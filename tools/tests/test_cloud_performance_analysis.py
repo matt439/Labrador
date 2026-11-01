@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import hashlib
+import io
 import json
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
+from tools.cloud_performance import __main__ as cli
 from tools.cloud_performance import analysis, infrastructure
 from tools.cloud_performance.common import canonical, validate_config
-from tools.tests.cloud_performance_fixtures import config, write_json
+from tools.tests.cloud_performance_fixtures import config, phase_summary, write_json
 
 
 def evidence_manifest(root: Path) -> dict[str, dict[str, int | str]]:
@@ -32,17 +37,6 @@ def refresh_terminal_manifest(root: Path) -> None:
     marker = json.loads(marker_path.read_text())
     marker["evidence_files"] = evidence_manifest(root)
     write_json(marker_path, marker)
-
-
-def phase_summary(values: list[int]) -> dict[str, int]:
-    ordered = sorted(values)
-
-    def percentile(numerator: int, denominator: int) -> int:
-        rank = max(1, (len(ordered) * numerator + denominator - 1) // denominator)
-        return ordered[rank - 1]
-
-    return {"count": len(values), "min": ordered[0], "p50": percentile(50, 100),
-            "p95": percentile(95, 100), "p99": percentile(99, 100), "max": ordered[-1]}
 
 
 class AnalysisTests(unittest.TestCase):
@@ -866,6 +860,303 @@ class AnalysisTests(unittest.TestCase):
             report = analysis.analyze(root)
             self.assertFalse(report["complete"])
             self.assertEqual(report["analysis_withheld"], "host_or_release_identity_invalid")
+
+
+
+PERIOD_NS = 16_666_667
+SOFTWARE_SCOPE = "software-paced frame-start interval; not display scan-out"
+PRESENTATION_SCOPE = "presentation-driven frame-start interval; not display scan-out"
+
+
+def frames(count: int, *, update: int, record: int, present: int, period: int = PERIOD_NS,
+           software: bool = False) -> list[dict]:
+    """Frames that start one period apart, the wait the remainder of the period in begin."""
+    samples = []
+    for ordinal in range(count):
+        begin = period - update - record - present
+        sample = {
+            "ordinal": ordinal, "update_ns": update, "begin_ns": begin,
+            "record_submit_ns": record, "present_ns": present, "whole_frame_ns": period,
+            "scheduled_interval_ns": period if ordinal else 0,
+        }
+        if software:
+            sample.update({"pacing_wait_ns": 100, "start_lateness_ns": 200})
+        samples.append(sample)
+    return samples
+
+
+def capture(samples: list[dict], *, run: str = "local-0123456789ab-vulkan-1",
+            backend: str = "vulkan", vendor_id: int = 0x1002,
+            device_name: str = "AMD Radeon(TM) Graphics", software: bool = False) -> dict:
+    """A capture as LineSweeperFrameBench writes it on a Radeon host."""
+    presentation = {
+        "vulkan": ("fifo", None, None),
+        "d3d12": ("dxgi_sync_interval", 1, None),
+    }[backend]
+    phases = analysis.PHASES + (analysis.PACING_PHASES if software else ())
+    return {
+        "schema_version": 1,
+        "scope": "linesweeper_frame_benchmark",
+        "status": "complete",
+        "run": run,
+        "release_sha256": "f" * 64,
+        "started_utc": "2026-11-01T01:00:00Z",
+        "finished_utc": "2026-11-01T01:01:30Z",
+        "build": {"configuration": "release", "render_backend": backend},
+        "measurement_class": "hardware_raster",
+        "render_device": {
+            "device_name": device_name, "vendor_id": vendor_id, "device_id": 0x164E,
+            "kind": "hardware", "api": "Vulkan" if backend == "vulkan" else "Direct3D 12",
+            "present_mode": presentation[0], "requested_swap_interval": presentation[1],
+            "reported_swap_interval": presentation[2],
+        },
+        "workload": {
+            "name": "full_well_top_out", "resolution": {"width": 1280, "height": 720},
+            "refresh_hz": 60, "warmup_frames": 1800, "sample_frames": len(samples),
+            "live_particles": 9600, "target_frame_ns": PERIOD_NS,
+        },
+        "timing": {
+            "clock": "std::chrono::steady_clock", "unit": "nanoseconds",
+            "summary_method": "nearest-rank",
+            "interval_scope": SOFTWARE_SCOPE if software else PRESENTATION_SCOPE,
+            "pacer": "win32_high_resolution_waitable_timer" if software
+            else "presentation_driven",
+            "deadline_policy": "absolute_catch_up" if software else "none",
+            "sample_count": len(samples),
+            "scheduled_interval_ns": [sample["scheduled_interval_ns"] for sample in samples],
+        },
+        "samples": samples,
+        "summary": {phase: phase_summary([sample[phase] for sample in samples])
+                    for phase in phases},
+    }
+
+
+class LocalAnalysisTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.root = Path(self.directory.name)
+
+    def tearDown(self) -> None:
+        self.directory.cleanup()
+
+    def write(self, name: str, document: dict) -> Path:
+        path = self.root / name
+        write_json(path, document)
+        return path
+
+    def test_radeon_capture_without_nvidia_identity_gets_a_verdict_and_pooled_p99s(self):
+        waiting = self.write("wait.json", capture(
+            frames(120, update=300_000, record=900_000, present=200_000)))
+        working = self.write("work.json", capture(
+            frames(120, update=6_000_000, record=10_400_000, present=100_000),
+            run="local-0123456789ab-vulkan-2"))
+
+        report = analysis.analyze_local([waiting, working])
+
+        self.assertTrue(report["complete"], report)
+        self.assertEqual(report["scope"], "local_captures")
+        self.assertIn("local_capture", report["interpretation"])
+        backend = report["backends"]["vulkan"]
+        self.assertEqual(backend["pacer"], "presentation_driven")
+        self.assertEqual(backend["render_device"]["vendor_id"], 0x1002)
+        self.assertEqual(backend["target_frame_ns"], PERIOD_NS)
+        verdicts = {item["run"]: item["presentation_lock"]["verdict"]
+                    for item in backend["repetitions"]}
+        self.assertEqual(verdicts, {
+            "local-0123456789ab-vulkan-1": "presentation_wait_candidate",
+            "local-0123456789ab-vulkan-2": "work_limited",
+        })
+        first = backend["repetitions"][0]["presentation_lock"]
+        self.assertEqual(first["pacer_idle_source"], "frame_end_to_next_start")
+        self.assertEqual(backend["presentation_wait_candidate_repetitions"], [1])
+        self.assertEqual(backend["sample_count"], 240)
+        self.assertEqual(backend["summary"]["update_ns"]["p99"], 6_000_000)
+        self.assertEqual(backend["summary"]["record_submit_ns"]["p50"], 900_000)
+        self.assertEqual(backend["cadence_pools"]["work_limited"]["repetitions"], [2])
+        self.assertEqual(
+            backend["cadence_pools"]["presentation_wait_candidate"]["summary"]["update_ns"]["p99"],
+            300_000)
+
+    def test_command_prints_the_verdict_and_pooled_p99s_and_keeps_the_report(self):
+        path = self.write("wait.json", capture(
+            frames(120, update=300_000, record=900_000, present=200_000)))
+        out = self.root / "analysis.json"
+        stdout = io.StringIO()
+        argv = ["tools.cloud_performance", "analyze-local", "--input", str(path),
+                "--out", str(out)]
+        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(stdout):
+            status = cli.main()
+
+        self.assertEqual(status, 0)
+        printed = json.loads(stdout.getvalue())
+        self.assertEqual(printed["vulkan"]["verdicts"],
+                         {"local-0123456789ab-vulkan-1": "presentation_wait_candidate"})
+        self.assertEqual(printed["vulkan"]["pooled_p99_ns"]["record_submit_ns"], 900_000)
+        self.assertTrue(json.loads(out.read_text())["complete"])
+        with mock.patch.object(sys, "argv", argv), self.assertRaises(FileExistsError):
+            cli.main()
+
+    def test_command_reports_a_refusal_and_exits_nonzero(self):
+        document = capture(frames(120, update=300_000, record=900_000, present=200_000))
+        document["samples"][3]["update_ns"] += 1
+        path = self.write("bad.json", document)
+        stdout = io.StringIO()
+        argv = ["tools.cloud_performance", "analyze-local", "--input", str(path),
+                "--out", str(self.root / "analysis.json")]
+        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(stdout):
+            status = cli.main()
+
+        self.assertEqual(status, 1)
+        self.assertEqual(json.loads(stdout.getvalue())["analysis_withheld"],
+                         "result_validation_failed")
+
+    def test_display_period_other_than_the_workload_default_needs_the_refresh_argument(self):
+        period_75 = (1_000_000_000 + 37) // 75
+        path = self.write("75hz.json", capture(
+            frames(120, update=300_000, record=900_000, present=200_000, period=period_75)))
+
+        default = analysis.analyze_local([path])
+        stated = analysis.analyze_local([path], refresh_hz=75)
+
+        self.assertEqual(
+            default["backends"]["vulkan"]["repetitions"][0]["presentation_lock"]["verdict"],
+            "not_locked")
+        self.assertEqual(default["target_frame_source"], "workload.target_frame_ns")
+        self.assertEqual(stated["target_frame_source"], "refresh_hz_argument")
+        self.assertEqual(stated["backends"]["vulkan"]["target_frame_ns"], period_75)
+        self.assertEqual(
+            stated["backends"]["vulkan"]["repetitions"][0]["presentation_lock"]["verdict"],
+            "presentation_wait_candidate")
+        for invalid in (0, -60, True, 59.94, 1001, 3_000_000_000):
+            self.assertEqual(analysis.analyze_local([path], refresh_hz=invalid)
+                             ["analysis_withheld"], "refresh_invalid")
+
+    def test_a_gap_between_frames_late_in_a_presentation_run_ends_the_tail(self):
+        samples = frames(120, update=300_000, record=900_000, present=200_000)
+        for sample in samples[100:]:
+            # A millisecond outside every phase: frames still start one period apart.
+            sample["begin_ns"] -= 1_000_000
+            sample["whole_frame_ns"] -= 1_000_000
+        report = analysis.analyze_local([self.write("gap.json", capture(samples))])
+
+        lock = report["backends"]["vulkan"]["repetitions"][0]["presentation_lock"]
+        self.assertEqual(lock["tail_first_sample"], None)
+        self.assertEqual(lock["verdict"], "not_locked")
+
+    def test_software_paced_capture_uses_the_pacer_wait_and_its_own_period(self):
+        path = self.write("software.json", capture(
+            frames(120, update=300_000, record=900_000, present=200_000, software=True),
+            backend="d3d12", software=True))
+
+        report = analysis.analyze_local([path])
+
+        self.assertTrue(report["complete"], report)
+        lock = report["backends"]["d3d12"]["repetitions"][0]["presentation_lock"]
+        self.assertEqual(lock["pacer_idle_source"], "pacing_wait_ns")
+        self.assertEqual(lock["verdict"], "presentation_wait_candidate")
+        refused = analysis.analyze_local([path], refresh_hz=60)
+        self.assertEqual(refused["analysis_withheld"], "result_validation_failed")
+        self.assertIn("presentation-driven", refused["error"])
+
+    def test_a_capture_that_contradicts_itself_is_withheld(self):
+        def refused(mutate) -> dict:
+            document = capture(frames(120, update=300_000, record=900_000, present=200_000))
+            mutate(document)
+            report = analysis.analyze_local([self.write("capture.json", document)])
+            self.assertFalse(report["complete"])
+            self.assertEqual(report["analysis_withheld"], "result_validation_failed")
+            self.assertTrue(report["source"].endswith("capture.json"))
+            return report
+
+        def edit_sample(document: dict) -> None:
+            document["samples"][7]["record_submit_ns"] += 1
+            document["samples"][7]["whole_frame_ns"] += 1
+
+        def add_pacer_phase(document: dict) -> None:
+            for sample in document["samples"]:
+                sample["pacing_wait_ns"] = 0
+
+        self.assertIn("summary", refused(edit_sample)["error"])
+        self.assertIn("pacer phases", refused(add_pacer_phase)["error"])
+        self.assertIn("phase sum", refused(
+            lambda document: document["samples"][0].update(update_ns=1))["error"])
+        self.assertIn("presentation", refused(
+            lambda document: document["render_device"].pop("present_mode"))["error"])
+        self.assertIn("contract", refused(
+            lambda document: document["render_device"].update(present_mode="mailbox"))["error"])
+        self.assertIn("pacing contract", refused(
+            lambda document: document["timing"].update(deadline_policy="absolute_catch_up"))
+            ["error"])
+        self.assertIn("hardware-raster", refused(
+            lambda document: document["build"].update(configuration="debug"))["error"])
+        self.assertIn("hardware", refused(
+            lambda document: document["render_device"].update(kind="software"))["error"])
+        self.assertIn("period", refused(
+            lambda document: document["workload"].update(target_frame_ns=PERIOD_NS + 1))
+            ["error"])
+        self.assertIn("sample count", refused(
+            lambda document: document["workload"].update(sample_frames=121))["error"])
+        self.assertIn("release hash", refused(
+            lambda document: document.update(release_sha256="unhashed"))["error"])
+        self.assertIn("ordinals", refused(
+            lambda document: document["samples"][5].update(ordinal=6))["error"])
+        self.assertIn("adapter identity", refused(
+            lambda document: document["render_device"].pop("device_name"))["error"])
+        self.assertIn("adapter identity", refused(
+            lambda document: document["render_device"].update(vendor_id="0x1002"))["error"])
+        self.assertIn("period", refused(
+            lambda document: document["workload"].update(
+                refresh_hz=3_000_000_000, target_frame_ns=0))["error"])
+
+    def test_repetitions_of_one_backend_must_share_device_executable_and_pacing(self):
+        base = frames(120, update=300_000, record=900_000, present=200_000)
+        first = self.write("one.json", capture(base))
+        same_run = self.write("again.json", capture(base))
+        other_device = self.write("nvidia.json", capture(
+            base, run="local-0123456789ab-vulkan-2", vendor_id=0x10DE,
+            device_name="NVIDIA GeForce RTX 5080"))
+        other_executable = capture(base, run="local-0123456789ab-vulkan-3")
+        other_executable["release_sha256"] = "e" * 64
+        other_executable = self.write("rebuilt.json", other_executable)
+
+        self.assertIn("twice", analysis.analyze_local([first, same_run])["error"])
+        self.assertIn("differs within a backend",
+                      analysis.analyze_local([first, other_device])["error"])
+        self.assertIn("differs within a backend",
+                      analysis.analyze_local([first, other_executable])["error"])
+        self.assertEqual(analysis.analyze_local([])["analysis_withheld"], "no_results")
+        missing = analysis.analyze_local([self.root / "absent.json"])
+        self.assertEqual(missing["analysis_withheld"], "result_validation_failed")
+
+    def test_the_cloud_lane_still_refuses_what_the_local_lane_reads(self):
+        """A Radeon result in otherwise valid EC2 evidence reaches the vendor and host checks."""
+        radeon = {"device_name": "AMD Radeon(TM) Graphics", "vendor_id": 0x1002}
+        cloud = AnalysisTests()
+        root = self.root / "cloud"
+        cloud.evidence(root)
+        for path in (root / "output" / "results").glob("result-*.json"):
+            result = json.loads(path.read_text())
+            result["render_device"].update(radeon)
+            write_json(path, result)
+        refresh_terminal_manifest(root / "output")
+
+        report = analysis.analyze(root)
+
+        self.assertEqual(report["analysis_withheld"], "result_validation_failed")
+        self.assertIn("vendor", report["error"])
+        host_path = root / "output" / "host.json"
+        host = json.loads(host_path.read_text())
+        for field in ("nvidia_smi_before", "nvidia_smi_after", "nvidia_smi_identity"):
+            del host[field]
+        write_json(host_path, host)
+        refresh_terminal_manifest(root / "output")
+        report = analysis.analyze(root)
+        self.assertEqual(report["analysis_withheld"], "host_or_release_identity_invalid")
+        self.assertIn("nvidia-smi", report["error"])
+
+        local = self.write("radeon.json", capture(
+            frames(120, update=300_000, record=900_000, present=200_000)))
+        self.assertTrue(analysis.analyze_local([local])["complete"])
 
 
 if __name__ == "__main__":

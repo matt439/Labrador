@@ -534,14 +534,16 @@ long enough that the sweep found it twice.
       excludes against the named configuration, and the two passages
       in `samples/linesweeper/README.md` agree that the machine is named and the
       measurement is not. What is open is the measurement alone, and it is the
-      one item here that needs hardware. Taking it waits on four instruments,
+      one item here that needs hardware. Taking it needed four instruments,
       each a story in [STORIES.md](../../product/STORIES.md):
-      [SM-01](../../product/STORIES.md#sm-01) puts the bench on the integrated
-      Radeon rather than the discrete GPU,
       [SM-02](../../product/STORIES.md#sm-02) reproduces the four-core hold,
-      [SM-04](../../product/STORIES.md#sm-04) writes the local run procedure,
+      [SM-04](../../product/STORIES.md#sm-04) writes the local run procedure
       and [SM-05](../../product/STORIES.md#sm-05) applies the ratchet's lock
-      verdict to a local run. [SM-07](../../product/STORIES.md#sm-07) is the
+      verdict to a local run, all three in
+      [the local procedure](../../performance/local-frame-bench.md); it still
+      waits on [SM-01](../../product/STORIES.md#sm-01), which puts the bench
+      on the integrated Radeon rather than the discrete GPU.
+      [SM-07](../../product/STORIES.md#sm-07) is the
       measurement. The owner's `SM-03` decision separates CPU `update_ns`
       and `record_submit_ns` p99s, frame-start `scheduled_interval_ns` p99,
       GPU execution and pipeline latency; the

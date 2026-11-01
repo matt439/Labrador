@@ -260,6 +260,11 @@ python -m tools.cloud_performance analyze `
     --input out/cloud/RUN_ID --out out/cloud/RUN_ID-analysis.json
 ```
 
+`analyze-local` applies the same verdict and pooled summaries to results a
+desktop run wrote, with no host attestation and any adapter vendor;
+[the local procedure](../../docs/performance/local-frame-bench.md#reading-a-run)
+owns its command and reading.
+
 Analysis refuses to report percentiles unless the terminal marker, launch,
 configuration, host, release, adapter, workload and complete repetition matrix
 all agree. Recorded presentation metadata must be complete and match the

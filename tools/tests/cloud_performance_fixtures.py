@@ -62,3 +62,14 @@ def config(now: datetime | None = None) -> dict:
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value), encoding="utf-8")
+
+
+def phase_summary(values: list[int]) -> dict[str, int]:
+    ordered = sorted(values)
+
+    def percentile(numerator: int, denominator: int) -> int:
+        rank = max(1, (len(ordered) * numerator + denominator - 1) // denominator)
+        return ordered[rank - 1]
+
+    return {"count": len(values), "min": ordered[0], "p50": percentile(50, 100),
+            "p95": percentile(95, 100), "p99": percentile(99, 100), "max": ordered[-1]}
