@@ -18,8 +18,6 @@ Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns it;
 BACKLOG's L36 to L54 let it run alongside product work.
-`SM-25` still needs observation of a scheduled run; no manual dispatch is
-required by this plan.
 
 **Beginner guides are done:** every `GUIDE#` unit of
 [Beginner guides](docs/beginner-guides.md) has closed. What the runs could not
@@ -27,7 +25,7 @@ check is in its *Not verified by the audit*; `GUIDE#12` left saving through
 IDBFS from the starter unguided, and `IDEA#4`, which *A camera that follows
 the player* links, waits on the owner.
 
-**Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which with a green CI run of the changed consumer jobs closes `OCA-78`. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
+**Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which closes `OCA-78`; CI's consumer jobs have already passed with the ZIP. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
@@ -51,20 +49,11 @@ the player* links, waits on the owner.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-78` | BLOCKED | must | M | Starter ZIP implemented. Left: a CI run of the changed `consumer` and `wasm-consumer` jobs passing at a pushed commit, and `v0.3.0` carrying the ZIP with Get the starter project's download followed against it. [Acceptance](docs/product/BACKLOG.md#oca-78). |
+| `OCA-78` | BLOCKED | must | M | Starter ZIP implemented and CI's consumer jobs pass with it. Left: `v0.3.0` carrying the ZIP, with Get the starter project's download followed against it. [Acceptance](docs/product/BACKLOG.md#oca-78). |
 | `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
 | `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
 
 `SM-30`, the owner-only gate follow-up in [BACKLOG.md, Later](docs/product/BACKLOG.md#later), is ready now that `SM-29` is closed.
-
-## CI
-
-**Owner:** [.github/workflows/ci.yml](.github/workflows/ci.yml) for the `CI#` rows; stories in [docs/product/STORIES.md](docs/product/STORIES.md).
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
-| `SM-24` | BLOCKED | could | S | Pin/selector inventory, coupled consumer updates and full qualification procedure are documented. Preserve the after-SM-25 scheduled-run observation gate. [Procedure](docs/dependency-updates.md). |
 
 ## Performance
 
@@ -191,6 +180,7 @@ A new row for one of these gets its section back.
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
 | Code hygiene (L36 to L54) | [Code hygiene](docs/code-hygiene.md) and [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new bounded repair or review story reaching the front |
 | The rest of Later (L1 to L40) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | its next ready batch reaching the front under the scheduling amendment; the hygiene lane runs alongside product work |
+| CI | [.github/workflows/ci.yml](.github/workflows/ci.yml) and [docs/dependency-updates.md](docs/dependency-updates.md) | a new `CI#` row, or a CI story reaching the front |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9 | a regression, or a change the port meets that a decision must settle |
 | macOS and iOS | [docs/port/android.md](docs/port/android.md) sections 5 and 6 | a plan document; none is in the tree |
