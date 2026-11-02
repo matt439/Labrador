@@ -18,8 +18,6 @@ Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
 **Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns it;
 BACKLOG's L36 to L54 let it run alongside product work.
-`SM-25` still needs observation of a scheduled run; no manual dispatch is
-required by this plan.
 
 **Beginner guides are done:** every `GUIDE#` unit of
 [Beginner guides](docs/beginner-guides.md) has closed. What the runs could not
@@ -63,8 +61,7 @@ the player* links, waits on the owner.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-25` | WAITING | should | S | Observe the next scheduled Actions run; repaired SDK download and tests passed PR CI. [Evidence](docs/product/BACKLOG.md#next). |
-| `SM-24` | BLOCKED | could | S | Pin/selector inventory, coupled consumer updates and full qualification procedure are documented. Preserve the after-SM-25 scheduled-run observation gate. [Procedure](docs/dependency-updates.md). |
+| `SM-24` | OPEN | could | S | Pin/selector inventory, coupled consumer updates and full qualification procedure are documented, and its prerequisite `SM-25` is closed; check it against its acceptance and close it. [Procedure](docs/dependency-updates.md). |
 
 ## Performance
 

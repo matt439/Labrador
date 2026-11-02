@@ -7,10 +7,10 @@ command is not an installation or test result.
 
 The inventory below was read on 29 October 2026. Its linked source files own
 the values; update this record if a bump makes a displayed value false.
-SM-25's SDK pin, browser logging and weekly schedule are implemented, but
-observation of a scheduled run remains open in
-[BACKLOG](product/BACKLOG.md#next). This procedure does not close that gate
-or establish that any new toolchain has passed the checks below.
+SM-25's SDK pin, browser logging and weekly schedule are implemented, and
+the first scheduled run passed with the pinned SDK, as recorded in
+[BACKLOG](product/BACKLOG.md#next). This procedure does not establish that
+any new toolchain has passed the checks below.
 
 ## What is fixed, and what still moves
 
