@@ -43,9 +43,10 @@ and amend `web.md` §9 with the result.
 ## Needs Safari (M3's done-when)
 
 - [ ] LineSweeper, local_multiplayer, minimal, collision, the audio sample and
-      the components gallery in desktop Safari: drawing, keys, quit, context loss and restore. The 2013
-      MacBook Air is the candidate; note its Safari ceiling before moving off
-      legacy wasm exceptions, which needs Safari 18.4.
+      the components gallery in desktop Safari: drawing, keys, quit, context loss and restore. The owner's
+      current MacBook Air is the machine; record its macOS and Safari versions.
+      Moving off legacy wasm exceptions needs Safari 18.4 on every browser the
+      demo claims.
 - [ ] Safari masks `RENDERER` as "WebKit WebGL", as assumed, so the device
       strings are unmasked through the extension.
 

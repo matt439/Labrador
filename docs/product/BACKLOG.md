@@ -23,6 +23,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-10-27: v0.3.0 gets the first complete immutable documentation snapshot; no earlier-release backfill; implement and verify versioning before cutting it, with no release date promised | SITE#3 |
 | Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implemented, and the reviewed 150% scaling run remains | OCA-66 |
 | Decided 2026-10-30: the outside adopter's floor is someone with very little programming experience who wants to play around, not 'some C++'. Terminal commands and manual setup are acceptable, but every procedure has an exhaustive guide (every command in a copyable block, nothing to infer), which experienced users skip. Python is an acceptable tool prerequisite; no bundled installer. Many such readers will not clone with Git, so each release has a starter ZIP needing no Git: download, extract, build, play; Git stays the experienced route. This settles G96's direction without a C++ tutorial or a T10 rewrite | OCA-78, SRL-15 |
+| Owner facts 2026-11-03: ColourWars' repository is public; a current MacBook Air is owned and replaces the 2013 machine as M3's Safari candidate, so the Big Sur ceiling no longer decides M3; the desktop drives its four QHD screens at 60 Hz, and one at 144 Hz with the other three unplugged | DOC#4, SRL-07, SM-09, WEB#1, WEB#2, BDP-07 |
 
 `SITE#3` remains open under [the versioning policy](../website-versioning.md)
 and is a prerequisite for cutting `v0.3.0`. Verified candidate builds,
@@ -220,6 +221,10 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[SRL-04](STORIES.md#srl-04)** Could · XS · The Sample-Reading Learner: Examples page states LineSweeper's real reading size
 - [x] **[SRL-05](STORIES.md#srl-05)** Could · XS · The Sample-Reading Learner: LineSweeper README's open question states how much the unchecked layer rule covers
 - [ ] **[SM-09](STORIES.md#sm-09)** Should · S · The Sole Owner-Maintainer · **Owner**: Record the MacBook Air's Safari ceiling, and play the demo in it if it can
+  Owner fact 2026-11-03: a current MacBook Air is owned. Its macOS and Safari
+  versions, and a play of the live demo on it, are this story's record; the
+  2013 machine's ceiling no longer decides whether M3 can close on owned
+  hardware.
 - [ ] **[OCA-48](STORIES.md#oca-48)** Should · S · The Outside C++ Adopter · **Owner**: One physical-pad session: trust the desktop pad mapping and know what a backgrounded game receives
 - [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
 - [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside C++ Adopter: A test target for my game's rules from the start — after OCA-11
