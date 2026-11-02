@@ -1192,7 +1192,7 @@ and the vendor and renderer names. What it met and where it departed:
   LineSweeper and minimal samples were looked at on screen: no channel-swap
   tint, legible text, the pause menu, and exit 0.
 - **Owed before M3 is done.** Safari, which no machine here runs; the owner's
-  2013 MacBook Air is the candidate. And R5: headless Chrome gave 181
+  current MacBook Air is the machine. And R5: headless Chrome gave 181
   animation-frame callbacks in 3 s, a median of 16.7 ms between them (14.7 to
   16.9), which is a headless measurement and not the judder measurement on a
   60 Hz and a high-refresh display that R5 asks for.

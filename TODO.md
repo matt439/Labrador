@@ -12,7 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. No ready story is
 queued: what remains in Later waits on the owner, on another story or on an
-outside event.
+outside event. `DOC#4` is ready: ColourWars' repository is public.
 
 Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -28,8 +28,8 @@ the player* links, waits on the owner.
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which closes `OCA-78`; CI's consumer jobs have already passed with the ZIP. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` (the MacBook Air's Safari ceiling) · `SM-01` (Radeon driver and per-app GPU selection).
-- Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling).
+- Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` + `WEB#1` (Safari on the current MacBook Air) · `SM-01` (Radeon driver and per-app GPU selection).
+- Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling), `BDP-07` (browser pacing at 60 Hz and at 144 Hz).
 - Other acceptance: `SITE#3` (remaining browser/device/screen-reader acceptance and publication), `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `OCA-18` (the Visual Studio breakpoint session).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction. `IDEA#7` to `IDEA#19`, from the engine review of 2026-10-31: circle collision, scene queries, contact edges, arbitrary window sizes, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
@@ -71,14 +71,14 @@ the player* links, waits on the owner.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-48` | DECISION | should | S | One owner session with the physical XInput pad: on the desktop, each button and stick direction and a backgrounded sample (`OCA-48`); the bundle page in Firefox, and in Chrome the browser pad, a real tab switch and a real context loss (`BDP-06`). |
-| `SM-09` | DECISION | should | S | The owner records the highest macOS and Safari the 2013 MacBook Air takes, and plays the live demo there if it meets the wasm-exceptions floor. |
-| `WEB#1` | BLOCKED | should | M | M3's Safari half: all six sample pages in desktop Safari (drawing, keys, quit, context loss and restore), and whether Safari masks `RENDERER`. Blocked on `SM-09`'s ceiling; R5 is `BDP-07`'s. |
+| `SM-09` | DECISION | should | S | The owner records the current MacBook Air's macOS and Safari versions and plays the live demo there; the 2013 machine's ceiling no longer decides M3. Can share `WEB#1`'s session. |
+| `WEB#1` | DECISION | should | M | M3's Safari half on the owner's current MacBook Air: all six sample pages (drawing, keys, quit, context loss and restore), and whether Safari masks `RENDERER`. R5 is `BDP-07`'s. |
 | `WEB#3` | DECISION | should | S | Hear the audio sample through speakers (each sound, pan, pitch, volume, held keys), the first-gesture unlock in each browser, resume after a hidden tab, and `ping_adpcm.xwb` on XAudio2. Nobody has listened yet. |
-| `BDP-07` | BLOCKED | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` on a 60 Hz and a high-refresh display (R5), M3's second open term. May need a borrowed display; [method](docs/port/pacing-method.md). |
+| `BDP-07` | DECISION | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` at 60 Hz (four screens) and 144 Hz (one screen, three unplugged), R5, M3's second open term. Owner session; [method](docs/port/pacing-method.md). |
 | `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN); R6 by [the method](docs/port/pacing-method.md). |
 | `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13`; `BDP-09`'s layout is in place. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
 | `SM-44` | DEFERRED | could | S | Optional future real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is accessible. Does not gate iPhone acceptance. |
-| `WEB#2` | BLOCKED | could | S | A standard-mapping pad in Firefox and Safari (Chrome is `BDP-06`'s), and unplug and replug with more than four pads seen. Firefox can ride `OCA-48`'s session; Safari waits on `SM-09`, and five pads are not owned. |
+| `WEB#2` | BLOCKED | could | S | A standard-mapping pad in Firefox and Safari (Chrome is `BDP-06`'s), and unplug and replug with more than four pads seen. Firefox can ride `OCA-48`'s session, Safari `WEB#1`'s; five pads are not owned. |
 | `WEB#5` | BLOCKED | could | S | Touch on real glass: several fingers with distinct ids, no tap also a click, foreground loss cancelling every point, LineSweeper's buttons through `WM_POINTER`, a pen as the mouse, Firefox and Safari. Needs a touchscreen. |
 
 ## Engine verification and reviews
@@ -100,7 +100,7 @@ the player* links, waits on the owner.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `DOC#4` | WAITING | should | S | When ColourWars' repository goes public: sweep "private" and "not public" mentions outside dated records, link it from the README and site, and review report links within the approved disclosure boundary. |
+| `DOC#4` | OPEN | should | S | ColourWars' repository is public (2026-11-03): sweep "private" and "not public" mentions outside dated records, link it from the README and site, and review report links within the approved disclosure boundary. |
 | `PI-14` | DECISION | should | M | Sandbox run reached a keyboard match and exited 0 (2026-10-28, [BACKLOG](docs/product/BACKLOG.md#next)); left: one match on the owner's pad, the Radeon run after `SM-01`, and the record in ColourWars. |
 
 ## Records and design decisions
@@ -109,7 +109,7 @@ the player* links, waits on the owner.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Needs the private repository. [Scope](docs/product/BACKLOG.md#later). |
+| `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Waits on that pin move. [Scope](docs/product/BACKLOG.md#later). |
 | `OCA-66` | DECISION | could | S | The samples/template declare per-monitor DPI awareness and the release guide states it; review and record the template at 150% scaling. [Scope](docs/product/BACKLOG.md#later). |
 
 ## Features other engines have
