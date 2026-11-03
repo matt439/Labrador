@@ -1,0 +1,50 @@
+---
+// Text that only a release's own documentation shows. A snapshot is never
+// rebuilt, so where the development site can say "the newest release" or
+// clone master, a release's pages name their own tag and send a reader who
+// wants a newer one to that release's documentation. On the development site
+// this renders nothing.
+//
+// The list of versions lives once, on the development site, so its link is
+// written literally with data-version-index (VersionSelect.astro).
+import { Code } from '@astrojs/starlight/components';
+import { RELEASE_SOURCE } from '../lib/repository';
+
+interface Props {
+	// checkout: after Build Labrador's clone, the line that puts it on this
+	// release; newer: where a page has the reader check for a newer release;
+	// moving: before Update your starter downloads this release's ZIP.
+	part: 'checkout' | 'newer' | 'moving';
+}
+
+const { part } = Astro.props;
+const tag = RELEASE_SOURCE?.tag;
+---
+
+{tag && part === 'checkout' && (
+	<>
+		<p>
+			The clone is on <code>master</code>, which can be ahead of <code>{tag}</code>, the release these pages describe.
+			This puts it on that release, so that what you build is what they say:
+		</p>
+		<Code code={`git checkout ${tag}`} lang="bat" />
+		<p>
+			It prints a note that begins <code>Note: switching to '{tag}'.</code> and ends <code>HEAD is now at</code>{' '}
+			followed by a commit. That is expected.
+		</p>
+	</>
+)}
+{tag && part === 'newer' && (
+	<p>
+		These pages describe <code>{tag}</code>, and the files they give you to copy are that release's. For a newer
+		release, follow this page in that release's own documentation, from{' '}
+		<a href="/versions/" data-version-index>All documentation versions</a>, instead.
+	</p>
+)}
+{tag && part === 'moving' && (
+	<p>
+		These pages are <code>{tag}</code>'s own documentation, so the ZIP below is <code>{tag}</code>'s. If a newer
+		release has come out since, follow this page in its documentation, from{' '}
+		<a href="/versions/" data-version-index>All documentation versions</a>, instead.
+	</p>
+)}

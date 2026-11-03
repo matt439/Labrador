@@ -12,5 +12,18 @@
       "published": "2026-11-03"
     }
   ],
-  "errata": []
+  "errata": [
+    {
+      "tag": "v0.3.0",
+      "date": "2026-11-03",
+      "title": "Build Labrador clones master; to build v0.3.0 itself, run git checkout v0.3.0 in C:\\dev\\Labrador after cloning",
+      "href": "/docs/get-started/build-labrador/"
+    },
+    {
+      "tag": "v0.3.0",
+      "date": "2026-11-03",
+      "title": "Start your own project: for a release newer than v0.3.0, follow that release's own documentation rather than these pages",
+      "href": "/docs/get-started/your-project/"
+    }
+  ]
 }

@@ -27,9 +27,9 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-03: a check that can be written as a list is automated, and runs on every change it covers; the owner's manual testing is informal play on real hardware, reporting whatever looks wrong, not a scripted checklist. An acceptance criterion written as an owner checklist is re-planned as an automated suite plus, where only a person can judge (listening, a pad's feel, visible judder, real-device numbers), informal play | SITE#3, WEB#1, SM-09, SM-13, BDP-06, OCA-48, PI-21, WEB#2, WEB#3, WEB#5, BDP-07, REV#3, REV#8, REV#12, OCA-66 |
 | Decided 2026-11-03: cut `v0.3.0` without waiting for the iOS Simulator acceptance job to pass reliably; `SITE#5` stays open as its own item and no longer gates a release | SITE#3, SITE#5 |
 
-`SITE#3` remains open under [the versioning policy](../website-versioning.md).
-Its qualification, the prerequisite for cutting `v0.3.0`, is complete, and its
-publication follows the tag. Verified candidate builds,
+`SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
+its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
+deployed and [checked](../website-versioning.md#publication-evidence-2026-11-03). Verified candidate builds,
 versioned links and search, the release manifest, the snapshot archive,
 assembly, CI verification, the release index and the version selector are
 implemented and checked offline with fixtures;
@@ -45,8 +45,7 @@ A/AA scan, and NVDA is heard announcing the notice; the iOS Simulator runs
 only on request until reliable (`SITE#5`). The owner decided on 2026-11-03
 not to hold `v0.3.0` for the iOS Simulator, so `SITE#5` stays open on its own,
 and the owner's iPhone use that day, which found `SITE#4`, stands as the
-informal phone play. `v0.3.0`'s snapshot was published on 2026-11-03; what remains is checking
-its deploy. Immutable releases were enabled on 2026-10-27.
+informal phone play. Immutable releases were enabled on 2026-10-27.
 
 ## Now
 
@@ -913,7 +912,7 @@ written.
 
 - [x] **[SM-72](#sm-72)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse non-finite stored font metrics before layout
 
-- [ ] **[OCA-78](#oca-78)** Must - M - The Outside C++ Adopter: Start my own game from a release download, without Git
+- [x] **[OCA-78](#oca-78)** Must - M - The Outside C++ Adopter: Start my own game from a release download, without Git
 
 <a id="oca-78"></a>
 ### OCA-78. Start a project from a release ZIP without Git
@@ -962,12 +961,15 @@ ZIP beside the documentation asset. Until the site lists such a release,
 Get Started sends the reader to the Git route, unless the newest release
 has a ZIP, which the reader then downloads with the browser.
 
-The story stays open. CI's half is met: the scheduled
+CI's half was met by the scheduled
 [run](https://github.com/matt439/Labrador/actions/runs/41382891595) of
-2026-11-02 at `aa8f5a2` made the ZIP in its consumer and wasm-consumer jobs,
-extracted it with Windows' tar, and both jobs passed. No release carries a
-ZIP yet, so the download step is first followed when v0.3.0 is cut, and the
-story closes then.
+2026-11-02 at `aa8f5a2`, which made the ZIP in its consumer and wasm-consumer
+jobs, extracted it with Windows' tar, and passed both. **Closed 2026-11-03:**
+`v0.3.0` carries `labrador-starter-v0.3.0.zip`, made from a clean checkout of
+the tag; extracted into a new folder, its README named `v0.3.0` and its build
+and both tests passed. Once the site listed the release, Get the starter
+project's `curl` line, followed as written, downloaded the same file
+(9,265,469 bytes, SHA-256 `25db98b2…5869`).
 
 <a id="sm-72"></a>
 ### SM-72. Require finite metrics in sprite-font files
