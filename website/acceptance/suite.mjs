@@ -1063,6 +1063,18 @@ async function releaseIndex(context) {
 		return [...document.querySelectorAll('.version-card')].find((card) => card.querySelector('h2').id === arguments[0])
 			.querySelector('.version-links a');`, [OLDEST]);
 	await context.hideSidebar();
+	// Where the driver cannot touch below the first screen (touchAtPagePoint
+	// in browsers.mjs, a WebKit bug), a link down there is not followed: its
+	// address and target were checked above, and the tap waits for the fix
+	// (SITE#5). Remove this when the driver touches where it is asked to.
+	if (context.flags.touchAtPagePoint) {
+		const place = await context.script(INTO_VIEW_FROM_TOP, [docsLink]);
+		if (place.scrollY > 0) {
+			context.note(`SKIPPED following ${OLDEST}'s documentation link: it is ${place.y} px down the page, below the first screen of `
+				+ `${place.height} px, where ${context.target}'s driver places no touch where it is asked to (WebKit bug, SITE#5)`);
+			return;
+		}
+	}
 	const location = await context.follow(docsLink, context.abs(`${versionPath(OLDEST)}docs/`));
 	context.note(`followed ${OLDEST}'s documentation link to ${location.href}`);
 }
