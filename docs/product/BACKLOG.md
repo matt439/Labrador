@@ -224,7 +224,9 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   Owner fact 2026-11-03: a current MacBook Air is owned. Its macOS and Safari
   versions, and a play of the live demo on it, are this story's record; the
   2013 machine's ceiling no longer decides whether M3 can close on owned
-  hardware.
+  hardware. Recorded 2026-11-03: macOS 27.0.1 and Safari 27.0.1, above the
+  18.4 floor; the live demo loaded and was played briefly. Left: one full
+  match, quit and played again.
 - [ ] **[OCA-48](STORIES.md#oca-48)** Should · S · The Outside C++ Adopter · **Owner**: One physical-pad session: trust the desktop pad mapping and know what a backgrounded game receives
 - [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
 - [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside C++ Adopter: A test target for my game's rules from the start — after OCA-11

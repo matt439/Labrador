@@ -77,7 +77,8 @@ of its own: XAudio2, Web Audio in a browser, or a null one that records what it
 was asked to play. The `wasm-debug` and `wasm-release` presets build the engine
 and the samples for a browser with Emscripten, drawing through WebGL2 with the
 OpenGL backend. All six samples run there, LineSweeper has also been checked in
-Firefox, and Safari has not been checked yet. Phones are a planned phase, not a
+Firefox. In Safari, only LineSweeper's live demo has been tried: loaded and
+played briefly in Safari 27.0.1 on macOS. Phones are a planned phase, not a
 platform.
 
 Why each backend exists is in [ARCHITECTURE](docs/design/ARCHITECTURE.md),

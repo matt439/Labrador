@@ -1191,8 +1191,12 @@ and the vendor and renderer names. What it met and where it departed:
   bucket, `ANGLE (NVIDIA, NVIDIA GeForce GTX 980 ...), or similar`. The Win32 GL
   LineSweeper and minimal samples were looked at on screen: no channel-swap
   tint, legible text, the pause menu, and exit 0.
-- **Owed before M3 is done.** Safari, which no machine here runs; the owner's
-  current MacBook Air is the machine. And R5: headless Chrome gave 181
+- **Safari, so far.** The owner's current MacBook Air runs macOS 27.0.1 and
+  Safari 27.0.1 (About Safari, read by the owner on 2026-11-03), above the
+  18.4 that dropping legacy wasm exceptions needs. The live demo loaded and was
+  played briefly there that day; that is evidence for Safari 27.0.1 only.
+- **Owed before M3 is done.** In Safari: one full match on the live demo, quit
+  and played again (SM-09), and the six sample pages (WEB#1). And R5: headless Chrome gave 181
   animation-frame callbacks in 3 s, a median of 16.7 ms between them (14.7 to
   16.9), which is a headless measurement and not the judder measurement on a
   60 Hz and a high-refresh display that R5 asks for.

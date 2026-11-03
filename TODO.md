@@ -71,7 +71,7 @@ the player* links, waits on the owner.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-48` | DECISION | should | S | One owner session with the physical XInput pad: on the desktop, each button and stick direction and a backgrounded sample (`OCA-48`); the bundle page in Firefox, and in Chrome the browser pad, a real tab switch and a real context loss (`BDP-06`). |
-| `SM-09` | DECISION | should | S | The owner records the current MacBook Air's macOS and Safari versions and plays the live demo there; the 2013 machine's ceiling no longer decides M3. Can share `WEB#1`'s session. |
+| `SM-09` | DECISION | should | S | macOS and Safari 27.0.1 recorded and the live demo played briefly. Left: one full match there, quit and played again. Can share `WEB#1`'s session. |
 | `WEB#1` | DECISION | should | M | M3's Safari half on the owner's current MacBook Air: all six sample pages (drawing, keys, quit, context loss and restore), and whether Safari masks `RENDERER`. R5 is `BDP-07`'s. |
 | `WEB#3` | DECISION | should | S | Hear the audio sample through speakers (each sound, pan, pitch, volume, held keys), the first-gesture unlock in each browser, resume after a hidden tab, and `ping_adpcm.xwb` on XAudio2. Nobody has listened yet. |
 | `BDP-07` | DECISION | could | M | Measure the fixed 60 Hz step under `requestAnimationFrame` at 60 Hz (four screens) and 144 Hz (one screen, three unplugged), R5, M3's second open term. Owner session; [method](docs/port/pacing-method.md). |
