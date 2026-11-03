@@ -36,11 +36,12 @@ function refused(text, pattern) {
 	assert.throws(() => validateManifest(text), pattern);
 }
 
-test('an empty manifest is valid, and the committed manifest is that exact text', () => {
+test('an empty manifest is valid, and the committed manifest is canonical and starts at v0.3.0', () => {
 	assert.deepEqual(validateManifest(EMPTY), { schemaVersion: 1, releases: [], errata: [] });
 	const website = fileURLToPath(new URL('../', import.meta.url));
-	assert.equal(readFileSync(path.join(website, 'published-versions.json'), 'utf8'), EMPTY);
-	assert.deepEqual(readManifest(website), { schemaVersion: 1, releases: [], errata: [] });
+	const committed = readManifest(website);
+	assert.equal(readFileSync(path.join(website, 'published-versions.json'), 'utf8'), canonicalize(committed));
+	assert.equal(committed.releases[0].tag, 'v0.3.0');
 });
 
 test('a full manifest validates to a frozen copy in canonical order', () => {

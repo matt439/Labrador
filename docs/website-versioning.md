@@ -9,8 +9,9 @@ A package's `version` field, a CMake Release configuration, a commit and a tag
 are not published documentation. A release has documentation on the site only
 when [the published-release manifest](#published-release-manifest) lists it.
 `v0.1.0` and `v0.2.0` are tagged and have GitHub releases, but no snapshots.
-The manifest lists no releases yet, so the release index at `/versions/` and
-the version selector offer Development alone.
+`v0.3.0`, published on 2026-11-03, is the first release the manifest lists, so
+the release index at `/versions/` and the version selector offer it beside
+Development.
 
 ## First documentation snapshot: v0.3.0
 
@@ -21,10 +22,11 @@ authored guides, generated API reference, design documents, sample quotations,
 media and dependency lockfile all come from that revision. The build must not
 combine released headers with development guides.
 
-`SITE#3` in [TODO.md](../TODO.md) tracks what remains: its qualification,
-complete before `v0.3.0` is cut, and the first publication, built from the tag
-after it. The decision sets no release date. Until the first snapshot is published, the whole
-site remains development documentation.
+`SITE#3` in [TODO.md](../TODO.md) tracks what remains: its qualification was
+complete before `v0.3.0` was cut, and the first publication, built from the
+tag, is listed in the manifest; checking its deployment is left. The decision
+sets no release date. Outside `/versions/`, the site remains development
+documentation.
 
 Keep the current site and `/docs/` as development documentation. Store release
 snapshots under `/versions/<release-tag>/`, with the same page paths below that
