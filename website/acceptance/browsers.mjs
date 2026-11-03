@@ -46,6 +46,7 @@ export const DEFAULT_WINDOW = Object.freeze({ width: 1280, height: 800 });
 export const DRIVER_READY_TIMEOUT_MS = 20_000;
 export const SIMULATOR_BOOT_TIMEOUT_MS = 300_000;
 const DRIVER_START_ATTEMPTS = 3;
+const SESSION_ATTEMPTS = 3;
 const OUTPUT_LIMIT = 8_192;
 
 const DRIVERS = Object.freeze({
@@ -171,6 +172,11 @@ export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, l
 	log(`simulator ${device.name} (${device.udid}, ${device.runtime}) is ${device.state}`);
 	if (device.state !== 'Booted') await simctl(['boot', device.udid], 120_000);
 	await simctl(['bootstatus', device.udid, '-b'], SIMULATOR_BOOT_TIMEOUT_MS);
+	// A freshly booted simulator's first Safari launch can outlast
+	// safaridriver's own connection timeout; launching it once here takes
+	// that cost before the session is asked for.
+	await simctl(['launch', device.udid, 'com.apple.mobilesafari'], 120_000)
+		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
 	return device;
 }
 
@@ -319,7 +325,18 @@ export async function startBrowser(target, {
 	const stopDriver = () => killDriver(started.child, { log });
 	let session;
 	try {
-		session = await newSession(started.url, capabilities, { timeoutMs: sessionTimeoutMs, commandTimeoutMs });
+		// safaridriver can fail to reach a simulator's Safari that is still
+		// starting; that failure is "session not created", and a later
+		// attempt usually connects.
+		for (let attempt = 1; ; attempt += 1) {
+			try {
+				session = await newSession(started.url, capabilities, { timeoutMs: sessionTimeoutMs, commandTimeoutMs });
+				break;
+			} catch (error) {
+				if (attempt >= SESSION_ATTEMPTS || error?.code !== 'session not created') throw error;
+				log(`session attempt ${attempt} failed (${error.message}); trying again`);
+			}
+		}
 		if (flags.setWindowRect) await session.setWindowRect({ width: window.width, height: window.height });
 	} catch (error) {
 		if (session) await session.deleteSession().catch(() => {});
