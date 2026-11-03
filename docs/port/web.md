@@ -580,7 +580,7 @@ artifact. It adds no rasteriser and needs no GPU.
 | Players | 1 | 2, one per pane | 1 | 2+ |
 | Audio | none | none | — | yes |
 | Fans out | no | 2 views | — | yes |
-| Content | 29.1 KB, BC2 + BGRA + the font's licence | small | small | large, private |
+| Content | 29.1 KB, BC2 + BGRA + the font's licence | small | small | large, in its own repository |
 | Is a game | yes | a camera demo | a template | yes |
 
 What LineSweeper needs beyond the platform layer is small:
@@ -597,7 +597,9 @@ What LineSweeper needs beyond the platform layer is small:
 
 `local_multiplayer` already plays on one keyboard, with WASD and the arrow
 keys, but one visitor driving two cursors is a demonstration of the engine,
-not a game. ColourWars is private and outside this repository. Bots or a
+not a game. ColourWars is outside this repository: its own repository has
+been public since 2026-11-03, and this tree keeps to the owner's 2026-10-27
+decision to disclose only engine-focused facts about it. Bots or a
 one-player mode would be its own design work, out of scope for a port.
 `local_multiplayer` is the natural **second** web sample, because it is the
 cheapest way to exercise two views and the serial pool fan-out in a browser.
@@ -624,14 +626,28 @@ were against a bundle built at `c369e8b` (`v0.1.0`)
 ([web-to-be-tested.md](web-to-be-tested.md) has the headers it served). On
 2026-10-29 the host repository's committed `BUILD.json` (host commit
 `d433560`) names `1e60fb2` (`v0.2.0`); the live page was not re-checked.
+On 2026-11-03 `v0.3.0` was cut and the host still names `1e60fb2`, so the
+live demo lags the release: it predates `0fd5924`, which made Up hard-drop,
+so a visitor following the Examples page's controls sees Up rotate, and it
+lacks the colour-vision palettes and pause on focus loss. The site's own
+page also lacks the bundle page's player-facing failure text, bounded
+context-loss wait, accessibility note and iPhone-only gate wording, and its
+controls list names Up as rotate, which becomes wrong once a post-`v0.2.0`
+bundle is synced. Re-syncing and the page changes are the owner's, in the
+host repository (`WEB#11` in TODO.md). `LineSweeperBundlePageTests` tests the
+bundle's example page, not the site's own page script, which has no automated
+check (`WEB#13`).
 
 **When to re-sync.** After a change to LineSweeper's source or content, engine
 code included in its browser build, the browser shell/mount, bundle/notices
 inputs or wasm/toolchain/build settings, prepare and verify a fresh clean
-Release bundle before asking the owner to re-sync the host. Until that sync,
+Release bundle before asking the owner to re-sync the host. A release tag
+whose browser build of LineSweeper differs from the host's is such a
+change. Until that sync,
 the public demo does not represent those changes. Review the relevant diff:
 a documentation-only commit can increase the revision distance without
 changing the game bytes. A positive count alone is not a deploy instruction.
+At each re-sync the host's project page figures are compared as well.
 
 From this checkout's root, compare the host's committed bundle record with
 the existing local Labrador `refs/heads/master`:

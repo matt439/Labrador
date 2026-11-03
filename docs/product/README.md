@@ -9,7 +9,7 @@ amended in `PHILOSOPHY.md`, not here.
 
 | File | What it holds | Kept current? |
 |---|---|---|
-| [PERSONAS.md](PERSONAS.md) | Seven personas: one primary (the outside adopter, by the owner's decision), two secondary (the maintainer and the integrator, the only users the evidence shows), two tertiary and two anti, each with its evidence and the assumptions still to validate; the guardrails the anti-personas impose | No: record of 2026-10-13 |
+| [PERSONAS.md](PERSONAS.md) | Seven personas: one primary (the outside adopter, by the owner's decision), two secondary (the maintainer and the integrator, the only users the evidence shows), two tertiary and two anti, each with its evidence and the assumptions still to validate; the guardrails the anti-personas impose | No: record of 2026-10-13, with dated amendments in place (2026-10-30, 2026-11-03) |
 | [JOURNEYS.md](JOURNEYS.md) | Twenty-one journeys, step by step, with what happens today; and a literal run of Get Started | No |
 | [GAP-REGISTER.md](GAP-REGISTER.md) | 149 gaps (34 major, 115 minor) in twelve epics, each with evidence, a scope check and the stories that close it | No |
 | [STORIES.md](STORIES.md) | 163 user stories with Given/When/Then acceptance criteria, sizes and the trade-offs that bear on them | No |
@@ -78,4 +78,8 @@ what hardware is in hand.
 - **Hardware facts are as the owner gave them on 2026-10-13:** a physical XInput
   pad and an iPhone, no Android phone; the 2013 MacBook Air stops at Big Sur;
   the desktop's integrated Radeon needs AMD's driver before it can be measured.
+  The owner's facts of 2026-11-03 in BACKLOG.md supersede the Air (a current
+  MacBook Air is owned) and add the displays; the owner reported the Radeon
+  unavailable that day, and whether to re-enable it, name another configuration or record it as
+  unmeasurable is open.
 - **Sizes are estimates** for one person working with agents, not measurements.
