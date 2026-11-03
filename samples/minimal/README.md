@@ -36,76 +36,79 @@ about it, is recorded in
 [CHANGES.md](https://github.com/matt439/Labrador/blob/master/CHANGES.md). The
 list below is the other half, newest first: the changes to what the code here
 does or how it builds, and the engine behaviour changes it depends on, that a
-copy taken before them would want.
+copy taken before them would want. Each entry gives its date and, from the
+next release on, the master commit that made it; the id is added when that
+release is prepared, and `git tag --contains <commit>` names the releases that
+carry it.
 
-- **2026-10-31.** The project's `.gitignore` also ignores `.vs/`, the folder
+- **2026-10-31, `4bc1aa2`.** The project's `.gitignore` also ignores `.vs/`, the folder
   Visual Studio makes when it opens the project, so `git add .` does not
   record its databases. A copy adds the line `.vs/` to its own `.gitignore`;
   if `git status --short .vs` lists files already recorded, it also runs
   `git rm -r --cached -q .vs` and commits.
-- **2026-10-30.** `states/hello_state.cpp` said `using namespace labrador;`
+- **2026-10-30, `59a9612`.** `states/hello_state.cpp` said `using namespace labrador;`
   twice in a row; the second line is deleted. A copy can delete its own. It
   changes nothing the compiler does.
-- **2026-10-29.** `labrador_settings` selects UTF-8 source and ordinary narrow
+- **2026-10-29, `b8667a2`.** `labrador_settings` selects UTF-8 source and ordinary narrow
   literal encoding for MSVC. Keep linking that target, and save game source as
   UTF-8. Convert files saved in another encoding before rebuilding; the
   template's ASCII sources need no encoding conversion.
-- **2026-10-29.** The Get Started project's native `base` preset now has the
+- **2026-10-29, `67ae697`.** The Get Started project's native `base` preset now has the
   condition `${hostSystemName}` equals `Windows`, inherited by `x64-debug`
   and `x64-release`. A copied project's presets can take that same condition
   from the walkthrough's `CMakePresets.json`; keep `wasm-base` separate and
   unrestricted. Non-Windows wasm builds remain unverified. The engine's
   unsupported-target diagnostic names its supported platforms and links their
   scope statement.
-- **2026-10-29.** Manifest and sprite-sheet objects reject unknown keys,
+- **2026-10-29, `e166dcc`.** Manifest and sprite-sheet objects reject unknown keys,
   including optional-field typos. Correct or remove unsupported fields when
   moving the engine pin; this template's manifest needs no change. Custom
   asset kinds and resource names remain game-owned values.
-- **2026-10-28.** D3D12 replacement texture publication completes before its
+- **2026-10-28, `c39b21e`.** D3D12 replacement texture publication completes before its
   descriptor write, preserving the old pair if C++ preparation fails. No
   template migration is needed; SM-57 keeps failure/device qualification open.
-- **2026-10-28.** Vulkan releases temporary texture/shader resources on the
+- **2026-10-28, `518c596`.** Vulkan releases temporary texture/shader resources on the
   corrected failure paths and retains the creating device during read-back
   recovery cleanup. No template source migration is needed; SM-56 keeps
   the outstanding device qualification separate from the source fix.
-- **2026-10-28.** Before uploading a browser release, gather its notices as
+- **2026-10-28, `5bc4045`.** Before uploading a browser release, gather its notices as
   [Build for the browser](https://labradorengine.com/docs/guides/browser/#gather-the-browser-release-and-its-notices)
   shows. The command stages the page, script, module, full licence texts and
   build record into `out/web-release`; copies use their own game's paths and
   add the notices for any libraries or content they introduce.
-- **2026-10-27.** Constants are snake_case: `Vector2F::zero` where the
+- **2026-10-27, `e0536cc`.** Constants are snake_case: `Vector2F::zero` where the
   sources spelt `Vector2F::ZERO`. CHANGES.md lists every renamed constant.
-- **2026-10-27.** The math library is `LabradorMath` and its types live in
+- **2026-10-27, `afac4a9`.** The math library is `LabradorMath` and its types live in
   `labrador::`. `CMakeLists.txt` links `LabradorMath` where it linked
   `MattMath`, and the sources spell `labrador::Vector2F` and
   `using namespace labrador;` where they spelt `mattmath::`. A copy must make
   the same edits when it moves its engine pin; CHANGES.md has the commit.
-- **2026-10-27.** Per-monitor DPI awareness. `dpi_aware.manifest` is new, and
+- **2026-10-27, `69c2963`.** Per-monitor DPI awareness. `dpi_aware.manifest` is new, and
   `CMakeLists.txt` lists it with the program's sources, so Windows no longer
   stretches the window and blurs its text on a scaled display. The window is
   then its requested size in physical pixels. A copy wanting the same adds the
   file and the line; the Windows release guide's *Scaled displays* section
   says what it changes.
-- **2026-10-27.** Windows resolution changes resize the window without
+- **2026-10-27, `42bc478`.** Windows resolution changes resize the window without
   requesting activation. A hidden smoke-test window stays hidden and inactive;
   CHANGES.md's *Keep window resizing from requesting activation* entry is the
   engine side. No template source migration is needed.
-- **2026-10-27.** Quitting during update skips the tick's render after its
+- **2026-10-27, `1b3120b`.** Quitting during update skips the tick's render after its
   remaining fixed updates. The smoke test draws its requested 30 completed
   frames and closes without another present against a destroyed Vulkan
   surface. A copy relying on a final draw after `Application::quit()` moves
   that work before quitting; `frame_timings()` keeps the last completed frame.
-- **2026-10-26.** XAudio2 retries unavailable default output while active.
+- **2026-10-26, `2b3b97b`.** XAudio2 retries unavailable default output while active.
   A copy adding sound keeps its bank and voice handles after recovery but
   explicitly plays persistent sounds again; lost one-shots are dropped.
-- **2026-10-26.** A single-player pad can occupy any slot. `HelloState::update()`
+- **2026-10-26, `57c6f9d`.** A single-player pad can occupy any slot. `HelloState::update()`
   reads every slot's B edge and deadzoned left stick, and `ConfirmState` reads
   every slot's A/B edges, alongside the keyboard. Several pads share control:
   directions add and the rules clamp the sum. A copy that reads slot 0 alone
   wants both loops so a remaining controller in a higher slot can move the
   greeting, open the quit dialog and answer it. This is game policy, not a new
   engine input service; the input guide quotes the sample's loop.
-- **2026-10-25.** A release folder. `CMakeLists.txt` now has install rules,
+- **2026-10-25, `789d5df`.** A release folder. `CMakeLists.txt` now has install rules,
   so `cmake --install out/build/x64-release --prefix <folder>` stages what a
   player gets: the program, `DirectXTK.dll` and `xaudio2_9redist.dll`, the
   MSVC runtime copied from Visual Studio's redist folder, `manifest.json` and
@@ -116,7 +119,7 @@ copy taken before them would want.
   redistributed. A copy wants the block below `add_dependencies`, with its
   own target name, and an `install(DIRECTORY ...)` line for each content
   folder it adds; *Ship a Windows release* on the website is the guide.
-- **2026-10-25.** No code here changed, but a copy's browser build needs less:
+- **2026-10-25, `1bf68e9`.** No code here changed, but a copy's browser build needs less:
   under Emscripten the engine now chooses the `gl` renderer by itself and
   refuses `d3d11`, `d3d12` and `vulkan` at configure, so a project's `wasm`
   preset sets only the vcpkg toolchain, Emscripten's toolchain file chained
@@ -125,7 +128,7 @@ copy taken before them would want.
   `if(EMSCRIPTEN)` block that builds `main_web.cpp` and `web/shell.html`;
   *Build for the browser* on the website is the guide. CHANGES.md's *Add a
   browser build to the Get Started project* entry is the engine side.
-- **2026-10-25.** Tests, from the start. The motion arithmetic that was in
+- **2026-10-25, `cc56ddd`.** Tests, from the start. The motion arithmetic that was in
   `HelloState::update()` - the stick and the keys summed and clamped, the
   centre moved, the spin advanced and the greeting placed - is in
   `rules/motion.h` and `rules/motion.cpp` as `step_motion` and
@@ -145,26 +148,26 @@ copy taken before them would want.
   `vcpkg.json`; the walkthrough's `game/CMakeLists.txt`, root
   `CMakeLists.txt` (`enable_testing()`) and `CMakePresets.json` (test
   presets) show the project's side.
-- **2026-10-25.** The hint in `states/hello_state.cpp` says "B or Escape asks
+- **2026-10-25, `ac56156`.** The hint in `states/hello_state.cpp` says "B or Escape asks
   to quit" rather than "quits", and `web/shell.html`'s status line says Escape
   asks and Enter says yes, because quitting pushes `ConfirmState` first. A
   copy that kept the confirmation wants the same words.
-- **2026-10-24.** No code here changed, but the engine's table now holds a
+- **2026-10-24, `dcf9854`.** No code here changed, but the engine's table now holds a
   one-texel white texture under `white_texture_name`
   (`engine/render/resource_factory.h`), so a copy can draw a solid rectangle -
   a bar, a divider, a backdrop - with `draw_sprite` over source
   `RectangleI(0, 0, 1, 1)` and a tint, and no texture in `content/`.
-- **2026-10-22.** No build step changed, but `CMakeLists.txt` now says what its
+- **2026-10-22, `48fb236`.** No build step changed, but `CMakeLists.txt` now says what its
   content mirror does not do: `copy_directory_if_different` never removes, so a
   file deleted from `content/` goes on loading from the build folder until it
   is cleaned. A copy with content it may delete, or an optional sound bank,
   wants the list-and-remove recipe in the assets guide's *Optional content and
   stale copies*.
-- **2026-10-22.** No code here changed, but what the window does did: on
+- **2026-10-22, `0f3b283`.** No code here changed, but what the window does did: on
   Windows, F10 and Alt pressed alone are keys and no longer stop the loop in
   the system menu. Alt+Space still opens it. CHANGES.md's *Let F10 and Alt
   alone be keys, not the system menu* entry is the engine side.
-- **2026-10-13.** The font is `content/fonts/jetbrains_mono_bold_16.spritefont`,
+- **2026-10-13, `97be55f`.** The font is `content/fonts/jetbrains_mono_bold_16.spritefont`,
   JetBrains Mono Bold under the SIL Open Font License 1.1 with that licence as
   `OFL.txt` beside it, in place of `courier_new_bold_16.spritefont`, whose
   redistribution terms are Monotype's and were never settled here. A copy

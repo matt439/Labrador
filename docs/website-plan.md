@@ -22,6 +22,8 @@ The owner purchased `labradorengine.com` and selected the Cloudflare Workers Pai
 
 **Proposed positioning:** A focused 2D engine for developers who want to build games in ordinary C++ and understand the machinery beneath them.
 
+*Amended 2026-11-03:* the owner's decision of 2026-10-30 (BACKLOG.md, Decisions only the owner can make) lowered the adopter's floor to someone with very little programming experience. Get Started now takes that reader, with every procedure guided, as far as a running copy of the template and a first change; going further still means learning C++, which the site does not teach. The positioning above stays as written for the reader beyond that floor; the site's description and tagline now read "for people who want to build games in ordinary C++ and be able to read everything underneath them", as why.mdx does.
+
 The homepage should communicate explicit ownership, freedom over game data, and a deliberate focus on local 2D games, including shared-screen and split-screen play. A dedicated “Why Labrador?” page should explain each choice, its practical benefit, and its cost.
 
 | Message | Concrete demonstration | Trade-off to explain |
@@ -215,7 +217,7 @@ Proposed readiness criteria:
 - The website contains the agreed documentation coverage, with visible source revisions and clear boundaries around unfinished material.
 - Differentiation claims link to examples or evidence; performance figures identify what was actually measured.
 - Navigation, search, code blocks, images, and links work on desktop and phone.
-- Content rights and attribution are checked for selected media. LineSweeper is the initial public showcase candidate; use of ColourWars assets is a separate choice because that client repository is private.
+- Content rights and attribution are checked for selected media. LineSweeper is the initial public showcase candidate; use of ColourWars assets is a separate choice.
 
 Keep the site’s build independent of the Windows engine build. Validate examples through the engine’s appropriate checks, then use web checks for page generation, links, and presentation. Review the website workflow's built artifact before merging, using the [preview and recovery procedure](../website/README.md#preview-and-recovery); Cloudflare preview builds remain off. That procedure also owns the live checks after deployment and the rollback steps.
 

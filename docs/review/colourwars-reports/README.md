@@ -1,6 +1,6 @@
 # ColourWars' reports: the engine's decisions
 
-ColourWars, the engine's one real client, keeps a private ledger of API
+ColourWars, the engine's one real client, keeps a ledger of API
 complaints against Labrador, each backed by the workaround it wrote. On
 2026-10-22 fifteen were live and unfiled: 6 and 9 to 22. This folder is the
 engine side's answer to each, decided ahead of their filing (`PI-09`) so that
@@ -16,14 +16,16 @@ second reviewer. Every verdict survived, and that review's corrections are
 folded into the text rather than kept as a separate debate. Line numbers are
 as of `0c15f34` and will drift, so recheck a citation before acting on it.
 
-The client's workarounds are described generically on purpose. The ledger is
-private, and its owner approved only minimal engine-focused disclosure. So no
-ColourWars path, name or line appears here.
+The client's workarounds are described generically on purpose. The ledger's
+owner approved only minimal engine-focused disclosure, so no ColourWars path,
+name or line appears here. The client's repository has been
+public since 3 November 2026; that does not change this boundary, which is the
+owner's decision rather than a visibility fact.
 
 The owner reaffirmed this boundary on 27 October 2026 for `PI-09`'s public
 filings. Recheck each report against current master and file an engine-focused
 exhibit within that boundary, or withdraw it with a reason. This approval does
-not broaden disclosure of the private ledger.
+not broaden disclosure of the client's ledger.
 
 ## Filing recheck, 2026-10-27
 
@@ -48,7 +50,7 @@ separately from that completed batch:
 Both are answered here without a duplicate public issue. Together with the
 withdrawal of the original fifteen, this closes `PI-09`'s filing queue.
 The records contain only public engine mechanisms and engine-owned evidence,
-with no private exhibit content; the client's own ledger remains its own.
+with no client exhibit content; the client's own ledger remains its own.
 
 ## The files
 

@@ -171,7 +171,9 @@ run the XAudio2 playback check after rebuilding. Python and XWBTool are not
 needed to build or run the checked-in example.
 
 The font is copied at build time from `samples/minimal/content/fonts`; its
-provenance is in the root [NOTICE](../../NOTICE). On Windows the sample plays
+provenance is in the root [NOTICE](../../NOTICE). The Windows build also
+compiles the template's DPI awareness declaration,
+`samples/minimal/dpi_aware.manifest`. On Windows the sample plays
 the bank through XAudio2 and DirectXTK's reader; in a browser, through the
 engine's own reader and Web Audio. It introduces no audio backend or engine
 format of its own.

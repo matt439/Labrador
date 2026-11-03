@@ -94,3 +94,24 @@ reconnect and shutdown. Browser output requires its own recorded checks; a
 native result does not establish it. No such session is supplied by this
 decision or by headless tests. PI-21 must state those limits wherever the
 feature is documented.
+
+**Amended 2026-11-03**, under the owner's decision that a check which can be
+written as a list is automated and the owner's manual testing is informal
+play ([BACKLOG](../../product/BACKLOG.md#decisions-only-the-owner-can-make)).
+The per-motor physical record above is re-planned as follows.
+
+- Automated, and already in InputTests against a recording transport
+  (`tests/input/vibration_tests.cpp`): a request reaching its own slot with
+  both motors, expiry, replacement, explicit stop, a slot losing its pad,
+  suspension refusing and stopping without replay on resume, destruction
+  stopping only the slots with a request, and the empty-slot and suspended
+  answers on each backend's own reader.
+- Listable and still missing: the browser transport itself. Nothing tests
+  that `engine/input/web/gamepad_reader.cpp` plays `dual-rumble` with the
+  requested strengths and resets it on stop, suspension and teardown; a
+  case driving it against a fake `vibrationActuator` under Node would.
+- The owner's part is informal play with the XInput pad, natively and in
+  Chrome, reporting how the motors feel and anything that looks wrong. It
+  can ride OCA-48's pad session.
+
+Headless tests still make no claim about physical output.

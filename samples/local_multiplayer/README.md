@@ -141,6 +141,12 @@ repository has these to deal with:
   `.spritefont` in its own `content/fonts/` and points the three lines of
   `CMakeLists.txt` that reach into it there, or brings its own font and
   renames it in `content/manifest.json` and the state that resolves it.
+- `../minimal/dpi_aware.manifest`, the template's per-monitor DPI awareness
+  declaration, compiled into the Windows executable by the `elseif(WIN32)`
+  `add_executable` in `CMakeLists.txt`. A copy takes the file into its own
+  folder and repoints that one path, or removes that path from the
+  `add_executable` call and lets Windows stretch the window on a scaled
+  display.
 - `../../tools/linesweeper_capture/png_file.h` and `png_file.cpp`, the PNG
   writer behind `--capture`, compiled into the Windows build on every backend
   but `null`; `main.cpp` includes the header from the repository root. A copy

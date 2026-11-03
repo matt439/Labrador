@@ -186,9 +186,11 @@ after `git`, or write long output to a file in your `%TEMP%` folder and open it 
    notepad "%TEMP%\template-changes.txt"
    ```
 
-   The new entries are the lines that start `+- **`, each dated, such as
-   `+- **2026-10-25.** Tests, from the start.` The `+` only marks them as new. Each names the files
-   it changes. To see which files changed in all, with how many lines each:
+   The entries are the lines that start `+- **`, each dated, such as
+   `+- **2026-10-25.** Tests, from the start.` The `+` marks a line the diff changed, not always a
+   new entry: read the entries dated after your release, which is the date beside your release's
+   heading in CHANGES.md, here `## v0.1.0 (2026-10-13)`. An entry dated on or before it is not new
+   even when the diff marks it. Each names the files it changes. To see which files changed in all, with how many lines each:
 
    ```bat
    git -C external/labrador --no-pager diff --stat v0.1.0 v0.2.0 -- samples/minimal website/src/walkthrough
@@ -429,9 +431,12 @@ and `Cloning into` first. A new clone gets everything at once with
 ## The reference at your pin
 
 This site's [API reference](/docs/reference/) is generated
-from the headers at the revision named at the foot of each page. When your pin is older, the
-headers under `external/labrador/engine` are the reference for the engine you build. Their
-comments are the same text the reference publishes.
+from the headers at the revision named at the foot of each page. When your pin is a release tag
+from `v0.3.0` on, that release's own reference is under **All documentation versions**, and the
+version selector beside the sidebar switches a page to it, as
+[Which Labrador you have](/docs/guides/your-version/) says. When your pin is between releases or
+older than `v0.3.0`, the headers under `external/labrador/engine` are the reference for the engine
+you build. Their comments are the same text the reference publishes.
 
 ## The compiler
 

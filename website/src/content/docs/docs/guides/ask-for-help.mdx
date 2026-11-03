@@ -131,6 +131,16 @@ report it privately as <RepoLink path="SECURITY.md">SECURITY.md</RepoLink> descr
    revision** also asks whether current master still does it; master is the engine as it is
    being written, and checking it needs a newer project, so leave that out unless you know.
 
+   The **Engine request** form's boxes that need more than the form's own help:
+
+   | Box | What to put |
+   | --- | --- |
+   | **The exhibit - your current workaround** | The code in your game that gets around the missing part, or, if you have none yet, why. |
+   | **Engine revision** | Your `Labrador commit:` line, then your `Labrador version:` line after it on the same line, as in the bug form; or, with the engine as a submodule, the hash from `git -C external/labrador rev-parse --short HEAD`. |
+   | **Current master checked against (optional)** | Leave it empty unless you built or read current master. |
+   | **Checked against master** | Tick it once you have read CHANGES.md on master, which the box links, its **Unreleased** section, if it has one, and every release newer than your `Labrador version:`, and found nothing there that closes the gap. Reading it needs no Git. |
+   | **The trade-off you think applies** | A T-number from <RepoLink path="docs/design/PHILOSOPHY.md">PHILOSOPHY.md</RepoLink> and a few words on why; a guess is fine. |
+
    Attach the log: drag `build-log.txt` from the project's folder in File Explorer into the
    **What happened** box, or a picture of the screen. GitHub takes `.txt` and `.log` files up to
    25 MB and pictures up to 10 MB. The **Question** form has two boxes: the question, and what you

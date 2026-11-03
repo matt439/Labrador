@@ -148,12 +148,16 @@ It draws its bars from the engine's own white texture, `white_texture_name`,
 its panel from `content/textures/panel.dds`, a 16-texel premultiplied frame
 with 6-texel corners, its previews from the animation atlas, and its text from
 the minimal sample's font, which the
-build copies beside it from `../minimal/content/fonts/`. That folder is the one path outside this one
-the gallery uses, and the components themselves use none: a copy of the
-gallery puts the `.spritefont` in its own `content/fonts/` and points the
-three lines of `CMakeLists.txt` that reach into it there. Under a `wasm-*`
-preset it is a page, `ComponentsGallery.html`, with the same content packed
-into the module.
+build copies beside it from `../minimal/content/fonts/`. That folder and,
+on Windows, the template's DPI awareness declaration
+`../minimal/dpi_aware.manifest` are the two paths outside this one the
+gallery uses, and the components themselves use none. A copy of the gallery
+puts the `.spritefont` in its own `content/fonts/` and points the three lines
+of `CMakeLists.txt` that reach into it there, and takes the manifest into its
+own folder and repoints its one path, or removes that path from its
+`add_executable` call and lets Windows stretch the window on a scaled
+display. Under a `wasm-*` preset it is a page, `ComponentsGallery.html`, with
+the same content packed into the module.
 `ComponentsPageTests` is configured to load the browser build, move a slider
 and an option row, restart the previews with R, and quit. Its window-row
 adjustment requests full screen. The sequence sends Escape twice because the
