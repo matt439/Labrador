@@ -185,9 +185,9 @@ jobs:
   # One job per browser. Chrome and Firefox use the runner's own drivers
   # (CHROMEWEBDRIVER, GECKOWEBDRIVER). Safari and Safari in the iOS Simulator
   # use safaridriver, which must be enabled once with sudo; the suite boots
-  # the newest runtime's first iPhone. The iOS Simulator and NVDA are not
-  # run here until they pass reliably: acceptance-trial.yml runs them on
-  # request (SITE#5).
+  # the newest runtime's first iPhone. The iOS Simulator is not run here
+  # until it passes reliably: acceptance-trial.yml runs it on request
+  # (SITE#5).
   acceptance:
     name: acceptance (${{ matrix.target }})
     needs: acceptance-fixture
@@ -229,5 +229,50 @@ jobs:
         if: always()
         with:
           name: acceptance-report-${{ matrix.target }}
+          path: ${{ runner.temp }}/report
+          retention-days: 14
+
+  # Whether NVDA speaks the arrival notice after a keyboard switch
+  # (website/acceptance/screen-reader.mjs). Guidepup and NVDA are installed
+  # here rather than kept in package.json: nothing else needs them, and NVDA
+  # runs only on a Windows runner.
+  acceptance-screen-reader:
+    name: acceptance (nvda)
+    needs: acceptance-fixture
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: acceptance-fixture
+          path: ${{ runner.temp }}/dist
+      - name: Install Guidepup and NVDA
+        run: |
+          npm ci
+          npm install --no-save @guidepup/guidepup @guidepup/setup
+          npx guidepup setup --ci
+          npx guidepup install nvda
+      - name: Does NVDA speak the notice?
+        run: |
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/report" | Out-Null
+          node acceptance/screen-reader.mjs --serve-dist "$env:RUNNER_TEMP/dist" --screenshot "$env:RUNNER_TEMP/report/final.png"
+      - name: Keep NVDA's log
+        if: always()
+        run: Copy-Item "$env:TEMP/nvda.log" "$env:RUNNER_TEMP/report" -ErrorAction SilentlyContinue
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-report-nvda
           path: ${{ runner.temp }}/report
           retention-days: 14

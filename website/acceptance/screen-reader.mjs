@@ -14,16 +14,20 @@
 //   npx guidepup install nvda
 //
 // Usage: node acceptance/screen-reader.mjs --serve-dist <dist>
-//   [--browser chrome|edge] [--driver <path>] [--binary <path>] [--listen <seconds>]
+//   [--browser chrome|edge] [--driver <path>] [--binary <path>] [--screenshot <file>]
 //
-// The browser is a visible window, because NVDA reads only what is on the
-// desktop, driven through WebDriver with real key actions: Tab to the
-// selector's summary, Enter to open it, Tab to the v0.3.0 link and Enter to
-// follow it. NVDA's spoken phrases are sampled for the listening time
-// (20 seconds) after the last Enter, and every phrase is printed. NVDA
-// may speak the notice as a live-region change or while reading the new
-// page; a reader hears it either way, so either passes.
-import { existsSync } from 'node:fs';
+// The browser is a visible window, because NVDA reads only the foreground
+// window. WebDriver's Tab and Enter key actions reach the selector's v0.3.0
+// link. The Enter that follows it is pressed through NVDA, as a reader's own
+// key press, once NVDA reports the browser as the foreground window.
+//
+// Guidepup records speech only while one of its own commands runs: it hears
+// what the command makes NVDA say until NVDA has been quiet for a second, and
+// drops anything said between commands. So the Enter is pressed through it
+// with full capture, which hears NVDA read the new page as it opens, notice
+// included. Everything heard is printed; --screenshot saves the final
+// viewport.
+import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { killDriver, startDriver } from './browsers.mjs';
@@ -32,25 +36,22 @@ import { Keys, newSession, pressKeys } from './webdriver.mjs';
 
 const START = 'docs/guides/fixture-only/';
 const TARGET_LABEL = 'v0.3.0';
-const DEFAULT_LISTEN_SECONDS = 20;
-const SAMPLE_INTERVAL_MS = 250;
+const FOREGROUND_ATTEMPTS = 10;
 
 const BROWSERS = {
-	chrome: { driver: 'chromedriver', folderVariable: 'CHROMEWEBDRIVER', browserName: 'chrome', options: 'goog:chromeOptions' },
-	edge: { driver: 'msedgedriver', folderVariable: 'EDGEWEBDRIVER', browserName: 'MicrosoftEdge', options: 'ms:edgeOptions' },
+	chrome: { driver: 'chromedriver', folderVariable: 'CHROMEWEBDRIVER', browserName: 'chrome', options: 'goog:chromeOptions', application: 'chrome' },
+	edge: { driver: 'msedgedriver', folderVariable: 'EDGEWEBDRIVER', browserName: 'MicrosoftEdge', options: 'ms:edgeOptions', application: 'edge' },
 };
 
 function parseArguments(argv) {
-	const options = { browser: 'chrome', listen: String(DEFAULT_LISTEN_SECONDS) };
-	const valued = new Set(['--serve-dist', '--browser', '--driver', '--binary', '--listen']);
+	const options = { browser: 'chrome' };
+	const valued = new Set(['--serve-dist', '--browser', '--driver', '--binary', '--screenshot']);
 	for (let index = 0; index < argv.length; index += 2) {
 		if (!valued.has(argv[index]) || argv[index + 1] === undefined) throw new Error(`Unexpected argument ${argv[index]}.`);
 		options[argv[index].slice(2)] = argv[index + 1];
 	}
 	if (!options['serve-dist']) throw new Error('--serve-dist <dist> is required.');
 	if (!BROWSERS[options.browser]) throw new Error('--browser must be chrome or edge.');
-	options.listen = Number(options.listen);
-	if (!(options.listen > 0)) throw new Error('--listen must be a number of seconds.');
 	return options;
 }
 
@@ -60,6 +61,8 @@ function driverPath(entry, explicit) {
 	const candidate = folder && path.join(folder, `${entry.driver}.exe`);
 	return candidate && existsSync(candidate) ? candidate : `${entry.driver}.exe`;
 }
+
+const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 // What NVDA said, reduced to letters and digits, so that "/docs/" and
 // "slash docs slash" compare alike whatever its punctuation level.
@@ -74,6 +77,14 @@ export function isNotice(phrases) {
 	return spoken.includes('notpartof') && spoken.includes('fixtureonly');
 }
 
+// Whether NVDA's report of the foreground window's title names the page or
+// the browser.
+export function namesBrowser(spoken, pageTitle, application) {
+	const said = normalisePhrase(spoken);
+	const title = normalisePhrase(pageTitle);
+	return (title.length > 0 && said.includes(title)) || said.includes(application);
+}
+
 async function main() {
 	if (!process.env.CI) {
 		throw new Error('screen-reader.mjs runs only on a CI runner (CI is not set): it starts NVDA, which speaks aloud.');
@@ -81,12 +92,12 @@ async function main() {
 	const options = parseArguments(process.argv.slice(2));
 	const entry = BROWSERS[options.browser];
 	// Loaded here so that the rest of the acceptance code needs no Guidepup.
-	const { nvda } = await import('@guidepup/guidepup');
+	const { nvda, NVDAKeyCodeCommands, WindowsKeyCodes, WindowsModifiers } = await import('@guidepup/guidepup');
+	const switchApplication = { keyCode: [WindowsKeyCodes.Escape], modifiers: [WindowsModifiers.Alt] };
 	const server = await startServer({ root: options['serve-dist'], port: 0 });
 	let driver;
 	let session;
 	let nvdaStarted = false;
-	const heard = [];
 	try {
 		await nvda.start();
 		nvdaStarted = true;
@@ -132,7 +143,7 @@ async function main() {
 				return window.__acceptanceOpened === true && list.getAttribute('aria-busy') !== 'true' && !!list.querySelector('.current');`);
 			if (ready) break;
 			if (Date.now() > deadline) throw new Error('The selector never listed the versions.');
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			await delay(100);
 		}
 		let link = null;
 		for (let tabs = 0; tabs < 10 && !(link ?? '').startsWith(TARGET_LABEL); tabs += 1) {
@@ -140,31 +151,41 @@ async function main() {
 			link = (await focus()).link;
 		}
 		if (!(link ?? '').startsWith(TARGET_LABEL)) throw new Error(`Tab never reached the ${TARGET_LABEL} link.`);
-		process.stdout.write(`focused the link "${link}"; following it\n`);
-		await nvda.clearSpokenPhraseLog();
-		await pressKeys(session, Keys.Enter);
+		process.stdout.write(`focused the link "${link}"\n`);
 
-		const until = Date.now() + options.listen * 1000;
-		let last = '';
-		while (Date.now() < until) {
-			const phrase = await nvda.lastSpokenPhrase();
-			if (phrase && phrase !== last) {
-				heard.push(phrase);
-				last = phrase;
+		// NVDA's key presses go to the foreground window. Alt+Escape sends the
+		// foreground window to the back, which brings the next one forward.
+		const pageTitle = await session.title();
+		let foreground = false;
+		for (let attempt = 0; attempt < FOREGROUND_ATTEMPTS && !foreground; attempt += 1) {
+			if (attempt > 0) {
+				await nvda.perform(switchApplication, { capture: false });
+				await delay(500);
 			}
-			await new Promise((resolve) => setTimeout(resolve, SAMPLE_INTERVAL_MS));
+			await nvda.perform(NVDAKeyCodeCommands.reportTitle);
+			const title = await nvda.lastSpokenPhrase();
+			process.stdout.write(`NVDA reports the foreground window as ${JSON.stringify(title)}\n`);
+			foreground = namesBrowser(title, pageTitle, entry.application);
 		}
-		const log = await nvda.spokenPhraseLog();
+		if (!foreground) throw new Error(`NVDA never reported the browser ("${pageTitle}") as the foreground window.`);
+		if ((await focus()).link !== link) throw new Error(`Focus left the ${TARGET_LABEL} link while the browser was brought forward.`);
+
+		await nvda.clearSpokenPhraseLog();
+		process.stdout.write('pressing Enter through NVDA\n');
+		await nvda.press('Enter', { capture: true });
+		const heard = await nvda.spokenPhraseLog();
 		process.stdout.write(`location after the switch: ${await session.url()}\n`);
-		process.stdout.write(`sampled phrases (${heard.length}):\n${heard.map((phrase) => `  ${JSON.stringify(phrase)}`).join('\n')}\n`);
-		process.stdout.write(`spoken phrase log (${log.length}):\n${log.map((phrase) => `  ${JSON.stringify(phrase)}`).join('\n')}\n`);
-		if (isNotice([...log, ...heard])) {
+		process.stdout.write(`spoken after Enter (${heard.length}):\n${heard.map((phrase) => `  ${JSON.stringify(phrase)}`).join('\n')}\n`);
+		if (isNotice(heard)) {
 			process.stdout.write('PASS NVDA spoke the arrival notice naming the page.\n');
 		} else {
 			process.stdout.write('FAIL NVDA did not speak the arrival notice naming the page.\n');
 			process.exitCode = 1;
 		}
 	} finally {
+		if (session && options.screenshot) {
+			await session.screenshot().then((png) => writeFileSync(options.screenshot, png)).catch(() => {});
+		}
 		if (session) await session.deleteSession().catch(() => {});
 		if (driver) await killDriver(driver.child);
 		if (nvdaStarted) await nvda.stop().catch(() => {});

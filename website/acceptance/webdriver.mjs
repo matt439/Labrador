@@ -267,24 +267,21 @@ export async function pressKeys(session, ...keys) {
 	await session.releaseActions();
 }
 
-export function tapActions(element, { x = 0, y = 0 } = {}) {
-	return [{
-		type: 'pointer',
-		id: 'finger',
-		parameters: { pointerType: 'touch' },
-		actions: [
-			{ type: 'pointerMove', duration: 0, origin: reference(element), x, y },
-			{ type: 'pointerDown', button: 0 },
-			{ type: 'pause', duration: 50 },
-			{ type: 'pointerUp', button: 0 },
-		],
-	}];
+// pauseMs is how long the finger rests before lifting; 0 lifts at once.
+export function tapActions(element, { x = 0, y = 0, pauseMs = 50 } = {}) {
+	const actions = [
+		{ type: 'pointerMove', duration: 0, origin: reference(element), x, y },
+		{ type: 'pointerDown', button: 0 },
+	];
+	if (pauseMs > 0) actions.push({ type: 'pause', duration: pauseMs });
+	actions.push({ type: 'pointerUp', button: 0 });
+	return [{ type: 'pointer', id: 'finger', parameters: { pointerType: 'touch' }, actions }];
 }
 
 // A touch tap at the element's centre (or offset from it), as a finger
 // produces, rather than the mouse-like click of the element click command.
-export async function tap(session, element, offset) {
-	await session.performActions(tapActions(element, offset));
+export async function tap(session, element, options) {
+	await session.performActions(tapActions(element, options));
 	await session.releaseActions();
 }
 

@@ -107,7 +107,7 @@ protection for a trivial fix; nobody else does.
 so this list is the record of what those settings must hold. Each name is the
 job's `name:` in its workflow, and the windows jobs are named for their preset
 alone, so changing a matrix entry's `skip_tests` or `vulkan_sdk` does not
-rename its check. The required contexts are exactly these seventeen:
+rename its check. The required contexts are exactly these eighteen:
 
 - `changes`
 - `lint`
@@ -126,13 +126,14 @@ rename its check. The required contexts are exactly these seventeen:
 - `acceptance (chrome)`
 - `acceptance (firefox)`
 - `acceptance (safari)`
+- `acceptance (nvda)`
 
 The first twelve are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
-and the last five are jobs in
+and the last six are jobs in
 [.github/workflows/website.yml](.github/workflows/website.yml).
-The iOS Simulator and NVDA targets run only on request, in
+The iOS Simulator target runs only on request, in
 [.github/workflows/acceptance-trial.yml](.github/workflows/acceptance-trial.yml),
-until they pass reliably
+until it passes reliably
 ([the suite](docs/website-versioning.md#browser-acceptance-suite)).
 
 **A change that touches only documentation is linted, not built**: when

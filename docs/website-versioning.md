@@ -347,16 +347,23 @@ states each check.
 
 CI builds the fixture once (`acceptance fixture`) and runs the suite as
 `acceptance (chrome)` and `acceptance (firefox)` on Linux and
-`acceptance (safari)` on macOS, all required checks. Two targets do not yet
-pass reliably on hosted runners, so they run only on request, in
+`acceptance (safari)` on macOS, all required checks. `acceptance (nvda)` runs
+[screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows: WebDriver's
+Tab and Enter reach the selector's `v0.3.0` link, and the Enter that follows it
+is pressed through NVDA once NVDA reports the browser as the foreground window.
+Guidepup keeps only what NVDA says during its own commands, so that Enter's
+capture is what must contain the notice.
+
+One target does not yet pass on hosted runners, so it runs only on request, in
 [the acceptance trial workflow](../.github/workflows/acceptance-trial.yml),
-and no pull request shows their failures (`SITE#5`). `acceptance (ios)` is
-Safari in the newest iOS Simulator, whose Safari is slow to accept a WebDriver
-session and sometimes takes a composed tap as a long press.
-`acceptance (nvda)` runs
-[screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows to
-listen for NVDA speaking the notice after a keyboard switch; NVDA installs
-and the switch works, but its spoken log has stayed empty. The scan leaves out Starlight's search button, whose visible
+and no pull request shows its failure (`SITE#5`). `acceptance (ios)` is
+Safari in the newest iOS Simulator. Its safaridriver places a touch at the
+requested point less the page's scroll offset yet refuses points outside the
+viewport, so the suite taps with the page at its top and nothing below the
+first screen can be tapped: the release index's link to `v0.3.0`'s
+documentation is such a target, and that check fails there. Its Element Send
+Keys fires key events but inserts no text, so the suite types search queries
+on the Simulator's hardware keyboard through System Events instead. The scan leaves out Starlight's search button, whose visible
 shortcut hint is not in its accessible name (`SITE#6`), and axe's
 best-practice rules, which judge Starlight's page structure rather than what
 versioning adds. An emulator's layout is not a real phone's: informal play on
