@@ -347,15 +347,16 @@ states each check.
 
 CI builds the fixture once (`acceptance fixture`) and runs the suite as
 `acceptance (chrome)` and `acceptance (firefox)` on Linux and
-`acceptance (safari)` and `acceptance (ios)` on macOS, where `ios` is Safari in
-the newest iOS Simulator. The iOS job is advisory for now: on GitHub's
-runners the simulator's Safari is slow to accept a WebDriver session, and a
-composed tap is sometimes taken as a long press, so its checks fail
-intermittently. `acceptance (nvda)` runs
-[screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows, which
-listens for NVDA speaking the notice after a keyboard switch. It is not
-required: whether a hosted runner's NVDA can be driven reliably is itself
-unproven. The scan leaves out Starlight's search button, whose visible
+`acceptance (safari)` on macOS, all required checks. Two targets do not yet
+pass reliably on hosted runners, so they run only on request, in
+[the acceptance trial workflow](../.github/workflows/acceptance-trial.yml),
+and no pull request shows their failures (`SITE#5`). `acceptance (ios)` is
+Safari in the newest iOS Simulator, whose Safari is slow to accept a WebDriver
+session and sometimes takes a composed tap as a long press.
+`acceptance (nvda)` runs
+[screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows to
+listen for NVDA speaking the notice after a keyboard switch; NVDA installs
+and the switch works, but its spoken log has stayed empty. The scan leaves out Starlight's search button, whose visible
 shortcut hint is not in its accessible name (`SITE#6`), and axe's
 best-practice rules, which judge Starlight's page structure rather than what
 versioning adds. An emulator's layout is not a real phone's: informal play on

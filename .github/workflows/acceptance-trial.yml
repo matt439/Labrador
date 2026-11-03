@@ -1,0 +1,111 @@
+# The acceptance targets that do not yet pass reliably on hosted runners,
+# run only on request (Actions > acceptance trial > Run workflow) so that
+# pull requests and master show no failure that blocks nothing. SITE#5 owns
+# making them reliable; a target that passes repeatedly moves back into
+# website.yml. See docs/website-versioning.md's "Browser acceptance suite".
+#
+# ios: Safari in the newest iOS Simulator. The simulator's Safari is slow to
+# accept a WebDriver session and sometimes takes a composed tap as a long
+# press. nvda: NVDA through Guidepup on Windows; it installs and the switch
+# works, but its spoken log has stayed empty.
+
+name: acceptance trial
+
+on:
+  workflow_dispatch:
+
+jobs:
+  acceptance-fixture:
+    name: acceptance fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Build the fixture
+        working-directory: website
+        run: npm run acceptance:fixture -- "$RUNNER_TEMP/fixture"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-fixture
+          path: ${{ runner.temp }}/fixture/repo/website/dist
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: acceptance-fixture-logs
+          path: ${{ runner.temp }}/fixture/logs
+          retention-days: 7
+
+  ios:
+    name: acceptance (ios)
+    needs: acceptance-fixture
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: acceptance-fixture
+          path: ${{ runner.temp }}/dist
+      - run: sudo safaridriver --enable
+      - name: Run the suite
+        run: >-
+          npm run acceptance -- --target ios
+          --serve-dist "$RUNNER_TEMP/dist" --report "$RUNNER_TEMP/report/report.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-report-ios
+          path: ${{ runner.temp }}/report
+          retention-days: 14
+
+  # Whether NVDA speaks the arrival notice after a keyboard switch.
+  acceptance-screen-reader:
+    name: acceptance (nvda)
+    needs: acceptance-fixture
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: acceptance-fixture
+          path: ${{ runner.temp }}/dist
+      - name: Install Guidepup and NVDA
+        run: |
+          npm ci
+          npm install --no-save @guidepup/guidepup @guidepup/setup
+          npx guidepup setup --ci
+          npx guidepup install nvda
+      - name: Does NVDA speak the notice?
+        run: node acceptance/screen-reader.mjs --serve-dist "$env:RUNNER_TEMP/dist"
