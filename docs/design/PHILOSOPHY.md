@@ -1,12 +1,12 @@
 # Labrador — Engine Design Philosophies
 
-Labrador is a 2D game engine intended, eventually, for developers other
-than its author. The paint-shooter built on it is its first client and its
-proof; a documented API, a sample game, teaching materials, and speed are
-what will make it worth picking up. Its style is the sharpest break from
-the major engines: value-first, stack-first C++ with no garbage collection
-(T11). When engine and game pull in different directions, the
-engine wins: the game is a client, not the owner.
+Labrador is a 2D game engine for developers other than its author, and each
+release carries a starter project and its own documentation. The paint-shooter
+built on it is its first client and its proof; a documented API, a sample
+game, teaching materials, and speed are what make it worth picking up. Its
+style is the sharpest break from the major engines: value-first, stack-first
+C++ with no garbage collection (T11). When engine and game pull in different
+directions, the engine wins: the game is a client, not the owner.
 
 This document describes the destination. It deliberately says nothing about
 the current codebase — no findings, no history; [docs/review/](../review/)

@@ -25,9 +25,9 @@ The repository's own record shows one person in two roles: the owner, who
 maintains the engine, and the same owner writing ColourWars, its only client.
 Everything public - the website, Get Started, the reference, the samples - is
 written for an outside developer who appears nowhere in that record: no tags,
-no issues, no contributing guide, and PHILOSOPHY says strangers are for
-"eventually". The owner decided the process should still design for that
-stranger, the **Outside C++ Adopter**, with the maintainer as the constraint on
+no issues, no contributing guide, and PHILOSOPHY said strangers were for
+"eventually" (since 2026-11-03 it says they are served now). The owner decided the process should still design for that
+stranger, the **Outside Adopter**, with the maintainer as the constraint on
 capacity, so the persona that drives priority is a hypothesis. PERSONAS.md says
 so for every claim about them, and BACKLOG.md's Now horizon is mostly fixes
 that pay off whether the stranger arrives or not: a public face that agrees

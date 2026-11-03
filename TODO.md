@@ -30,10 +30,9 @@ the player* links, waits on the owner.
 Ready agent rows from the 2026-11-03 persona re-review are listed in their sections.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration and play `PI-14`'s pad match) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (no Radeon is available: re-enable it, re-plan the low tier, or record it as unmeasurable on owned hardware) · `OCA-45` (confirm its re-plan: one pad is owned, the run needs two) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
-- Later: `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `PI-10` (close it with `PI-11` parked, or decide `PI-11`), `OCA-79` (authorise the starter project's first push to GitHub), `WEB#11` (re-sync and deploy the live demo).
-- Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `OCA-18` (whether the recorded agent runs close it).
-- Records: `DOC#5` (rename the outside-adopter persona or not), `DOC#6` (PHILOSOPHY's 'eventually'), `DOC#7` (the GitHub description's platform answer), `SM-11` (move it out of Won't now that `WEB#10` does its work).
+- Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration and play `PI-14`'s pad match) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
+- Later: `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `WEB#11` (re-sync and deploy the live demo).
+- Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction. `IDEA#7` to `IDEA#19`, from the engine review of 2026-10-31: circle collision, scene queries, contact edges, arbitrary window sizes, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
 
@@ -43,7 +42,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-45` | DECISION | should | S | Code and guide done; the two-pad unplug run needs two pads and one is owned. Owner confirms the re-plan: a pure slot scan in minimal's rules asserted by MinimalTests, plus informal pad play. [Amendment](docs/product/BACKLOG.md#next). |
+| `OCA-45` | OPEN | should | S | Owner decided no second pad (2026-11-03). Left: move minimal's slot scan into a pure rules function and assert in MinimalTests a pad only in slot 1 or 3 and slot 0 emptied; then informal one-pad play. [Decision](docs/product/BACKLOG.md#next). |
 | `PI-21` | OPEN | should | S | Add the missing browser-transport test (`dual-rumble` played and reset); then the owner's informal pad play, natively and in Chrome, in `OCA-48`'s session. [Re-plan](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 
 ## Website and the hosted demo
@@ -55,7 +54,6 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 | `SITE#6` | OPEN | could | S | axe-core's `label-content-name-mismatch` (WCAG 2.5.3) fails Starlight's search button: its visible "Ctrl K" hint is not in its accessible name "Search". The acceptance scan leaves `site-search` out until it is fixed, by an override or upstream. |
 | `SITE#5` | OPEN | should | S | Not a release gate since the owner's decision of 2026-11-03 to cut `v0.3.0` without it. Make `acceptance (ios)`, which runs only on request in [the acceptance trial workflow](.github/workflows/acceptance-trial.yml), pass reliably, then move it back into the website workflow as a required check. safaridriver on iOS 26.5 places touches at the requested point less the page's scroll offset while refusing points outside the viewport, so the release index check does not follow the card's documentation link, below the first screen, until WebKit fixes it (owner's decision, 2026-11-03). Search text is typed on the Simulator's hardware keyboard, because safaridriver's send keys inserts none. Still unreliable: of three runs on 2026-11-03, taps were taken as long presses, a navigation timed out and one session was never created. |
 | `SITE#4` | OPEN | should | S | iOS Safari shows a pill naming the host above the keyboard while typing in search; tapping it, or pressing Go on an empty box, leaves an empty page. Seen 2026-11-03 on the live site and the versioned fixture, so not versioning. Pagefind's form has `action="javascript:void(0);"`, the likely cause. |
-| `OCA-18` | DECISION | could | S | Guide implemented; the 2026-10-31 agent runs record the date, Visual Studio 18.9.2, the breakpoint hit and content loaded, as the criterion asks. Owner decides whether they close it, a person's use becoming informal. [Evidence](docs/product/BACKLOG.md#later). |
 | `OCA-79` | DECISION | should | S | Push a current-release starter project, as *Put your project on GitHub* says, to a public test repository under the owner's account (owner's authorisation), and record its green `ci.yml` run in the guides. [Story](docs/product/BACKLOG.md#oca-79). |
 | `WEB#11` | DECISION | should | S | Live demo is `v0.2.0`. Prepare a verified `v0.3.0` bundle; the owner syncs, updates the host page's controls, failure text, loss wait, access note, gate wording and project-page figures, and deploys. [web.md §7](docs/port/web.md#7-what-the-host-page-gets). |
 | `WEB#12` | OPEN | could | S | A script checking the live demo after each deploy: content types, both Cache-Control values, Brotli, sizes and SHA-256 against the served `BUILD.json`, and the served commit; its dated output replaces M5's manual ticks. [M5](docs/port/web-to-be-tested.md). |
@@ -69,8 +67,8 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-01` | DECISION | should | S | No Radeon GPU is available: the desktop's integrated Radeon is switched off (owner, 2026-11-03). Owner decides: re-enable it, re-plan `SM-01`/`SM-07` with PHILOSOPHY amended first, or record that the named tier cannot be measured on owned hardware. |
-| `SM-07` | BLOCKED | should | M | Low-tier CPU-phase and cadence p99s plus separate pipeline-latency evidence under the four-core hold (D3D12/Vulkan). Needs `SM-01`'s decision; EC2 runs do not count. See the held Vulkan pairing in [the procedure](docs/performance/local-frame-bench.md). |
+| `SM-01` | DECISION | should | S | Owner session (decided 2026-11-03, no re-plan): re-enable the integrated Radeon in the BIOS at the next reboot, install AMD's driver, then run the bench's adapter check on it. [SM-01](docs/product/BACKLOG.md#next). |
+| `SM-07` | BLOCKED | should | M | Low-tier CPU-phase and cadence p99s plus separate pipeline-latency evidence under the four-core hold (D3D12/Vulkan). Needs `SM-01`'s run on the Radeon; EC2 runs do not count. See the held Vulkan pairing in [the procedure](docs/performance/local-frame-bench.md). |
 
 ## Browsers, phones and hardware
 
@@ -81,7 +79,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 | `OCA-48` | DECISION | should | S | Informal play with the physical XInput pad: an `x64-release` sample, noting whether pad input reached it with another window focused, and the pad in Chrome (`BDP-06`). Mapping is SM-40's test; `BDP-06`'s Firefox half is `WEB#10`. |
 | `SM-09` | DECISION | should | S | Ceiling recorded: Safari 27.0.1 on macOS 27.0.1, above the 18.4 floor. Left: the owner's informal play on the Air; the scripted match, quit and replay is `WEB#1`'s automated run. |
 | `WEB#1` | OPEN | should | M | M3's Safari half automated: safaridriver on `macos-latest` drives CI's `wasm-release` sample pages and bundle (frames, keys, quit, replay, context loss) and reads `RENDERER`. If WebGL2 is unusable there, drawing stays informal play on the Air. |
-| `WEB#10` | OPEN | should | S | Add LineSweeper and the bundle page's play, quit and replay to `run_firefox.mjs`, and register its runs as ctest entries when configure finds a Firefox; CI only if the image has one. Covers `BDP-06`'s Firefox half. |
+| `WEB#10` | OPEN | should | S | Add LineSweeper and the bundle page's play, quit and replay to `run_firefox.mjs`, and register its runs as ctest entries when configure finds a Firefox; CI only if the image has one. Covers `BDP-06`'s Firefox half; story `SM-11` (Later L57). |
 | `WEB#14` | OPEN | should | S | Investigate driving a real context loss (`chrome://gpucrash`) and a real tab switch in Chrome over CDP for `BDP-06`; what cannot be automated stays informal play. [M5](docs/port/web-to-be-tested.md). |
 | `SM-14` | OPEN | should | S | Draft the LAN-serve procedure in `docs/port/`: LAN binding, secure-context features and how to get one, Web Inspector on the current MacBook Air, and Android Chrome's steps, written but untried. Closes once used in `SM-13`'s iPhone session. |
 | `WEB#3` | DECISION | should | S | Hear the audio sample through speakers (each sound, pan, pitch, volume, held keys), the first-gesture unlock in each browser, resume after a hidden tab, and `ping_adpcm.xwb` on XAudio2. Nobody has listened yet. |
@@ -113,7 +111,6 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 |---|---|---|---|---|
 | `DOC#4` | OPEN | should | S | ColourWars is public (2026-11-03). Fixed: README.md (links it), AGENTS.md, colourwars-reports' README, web.md §6, review INDEX, website plan. Left: whether the site links it; report links reviewed within the 2026-10-27 disclosure boundary. |
 | `PI-14` | DECISION | should | M | Sandbox run at `v0.2.0` reached a keyboard match. Radeon criterion: not run, none available; the pad match is informal play. Run and record are ColourWars'. Owner: close as delegated, or await its `v0.3.0` run. [BACKLOG](docs/product/BACKLOG.md#next). |
-| `PI-10` | DECISION | could | M | Every filed report has an answer; F8's install half was parked by the client, not filed. Owner decides: close with `PI-11` parked until a request is filed (T1), or decide `PI-11` now. [Note](docs/product/BACKLOG.md#later). |
 
 ## Records and design decisions
 
@@ -123,9 +120,6 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 |---|---|---|---|---|
 | `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Waits on that pin move. [Scope](docs/product/BACKLOG.md#later). |
 | `OCA-66` | DECISION | could | S | DPI declaration implemented. Closes when `CI#4` checks it and the owner has informally played the template on a screen at 150% scaling. [Re-plan](docs/product/BACKLOG.md#later). |
-| `DOC#5` | DECISION | could | XS | Whether to rename "The Outside C++ Adopter", whose floor is a near-beginner since 2026-10-30; recommended: keep name and id with a note. [PERSONAS.md](docs/product/PERSONAS.md). |
-| `DOC#6` | DECISION | could | XS | PHILOSOPHY's opening says outside adopters come 'eventually', while their onboarding has shipped: amend it with its reason, or record that it stands. [PHILOSOPHY](docs/design/PHILOSOPHY.md). |
-| `DOC#7` | DECISION | could | XS | The GitHub repository description says "the browser"; the one platform answer is "a desktop browser" while phones are gated. A repository setting. [README.md](README.md). |
 
 ## CI
 
