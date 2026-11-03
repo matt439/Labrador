@@ -157,7 +157,7 @@ export function buildFixture({
 	function release(tag, message) {
 		setVersion(tag.slice(1));
 		git(`commit-${tag}`, 'add', '--all');
-		git(`commit-${tag}`, 'commit', '--quiet', '-m', message);
+		git(`commit-${tag}`, 'commit', '--quiet', '--allow-empty', '-m', message);
 		git(`tag-${tag}`, 'tag', '-a', tag, '-m', `Acceptance fixture ${tag}`);
 		node(`snapshot-build-${tag}`, 'scripts/build-snapshot.mjs', tag);
 		const printed = node(`snapshot-pack-${tag}`, 'scripts/pack-snapshot.mjs', tag);

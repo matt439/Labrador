@@ -25,9 +25,11 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-10-30: the outside adopter's floor is someone with very little programming experience who wants to play around, not 'some C++'. Terminal commands and manual setup are acceptable, but every procedure has an exhaustive guide (every command in a copyable block, nothing to infer), which experienced users skip. Python is an acceptable tool prerequisite; no bundled installer. Many such readers will not clone with Git, so each release has a starter ZIP needing no Git: download, extract, build, play; Git stays the experienced route. This settles G96's direction without a C++ tutorial or a T10 rewrite | OCA-78, SRL-15 |
 | Owner facts 2026-11-03: ColourWars' repository is public; a current MacBook Air is owned and replaces the 2013 machine as M3's Safari candidate, so the Big Sur ceiling no longer decides M3; the desktop drives its four QHD screens at 60 Hz, and one at 144 Hz with the other three unplugged | DOC#4, SRL-07, SM-09, WEB#1, WEB#2, BDP-07 |
 | Decided 2026-11-03: a check that can be written as a list is automated, and runs on every change it covers; the owner's manual testing is informal play on real hardware, reporting whatever looks wrong, not a scripted checklist. An acceptance criterion written as an owner checklist is re-planned as an automated suite plus, where only a person can judge (listening, a pad's feel, visible judder, real-device numbers), informal play | SITE#3, WEB#1, SM-09, SM-13, BDP-06, OCA-48, PI-21, WEB#2, WEB#3, WEB#5, BDP-07, REV#3, REV#8, REV#12, OCA-66 |
+| Decided 2026-11-03: cut `v0.3.0` without waiting for the iOS Simulator acceptance job to pass reliably; `SITE#5` stays open as its own item and no longer gates a release | SITE#3, SITE#5 |
 
-`SITE#3` remains open under [the versioning policy](../website-versioning.md)
-and is a prerequisite for cutting `v0.3.0`. Verified candidate builds,
+`SITE#3` remains open under [the versioning policy](../website-versioning.md).
+Its qualification, the prerequisite for cutting `v0.3.0`, is complete, and its
+publication follows the tag. Verified candidate builds,
 versioned links and search, the release manifest, the snapshot archive,
 assembly, CI verification, the release index and the version selector are
 implemented and checked offline with fixtures;
@@ -40,9 +42,11 @@ as emulation. Since 2026-11-03 those checks are
 [an automated suite](../website-versioning.md#browser-acceptance-suite) that CI
 runs in Chrome, Firefox and Safari as required checks, with an axe-core WCAG
 A/AA scan, and NVDA is heard announcing the notice; the iOS Simulator runs
-only on request until reliable (`SITE#5`). What remains is iOS reliable,
-informal play on the owner's iPhone, then
-`v0.3.0`'s snapshot published and its deploy checked. Immutable releases were enabled on 2026-10-27.
+only on request until reliable (`SITE#5`). The owner decided on 2026-11-03
+not to hold `v0.3.0` for the iOS Simulator, so `SITE#5` stays open on its own,
+and the owner's iPhone use that day, which found `SITE#4`, stands as the
+informal phone play. What remains is `v0.3.0`'s snapshot published and its
+deploy checked. Immutable releases were enabled on 2026-10-27.
 
 ## Now
 

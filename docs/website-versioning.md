@@ -21,9 +21,9 @@ authored guides, generated API reference, design documents, sample quotations,
 media and dependency lockfile all come from that revision. The build must not
 combine released headers with development guides.
 
-`SITE#3` in [TODO.md](../TODO.md) tracks the qualification and first
-publication that remain, which must be complete before `v0.3.0` is cut. The
-decision sets no release date. Until the first snapshot is published, the whole
+`SITE#3` in [TODO.md](../TODO.md) tracks what remains: its qualification,
+complete before `v0.3.0` is cut, and the first publication, built from the tag
+after it. The decision sets no release date. Until the first snapshot is published, the whole
 site remains development documentation.
 
 Keep the current site and `/docs/` as development documentation. Store release
@@ -371,7 +371,8 @@ on the Simulator's hardware keyboard through System Events instead. The scan lea
 shortcut hint is not in its accessible name (`SITE#6`), and axe's
 best-practice rules, which judge Starlight's page structure rather than what
 versioning adds. An emulator's layout is not a real phone's: informal play on
-a real iPhone remains the owner's.
+a real iPhone is the owner's, and for `v0.3.0` the owner's iPhone use on
+2026-11-03 stood as it.
 
 ## Runtime contract, permanent from v0.3.0
 
@@ -574,9 +575,12 @@ snapshot with these checks:
 3. The release index and selector keep release labels and archived-page source
    links. *Implemented; qualified in headless Chrome and Firefox as above.*
    [The browser acceptance suite](#browser-acceptance-suite) repeats those
-   checks in Chrome, Firefox, Safari and the iOS Simulator on every change.
-   Acceptance still needs those jobs green, a screen reader heard announcing
-   the notice and informal play on a real phone.
+   checks in Chrome, Firefox and Safari on every change, and in the iOS
+   Simulator on request. *Accepted for `v0.3.0` on 2026-11-03:* those three
+   jobs and NVDA's are required and green, and NVDA is heard announcing the
+   notice. The owner chose not to hold the release for the iOS Simulator job
+   (`SITE#5`), and the owner's iPhone use that day stands as the informal play
+   on a real phone.
 4. Run `npm ci`, `npm run check`, `npm test` and `npm run build` in the release checkout.
    Retain the matching engine qualification and the built site together. Check
    that API anchors and sample quotations resolve within this release, and

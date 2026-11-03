@@ -12,7 +12,7 @@ only: [why](https://labradorengine.com/why/), and
 New here? [Get Started](https://labradorengine.com/docs/get-started/) takes an
 empty Windows machine to a game of your own that builds against Labrador, in
 three steps, from a release's starter ZIP and with no Git needed; the first
-release to carry one is the one after `v0.2.0`.
+release to carry one is `v0.3.0`.
 
 The engine is the point, but an engine with no client is a library of guesses.
 Labrador has one: ColourWars, a split-screen paint-shooter that consumes this
