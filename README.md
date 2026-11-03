@@ -48,7 +48,7 @@ gallery shows them running. [Its README](samples/components/README.md)
 says why they are copied, and when one would move into the engine.
 
 ```
-engine/    ~43k lines   the engine: ten modules with a fixed dependency direction
+engine/    ~42k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
 tests/     ~38k lines   doctest, run by ctest with five more that sit beside their samples
 bench/                  throughput, run by ctest alongside them
