@@ -40,7 +40,7 @@
 // which acceptance/screen-reader.mjs checks on a CI runner.
 import http from 'node:http';
 import https from 'node:https';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_WINDOW, TARGETS, startBrowser } from './browsers.mjs';
@@ -381,6 +381,10 @@ class Context {
 		return this.script(SELECTOR_STATE);
 	}
 
+	// A finger's tap on a phone, and at phone widths where the target has
+	// touch. On the iOS Simulator safaridriver's element click does not open
+	// Starlight's menu at all, and a composed tap is sometimes taken as a long
+	// press; the iOS job is advisory until that is resolved.
 	async activate(element) {
 		if (this.flags.phone || this.touchInput) {
 			await this.script(SCROLL_INTO_VIEW, [element]);
@@ -399,11 +403,27 @@ class Context {
 
 	// At a phone's width the sidebar, and the selector in it, is the menu
 	// behind the header's menu button: a reader opens that first.
+	// A tap on the sticky header button of a page scrolled to a heading can
+	// miss on iOS, so the reader's way is taken: back to the top, then tap,
+	// and tap again if the menu has not opened.
 	async revealSidebar() {
 		if (!(await this.script(MENU_HIDDEN))) return;
+		await this.script('window.scrollTo(0, 0);');
+		for (let tapAt = 1; tapAt <= 3; tapAt += 1) {
+			const menu = await this.session.findElement('button.sl-menu-button');
+			await this.activate(menu);
+			const opened = await waitUntil(() => this.script(MENU_OPEN), { timeoutMs: 5_000, message: 'the phone menu to open' }).catch(() => false);
+			if (opened) return;
+		}
+		throw new Error('Three taps of the menu button did not open the phone menu.');
+	}
+
+	// Closes the phone menu, which covers the page, before a tap on the page.
+	async hideSidebar() {
+		if (!(await this.script(MENU_OPEN))) return;
 		const menu = await this.session.findElement('button.sl-menu-button');
 		await this.activate(menu);
-		await waitUntil(() => this.script(MENU_OPEN), { message: 'the phone menu to open' });
+		await waitUntil(async () => !(await this.script(MENU_OPEN)), { message: 'the phone menu to close' });
 	}
 
 	// Opens the selector by clicking or tapping its summary and waits until
@@ -981,6 +1001,7 @@ async function releaseIndex(context) {
 	const docsLink = await context.script(`
 		return [...document.querySelectorAll('.version-card')].find((card) => card.querySelector('h2').id === arguments[0])
 			.querySelector('.version-links a');`, [OLDEST]);
+	await context.hideSidebar();
 	const location = await context.follow(docsLink, context.abs(`${versionPath(OLDEST)}docs/`));
 	context.note(`followed ${OLDEST}'s documentation link to ${location.href}`);
 }
@@ -996,7 +1017,16 @@ async function search(context, label, query) {
 		const found = await context.session.findElements('site-search dialog[open] .pagefind-ui__search-input');
 		return found[0] ?? null;
 	}, { timeoutMs: 15_000, message: 'the search box' });
+	// On a phone a reader taps the box before typing into it.
+	if (context.flags.phone) await context.activate(input);
 	await context.session.sendKeys(input, query);
+	// The simulator can drop the first text sent to a box it is still
+	// focusing; a reader whose text did not appear types it again.
+	const arrived = await waitUntil(() => context.script('return arguments[0].value;', [input]), { timeoutMs: 3_000, message: 'the typed text' }).catch(() => '');
+	if (!arrived) {
+		context.note(`the first text sent to the search box on ${label} did not arrive; it was sent again`);
+		await context.session.sendKeys(input, query);
+	}
 	const read = () => context.script(`
 		const dialog = document.querySelector('site-search dialog');
 		const message = dialog.querySelector('.pagefind-ui__message');
@@ -1172,6 +1202,7 @@ async function staticMarkup(context) {
 async function indexLoading(context) {
 	await context.go(`/${SHARED_PAGE}`, { base: context.heldIndex.url });
 	const before = await context.countOpenings();
+	await context.revealSidebar();
 	const summary = await context.session.findElement('[data-version-select] summary');
 	await context.activate(summary);
 	const loading = await waitUntil(async () => {
@@ -1370,6 +1401,15 @@ export async function runSuite(options, { write = (line) => process.stdout.write
 					context.failures.push(error instanceof Error ? error.message : String(error));
 				}
 			}
+			// What the browser showed when a check failed, beside the report.
+			if (result.status === 'fail' && options.report) {
+				const shot = path.join(path.dirname(options.report), `fail-${check.id}.png`);
+				mkdirSync(path.dirname(shot), { recursive: true });
+				await context.session.screenshot().then((png) => {
+					writeFileSync(shot, png);
+					result.screenshot = path.basename(shot);
+				}).catch(() => {});
+			}
 			result.failures = context.failures;
 			result.details = context.details;
 			result.durationMs = Date.now() - started;
@@ -1383,6 +1423,7 @@ export async function runSuite(options, { write = (line) => process.stdout.write
 		await cleanup();
 		running.delete(cleanup);
 		report.finishedAt = new Date().toISOString();
+		if (options.report) mkdirSync(path.dirname(path.resolve(options.report)), { recursive: true });
 		if (options.report) writeFileSync(options.report, `${JSON.stringify(report, null, 2)}\n`);
 	}
 	const failed = results.filter((result) => result.status === 'fail').length;

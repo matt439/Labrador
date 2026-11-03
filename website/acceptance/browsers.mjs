@@ -44,6 +44,7 @@ export const TARGETS = Object.freeze({
 
 export const DEFAULT_WINDOW = Object.freeze({ width: 1280, height: 800 });
 export const DRIVER_READY_TIMEOUT_MS = 20_000;
+export const IOS_DRIVER_READY_TIMEOUT_MS = 120_000;
 export const SIMULATOR_BOOT_TIMEOUT_MS = 300_000;
 const DRIVER_START_ATTEMPTS = 3;
 const SESSION_ATTEMPTS = 3;
@@ -321,7 +322,10 @@ export async function startBrowser(target, {
 	const capabilities = targetCapabilities(target, { binary, udid: device?.udid, window });
 	const executable = resolveDriver(target, { driver });
 	const tabKey = target === 'safari' && !(await safariTabsToLinks()) ? [Keys.Alt, Keys.Tab] : Keys.Tab;
-	const started = await startDriver(executable, target, { log, readyTimeoutMs });
+	// safaridriver can take far longer to report ready while a simulator
+	// that has just booted is still opening Safari.
+	const readyFor = target === 'ios' ? Math.max(readyTimeoutMs, IOS_DRIVER_READY_TIMEOUT_MS) : readyTimeoutMs;
+	const started = await startDriver(executable, target, { log, readyTimeoutMs: readyFor });
 	const stopDriver = () => killDriver(started.child, { log });
 	let session;
 	try {

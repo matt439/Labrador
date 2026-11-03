@@ -346,7 +346,10 @@ each check.
 CI builds the fixture once (`acceptance fixture`) and runs the suite as
 `acceptance (chrome)` and `acceptance (firefox)` on Linux and
 `acceptance (safari)` and `acceptance (ios)` on macOS, where `ios` is Safari in
-the newest iOS Simulator. `acceptance (nvda)` runs
+the newest iOS Simulator. The iOS job is advisory for now: on GitHub's
+runners the simulator's Safari is slow to accept a WebDriver session, and a
+composed tap is sometimes taken as a long press, so its checks fail
+intermittently. `acceptance (nvda)` runs
 [screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows, which
 listens for NVDA speaking the notice after a keyboard switch. It is not
 required: whether a hosted runner's NVDA can be driven reliably is itself
