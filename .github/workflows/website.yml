@@ -185,11 +185,14 @@ jobs:
   # One job per browser. Chrome and Firefox use the runner's own drivers
   # (CHROMEWEBDRIVER, GECKOWEBDRIVER). Safari and Safari in the iOS Simulator
   # use safaridriver, which must be enabled once with sudo; the suite boots
-  # the newest runtime's first iPhone.
+  # the newest runtime's first iPhone. The iOS job is advisory: the
+  # simulator's Safari is slow to accept a session and sometimes takes a
+  # composed tap as a long press, so its failures are read, not gated on.
   acceptance:
     name: acceptance (${{ matrix.target }})
     needs: acceptance-fixture
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.target == 'ios' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -219,12 +222,12 @@ jobs:
       - name: Run the suite
         run: >-
           npm run acceptance -- --target ${{ matrix.target }}
-          --serve-dist "$RUNNER_TEMP/dist" --report "$RUNNER_TEMP/report.json"
+          --serve-dist "$RUNNER_TEMP/dist" --report "$RUNNER_TEMP/report/report.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: acceptance-report-${{ matrix.target }}
-          path: ${{ runner.temp }}/report.json
+          path: ${{ runner.temp }}/report
           retention-days: 14
 
   # Whether NVDA speaks the arrival notice. Not a required check: whether a

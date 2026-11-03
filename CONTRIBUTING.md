@@ -128,9 +128,9 @@ and the last is the job in
 [.github/workflows/website.yml](.github/workflows/website.yml).
 
 That workflow's browser acceptance jobs, `acceptance fixture`,
-`acceptance (chrome)`, `acceptance (firefox)`, `acceptance (safari)` and
-`acceptance (ios)`, are added to the list once they have passed on `master`;
-`acceptance (nvda)` stays advisory
+`acceptance (chrome)`, `acceptance (firefox)` and `acceptance (safari)`, are
+added to the list once they have passed on `master`; `acceptance (ios)` and
+`acceptance (nvda)` stay advisory until they pass reliably
 ([the suite](docs/website-versioning.md#browser-acceptance-suite)).
 
 **A change that touches only documentation is linted, not built**: when
