@@ -626,15 +626,15 @@ were against a bundle built at `c369e8b` (`v0.1.0`)
 ([web-to-be-tested.md](web-to-be-tested.md) has the headers it served). On
 2026-10-29 the host repository's committed `BUILD.json` (host commit
 `d433560`) names `1e60fb2` (`v0.2.0`); the live page was not re-checked.
-On 2026-11-03 `v0.3.0` was cut and the host still names `1e60fb2`, so the
-live demo lags the release: it predates `0fd5924`, which made Up hard-drop,
-so a visitor following the Examples page's controls sees Up rotate, and it
-lacks the colour-vision palettes and pause on focus loss. The site's own
-page also lacks the bundle page's player-facing failure text, bounded
-context-loss wait, accessibility note and iPhone-only gate wording, and its
-controls list names Up as rotate, which becomes wrong once a post-`v0.2.0`
-bundle is synced. Re-syncing and the page changes are the owner's, in the
-host repository (`WEB#11` in TODO.md). `LineSweeperBundlePageTests` tests the
+On 2026-11-03 the owner deployed a clean Release bundle of `v0.3.0`
+(`0f4f503`), verified by `bundle.mjs --verify` and
+`LineSweeperBundlePageTests` before the sync. The site's own page was brought
+to the bundle page's controls (Up hard-drops), player-facing failure text,
+bounded context-loss wait, accessibility note and iPhone-only gate wording,
+with a new phone recording. That day the live `BUILD.json` named `0f4f503`
+with `dirty` false, and the served `linesweeper.js`, `linesweeper.wasm`,
+`NOTICE.txt` and `poster.png` matched its SHA-256 values; headers were not
+re-checked (`WEB#12`). `LineSweeperBundlePageTests` tests the
 bundle's example page, not the site's own page script, which has no automated
 check (`WEB#13`).
 
