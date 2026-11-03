@@ -286,6 +286,7 @@ class Context {
 		this.blockedBase = blockedBase;
 		this.heldIndex = heldIndex;
 		this.log = log;
+		this.frame = null;
 		this.chromeLog = target === 'chrome';
 		this.touchInput = false;
 		this.reset();
@@ -351,6 +352,12 @@ class Context {
 				return location;
 			} catch (error) {
 				if (error instanceof WebDriverError && error.code !== 'no such window') return null;
+				// Safari answers "no such window" for a frame whose document is
+				// being replaced; the frame is entered again and asked again.
+				if (error instanceof WebDriverError && this.frame) {
+					await this.enterFrame().catch(() => {});
+					return null;
+				}
 				throw error;
 			}
 		}, { timeoutMs, message: expectedHref ? `the page at ${expectedHref}` : 'the page to load' }).catch(async (error) => {
@@ -359,6 +366,13 @@ class Context {
 		});
 		await this.script(INSTALL_ERROR_LISTENER);
 		return where;
+	}
+
+	// The phone-width frame that loadAtWidth made, when the session is in it.
+	async enterFrame() {
+		await this.session.send('POST', '/frame', { id: null });
+		const element = await this.session.findElement(this.frame);
+		await this.session.send('POST', '/frame', { id: element });
 	}
 
 	async go(urlPath, { base } = {}) {
@@ -506,6 +520,7 @@ function canonicalOf(html) {
 // point of it can be clicked.
 
 async function topFrame(context) {
+	context.frame = null;
 	await context.session.send('POST', '/frame', { id: null });
 }
 
@@ -530,8 +545,8 @@ async function loadAtWidth(context, width, urlPath, theme) {
 			+ 'width:' + arguments[0] + 'px;height:' + Math.min(arguments[1], innerHeight) + 'px';
 		frame.src = arguments[2];
 		document.body.append(frame);`, [width, PHONE_HEIGHT, context.abs(urlPath)]);
-	const frame = await context.session.findElement('#acceptance-viewport');
-	await context.session.send('POST', '/frame', { id: frame });
+	context.frame = '#acceptance-viewport';
+	await context.enterFrame();
 	await context.settle(context.abs(urlPath));
 }
 
