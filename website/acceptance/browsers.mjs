@@ -31,15 +31,30 @@ const execFileAsync = promisify(execFile);
 //   touch          pointer actions with pointerType "touch" are delivered;
 //                  the suite taps rather than clicks at phone widths
 //   phone          the page runs on a phone's browser and screen
+//   touchAtPagePoint
+//                  the driver places a touch at the given viewport point
+//                  less the page's scroll offset, reading it as a point of
+//                  the page: safaridriver on iOS maps the point with
+//                  syncRootViewToScreen, whose root view is the whole page
+//                  (WebKit's WebAutomationSessionIOS.mm). It still refuses a
+//                  point outside the viewport, so the suite taps only with
+//                  the page scrolled to its top, and nothing lower on the
+//                  page than the viewport is tall can be touched.
+//   simulatorKeyboard
+//                  text is typed on the iOS Simulator's hardware keyboard.
+//                  safaridriver's Element Send Keys on iOS dispatches keydown
+//                  and keyup but inserts no text, because its key events go
+//                  to the page without passing through the system's text
+//                  input (WebAutomationSessionIOS.mm).
 // startBrowser adds tabKey, the key or chord that moves focus to the next
 // link: Tab, except in a Safari whose "Press Tab to highlight each item on a
 // webpage" setting is off (its default), where Tab skips links and Option-Tab
 // is what reaches them.
 export const TARGETS = Object.freeze({
-	chrome: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false }),
-	firefox: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false }),
-	safari: Object.freeze({ keyboard: true, setWindowRect: true, touch: false, phone: false }),
-	ios: Object.freeze({ keyboard: false, setWindowRect: false, touch: true, phone: true }),
+	chrome: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false, touchAtPagePoint: false, simulatorKeyboard: false }),
+	firefox: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false, touchAtPagePoint: false, simulatorKeyboard: false }),
+	safari: Object.freeze({ keyboard: true, setWindowRect: true, touch: false, phone: false, touchAtPagePoint: false, simulatorKeyboard: false }),
+	ios: Object.freeze({ keyboard: false, setWindowRect: false, touch: true, phone: true, touchAtPagePoint: true, simulatorKeyboard: true }),
 });
 
 export const DEFAULT_WINDOW = Object.freeze({ width: 1280, height: 800 });
@@ -179,6 +194,22 @@ export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, l
 	await simctl(['launch', device.udid, 'com.apple.mobilesafari'], 120_000)
 		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
 	return device;
+}
+
+// Types text on the hardware keyboard that the Simulator app connects to the
+// booted device, as a reader with a keyboard attached types: System Events
+// presses the keys with the Simulator app in front, so the process running
+// this needs macOS's Accessibility permission, which GitHub's macOS runners
+// grant. Text reaches whatever has focus in the simulator.
+export async function typeOnSimulatorKeyboard(text) {
+	await execFileAsync('osascript', [
+		'-e', 'on run argv',
+		'-e', 'tell application "Simulator" to activate',
+		'-e', 'delay 0.5',
+		'-e', 'tell application "System Events" to keystroke (item 1 of argv)',
+		'-e', 'end run',
+		String(text),
+	], { timeout: 60_000 });
 }
 
 // Whether desktop Safari's Tab moves to links. LABRADOR_SAFARI_TAB_TO_LINKS

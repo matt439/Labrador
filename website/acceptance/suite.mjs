@@ -43,7 +43,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_WINDOW, TARGETS, startBrowser } from './browsers.mjs';
+import { DEFAULT_WINDOW, TARGETS, startBrowser, typeOnSimulatorKeyboard } from './browsers.mjs';
 import { FIXTURE_ONLY_HEADING, FIXTURE_ONLY_PATH } from './fixture.mjs';
 import { startServer } from './server.mjs';
 import { Keys, WebDriverError, pressKeys, tap, waitUntil } from './webdriver.mjs';
@@ -245,6 +245,21 @@ const MENU_HIDDEN = `
 
 const SCROLL_INTO_VIEW = 'arguments[0].scrollIntoView({ block: "center", inline: "nearest" });';
 
+// Brings the element into view with the page scrolled to its top, so far as
+// it can be: the page is scrolled only when the element lies below the first
+// screen. Returns where the element is and how far the page scrolled.
+const INTO_VIEW_FROM_TOP = `
+	const element = arguments[0];
+	window.scrollTo(0, 0);
+	element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	const box = element.getBoundingClientRect();
+	return {
+		y: Math.round(box.top + box.height / 2 + scrollY),
+		scrollY,
+		height: innerHeight,
+		text: (element.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 40),
+	};`;
+
 const NOTICE = `
 	const notice = document.querySelector('[data-version-notice]');
 	if (!notice) return null;
@@ -397,15 +412,33 @@ class Context {
 
 	// A finger's tap on a phone, and at phone widths where the target has
 	// touch. On the iOS Simulator safaridriver's element click does not open
-	// Starlight's menu at all, and a composed tap is sometimes taken as a long
-	// press; CI runs the iOS target only on request until that is resolved.
+	// Starlight's menu at all, and its touches land where they are asked to
+	// only while the page is scrolled to its top (touchAtPagePoint in
+	// browsers.mjs), so there the page goes back to its top first and an
+	// element below the first screen cannot be tapped. Its touch generator is
+	// slow enough that a held finger can become a long press, so its taps
+	// lift without a pause.
 	async activate(element) {
-		if (this.flags.phone || this.touchInput) {
+		if (this.flags.touchAtPagePoint) {
+			const place = await this.script(INTO_VIEW_FROM_TOP, [element]);
+			if (place.scrollY > 0) {
+				throw new Error(`"${place.text}" is ${place.y} px down the page, below its first screen of ${place.height} px, `
+					+ `where ${this.target}'s driver places no touch where it is asked to.`);
+			}
+			await tap(this.session, element, { pauseMs: 0 });
+		} else if (this.flags.phone || this.touchInput) {
 			await this.script(SCROLL_INTO_VIEW, [element]);
 			await tap(this.session, element);
 		} else {
 			await this.session.click(element);
 		}
+	}
+
+	// Types into a field that has focus: on the target's keyboard where its
+	// driver cannot type, otherwise through the driver.
+	async type(element, text) {
+		if (this.flags.simulatorKeyboard) await typeOnSimulatorKeyboard(text);
+		else await this.session.sendKeys(element, text);
 	}
 
 	// The number of openings so far; pass it to waitForList after opening.
@@ -524,12 +557,23 @@ async function topFrame(context) {
 	await context.session.send('POST', '/frame', { id: null });
 }
 
+// Loads a page in the window itself with the theme chosen before it loads:
+// a reload to apply the theme would lose the arrival notice, which shows only
+// on the first load.
+async function loadInTheme(context, urlPath, theme, landsAt = urlPath) {
+	await topFrame(context);
+	await context.go('/404.html');
+	await context.script(SET_THEME, [theme]);
+	await context.go(urlPath);
+	await context.settle(context.abs(landsAt));
+}
+
 // landsAt names the address the page settles on when it rewrites its own
-// (the arrival notice drops its query); it defaults to urlPath.
+// (the arrival notice drops its query); it defaults to urlPath. A null width
+// is the window's own.
 async function loadAtWidth(context, width, urlPath, theme, landsAt = urlPath) {
 	if (width === null) {
-		await context.go(urlPath);
-		await context.useTheme(theme);
+		await loadInTheme(context, urlPath, theme, landsAt);
 		return;
 	}
 	await context.takePageErrors();
@@ -1036,13 +1080,13 @@ async function search(context, label, query) {
 	}, { timeoutMs: 15_000, message: 'the search box' });
 	// On a phone a reader taps the box before typing into it.
 	if (context.flags.phone) await context.activate(input);
-	await context.session.sendKeys(input, query);
+	await context.type(input, query);
 	// The simulator can drop the first text sent to a box it is still
 	// focusing; a reader whose text did not appear types it again.
 	const arrived = await waitUntil(() => context.script('return arguments[0].value;', [input]), { timeoutMs: 3_000, message: 'the typed text' }).catch(() => '');
 	if (!arrived) {
 		context.note(`the first text sent to the search box on ${label} did not arrive; it was sent again`);
-		await context.session.sendKeys(input, query);
+		await context.type(input, query);
 	}
 	const read = () => context.script(`
 		const dialog = document.querySelector('site-search dialog');
@@ -1284,13 +1328,9 @@ async function accessibilityScan(context) {
 			for (const viewport of viewports) {
 				const load = async (urlPath, landsAt) => {
 					if (viewport.desktop) {
-						// The theme is chosen before the page loads: a reload would
-						// lose the arrival notice, which shows only once.
 						await topFrame(context);
 						await context.session.setWindowRect({ ...DESKTOP_WINDOW });
-						await context.go('/404.html');
-						await context.script(SET_THEME, [theme]);
-						await context.go(urlPath);
+						await loadInTheme(context, urlPath, theme, landsAt);
 					} else {
 						await loadAtWidth(context, viewport.width, urlPath, theme, landsAt);
 					}

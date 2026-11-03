@@ -183,6 +183,13 @@ test('tap moves a touch pointer to the element, presses and lifts', async (t) =>
 	assert.equal(driver.requests[2].method, 'DELETE');
 });
 
+test('a tap with no pause lifts straight after pressing', async (t) => {
+	const { driver, session } = await sessionOn(t, () => ok(null));
+	await tap(session, { [ELEMENT_KEY]: 'e5' }, { pauseMs: 0 });
+	const [source] = driver.requests[1].body.actions;
+	assert.deepEqual(source.actions.map((action) => action.type), ['pointerMove', 'pointerDown', 'pointerUp']);
+});
+
 test('a driver error becomes a WebDriverError with its code and message', async (t) => {
 	const { session } = await sessionOn(t, () => ({
 		status: 404, body: { value: { error: 'no such element', message: 'Unable to locate element: nav', stacktrace: '' } },
@@ -230,10 +237,16 @@ test('waitUntil returns the first truthy value or times out', async () => {
 
 test('each target declares the flags the suite consults', () => {
 	for (const flags of Object.values(TARGETS)) {
-		assert.deepEqual(Object.keys(flags).sort(), ['keyboard', 'phone', 'setWindowRect', 'touch']);
+		assert.deepEqual(Object.keys(flags).sort(),
+			['keyboard', 'phone', 'setWindowRect', 'simulatorKeyboard', 'touch', 'touchAtPagePoint']);
 	}
 	assert.equal(TARGETS.ios.setWindowRect, false);
 	assert.equal(TARGETS.ios.phone, true);
+	// Only the iOS Simulator's driver needs its touches and text routed round it.
+	for (const [target, flags] of Object.entries(TARGETS)) {
+		assert.equal(flags.touchAtPagePoint, target === 'ios', target);
+		assert.equal(flags.simulatorKeyboard, target === 'ios', target);
+	}
 });
 
 test('Chrome capabilities are headless, sized, and sandboxed except on Linux CI', () => {
