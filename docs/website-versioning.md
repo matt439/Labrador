@@ -361,7 +361,11 @@ Safari in the newest iOS Simulator. Its safaridriver places a touch at the
 requested point less the page's scroll offset yet refuses points outside the
 viewport, so the suite taps with the page at its top and nothing below the
 first screen can be tapped: the release index's link to `v0.3.0`'s
-documentation is such a target, and that check fails there. Its Element Send
+documentation is such a target, so on iOS that check verifies the link's
+address and target but does not follow it, and says so in its report, until
+the driver is fixed. Taps are still sometimes taken as a long press, and
+sessions and navigations sometimes time out, so the target is not yet
+reliable. Its Element Send
 Keys fires key events but inserts no text, so the suite types search queries
 on the Simulator's hardware keyboard through System Events instead. The scan leaves out Starlight's search button, whose visible
 shortcut hint is not in its accessible name (`SITE#6`), and axe's
