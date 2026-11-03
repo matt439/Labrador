@@ -100,6 +100,8 @@ Trust and clocks: the public face and the tree's records stop misleading readers
   live page was not re-checked against it, and the record says a later
   deploy needs the checks run again. Under the 2026-11-03 decision that listable check is
   a script run after each deploy (`WEB#12` in TODO.md), not dated manual ticks.
+  Later that day the owner deployed `v0.3.0` (`0f4f503`); the served
+  `BUILD.json` and file hashes were compared, not the headers.
 - [x] **[BDP-23](STORIES.md#bdp-23)** Must · S · The Browser and Phone Demo Player: Check the top-out burst against flash limits
 - [x] **[OCA-03](STORIES.md#oca-03)** Must · S · The Outside Adopter: Try LineSweeper in my browser from the site and the README — after SM-12, BDP-23
 - [x] **[OCA-01](STORIES.md#oca-01)** Must · S · The Outside Adopter: One answer to 'where does it run?' on every public page

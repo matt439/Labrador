@@ -168,7 +168,10 @@ since named a bundle built at `1e60fb2` (`v0.2.0`); the live page was not
 re-checked against it, and neither were these boxes. Under the
 owner's 2026-11-03 decision the server-side boxes become a script run after
 each deploy, which records its dated output here in place of manual ticks
-(`WEB#12` in TODO.md); the re-sync to `v0.3.0` is `WEB#11`.
+(`WEB#12` in TODO.md). Later on 2026-11-03 the owner deployed `v0.3.0`
+(`0f4f503`): the live `BUILD.json` names it, and the served module, loader,
+notices and poster match its SHA-256 values. These boxes were not re-run
+against that deploy.
 
 - [x] `curl -I` with `Accept-Encoding: br` against the page and the live
       `.wasm`: `application/wasm`, immutable `Cache-Control` under
