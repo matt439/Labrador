@@ -38,11 +38,11 @@ page and notice were qualified on assembled real snapshot output
 and [again in Chrome and Firefox](../website-versioning.md#rebuilt-fixture-qualification-2026-10-27),
 as emulation. Since 2026-11-03 those checks are
 [an automated suite](../website-versioning.md#browser-acceptance-suite) that CI
-runs in Chrome, Firefox, Safari and the iOS Simulator; the iOS and NVDA jobs
-are advisory until reliable (`SITE#5`). What remains is the Chrome, Firefox and
-Safari jobs required, iOS reliable, a screen reader heard
-announcing the notice, the owner's decision on axe-core, informal play on the
-owner's iPhone, then `v0.3.0`'s snapshot published and its deploy checked. Immutable releases were enabled on 2026-10-27.
+runs in Chrome, Firefox, Safari and the iOS Simulator, with an axe-core WCAG
+A/AA scan; Chrome, Firefox and Safari are required checks, iOS and NVDA
+advisory until reliable (`SITE#5`). What remains is iOS reliable, a screen
+reader heard announcing the notice, informal play on the owner's iPhone, then
+`v0.3.0`'s snapshot published and its deploy checked. Immutable releases were enabled on 2026-10-27.
 
 ## Now
 
@@ -2267,7 +2267,7 @@ Held on T1 and capacity grounds: each needs recorded demand, a regression it wou
 | Story | Why |
 |---|---|
 | SM-11 | G70: a WebDriver BiDi runner is a second protocol to maintain. Revisit when a Firefox-only regression it would have caught is recorded; BDP-06's manual record is the fallback. |
-| SM-28 | G120: a CI accessibility scan buys axe-core (T9 says buy) but costs CI time. Revisit when a manual WCAG check finds a regression, or OCA-08's position names the site as an aim. |
+| SM-28 | G120: a CI accessibility scan buys axe-core (T9 says buy) but costs CI time. Revisit when a manual WCAG check finds a regression, or OCA-08's position names the site as an aim. Since 2026-11-03 axe-core is a dev dependency and the acceptance suite scans the versioning pages at WCAG A/AA in both themes; the whole-site scan of dist/ this story asks for is still open. |
 | OCA-04 | G45 (merged with SRL-13): hosting more samples is an L bundle generalisation plus owner deploys. Revisit after SM-12's checks, SM-27's verify and a recorded request for a hosted second sample. |
 | OCA-47 | G113: three- and four-player layouts exist and were extracted from a four-pane client (PHILOSOPHY.md:662-667); showing them is not urgent. Revisit with OCA-46's join screen. |
 | BDP-19 | G85: whether a best score survives is a decision nobody has asked for. Revisit if the owner decides yes. |

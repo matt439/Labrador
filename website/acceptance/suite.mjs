@@ -35,12 +35,12 @@
 // page loads records errors and unhandled rejections from then on; an error
 // raised while a page is loading is not seen there.
 //
-// Not covered here: axe-core's accessibility scan, which needs a dependency
-// the website does not have, and how a screen reader speaks the notice,
-// which acceptance/screen-reader.mjs checks on a CI runner.
+// Not covered here: how a screen reader speaks the notice, which
+// acceptance/screen-reader.mjs checks on a CI runner.
 import http from 'node:http';
 import https from 'node:https';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_WINDOW, TARGETS, startBrowser } from './browsers.mjs';
@@ -524,7 +524,9 @@ async function topFrame(context) {
 	await context.session.send('POST', '/frame', { id: null });
 }
 
-async function loadAtWidth(context, width, urlPath, theme) {
+// landsAt names the address the page settles on when it rewrites its own
+// (the arrival notice drops its query); it defaults to urlPath.
+async function loadAtWidth(context, width, urlPath, theme, landsAt = urlPath) {
 	if (width === null) {
 		await context.go(urlPath);
 		await context.useTheme(theme);
@@ -547,7 +549,7 @@ async function loadAtWidth(context, width, urlPath, theme) {
 		document.body.append(frame);`, [width, PHONE_HEIGHT, context.abs(urlPath)]);
 	context.frame = '#acceptance-viewport';
 	await context.enterFrame();
-	await context.settle(context.abs(urlPath));
+	await context.settle(context.abs(landsAt));
 }
 
 async function restoreWindow(context) {
@@ -1238,6 +1240,89 @@ async function indexLoading(context) {
 	context.note(`after release: ${state.items.map((item) => item.text).join(' | ')}`);
 }
 
+// axe-core's WCAG 2.x A and AA rules, run in the page itself. The scan covers
+// every state the selector and notice add to a page: the open list with an
+// absent page's note, the arrival notice, and the release index with the list
+// open, each at a phone's width and at 1440 pixels in both themes. Rules
+// beyond A and AA (axe's best practices) are left out: they judge Starlight's
+// page structure rather than what versioning adds. Starlight's search button
+// is left out too: its visible "Ctrl K" hint is not in its accessible name
+// "Search" (label-content-name-mismatch), which is Starlight's markup and is
+// recorded as SITE#6, not a versioning defect.
+const AXE_SOURCE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+const AXE_RUN = `
+	const done = arguments[arguments.length - 1];
+	window.axe.run({ exclude: [['site-search']] }, { runOnly: { type: 'tag', values: arguments[0] }, resultTypes: ['violations'] })
+		.then((result) => done({
+			version: window.axe.version,
+			violations: result.violations.map((violation) => ({
+				id: violation.id,
+				impact: violation.impact,
+				nodes: violation.nodes.slice(0, 5).map((node) => ({ target: node.target.join(' '), summary: node.failureSummary })),
+			})),
+		}), (error) => done({ error: String(error) }));`;
+
+async function axeScan(context, where) {
+	await context.script(`${AXE_SOURCE}
+return typeof window.axe;`);
+	const result = await context.session.executeAsyncScript(AXE_RUN, [AXE_TAGS]);
+	if (result.error) throw new Error(`${where}: axe failed: ${result.error}`);
+	for (const violation of result.violations) {
+		context.expect(false, `${where}: ${violation.id} (${violation.impact}) at ${violation.nodes.map((node) => `${node.target}: ${node.summary}`).join(' | ')}`);
+	}
+	context.note(`${where}: axe ${result.version}, ${result.violations.length} violations`);
+}
+
+async function accessibilityScan(context) {
+	const viewports = [];
+	if (context.flags.phone) viewports.push({ width: null, label: 'the device width' });
+	else viewports.push({ width: 360, label: '360 px' });
+	if (!context.flags.phone && context.flags.setWindowRect) viewports.push({ width: DESKTOP_WINDOW.width, label: '1440 px', desktop: true });
+	try {
+		for (const theme of THEMES) {
+			for (const viewport of viewports) {
+				const load = async (urlPath, landsAt) => {
+					if (viewport.desktop) {
+						// The theme is chosen before the page loads: a reload would
+						// lose the arrival notice, which shows only once.
+						await topFrame(context);
+						await context.session.setWindowRect({ ...DESKTOP_WINDOW });
+						await context.go('/404.html');
+						await context.script(SET_THEME, [theme]);
+						await context.go(urlPath);
+					} else {
+						await loadAtWidth(context, viewport.width, urlPath, theme, landsAt);
+					}
+					checkTheme(context, await context.script(OVERFLOW), theme, `${viewport.label}, ${urlPath}`);
+				};
+				const at = `${viewport.label}, ${theme}`;
+
+				// The open list, with the absent page's note on v0.3.0.
+				await load(`/${FIXTURE_ONLY}`);
+				const open = await context.openSelector();
+				const missing = open.links.find((link) => link.label === OLDEST);
+				context.expect(missing?.note, `${at}: the ${OLDEST} link carries no note to scan.`);
+				await axeScan(context, `${at}, ${FIXTURE_ONLY_PATH} with the list open`);
+
+				// The arrival notice, reached through that link's address.
+				await load(missing.rawHref, missing.rawHref.split('?')[0]);
+				await waitUntil(async () => (await context.script(NOTICE))?.text, { message: 'the arrival notice' });
+				await axeScan(context, `${at}, ${OLDEST}'s overview with the arrival notice`);
+
+				// The release index with the list open.
+				await load('/versions/');
+				await context.openSelector();
+				await axeScan(context, `${at}, /versions/ with the list open`);
+			}
+		}
+	} finally {
+		await topFrame(context).catch(() => {});
+		await restoreWindow(context);
+		await restoreTheme(context);
+	}
+}
+
 export const CHECKS = [
 	{ id: 1, name: 'shared page and heading', run: sharedPage },
 	{ id: 2, name: 'absent page', run: absentPage },
@@ -1252,6 +1337,7 @@ export const CHECKS = [
 	{ id: 11, name: 'keyboard switching', run: keyboardSwitching },
 	{ id: 12, name: 'static markup', run: staticMarkup },
 	{ id: 13, name: 'index loading', run: indexLoading },
+	{ id: 14, name: 'accessibility scan', run: accessibilityScan },
 ];
 
 // ---------------------------------------------------------------------------
