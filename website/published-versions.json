@@ -1,5 +1,16 @@
 {
   "schemaVersion": 1,
-  "releases": [],
+  "releases": [
+    {
+      "tag": "v0.3.0",
+      "commit": "0f4f5033b317a334d89e3cf14ab98684e0598ddd",
+      "sourceDate": "2026-11-03",
+      "path": "/versions/v0.3.0/",
+      "asset": "labrador-docs-v0.3.0.tar.gz",
+      "bytes": 8853554,
+      "sha256": "c61377d4f4cb67d9b83d65e160cf14192f75ded07771a252b6a4c02fdab46602",
+      "published": "2026-11-03"
+    }
+  ],
   "errata": []
 }

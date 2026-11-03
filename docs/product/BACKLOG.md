@@ -45,8 +45,8 @@ A/AA scan, and NVDA is heard announcing the notice; the iOS Simulator runs
 only on request until reliable (`SITE#5`). The owner decided on 2026-11-03
 not to hold `v0.3.0` for the iOS Simulator, so `SITE#5` stays open on its own,
 and the owner's iPhone use that day, which found `SITE#4`, stands as the
-informal phone play. What remains is `v0.3.0`'s snapshot published and its
-deploy checked. Immutable releases were enabled on 2026-10-27.
+informal phone play. `v0.3.0`'s snapshot was published on 2026-11-03; what remains is checking
+its deploy. Immutable releases were enabled on 2026-10-27.
 
 ## Now
 
