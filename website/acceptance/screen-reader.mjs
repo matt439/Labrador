@@ -11,6 +11,7 @@
 // CI is set. The runner prepares NVDA first:
 //   npm install --no-save @guidepup/guidepup @guidepup/setup
 //   npx guidepup setup --ci
+//   npx guidepup install nvda
 //
 // Usage: node acceptance/screen-reader.mjs --serve-dist <dist>
 //   [--browser chrome|edge] [--driver <path>] [--binary <path>] [--listen <seconds>]

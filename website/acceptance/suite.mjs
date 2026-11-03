@@ -235,6 +235,14 @@ const MENU_OPEN = `
 	const pane = document.querySelector('#starlight__sidebar');
 	return !!pane && pane.matches(':popover-open');`;
 
+// True when the page shows a menu button and its menu is closed.
+const MENU_HIDDEN = `
+	const button = document.querySelector('button.sl-menu-button');
+	const pane = document.querySelector('#starlight__sidebar');
+	if (!button || !pane || pane.matches(':popover-open')) return false;
+	const box = button.getBoundingClientRect();
+	return box.width > 0 && box.height > 0 && getComputedStyle(button).visibility !== 'hidden';`;
+
 const SCROLL_INTO_VIEW = 'arguments[0].scrollIntoView({ block: "center", inline: "nearest" });';
 
 const NOTICE = `
@@ -389,10 +397,20 @@ class Context {
 		return count;
 	}
 
+	// At a phone's width the sidebar, and the selector in it, is the menu
+	// behind the header's menu button: a reader opens that first.
+	async revealSidebar() {
+		if (!(await this.script(MENU_HIDDEN))) return;
+		const menu = await this.session.findElement('button.sl-menu-button');
+		await this.activate(menu);
+		await waitUntil(() => this.script(MENU_OPEN), { message: 'the phone menu to open' });
+	}
+
 	// Opens the selector by clicking or tapping its summary and waits until
 	// the version list is shown, or with { staticOnly } until loading ends.
 	async openSelector({ staticOnly = false } = {}) {
 		const before = await this.countOpenings();
+		await this.revealSidebar();
 		const summary = await this.session.findElement('[data-version-select] summary');
 		await this.activate(summary);
 		return this.waitForList({ staticOnly, after: before });
@@ -986,17 +1004,22 @@ async function search(context, label, query) {
 		const links = [...dialog.querySelectorAll('.pagefind-ui__result-link')];
 		return {
 			message: message ? message.textContent.trim() : '',
+			typed: dialog.querySelector('.pagefind-ui__search-input')?.value ?? null,
 			more: !!more,
 			pages: dialog.querySelectorAll('li.pagefind-ui__result').length,
 			links: links.map((a) => ({ href: a.href, text: a.textContent.trim() })),
 		};`);
+	let last = null;
 	let results = await waitUntil(async () => {
 		const found = await read();
+		last = found;
 		if (!found.message.includes(query)) return null;
 		if (/^No results/.test(found.message)) return { ...found, count: 0 };
 		const count = /^(\d+) results?/.exec(found.message);
 		return count && found.links.length > 0 ? { ...found, count: Number(count[1]) } : null;
-	}, { timeoutMs: 15_000, message: `search results for "${query}" on ${label}` });
+	}, { timeoutMs: 15_000, message: `search results for "${query}" on ${label}` }).catch((error) => {
+		throw new Error(`${error.message} The box held ${JSON.stringify(last?.typed)} and the message read ${JSON.stringify(last?.message)}.`);
+	});
 	// Each result is a page. The box shows five at a time behind "Load more
 	// results", which loses presses while a page of results is arriving, so
 	// every result's address is read instead from the Pagefind module the box

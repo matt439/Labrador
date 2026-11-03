@@ -257,5 +257,6 @@ jobs:
           npm ci
           npm install --no-save @guidepup/guidepup @guidepup/setup
           npx guidepup setup --ci
+          npx guidepup install nvda
       - name: Does NVDA speak the notice?
         run: node acceptance/screen-reader.mjs --serve-dist "$env:RUNNER_TEMP/dist"
