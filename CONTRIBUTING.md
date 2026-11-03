@@ -23,7 +23,8 @@ A security vulnerability is not an issue: report it privately as
 around the gap, which the change would let it delete. That is PHILOSOPHY's T1
 applied to intake - mechanisms are extracted from a client game in hand - so a
 request with no workaround behind it is answered as a question about whether a
-client needs the change. Check the gap against current `master` rather than
+client needs the change. Check the gap against current `master` (reading CHANGES.md on master is
+enough) rather than
 the revision your project pins, because a gap master has already closed is
 answered by moving the pin. Name the trade-off you think applies.
 
@@ -84,8 +85,9 @@ gh label create declined --color b60205 --description "Request declined; the clo
    checks this before merging, because nothing else does.
    A commit that changes what `samples/minimal/` does or how it builds, or an
    engine behaviour that folder depends on, in a way a copy of it would want,
-   adds a line to the change list in
-   [samples/minimal/README.md](samples/minimal/README.md) in the same commit.
+   adds a dated line to the change list in
+   [samples/minimal/README.md](samples/minimal/README.md) in the same commit;
+   the rebase-merge changes the commit's id, so the release commit adds the entry's commit id (step 2).
    A commit that changes a dependency in `vcpkg.json` changes the notices list
    a game's release carries,
    [website/src/components/ReleaseNotices.astro](website/src/components/ReleaseNotices.astro),
@@ -229,7 +231,9 @@ cut once PHILOSOPHY's settle criterion has run.
    authored, which is the author date a rebase-merge keeps; a batch with no
    entry gets the heading with nothing under it. Its message says
    `not consumer-visible` for the `vcpkg.json` change, which CHANGES.md's
-   *Entries* explains.
+   *Entries* explains. It also adds the master commit's id to each entry in
+   [samples/minimal/README.md](samples/minimal/README.md)'s change list that
+   lacks one, found with `git log -S` on the entry's text.
 
    **For `v0.3.0`, qualify documentation versioning before the tag is cut.**
    It is the first release with a complete immutable snapshot; `v0.1.0` and

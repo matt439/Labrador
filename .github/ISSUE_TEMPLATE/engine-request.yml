@@ -26,17 +26,24 @@ body:
   - type: input
     id: revision
     attributes:
-      label: Engine revision checked against
-      description: The commit hash of current master you checked this against. A gap already closed on master is answered by moving your pin.
+      label: Engine revision
+      description: The commit hash your project uses. A project made from a starter ZIP has it in its README.txt, on the line starting "Labrador commit:"; paste that line and the "Labrador version:" line, both on this one line. A project with the engine as a submodule has it from `git -C external/labrador rev-parse --short HEAD`.
       placeholder: "e.g. 65116c3"
     validations:
       required: true
+  - type: input
+    id: master-revision
+    attributes:
+      label: Current master checked against (optional)
+      description: If you built or read current master, its commit hash. A gap already closed on master is answered by moving your pin.
+      placeholder: "e.g. 65116c3"
   - type: checkboxes
     id: checked-master
     attributes:
       label: Checked against master
+      description: "[CHANGES.md on master](https://github.com/matt439/Labrador/blob/master/CHANGES.md) lists every change newest first: its Unreleased section, if it has one, and each release newer than yours. Reading it needs no Git."
       options:
-        - label: I checked that the gap is still present on current master, not only on the revision my project pins.
+        - label: I read CHANGES.md on master, its Unreleased section if it has one and every release newer than mine, and found nothing that closes this gap.
           required: true
   - type: input
     id: trade-off

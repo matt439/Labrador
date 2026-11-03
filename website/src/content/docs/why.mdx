@@ -214,9 +214,22 @@ was measured.
 Labrador runs on **Windows** and in a **desktop browser**. The Windows build uses the
 [tools in Get Started](/docs/get-started/prerequisites/); its OpenGL renderer reaches the
 browser as WebGL2, through Emscripten.
-All six samples run there today. The full CI sweep loads each sample's page in headless Chrome and
-quits it the sample's own way, and LineSweeper has also been checked in Firefox. In Safari, only
-LineSweeper's live demo has been tried: loaded and played briefly in Safari 27.0.1 on macOS.
+All six samples run there today. Each desktop browser has been checked this far, and no further:
+
+- **Chrome**: the full CI sweep loads each of the six samples' pages in headless Chrome and quits
+  it the sample's own way, and CI's `wasm-consumer` job builds a starter project as a page and
+  quits it in Chrome, for every change to code.
+- **Edge**: on 31 October 2026, a starter project's page built by
+  [Build for the browser](/docs/guides/browser/) passed the page runner in Edge 156. No sample's
+  page has been run in it.
+- **Firefox**: headless Firefox 157 drew LineSweeper's development page, took its keys and quit
+  it, by 13 October 2026. On 28 October 2026, headless Firefox 158.0.1 ran the other five samples'
+  pages (each drawing, taking its keys and quitting) and the browser window's input test, through
+  a separate WebDriver BiDi runner. No pixel was read back and nothing was listened to.
+- **Safari**: only LineSweeper's live demo has been tried, loaded and played briefly in Safari
+  27.0.1 on macOS on 3 November 2026.
+
+None of these was on a phone, with a real touchscreen or with a physical gamepad.
 
 Phones are a planned phase, not a supported platform. The browser build has touch controls and
 a layout for a phone held upright, but they have been played only under Chrome's touch

@@ -21,8 +21,8 @@ awkward" loudly enough to be worth fixing. It used to live in this tree. It
 does not any more, and that is the point of the arrangement rather than an
 accident of it — see [The wall](#the-wall).
 
-*(ColourWars is a private repository, so its link is omitted rather than left
-to 404. Nothing here depends on it: this repository builds, tests and
+*([ColourWars](https://github.com/matt439/ColourWars) is a public repository
+of its own. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
 Six samples come with it, and they answer different questions.
@@ -50,7 +50,7 @@ says why they are copied, and when one would move into the engine.
 ```
 engine/    ~43k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
-tests/     ~28k lines   doctest, run by ctest with five more that sit beside their samples
+tests/     ~38k lines   doctest, run by ctest with five more that sit beside their samples
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
@@ -76,10 +76,10 @@ images of every frame they draw. Audio is a seam
 of its own: XAudio2, Web Audio in a browser, or a null one that records what it
 was asked to play. The `wasm-debug` and `wasm-release` presets build the engine
 and the samples for a browser with Emscripten, drawing through WebGL2 with the
-OpenGL backend. All six samples run there, LineSweeper has also been checked in
-Firefox. In Safari, only LineSweeper's live demo has been tried: loaded and
-played briefly in Safari 27.0.1 on macOS. Phones are a planned phase, not a
-platform.
+OpenGL backend. All six samples run there, checked in headless Chrome and
+headless Firefox, and a starter's page in Edge. In Safari, only LineSweeper's
+live demo has been tried: loaded and played briefly in Safari 27.0.1 on macOS.
+Phones are a planned phase, not a platform.
 
 Why each backend exists is in [ARCHITECTURE](docs/design/ARCHITECTURE.md),
 *Modules*; where the browser build stands is in
@@ -164,7 +164,7 @@ target_link_libraries(YourGame PRIVATE LabradorEngine labrador_settings)
 target_include_directories(YourGame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 ```
 
-Three things worth knowing:
+Four things worth knowing:
 
 - **You get the library and nothing else.** The tests, the benchmark and the
   samples are behind `PROJECT_IS_TOP_LEVEL`, so consuming Labrador does not put

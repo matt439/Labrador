@@ -31,10 +31,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import assemble  # noqa: E402
 
 TOP = "mygame"
-GET_STARTED = "https://labradorengine.com/docs/get-started/"
+SITE = "https://labradorengine.com"
+# The development site's Get Started, which moves on with master.
+GET_STARTED = f"{SITE}/docs/get-started/"
 TAG = re.compile(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 # The earliest time a ZIP entry can hold.
 EARLIEST = (1980, 1, 1, 0, 0, 0)
+
+
+def release_get_started(tag: str) -> str:
+    """A release's own Get Started, in its documentation snapshot (docs/website-versioning.md)."""
+    return f"{SITE}/versions/{tag}/docs/get-started/"
 
 
 def git(engine: Path, *arguments: str) -> str:
@@ -73,7 +80,16 @@ def readme(engine: Path, release: str | None) -> bytes:
     commit = git(engine, "rev-parse", "HEAD")
     if release:
         version = release
+        guide = [
+            f"    {release_get_started(release)}",
+            "",
+            "Those pages are this release's own. The development site's,",
+            "which describe the newest engine and may differ from yours, are:",
+            "",
+            f"    {GET_STARTED}",
+        ]
     else:
+        guide = [f"    {GET_STARTED}"]
         version = f"a development build, not a release (its vcpkg.json says {version_string(engine)})"
         if git(engine, "status", "--porcelain"):
             commit += ", with uncommitted changes"
@@ -89,7 +105,7 @@ def readme(engine: Path, release: str | None) -> bytes:
         "How to build and run it, step by step, starting from a Windows",
         "machine with nothing installed:",
         "",
-        f"    {GET_STARTED}",
+        *guide,
         "",
         "In short, in the x64 Native Tools Command Prompt, from this folder:",
         "",

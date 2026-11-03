@@ -30,7 +30,7 @@ export default defineConfig({
 		starlight({
 			title: 'Labrador',
 			description:
-				'A 2D game engine for developers who want to write games in ordinary C++ and understand the machinery beneath them.',
+				'A 2D game engine for people who want to build games in ordinary C++ and be able to read everything underneath them.',
 			favicon: '/favicon.svg',
 			logo: { src: './src/assets/mark.svg', alt: '', replacesTitle: false },
 			social: [{ icon: 'github', label: 'Labrador on GitHub', href: GITHUB_REPOSITORY }],

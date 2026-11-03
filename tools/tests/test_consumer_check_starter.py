@@ -152,11 +152,15 @@ class StarterZipTests(unittest.TestCase):
         with zipfile.ZipFile(self.write("release.zip", "v0.3.0")) as archive:
             text = archive.read("mygame/README.txt").decode("ascii")
         self.assertIn("Labrador version: v0.3.0\r\n", text)
-        self.assertIn(starter_zip.GET_STARTED, text)
+        self.assertIn("    https://labradorengine.com/versions/v0.3.0/docs/get-started/\r\n", text)
+        self.assertLess(text.index("/versions/v0.3.0/"), text.index(f"    {starter_zip.GET_STARTED}\r\n"))
+        self.assertTrue(all(len(line) <= 80 for line in text.splitlines() if not line.startswith("Labrador ")))
         with zipfile.ZipFile(self.write("dev.zip")) as archive:
             text = archive.read("mygame/README.txt").decode("ascii")
         self.assertIn("not a release (its vcpkg.json says 0.3.0)", text)
         self.assertNotIn("uncommitted", text)  # out/ is ignored
+        self.assertIn(f"    {starter_zip.GET_STARTED}\r\n", text)
+        self.assertNotIn("/versions/", text)
         self.assertTrue(all(len(line) <= 80 for line in text.splitlines() if not line.startswith("Labrador ")))
         (self.engine / "engine/core/thing.h").write_bytes(b"#pragma once\n// edited\n")
         with zipfile.ZipFile(self.write("edited.zip")) as archive:

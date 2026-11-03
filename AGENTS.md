@@ -11,8 +11,8 @@ The authoritative design documents are
 [ARCHITECTURE.md](docs/design/ARCHITECTURE.md) (targets, modules and dependency
 direction), and [CONVENTIONS.md](docs/design/CONVENTIONS.md) (naming and style).
 
-This is the standalone C++20 engine repository. ColourWars is a separate,
-private client that consumes it as a submodule; nothing here depends on it.
+This is the standalone C++20 engine repository. ColourWars is a separate
+client that consumes it as a submodule; nothing here depends on it.
 The six samples are `minimal` (the new-project template, with rules tests and
 `--smoke-test`), `collision`, `audio`, `local_multiplayer`, `components`
 (copyable option-row and slider code, not an engine library), and `linesweeper`.
@@ -334,9 +334,9 @@ Unverified findings are questions to check before acting: D3D12 §6, Vulkan §7
 and Vulkan's unresolved minimize/platform-surface questions remain in TODO.md.
 Deleting a false sentence does not itself answer the question it got wrong.
 
-`docs/review/colourwars-reports/` is the engine's decision on private client
-reports, not a review of this tree. Keep its README table current in the commit
-answering a report; describe workarounds generically without private detail.
+`docs/review/colourwars-reports/` is the engine's decision on client reports,
+not a review of this tree. Keep its README table current in the commit
+answering a report; describe workarounds generically, as its README requires.
 The moved brief's narrative and relocation map are preserved in
 [the dated record](docs/2026-10-26-agent-brief-history.md).
 
