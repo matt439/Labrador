@@ -130,8 +130,9 @@ rename its check. The required contexts are exactly these seventeen:
 The first twelve are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
 and the last five are jobs in
 [.github/workflows/website.yml](.github/workflows/website.yml).
-That workflow's `acceptance (ios)` and `acceptance (nvda)` stay advisory until
-they pass reliably
+The iOS Simulator and NVDA targets run only on request, in
+[.github/workflows/acceptance-trial.yml](.github/workflows/acceptance-trial.yml),
+until they pass reliably
 ([the suite](docs/website-versioning.md#browser-acceptance-suite)).
 
 **A change that touches only documentation is linted, not built**: when

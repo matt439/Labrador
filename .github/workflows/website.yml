@@ -185,14 +185,13 @@ jobs:
   # One job per browser. Chrome and Firefox use the runner's own drivers
   # (CHROMEWEBDRIVER, GECKOWEBDRIVER). Safari and Safari in the iOS Simulator
   # use safaridriver, which must be enabled once with sudo; the suite boots
-  # the newest runtime's first iPhone. The iOS job is advisory: the
-  # simulator's Safari is slow to accept a session and sometimes takes a
-  # composed tap as a long press, so its failures are read, not gated on.
+  # the newest runtime's first iPhone. The iOS Simulator and NVDA are not
+  # run here until they pass reliably: acceptance-trial.yml runs them on
+  # request (SITE#5).
   acceptance:
     name: acceptance (${{ matrix.target }})
     needs: acceptance-fixture
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.target == 'ios' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -203,7 +202,6 @@ jobs:
           - { target: chrome, os: ubuntu-latest }
           - { target: firefox, os: ubuntu-latest }
           - { target: safari, os: macos-latest }
-          - { target: ios, os: macos-latest }
     defaults:
       run:
         working-directory: website
@@ -233,37 +231,3 @@ jobs:
           name: acceptance-report-${{ matrix.target }}
           path: ${{ runner.temp }}/report
           retention-days: 14
-
-  # Whether NVDA speaks the arrival notice. Not a required check: whether a
-  # hosted runner's NVDA can be driven reliably is itself unproven, so a
-  # failure here is read from its log rather than blocking a merge.
-  acceptance-screen-reader:
-    name: acceptance (nvda)
-    needs: acceptance-fixture
-    runs-on: windows-latest
-    continue-on-error: true
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    defaults:
-      run:
-        working-directory: website
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: website/package-lock.json
-      - uses: actions/download-artifact@v4
-        with:
-          name: acceptance-fixture
-          path: ${{ runner.temp }}/dist
-      - name: Install Guidepup and NVDA
-        run: |
-          npm ci
-          npm install --no-save @guidepup/guidepup @guidepup/setup
-          npx guidepup setup --ci
-          npx guidepup install nvda
-      - name: Does NVDA speak the notice?
-        run: node acceptance/screen-reader.mjs --serve-dist "$env:RUNNER_TEMP/dist"

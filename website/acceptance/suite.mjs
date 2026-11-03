@@ -398,7 +398,7 @@ class Context {
 	// A finger's tap on a phone, and at phone widths where the target has
 	// touch. On the iOS Simulator safaridriver's element click does not open
 	// Starlight's menu at all, and a composed tap is sometimes taken as a long
-	// press; the iOS job is advisory until that is resolved.
+	// press; CI runs the iOS target only on request until that is resolved.
 	async activate(element) {
 		if (this.flags.phone || this.touchInput) {
 			await this.script(SCROLL_INTO_VIEW, [element]);
