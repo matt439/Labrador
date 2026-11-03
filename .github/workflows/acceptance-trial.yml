@@ -7,7 +7,8 @@
 #
 # ios: Safari in the newest iOS Simulator. Its safaridriver cannot touch
 # anything below the page's first screen (see touchAtPagePoint in
-# website/acceptance/browsers.mjs), so the release index check fails there.
+# website/acceptance/browsers.mjs), so the release index check does not
+# follow its link there; taps still sometimes register as long presses.
 
 name: acceptance trial
 
