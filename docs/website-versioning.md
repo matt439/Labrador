@@ -332,7 +332,7 @@ run of the website workflow. `fixture.mjs` clones the checkout's `HEAD`, builds
 and packs a `v0.3.0` snapshot, adds one guide, builds and packs `v0.4.0`, and
 assembles both into the development site with one erratum on `v0.3.0`. It
 names no real release and needs no network beyond npm. `suite.mjs` serves that
-build with the host's 404 behaviour and runs thirteen checks: a shared page and
+build with the host's 404 behaviour and runs fourteen checks: a shared page and
 heading kept across every switch; a page `v0.3.0` lacks leading to its overview
 with a note in the link and an arrival notice in an initially empty
 `role=status` region; keyboard opening, walking and switching; phone widths of
@@ -340,8 +340,10 @@ with a note in the link and an arrival notice in an initially empty
 widths, no sideways scroll, 44-pixel targets and the selector after the pages;
 the release index against `index.json`; search confined to each version; each
 version's 404 page; the static list when the index cannot be fetched or is
-still loading; and the served markup without JavaScript. `suite.mjs` states
-each check.
+still loading; the served markup without JavaScript; and axe-core's WCAG 2.x
+A and AA rules on the open list with an absent page's note, the arrival
+notice and `/versions/`, at 360 and 1440 pixels in both themes. `suite.mjs`
+states each check.
 
 CI builds the fixture once (`acceptance fixture`) and runs the suite as
 `acceptance (chrome)` and `acceptance (firefox)` on Linux and
@@ -353,9 +355,11 @@ intermittently. `acceptance (nvda)` runs
 [screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows, which
 listens for NVDA speaking the notice after a keyboard switch. It is not
 required: whether a hosted runner's NVDA can be driven reliably is itself
-unproven. The suite does not run axe-core, which would be a new dependency, and
-an emulator's layout is not a real phone's: informal play on a real iPhone
-remains the owner's.
+unproven. The scan leaves out Starlight's search button, whose visible
+shortcut hint is not in its accessible name (`SITE#6`), and axe's
+best-practice rules, which judge Starlight's page structure rather than what
+versioning adds. An emulator's layout is not a real phone's: informal play on
+a real iPhone remains the owner's.
 
 ## Runtime contract, permanent from v0.3.0
 

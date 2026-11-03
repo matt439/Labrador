@@ -107,7 +107,7 @@ protection for a trivial fix; nobody else does.
 so this list is the record of what those settings must hold. Each name is the
 job's `name:` in its workflow, and the windows jobs are named for their preset
 alone, so changing a matrix entry's `skip_tests` or `vulkan_sdk` does not
-rename its check. The required contexts are exactly these thirteen:
+rename its check. The required contexts are exactly these seventeen:
 
 - `changes`
 - `lint`
@@ -122,15 +122,16 @@ rename its check. The required contexts are exactly these thirteen:
 - `wasm-consumer`
 - `consumer`
 - `website`
+- `acceptance fixture`
+- `acceptance (chrome)`
+- `acceptance (firefox)`
+- `acceptance (safari)`
 
 The first twelve are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
-and the last is the job in
+and the last five are jobs in
 [.github/workflows/website.yml](.github/workflows/website.yml).
-
-That workflow's browser acceptance jobs, `acceptance fixture`,
-`acceptance (chrome)`, `acceptance (firefox)` and `acceptance (safari)`, are
-added to the list once they have passed on `master`; `acceptance (ios)` and
-`acceptance (nvda)` stay advisory until they pass reliably
+That workflow's `acceptance (ios)` and `acceptance (nvda)` stay advisory until
+they pass reliably
 ([the suite](docs/website-versioning.md#browser-acceptance-suite)).
 
 **A change that touches only documentation is linted, not built**: when
