@@ -51,6 +51,9 @@ and amend `web.md` §9 with the result.
 - [ ] Safari masks `RENDERER` as "WebKit WebGL", as assumed, so the device
       strings are unmasked through the extension.
 
+*Amended 2026-11-03:* re-planned as an automated safaridriver run on
+`macos-latest` (`WEB#1` in TODO.md) plus the owner's informal play on the Air.
+
 ## Needs real displays (R5)
 
 - [ ] Frame pacing of the fixed 60 Hz step under `requestAnimationFrame` on a
@@ -160,6 +163,13 @@ answers 404. Each box below was checked against that deploy on 2026-10-13
 from this desktop, in headless Chrome 155, and a later deploy needs them run
 again.
 
+*Amended 2026-11-03:* the host repository's committed `BUILD.json` has
+since named a bundle built at `1e60fb2` (`v0.2.0`); the live page was not
+re-checked against it, and neither were these boxes. Under the
+owner's 2026-11-03 decision the server-side boxes become a script run after
+each deploy, which records its dated output here in place of manual ticks
+(`WEB#12` in TODO.md); the re-sync to `v0.3.0` is `WEB#11`.
+
 - [x] `curl -I` with `Accept-Encoding: br` against the page and the live
       `.wasm`: `application/wasm`, immutable `Cache-Control` under
       `m/<hash>/`, `no-cache` on the page, and `Content-Encoding: br` served
@@ -221,7 +231,8 @@ again.
       fetched the module again from the browser's cache, started from an
       empty board, and played and quit the same way, with no console message
       and no browser warning throughout. **Firefox waits on BDP-06** (the
-      page runner speaks only CDP) and **Safari on SM-09**.
+      Firefox BiDi runner, `run_firefox.mjs`, does not yet cover LineSweeper
+      or the bundle page: `WEB#10`) and **Safari on SM-09**.
 - [x] The live demo plays the calm top-out (BDP-23). `c369e8b` contains
       `8c69272`, the commit that calmed it, and in headless Chrome a third
       game, Space pressed until the well filled, showed the stack on every
@@ -255,7 +266,10 @@ again.
 - [ ] A real context loss (GPU reset, or a tab hidden while it is lost) shows
       and clears the page's message. **Blocked on BDP-06**, which takes a real
       tab switch and a real loss; `RenderContextLossTests` covers the engine
-      half with a forced loss. Not run against this deploy.
+      half with a forced loss. Not run against this deploy. Whether
+      DevTools can drive a real loss (`chrome://gpucrash`) and a real tab
+      switch in Chrome is `WEB#14`; what cannot be automated stays informal
+      play.
 - [x] **Owner decision, 2026-10-27 (`BDP-20`): keep the existing 4.3 MB
       on-demand recording** (4,305,947 bytes); no smaller encode is needed.
       The site's page sets it to `preload="none"` with controls, so it neither
@@ -406,7 +420,8 @@ node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefo
 node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --test WebWindowTests
 ```
 
-Firefox is not in CI and these runs are not ctest entries; Chromium's
+Firefox is not in CI and these runs are not ctest entries (`WEB#10` would
+register them when configure finds a Firefox); Chromium's
 `WebWindowTests` entry runs the same sequence wherever configure finds a
 Chromium.
 

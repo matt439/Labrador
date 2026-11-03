@@ -23,7 +23,7 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-10-27: v0.3.0 gets the first complete immutable documentation snapshot; no earlier-release backfill; implement and verify versioning before cutting it, with no release date promised | SITE#3 |
 | Decided 2026-10-27: the Windows samples/template default to per-monitor DPI awareness; implemented, and the reviewed 150% scaling run remains | OCA-66 |
 | Decided 2026-10-30: the outside adopter's floor is someone with very little programming experience who wants to play around, not 'some C++'. Terminal commands and manual setup are acceptable, but every procedure has an exhaustive guide (every command in a copyable block, nothing to infer), which experienced users skip. Python is an acceptable tool prerequisite; no bundled installer. Many such readers will not clone with Git, so each release has a starter ZIP needing no Git: download, extract, build, play; Git stays the experienced route. This settles G96's direction without a C++ tutorial or a T10 rewrite | OCA-78, SRL-15 |
-| Owner facts 2026-11-03: ColourWars' repository is public; a current MacBook Air is owned and replaces the 2013 machine as M3's Safari candidate, so the Big Sur ceiling no longer decides M3; the desktop drives its four QHD screens at 60 Hz, and one at 144 Hz with the other three unplugged | DOC#4, SRL-07, SM-09, WEB#1, WEB#2, BDP-07 |
+| Owner facts 2026-11-03: ColourWars' repository is public; a current MacBook Air is owned and replaces the 2013 machine as M3's Safari candidate, so the Big Sur ceiling no longer decides M3; the desktop drives its four QHD screens at 60 Hz, and one at 144 Hz with the other three unplugged; no Radeon GPU is available, because the desktop's integrated Radeon is switched off, so the named low tier cannot be measured on owned hardware until the owner re-enables it or names another tier (open: SM-01) | DOC#4, SRL-07, SM-09, WEB#1, WEB#2, BDP-07, SM-01, SM-07, PI-14 |
 | Decided 2026-11-03: a check that can be written as a list is automated, and runs on every change it covers; the owner's manual testing is informal play on real hardware, reporting whatever looks wrong, not a scripted checklist. An acceptance criterion written as an owner checklist is re-planned as an automated suite plus, where only a person can judge (listening, a pad's feel, visible judder, real-device numbers), informal play | SITE#3, WEB#1, SM-09, SM-13, BDP-06, OCA-48, PI-21, WEB#2, WEB#3, WEB#5, BDP-07, REV#3, REV#8, REV#12, OCA-66 |
 | Decided 2026-11-03: cut `v0.3.0` without waiting for the iOS Simulator acceptance job to pass reliably; `SITE#5` stays open as its own item and no longer gates a release | SITE#3, SITE#5 |
 
@@ -93,6 +93,12 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[SM-20](STORIES.md#sm-20)** Must · XS · The Sole Owner-Maintainer: Write the merge procedure into the tree
 - [x] **[SM-22](STORIES.md#sm-22)** Should · XS · The Sole Owner-Maintainer: One agent brief, not two copies — after SM-20
 - [x] **[SM-12](STORIES.md#sm-12)** Must · S · The Sole Owner-Maintainer: Make the records say the demo is live, and tick its server-side deploy checks against it
+  *Amended 2026-11-03 by the persona re-review:* the ticks were taken against
+  the `v0.1.0` deploy of 2026-10-13. The host repository's committed
+  `BUILD.json` has since named a bundle built at `1e60fb2` (`v0.2.0`); the
+  live page was not re-checked against it, and the record says a later
+  deploy needs the checks run again. Under the 2026-11-03 decision that listable check is
+  a script run after each deploy (`WEB#12` in TODO.md), not dated manual ticks.
 - [x] **[BDP-23](STORIES.md#bdp-23)** Must · S · The Browser and Phone Demo Player: Check the top-out burst against flash limits
 - [x] **[OCA-03](STORIES.md#oca-03)** Must · S · The Outside C++ Adopter: Try LineSweeper in my browser from the site and the README — after SM-12, BDP-23
 - [x] **[OCA-01](STORIES.md#oca-01)** Must · S · The Outside C++ Adopter: One answer to 'where does it run?' on every public page
@@ -116,6 +122,11 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 - [x] **[OCA-16](STORIES.md#oca-16)** Could · XS · The Outside C++ Adopter: First-change sends me on to the guides
 - [x] **[OCA-13](STORIES.md#oca-13)** Should · XS · The Outside C++ Adopter: The template's comments describe public code and the current content rule
 - [x] **[OCA-15](STORIES.md#oca-15)** Should · S · The Outside C++ Adopter: The template folder tells me how to copy it and what changed — after OCA-13, OCA-68
+  *Amended 2026-11-03 by the persona re-review:* the 23 entries in
+  `samples/minimal/README.md`'s change list that lacked a commit id were
+  back-filled on 2026-11-03. Since the rebase-merge rewrites a commit's id,
+  the release preparation now back-fills the ids of entries added since the
+  previous tag ([CONTRIBUTING.md](../../CONTRIBUTING.md)).
 - [x] **[OCA-34](STORIES.md#oca-34)** Must · S · The Outside C++ Adopter: Get the content tools and the commands to make sprites and fonts
 - [x] **[OCA-37](STORIES.md#oca-37)** Must · XS · The Outside C++ Adopter: Know whether I may ship the template font, before I copy it — after OCA-34
 - [x] **[OCA-55](STORIES.md#oca-55)** Should · XS · The Outside C++ Adopter: Know that layer_depth orders nothing
@@ -148,7 +159,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 | SRL-03 | G36: concept pages say false things about the samples they cite, and the quote check cannot catch prose. |
 | OCA-73 | G148 (merged with SM-42): a public repository with no private vulnerability route; delay compounds with exposure. The setting is owner-only. |
 | OCA-72 | G21 (merged with PI-07): no stated route for questions and exhibit-backed requests. Same PR as SECURITY.md; PI-09 files into it in Next. |
-| OCA-68 | G18 (merged with PI-01, SM-34, PI-02): no consumer-visible change list, and every merge without one widens the backfill (test 1). The backfill to 4cefb68 serves ColourWars' next ordinary bump. |
+| OCA-68 | G18 (merged with PI-01, SM-34, PI-02): no consumer-visible change list, and every merge without one widens the backfill (test 1). The backfill to 4cefb68 serves ColourWars' next ordinary bump. *Amended 2026-11-03 by the persona re-review:* the third criterion has one recorded failure, `0c15f34` (2026-10-21), which changed a comment in `engine/CMakeLists.txt` without a CHANGES.md entry or `not consumer-visible`; `v0.2.0`'s release audit caught it and CHANGES.md names it as the exception. Only that manual audit checks the rule; automating it is `CI#3` in TODO.md. |
 | SM-21 | G134: required contexts are matrix strings held only in GitHub settings; renaming an entry wedges PRs. Must precede adding the consumer job's context. |
 | OCA-11 | G08 (merged with PI-06): nothing builds the project shape Get Started teaches. The only M in Now; it consumes the PR's own engine tree from a short path (critique). |
 | OCA-09 | G06: Get Started's long-path advice fails as written (seven C1083 failures observed). |
@@ -183,7 +194,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - A Release package staged by the template's install rules has run on a clean Windows install, and its runtime requirement, notice list, OS and hardware floor and backend choice are stated
 - An adopter can install the pinned Emscripten and add a browser build to their own project from public pages, with gl as the browser default, hosting requirements and an honest browser list
 - Every game-facing reference page says how a game obtains the type, links the guide that teaches it and names members correctly
-- The physical-pad session, the MacBook Air's Safari ceiling and the first iGPU step (AMD driver plus per-app preference) are recorded
+- The physical-pad session, the MacBook Air's Safari ceiling and the first iGPU step (AMD driver plus per-app preference) are recorded. *Amended 2026-11-03 by the persona re-review:* the Safari ceiling is recorded (SM-09); the pad session is informal play under the 2026-11-03 decision; the iGPU term waits on the owner's SM-01 decision, since no Radeon is available
 - The accessibility position (PHILOSOPHY amendment C) is recorded, the bundle page a host serves is a ctest entry with its failure paths, and the ColourWars drafts are filed
 
 **Lands as**
@@ -225,6 +236,11 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[SM-36](STORIES.md#sm-36)** Should · S · The Sole Owner-Maintainer · **Owner**: A cadence for moving ColourWars' engine pin — after OCA-70, OCA-68
 - [x] **[FES-04](STORIES.md#fes-04)** Should · XS · The Full-Environment Seeker (anti-persona): 'What Labrador is not' covers every want the seeker arrives with and names the alternatives — after FES-03
 - [x] **[FES-02](STORIES.md#fes-02)** Could · XS · The Full-Environment Seeker (anti-persona): Get Started points at the exclusions before it asks for Visual Studio — after FES-04
+  *Amended 2026-11-03 by the persona re-review:* the non-regression guard
+  that "the five-step path keeps its five cards" was superseded on 2026-10-30
+  by the starter-ZIP path (OCA-78), which has three steps and a separate Git
+  route. The toolchain sentence and the exclusions link still come before the
+  first step card, so the story's main criteria hold.
 - [x] **[SRL-02](STORIES.md#srl-02)** Could · XS · The Sample-Reading Learner: Read Concepts without first building the minimal sample
 - [x] **[SRL-04](STORIES.md#srl-04)** Could · XS · The Sample-Reading Learner: Examples page states LineSweeper's real reading size
 - [x] **[SRL-05](STORIES.md#srl-05)** Could · XS · The Sample-Reading Learner: LineSweeper README's open question states how much the unchecked layer rule covers
@@ -235,8 +251,35 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   hardware. Recorded 2026-11-03: macOS 27.0.1 and Safari 27.0.1, above the
   18.4 floor; the live demo loaded and was played briefly. Left: one full
   match, quit and played again.
+  *Amended 2026-11-03 by the persona re-review:* the ceiling half is met,
+  since Safari 27.0.1 is above the 18.4 floor. Under the 2026-11-03 decision
+  the scripted match, quit and replay is re-planned with `WEB#1` as an
+  automated Safari run on a `macos-latest` runner (safaridriver, which the
+  website workflow already uses), driving CI's `wasm-release` sample pages and
+  bundle through frames, keys, quit and replay, plus the owner's informal play
+  on the Air. If the runner's Safari has no usable WebGL2, that is recorded as
+  the reason the drawing check stays informal on the Air.
 - [ ] **[OCA-48](STORIES.md#oca-48)** Should · S · The Outside C++ Adopter · **Owner**: One physical-pad session: trust the desktop pad mapping and know what a backgrounded game receives
+  *Amended 2026-11-03 by the persona re-review, under the 2026-11-03
+  decision:* the per-button and per-direction mapping criterion is met by
+  SM-40's headless XInput translation test and leaves the owner's part. The
+  owner's part is informal play of an `x64-release` sample with the physical
+  pad, reporting anything wrong, plus one named observation: whether pad
+  input reached the game while another window had focus. That observation,
+  recorded with pad model, Windows build, date and commit but no per-button
+  list, decides the remaining criteria: the `gamepad_reader.h` disclaimer
+  replaced, the input guide's focus-loss note, or a defect in
+  `engine/input/xinput/`.
 - [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
+  *Amended 2026-11-03 by the persona re-review, under the 2026-11-03
+  decision:* the Firefox half is automated rather than played: a bundle mode
+  for the existing BiDi runner, `tests/render/web/run_firefox.mjs`, serves
+  `web-dist/linesweeper/` and plays, quits and plays again with the bundle
+  page test's assertions, registered when a Firefox is found (`WEB#10`).
+  Whether DevTools can drive a real context loss and a real tab switch in
+  Chrome is investigated for the same treatment (`WEB#14`). The physical
+  pad's feel in the browser, and whatever cannot be automated, is informal
+  owner play in OCA-48's session.
 - [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside C++ Adopter: A test target for my game's rules from the start — after OCA-11
 - [x] **[OCA-30](STORIES.md#oca-30)** Must · S · The Outside C++ Adopter: A start-up smoke check for my Windows game — after OCA-29
 - [x] **[OCA-12](STORIES.md#oca-12)** Should · S · The Outside C++ Adopter: The first-build time and public-clone path are observed from a cold cache — after OCA-11
@@ -251,8 +294,27 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-64](STORIES.md#oca-64)** Should · S · The Outside C++ Adopter: Know the minimum hardware and Windows my players need — after OCA-61
 - [x] **[OCA-65](STORIES.md#oca-65)** Should · S · The Outside C++ Adopter: Know which render backend to ship and what to do when a machine refuses it
 - [ ] **[PI-14](STORIES.md#pi-14)** Should · M · The Pinned Submodule Integrator · **Owner**: My release ZIP is known to run on a player's clean Windows machine at a current pin — after OCA-61, SM-36
+  *Amended 2026-11-03 by the persona re-review:* the Radeon criterion is
+  recorded as not run, since no Radeon GPU is available (owner fact
+  2026-11-03), which the criterion allows; it no longer waits on SM-01. The
+  pad match is informal play in OCA-48's session. Under the 2026-10-26
+  decision the run and its record are ColourWars', and the sandbox run was at
+  `v0.2.0` while `v0.3.0` is now cut. Whether Labrador closes PI-14 as
+  delegated or keeps it as an outside event, met when ColourWars records a run
+  at its `v0.3.0` pin, is the owner's call.
 - [x] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside C++ Adopter: Know which controllers work on Windows and how slots are assigned
 - [ ] **[OCA-45](STORIES.md#oca-45)** Should · S · The Outside C++ Adopter: A one-player game that accepts the pad in whatever slot it is in — after OCA-44
+  *Amended 2026-11-03 by the persona re-review:* the open criterion, a dated
+  physical run with two pads after unplugging slot 0, cannot be made on owned
+  hardware, which is one XInput pad. Proposed under the 2026-11-03 decision,
+  for the owner to confirm: move the slot scan from `hello_state.cpp` into a
+  pure function in `samples/minimal/rules` that takes the four slots' states
+  and returns quit and the summed stick, and have MinimalTests assert it with
+  only slot 1 or 3 occupied and with slot 0 empty after a disconnect, with no
+  fake-reader seam added to engine `Gamepads`; the guide keeps quoting the
+  loop. Any physical impression goes into OCA-48's informal pad play. The
+  dated story's note that minimal has no test target is out of date:
+  `samples/minimal/tests` exists.
 - [x] **[OCA-49](STORIES.md#oca-49)** Could · XS · The Outside C++ Adopter: The default disabled menu row looks unavailable
 - [x] **[OCA-52](STORIES.md#oca-52)** Could · XS · The Outside C++ Adopter: The menus guide routes me to the components I can copy
 - [x] **[OCA-53](STORIES.md#oca-53)** Should · M · The Outside C++ Adopter: Keep my players' settings and saves on desktop and in the browser
@@ -266,13 +328,28 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-19](STORIES.md#oca-19)** Could · XS · The Outside C++ Adopter: Know what to do with the browser files the template copy brings — after OCA-20
 - [x] **[OCA-23](STORIES.md#oca-23)** Should · S · The Outside C++ Adopter: Know what my web host must send — after OCA-20
 - [ ] **[OCA-28](STORIES.md#oca-28)** Should · S · The Outside C++ Adopter: Know which browsers my players can be promised — after SM-09, SM-10
+  *Amended 2026-11-03 by the persona re-review:* the 'out of reach on owned
+  hardware' branch assumed the 2013 MacBook Air and is dropped, and the story
+  no longer waits for SM-09 to close. The Safari entry states what has run,
+  with Safari and macOS versions and the date (Safari 27.0.1 on macOS 27.0.1,
+  2026-11-03), and is updated when SM-09 or `WEB#1` records more. The public
+  Safari sentences gain the macOS version in the commit that closes this story.
 - [x] **[OCA-08](STORIES.md#oca-08)** Should · S · The Outside C++ Adopter · **Owner**: Know what accessibility the engine gives my game and what is mine to do — after OCA-05
 - [x] **[BDP-24](STORIES.md#bdp-24)** Could · XS · The Browser and Phone Demo Player: The demo says what it offers players with access needs — after OCA-08
 - [x] **[BDP-03](STORIES.md#bdp-03)** Should · M · The Browser and Phone Demo Player: ctest loads and plays the bundle page a visitor gets
+  *Amended 2026-11-03:* the tested page is the bundle's example, not the
+  host's deployed page; checking the host page is `WEB#13`.
 - [x] **[BDP-04](STORIES.md#bdp-04)** Should · M · The Browser and Phone Demo Player: The bundle page's failure paths are tested — after BDP-03
 - [x] **[PI-05](STORIES.md#pi-05)** Could · S · The Pinned Submodule Integrator: The engine tells my build which revision of it I am shipping — after OCA-67
 - [x] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Assign separate measurements to CPU phases, cadence, GPU execution and pipeline latency
 - [ ] **[SM-01](STORIES.md#sm-01)** Should · S · The Sole Owner-Maintainer · **Owner**: Run the frame bench on the integrated Radeon, not the RTX 5080 — after SM-03
+  *Amended 2026-11-03 by the persona re-review:* the owner reported that no
+  Radeon GPU is available; the desktop's integrated Radeon (1002:13C0) is
+  switched off. This story, SM-07, Next's iGPU exit term and PHILOSOPHY's
+  named low tier all assume it. The owner decides: re-enable it in firmware,
+  so this story proceeds as written; re-plan SM-01 and SM-07, amending
+  PHILOSOPHY's named low tier first with the decision as its reason; or
+  record that the named tier cannot be measured on owned hardware.
 - [x] **[PI-09](STORIES.md#pi-09)** Should · S · The Pinned Submodule Integrator: Recheck and file or withdraw the live reports within the approved disclosure boundary — after OCA-72
 - [x] **[SM-16](STORIES.md#sm-16)** Should · S · The Sole Owner-Maintainer: One index of reviews and which ledger is live — after SM-06
 - [x] **[SM-19](STORIES.md#sm-19)** Could · XS · The Sole Owner-Maintainer: Gate the offline tooling tests in CI — after SM-21
@@ -291,7 +368,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | SRL-02 | G95: Concepts reads without building minimal. Moved to Next by the critique. |
 | SRL-04 | G89: Examples misstates LineSweeper's reading size. Moved to Next by the critique. |
 | SRL-05 | G90: the README's open question understates the unchecked layer rule. Moved to Next by the critique. |
-| SM-09 | G28, G23 (merged with BDP-05): M3's cheapest open question, on owned hardware (Big Sur MacBook Air). Moved to Next before OCA-28 (critique). |
+| SM-09 | G28, G23 (merged with BDP-05): M3's cheapest open question, on owned hardware (Big Sur MacBook Air). Moved to Next before OCA-28 (critique). *Amended 2026-11-03:* the machine is now the owner's current MacBook Air (owner facts), so no Big Sur ceiling applies; see the story's amendment. |
 | OCA-48 | G124, G125 (merged with SM-39): the owner has a physical XInput pad (owner fact), so the wait is gone. One session settles mapping and backgrounded input. |
 | BDP-06 | G23: Firefox, the physical pad in the browser, a real tab switch and a real context loss. The pad is owned, so it moves from Later and shares OCA-48's session. |
 | OCA-29 | G10 (major): no test target for a game's rules. The consumer job (OCA-11, Now) builds it. |
@@ -330,7 +407,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 | PI-05 | G53: no engine revision a consumer can stamp; two present callers (the web bundle and a client). The first tag (Now) gives the fallback value. Closed 2026-10-26: LABRADOR_SOURCE_REVISION exports a configure-time hash/dirty or unknown identity, with an own-root guard for archives. Offline checkout/consumer/dirty-refresh/worktree/unborn/archive/missing-Git and bundle fixtures pass; the existing CI lint job runs them. README documents reconfigure-before-packaging and the bundle build-time distinction. |
 | SM-03 | G26. Closed 2026-10-27 by the owner's decision to split the measurements: [ratchet section 5](../performance/2026-09-19-g6f-ratchet.md#measurement-decision-sm-03) owns the field mapping; PHILOSOPHY's Performance section cites it. CPU update, recording/submission and frame-start cadence have separate p99s. GPU execution and pipeline latency require separate evidence with stated endpoints. The low-tier capture uses the existing presentation pacing and synchronised present; an unsynchronised seam option is not adopted (T5, T8). This Performance amendment was independent of OCA-08's UI position. SM-07 and the low-tier acceptance box remain open; no hardware result is added. |
 | SM-01 | G01 (major): the bench cannot reach the iGPU. The XS first step (AMD driver, per-app preference, no code) moves it to Next beside SM-03 (critique, owner facts); a code option is argued only if that fails. |
-| PI-09 | G74. Closed 2026-10-27 within the owner's minimal engine-focused disclosure boundary. The original fifteen are withdrawn as already answered, with individual dispositions in the [reports table](../review/colourwars-reports/README.md#filing-recheck-2026-10-27). The two newer reports were rechecked at `1b3120b`: 23 is fixed with a failing-before/passing-after native activation regression, and 25 is accepted narrowly with implementation split into PI-21. Both answers use public engine evidence only, so no duplicate issue or private exhibit is needed. |
+| PI-09 | G74. Closed 2026-10-27 within the owner's minimal engine-focused disclosure boundary. The original fifteen are withdrawn as already answered, with individual dispositions in the [reports table](../review/colourwars-reports/README.md#filing-recheck-2026-10-27). The two newer reports were rechecked at `1b3120b`: 23 is fixed with a failing-before/passing-after native activation regression, and 25 is accepted narrowly with implementation split into PI-21. Both answers use public engine evidence only, so no duplicate issue or private exhibit is needed. *Amended 2026-11-03 by the persona re-review:* the story's F8 criterion, a packaging request filed with the client's packaging scripts as its exhibit, was not met as written. F8 reached the engine only as report 15, whose staging half is answered as documentation only; the client kept the runtime-install half out of its filing, so no packaging request was filed. That half is left for PI-10 and PI-11 to decide or drop. |
 | SM-16 | G29: one index of reviews and which ledger is live. Follows SM-06 (Now). Closed 2026-10-26: docs/review/INDEX.md maps every review entry to its live ledger or frozen disposition, owns remaining D3D12/Vulkan candidate tracking and links the verification limits. AGENTS points there; historical review README.md is unchanged. Local paths and anchors were checked. |
 | SM-19 | G32: the offline tooling tests were not gated in CI. Implemented 2026-10-26: the existing Windows lint job runs the tools unittest suite as a non-tolerated step beside the flash suite; priority 3 is tracked in STATUS.md. On 2026-10-27 all 81 local Python tests pass with no skips, superseding the earlier execution-policy blocker. Closed 2026-10-27: a throwaway head of [PR #74](https://github.com/matt439/Labrador/pull/74) at `fb67d6c` added one test that fails on purpose, and the [lint job](https://github.com/matt439/Labrador/actions/runs/40470680489/job/122076786279) went red at *Run the offline tooling tests*: 82 tests ran on windows-latest, the deliberate one failed, the step exited 1 and the job concluded failure. The throwaway commit was then replaced and never merged. |
 | SM-25 | G133: the Vulkan SDK floats and drift is undetected. Implemented 2026-10-26: SDK 1.4.357.0 and its official SHA-256 are pinned, Monday 03:17 UTC forces the full CI matrix, and the page runner logs browser identity. On 2026-10-27 [LunarG metadata](https://vulkan.lunarg.com/sdk/home) confirms the pin/hash. After PR #59's hosted download received HTTP 403, a local GET with default urllib reproduces Cloudflare 403/error 1010; identifying the application as LabradorCI returns 200 from the same URL. The helper now sends that application identity. The exact pin/checksum and terminal handling of HTTP 403 are unchanged. The repaired [PR #59 Vulkan job](https://github.com/matt439/Labrador/actions/runs/40422181511/job/121919076713), at head `0ed6b12`, downloads the pinned SDK, verifies its SHA-256, installs it and passes 18 enabled tests. No scheduled run existed when checked on 2026-10-27. Closed 2026-11-03: the first [scheduled run](https://github.com/matt439/Labrador/actions/runs/41382891595), on 2026-11-02 at `aa8f5a2`, passed all twelve jobs; its Vulkan job downloaded 1.4.357.0 from LunarG, passed the SHA-256 check, installed it and passed 18 tests, and the browser pages logged Chrome/156.0.8078.80. |
@@ -389,7 +466,7 @@ written.
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
 - The demo's failure messages are written for players, it probes support before downloading, pauses on focus loss, honours reduced motion, offers the three agreed colour-vision-deficiency palette groups with their verification status stated, and every landing shadow meets 3:1 contrast
-- Separate low-tier CPU phase and cadence p99s on the integrated Radeon are published with their pacing rule and cadence verdicts, and pipeline latency has its own evidence with stated endpoints; a blocked measurement records its reason and keeps the acceptance item open
+- Separate low-tier CPU phase and cadence p99s on the integrated Radeon are published with their pacing rule and cadence verdicts, and pipeline latency has its own evidence with stated endpoints; a blocked measurement records its reason and keeps the acceptance item open. *Amended 2026-11-03:* no Radeon GPU is available; this term waits on the owner's SM-01 decision.
 - A real iPhone has played the development page and the live demo, with the LAN-serve procedure written in that session; a pacing method exists and runs on the owner's displays are recorded
 - PI-10 has decided each filed report, and only then is the engine staging helper built or declined
 - Golden regenerations leave a review trace, the five-backend-plus-wasm sweep is one command per area, and site preview and rollback are written down
@@ -453,6 +530,7 @@ written.
 53. L53 Preserve representable animation-strip origins through intermediate arithmetic: SM-71
 54. L54 Refuse non-finite stored font metrics before layout: SM-72
 55. L55 Start a project from a release ZIP without Git: OCA-78
+56. L56 The starter project's first push runs green on GitHub: OCA-79 (added 2026-11-03 by the persona re-review)
 
 **Stories**
 
@@ -506,6 +584,16 @@ written.
 - [x] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
 - [x] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
+  *Amended 2026-11-03 by the persona re-review:* the Mac for iOS Web Inspector
+  is the owner's current MacBook Air, not the 2013 machine the dated story
+  names. No LAN-serve procedure exists yet; every serve recipe in the tree
+  binds to loopback (`127.0.0.1`), for example `samples/audio/README.md` and
+  the browser guide. It can be drafted ahead in
+  `docs/port/`: binding to the LAN, which features need a secure context and
+  how to get one, the Web Inspector steps on the Air, and Android Chrome's remote-debugging
+  steps, written but untried until SM-44. The story closes
+  only after the draft has been used in SM-13's iPhone session, as its note
+  requires.
 - [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-14, SM-08
 - [ ] **[BDP-10](STORIES.md#bdp-10)** Could · XS · The Browser and Phone Demo Player: Lift the phone gate after the real iPhone and host layout pass — after SM-13, BDP-09
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
@@ -584,6 +672,11 @@ written.
   160 website tests and the 144-page/433-file build pass. The generated page's
   three live excerpts, key instructions and sidebar/follow-on links were
   inspected with eight content and two navigation checks. No IDE or game ran.
+  *Amended 2026-11-03 by the persona re-review:* the story's criterion asks
+  for the page's steps followed once with the run recorded, not for a person,
+  and the 2026-10-31 runs record that. Whether it closes on them under the
+  2026-11-03 decision, with any person's use of the page becoming informal
+  use, is the owner's call (TODO.md's `OCA-18` row).
 - [x] **[OCA-32](STORIES.md#oca-32)** Could · S · The Outside C++ Adopter: Use the recording renderer in my own tests — after OCA-29
   Closed 2026-10-29. The [testing guide](../../website/src/content/docs/docs/guides/testing.mdx)
   adds a second consumer null-render/audio configure, matching build/test
@@ -599,8 +692,26 @@ written.
   the 143-page build pass; built API/source links were checked. This qualifies
   the native consumer example, not rasterization, browser or device output.
 - [ ] **[OCA-66](STORIES.md#oca-66)** Could · S · The Outside C++ Adopter: Declare per-monitor DPI awareness and review the template at 150% scaling
+  *Amended 2026-11-03 by the persona re-review, under the 2026-11-03
+  decision:* the reviewed 150% run is re-planned in two parts. (a) The
+  declaration is checked automatically: a test or tool reads the embedded
+  manifest of the built minimal executable, and of the installed game in
+  `tools/consumer_check/check_release.py`, and asserts PerMonitorV2, so CI
+  proves on every change that each sample and the Get Started project carry
+  it (`CI#4` in TODO.md). Nothing checks this today. (b) The look at 150% is
+  the owner's informal play with one of the owned QHD screens set to 150%,
+  with no checklist. The story closes when (a) lands and that play has
+  happened, and the release guide's sentence that nobody has looked at the
+  template at 150% is updated then. The dated story's trade-off cites the
+  Radeon low tier, which is unavailable (owner facts).
 - [ ] **[PI-10](STORIES.md#pi-10)** Could · M · The Pinned Submodule Integrator · **Owner**: An upstream answer for each filed report — after PI-09
   - Each report's decision and the commit that answered it: [the reports table](../review/colourwars-reports/README.md#the-decisions).
+  - *Amended 2026-11-03 by the persona re-review:* every report PI-09 dealt
+    with has a recorded answer. The one loose end is F8's runtime-install and
+    packaging half (PI-11), which the client parked rather than filed. The
+    owner decides whether PI-10 closes, with PI-11 parked until an
+    exhibit-backed request is filed (T1), or whether PI-11 is decided now; a
+    decline cites T1 and ARCHITECTURE's *A game project* and drops PI-11.
 - [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
 - [ ] **[PI-11](STORIES.md#pi-11)** Could · M · The Pinned Submodule Integrator: Stage the runtime files the engine makes my game need, without hand-keeping that list — after PI-10, OCA-60
 - [x] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
@@ -913,6 +1024,35 @@ written.
 - [x] **[SM-72](#sm-72)** Should - S - The Outside C++ Adopter, The Sole Owner-Maintainer: Refuse non-finite stored font metrics before layout
 
 - [x] **[OCA-78](#oca-78)** Must - M - The Outside C++ Adopter: Start my own game from a release download, without Git
+
+- [ ] **[OCA-79](#oca-79)** Should - S - The Outside C++ Adopter · **Owner**: My starter project's first push runs green on GitHub — after OCA-78
+
+<a id="oca-79"></a>
+### OCA-79. My starter project's first push runs green on GitHub
+
+Added 2026-11-03 by the persona re-review. The near-beginner floor's own
+route is the starter ZIP, then *Put your project on GitHub*, then the copied
+`ci.yml`, with the engine committed as plain files. That route has never run
+its workflow on GitHub: OCA-33 closed on the submodule walkthrough project,
+and `GUIDE#8` wrote the sign-in, repository, first-push and Actions steps
+from GitHub's documentation without running them
+([Beginner guides](../beginner-guides.md)). No story covered closing it.
+
+**Acceptance**
+
+- A starter ZIP of the current release is extracted and committed as plain
+  files exactly as *Put your project on GitHub* says, and pushed, with the
+  owner's authorisation, to a public test repository under the owner's
+  account; its `ci.yml` runs green on `windows-latest`.
+- The run's URL replaces the sentence in the CI guide (`ci.mdx`) saying such
+  a project has not yet run the workflow on GitHub, and the steps seen for
+  real (push output, the Actions pages) replace *Put your project on
+  GitHub*'s steps written from GitHub's documentation. The Beginner guides' `GUIDE#8` limitation is updated.
+- Automating this at each release (a CI job that pushes the release's ZIP to
+  a test repository with a scoped token and waits for its run) needs a
+  secret, so whether to do it is recorded as the owner's decision.
+- The walkthrough project's own pin moves on its own cadence and is not
+  part of this story.
 
 <a id="oca-78"></a>
 ### OCA-78. Start a project from a release ZIP without Git
@@ -2195,13 +2335,13 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | SM-04 | G63: a local run procedure for the frame bench. Promoted to Should because SM-07 depends on it. |
 | SM-05 | G62: the lock verdict on a non-NVIDIA run. Promoted to Should because SM-07 depends on it (critique). |
 | SM-02 | G25: what the bench's fan-out measures; PHILOSOPHY amendment E at :691-693, after SM-03's amendment D (Next). Promoted to Should (critique). |
-| SM-07 | G24 (major): the low-tier measurements the performance identity rests on. Follows SM-03's per-claim mapping and SM-01's adapter selection; owner-run on the iGPU. CPU update, recording/submission and cadence p99s complete only their part. The pipeline-latency claims and the low-tier acceptance box remain open until separate evidence with stated endpoints exists. |
+| SM-07 | G24 (major): the low-tier measurements the performance identity rests on. Follows SM-03's per-claim mapping and SM-01's adapter selection; owner-run on the iGPU. CPU update, recording/submission and cadence p99s complete only their part. The pipeline-latency claims and the low-tier acceptance box remain open until separate evidence with stated endpoints exists. *Amended 2026-11-03:* no Radeon GPU is available (owner facts), so this story and Later's low-tier exit term wait on the owner's SM-01 decision. |
 | SM-40 | G125. Closed 2026-10-27: the translation is `engine/input/xinput/xinput_gamepad.h`'s `gamepad_state_from_xinput`, and InputTests under the XInput backend fills DirectXTK's state by hand to assert each of the fourteen button bits alone and together, both sticks' y negation, the analogue triggers, a disconnected pad's neutral state and `DEAD_ZONE_NONE`. |
 | SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Closed 2026-10-29. [The method](../port/pacing-method.md) names the console rAF procedure, the `?pacing=` engine-frame export, observed judder and both results templates. In headless Chrome 156 on `wasm-release`, `LineSweeperPacingPageTests` logged per-frame intervals and the marked top-out frame (9,600 live, 0 dropped, CPU 1.6 and 1.5 ms) for both fixture modes, and `LineSweeperPageTests` passed. No display or phone result: those are BDP-07's and SM-13's. |
 | SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |
 | SM-13 | G34, G05 (merged with BDP-08): a real iPhone run. Split from the Android half (SM-44, deferred) per the owner facts. |
 | BDP-10 | Moved from Deferred to Later on 2026-10-27: the owner has no Android access and accepts iPhone-only evidence for lifting the phone gate. The gate stays closed until SM-13 and BDP-09 pass, then its implementation and public support wording are updated together. SM-44 is optional future evidence; this decision verifies no device and makes no Android support claim. |
-| BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. |
+| BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. *Amended 2026-11-03:* no display needs borrowing. The owner's desktop runs its four QHD screens at 60 Hz, and one at 144 Hz with the other three unplugged (owner facts). Interval collection can be scripted, for example a headed `LineSweeperPacingPageTests`-style run on each display, leaving the owner to judge only visible judder. |
 | OCA-46 | G123. Closed 2026-10-29 at 1b5ecee: a two-player JoinState uses source-owned assignments, separate FocusGroup slots and DirectionRepeat clocks, readiness and observed-disconnect handling. The Menus and Local multiplayer guides link the copyable code and state the slot-identity limit. The x64-release D3D11 sample and the wasm-release page in headless Chrome 156 were driven with real key events through joining, separate cursors, leaving, rejoining, READY and the arena, and every frame was looked at. LocalMultiplayerPageTests passes in wasm-release, wasm-debug and wasm-release-null. LocalMultiplayerTests passes 20 cases/84 assertions in wasm-release, wasm-debug and x64-release, 21/831 in wasm-release-null and 25/21258 in x64-debug-null. No physical pad or Gamepad API source has driven the menu. |
 | OCA-51 | G128: a settings screen wired to what the engine can set. Follows OCA-53 (Next). Implementation note 2026-10-28: the dated story predates sound groups; use the existing SoundBank group controls where appropriate rather than adding another volume bus. Keep fullscreen re-sync and callback behavior in the sample. |
 | OCA-50 | G127: a menu that works with a click or a tap, in game code. An engine hit test over `bounds()` was weighed on 2026-10-24 and declined: the one caller, LineSweeper's pause menu (`tapped_row`), sizes each tap target from the row's centre, the row spacing and a minimum width rather than from its bounds alone, because a finger needs more than the text's extent. The target is policy, so the hit test stays the game's (T1; PHILOSOPHY, UI). |
@@ -2223,7 +2363,7 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | PI-17 | G75. Closed 2026-10-27: README's *Using Labrador in a project* and the *Settings and saves* guide say that `read_json_file` and `parse_json` read JSON, that rapidjson is linked `PRIVATE` and named by no engine header, as `engine/CMakeLists.txt` links it, and that a game writing JSON brings its own writer. |
 | PI-18 | G76. Closed 2026-10-27: `cmake/check_engine_includes.cmake` states that its pattern matches only a folder named `game/`, quoted, angle-bracketed or reached through `../`, and that a client folder with another name is not covered. The check stays the one name (T5). |
 | <a id="pi-20"></a>PI-20 | Split out of report 12 on 2026-10-22 and argued in its decision record, which stands in for a STORIES.md entry: object-member enumeration and unknown-key refusal in manifest/sprite-sheet loaders (T6). Implemented 2026-10-29 with copied `JsonValue::keys()` names and one assets-private helper at nine fixed schemas; custom kinds/names and game-owned JSON remain unrestricted. CHANGES.md describes the migration. [Implementation and checks](../2026-10-29-strict-asset-keys.md) record 66 cases/444 assertions passing in native Debug, Debug-null and Release-null. On 2026-10-29 the twelve new cases ran and passed under Node in wasm-release, wasm-debug and CI's wasm-release-null override. CI run 40836037123 passed all twelve jobs at a commit containing the change, so the story is closed. |
-| <a id="pi-21"></a>PI-21 | Split out of report 25 on 2026-10-27: slot-addressed, two-motor vibration transport and explicit stop, with game-owned timing, effects, preferences and routing. The [decision record](../review/colourwars-reports/vibration.md) stands in for a STORIES.md entry and owns acceptance. Settle portable lifetime/result semantics before publishing an API; validate requests, report unavailable output, cancel on suspend/teardown without stale replay, and test observable native/browser transport. Physical output evidence stays separate. Added to L26 after PI-20; the current Next order is unchanged. Implemented 2026-10-27: `Gamepads::vibrate(slot, Vibration)` sends both motors a request bounded to `max_vibration_seconds` and answers `submitted` or `unavailable`; `stop_vibration` stops it. `engine/input/vibration_output.h` holds the shared lifetime (expiry, a pad leaving, suspension, destruction, no replay) and InputTests holds it against a recording transport, with validation and the empty-slot answers on each backend's own reader. XInput sends `SetVibration`; the browser plays `dual-rumble` and resets it. The physical session, natively and in a browser, remains. |
+| <a id="pi-21"></a>PI-21 | Split out of report 25 on 2026-10-27: slot-addressed, two-motor vibration transport and explicit stop, with game-owned timing, effects, preferences and routing. The [decision record](../review/colourwars-reports/vibration.md) stands in for a STORIES.md entry and owns acceptance. Settle portable lifetime/result semantics before publishing an API; validate requests, report unavailable output, cancel on suspend/teardown without stale replay, and test observable native/browser transport. Physical output evidence stays separate. Added to L26 after PI-20; the current Next order is unchanged. Implemented 2026-10-27: `Gamepads::vibrate(slot, Vibration)` sends both motors a request bounded to `max_vibration_seconds` and answers `submitted` or `unavailable`; `stop_vibration` stops it. `engine/input/vibration_output.h` holds the shared lifetime (expiry, a pad leaving, suspension, destruction, no replay) and InputTests holds it against a recording transport, with validation and the empty-slot answers on each backend's own reader. XInput sends `SetVibration`; the browser plays `dual-rumble` and resets it. The physical session, natively and in a browser, remains. *Amended 2026-11-03 by the persona re-review, under the 2026-11-03 decision:* the physical checklist is re-planned in [the decision record](../review/colourwars-reports/vibration.md#acceptance-and-evidence) as automated transport coverage, with the browser transport's missing test named, plus informal owner play with the XInput pad natively and in Chrome. |
 | SRL-09 | G94: backend rationale out of a game reader's way. Follows SRL-08 (Next). |
 | SM-23 | G67: regenerated goldens leave a review trace. |
 | SM-24 | G115: a written procedure for moving dependency and toolchain pins. Follows SM-25 (Next). |
@@ -2243,6 +2383,7 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | SRL-18 | G88: run LineSweeper's rules tests knowing what is needed. |
 | SRL-06 | G91: LineSweeper's design notes give reasons without internal records. |
 | OCA-78 | No registered gap: the 2026-10-13 record took a C++ developer with Git as the floor. The owner's 2026-10-30 decision lowered it and required a Git-free start; the Get Started pages were made exhaustive for that reader in the commit that added this story. |
+| OCA-79 | No registered gap: found by the persona re-review of 2026-11-03. The near-beginner's ZIP-to-GitHub route has never run its CI on GitHub; the account-bound steps are the owner's, so it is marked owner. |
 | SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. Implemented in this tree 2026-10-27 by *Spell constants in snake_case*: engine, samples, tests and benches, with platform-API restatements kept as CONVENTIONS now allows and the public renames in CHANGES.md. The ColourWars migration and the counted caller record remain. |
 
 </details>
@@ -2272,7 +2413,7 @@ Held on T1 and capacity grounds: each needs recorded demand, a regression it wou
 
 | Story | Why |
 |---|---|
-| SM-11 | G70: a WebDriver BiDi runner is a second protocol to maintain. Revisit when a Firefox-only regression it would have caught is recorded; BDP-06's manual record is the fallback. |
+| SM-11 | G70: a WebDriver BiDi runner is a second protocol to maintain. Revisit when a Firefox-only regression it would have caught is recorded; BDP-06's manual record is the fallback. *Amended 2026-11-03 by the persona re-review:* both reasons are overtaken. The BiDi runner exists (`tests/render/web/run_firefox.mjs`, its protocol held by `BrowserProtocolTests`) and has run five sample pages, so its maintenance cost is already paid; and the 2026-11-03 decision withdraws the manual-checklist fallback. What remains is adding LineSweeper and the bundle page and registering the runs as ctest entries when a Firefox is found (`WEB#10` in TODO.md). Moving the story out of Won't is the owner's reorder. |
 | SM-28 | G120: a CI accessibility scan buys axe-core (T9 says buy) but costs CI time. Revisit when a manual WCAG check finds a regression, or OCA-08's position names the site as an aim. Since 2026-11-03 axe-core is a dev dependency and the acceptance suite scans the versioning pages at WCAG A/AA in both themes; the whole-site scan of dist/ this story asks for is still open. |
 | OCA-04 | G45 (merged with SRL-13): hosting more samples is an L bundle generalisation plus owner deploys. Revisit after SM-12's checks, SM-27's verify and a recorded request for a hosted second sample. |
 | OCA-47 | G113: three- and four-player layouts exist and were extracted from a four-pane client (PHILOSOPHY.md:662-667); showing them is not urgent. Revisit with OCA-46's join screen. |
@@ -2297,7 +2438,7 @@ Not in any horizon: each waits on something outside the backlog.
 - The primary persona is unevidenced: no issues, analytics or independent adopter. Next spends real capacity on a stranger's ship path. Mitigation: most of Now is truth fixes that also serve the agents who read the same documents, and PI-09/PI-10 are the only stories backed by recorded demand.
 - Doc edits can fail the website build by design: quoted lines and public header comments are read at build time. Header-contract stories (OCA-55, OCA-59, OCA-56) and the brief trim (SM-43) must fix any quoting page in the same commit.
 - The consumer CI job adds build minutes and a vcpkg cold cache to every PR. If it is slow it will tempt someone to drop it; cache it deliberately and keep SM-21's documented contexts in place.
-- Hardware-bound claims may stay open: the iGPU p99 needs AMD's driver first and may still need a code option if the per-app preference fails; the Big Sur MacBook Air's Safari may sit below the wasm-exceptions floor. BDP-10 now waits only on the real iPhone and host layout checks; Android remains unverified without an accessible device.
+- Hardware-bound claims may stay open: the iGPU p99 needs AMD's driver first and may still need a code option if the per-app preference fails; the Big Sur MacBook Air's Safari may sit below the wasm-exceptions floor. *Amended 2026-11-03:* the current MacBook Air's Safari 27.0.1 is above that floor, and no Radeon GPU is available, so the low-tier p99 waits on the owner's SM-01 decision. BDP-10 now waits only on the real iPhone and host layout checks; Android remains unverified without an accessible device.
 - Windows Sandbox (OCA-61, PI-14) proves the loader and runtime requirements on a clean OS, but its default virtual GPU is the host's adapter behind a paravirtual driver (Release has no WARP fallback, so `--vgpu Disable` gives a loud refusal); G77's target-GPU half stays open until a real machine runs it.
 - Linking the live demo widens its exposure before Safari, real phones and the player-facing failure messages are settled. BDP-23's flash check now precedes the link, and the platform statement names the phone gate plainly.
 
