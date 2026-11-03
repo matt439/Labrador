@@ -11,7 +11,10 @@
     "snapshot:source": "node scripts/snapshot-source.mjs",
     "snapshot:build": "node scripts/build-snapshot.mjs",
     "snapshot:pack": "node scripts/pack-snapshot.mjs",
-    "versions:verify": "node scripts/verify-published-versions.mjs"
+    "versions:verify": "node scripts/verify-published-versions.mjs",
+    "acceptance:fixture": "node acceptance/fixture.mjs",
+    "acceptance:serve": "node acceptance/server.mjs",
+    "acceptance": "node acceptance/suite.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.2",

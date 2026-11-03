@@ -324,6 +324,36 @@ The check needs history and the network, so it is not part of `npm test` or of
 the host's build. It does not compare the entry's `published` date with the
 GitHub release's.
 
+## Browser acceptance suite
+
+[website/acceptance/](../website/acceptance/) checks the selector, the release
+index and the arrival notice in real browsers through W3C WebDriver, on every
+run of the website workflow. `fixture.mjs` clones the checkout's `HEAD`, builds
+and packs a `v0.3.0` snapshot, adds one guide, builds and packs `v0.4.0`, and
+assembles both into the development site with one erratum on `v0.3.0`. It
+names no real release and needs no network beyond npm. `suite.mjs` serves that
+build with the host's 404 behaviour and runs thirteen checks: a shared page and
+heading kept across every switch; a page `v0.3.0` lacks leading to its overview
+with a note in the link and an arrival notice in an initially empty
+`role=status` region; keyboard opening, walking and switching; phone widths of
+320, 360 and 430 and desktop at 1440 pixels in both themes, with touch at phone
+widths, no sideways scroll, 44-pixel targets and the selector after the pages;
+the release index against `index.json`; search confined to each version; each
+version's 404 page; the static list when the index cannot be fetched or is
+still loading; and the served markup without JavaScript. `suite.mjs` states
+each check.
+
+CI builds the fixture once (`acceptance fixture`) and runs the suite as
+`acceptance (chrome)` and `acceptance (firefox)` on Linux and
+`acceptance (safari)` and `acceptance (ios)` on macOS, where `ios` is Safari in
+the newest iOS Simulator. `acceptance (nvda)` runs
+[screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows, which
+listens for NVDA speaking the notice after a keyboard switch. It is not
+required: whether a hosted runner's NVDA can be driven reliably is itself
+unproven. The suite does not run axe-core, which would be a new dependency, and
+an emulator's layout is not a real phone's: informal play on a real iPhone
+remains the owner's.
+
 ## Runtime contract, permanent from v0.3.0
 
 Every snapshot freezes the code that reads these, so from `v0.3.0` they do not
@@ -367,8 +397,9 @@ tree, its full commit, its archive and SHA-256, and its errata. Until the first
 release it says that no release documentation has been published. It is not
 searchable.
 
-The selector sits at the top of the sidebar on desktop and at the top of the
-phone menu, once per page. Without JavaScript it is a `<details>` naming the
+The selector follows the pages at the foot of the sidebar on desktop and of
+the phone menu, once per page: most readers never change version, so it does
+not push the pages down. Without JavaScript it is a `<details>` naming the
 current version with a link to `/versions/`. With JavaScript, opening it, or
 focusing or pointing at it, fetches the index; it then lists Development and
 each release, the current one as text marked `aria-current`, and each other
@@ -523,8 +554,10 @@ snapshot with these checks:
    above.*
 3. The release index and selector keep release labels and archived-page source
    links. *Implemented; qualified in headless Chrome and Firefox as above.*
-   Acceptance still repeats those checks in Safari and on a real phone with
-   touch, and checks with a screen reader that the arrival notice is announced.
+   [The browser acceptance suite](#browser-acceptance-suite) repeats those
+   checks in Chrome, Firefox, Safari and the iOS Simulator on every change.
+   Acceptance still needs those jobs green, a screen reader heard announcing
+   the notice and informal play on a real phone.
 4. Run `npm ci`, `npm run check`, `npm test` and `npm run build` in the release checkout.
    Retain the matching engine qualification and the built site together. Check
    that API anchors and sample quotations resolve within this release, and

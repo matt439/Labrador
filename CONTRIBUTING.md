@@ -127,6 +127,12 @@ The first twelve are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml
 and the last is the job in
 [.github/workflows/website.yml](.github/workflows/website.yml).
 
+That workflow's browser acceptance jobs, `acceptance fixture`,
+`acceptance (chrome)`, `acceptance (firefox)`, `acceptance (safari)` and
+`acceptance (ios)`, are added to the list once they have passed on `master`;
+`acceptance (nvda)` stays advisory
+([the suite](docs/website-versioning.md#browser-acceptance-suite)).
+
 **A change that touches only documentation is linted, not built**: when
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
