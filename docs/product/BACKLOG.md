@@ -36,9 +36,12 @@ distinguishes that fixture from an actual engine release. The selector, index
 page and notice were qualified on assembled real snapshot output
 [in headless Chrome](../website-versioning.md#headless-chrome-qualification-2026-10-27)
 and [again in Chrome and Firefox](../website-versioning.md#rebuilt-fixture-qualification-2026-10-27),
-as emulation. What remains is acceptance in Safari, on a real phone with touch
-and with a screen reader; then `v0.3.0`'s snapshot is published
-and its deploy checked. Immutable releases were enabled on 2026-10-27.
+as emulation. Since 2026-11-03 those checks are
+[an automated suite](../website-versioning.md#browser-acceptance-suite) that CI
+runs in Chrome, Firefox, Safari and the iOS Simulator, with a non-blocking NVDA
+job. What remains is those jobs green and required, a screen reader heard
+announcing the notice, the owner's decision on axe-core, informal play on the
+owner's iPhone, then `v0.3.0`'s snapshot published and its deploy checked. Immutable releases were enabled on 2026-10-27.
 
 ## Now
 

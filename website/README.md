@@ -15,7 +15,7 @@ needs the engine's toolchain.
 npm ci            # once, and after package-lock.json changes
 npm run dev       # a local server that reloads on edits, including to the files below
 npm run check     # types
-npm test          # API indexing and rendered code-link regressions
+npm test          # API indexing, rendered code-link and acceptance-tool regressions; no browser
 npm run build     # the site into dist/, published snapshots under dist/versions/ - fails on any broken internal link
 npm run preview   # serve dist/
 npm run --silent snapshot:source -- v0.3.0  # verify candidate release source; no build or publication
@@ -23,7 +23,19 @@ npm run snapshot:build -- v0.3.0  # verified candidate in dist/snapshot/; no pub
 npm run snapshot:pack -- v0.3.0   # that candidate as release-assets/labrador-docs-v0.3.0.tar.gz, and its manifest entry
 npm run versions:verify -- --base <commit>  # CI's manifest, GitHub release and live-index check; needs history and network
 npm run versions:verify -- --base <commit> --dist dist  # after the build: appended errata link to something that exists
+npm run acceptance:fixture -- <out-dir> [--force] [--repo <checkout>]  # two synthetic releases built from HEAD; prints its dist
+npm run acceptance:serve -- <dist> [port] [host]  # that dist with the host's 404 pages, on 127.0.0.1:4321 by default
+npm run acceptance -- --target chrome|firefox|safari|ios (--serve-dist <dist> | --base <url>) [--driver <path>]  # the selector, release index and notice checks in a real browser
 ```
+
+The acceptance commands check the documentation-version selector, the release
+index and the arrival notice that
+[docs/website-versioning.md](../docs/website-versioning.md) describes, through
+W3C WebDriver against a fixture with two releases. They need the browser's
+driver (`chromedriver`, `geckodriver` or `safaridriver`) on `PATH`, in the
+folder `CHROMEWEBDRIVER` or `GECKOWEBDRIVER` names, or given with `--driver`;
+Chrome and Firefox run headless. `acceptance/suite.mjs` explains each check,
+and `acceptance/browsers.mjs` each target.
 
 ## It reads the rest of the repository
 

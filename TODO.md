@@ -27,7 +27,7 @@ the player* links, waits on the owner.
 
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which closes `OCA-78`; CI's consumer jobs have already passed with the ZIP. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
-**Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up, starting with `SITE#3`'s Safari, iOS Simulator and VoiceOver checks.
+**Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` + `WEB#1` (Safari on the current MacBook Air) · `SM-01` (Radeon driver and per-app GPU selection).
@@ -52,7 +52,8 @@ the player* links, waits on the owner.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-78` | BLOCKED | must | M | Starter ZIP implemented and CI's consumer jobs pass with it. Left: `v0.3.0` carrying the ZIP, with Get the starter project's download followed against it. [Acceptance](docs/product/BACKLOG.md#oca-78). |
-| `SITE#3` | DECISION | must | M | Left: Safari, real-phone touch and screen-reader acceptance; publish `v0.3.0`'s snapshot and check the deploy. [Scope and checks](docs/website-versioning.md). |
+| `SITE#3` | DECISION | must | M | The selector, index and notice checks are automated: [the browser acceptance suite](docs/website-versioning.md#browser-acceptance-suite) runs in Chrome, Firefox, Safari and the iOS Simulator on every website change, with a non-blocking NVDA job. Left: those jobs green and added to the required checks; a screen reader heard announcing the notice; the owner's decision on adding axe-core for the accessibility scan; informal play on the owner's iPhone; publish `v0.3.0`'s snapshot and check the deploy. |
+| `SITE#4` | OPEN | should | S | iOS Safari shows a pill naming the host above the keyboard while typing in search; tapping it, or pressing Go on an empty box, leaves an empty page. Seen 2026-11-03 on the live site and the versioned fixture, so not versioning. Pagefind's form has `action="javascript:void(0);"`, the likely cause. |
 | `OCA-18` | DECISION | could | S | Visual Studio guide is implemented. A person follows it in a clean copied project in Visual Studio Community 2026 18.9.2, hits the breakpoint, sees content load and records the date. [Evidence](docs/product/BACKLOG.md#later). |
 
 `SM-30`, the owner-only gate follow-up in [BACKLOG.md, Later](docs/product/BACKLOG.md#later), is ready now that `SM-29` is closed.
