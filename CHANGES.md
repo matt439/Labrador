@@ -75,7 +75,17 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
-## Unreleased
+## v0.3.0 (2026-11-03)
+
+Of the commits in
+
+```
+git log --format=%h v0.2.0..v0.3.0 -- 'engine/*.h' 'engine/*.cpp' engine/CMakeLists.txt cmake/settings.cmake vcpkg.json
+```
+
+every one that has no entry below says `not consumer-visible` in its message
+except `b7ad202`, which splits the Win32 window procedure into one handler per
+message group and keeps each message's handling and result.
 
 ### 2026-10-29 - Keep a Win32 window shown through full screen
 

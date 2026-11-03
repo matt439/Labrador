@@ -106,7 +106,8 @@ The starter ZIP came the same day. One made from the development tree was extrac
 built and tested with Git hidden from vcpkg and vcpkg's caches empty: vcpkg downloaded a copy of
 Git for itself, the configure took 2 minutes 8 seconds and downloaded about 400 MB, and both of
 the game's tests passed. [Get the starter project](/docs/get-started/starter/#what-was-checked)
-says what else was and was not checked. No release has carried a starter ZIP yet.
+says what else was and was not checked. No release had carried a starter ZIP then; `v0.3.0` is
+the first that does.
 
 The full CI sweep checks part of this path on every change. It makes a starter ZIP from the
 change itself, extracts it with Windows' `tar`, builds the project in it, checks that its ctest

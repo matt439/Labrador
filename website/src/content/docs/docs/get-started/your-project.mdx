@@ -79,7 +79,7 @@ preset in `CMakePresets.json` with them.
 
    ```bat
    git submodule add https://github.com/matt439/Labrador.git external/labrador
-   git -C external/labrador checkout v0.2.0
+   git -C external/labrador checkout v0.3.0
    ```
 
    The first line downloads Labrador into `external\labrador`, as the clone did on
@@ -87,7 +87,7 @@ preset in `CMakePresets.json` with them.
    begins:
 
    ```text title="Output"
-   Note: switching to 'v0.2.0'.
+   Note: switching to 'v0.3.0'.
 
    You are in 'detached HEAD' state. You can look around, make experimental
    ```
@@ -97,21 +97,22 @@ preset in `CMakePresets.json` with them.
    that moves, which is what you want for an engine you build against. Ignore the note's advice
    about `git switch`.
 
-   `v0.2.0` was the newest release when this page was written. To see whether there is a newer
+   `v0.3.0` was the newest release when this page was written. To see whether there is a newer
    one, list the releases, newest first:
 
    ```bat
    git -C external/labrador tag --list "v*" --sort=-v:refname
    ```
 
-   If the first line it prints is later than `v0.2.0`, run the checkout line again with that
-   name in place of `v0.2.0`. Your repository
+   If the first line it prints is later than `v0.3.0`, run the checkout line again with that
+   name in place of `v0.3.0`. Your repository
    now records exactly which commit of Labrador it builds against, and moving to a newer tag
    is a change you make deliberately and commit, after reading what
    <RepoLink path="CHANGES.md">CHANGES.md</RepoLink> says changed
-   between the two; [Move your engine pin](/docs/guides/move-pin/) is the procedure. This site documents `master`, which can be ahead of the newest tag, and
+   between the two; [Move your engine pin](/docs/guides/move-pin/) is the procedure. The development documentation describes `master`, which can be ahead of the newest tag, and
    CHANGES.md's *Unreleased* heading, when it has one, lists what `master` has that the tag
-   does not.
+   does not; a release's own documentation, named at the foot of each page, describes that
+   release.
 
    Anyone cloning your project, you included on another machine, needs
    `--recurse-submodules` to get the engine too. With your repository's address in place of the
