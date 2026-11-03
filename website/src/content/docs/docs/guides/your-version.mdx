@@ -9,9 +9,10 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 import RepoLink from '~/components/RepoLink.astro';
 
 Your game is built against the copy of the engine inside your project, in `external\labrador`,
-as it was when you made the project or last moved it to a newer Labrador. This site describes the
-engine at one commit, named at the foot of every page, and is rebuilt as the engine changes. When
-the two differ, a page can show code that names something your copy does not have, and the build
+as it was when you made the project or last moved it to a newer Labrador. Each page of this site
+describes the engine at one commit, named at its foot: the development documentation is rebuilt
+as the engine changes, and a release's own documentation stays at that release. When the two
+differ, a page can show code that names something your copy does not have, and the build
 then stops with an error that looks like a typing slip. This page finds both versions, compares
 them, and checks a name against your copy. It takes about five minutes.
 
@@ -71,9 +72,8 @@ cd /d C:\dev\mygame
    **Development documentation** means the page describes the engine as it is being written,
    ahead of the newest release. A page of a release's own documentation says instead
    `Documentation for Labrador` and the release, such as `v0.3.0`. The link under it,
-   **All documentation versions**, lists every version the site has; until the first release's
-   documentation is published, that is Development alone, and every page on the site is
-   Development.
+   **All documentation versions**, lists every version the site has: Development and each release
+   whose documentation is published, from `v0.3.0` on.
 
 3. **Compare them.** If the first 7 letters and digits of your `Labrador commit:` are the commit
    at the foot of the page, the page describes exactly your engine. If they differ, the page

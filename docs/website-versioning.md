@@ -22,10 +22,9 @@ authored guides, generated API reference, design documents, sample quotations,
 media and dependency lockfile all come from that revision. The build must not
 combine released headers with development guides.
 
-`SITE#3` in [TODO.md](../TODO.md) tracks what remains: its qualification was
-complete before `v0.3.0` was cut, and the first publication, built from the
-tag, is listed in the manifest; checking its deployment is left. The decision
-sets no release date. Outside `/versions/`, the site remains development
+`SITE#3` closed on 2026-11-03: its qualification was complete before `v0.3.0`
+was cut, and [the first publication](#publication-evidence-2026-11-03), built
+from the tag, was deployed and checked. The decision set no release date. Outside `/versions/`, the site remains development
 documentation.
 
 Keep the current site and `/docs/` as development documentation. Store release
@@ -563,6 +562,32 @@ Not established: real screen-reader speech (Narrator cannot be scripted here),
 Safari, real phones and touch, and the host's 404 handling under
 `/versions/<tag>/`.
 
+## Publication evidence: 2026-11-03
+
+`v0.3.0` was tagged at `0f4f503` and published at 08:09 UTC as an immutable
+release with its two assets, both made from a clean checkout of the tag:
+`labrador-starter-v0.3.0.zip` (9,265,469 bytes, SHA-256 `25db98b2…5869`) and
+`labrador-docs-v0.3.0.tar.gz` (8,853,554 bytes, SHA-256 `c61377d4…6602`). The
+candidate was read before packing; five wordings that read wrongly in a frozen
+release were found, two of them misleading, and those two are the release's
+errata. The others, and the reason for all five, were fixed on the development
+site with `ReleaseNote` and `DevelopmentOnly`, which give a release's own pages
+their tag where the development site's text assumes it is rebuilt.
+
+After the manifest entry merged, the deployed site was checked against step 7
+of [the procedure](#publishing-a-releases-documentation):
+`/versions/index.json` lists Development and then `v0.3.0` with its commit,
+hash, publication date and `latest`, and `publishedOrder` is `["v0.3.0"]`; the
+release index shows the release with its archive, whose download matches the
+hash; pages under `/versions/v0.3.0/` say *Documentation for Labrador v0.3.0*
+with the full commit, *View source* and canonical URLs under the prefix, while
+development pages are unchanged; in headless Chrome, search in each version
+returns only that version's pages; the selector switches a shared page both
+ways and an absent page to the release's overview with its notice; and a
+missing page under the prefix gets the release's own 404. Get the starter
+project's `curl` line, run as written, downloaded the ZIP with the size and
+hash above.
+
 ## Work required for v0.3.0
 
 Qualify the versioned build before cutting `v0.3.0`, then publish the first
@@ -590,7 +615,8 @@ snapshot with these checks:
 5. Publish the reviewed snapshot by the procedure above, without removing
    earlier versions. Keep the previous deployment available for rollback and
    verify the deployed version label, links, search and assets after
-   publication.
+   publication. *Done for `v0.3.0` on 2026-11-03,*
+   [as recorded](#publication-evidence-2026-11-03).
 
 Hosting and the domain are recorded in [the website plan](website-plan.md).
 Versioning does not choose a host or establish an engine release schedule.

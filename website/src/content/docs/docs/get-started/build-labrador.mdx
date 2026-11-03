@@ -4,6 +4,7 @@ description: Clone the engine, configure it with a preset, build it and run its 
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
+import ReleaseNote from '~/components/ReleaseNote.astro';
 
 This page, [Run the minimal sample](/docs/get-started/run-minimal/) and
 [Start your own project](/docs/get-started/your-project/) are the route for people who use Git.
@@ -32,6 +33,8 @@ Every command on this page runs in the x64 Native Tools Command Prompt from
    the prompt then ends `C:\dev\Labrador>`. If Git says `destination path 'Labrador' already
    exists and is not an empty directory`, you have cloned it before: run only the last line,
    `cd Labrador`, and carry on.
+
+   <ReleaseNote part="checkout" />
 
 2. **Configure the build:**
 

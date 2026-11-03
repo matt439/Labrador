@@ -7,6 +7,8 @@ import { Code, FileTree, Steps, Aside } from '@astrojs/starlight/components';
 import ConsumerManifest from '~/components/ConsumerManifest.astro';
 import IncludeChanges from '~/components/IncludeChanges.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import DevelopmentOnly from '~/components/DevelopmentOnly.astro';
+import ReleaseNote from '~/components/ReleaseNote.astro';
 import rootCMake from '~/walkthrough/root-CMakeLists.txt?raw';
 import gameCMake from '~/walkthrough/game-CMakeLists.txt?raw';
 import presets from '~/walkthrough/CMakePresets.json?raw';
@@ -104,9 +106,15 @@ preset in `CMakePresets.json` with them.
    git -C external/labrador tag --list "v*" --sort=-v:refname
    ```
 
+   <DevelopmentOnly>
+
    If the first line it prints is later than `v0.3.0`, run the checkout line again with that
-   name in place of `v0.3.0`. Your repository
-   now records exactly which commit of Labrador it builds against, and moving to a newer tag
+   name in place of `v0.3.0`.
+
+   </DevelopmentOnly>
+   <ReleaseNote part="newer" />
+
+   Your repository now records exactly which commit of Labrador it builds against, and moving to a newer tag
    is a change you make deliberately and commit, after reading what
    <RepoLink path="CHANGES.md">CHANGES.md</RepoLink> says changed
    between the two; [Move your engine pin](/docs/guides/move-pin/) is the procedure. The development documentation describes `master`, which can be ahead of the newest tag, and

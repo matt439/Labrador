@@ -1,0 +1,8 @@
+---
+// Text that only the development site shows: advice that holds for a site
+// rebuilt as releases come out, and that a release's own documentation, which
+// is never rebuilt, replaces with a ReleaseNote.
+import { RELEASE_SOURCE } from '../lib/repository';
+---
+
+{!RELEASE_SOURCE && <slot />}
