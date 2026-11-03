@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
 
 Your game is built against the copy of the engine inside your project, in `external\labrador`,
 as it was when you made the project or last moved it to a newer Labrador. This site describes the
@@ -88,7 +89,7 @@ cd /d C:\dev\mygame
    ```
 
    The site's own is on GitHub, through
-   [Changes in the repository](https://github.com/matt439/Labrador/blob/master/CHANGES.md). The
+   <RepoLink path="CHANGES.md">Changes in the repository</RepoLink>. The
    entries in that one and not in yours are what changed since your engine.
 
 4. **Check a name in your engine.** The engine's headers in `external\labrador\engine` are the
