@@ -27,6 +27,8 @@ the player* links, waits on the owner.
 
 **Before `v0.3.0` is cut:** `SITE#3` finishes accepting the selector and index in real browsers, on a phone and with a screen reader, then publishes the first snapshot. The same release attaches the first starter ZIP, by [CONTRIBUTING.md's release procedure](CONTRIBUTING.md#cutting-a-release), and its download is first followed then, which closes `OCA-78`; CI's consumer jobs have already passed with the ZIP. The owner chose `v0.3.0`, with no backfill for earlier releases; [the policy](docs/website-versioning.md) owns the release checks.
 
+**Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up, starting with `SITE#3`'s Safari, iOS Simulator and VoiceOver checks.
+
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (the physical pad session, which can also feel `PI-21`'s vibration, and play `PI-14`'s pad match) · `SM-09` + `WEB#1` (Safari on the current MacBook Air) · `SM-01` (Radeon driver and per-app GPU selection).
 - Later: `WEB#3` (listen to the audio sample), `OCA-66` (review the template at 150% scaling), `BDP-07` (browser pacing at 60 Hz and at 144 Hz).
