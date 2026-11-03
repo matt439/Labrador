@@ -212,6 +212,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      # The suite's only package is axe-core, for check 14.
+      - run: npm ci
       - uses: actions/download-artifact@v4
         with:
           name: acceptance-fixture
