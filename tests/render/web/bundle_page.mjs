@@ -219,8 +219,16 @@ export function steps(page, state) {
 	const click_play = async () => {
 		assert(await evaluate(button_visible), 'Play is unavailable');
 		// A visitor scrolls to the button first; the site's page puts its
-		// stage below the fold of a short window.
-		await evaluate("document.getElementById('play').scrollIntoView({ block: 'nearest' })");
+		// stage below the fold of a short window. A button already in view,
+		// as on the bundle's page, is left where it is, and the scroll is
+		// instant so the click lands where the button now is.
+		await evaluate(`(() => {
+			const button = document.getElementById('play');
+			const box = button.getBoundingClientRect();
+			if (box.top < 0 || box.bottom > innerHeight || box.left < 0 || box.right > innerWidth) {
+				button.scrollIntoView({ block: 'center', behavior: 'instant' });
+			}
+		})()`);
 		assert(await evaluate(button_exposed), 'a canvas overlays the Play button');
 		const at = await evaluate(`(() => {
 			const box = document.getElementById('play').getBoundingClientRect();
