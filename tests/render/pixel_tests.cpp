@@ -110,6 +110,10 @@ TEST_CASE("the renderer reports the rasterising device it selected")
 	Harness harness;
 	const RenderDeviceInfo& info = harness.renderer().device_info();
 
+	// Printed, because the same green means different things on a GPU and on
+	// a software rasteriser. CI's windows jobs read this line.
+	MESSAGE("Drawing on ", info.device_name);
+
 	CHECK_FALSE(info.backend.empty());
 	CHECK_FALSE(info.api.empty());
 	CHECK_FALSE(info.device_name.empty());

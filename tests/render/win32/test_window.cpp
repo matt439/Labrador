@@ -66,7 +66,26 @@ namespace render_tests
 
 	bool TestWindow::resize(int width, int height)
 	{
-		return SetWindowPos(this->impl_->window, nullptr, 0, 0, width, height,
-			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE) != 0;
+		if (!SetWindowPos(this->impl_->window, nullptr, 0, 0, width, height,
+			SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE))
+		{
+			return false;
+		}
+
+		// A SWAP, BECAUSE WGL DOES NOT SAY WHEN A DRIVER ADOPTS THE NEW SIZE.
+		// NVIDIA's has by the next draw; Mesa's does at the next swap, so
+		// without this llvmpipe draws the frame after a resize into a buffer
+		// it then replaces. A real window has swapped many times by the time
+		// its size matters; this one would resize and read back with none
+		// between. The back buffer is undefined after it, which suits what
+		// the resize cases ask. The other backends set no pixel format on this
+		// window, so there SwapBuffers refuses and nothing happens.
+		const HDC device_context = GetDC(this->impl_->window);
+		if (device_context != nullptr)
+		{
+			SwapBuffers(device_context);
+			ReleaseDC(this->impl_->window, device_context);
+		}
+		return true;
 	}
 }
