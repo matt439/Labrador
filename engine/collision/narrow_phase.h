@@ -74,10 +74,16 @@ namespace labrador
 	// infinite penetration into a position.
 	//
 	// Supported shape types are the convex polygons - rectangle, rotated
-	// rectangle, triangle and quad. A circle throws std::invalid_argument
-	// rather than reporting no overlap, because silently missing collisions is
-	// the worse failure and nothing in the tree is a collidable circle. Adding
-	// them is one more axis, the centre-to-closest-point one.
+	// rectangle, triangle and quad - and the circle, in every pairing. A
+	// circle against a polygon adds one axis to the polygon's edge normals:
+	// the one from the circle's centre to the polygon's closest vertex, which
+	// keeps the axis set complete. Two circles are measured along the line
+	// between their centres, and two concentric circles separate along
+	// positive x. A circle whose radius is not greater than zero encloses
+	// nothing and contacts nothing, and a nonfinite centre or radius reports
+	// no contact, as a nonfinite polygon coordinate does. A shape whose
+	// shape_type() is none throws std::invalid_argument rather than reporting
+	// no overlap, because silently missing collisions is the worse failure.
 	std::optional<Manifold> narrow_phase(const Shape& a,
 		const Shape& b);
 }

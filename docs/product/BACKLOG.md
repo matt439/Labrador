@@ -563,6 +563,7 @@ written.
 55. L55 Start a project from a release ZIP without Git: OCA-78
 56. L56 The starter project's first push runs green on GitHub: OCA-79 (added 2026-11-03 by the persona re-review)
 57. L57 The Firefox runner covers LineSweeper and the bundle page and registers as ctest: SM-11 (moved from Won't this time on 2026-11-03 by the owner; its work is `WEB#10`)
+58. L58 Collide a round body: OCA-80 (selected from `IDEA#7` on 2026-11-04 by the owner)
 
 **Stories**
 
@@ -1069,11 +1070,43 @@ written.
 
 - [ ] **[OCA-79](#oca-79)** Should - S - The Outside Adopter · **Owner**: My starter project's first push runs green on GitHub — after OCA-78
 
+- [x] **[OCA-80](#oca-80)** Should - S - The Outside Adopter: Collide a round body without the narrow phase throwing
+
 - [ ] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work is `WEB#10` in TODO.md: add LineSweeper and the bundle
   page's play, quit and replay to `tests/render/web/run_firefox.mjs`, and
   register its runs as ctest entries when configure finds a Firefox.
+
+<a id="oca-80"></a>
+### OCA-80. Collide a round body without the narrow phase throwing
+
+Selected 2026-11-04 by the owner from `IDEA#7` in
+[Feature candidates](../feature-candidates.md), taking option A of the
+[recommendations of 2026-11-04](../2026-11-04-decision-recommendations.md#idea7-circle-collision-in-the-narrow-phase).
+A `CollisionObject` whose shape was a `Circle` compiled and then threw
+`std::invalid_argument` from the sweep at the first pair whose bounds
+overlapped: the type system accepted what the engine refused, and a beginner
+met it mid-game. Balls, round bodies and radial triggers are a common first
+shape.
+
+**Acceptance**
+
+- `narrow_phase` measures a circle against a circle and against each polygon
+  type, in both argument orders, under the existing `Manifold` contract: a
+  unit normal from `a` towards `b`, a positive penetration, touching is no
+  contact, and nonfinite input reports none. A circle against a polygon adds
+  the centre-to-closest-vertex axis to the polygon's edge normals.
+- Narrow-phase tests cover containment, grazing, nonfinite and non-positive
+  radii, each polygon type, and agreement with `intersects.h`'s predicates on
+  randomised pairs near the origin and at level magnitudes, including that
+  the manifold is the least translation.
+- `find_contacts` tests pass with circles and polygons in one sweep, and the
+  collision sample's tests hold a round post the player meets head on and off
+  centre.
+- The collision guide and `narrow_phase.h` state the supported pairs, and
+  CHANGES.md records the behaviour change.
+- The broad phase is unchanged; a shape whose type is `none` still throws.
 
 <a id="oca-79"></a>
 ### OCA-79. My starter project's first push runs green on GitHub
