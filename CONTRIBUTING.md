@@ -108,7 +108,7 @@ protection for a trivial fix; nobody else does.
 **The required checks are names held in GitHub's settings**, not in this tree,
 so this list is the record of what those settings must hold. Each name is the
 job's `name:` in its workflow, and the windows jobs are named for their preset
-alone, so changing a matrix entry's `skip_tests` or `vulkan_sdk` does not
+alone, so changing a matrix entry's `software_device` or `vulkan_sdk` does not
 rename its check. The required contexts are exactly these eighteen:
 
 - `changes`
@@ -408,8 +408,9 @@ qualifications separately from a printed plan or fake-command test result.
 - For a code change, run `python tools/ci_gap_report.py --execute` on the
   branch head and paste its output under the pull request template's
   "Configurations CI cannot run". It builds and tests what CI does not: the
-  GL and Vulkan pixel and smoke tests, the release presets CI skips and
-  `wasm-debug`. Name the device it ran on;
+  GL and Vulkan pixel and smoke tests on a real driver (CI runs them on
+  software rasterisers), the release presets CI skips and `wasm-debug`.
+  Name the device it ran on;
   [the procedure](docs/verification.md#configurations-ci-cannot-run) says
   what the record does and does not show.
 - If you edited a public engine header, a line a website page quotes, or a

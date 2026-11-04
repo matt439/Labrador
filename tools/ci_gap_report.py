@@ -27,10 +27,11 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 class Gap:
     preset: str
     # Empty means CI never builds this preset, so every test is the gap.
-    # Otherwise these tests are the ones CI's job for the preset excludes.
-    ci_skips: tuple[str, ...] = ()
+    # Otherwise these tests are the ones CI's job for the preset runs only on
+    # a software rasteriser, so a real driver is the gap.
+    real_driver: tuple[str, ...] = ()
     # Tests that must have run and passed. Registration can quietly drop them:
-    # a GL or Vulkan run must include what CI skips, and configure registers
+    # a GL or Vulkan run must include the device tests, and configure registers
     # wasm-debug's browser tests only when it finds a Chromium.
     required: tuple[str, ...] = ()
 
@@ -124,8 +125,8 @@ def judge(gap: Gap, groups: dict[str, list[str]]) -> tuple[str, str]:
     summary = f"{len(groups['passed'])}/{total} passed"
     if problems:
         return "failed", summary + "; " + "; ".join(problems)
-    if gap.ci_skips:
-        summary += "; " + " and ".join(gap.ci_skips) + " passed"
+    if gap.real_driver:
+        summary += "; " + " and ".join(gap.real_driver) + " passed"
     elif gap.required:
         summary += f"; including {len(gap.required)} required tests"
     return "passed", summary
@@ -193,7 +194,8 @@ def execute(gaps: list[Gap], root: Path, output_dir: Path, *, runner=None) -> li
 
 
 def markdown(outcomes: list[Outcome], *, commit: str, changed: int, executed: bool) -> str:
-    scope = {gap.preset: (", ".join(gap.ci_skips) if gap.ci_skips else "whole preset") for gap in GAPS}
+    scope = {gap.preset: (", ".join(gap.real_driver) + " on a real driver" if gap.real_driver else "whole preset")
+             for gap in GAPS}
     if changed:
         tree = f"working tree with {changed} uncommitted change(s), so this describes that tree"
     else:

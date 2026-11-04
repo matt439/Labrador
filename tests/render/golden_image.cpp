@@ -323,13 +323,13 @@ namespace
 	// this number is not zero.
 	//
 	// RenderPixelTests runs against a hardware adapter on a machine with a
-	// driver and against whatever a build machine offers, which is not the
-	// same rasteriser and cannot be made to be one. There is no arrangement
-	// that lets one checked-in set be exact for both: the OpenGL backend cannot
-	// run on a software rasteriser at all - Windows' fallback for GL is the 1.1
-	// GDI implementation - so a set generated on one would be inexact for every
-	// GL run in exchange for being exact in CI. Something has to give, and the
-	// honest place is here, stated with the measurement that set it.
+	// driver and against what a build machine offers, which is not the same
+	// rasteriser and cannot be made to be one. There is no arrangement that
+	// lets one checked-in set be exact for both: CI's Direct3D adapter,
+	// SwiftShader and llvmpipe are three rasterisers of their own, so a set
+	// generated on one would be inexact for every other run in exchange for
+	// being exact there. Something has to give, and the honest place is here,
+	// stated with the measurement that set it.
 	//
 	// WHAT CI'S RASTERISERS ARE. The Direct3D jobs draw on an adapter no log
 	// names: x64-release passes RenderPixelTests with the WARP fallback

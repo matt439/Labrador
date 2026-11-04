@@ -555,8 +555,8 @@ namespace labrador
 			// THE FAILURE A GPU-LESS BUILD MACHINE SEES, NAMED (T6). Direct3D
 			// has WARP in the box and falls back to it; Vulkan's software
 			// implementations - lavapipe, SwiftShader - are installed rather
-			// than shipped, which is why .github/workflows/ci.yml skips
-			// RenderPixelTests on this preset exactly as it does on the GL one.
+			// than shipped, which is why .github/workflows/ci.yml points the
+			// loader at the SwiftShader Chrome carries.
 			throw std::runtime_error("This machine has a Vulkan loader but no "
 				"Vulkan device. There is no in-box software implementation the "
 				"way Direct3D has WARP; a GPU driver or an installed software "

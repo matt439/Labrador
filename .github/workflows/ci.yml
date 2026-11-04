@@ -45,6 +45,10 @@ env:
   # Windows SDK installer and SHA-256 published at vulkan.lunarg.com/sdk/home.
   VULKAN_SDK_VERSION: 1.4.357.0
   VULKAN_SDK_SHA256: 81f474711e9042f4cd22b31b2f7a8870db2e428b21586fb43dd80150be97310d
+  # The MinGW archive of github.com/pal1000/mesa-dist-win: its MSVC archive of
+  # this version carries no opengl32.dll. SHA-256 from the release's asset list.
+  MESA_VERSION: 26.2.6
+  MESA_SHA256: da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388
   EMSDK_VERSION: 6.0.12
   CCACHE_VERSION: 4.14.1
   CCACHE_SHA256: 6219f3865ca59aec41ee4b678df171d5d35855ecb2b6dbbbd20690b3a68af7b4
@@ -194,7 +198,7 @@ jobs:
 
   windows:
     # The check's name is the preset alone. Without it GitHub names each
-    # matrix job after every value in its entry, so changing skip_tests,
+    # matrix job after every value in its entry, so changing software_device,
     # vulkan_sdk or probes would rename a required check and leave every pull request
     # waiting on a context that never reports (CONTRIBUTING.md).
     name: windows (${{ matrix.preset }})
@@ -209,14 +213,14 @@ jobs:
     # rots the moment nothing checks it - and a backend rots by failing to
     # compile long before it rots by drawing the wrong thing.
     #
-    # THE GL PRESET SKIPS RenderPixelTests, AND THAT IS NOT A CONVENIENCE. A
-    # runner has no GPU. Direct3D makes a device there anyway and OpenGL does
-    # not: Windows' fallback for OpenGL is the GDI generic implementation,
-    # which is version 1.1 and has no WGL_ARB_create_context, so create_device
-    # throws saying so. The pixel contract is checked on a machine with a
-    # driver; everything else about that backend is checked here.
-    # MinimalSmokeTests is skipped beside it for the same reason: it starts
-    # the minimal sample, which creates a device too.
+    # THE GL PRESET DRAWS ON MESA'S LLVMPIPE, BECAUSE A RUNNER HAS NO GPU AND
+    # WINDOWS' OWN OPENGL IS NOT ENOUGH. Windows' fallback is the GDI generic
+    # implementation, which is version 1.1 and has no WGL_ARB_create_context,
+    # so create_device throws saying so. opengl32 is not a known DLL, so Mesa's
+    # copy beside an executable is the one that loads: the step below puts it
+    # beside RenderPixelTests and MinimalSample, the two tests that make a
+    # device. llvmpipe is not a driver, so a real one is still run per release
+    # (tools/ci_gap_report.py).
     #
     # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK, WHICH
     # THIS FILE SAID UNTIL ONE JOB LOG WAS READ. x64-release runs
@@ -232,27 +236,26 @@ jobs:
     # checkable shape is what the matrix rests on and it is unchanged: Direct3D
     # gets a device on this machine, GL and Vulkan do not.
     #
-    # THE D3D12 PRESET SKIPS NOTHING, AND THAT IS THE REASON IT IS THE FOURTH
-    # BACKEND. Whatever adapter this runner offers, both Direct3D backends take
-    # it, so this runner rasterises the whole pixel contract twice, against one
-    # set of images, on one rasteriser - which is the cross-backend comparison
-    # the golden set was added for and which the GL preset cannot supply here.
-    # If the two ever disagree, this job is where it shows.
+    # THE D3D12 PRESET IS THE SAME RASTERISER AS D3D11. Whatever adapter this
+    # runner offers, both Direct3D backends take it, so this runner rasterises
+    # the pixel contract twice on one rasteriser, against one set of images. If
+    # the two ever disagree, this job is where it shows.
     #
-    # THE VULKAN PRESET SKIPS RenderPixelTests FOR THE SAME REASON THE GL ONE
-    # DOES, AND docs/port/android.md SAID SO BEFORE IT WAS WRITTEN: "it does not
-    # buy a CI rasteriser for free". WARP is a Direct3D luxury. Vulkan's
-    # software implementations - lavapipe, SwiftShader - are installed rather
-    # than shipped, so a runner has a loader and no device, and
-    # engine/render/vulkan/device_resources.cpp says exactly that when it finds
-    # none. Everything else about the backend is checked here, which is the
-    # point: a backend rots by failing to compile long before it rots by drawing
-    # the wrong thing.
+    # THE VULKAN PRESET DRAWS ON SWIFTSHADER, WHICH THE RUNNER ALREADY HAS:
+    # Chrome ships it as a Vulkan driver beside itself, the rasteriser the wasm
+    # job's pages already draw on. A runner's loader finds no device without
+    # being pointed at it, and engine/render/vulkan/device_resources.cpp says
+    # exactly that when it finds none. It moves with the runner image's Chrome,
+    # as the wasm job does.
     #
-    # IT IS ALSO THE ONE PRESET THAT INSTALLS SOMETHING, and that was decided
-    # rather than discovered. Every other dependency in this repository is on
-    # the runner already - fxc and the Direct3D libraries come with Visual
-    # Studio, opengl32 with Windows - where this one needs the Vulkan SDK twice
+    # EACH OF THOSE TWO IS CHECKED BY NAME AFTER IT RUNS. software_device is a
+    # word from the device's name, and the job fails if RenderPixelTests says it
+    # drew on anything else, so a green here cannot be a different device's.
+    #
+    # IT ALSO INSTALLS THE VULKAN SDK, and that was decided rather than
+    # discovered. The other presets' build dependencies are on the runner
+    # already - fxc and the Direct3D libraries come with Visual Studio,
+    # opengl32 with Windows - where this one needs the Vulkan SDK twice
     # over: for a dxc that can emit SPIR-V at build time
     # (cmake/compile_shaders.cmake says which dxc and why), and for the Vulkan
     # loader the same installer puts in System32. Executables whose linked
@@ -274,27 +277,27 @@ jobs:
       matrix:
         include:
           - preset: x64-debug
-            skip_tests: ''
+            software_device: ''
             vulkan_sdk: false
             probes: ''
           - preset: x64-release
-            skip_tests: ''
+            software_device: ''
             vulkan_sdk: false
             probes: ''
           - preset: x64-debug-d3d12
-            skip_tests: ''
+            software_device: ''
             vulkan_sdk: false
             probes: 'D3D12DestructionProbe D3D12PresentedSlotsProbe D3D12DescriptorQueryProbe D3D12DescriptorCountProbe'
           - preset: x64-debug-gl
-            skip_tests: '-E "^(RenderPixelTests|MinimalSmokeTests)$"'
+            software_device: llvmpipe
             vulkan_sdk: false
             probes: ''
           - preset: x64-debug-vulkan
-            skip_tests: '-E "^(RenderPixelTests|MinimalSmokeTests)$"'
+            software_device: SwiftShader
             vulkan_sdk: true
             probes: 'VulkanDestructionProbe VulkanPresentedSlotsProbe'
           - preset: x64-debug-null
-            skip_tests: ''
+            software_device: ''
             vulkan_sdk: false
             probes: ''
 
@@ -331,8 +334,8 @@ jobs:
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-${{ runner.os }}-
 
-      # Only for the preset that needs it, and it is the only install step in
-      # this file. CMake's own FindVulkan reads VULKAN_SDK, which is what the
+      # Only for the preset that needs it. CMake's own FindVulkan reads
+      # VULKAN_SDK, which is what the
       # installer sets and what this hands on to the configure step.
       #
       # -PassThru IS WHAT MAKES THIS STEP ABLE TO FAIL. Without it Start-Process
@@ -403,6 +406,49 @@ jobs:
           call "%VCVARS%"
           cmake --build --preset ${{ matrix.preset }} --target ${{ matrix.probes }}
 
+      # THE REGISTRY VALUE AS WELL AS THE VARIABLE, because the Vulkan loader
+      # ignores VK_DRIVER_FILES in an elevated process, which a runner's may be.
+      - name: Point the Vulkan loader at Chrome's SwiftShader
+        if: needs.changes.outputs.build == 'true' && matrix.software_device == 'SwiftShader'
+        shell: pwsh
+        run: |
+          $manifest = Get-ChildItem "$env:ProgramFiles\Google\Chrome\Application\*\vk_swiftshader_icd.json" |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $manifest) {
+            throw "This runner's Chrome has no vk_swiftshader_icd.json, so the Vulkan tests have no device."
+          }
+          Write-Output "Vulkan driver: $($manifest.FullName)"
+          New-Item -Path HKLM:\SOFTWARE\Khronos\Vulkan\Drivers -Force | Out-Null
+          New-ItemProperty -Path HKLM:\SOFTWARE\Khronos\Vulkan\Drivers -Name $manifest.FullName -PropertyType DWord -Value 0 -Force | Out-Null
+          echo "VK_DRIVER_FILES=$($manifest.FullName)" >> $env:GITHUB_ENV
+
+      # After the build, so that nothing it copies lands over these. GALLIUM_DRIVER
+      # because Mesa's own choice on a machine with Direct3D 12 need not be
+      # llvmpipe.
+      - name: Put Mesa's llvmpipe beside the tests that make a device
+        if: needs.changes.outputs.build == 'true' && matrix.software_device == 'llvmpipe'
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $name = "mesa3d-$env:MESA_VERSION-release-mingw.7z"
+          $archive = Join-Path $env:RUNNER_TEMP $name
+          $uri = "https://github.com/pal1000/mesa-dist-win/releases/download/$env:MESA_VERSION/$name"
+          python tools/ci_download.py --url "$uri" --output "$archive"
+          if ($LASTEXITCODE -ne 0) {
+            throw "The Mesa download failed with exit code $LASTEXITCODE."
+          }
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $env:MESA_SHA256) {
+            throw "$name does not match MESA_SHA256."
+          }
+          $mesa = Join-Path $env:RUNNER_TEMP mesa
+          7z e -y "-o$mesa" $archive x64/opengl32.dll x64/libgallium_wgl.dll | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            throw "7z could not extract Mesa's two DLLs from $name."
+          }
+          Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\tests\render"
+          Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\samples\minimal"
+          echo "GALLIUM_DRIVER=llvmpipe" >> $env:GITHUB_ENV
+
       # The benchmark is one of these targets. It asserts on complexity class
       # rather than wall-clock, so it is a real test on a shared runner where an
       # absolute timing would be noise.
@@ -410,7 +456,18 @@ jobs:
         if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
-          ctest --preset ${{ matrix.preset }} ${{ matrix.skip_tests }}
+          ctest --preset ${{ matrix.preset }}
+
+      # A green above says nothing about what drew. ctest shows a passing
+      # test's output to nobody, so this asks RenderPixelTests again, in its
+      # own folder because it loads ./content.
+      - name: Check that the software device drew
+        if: needs.changes.outputs.build == 'true' && matrix.software_device != ''
+        working-directory: out/build/${{ matrix.preset }}/tests/render
+        run: |
+          RenderPixelTests.exe -tc="the renderer reports the rasterising device it selected" > device.txt || exit /b 1
+          type device.txt
+          findstr /C:"Drawing on" device.txt | findstr /C:"${{ matrix.software_device }}" >nul || (echo RenderPixelTests did not draw on ${{ matrix.software_device }}. & exit /b 1)
 
       # A failed golden comparison is the one failure here that cannot be read
       # from the log: it says which frame moved and by how much, but the thing a
