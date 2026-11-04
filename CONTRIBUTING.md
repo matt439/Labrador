@@ -172,6 +172,13 @@ website, its lockfile, because a run on `master` is what refreshes the caches
 pull requests restore. Browser ccache objects on `master` are therefore
 refreshed by those runs and the weekly schedule rather than by every merge.
 
+**A red run on `master` is rerun once, then reported.** When either
+workflow fails on `master`, [master-watch.yml](.github/workflows/master-watch.yml)
+reruns its failed jobs. If they fail again it opens an issue titled
+`master is red: <workflow>`, or comments on the open one, and the next green
+run on `master` closes it. It is not a required check: it reports on
+`master` and gates nothing.
+
 For a deliberate dependency or toolchain bump, follow
 [Moving dependency and toolchain pins](docs/dependency-updates.md). It lists
 fixed inputs and moving selectors, the derived consumer manifest, coupled

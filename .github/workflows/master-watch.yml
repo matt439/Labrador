@@ -1,0 +1,42 @@
+# What happens when a run on master ends: tools/master_watch.py reruns a failed
+# run's failed jobs once, opens or updates an issue if they fail again, and
+# closes that issue when master is green again. Before it, a red master run
+# was seen only by whoever opened the commit.
+#
+# workflow_run always runs this file as it is on master, never a pull
+# request's copy, and checks out master for the script. Its job is not a
+# required check, because it reports on master rather than gating a change.
+
+name: master watch
+
+on:
+  workflow_run:
+    workflows: ["build and test", "website"]
+    types: [completed]
+    branches: [master]
+
+# One decision at a time per watched workflow, so two runs ending together
+# cannot both open an issue.
+concurrency:
+  group: master-watch-${{ github.event.workflow_run.name }}
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: master watch
+    runs-on: ubuntu-latest
+    # Long enough to wait out a rerun of the slowest workflow.
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Rerun, report or close
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 tools/master_watch.py
