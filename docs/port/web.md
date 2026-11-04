@@ -34,7 +34,7 @@ Sizes mean what they mean in [android.md](android.md):
 5. [Build integration](#5-build-integration)
 6. [Which sample ships first](#6-which-sample-ships-first)
 7. [What the host page gets](#7-what-the-host-page-gets)
-8. [Decisions this plan does not make](#8-decisions-this-plan-does-not-make)
+8. [Decisions](#8-decisions)
 9. [Milestones, and what to spike first](#9-milestones-and-what-to-spike-first)
 10. [Out of scope, on purpose](#10-out-of-scope-on-purpose)
 11. [The documents this port amends](#11-the-documents-this-port-amends)
