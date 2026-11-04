@@ -10,6 +10,7 @@
 
 #include <Windows.h>
 
+#include <stdexcept>
 #include <utility>
 
 // A live shell, including its real hidden HWND, with null render and audio.
@@ -137,4 +138,80 @@ TEST_CASE("a live Application hands the pointer's options and calls to its windo
 
 	app.set_cursor_confined(true);
 	CHECK(app.cursor_confined());
+}
+
+TEST_CASE("a live Application opens at, and resizes to, a client size no preset names")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"ApplicationClientSizeTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	options.client_size = Vector2I(900, 500);
+	Application app(std::move(options));
+	app.initialize();
+	const HWND window = static_cast<HWND>(app.window());
+	REQUIRE(window != nullptr);
+
+	// A hidden window makes no size report at creation, so the layout holds
+	// what was asked for, and the window must have been made that size.
+	CHECK(client_size(window) == Vector2I(900, 500));
+	CHECK(app.resolution_manager()->resolution_ivec() == Vector2I(900, 500));
+	CHECK(app.resolution_manager()->resolution() ==
+		ScreenResolution::s_1280_720);
+
+	// Small enough for any desktop CI runs on, so none of them is clamped.
+	for (const Vector2I& requested :
+		{ Vector2I(640, 480), Vector2I(800, 500), Vector2I(1000, 600) })
+	{
+		CAPTURE(requested.x);
+		CAPTURE(requested.y);
+		app.set_resolution(requested);
+		CHECK(client_size(window) == requested);
+		check_size(app, window);
+		CHECK(app.resolution_manager()->resolution() ==
+			ScreenResolution::s_1280_720);
+	}
+
+	SUBCASE("below the minimum is refused and changes nothing")
+	{
+		const Vector2I before = client_size(window);
+		CHECK_THROWS_AS(app.set_resolution(Vector2I(100, 600)),
+			std::invalid_argument);
+		CHECK_THROWS_AS(app.set_resolution(Vector2I(800, 100)),
+			std::invalid_argument);
+		CHECK(client_size(window) == before);
+		check_size(app, window);
+	}
+
+	SUBCASE("past the monitor comes back clamped, and the layout follows")
+	{
+		const Vector2I requested(30000, 20000);
+		app.set_resolution(requested);
+		const Vector2I got = client_size(window);
+		CHECK(got.x < requested.x);
+		CHECK(got.y < requested.y);
+		check_size(app, window);
+	}
+
+	SUBCASE("leaving full screen comes back to the size, not the preset")
+	{
+		app.set_fullscreen(true);
+		app.set_fullscreen(false);
+		CHECK(client_size(window) == Vector2I(1000, 600));
+		check_size(app, window);
+	}
+
+	SUBCASE("a preset afterwards replaces the size")
+	{
+		// What the preset gives on this desktop, clamped or not, is what
+		// leaving full screen must come back to.
+		app.set_resolution(ScreenResolution::s_1280_720);
+		const Vector2I preset = client_size(window);
+		CHECK(preset != Vector2I(1000, 600));
+		app.set_fullscreen(true);
+		app.set_fullscreen(false);
+		CHECK(client_size(window) == preset);
+		check_size(app, window);
+	}
 }

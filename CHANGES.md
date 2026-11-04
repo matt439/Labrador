@@ -77,6 +77,19 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-04 - Open and resize the window at any client size
+
+**Addition.** `ApplicationOptions::client_size`, a `std::optional<Vector2I>`,
+opens the window at any client size, and `Application::set_resolution(const
+Vector2I&)` resizes it to one, beside the four 16:9 presets, which were all a
+game could ask for. Either is refused with `std::invalid_argument` when an
+extent is below `min_window_width` or `min_window_height`; `validate()` names
+the field, and a refused `set_resolution` changes nothing. A size past the
+monitor's comes back clamped and the layout follows it. Leaving full screen
+returns to the size last asked for, and `set_resolution(ScreenResolution)`
+clears it. `ResolutionManager::resolution()` keeps the preset last asked for
+unless the size is one of the four. A game that sets neither sees no change.
+
 ### 2026-11-04 - Collide circles in the narrow phase
 
 **Behaviour change.** `narrow_phase` measured only the convex polygons and

@@ -229,6 +229,22 @@ places it from `resolution`. So does the greeting, unless you gave it a place of
 section before: `Vector2F(200.0f, 150.0f)` stays where it is. The text stays the same size in
 pixels, so it looks smaller.
 
+**Any other size** goes on its own line under that one, as width then height:
+
+```cpp
+		options.resolution = ScreenResolution::s_1280_720;
+		options.client_size = Vector2I(1600, 900);
+```
+
+The window is then 1600 pixels wide and 900 high inside its frame, and `resolution` in `init()`
+is that size, so the hint is along its bottom as before. Any shape works, `Vector2I(1440, 900)`
+or `Vector2I(1024, 768)` too; what is placed from `resolution` moves with it, and the rest stays
+where it is. A size narrower than 320 or shorter than 200, the smallest window the engine allows,
+stops the game before its window opens, and the test fails too, with
+`startup failure: ApplicationOptions::client_size is narrower than min_window_width.` or
+`... is shorter than min_window_height.`; on Windows a box titled `Sample - startup failure` says
+the same. Delete the line to go back to the preset.
+
 **Choose a size smaller than your screen.** The window's frame and title bar take room too, so a
 window as big as the screen does not fit. On a 2560 by 1440 screen, `s_2560_1440` gave a window
 2576 by 1479 pixels with its frame, starting at the top-left corner, and its bottom 39 pixels
@@ -671,6 +687,11 @@ and headless Chrome showed the page with the sky and the question; it was not ch
 browser whether **F11** makes the canvas full screen. A colour from three whole numbers and
 from three numbers with `f`, and `Vector2F(200, 150)`, were built, and a screenshot showed the
 greeting near the top-left corner after the start-position change.
+
+The *Any other size* lines under *The window's size* were added on 4 November 2026 with
+`client_size` and have not yet been followed in a starter. The engine's hidden-window tests open a
+window at a size no preset names, resize it to three more, refuse a size below the minimum and
+read back each client size; the startup message is `validate()`'s, which its own test checks.
 
 A second agent then followed the page as worded in another fresh starter, after
 [Make a first change](/docs/get-started/first-change/)'s steps 2 to 4, copying from the page.

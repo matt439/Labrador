@@ -564,6 +564,7 @@ written.
 56. L56 The starter project's first push runs green on GitHub: OCA-79 (added 2026-11-03 by the persona re-review)
 57. L57 The Firefox runner covers LineSweeper and the bundle page and registers as ctest: SM-11 (moved from Won't this time on 2026-11-03 by the owner; its work is `WEB#10`)
 58. L58 Collide a round body: OCA-80 (selected from `IDEA#7` on 2026-11-04 by the owner)
+59. L59 Open the window at any size: OCA-81 (selected from `IDEA#10` on 2026-11-04 by the owner)
 
 **Stories**
 
@@ -1072,11 +1073,37 @@ written.
 
 - [x] **[OCA-80](#oca-80)** Should - S - The Outside Adopter: Collide a round body without the narrow phase throwing
 
+- [x] **[OCA-81](#oca-81)** Should - S - The Outside Adopter: Open the window at any client size, not only four presets
+
 - [ ] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work is `WEB#10` in TODO.md: add LineSweeper and the bundle
   page's play, quit and replay to `tests/render/web/run_firefox.mjs`, and
   register its runs as ctest entries when configure finds a Firefox.
+
+<a id="oca-81"></a>
+### OCA-81. Open the window at any client size, not only four presets
+
+Selected 2026-11-04 by the owner from `IDEA#10` in
+[Feature candidates](../feature-candidates.md), taking option A of the
+[recommendations of 2026-11-04](../2026-11-04-decision-recommendations.md#idea10-arbitrary-client-sizes).
+A game could ask only for the four 16:9 presets, so it could not open at
+1366x768 or 1600x900, choose a 16:10 shape, or fill a laptop's own screen,
+while `ResolutionManager` and `Window::resize_client` already took any size.
+Monitor-mode enumeration waits for a menu that lists modes.
+
+**Acceptance**
+
+- `ApplicationOptions::client_size` and `Application::set_resolution(const
+  Vector2I&)` take any client size; an extent below the minimum window size
+  is refused by name, and a refused call changes nothing.
+- Hidden-window tests read back the client size at startup and for several
+  arbitrary sizes, one below the minimum refused, one past the monitor
+  clamped with the layout following, and full screen left back to the size.
+- `ResolutionManager::resolution()` keeps meaning the preset last asked for;
+  the hidden-window and browser size reports are unchanged.
+- The window guide's size section shows a custom size, and CHANGES.md
+  records the addition.
 
 <a id="oca-80"></a>
 ### OCA-80. Collide a round body without the narrow phase throwing

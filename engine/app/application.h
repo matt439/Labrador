@@ -23,6 +23,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -47,7 +48,14 @@ namespace labrador
 		std::wstring window_class_name = L"LabradorWindowClass";
 		std::wstring window_title = L"Labrador";
 
+		// The window's client size: one of the four presets, or, when
+		// client_size is set, any size at all - 1366x768, 1600x900, a 16:10
+		// shape. A set client_size is the size the window opens at, and
+		// `resolution` is then only the preset label ResolutionManager reports
+		// until the size matches one. Neither extent may be below the minimum
+		// window size further down; validate() refuses it by name.
 		ScreenResolution resolution = ScreenResolution::s_1280_720;
+		std::optional<Vector2I> client_size;
 		bool fullscreen = false;
 
 		// Whether the window is shown. A smoke test or a capture tool says
@@ -204,9 +212,9 @@ namespace labrador
 		void quit() const;
 
 		// THE LAYOUT SIZE FOLLOWS THE WINDOW. However the window comes to change
-		// size - either call below, or a user dragging an edge, which no game
+		// size - any call below, or a user dragging an edge, which no game
 		// asked for at all - ResolutionManager is re-pointed at the new CLIENT
-		// size before the renderer resizes its back buffer. All three arrive as
+		// size before the renderer resizes its back buffer. All of them arrive as
 		// the window's size report - WM_SIZE on Windows - so
 		// on_window_size_changed is the single place that holds the invariant,
 		// and it cannot be got at from a game (APPLICATION.md#2).
@@ -216,6 +224,14 @@ namespace labrador
 		// decides which resolution and when - it is reading its own options menu
 		// - and the engine owns what that means to a window, frame included.
 		void set_resolution(ScreenResolution resolution);
+
+		// The same for a size no preset names, in CLIENT pixels. A size past
+		// the monitor's comes back clamped, and the layout follows what the
+		// window got. resolution_manager()->resolution() keeps the preset
+		// last asked for unless this size is one of the four. Throws
+		// std::invalid_argument, changing nothing, when either extent is
+		// below ApplicationOptions::min_window_width or min_window_height.
+		void set_resolution(const Vector2I& client_size);
 
 		// Switches between a borderless full-screen window and an ordinary one.
 		// Going full screen adopts the monitor's size; coming back adopts the
@@ -391,6 +407,11 @@ namespace labrador
 		bool content_loaded_ = false;
 
 		void update();
+
+		// Points the resolution manager at the size the game last asked for:
+		// the preset, then client_size over it when one is set, so the label
+		// stays the preset unless the size is one.
+		void point_at_requested_size();
 
 		// Fills in the marks after the update, and publishes them once the
 		// frame has ended.

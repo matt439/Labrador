@@ -41,7 +41,7 @@ because the pacing records rest on the constant it would turn into a setting.
 | `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Select the result shape and mask filter; exact tests, not swept motion |
 | `IDEA#9` | Contact begin and end edges | could | S | A second client needing the edge; the collision sample derives it in a few lines |
-| `IDEA#10` | Arbitrary client sizes | should | S | Select whether monitor-mode enumeration comes with it or later |
+| `IDEA#10` | Arbitrary client sizes | should | S | Selected 2026-11-04 as OCA-81 and landed; enumeration later |
 | `IDEA#11` | Sounds from WAV files and from memory | could | M | Select the seam verb's shape; compressed formats stay with GAP#2 |
 | `IDEA#12` | Animation sequences with named frames and durations | could | M | Select the JSON form; the existing strip form stays valid |
 | `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Keep OCA-50's rule that pointer policy stays in the page |
@@ -238,6 +238,10 @@ allocation-free steady state; the collision sample's trigger counter uses it,
 or the proposal records that the sample pattern is enough and closes.
 
 ## IDEA#10. Arbitrary client sizes
+
+**Result:** selected by the owner on 2026-11-04 as
+[OCA-81](product/BACKLOG.md#oca-81), and landed without monitor-mode
+enumeration. The evidence below is as the proposal found it.
 
 **Present evidence:** [application.h](../engine/app/application.h)'s
 `set_resolution` and `ApplicationOptions::resolution` accept only the four
