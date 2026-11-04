@@ -616,6 +616,9 @@ written.
 - [x] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
 - [x] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
+  *Amended 2026-11-04:* drafted, untried, in
+  [lan-serve.md](../port/lan-serve.md) with `tools/lan_serve.py`; the box is
+  ticked once `SM-13`'s iPhone session has followed and corrected it.
   *Amended 2026-11-03 by the persona re-review:* the Mac for iOS Web Inspector
   is the owner's current MacBook Air, not the 2013 machine the dated story
   names. No LAN-serve procedure exists yet; every serve recipe in the tree
