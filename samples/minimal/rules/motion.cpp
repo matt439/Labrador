@@ -2,6 +2,8 @@
 
 #include "engine/math/matrix3x2f.h"
 
+#include <span>
+
 using namespace labrador;
 
 Vector2F combined_direction(const Vector2F& stick, const Vector2F& keys)
@@ -34,4 +36,15 @@ Vector2F greeting_position(const Motion& motion)
 	const Matrix3x2F to_screen = Matrix3x2F::rotation(motion.spin) *
 		Matrix3x2F::translation(motion.centre);
 	return to_screen.transform_point(Point2F(0.0f, -orbit_radius));
+}
+
+PadsInput combine_pads(std::span<const PadReading> slots)
+{
+	PadsInput input;
+	for (const PadReading& slot : slots)
+	{
+		input.stick += slot.stick;
+		input.quit_requested = input.quit_requested || slot.quit_pressed;
+	}
+	return input;
 }

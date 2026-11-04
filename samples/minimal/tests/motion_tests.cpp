@@ -10,6 +10,9 @@
 
 #include "samples/minimal/rules/motion.h"
 
+#include <array>
+#include <cstddef>
+
 using namespace labrador;
 
 TEST_CASE("the stick and the keys add up to at most one unit")
@@ -45,4 +48,36 @@ TEST_CASE("a step moves the centre and turns the greeting")
 	const Vector2F above = greeting_position(start);
 	CHECK(above.x == doctest::Approx(100.0f));
 	CHECK(above.y == doctest::Approx(100.0f - orbit_radius));
+}
+
+TEST_CASE("the only pad counts in whichever slot it is in")
+{
+	// A lone pad can sit in slot 1 or 3 with every other slot empty, as the
+	// system can leave it after another pad is unplugged. B on it asks to
+	// quit, and its stick moves the greeting as one in slot 0 would.
+	for (const size_t occupied : { size_t{ 1 }, size_t{ 3 } })
+	{
+		std::array<PadReading, 4> slots;
+		slots[occupied] = PadReading{ Vector2F(0.5f, 0.0f), true };
+		const PadsInput input = combine_pads(slots);
+		CHECK(input.quit_requested);
+		const Motion moved = step_motion(Motion{}, input.stick,
+			Vector2F::zero, 1.0f);
+		CHECK(moved.centre.x == doctest::Approx(0.5f * move_speed));
+	}
+
+	// Two pads, then the one in slot 0 unplugged: that slot now reads as a
+	// stick at rest with nothing pressed, and the pad left in slot 2 still
+	// steers and still quits.
+	std::array<PadReading, 4> slots;
+	slots[0] = PadReading{ Vector2F(-1.0f, 0.0f), false };
+	slots[2] = PadReading{ Vector2F(0.0f, 1.0f), true };
+	slots[0] = PadReading{};
+	const PadsInput input = combine_pads(slots);
+	CHECK(input.stick.x == doctest::Approx(0.0f));
+	CHECK(input.stick.y == doctest::Approx(1.0f));
+	CHECK(input.quit_requested);
+
+	// With no pad at all, nothing asks to quit.
+	CHECK_FALSE(combine_pads(std::array<PadReading, 4>{}).quit_requested);
 }

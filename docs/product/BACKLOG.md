@@ -330,6 +330,14 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   (`standard_gamepad_tests.cpp`), but nothing asserts that a pad in slot 1
   or 3, or with slot 0 emptied, moves the greeting and quits. That pure
   function and its MinimalTests case remain before the box is ticked.
+  *Coverage landed 2026-11-04:* `combine_pads` in
+  `samples/minimal/rules/motion.h` takes the four slots' readings and returns
+  the summed stick and quit; `HelloState::update` only reads the slots into
+  it, and MinimalTests' "the only pad counts in whichever slot it is in"
+  asserts a lone pad in slot 1 and in slot 3 quitting and moving the greeting,
+  slot 0 emptied after an unplug, and no pad. `ConfirmState`'s A/B loop is
+  unchanged. Left before the box is ticked: the informal one-pad play in
+  OCA-48's session; the unplug-slot-0 path stays unseen on hardware.
 - [x] **[OCA-49](STORIES.md#oca-49)** Could · XS · The Outside Adopter: The default disabled menu row looks unavailable
 - [x] **[OCA-52](STORIES.md#oca-52)** Could · XS · The Outside Adopter: The menus guide routes me to the components I can copy
 - [x] **[OCA-53](STORIES.md#oca-53)** Should · M · The Outside Adopter: Keep my players' settings and saves on desktop and in the browser

@@ -278,8 +278,14 @@ sticks, alongside Escape, with no connected guard:
 <SourceFile
 	path="samples/minimal/states/hello_state.cpp"
 	from="bool quit_requested = keyboard.pressed(Key::escape);"
-	to="}"
+	to="const Vector2F stick_direction = pad_input.stick;"
 />
+
+The loop only reads. What the four slots mean together is a rule in the sample's rules library,
+so a test checks it with no pad at all: a pad alone in slot 1 or 3, and slot 0 emptied after an
+unplug, still move the greeting and ask to quit.
+
+<SourceFile path="samples/minimal/rules/motion.cpp" from="PadsInput combine_pads(" to="}" />
 
 Any pad can move the greeting or ask to quit, and any pad can answer the confirmation. Several
 pads' directions add, so opposite pushes cancel; the motion rules clamp the combined direction
