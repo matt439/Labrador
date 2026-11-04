@@ -206,6 +206,23 @@ class TestedTreeTests(unittest.TestCase):
         cached = self.history.commit(".github/actions/emscripten/action.yml", "x\n")
         self.assertFalse(self.decide(self.passing(), head=cached, refresh=(".github/",)).tested)
 
+    def test_moving_a_refresh_path_away_still_refreshes(self):
+        self.history.git("checkout", "--quiet", self.head)
+        before = self.history.commit("vcpkg.json", "{}\n")
+        self.history.git("mv", "vcpkg.json", "docs.json")
+        self.history.git("commit", "--quiet", "-m", "move")
+        moved = self.history.git("rev-parse", "HEAD").strip()
+        api = self.passing()
+        decision = self.decide(api, before=before, head=moved, refresh=("vcpkg.json",))
+        self.assertFalse(decision.tested)
+        self.assertIn("vcpkg.json", decision.reason)
+        self.assertEqual(api.calls, [])
+
+    def test_the_documentation_filter_lists_both_ends_of_a_move(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text(
+            encoding="utf-8")
+        self.assertIn('git diff --no-renames --name-only "$BASE" HEAD', workflow)
+
     def test_main_reports_an_error_as_build(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "output"

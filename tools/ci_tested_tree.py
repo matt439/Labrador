@@ -103,7 +103,9 @@ def decide(*, repository: str, workflow_path: str, before: str, head: str, force
         return Decision(False, "the push has no previous master to compare with")
     if not SHA.fullmatch(head):
         return Decision(False, f"{head!r} is not a commit hash")
-    changed = git("diff", "--name-only", before, head).splitlines()
+    # --no-renames, or a moved file is listed only where it went, and moving
+    # vcpkg.json away would not count as changing it.
+    changed = git("diff", "--no-renames", "--name-only", before, head).splitlines()
     refresh = tuple(refresh)
     refreshed = [path for path in changed if refreshes(path, refresh)]
     if refreshed:

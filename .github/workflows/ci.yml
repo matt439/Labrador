@@ -115,7 +115,9 @@ jobs:
             echo "code=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git diff --name-only "$BASE" HEAD > "$RUNNER_TEMP/changed.txt"
+          # --no-renames, or a source file moved into docs/ is listed only
+          # where it went and the change reads as documentation.
+          git diff --no-renames --name-only "$BASE" HEAD > "$RUNNER_TEMP/changed.txt"
           cat "$RUNNER_TEMP/changed.txt"
           if grep -v -E '(\.md$)|(^docs/)' "$RUNNER_TEMP/changed.txt" > /dev/null; then
             echo "code=true" >> "$GITHUB_OUTPUT"
