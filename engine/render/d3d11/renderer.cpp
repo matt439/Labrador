@@ -27,7 +27,7 @@ namespace labrador
 {
 	namespace
 	{
-		RenderDeviceInfo selected_device(ID3D11Device* device)
+		RenderDeviceInfo selected_device(ID3D11Device* device, bool vsync)
 		{
 			Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
 			ThrowIfFailed(device->QueryInterface(
@@ -45,7 +45,7 @@ namespace labrador
 			RenderDeviceInfo info;
 			info.backend = "d3d11";
 			info.present_mode = "dxgi_sync_interval";
-			info.requested_swap_interval = 1;
+			info.requested_swap_interval = vsync ? 1 : 0;
 			info.api = "Direct3D 11";
 			info.device_name = narrow(description.Description);
 			info.vendor_id = description.VendorId;
@@ -662,7 +662,7 @@ namespace labrador
 	{
 		this->create_device_dependent_resources();
 		this->device_info = selected_device(
-			this->device_resources.GetD3DDevice());
+			this->device_resources.GetD3DDevice(), this->vsync);
 
 		if (this->notify != nullptr)
 		{
@@ -704,7 +704,7 @@ namespace labrador
 		this->impl_->create_device_dependent_resources();
 		this->impl_->device_resources.CreateWindowSizeDependentResources();
 		this->impl_->device_info = selected_device(
-			this->impl_->device_resources.GetD3DDevice());
+			this->impl_->device_resources.GetD3DDevice(), this->impl_->vsync);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
@@ -715,6 +715,20 @@ namespace labrador
 				"Renderer::device_info requires create_device.");
 		}
 		return this->impl_->device_info;
+	}
+
+	void Renderer::set_vsync(bool vsync)
+	{
+		this->impl_->vsync = vsync;
+		if (!this->impl_->device_info.backend.empty())
+		{
+			this->impl_->device_info.requested_swap_interval = vsync ? 1 : 0;
+		}
+	}
+
+	bool Renderer::vsync() const
+	{
+		return this->impl_->vsync;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)
@@ -883,7 +897,7 @@ namespace labrador
 		// restart by then.
 		this->impl_->frame_begun = false;
 
-		this->impl_->device_resources.Present();
+		this->impl_->device_resources.Present(this->impl_->vsync ? 1u : 0u);
 	}
 
 	void Renderer::set_view_count(int count)

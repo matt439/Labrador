@@ -387,12 +387,13 @@ namespace labrador
     }
 
     // Present the contents of the swap chain to the screen.
-    void DeviceResources::Present()
+    void DeviceResources::Present(UINT syncInterval)
     {
-        // Request a display interval of one. Present may return before the next
-        // VSync or block on presentation backpressure; its CPU duration is not
-        // the display interval and does not measure when this frame scans out.
-        HRESULT hr = m_swapChain->Present(1, 0);
+        // Request a display interval of one, or of none when vsync is off.
+        // Present may return before the next VSync or block on presentation
+        // backpressure; its CPU duration is not the display interval and does
+        // not measure when this frame scans out.
+        HRESULT hr = m_swapChain->Present(syncInterval, 0);
 
         // Discard the contents of the render target.
         // This is a valid operation only when the existing contents will be entirely

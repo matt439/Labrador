@@ -68,6 +68,12 @@ namespace labrador
 		// Must convert to at least one StepTimer tick (at most 10,000,000 FPS).
 		int target_fps = 60;
 
+		// Whether presenting waits for the display, from the first frame.
+		// Changed later through renderer()->set_vsync, which says what each
+		// backend can honour. It changes presentation only: the simulation
+		// still steps at target_fps.
+		bool vsync = true;
+
 		// The render thread pool's floor and ceiling. The ceiling defaults to
 		// what the machine reports (APPLICATION.md#1).
 		int min_threads = 1;

@@ -333,7 +333,8 @@ namespace labrador
 		enable_extensions(*this);
 
 		// No interval to ask for or read back: the browser presents at the
-		// display's rate and offers no control over it.
+		// display's rate and offers no control over it, so set_vsync is
+		// recorded and changes nothing here (SEAM.md#6).
 		this->device_info.present_mode = "browser_animation_frame";
 		this->shader_prelude = web_shader_prelude;
 	}

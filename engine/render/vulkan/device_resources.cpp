@@ -1171,17 +1171,20 @@ namespace labrador
 		description.preTransform = capabilities.currentTransform;
 		description.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 
-		// FIFO, WHICH IS THE ONLY MODE EVERY IMPLEMENTATION MUST HAVE and is
-		// vsync-locked - the same answer both Direct3D backends give by
-		// presenting with a sync interval of 1. Nothing in this tree sets a
-		// tearing flag, so there is no capability probe here to measure one.
-		description.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+		// FIFO, WHICH IS THE ONLY MODE EVERY IMPLEMENTATION MUST HAVE, unless
+		// set_vsync asked for none and the surface offers another -
+		// choose_present_mode. FIFO is vsync-locked, the same answer both
+		// Direct3D backends give by presenting with a sync interval of 1.
+		const VkPresentModeKHR present_mode = this->choose_present_mode();
+		description.presentMode = present_mode;
 		description.clipped = VK_TRUE;
 		description.oldSwapchain = previous;
 
 		VkSwapchainKHR fresh = VK_NULL_HANDLE;
 		const VkResult created = vkCreateSwapchainKHR(device, &description,
 			nullptr, &fresh);
+		this->present_mode_ = present_mode;
+		this->present_mode_stale_ = false;
 
 		// The old one is retired whether or not the new one was made: it was
 		// handed to oldSwapchain, which puts it into a state where the only
@@ -1238,6 +1241,58 @@ namespace labrador
 		}
 
 		return true;
+	}
+
+	VkPresentModeKHR DeviceResources::choose_present_mode() const
+	{
+		if (this->vsync_)
+		{
+			return VK_PRESENT_MODE_FIFO_KHR;
+		}
+
+		uint32_t count = 0;
+		check_vk(vkGetPhysicalDeviceSurfacePresentModesKHR(
+			this->owner_->physical_device, this->surface_, &count, nullptr),
+			"This window's Vulkan present modes could not be listed");
+		std::vector<VkPresentModeKHR> modes(count);
+		check_vk(vkGetPhysicalDeviceSurfacePresentModesKHR(
+			this->owner_->physical_device, this->surface_, &count,
+			modes.data()),
+			"This window's Vulkan present modes could not be listed");
+		modes.resize(count);
+
+		for (const VkPresentModeKHR wanted :
+			{ VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR })
+		{
+			if (std::find(modes.begin(), modes.end(), wanted) != modes.end())
+			{
+				return wanted;
+			}
+		}
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
+
+	void DeviceResources::set_vsync(bool vsync) noexcept
+	{
+		if (vsync == this->vsync_)
+		{
+			return;
+		}
+		this->vsync_ = vsync;
+		this->present_mode_stale_ = true;
+	}
+
+	const char* DeviceResources::present_mode_name() const noexcept
+	{
+		switch (this->present_mode_)
+		{
+		case VK_PRESENT_MODE_MAILBOX_KHR:
+			return "mailbox";
+		case VK_PRESENT_MODE_IMMEDIATE_KHR:
+			return "immediate";
+		default:
+			return "fifo";
+		}
 	}
 
 	bool DeviceResources::surface_has_area() const noexcept
@@ -1668,10 +1723,16 @@ namespace labrador
 			return;
 		}
 
+		// A SWAPCHAIN MADE FOR THE OTHER VSYNC IS ANSWERED AS AN OUT-OF-DATE
+		// ONE, by the branch below and without asking it for an image first:
+		// the present mode is fixed at creation, and the frame being presented
+		// is in the colour target, which a swapchain rebuild keeps.
 		uint32_t image = 0;
-		VkResult acquired = vkAcquireNextImageKHR(this->owner_->device,
-			this->swapchain_, UINT64_MAX, this->frame().acquired,
-			VK_NULL_HANDLE, &image);
+		VkResult acquired = this->present_mode_stale_
+			? VK_ERROR_OUT_OF_DATE_KHR
+			: vkAcquireNextImageKHR(this->owner_->device,
+				this->swapchain_, UINT64_MAX, this->frame().acquired,
+				VK_NULL_HANDLE, &image);
 
 		if (acquired == VK_ERROR_OUT_OF_DATE_KHR)
 		{

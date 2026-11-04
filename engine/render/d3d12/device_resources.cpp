@@ -504,11 +504,13 @@ namespace labrador
 		}
 	}
 
-	void DeviceResources::present()
+	void DeviceResources::present(UINT sync_interval)
 	{
-		// Vsync-locked, like the backend next door: nothing in this tree sets a
-		// tearing flag, so there is no capability probe here to measure one.
-		const HRESULT hr = this->swap_chain_->Present(1, 0);
+		// The interval set_vsync chose, like the backend next door. Nothing in
+		// this tree sets a tearing flag, so an interval of 0 in a window is
+		// still composed rather than torn, and there is no capability probe
+		// here to measure one.
+		const HRESULT hr = this->swap_chain_->Present(sync_interval, 0);
 
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{

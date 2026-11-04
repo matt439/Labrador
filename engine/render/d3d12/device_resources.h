@@ -59,7 +59,8 @@ namespace labrador
 			this->notify_ = notify;
 		}
 
-		void present();
+		// The sync interval is Renderer::set_vsync's answer, 1 or 0.
+		void present(UINT sync_interval);
 
 		// --- The fence, and the whole of what this backend owes it -----------
 

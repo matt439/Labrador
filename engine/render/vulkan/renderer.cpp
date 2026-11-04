@@ -732,6 +732,8 @@ namespace labrador
 	{
 		this->create_device_dependent_resources();
 		this->device_info = selected_device(this->device_resources.owner());
+		this->device_info.present_mode =
+			this->device_resources.present_mode_name();
 
 		if (this->notify != nullptr)
 		{
@@ -783,6 +785,7 @@ namespace labrador
 
 		impl.reset_views();
 		impl.device_info = selected_device(impl.device_resources.owner());
+		impl.device_info.present_mode = impl.device_resources.present_mode_name();
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
@@ -905,6 +908,25 @@ namespace labrador
 		impl.frame_begun = false;
 
 		impl.device_resources.present();
+
+		// The mode the swapchain now has, which a set_vsync since the last
+		// present has just changed. Empty while a lost device is between its
+		// two halves, and filled again by on_device_restored.
+		if (!impl.device_info.backend.empty())
+		{
+			impl.device_info.present_mode =
+				impl.device_resources.present_mode_name();
+		}
+	}
+
+	void Renderer::set_vsync(bool vsync)
+	{
+		this->impl_->device_resources.set_vsync(vsync);
+	}
+
+	bool Renderer::vsync() const
+	{
+		return this->impl_->device_resources.vsync();
 	}
 
 	void Renderer::set_view_count(int count)

@@ -105,6 +105,10 @@ namespace labrador
 		bool device_created = false;
 		RenderDeviceInfo device_info;
 
+		// What set_vsync last asked. Recorded and never acted on: there is no
+		// present for it to change (SEAM.md#6).
+		bool vsync = true;
+
 		// Whether submit() has already run for this frame. renderer.h makes a
 		// second submit a no-op. This backend answered that correctly by
 		// accident - its submit re-gathers rather than appends - and keeps the

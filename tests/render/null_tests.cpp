@@ -147,6 +147,27 @@ TEST_CASE("the null renderer reports that it selected no device")
 	CHECK_FALSE(info.reported_swap_interval.has_value());
 }
 
+TEST_CASE("the null renderer records a vsync request and presents nothing differently")
+{
+	Renderer renderer;
+	renderer.set_vsync(false);
+	renderer.create_device(nullptr, 640, 480, 1);
+
+	CHECK_FALSE(renderer.vsync());
+
+	renderer.begin_frame();
+	renderer.set_view_count(1);
+	renderer.submit();
+	renderer.end_frame();
+
+	const RenderDeviceInfo& info = renderer.device_info();
+	CHECK(info.present_mode == "none");
+	CHECK_FALSE(info.requested_swap_interval.has_value());
+
+	renderer.set_vsync(true);
+	CHECK(renderer.vsync());
+}
+
 TEST_CASE("a sprite is recorded with the corners a device would have been given")
 {
 	Harness harness;

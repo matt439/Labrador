@@ -174,6 +174,16 @@ namespace labrador
 		return this->impl_->device_info;
 	}
 
+	void Renderer::set_vsync(bool vsync)
+	{
+		this->impl_->vsync = vsync;
+	}
+
+	bool Renderer::vsync() const
+	{
+		return this->impl_->vsync;
+	}
+
 	bool Renderer::window_size_changed(int width, int height)
 	{
 		// BEFORE THERE IS A DEVICE THERE IS NOTHING TO REBUILD, and the seam

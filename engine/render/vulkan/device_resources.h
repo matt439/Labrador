@@ -347,6 +347,17 @@ namespace labrador
 		// A short present() does not establish that the GPU finished the frame.
 		void present();
 
+		// Renderer::set_vsync's answer. A change is a different present mode,
+		// and a present mode belongs to the swapchain, so the next present()
+		// remakes it before it acquires - the same rebuild an out-of-date
+		// swapchain gets, with the frame it was presenting kept.
+		void set_vsync(bool vsync) noexcept;
+		bool vsync() const noexcept { return this->vsync_; }
+
+		// The mode the current swapchain was made with: "fifo", "mailbox" or
+		// "immediate". FIFO until there has been a swapchain to make.
+		const char* present_mode_name() const noexcept;
+
 		// --- The timeline, and the whole of what this backend owes it ---------
 
 		// Blocks until everything submitted against THIS frame index has
@@ -453,6 +464,10 @@ namespace labrador
 		// present()'s null-swapchain branch reachable at all.
 		bool create_swapchain();
 
+		// FIFO when vsync is on; otherwise the first of MAILBOX and IMMEDIATE
+		// this surface offers, and FIFO when it offers neither.
+		VkPresentModeKHR choose_present_mode() const;
+
 		// Whether the surface has any area to present into, asked of the
 		// surface rather than of the shell. It is how present() notices a
 		// minimised window coming back, because no Win32 message says so:
@@ -487,6 +502,14 @@ namespace labrador
 
 		VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
 		VkFormat swapchain_format_ = VK_FORMAT_UNDEFINED;
+
+		// What set_vsync asked, the mode create_swapchain chose for it, and
+		// whether the swapchain has yet to be remade to match. Off prefers
+		// MAILBOX, then IMMEDIATE, and falls back to FIFO, the one mode every
+		// surface offers (SEAM.md#6).
+		bool vsync_ = true;
+		bool present_mode_stale_ = false;
+		VkPresentModeKHR present_mode_ = VK_PRESENT_MODE_FIFO_KHR;
 		VkExtent2D swapchain_extent_ = { 0, 0 };
 		std::vector<VkImage> swapchain_images_;
 

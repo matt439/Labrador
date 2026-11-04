@@ -213,6 +213,10 @@ namespace labrador
 		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
 		RenderDeviceInfo device_info;
 
+		// What set_vsync last asked, which outlives the device: it is the
+		// sync interval end_frame hands to Present, 1 or 0.
+		bool vsync = true;
+
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		// Non-owning scratch, reserved with the view capacity. A successful
 		// submission clears it after the queue has consumed the pointer array.
