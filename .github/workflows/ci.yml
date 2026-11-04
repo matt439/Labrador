@@ -397,6 +397,14 @@ jobs:
           call "%VCVARS%"
           cmake --build --preset ${{ matrix.preset }}
 
+      # ctest passes with whatever is registered, so a CMake change that drops
+      # a test would stay green without this.
+      - name: Check that every expected test is registered
+        if: needs.changes.outputs.build == 'true'
+        run: |
+          call "%VCVARS%"
+          python tools\check_ctest_inventory.py --configuration ${{ matrix.preset }} --build-dir out\build\${{ matrix.preset }}
+
       # The opt-in GPU probes are EXCLUDE_FROM_ALL and outside ctest, because
       # running them needs hardware a runner has not got. Compiling them does
       # not, and keeps the evidence docs/review/INDEX.md cites from rotting.
@@ -569,6 +577,13 @@ jobs:
           cmake --build --preset wasm-release || exit /b 1
           "%EM_COMPILER_WRAPPER%" -s
 
+      # Also what stops a configure that found no Chrome from dropping every
+      # page test at once.
+      - name: Check that every expected test is registered
+        run: |
+          call "%VCVARS%"
+          python tools\check_ctest_inventory.py --configuration wasm-release --build-dir out\build\wasm-release
+
       - name: Test
         run: |
           call "%VCVARS%"
@@ -708,6 +723,11 @@ jobs:
           "%EM_COMPILER_WRAPPER%" -z
           cmake --build out/build/wasm-release-null || exit /b 1
           "%EM_COMPILER_WRAPPER%" -s
+
+      - name: Check that every expected test is registered
+        run: |
+          call "%VCVARS%"
+          python tools\check_ctest_inventory.py --configuration wasm-release-null --build-dir out\build\wasm-release-null
 
       - name: Test
         run: |
