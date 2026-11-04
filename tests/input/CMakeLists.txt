@@ -10,10 +10,14 @@ labrador_add_test_suite(InputTests
     LINKS LabradorEngine
 )
 
-# The browser pad's translation, which is the part of engine/input/web/ Node
-# can reach with no Gamepad API. Compiled only where that backend is.
+# The browser pad's translation, which Node can reach with no Gamepad API, and
+# its rumble transport, driven against a fake navigator.getGamepads() that
+# web_vibration_tests.cpp installs for each case. Compiled only where that
+# backend is.
 if(LABRADOR_INPUT_BACKEND STREQUAL "web")
-    target_sources(InputTests PRIVATE standard_gamepad_tests.cpp)
+    target_sources(InputTests PRIVATE
+        standard_gamepad_tests.cpp
+        web_vibration_tests.cpp)
 endif()
 
 # The XInput pad's translation, the part of engine/input/xinput/ that needs no

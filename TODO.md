@@ -43,7 +43,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-45` | DECISION | should | S | Headless coverage landed (2026-11-04): minimal's `combine_pads` rule and its MinimalTests case for a pad alone in slot 1 or 3 and slot 0 emptied. Left: the owner's informal one-pad play, in `OCA-48`'s session; the unplug-slot-0 path stays unseen on hardware. [Decision](docs/product/BACKLOG.md#next). |
-| `PI-21` | OPEN | should | S | Add the missing browser-transport test (`dual-rumble` played and reset); then the owner's informal pad play, natively and in Chrome, in `OCA-48`'s session. [Re-plan](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
+| `PI-21` | DECISION | should | S | Browser-transport test landed 2026-11-04 (`dual-rumble` played, reset on stop, suspension and teardown, against a fake actuator under Node). Left: the owner's informal pad play, natively and in Chrome, in `OCA-48`'s session. [Re-plan](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 
 ## Website and the hosted demo
 
