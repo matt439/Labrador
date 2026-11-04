@@ -75,6 +75,22 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
+## Unreleased
+
+### 2026-11-04 - Collide circles in the narrow phase
+
+**Behaviour change.** `narrow_phase` measured only the convex polygons and
+threw `std::invalid_argument` for a `Circle`, so a `CollisionObject` whose
+`shape()` was a circle compiled and then threw from `Scene::resolve` or
+`find_contacts` at the first pair whose bounds overlapped. It now measures a
+circle against a circle and against each polygon type, under the same
+`Manifold` contract: a unit normal from the first shape towards the second, a
+positive penetration, touching is no contact, and a nonfinite centre or
+radius, or a radius that is not greater than zero, reports no contact. A game
+that kept circles out of collision to avoid the throw can now give an object
+a `Circle` shape; one that caught the exception sees contacts instead. A
+shape whose `shape_type()` is `none` still throws.
+
 ## v0.3.0 (2026-11-03)
 
 Of the commits in

@@ -4,6 +4,7 @@
 #include "engine/collision/broad_phase.h"
 #include "engine/collision/contacts.h"
 #include "engine/collision/resolve.h"
+#include "engine/math/circle.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/vector2f.h"
@@ -284,4 +285,64 @@ TEST_CASE("overlapping AABBs do not manufacture contact between disjoint thin po
 	std::vector<Contact> contacts;
 	find_contacts(objects, contacts, &broad_phase);
 	CHECK(contacts.empty());
+}
+
+TEST_CASE("circles and polygons share one sweep, and each pair is measured by shape")
+{
+	// A round object among boxes: the broad phase sees only bounds, and the
+	// narrow phase answers each pair for the shapes it actually has.
+	class RoundObject : public TestObject
+	{
+	public:
+		explicit RoundObject(const labrador::Circle& circle) :
+			TestObject(circle.bounding_box(), player_layer,
+				wall_layer | player_layer), circle_(circle) {}
+		const labrador::Shape* shape() const override { return &this->circle_; }
+	private:
+		labrador::Circle circle_;
+	};
+
+	RoundObject ball(labrador::Circle(Vector2F(0.0f, 0.0f), 5.0f));
+	// Overlaps the ball's face by one unit.
+	TestObject floor(RectangleF(-20.0f, 4.0f, 40.0f, 10.0f), wall_layer, player_layer);
+	// Overlaps the ball's bounding box at its corner, but not the ball.
+	TestObject corner(RectangleF(4.0f, -9.0f, 5.0f, 5.0f), wall_layer, player_layer);
+	// Overlaps the ball along the line between the centres, and rests on
+	// the floor without overlapping it.
+	RoundObject other(labrador::Circle(Vector2F(-8.0f, 0.0f), 4.0f));
+	REQUIRE(ball.bounds().intersects(corner.bounds()));
+
+	labrador::BroadPhase broad_phase;
+	std::vector<CollisionObject*> objects{ &ball, &floor, &corner, &other };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts, &broad_phase);
+
+	CHECK(contacts.size() == 2);
+	CHECK(contains_pair(contacts, ball, floor));
+	CHECK(contains_pair(contacts, ball, other));
+	CHECK_FALSE(contains_pair(contacts, other, floor));
+	CHECK_FALSE(contains_pair(contacts, ball, corner));
+
+	dispatch_contacts(contacts);
+	const auto from = [](const TestObject& object, const CollisionObject& other_object)
+	{
+		for (const TestObject::Received& received : object.received())
+		{
+			if (received.other == &other_object)
+			{
+				return received;
+			}
+		}
+		FAIL("no contact received");
+		return TestObject::Received{};
+	};
+
+	CHECK(from(ball, floor).normal.x == doctest::Approx(0.0f));
+	CHECK(from(ball, floor).normal.y == doctest::Approx(1.0f));
+	CHECK(from(ball, floor).penetration == doctest::Approx(1.0f));
+	CHECK(from(floor, ball).normal.y == doctest::Approx(-1.0f));
+
+	CHECK(from(ball, other).normal.x == doctest::Approx(-1.0f));
+	CHECK(from(ball, other).penetration == doctest::Approx(1.0f));
+	CHECK(from(other, ball).normal.x == doctest::Approx(1.0f));
 }

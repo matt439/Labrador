@@ -2,16 +2,18 @@
 
 #include "engine/collision/narrow_phase.h"
 #include "engine/collision/resolve.h"
+#include "engine/core/random.h"
 #include "engine/math/circle.h"
+#include "engine/math/intersects.h"
 #include "engine/math/quad.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/triangle.h"
 #include "engine/math/vector2f.h"
 
+#include <cmath>
 #include <limits>
 #include <optional>
-#include <stdexcept>
 
 using labrador::Manifold;
 using labrador::narrow_phase;
@@ -148,18 +150,6 @@ TEST_CASE("a ramp resolves along its slope, not along an axis")
 	CHECK(manifold->normal.x == doctest::Approx(diagonal));
 	CHECK(manifold->normal.y == doctest::Approx(diagonal));
 	CHECK(manifold->penetration == doctest::Approx(28.284271f));
-}
-
-TEST_CASE("a circle is rejected rather than silently missed")
-{
-	// Reporting "no overlap" for a shape the narrow phase cannot measure is
-	// the worse failure: it is a collision that never happens and nothing
-	// says so. Nothing in the tree is a collidable circle.
-	const Circle circle(Vector2F(5.0f, 5.0f), 5.0f);
-	const RectangleF rectangle(0.0f, 0.0f, 10.0f, 10.0f);
-
-	CHECK_THROWS_AS(narrow_phase(circle, rectangle), std::invalid_argument);
-	CHECK_THROWS_AS(narrow_phase(rectangle, circle), std::invalid_argument);
 }
 
 TEST_CASE("one move separates the pair, wherever the overlap is")
@@ -342,4 +332,351 @@ TEST_CASE("nonfinite geometry is rejected even inside an otherwise containing po
 			}
 		}
 	}
+}
+
+TEST_CASE("two overlapping circles meet along the line between their centres")
+{
+	const Circle a(Vector2F(0.0f, 0.0f), 5.0f);
+	const Circle b(Vector2F(6.0f, 8.0f), 7.0f);
+
+	const std::optional<Manifold> manifold = narrow_phase(a, b);
+	REQUIRE(manifold.has_value());
+	CHECK(manifold->normal.x == doctest::Approx(0.6f));
+	CHECK(manifold->normal.y == doctest::Approx(0.8f));
+	CHECK(manifold->penetration == doctest::Approx(2.0f));
+
+	const std::optional<Manifold> reversed = narrow_phase(b, a);
+	REQUIRE(reversed.has_value());
+	CHECK(reversed->normal.x == doctest::Approx(-0.6f));
+	CHECK(reversed->normal.y == doctest::Approx(-0.8f));
+	CHECK(reversed->penetration == doctest::Approx(2.0f));
+}
+
+TEST_CASE("circles that only touch, or are apart, do not overlap")
+{
+	const Circle a(Vector2F(0.0f, 0.0f), 5.0f);
+
+	CHECK_FALSE(narrow_phase(a, Circle(Vector2F(10.0f, 0.0f), 5.0f)).has_value());
+	CHECK_FALSE(narrow_phase(a, Circle(Vector2F(6.0f, 8.0f), 5.0f)).has_value());
+	CHECK_FALSE(narrow_phase(a, Circle(Vector2F(50.0f, 0.0f), 5.0f)).has_value());
+}
+
+TEST_CASE("concentric circles separate along positive x by their radii")
+{
+	// Every direction is a least-penetration axis, so the answer is a fixed
+	// one rather than whatever a zero-length normalisation produces.
+	const Circle outer(Vector2F(3.0f, 4.0f), 10.0f);
+	const Circle inner(Vector2F(3.0f, 4.0f), 2.0f);
+
+	const std::optional<Manifold> manifold = narrow_phase(inner, outer);
+	REQUIRE(manifold.has_value());
+	CHECK(manifold->normal == Vector2F(1.0f, 0.0f));
+	CHECK(manifold->penetration == doctest::Approx(12.0f));
+}
+
+TEST_CASE("a circle beside a box's face is pushed straight off that face")
+{
+	const RectangleF box(0.0f, 0.0f, 10.0f, 10.0f);
+	const Circle circle(Vector2F(-3.0f, 5.0f), 5.0f);
+
+	const std::optional<Manifold> manifold = narrow_phase(circle, box);
+	REQUIRE(manifold.has_value());
+	CHECK(manifold->normal.x == doctest::Approx(1.0f));
+	CHECK(manifold->normal.y == doctest::Approx(0.0f));
+	CHECK(manifold->penetration == doctest::Approx(2.0f));
+
+	const std::optional<Manifold> reversed = narrow_phase(box, circle);
+	REQUIRE(reversed.has_value());
+	CHECK(reversed->normal.x == doctest::Approx(-1.0f));
+	CHECK(reversed->normal.y == doctest::Approx(0.0f));
+	CHECK(reversed->penetration == doctest::Approx(2.0f));
+}
+
+TEST_CASE("a circle against a box's corner is pushed away from the corner")
+{
+	// Neither face normal is the answer here: separating along either one
+	// travels further than the circle overlaps. The corner-to-centre axis is
+	// the one that measures it, at radius minus distance.
+	const RectangleF box(0.0f, 0.0f, 10.0f, 10.0f);
+	const Circle circle(Vector2F(13.0f, 14.0f), 6.0f);
+
+	const std::optional<Manifold> manifold = narrow_phase(circle, box);
+	REQUIRE(manifold.has_value());
+	CHECK(manifold->normal.x == doctest::Approx(-0.6f));
+	CHECK(manifold->normal.y == doctest::Approx(-0.8f));
+	CHECK(manifold->penetration == doctest::Approx(1.0f));
+
+	// The same distance outside the corner, and no overlap: the boxes overlap
+	// but the shapes do not, which is the case a bounding-box test gets wrong.
+	const Circle clear(Vector2F(13.0f, 14.0f), 4.5f);
+	REQUIRE(clear.bounding_box().intersects(box));
+	CHECK_FALSE(narrow_phase(clear, box).has_value());
+	CHECK_FALSE(narrow_phase(box, clear).has_value());
+}
+
+TEST_CASE("a circle grazing a face does not overlap it")
+{
+	const RectangleF box(0.0f, 0.0f, 10.0f, 10.0f);
+
+	CHECK_FALSE(narrow_phase(Circle(Vector2F(-5.0f, 5.0f), 5.0f), box).has_value());
+	CHECK_FALSE(narrow_phase(box, Circle(Vector2F(5.0f, 15.0f), 5.0f)).has_value());
+}
+
+TEST_CASE("a circle contained by a polygon, or containing one, leaves the nearest way")
+{
+	const RectangleF box(0.0f, 0.0f, 20.0f, 10.0f);
+
+	// Centre inside, nearer the top face: out through the top, by the
+	// distance to it plus the whole radius.
+	const std::optional<Manifold> inside =
+		narrow_phase(Circle(Vector2F(8.0f, 3.0f), 1.0f), box);
+	REQUIRE(inside.has_value());
+	CHECK(inside->normal.x == doctest::Approx(0.0f));
+	CHECK(inside->normal.y == doctest::Approx(1.0f));
+	CHECK(inside->penetration == doctest::Approx(4.0f));
+
+	// A circle swallowing the box: the box's narrow dimension wins.
+	const std::optional<Manifold> around =
+		narrow_phase(Circle(Vector2F(10.0f, 5.0f), 50.0f), box);
+	REQUIRE(around.has_value());
+	CHECK(around->normal.x == doctest::Approx(0.0f));
+	CHECK(std::abs(around->normal.y) == doctest::Approx(1.0f));
+	CHECK(around->penetration == doctest::Approx(55.0f));
+
+	// A centre exactly on a vertex has no direction to that vertex, and the
+	// faces measure it.
+	const std::optional<Manifold> on_corner =
+		narrow_phase(Circle(Vector2F(0.0f, 0.0f), 2.0f), box);
+	REQUIRE(on_corner.has_value());
+	CHECK(on_corner->penetration == doctest::Approx(2.0f));
+}
+
+TEST_CASE("a circle is measured against every polygon type")
+{
+	const Circle circle(Vector2F(0.0f, 0.0f), 2.0f);
+
+	// A triangle whose slanted face is nearest the circle: that face's
+	// normal is the axis, which no box test can produce.
+	const Triangle triangle(Point2F(2.5f, 0.0f), Point2F(0.0f, 2.5f),
+		Point2F(4.0f, 4.0f));
+	const std::optional<Manifold> from_triangle = narrow_phase(circle, triangle);
+	REQUIRE(from_triangle.has_value());
+	CHECK(from_triangle->normal.x == doctest::Approx(0.70710678f));
+	CHECK(from_triangle->normal.y == doctest::Approx(0.70710678f));
+	CHECK(from_triangle->penetration == doctest::Approx(2.0f - 1.76776695f));
+	CHECK_FALSE(narrow_phase(circle, Triangle(Point2F(3.0f, 0.0f),
+		Point2F(0.0f, 3.0f), Point2F(4.0f, 4.0f))).has_value());
+
+	// A kite whose nearest feature is a vertex, so the vertex axis decides.
+	const labrador::Quad kite(Point2F(1.0f, 0.0f), Point2F(4.0f, -2.0f),
+		Point2F(7.0f, 0.0f), Point2F(4.0f, 2.0f));
+	const std::optional<Manifold> from_quad = narrow_phase(kite, circle);
+	REQUIRE(from_quad.has_value());
+	CHECK(from_quad->normal.x == doctest::Approx(-1.0f));
+	CHECK(from_quad->normal.y == doctest::Approx(0.0f));
+	CHECK(from_quad->penetration == doctest::Approx(1.0f));
+	CHECK_FALSE(narrow_phase(circle, labrador::Quad(Point2F(2.5f, 0.0f),
+		Point2F(4.0f, -2.0f), Point2F(7.0f, 0.0f), Point2F(4.0f, 2.0f)))
+		.has_value());
+
+	const float diagonal = 0.70710678f;
+	const RectangleRotated tilted(Point2F(2.0f, 2.0f),
+		Point2F(diagonal, diagonal), Point2F(-diagonal, diagonal),
+		Point2F(1.0f, 3.0f));
+	const std::optional<Manifold> from_rotated = narrow_phase(circle, tilted);
+	REQUIRE(from_rotated.has_value());
+	CHECK(from_rotated->normal.x == doctest::Approx(diagonal));
+	CHECK(from_rotated->normal.y == doctest::Approx(diagonal));
+	CHECK(from_rotated->penetration
+		== doctest::Approx(3.0f - 2.0f * 1.41421356f).epsilon(0.001));
+}
+
+TEST_CASE("a circle with no area, or a nonfinite one, contacts nothing")
+{
+	// inflate() can take a radius to zero or below. Neither encloses
+	// anything, and neither may hand a resolver a distance.
+	const float nan = std::numeric_limits<float>::quiet_NaN();
+	const float infinity = std::numeric_limits<float>::infinity();
+	const RectangleF box(0.0f, 0.0f, 10.0f, 10.0f);
+	const Circle good(Vector2F(5.0f, 5.0f), 3.0f);
+
+	const Circle invalid[] = {
+		Circle(Vector2F(5.0f, 5.0f), 0.0f),
+		Circle(Vector2F(5.0f, 5.0f), -3.0f),
+		Circle(Vector2F(nan, 5.0f), 3.0f),
+		Circle(Vector2F(5.0f, infinity), 3.0f),
+		Circle(Vector2F(5.0f, 5.0f), nan),
+		Circle(Vector2F(5.0f, 5.0f), infinity),
+	};
+	for (const Circle& circle : invalid)
+	{
+		CHECK_FALSE(narrow_phase(circle, box).has_value());
+		CHECK_FALSE(narrow_phase(box, circle).has_value());
+		CHECK_FALSE(narrow_phase(circle, good).has_value());
+		CHECK_FALSE(narrow_phase(good, circle).has_value());
+	}
+
+	CHECK_FALSE(narrow_phase(good, RectangleF(nan, 0.0f, 10.0f, 10.0f))
+		.has_value());
+	CHECK_FALSE(narrow_phase(good, Triangle(Point2F(0.0f, 0.0f),
+		Point2F(5.0f, 5.0f), Point2F(10.0f, 10.0f))).has_value());
+}
+
+namespace
+{
+	// A random circle and one of each polygon type, near each other.
+	struct CirclePair
+	{
+		Circle circle;
+		RectangleF rectangle;
+		Triangle triangle;
+		labrador::Quad quad;
+		RectangleRotated rotated;
+	};
+
+	CirclePair random_pair(labrador::Random& random, float origin)
+	{
+		const auto coordinate = [&random, origin]()
+		{
+			return origin + random.uniform_float(-12.0f, 12.0f);
+		};
+
+		CirclePair pair;
+		pair.circle = Circle(Vector2F(coordinate(), coordinate()),
+			random.uniform_float(0.5f, 8.0f));
+		pair.rectangle = RectangleF(origin + random.uniform_float(-8.0f, 0.0f),
+			origin + random.uniform_float(-8.0f, 0.0f),
+			random.uniform_float(1.0f, 10.0f), random.uniform_float(1.0f, 10.0f));
+
+		// Counter-clockwise around the origin at three increasing angles,
+		// so the triangle is never degenerate.
+		const float start = random.uniform_float(0.0f, 2.0f);
+		const auto at = [&random, origin](float angle)
+		{
+			const float length = random.uniform_float(2.0f, 8.0f);
+			return Point2F(origin + length * std::cos(angle),
+				origin + length * std::sin(angle));
+		};
+		pair.triangle = Triangle(at(start), at(start + 2.0f), at(start + 4.0f));
+
+		// A rhombus with random half-diagonals, convex by construction.
+		const float across = random.uniform_float(1.0f, 8.0f);
+		const float down = random.uniform_float(1.0f, 8.0f);
+		pair.quad = labrador::Quad(Point2F(origin - across, origin),
+			Point2F(origin, origin - down), Point2F(origin + across, origin),
+			Point2F(origin, origin + down));
+
+		const float angle = random.uniform_float(0.0f, 3.14159265f);
+		const Vector2F x_axis(std::cos(angle), std::sin(angle));
+		const Vector2F y_axis(-x_axis.y, x_axis.x);
+		// Built at zero and moved, because the constructor's corner checks
+		// are stricter than the far-from-zero rounding of its own corners.
+		pair.rotated = RectangleRotated(Point2F(0.0f, 0.0f), x_axis, y_axis,
+			Vector2F(random.uniform_float(0.5f, 6.0f),
+				random.uniform_float(0.5f, 6.0f)));
+		pair.rotated.offset(Vector2F(origin, origin));
+		return pair;
+	}
+
+	// The narrow phase's answer must agree with intersects.h's yes/no
+	// predicate, which is closed where the narrow phase is open: a contact
+	// implies the predicate, and the predicate for a slightly smaller circle
+	// implies a contact. Between the two is only the grazing boundary.
+	//
+	// The manifold must also be the least translation: moving the circle a
+	// little more than the penetration along the normal separates the pair,
+	// and moving it a little less does not.
+	void check_against(const Circle& circle, const labrador::Shape& polygon,
+		bool (*predicate)(const Circle&, const labrador::Shape&), float origin)
+	{
+		const float tolerance = 1.0e-4f * (1.0f + std::abs(origin));
+		const std::optional<Manifold> manifold = narrow_phase(circle, polygon);
+
+		Circle smaller = circle;
+		smaller.inflate(-tolerance);
+		if (predicate(smaller, polygon))
+		{
+			REQUIRE(manifold.has_value());
+		}
+		if (!manifold.has_value())
+		{
+			return;
+		}
+		REQUIRE(predicate(circle, polygon));
+
+		CHECK(manifold->normal.length() == doctest::Approx(1.0f));
+		REQUIRE(manifold->penetration > 0.0f);
+
+		const std::optional<Manifold> reversed = narrow_phase(polygon, circle);
+		REQUIRE(reversed.has_value());
+		CHECK(reversed->normal == -manifold->normal);
+		CHECK(reversed->penetration == manifold->penetration);
+
+		Circle beyond = circle;
+		beyond.offset(separation(manifold->normal,
+			manifold->penetration + tolerance));
+		CHECK_FALSE(narrow_phase(beyond, polygon).has_value());
+
+		if (manifold->penetration > 4.0f * tolerance)
+		{
+			Circle short_of = circle;
+			short_of.offset(separation(manifold->normal,
+				manifold->penetration - 2.0f * tolerance));
+			CHECK(narrow_phase(short_of, polygon).has_value());
+		}
+	}
+}
+
+TEST_CASE("circle manifolds agree with intersects.h and are the least translation")
+{
+	using labrador::Shape;
+	const auto rectangle = [](const Circle& circle, const Shape& shape)
+	{
+		return labrador::rectangle_circle_intersect(
+			static_cast<const RectangleF&>(shape), circle);
+	};
+	const auto triangle = [](const Circle& circle, const Shape& shape)
+	{
+		return labrador::circle_triangle_intersect(circle,
+			static_cast<const Triangle&>(shape));
+	};
+	const auto quad = [](const Circle& circle, const Shape& shape)
+	{
+		return labrador::circle_quad_intersect(circle,
+			static_cast<const labrador::Quad&>(shape));
+	};
+	const auto rotated = [](const Circle& circle, const Shape& shape)
+	{
+		return labrador::circle_rectangle_rotated_intersect(circle,
+			static_cast<const RectangleRotated&>(shape));
+	};
+	const auto circles = [](const Circle& circle, const Shape& shape)
+	{
+		return labrador::circles_intersect(circle,
+			static_cast<const Circle&>(shape));
+	};
+
+	labrador::Random random(7u);
+	int contacts = 0;
+	for (const float origin : { 0.0f, 6000.0f })
+	{
+		for (int i = 0; i < 2000; i++)
+		{
+			const CirclePair pair = random_pair(random, origin);
+			const Circle other(pair.rotated.center(),
+				random.uniform_float(0.5f, 8.0f));
+			CAPTURE(origin);
+			CAPTURE(i);
+			check_against(pair.circle, pair.rectangle, rectangle, origin);
+			check_against(pair.circle, pair.triangle, triangle, origin);
+			check_against(pair.circle, pair.quad, quad, origin);
+			check_against(pair.circle, pair.rotated, rotated, origin);
+			check_against(pair.circle, other, circles, origin);
+			contacts += narrow_phase(pair.circle, pair.rectangle).has_value() ? 1 : 0;
+		}
+	}
+
+	// Both outcomes are exercised, not only one of them.
+	CHECK(contacts > 500);
+	CHECK(contacts < 3500);
 }

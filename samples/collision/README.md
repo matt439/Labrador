@@ -68,7 +68,9 @@ automatic rigid-body solver.
 The sample uses the application's 60 Hz fixed step and a speed of 240 world
 units per second (four units per step), a 32-unit player and walls at least
 24 units thick. The tests exercise wall sliding, mask rejection, trigger
-entry/exit, the playable route and the outside corners. There is no continuous
+entry/exit, the playable route and the outside corners. They also add a round
+post, a `Circle` the player treats as a wall. Met head on, the post stops the
+player; met off centre, the player slides around it. There is no continuous
 collision detection, gravity, moving-body solver or guarantee for arbitrary
 speeds and level layouts. Validate movement together with geometry when
 adapting the sample.

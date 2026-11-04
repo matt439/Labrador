@@ -54,6 +54,13 @@ both come from the same rectangle, which is also the sprite destination:
 
 <SourceFile path="samples/collision/body.cpp" from="RectangleF Body::bounds() const" to="const Shape* Body::shape() const" />
 
+The narrow phase measures `RectangleF`, `RectangleRotated`, `Triangle`,
+`Quad` and `Circle`, each against any other. For a round body, `shape()`
+returns a `Circle` and `bounds()` returns its `bounding_box()`. A contact with
+a circle has its normal through the circle's centre, so a body that meets it
+off centre slides around it. A circle whose radius is zero or less touches
+nothing.
+
 A layer is one bit. A mask is the set of layers the object accepts. The engine
 does not name them for you:
 

@@ -38,7 +38,7 @@ because the pacing records rest on the constant it would turn into a setting.
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Select the local-multiplayer example's follow behavior |
 | `IDEA#5` | A grid sprite-sheet authoring command | could | S | Select the input description; builds on the existing sheet schema |
 | `IDEA#6` | Pointer interaction in the components gallery | could | S | OCA-50's guide first, or explicitly amend that story to include this extension |
-| `IDEA#7` | Circle collision in the narrow phase | should | S | Select the shape pairs; the closest-point axis is named in narrow_phase.h |
+| `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Select the result shape and mask filter; exact tests, not swept motion |
 | `IDEA#9` | Contact begin and end edges | could | S | A second client needing the edge; the collision sample derives it in a few lines |
 | `IDEA#10` | Arbitrary client sizes | should | S | Select whether monitor-mode enumeration comes with it or later |
@@ -161,6 +161,10 @@ The browser page test drives the gallery through its actual CSS geometry.
 Identify emulated touch separately from a physical touchscreen session.
 
 ## IDEA#7. Circle collision in the narrow phase
+
+**Result:** selected by the owner on 2026-11-04 as
+[OCA-80](product/BACKLOG.md#oca-80), and landed. The evidence below is as the
+proposal found it.
 
 **Present evidence:** [narrow_phase.h](../engine/collision/narrow_phase.h)
 measures the convex polygons and throws `std::invalid_argument` for a

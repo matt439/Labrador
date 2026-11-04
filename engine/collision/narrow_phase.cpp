@@ -1,5 +1,6 @@
 #include "engine/collision/narrow_phase.h"
 
+#include "engine/math/circle.h"
 #include "engine/math/quad.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/rectanglef.h"
@@ -17,8 +18,8 @@ namespace labrador
 {
 	namespace
 	{
-		// Every collidable shape in the engine is a convex polygon of at most
-		// four vertices, so the narrow phase carries them in an array rather
+		// Every collidable shape other than a circle is a convex polygon of at
+		// most four vertices, so the narrow phase carries them in an array rather
 		// than asking Shape::edges(), which returns a std::vector - a heap
 		// allocation per shape per pair per frame, on the one path
 		// PHILOSOPHY's performance section names outright.
@@ -150,9 +151,10 @@ namespace labrador
 				return polygon;
 			}
 			case ShapeType::circle:
+				// narrow_phase sends circles to their own measurements before
+				// asking for a polygon, so only a new caller can reach this.
 				throw std::invalid_argument(
-					"narrow_phase: a circle is not a convex polygon, and the "
-					"circle axis is not implemented");
+					"narrow_phase: a circle is not a convex polygon");
 			case ShapeType::none:
 			default:
 				throw std::invalid_argument(
@@ -225,17 +227,13 @@ namespace labrador
 			float penetration = 0.0f;
 		};
 
-		// `axis` must be unit length, or the depths measured on different axes
-		// are in different units and the smallest of them means nothing.
-		AxisTest test_axis(const Polygon& a, const Polygon& b, const Vector2F& axis)
+		// What one axis says about two intervals already projected onto it,
+		// `a`'s and `b`'s. `axis` must be unit length, or the depths measured
+		// on different axes are in different units and the smallest of them
+		// means nothing.
+		AxisTest test_intervals(float a_min, float a_max, float b_min,
+			float b_max, const Vector2F& axis)
 		{
-			float a_min = 0.0f;
-			float a_max = 0.0f;
-			float b_min = 0.0f;
-			float b_max = 0.0f;
-			project(a, axis, a_min, a_max);
-			project(b, axis, b_min, b_max);
-
 			// The two ways off this axis, measured as the distance `a` would
 			// travel: forwards until its trailing edge clears b, or backwards
 			// until its leading edge does.
@@ -281,38 +279,143 @@ namespace labrador
 			}
 			return result;
 		}
-	}
 
-	std::optional<Manifold> narrow_phase(const Shape& a, const Shape& b)
-	{
-		const Polygon polygon_a = polygon_from(a);
-		const Polygon polygon_b = polygon_from(b);
-
-		if (polygon_a.count < 3 || polygon_b.count < 3
-			|| polygon_a.axis_count == 0 || polygon_b.axis_count == 0
-			|| !has_interior(polygon_a) || !has_interior(polygon_b))
+		AxisTest test_axis(const Polygon& a, const Polygon& b, const Vector2F& axis)
 		{
-			// Nothing can overlap a shape that encloses no area, and a shape
-			// with no axes has no edges worth testing.
-			return std::nullopt;
+			float a_min = 0.0f;
+			float a_max = 0.0f;
+			float b_min = 0.0f;
+			float b_max = 0.0f;
+			project(a, axis, a_min, a_max);
+			project(b, axis, b_min, b_max);
+			return test_intervals(a_min, a_max, b_min, b_max, axis);
 		}
 
-		Manifold least;
-		least.penetration = std::numeric_limits<float>::max();
-
-		const Polygon* const polygons[2] = { &polygon_a, &polygon_b };
-		for (const Polygon* polygon : polygons)
+		// Whether a polygon can take part in a contact at all: enough points,
+		// at least one axis, and an interior.
+		bool measurable(const Polygon& polygon)
 		{
-			for (int i = 0; i < polygon->axis_count; i++)
+			return polygon.count >= 3 && polygon.axis_count > 0
+				&& has_interior(polygon);
+		}
+
+		// The same question for a circle. A radius of zero encloses nothing,
+		// and a negative one, which inflate() can produce, is not a shape.
+		bool measurable(const Circle& circle)
+		{
+			const Vector2F center = circle.center();
+			return std::isfinite(center.x) && std::isfinite(center.y)
+				&& std::isfinite(circle.radius()) && circle.radius() > 0.0f;
+		}
+
+		// Two circles overlap along the line between their centres, by as
+		// much as the radii exceed that distance. No other axis can be
+		// shallower, so this is the whole measurement.
+		//
+		// Double intermediates keep the difference and its length from
+		// overflowing for finite float coordinates, as in fill_axes.
+		std::optional<Manifold> circle_circle(const Circle& a, const Circle& b)
+		{
+			if (!measurable(a) || !measurable(b))
 			{
-				const AxisTest test =
-					test_axis(polygon_a, polygon_b, polygon->axes[i]);
+				return std::nullopt;
+			}
+
+			const double x = static_cast<double>(b.center().x) - a.center().x;
+			const double y = static_cast<double>(b.center().y) - a.center().y;
+			const double distance = std::hypot(x, y);
+			const double depth =
+				static_cast<double>(a.radius()) + b.radius() - distance;
+			const float penetration = static_cast<float>(depth);
+			if (!(penetration > 0.0f) || !std::isfinite(penetration))
+			{
+				return std::nullopt;
+			}
+
+			Manifold manifold;
+			manifold.penetration = penetration;
+			// Concentric circles have every direction as a least-penetration
+			// axis. Positive x is a fixed choice, so the same pair always
+			// separates the same way.
+			manifold.normal = distance > 0.0
+				? Vector2F(static_cast<float>(x / distance),
+					static_cast<float>(y / distance))
+				: Vector2F(1.0f, 0.0f);
+			return manifold;
+		}
+
+		// A circle against a convex polygon, with the normal pointing from
+		// the circle towards the polygon.
+		//
+		// The separating-axis theorem again, with one extra axis: the one
+		// from the circle's centre towards the polygon's closest vertex. The
+		// polygon's closest point to the centre lies either inside an edge,
+		// whose normal is already a candidate, or at a vertex, which is then
+		// the closest vertex, and the line from it to the centre is the
+		// direction that separates or least penetrates the pair there. The
+		// set therefore stays complete and the answer stays exact. A circle
+		// projects onto a unit axis as its centre's projection plus and minus
+		// its radius.
+		std::optional<Manifold> circle_polygon(const Circle& circle,
+			const Polygon& polygon)
+		{
+			if (!measurable(circle) || !measurable(polygon))
+			{
+				return std::nullopt;
+			}
+
+			const Vector2F center = circle.center();
+			const float radius = circle.radius();
+
+			Vector2F axes[Polygon::max_points + 1];
+			int axis_count = 0;
+			for (int i = 0; i < polygon.axis_count; i++)
+			{
+				axes[axis_count] = polygon.axes[i];
+				axis_count++;
+			}
+
+			int closest = 0;
+			double closest_distance = std::numeric_limits<double>::infinity();
+			for (int i = 0; i < polygon.count; i++)
+			{
+				const double x = static_cast<double>(polygon.points[i].x) - center.x;
+				const double y = static_cast<double>(polygon.points[i].y) - center.y;
+				const double distance = std::hypot(x, y);
+				if (distance < closest_distance)
+				{
+					closest = i;
+					closest_distance = distance;
+				}
+			}
+
+			// A centre exactly on a vertex has no direction to it, and needs
+			// none: that vertex is on the boundary, so an edge normal already
+			// measures the least penetration.
+			if (closest_distance > 0.0 && std::isfinite(closest_distance))
+			{
+				const double x =
+					static_cast<double>(polygon.points[closest].x) - center.x;
+				const double y =
+					static_cast<double>(polygon.points[closest].y) - center.y;
+				axes[axis_count] = Vector2F(
+					static_cast<float>(x / closest_distance),
+					static_cast<float>(y / closest_distance));
+				axis_count++;
+			}
+
+			Manifold least;
+			least.penetration = std::numeric_limits<float>::max();
+			for (int i = 0; i < axis_count; i++)
+			{
+				const float projected = Vector2F::dot(center, axes[i]);
+				float polygon_min = 0.0f;
+				float polygon_max = 0.0f;
+				project(polygon, axes[i], polygon_min, polygon_max);
+				const AxisTest test = test_intervals(projected - radius,
+					projected + radius, polygon_min, polygon_max, axes[i]);
 				if (test.separated)
 				{
-					// One separating axis is a proof of no contact, so this is
-					// also the early out that makes the common case - two
-					// things nowhere near each other - cost one projection
-					// pair rather than all seven.
 					return std::nullopt;
 				}
 
@@ -322,14 +425,88 @@ namespace labrador
 					least.penetration = test.penetration;
 				}
 			}
+
+			if (least.normal == Vector2F::zero)
+			{
+				return std::nullopt;
+			}
+
+			return least;
 		}
 
-		if (least.normal == Vector2F::zero)
+		std::optional<Manifold> polygon_polygon(const Polygon& polygon_a,
+			const Polygon& polygon_b)
 		{
-			// Every edge was degenerate, so neither shape has an interior.
-			return std::nullopt;
-		}
+			if (!measurable(polygon_a) || !measurable(polygon_b))
+			{
+				// Nothing can overlap a shape that encloses no area, and a shape
+				// with no axes has no edges worth testing.
+				return std::nullopt;
+			}
 
-		return least;
+			Manifold least;
+			least.penetration = std::numeric_limits<float>::max();
+
+			const Polygon* const polygons[2] = { &polygon_a, &polygon_b };
+			for (const Polygon* polygon : polygons)
+			{
+				for (int i = 0; i < polygon->axis_count; i++)
+				{
+					const AxisTest test =
+						test_axis(polygon_a, polygon_b, polygon->axes[i]);
+					if (test.separated)
+					{
+						// One separating axis is a proof of no contact, so this is
+						// also the early out that makes the common case - two
+						// things nowhere near each other - cost one projection
+						// pair rather than all seven.
+						return std::nullopt;
+					}
+
+					if (test.penetration < least.penetration)
+					{
+						least.normal = test.normal;
+						least.penetration = test.penetration;
+					}
+				}
+			}
+
+			if (least.normal == Vector2F::zero)
+			{
+				// Every edge was degenerate, so neither shape has an interior.
+				return std::nullopt;
+			}
+
+			return least;
+		}
+	}
+
+	std::optional<Manifold> narrow_phase(const Shape& a, const Shape& b)
+	{
+		// The downcasts are safe for the reason polygon_from's are.
+		const bool a_is_circle = a.shape_type() == ShapeType::circle;
+		const bool b_is_circle = b.shape_type() == ShapeType::circle;
+		if (a_is_circle && b_is_circle)
+		{
+			return circle_circle(static_cast<const Circle&>(a),
+				static_cast<const Circle&>(b));
+		}
+		if (a_is_circle)
+		{
+			return circle_polygon(static_cast<const Circle&>(a), polygon_from(b));
+		}
+		if (b_is_circle)
+		{
+			// Measured from the circle's side, then turned round so the
+			// normal still points from `a` towards `b`.
+			std::optional<Manifold> manifold =
+				circle_polygon(static_cast<const Circle&>(b), polygon_from(a));
+			if (manifold.has_value())
+			{
+				manifold->normal = -manifold->normal;
+			}
+			return manifold;
+		}
+		return polygon_polygon(polygon_from(a), polygon_from(b));
 	}
 }

@@ -35,7 +35,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below and for `DOC#4`'s two open questions; the calls stay the owner's.
-- New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction. `IDEA#7` to `IDEA#19`, from the engine review of 2026-10-31: circle collision, scene queries, contact edges, arbitrary window sizes, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
+- New proposals: `IDEA#1` to `IDEA#6` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following, grid-sheet authoring and gallery pointer interaction. `IDEA#8` to `IDEA#19`, from the engine review of 2026-10-31: scene queries, contact edges, arbitrary window sizes, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
 
 ## Input, menus, settings and saves
 
@@ -162,7 +162,6 @@ ready queue above.
 | `IDEA#4` | DECISION | could | S | A dead-zone/bounded camera-follow component in the local-multiplayer sample. |
 | `IDEA#5` | DECISION | could | S | A deterministic grid-sheet JSON authoring command using the current asset schema. |
 | `IDEA#6` | DECISION | could | S | Extend OCA-50 with gallery click/tap rows and slider dragging; keep capture policy in the page. |
-| `IDEA#7` | DECISION | should | S | Circle collision in the narrow phase, which throws for a Circle today: the closest-point axis, under the same Manifold contract. |
 | `IDEA#8` | DECISION | could | M | Scene queries: the first collision object along a segment, and every object overlapping a rectangle, mask-filtered and allocation-free. |
 | `IDEA#9` | DECISION | could | S | A contact begin/continue/end helper over two ticks' contact lists; the collision sample derives trigger entry by hand. Needs a second client. |
 | `IDEA#10` | DECISION | should | S | Arbitrary client sizes: a Vector2I set_resolution and options field beside the four 16:9 presets, which are all a game can request today. |
