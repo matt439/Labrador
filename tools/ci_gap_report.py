@@ -39,8 +39,8 @@ DEVICE_TESTS = ("RenderPixelTests", "MinimalSmokeTests")
 BROWSER_TESTS = (
     "RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests", "WebWindowTests",
     "MinimalPageTests", "CollisionPageTests", "AudioPageTests", "LocalMultiplayerPageTests",
-    "ComponentsPageTests", "LineSweeperPageTests", "LineSweeperReducedMotionPageTests",
-    "LineSweeperPalettePageTests", "LineSweeperBundlePageTests",
+    "ComponentsPageTests", "ComponentsPointerPageTests", "LineSweeperPageTests",
+    "LineSweeperReducedMotionPageTests", "LineSweeperPalettePageTests", "LineSweeperBundlePageTests",
 )
 
 # What .github/workflows/ci.yml leaves out. tools/tests/test_ci_gap_report.py

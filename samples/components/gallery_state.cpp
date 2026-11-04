@@ -3,9 +3,12 @@
 
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
+#include "engine/input/mouse.h"
+#include "engine/input/touch.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
 #include "engine/render/render_resources.h"
@@ -14,7 +17,9 @@
 #include "engine/render/viewport.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace labrador;
@@ -41,6 +46,18 @@ namespace components
 		constexpr Colour heading_colour(200, 208, 222);
 		constexpr Colour help_colour(150, 160, 180);
 
+		// What a pointer can choose on each row: a band the row's full
+		// spacing tall, centred on its line of text, from just left of the
+		// label to past the slider's number. Bands meet and do not overlap,
+		// so a point between two rows belongs to exactly one.
+		constexpr float band_left = label_x - 20.0f;
+		constexpr float band_right = value_x + track_width + 80.0f;
+		constexpr float text_middle = 10.0f;
+
+		// A slider is grabbed on its track or within this of either end, so
+		// a finger need not land on a ten-unit line; the label only focuses.
+		constexpr float grab_margin = 20.0f;
+
 		const RectangleF loop_preview_bounds(960.0f, 260.0f, 64.0f, 64.0f);
 		const RectangleF once_preview_bounds(960.0f, 410.0f, 64.0f, 64.0f);
 
@@ -54,9 +71,18 @@ namespace components
 			return RectangleF(value_x, row_y(row) + track_inset, track_width,
 				track_height);
 		}
+
+		RectangleF band_for_row(int row)
+		{
+			return RectangleF(band_left,
+				row_y(row) + text_middle - row_spacing * 0.5f,
+				band_right - band_left, row_spacing);
+		}
 	}
 
-	GalleryState::GalleryState(Application* app) : app_(app)
+	GalleryState::GalleryState(Application* app, StatusChanged on_status) :
+		app_(app),
+		on_status_(std::move(on_status))
 	{
 
 	}
@@ -87,7 +113,7 @@ namespace components
 			L"COMPONENTS / copy one into your game", font_name,
 			Vector2F(label_x, 120.0f), resources, heading_colour));
 		this->scene_->add(std::make_unique<UiText>("help",
-			L"Up/Down: choose   Left/Right: change   Enter/A: select   Esc/B: quit",
+			L"Arrows, click or tap: choose and change   Enter/A: select   Esc/B: quit",
 			font_name, Vector2F(label_x, 150.0f), resources, help_colour));
 		this->scene_->add(std::make_unique<UiText>("animation_help",
 			L"R / gamepad X: restart both animations", font_name,
@@ -113,7 +139,7 @@ namespace components
 			Vector2F(label_x, row_y(0)), value_x, font_name, resources,
 			[this, difficulties](size_t index)
 			{
-				this->status_->set_text(L"Difficulty is now " +
+				this->set_status(L"Difficulty is now " +
 					difficulties[index]);
 			},
 			false));
@@ -126,7 +152,7 @@ namespace components
 			[this, window_modes](size_t index)
 			{
 				this->app_->set_fullscreen(index == 1);
-				this->status_->set_text(L"Window mode requested: " +
+				this->set_status(L"Window mode requested: " +
 					window_modes[index]);
 			}));
 		this->window_mode_->set_index(
@@ -138,7 +164,7 @@ namespace components
 			resources,
 			[this](int value)
 			{
-				this->status_->set_text(L"Music slider example: " +
+				this->set_status(L"Music slider example: " +
 					std::to_wstring(value) + L"% (no audio loaded)");
 			}));
 
@@ -148,7 +174,7 @@ namespace components
 			resources,
 			[this](int value)
 			{
-				this->status_->set_text(L"Effects slider example: " +
+				this->set_status(L"Effects slider example: " +
 					std::to_wstring(value) + L"% (no audio loaded)");
 			}));
 
@@ -163,6 +189,15 @@ namespace components
 		this->focus_.add(this->music_);
 		this->focus_.add(this->effects_);
 		this->focus_.add(quit, [this]() { this->app_->quit(); });
+
+		// The same rows, in the same order, as places a pointer can choose.
+		UiWidget* const rows[] = { this->difficulty_, this->window_mode_,
+			this->music_, this->effects_, quit };
+		for (int row = 0; row < 5; ++row)
+		{
+			this->pointer_targets_.push_back({ band_for_row(row), true });
+			this->pointer_widgets_.push_back(rows[row]);
+		}
 
 		// Adds are pending until a tick ends, and the frame drawn before the
 		// first update() is a real one.
@@ -255,11 +290,23 @@ namespace components
 			this->adjust_focused(direction);
 		}
 
-		if (keyboard.pressed(Key::enter) || keyboard.pressed(Key::space) ||
-			pads.pressed(0, GamepadButton::a))
+		const bool confirmed = keyboard.pressed(Key::enter) ||
+			keyboard.pressed(Key::space) || pads.pressed(0, GamepadButton::a);
+		if (confirmed)
 		{
 			this->focus_.activate(0);
 		}
+
+		// THE KEYS AND THE PAD COME FIRST. A tick in which either moved the
+		// cursor, changed a row or chose one drops any click or drag in
+		// progress, so the two can never both act on a row in one tick.
+		if (direction != Direction::none || confirmed)
+		{
+			this->pointer_.cancel();
+			this->pressed_row_ = nullptr;
+			this->dragging_ = nullptr;
+		}
+		this->update_pointer();
 
 		this->loop_preview_->update(dt);
 		this->once_preview_->update(dt);
@@ -268,12 +315,119 @@ namespace components
 			// Reset after the tick's step so the next draw shows frame zero.
 			this->loop_preview_->restart();
 			this->once_preview_->restart();
-			this->status_->set_text(L"Both animation previews restarted.");
+			this->set_status(L"Both animation previews restarted.");
 		}
 
 		this->refresh_view();
 		this->scene_->update(dt);
 		this->scene_->end_tick();
+	}
+
+	void GalleryState::update_pointer()
+	{
+		const PointerSample sample =
+			this->pointer_.update(*this->app_->mouse(), *this->app_->touch());
+
+		if (sample.phase == PointerPhase::pressed)
+		{
+			const Vector2F point = this->world_point(sample.position);
+			const std::optional<size_t> hit =
+				hit_target(this->pointer_targets_, point);
+			if (!hit.has_value())
+			{
+				return;
+			}
+
+			// Focus first, as LineSweeper's pause menu does, so whatever the
+			// release does belongs to the row the cursor is now on.
+			UiWidget* const row = this->pointer_widgets_[*hit];
+			this->focus_.set_focused(0, row);
+			this->pressed_row_ = row;
+
+			for (Slider* slider : { this->music_, this->effects_ })
+			{
+				const RectangleF& track = slider->track().bounds();
+				if (row == slider && point.x >= track.x - grab_margin &&
+					point.x < track.x + track.width + grab_margin)
+				{
+					this->dragging_ = slider;
+					slider->drag_to(point.x);
+				}
+			}
+			return;
+		}
+
+		if (sample.phase == PointerPhase::held)
+		{
+			// Followed wherever it goes, so a drag past either end of the
+			// track clamps there rather than letting go.
+			if (this->dragging_ != nullptr)
+			{
+				this->dragging_->drag_to(this->world_point(sample.position).x);
+			}
+			return;
+		}
+
+		UiWidget* const pressed = this->pressed_row_;
+		const bool dragged = this->dragging_ != nullptr;
+		this->pressed_row_ = nullptr;
+		this->dragging_ = nullptr;
+
+		// A cancelled contact completes nothing, and a drag has already done
+		// what it does. A slider keeps the value the drag left it at.
+		if (sample.phase != PointerPhase::released || dragged ||
+			pressed == nullptr)
+		{
+			return;
+		}
+
+		// A click or a tap completes only on the row it began on: letting go
+		// anywhere else is the player changing their mind.
+		const Vector2F point = this->world_point(sample.position);
+		const std::optional<size_t> hit =
+			hit_target(this->pointer_targets_, point);
+		if (!hit.has_value() || this->pointer_widgets_[*hit] != pressed)
+		{
+			return;
+		}
+
+		// On an option row's value, the left half steps back and the right
+		// half on, as the arrows do; on the label it only focused.
+		for (OptionRow* option : { this->difficulty_, this->window_mode_ })
+		{
+			if (pressed == option && point.x >= value_x)
+			{
+				const RectangleF value = option->value().bounds();
+				option->adjust(point.x < value.x + value.width * 0.5f ?
+					Direction::left : Direction::right);
+			}
+		}
+
+		// Quit is the one row with an action, and activation runs it.
+		if (pressed == this->pointer_widgets_.back())
+		{
+			this->focus_.activate(0);
+		}
+	}
+
+	Vector2F GalleryState::world_point(const Vector2I& client) const
+	{
+		// The camera refresh_view() gave the scene: the 1280x720 layout
+		// fitted into the window.
+		const Vector2F resolution =
+			this->app_->resolution_manager()->resolution_vec();
+		const Viewport viewport(RectangleF(Vector2F::zero, resolution));
+		return Camera::frame(RectangleF(0.0f, 0.0f, 1280.0f, 720.0f), viewport)
+			.world_position(client, viewport);
+	}
+
+	void GalleryState::set_status(const std::wstring& text)
+	{
+		this->status_->set_text(text);
+		if (this->on_status_)
+		{
+			this->on_status_(text);
+		}
 	}
 
 	void GalleryState::draw(Renderer& renderer) const

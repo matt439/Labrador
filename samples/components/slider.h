@@ -92,6 +92,17 @@ namespace components
 		// false at either end.
 		bool adjust(labrador::Direction direction);
 
+		// The value a pointer at world x stands for: its fraction of the way
+		// along the track, snapped to the nearest step from the minimum, or to
+		// the maximum where that is nearer. Left of the track is the minimum
+		// and right of it the maximum, so a drag past either end clamps.
+		int value_at(float x) const;
+
+		// Moves the value to value_at(x) and calls the callback when that
+		// changes it, as adjust() does. Returns whether it changed. Which
+		// pointer, and when a drag starts and ends, is the page's.
+		bool drag_to(float x);
+
 		int value() const;
 		int minimum() const;
 		int maximum() const;

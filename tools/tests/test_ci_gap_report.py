@@ -112,7 +112,7 @@ class JunitTests(unittest.TestCase):
         self.assertIn("19/19 passed; not registered: RenderPixelTests,", detail)
         result, detail = report.judge(wasm, report.junit_summary(
             junit(unregistered + list(report.BROWSER_TESTS))))
-        self.assertEqual((result, detail), ("passed", "32/32 passed; including 13 required tests"))
+        self.assertEqual((result, detail), ("passed", "33/33 passed; including 14 required tests"))
         result, detail = report.judge(report.Gap("x64-release-null"), report.junit_summary(CTEST_JUNIT))
         self.assertEqual(result, "failed")
         self.assertEqual(detail, "1/6 passed; failed: Bad, Slow; skipped: Missing, Skipper; disabled: Off")
@@ -196,7 +196,7 @@ class MainTests(unittest.TestCase):
             self.assertTrue((Path(directory) / "evidence/wasm-debug.log").is_file())
         self.assertEqual(code, 1)
         self.assertIn("at `" + "b" * 40 + "`, working tree with 2 uncommitted change(s)", text)
-        self.assertIn("| `wasm-debug` | whole preset | passed: 13/13 passed; including 13 required tests |", text)
+        self.assertIn("| `wasm-debug` | whole preset | passed: 14/14 passed; including 14 required tests |", text)
         self.assertIn("| `x64-release-null` | whole preset | failed: 1/6 passed;", text)
         self.assertIn("Logs and JUnit:", stderr)
 

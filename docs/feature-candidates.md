@@ -37,7 +37,7 @@ because the pacing records rest on the constant it would turn into a setting.
 | `IDEA#3` | Versioned saves with recovery | could | M | Select the example's save format and recovery policy; builds on OCA-53 |
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Select the local-multiplayer example's follow behavior |
 | `IDEA#5` | A grid sprite-sheet authoring command | could | S | Select the input description; builds on the existing sheet schema |
-| `IDEA#6` | Pointer interaction in the components gallery | could | S | OCA-50's guide first, or explicitly amend that story to include this extension |
+| `IDEA#6` | Pointer interaction in the components gallery | could | S | Selected 2026-11-04 as OCA-83 and landed |
 | `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Select the result shape and mask filter; exact tests, not swept motion |
 | `IDEA#9` | Contact begin and end edges | could | S | A second client needing the edge; the collision sample derives it in a few lines |
@@ -142,6 +142,10 @@ useful errors. Round-trip generated fixtures through the actual loader and
 reproduce the animation example without manual rectangle arithmetic.
 
 ## IDEA#6. Pointer interaction in the components gallery
+
+**Result:** selected by the owner on 2026-11-04 as
+[OCA-83](product/BACKLOG.md#oca-83), and landed. The evidence below is as the
+proposal found it.
 
 **Present evidence:** OCA-50 already owns the pointer-menu guide and lists
 gallery click support as an optional follow-up. The [gallery](../samples/components/gallery_state.cpp)

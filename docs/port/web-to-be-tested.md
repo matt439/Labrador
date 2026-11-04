@@ -110,6 +110,10 @@ its illegible HUD needs no fix. Zoom down to 67% stays readable.
       Firefox's synthetic BiDi touches (the
       [Firefox section](#firefox-sample-checks-web4)) have driven it; a real
       finger, a cancel the browser makes and Safari have not.
+- [ ] The components gallery by finger, natively and in a browser: a tap on a
+      row's value steps it once, a drag sets a slider and clamps past its
+      ends, and a second finger does nothing. `ComponentsPointerPageTests`
+      drives it with Chromium's touch emulation only.
 
 ## Needs real phones (M7b)
 

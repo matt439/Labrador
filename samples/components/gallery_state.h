@@ -2,6 +2,7 @@
 
 #include "samples/components/animation_preview.h"
 #include "samples/components/option_row.h"
+#include "samples/components/pointer_capture.h"
 #include "samples/components/slider.h"
 
 #include "engine/app/application.h"
@@ -11,8 +12,11 @@
 #include "engine/ui/focus.h"
 #include "engine/ui/widget.h"
 
+#include <functional>
 #include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 namespace components
 {
@@ -22,13 +26,19 @@ namespace components
 	//
 	// It is also the page half a component leaves to its game. A component
 	// reads no input, so this is where up and down move the cursor, where left
-	// and right reach the focused row, and where changes reach the game.
+	// and right reach the focused row, where a click or a tap finds a row and
+	// a drag moves a slider, and where changes reach the game.
 	// The window row requests Application's mode and follows its reports;
 	// difficulty and volume changes illustrate callbacks through a status line.
 	class GalleryState final : public labrador::State
 	{
 	public:
-		explicit GalleryState(labrador::Application* app);
+		// Told every line the status shows, for a page that reports it;
+		// main_web.cpp writes each to the console.
+		using StatusChanged = std::function<void(const std::wstring& text)>;
+
+		explicit GalleryState(labrador::Application* app,
+			StatusChanged on_status = nullptr);
 
 		void init() override;
 		void update(float dt) override;
@@ -46,6 +56,17 @@ namespace components
 		// matching it here needs no cast and no table. A page with many rows
 		// of one kind would loop over a list of them instead.
 		bool adjust_focused(labrador::Direction direction);
+
+		// What one tick's pointer did to the rows: a press focuses the row
+		// under it and starts dragging a slider; a release completes a click
+		// or a tap only on the row it began on (pointer_capture.h).
+		void update_pointer();
+
+		// The world point under a client pixel, through the camera the page
+		// draws with.
+		labrador::Vector2F world_point(const labrador::Vector2I& client) const;
+
+		void set_status(const std::wstring& text);
 
 		void refresh_view();
 
@@ -70,5 +91,17 @@ namespace components
 
 		labrador::FocusGroup focus_;
 		labrador::DirectionRepeat repeat_;
+
+		// The rows a pointer can choose, in focus order, and the widget each
+		// one is; pointer_widgets_[i] answers for pointer_targets_[i].
+		std::vector<PointerTarget> pointer_targets_;
+		std::vector<labrador::UiWidget*> pointer_widgets_;
+
+		// The one contact followed, and the row it began on.
+		PointerCapture pointer_;
+		labrador::UiWidget* pressed_row_ = nullptr;
+		Slider* dragging_ = nullptr;
+
+		StatusChanged on_status_;
 	};
 }

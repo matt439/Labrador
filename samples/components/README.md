@@ -7,7 +7,8 @@ beside it. The gallery shows menu rows and two animation previews on one screen.
 | Component | Files | What it is |
 | --- | --- | --- |
 | Option row | `option_row.h`, `option_row.cpp` | A label and a value picked from a fixed list with left and right: a difficulty, a window mode. Wraps or stops at the ends. |
-| Slider | `slider.h`, `slider.cpp` | A label, a bar and a number for an integer in a range: a volume, a sensitivity. Clamps, never wraps. |
+| Slider | `slider.h`, `slider.cpp` | A label, a bar and a number for an integer in a range: a volume, a sensitivity. Clamps, never wraps. A pointer's x maps to a value for dragging. |
+| Pointer capture | `pointer_capture.h`, `pointer_capture.cpp` | One contact at a time, from the mouse or one finger, followed from press to release or cancellation, and a hit test over a page's targets. |
 | Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 | Animation preview | `animation_preview.h`, `animation_preview.cpp` | Game-owned elapsed time, looping, one-shot completion and restart over a named animation strip. Drawing reads the current frame without advancing it. |
 
@@ -55,6 +56,29 @@ bindings belong to the page. For menu rows, a page:
   (`GalleryState::adjust_focused`), because the page built every row and
   already holds each one;
 - reacts to a change in the callback it handed the constructor.
+
+For a mouse or a touchscreen, the gallery's `update_pointer` adds the rest,
+and all of it is page policy rather than a component's:
+
+- `PointerCapture` follows one contact: the first finger down, or the mouse's
+  left button when no finger is near. A second finger is ignored, a mouse
+  press in the tick a finger lifts or the tick after is ignored, and a
+  contact that goes away without being let go - the window lost focus, the
+  platform cancelled it - ends cancelled, so nothing completes.
+- Each row is a band as tall as the row spacing, from just left of the label
+  to past the slider's number, and `hit_target` finds the first enabled one
+  under the point, through the camera the page draws with
+  (`Camera::world_position`). A disabled band is passed over.
+- A press focuses the row under it, as LineSweeper's pause menu does. On a
+  slider's track, or within 20 units of either end, it also starts a drag:
+  the slider takes `value_at(x)` through `drag_to`, follows the contact past
+  either end of the track and clamps there, and keeps the value it reached
+  when the contact ends, however it ends.
+- A release completes a click or a tap only over the row that was pressed.
+  On an option row's value, the left half steps left and the right half
+  right; on its label it only focused. Quit runs its action.
+- A tick in which the keys or the pad moved the cursor, changed a row or
+  chose one cancels the contact, so the two never both act in one tick.
 
 `adjust()` returns whether the value moved, which is the signal a cursor sound
 hangs on. Focus colours the label, and the slider's fill as well. The value
@@ -121,6 +145,8 @@ ctest --preset x64-debug -R "^ComponentsTests$"
 | --- | --- |
 | Up, Down, D-pad or left stick | Choose a row |
 | Left, Right, D-pad or left stick | Change it |
+| Click or tap a row | Choose it; on a value, the left half steps back and the right half on |
+| Drag a slider's track | Set it, clamped at either end |
 | Enter, Space or gamepad A on Quit | Quit |
 | R or gamepad X | Restart both animation previews |
 | Escape or gamepad B | Quit |
@@ -165,6 +191,13 @@ browser can consume the first press to leave full screen before the gallery
 receives its quit key. The key sequence alone does not establish fullscreen
 or animation acceptance; the animated frames, the restart and the window row
 are looked at on screen, natively and in a browser.
+`ComponentsPointerPageTests` drives the same page with a real mouse and
+Chromium's touch emulation through the canvas's CSS box
+(`web/pointer_input.mjs`): it drags the music slider from the track's middle
+past its end, lets go of a press on another row, taps the left half of the
+difficulty's value and checks it stepped once, and taps Quit. It reads each
+change from the console line `main_web.cpp` writes for every status. Emulated
+touch is not a touchscreen: a real phone's tap is an open check.
 
 ## What a component is not
 

@@ -10,12 +10,14 @@
 #include "samples/components/gallery_state.h"
 
 #include "engine/app/application.h"
+#include "engine/render/text_encoding.h"
 
 #include <emscripten/emscripten.h>
 
 #include <cstdio>
 #include <exception>
 #include <memory>
+#include <string>
 #include <utility>
 
 using namespace components;
@@ -44,7 +46,13 @@ int main()
 		app.initialize();
 		app.load_manifest("./manifest.json");
 
-		return app.run(std::make_unique<GalleryState>(&app));
+		// Each status line to the console, where the page test's input
+		// script reads what a click, a tap or a drag changed.
+		return app.run(std::make_unique<GalleryState>(&app,
+			[](const std::wstring& text)
+			{
+				std::printf("Components: %s\n", narrow(text).c_str());
+			}));
 	}
 	catch (const std::exception& error)
 	{
