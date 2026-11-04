@@ -173,6 +173,30 @@ each deploy, which records its dated output here in place of manual ticks
 notices and poster match its SHA-256 values. These boxes were not re-run
 against that deploy.
 
+*Amended 2026-11-04:* the script is
+[`tools/web_bundle/check_live.mjs`](../../tools/web_bundle/check_live.mjs).
+After each deploy, from this checkout, run
+
+```text
+node tools/web_bundle/check_live.mjs --expect-commit <deployed commit> --out live-check.txt
+```
+
+and put its output in a dated block here, in place of the first two boxes
+below. It checks the page's and the module folder's `Cache-Control` values,
+the others' revalidation, the content types, Brotli where it is offered and
+its decoded bytes, each served file's size and SHA-256 against the served
+`BUILD.json`, the folder name, the commit `BUILD.json`, `SITE.json` and the
+page's "Built from Labrador" line name, and that no COOP, COEP or
+script-restricting Content-Security-Policy is sent. Its offline test,
+`check_live.test.mjs`, runs in CI. It has not yet been run against the live
+site: cloud sessions cannot reach `mattharding.dev`. On 2026-11-04 it passed
+31 of 31 checks against host commit `6b57e7c` served on loopback through the
+host's own `worker/index.js`, with a stand-in for the asset store and
+Cloudflare's Brotli; that is the Worker's header logic, not Cloudflare's edge.
+The Worker at that commit sends `Content-Security-Policy: frame-ancestors
+'none'` with every response, which restricts no script; the 2026-10-13 headers
+below predate it.
+
 - [x] `curl -I` with `Accept-Encoding: br` against the page and the live
       `.wasm`: `application/wasm`, immutable `Cache-Control` under
       `m/<hash>/`, `no-cache` on the page, and `Content-Encoding: br` served
