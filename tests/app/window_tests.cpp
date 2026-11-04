@@ -1,8 +1,6 @@
 #include <doctest/doctest.h>
 
 #include "engine/app/window.h"
-#include "engine/app/win32/pointer_input.h"
-#include "engine/app/win32/system_command.h"
 
 #include <Windows.h>
 #include <algorithm>
@@ -495,31 +493,6 @@ TEST_CASE("modifier sides belong to each window")
 	CHECK(second_notify.last_up == Key::shift);
 }
 
-TEST_CASE("only a bare keyboard menu activation is the window's to swallow")
-{
-	using labrador::is_bare_menu_activation;
-
-	// What F10, or Alt alone, sends. The low four bits are the system's.
-	CHECK(is_bare_menu_activation(SC_KEYMENU, 0));
-	CHECK(is_bare_menu_activation(SC_KEYMENU | 0x5, 0));
-	CHECK(is_bare_menu_activation(SC_KEYMENU | 0xF, 0));
-
-	// Alt+Space names its key and opens the system menu, and Alt plus a
-	// letter names that letter.
-	CHECK_FALSE(is_bare_menu_activation(SC_KEYMENU, ' '));
-	CHECK_FALSE(is_bare_menu_activation(SC_KEYMENU, 'f'));
-
-	// Every other system command is the system's.
-	CHECK_FALSE(is_bare_menu_activation(SC_CLOSE, 0));
-	CHECK_FALSE(is_bare_menu_activation(SC_MAXIMIZE, 0));
-	CHECK_FALSE(is_bare_menu_activation(SC_MOUSEMENU, 0));
-
-	// No live case. Passed to DefWindowProc, SC_KEYMENU returned at once
-	// without entering the menu loop for a hidden window, and for a shown
-	// one that was never activated, so a message sent to any window here
-	// passes whether the window swallows it or not.
-}
-
 TEST_CASE("capture cancellation and transfer clear buttons without a normal release")
 {
 	RecordingNotify notify;
@@ -660,53 +633,6 @@ TEST_CASE("modern power notifications are idempotent and independent of minimize
 	}
 }
 
-TEST_CASE("a touch pointer's messages are the four touch calls")
-{
-	using labrador::TouchMessage;
-	using labrador::touch_message;
-
-	// The pointer's flags ride in the high word of WPARAM, its id in the low.
-	const auto w = [](unsigned int flags)
-	{
-		return static_cast<uint64_t>(MAKEWPARAM(42, flags));
-	};
-
-	CHECK(touch_message(WM_POINTERDOWN,
-		w(POINTER_MESSAGE_FLAG_INCONTACT)) == TouchMessage::down);
-	CHECK(touch_message(WM_POINTERUPDATE,
-		w(POINTER_MESSAGE_FLAG_INCONTACT)) == TouchMessage::move);
-	CHECK(touch_message(WM_POINTERUP, w(0)) == TouchMessage::up);
-
-	// A finger above a digitiser that reports hover is not a point.
-	CHECK(touch_message(WM_POINTERUPDATE, w(POINTER_MESSAGE_FLAG_INRANGE)) ==
-		TouchMessage::none);
-
-	// Taken away rather than lifted.
-	CHECK(touch_message(WM_POINTERUP, w(POINTER_MESSAGE_FLAG_CANCELED)) ==
-		TouchMessage::cancel);
-	CHECK(touch_message(WM_POINTERCAPTURECHANGED, w(0)) ==
-		TouchMessage::cancel);
-
-	CHECK(touch_message(WM_POINTERENTER, w(0)) == TouchMessage::none);
-	CHECK(touch_message(WM_MOUSEMOVE, w(0)) == TouchMessage::none);
-}
-
-TEST_CASE("the touch signature is told from the pen's and from none")
-{
-	using labrador::mouse_message_is_from_touch;
-
-	CHECK(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF515780u)));
-	CHECK(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF5157FFu)));
-
-	// A pen keeps its mouse messages: the signature without the touch bit.
-	CHECK_FALSE(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF515700u)));
-	CHECK_FALSE(mouse_message_is_from_touch(static_cast<intptr_t>(0xFF51577Fu)));
-
-	// A real mouse, and anything else that happens to set the bit.
-	CHECK_FALSE(mouse_message_is_from_touch(0));
-	CHECK_FALSE(mouse_message_is_from_touch(static_cast<intptr_t>(0x12345680u)));
-}
-
 TEST_CASE("mouse messages Windows made from a touch are dropped, and a pen's are kept")
 {
 	// GetMessageExtraInfo is the thread's, and a sent message is handled on
@@ -739,7 +665,8 @@ TEST_CASE("a pointer Windows does not know as touch reaches nothing, and a lost 
 {
 	// A made-up id is no kind of pointer to GetPointerType, which is the
 	// question the window asks before anything reaches the touch calls -
-	// and the reason the translation above is asserted on its own.
+	// and the reason that translation is asserted on its own, in
+	// pointer_input_tests.cpp.
 	RecordingNotify notify;
 	Window window(hidden_options(), &notify);
 
