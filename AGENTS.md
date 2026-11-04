@@ -60,7 +60,8 @@ web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audi
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
 `WebWindowTests`, all six sample `*PageTests`, `LineSweeperReducedMotionPageTests`,
 `LineSweeperPalettePageTests` and `LineSweeperBundlePageTests` registered. The bundle test loads `web-dist/linesweeper/index.html`, plays and
-replays, checks the touch gate, restores a context and asserts failure UI.
+replays, checks the touch gate, restores a context after a forced loss and a
+GPU process crash, switches tabs and asserts failure UI.
 It requires a rasterizing backend. `LineSweeperHostPageTests` drives the
 host site's own page the same way, registered only when `LABRADOR_HOST_SITE`
 names a host checkout's `public/`; CI has no such checkout. The second pixel run hides

@@ -48,8 +48,10 @@
 // the page and answers its value, a promise's once it settles;
 // send(method, params) is any DevTools command on the page's session -
 // Input.dispatchKeyEvent, Emulation.setTouchEmulationEnabled - which is what
-// makes the input real rather than an event the page made of itself; and
-// wait(ms). The script asserts by throwing. When it returns the run has
+// makes the input real rather than an event the page made of itself;
+// send_browser(method, params), the same on the browser's own session, for
+// Target.createTarget or Browser.crashGpuProcess, with target_id naming the
+// page's tab; and wait(ms). The script asserts by throwing. When it returns the run has
 // passed and is over, whether or not the page has exited, and a throw is a
 // failure naming its message. A page that aborts or exits with a failure
 // first ends the run as it would without one; one that exits cleanly first
@@ -574,6 +576,8 @@ async function run() {
 			evaluate: (expression, { user_gesture = false } = {}) =>
 				evaluate(devtools, session, expression, true, user_gesture),
 			send: (method, params = {}) => devtools.send(method, params, session),
+			send_browser: (method, params = {}) => devtools.send(method, params),
+			target_id: page.targetId,
 			on: (listener) => devtools.on((message) => {
 				if (message.sessionId === session) { listener(message); }
 			}),

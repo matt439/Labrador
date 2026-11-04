@@ -46,7 +46,8 @@ export default async function drive(page) {
 	const { evaluate, send } = page;
 	const { assert, until, frames, button_visible, button_exposed, accessibility_note,
 		click_play, key, loaded, quit, navigate, canvas_box, play_restore_replay,
-		repeated_play, context_timeout, truncated_and_runtime_failure } = steps(page, state);
+		real_loss_and_tab_switch, repeated_play, context_timeout,
+		truncated_and_runtime_failure } = steps(page, state);
 	const requests = state.requests;
 	const status = () => evaluate("document.getElementById('status').textContent");
 	const status_is_error = () => evaluate("document.getElementById('status').classList.contains('error')");
@@ -137,6 +138,7 @@ export default async function drive(page) {
 	await send('Emulation.clearDeviceMetricsOverride');
 	console.log('ok - the stage draws a 16:9 canvas within the page on an upright phone and on a desktop');
 
+	await real_loss_and_tab_switch();
 	await repeated_play();
 	await context_timeout('graphics have not come back');
 

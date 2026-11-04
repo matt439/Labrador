@@ -23,7 +23,8 @@ export default async function drive(page) {
 	const { evaluate, send } = page;
 	const { assert, until, frames, button_visible, button_exposed, accessibility_note,
 		click_play, key, loaded, quit, navigate, canvas_box, play_restore_replay,
-		repeated_play, context_timeout, truncated_and_runtime_failure } = steps(page, state);
+		real_loss_and_tab_switch, repeated_play, context_timeout,
+		truncated_and_runtime_failure } = steps(page, state);
 	const requests = state.requests;
 
 	assert(await evaluate("matchMedia('(pointer: coarse)').matches"), 'touch emulation did not produce a coarse pointer');
@@ -101,6 +102,7 @@ export default async function drive(page) {
 	await send('Emulation.clearDeviceMetricsOverride');
 	console.log('ok - an upright phone viewport draws a tall canvas and a desktop one 16:9, each on screen');
 
+	await real_loss_and_tab_switch();
 	await repeated_play();
 	await context_timeout('graphics have not returned');
 

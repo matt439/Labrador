@@ -35,7 +35,10 @@ controls are in [Examples](https://labradorengine.com/examples/#controls).
 `LineSweeperBundlePageTests` loads the packaged `web-dist/linesweeper/index.html`
 in headless Chromium when configure finds one in a rasterizing browser build.
 It clicks Play, observes rendered frames, loses and restores the WebGL context,
-quits through the pause menu and plays a fresh instance. It also checks that
+quits through the pause menu and plays a fresh instance. It also crashes
+Chrome's GPU process, a real loss that the page must hear and recover from,
+and opens another tab in front of the game and returns to it, a real tab
+switch that hides and pauses it. It also checks that
 touch emulation hides Play and fetches no wasm until a key is seen, that a
 truncated wasm response offers an exposed Try again button, and that the page's
 captured `onError` does the same after frames have drawn. These are automated

@@ -280,7 +280,10 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   `web-dist/linesweeper/` and plays, quits and plays again with the bundle
   page test's assertions, registered when a Firefox is found (`WEB#10`).
   Whether DevTools can drive a real context loss and a real tab switch in
-  Chrome is investigated for the same treatment (`WEB#14`). The physical
+  Chrome was investigated for the same treatment (`WEB#14`): it can, and
+  since 2026-11-04 the bundle and host page tests crash Chrome's GPU process
+  and switch tabs ([M5](../port/web-to-be-tested.md#the-live-demo-m5-checked-2026-10-13)).
+  The physical
   pad's feel in the browser, and whatever cannot be automated, is informal
   owner play in OCA-48's session.
 - [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside Adopter: A test target for my game's rules from the start — after OCA-11
