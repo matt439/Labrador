@@ -102,8 +102,20 @@ gh label create declined --color b60205 --description "Request declined; the clo
    stands alone. Merge commits are disabled in the repository's settings.
 
 `master` is protected: it requires the checks above and a linear history, and
-nothing reaches it except through a pull request. The owner can bypass the
-protection for a trivial fix; nobody else does.
+nothing reaches it except through a pull request. Nobody can bypass that,
+the owner included: the branch protection is enforced for administrators,
+and the *Protect master* ruleset, which requires the pull request and refuses
+deletion and force pushes, has no bypass list. A trivial fix takes a pull
+request like any other change. Only editing those settings would lift them,
+so they are changed for a reason, never to land a change.
+
+What the settings cannot hold is the checks' meaning. A pull request runs its
+own copy of the workflows, so one that edits `.github/` can keep every
+required name and test nothing, and its green checks are no evidence. A
+personal repository has no workflow its pull requests cannot edit, so such a
+change is merged only after its workflow diff has been read as a change to
+the checks themselves. A fork's workflows wait for the owner's approval
+before every run, not only a first contributor's.
 
 **The required checks are names held in GitHub's settings**, not in this tree,
 so this list is the record of what those settings must hold. Each name is the
