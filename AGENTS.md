@@ -102,7 +102,8 @@ The current mapping covers render paths only:
 | Other engine folders, samples, website and tooling | Not modeled by the render planner; follow their current owners and affected-configuration checks, including the independent audio rules below. |
 
 `python tools/ci_gap_report.py --execute` builds and tests what CI cannot
-(GL/Vulkan pixel and smoke tests, four release presets, `wasm-debug`) and prints
+(GL/Vulkan pixel and smoke tests on a real driver, four release presets,
+`wasm-debug`) and prints
 the PR template's section; its test fails if `ci.yml` drifts from its list.
 
 The five native selections are `x64-debug`, `x64-debug-d3d12`, `x64-debug-gl`,
@@ -118,7 +119,9 @@ paths are planning information; they do not establish a build or test result.
   `OutputDebugStringA`. [Vulkan review](docs/review/vulkan/README.md).
 - Desktop `RenderPixelTests` creates a hidden window and device;
   `MinimalSmokeTests` starts a hidden sample, draws 30 frames and quits. Both
-  need a device. CI skips them for GL/Vulkan where it has no driver. A passing
+  need a device. CI's GL job draws on Mesa's llvmpipe and its Vulkan job on
+  Chrome's SwiftShader, and fails if `RenderPixelTests` names another device;
+  neither is a real driver, which `ci_gap_report.py` still covers. A passing
   release Direct3D test does not imply WARP: release has no WARP fallback.
   `renderer_seam_tests.cpp` is headless and runs with every render backend.
 - Pixel tests compare read-back with the shared PNGs in `tests/render/golden/`.

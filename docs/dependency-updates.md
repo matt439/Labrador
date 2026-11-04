@@ -21,9 +21,10 @@ passed the checks below.
 | Emscripten | [.github/workflows/ci.yml](../.github/workflows/ci.yml): EMSDK_VERSION, currently 6.0.12 | Exact SDK release shared by the browser jobs. |
 | SDK bootstrap manager | [.github/actions/emscripten/action.yml](../.github/actions/emscripten/action.yml): shallow clone of emsdk's default branch, then install/activate EMSDK_VERSION | The selected SDK release is fixed; the manager's checkout is not pinned to a Git commit. |
 | Vulkan SDK | ci.yml: VULKAN_SDK_VERSION, currently 1.4.357.0, and VULKAN_SDK_SHA256 | Versioned Windows installer and checked archive digest. Keep the two fields together. |
+| Mesa llvmpipe | ci.yml: MESA_VERSION, currently 26.2.6, and MESA_SHA256 | Exact mesa-dist-win MinGW archive and checked digest, for the GL job's software rasteriser. Keep the two fields together. |
 | ccache | ci.yml: CCACHE_VERSION, currently 4.14.1, and CCACHE_SHA256; installed by the local Emscripten action | Exact Windows x86_64 archive and checked digest. |
 | Native build requirements | [CMakeLists.txt](../CMakeLists.txt), [engine/CMakeLists.txt](../engine/CMakeLists.txt), [cmake/settings.cmake](../cmake/settings.cmake) | CMake 3.26 minimum, C++20 and Vulkan 1.2 minimum are requirements, not installed tool versions. |
-| Runner images | ci.yml and [website.yml](../.github/workflows/website.yml): windows-latest and ubuntu-latest | Moving labels. Visual Studio/MSVC, Windows SDK, CMake, Ninja, vcpkg, Python and installed Chrome may change with the image. |
+| Runner images | ci.yml and [website.yml](../.github/workflows/website.yml): windows-latest and ubuntu-latest | Moving labels. Visual Studio/MSVC, Windows SDK, CMake, Ninja, vcpkg, Python and installed Chrome may change with the image. Chrome's version also sets the SwiftShader the Vulkan job draws on. |
 | Remote Actions | Both workflows and the local Emscripten action use checkout, cache, cache/restore, upload-artifact and setup-node at @v4 where applicable | Major tags, not immutable action commit references. The local composite action itself comes from this checkout. |
 | Website CI Node | website.yml: setup-node node-version 24 | A major-version selector, not an exact patch. |
 | Supported website Node | [package.json](../website/package.json) and the lock's root engines: `^22.18.0 || >=24.0.0` | A compatibility range. There is no website .node-version, .nvmrc or packageManager/npm version pin. |
@@ -109,6 +110,11 @@ Check the imported guide value and hand-written references. The SDK cache key
 contains the selected SDK version; ccache's compiler check is
 `string:emsdk-<version>`. Verify both clean and warm-cache browser builds, and
 record the actual compiler/SDK Node versions and produced bundle identity.
+
+**Mesa:** change MESA_VERSION and MESA_SHA256 together, from the release's
+asset list, and take the MinGW archive: mesa-dist-win's 26.2.6 MSVC archive has
+no opengl32.dll. A new llvmpipe is a new rasteriser, so `windows (x64-debug-gl)`
+passing the golden set is the qualification.
 
 **Vulkan:** change VULKAN_SDK_VERSION and its independently checked official
 VULKAN_SDK_SHA256 together. Review the constructed versioned Windows-X64 URL,

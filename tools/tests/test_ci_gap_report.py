@@ -57,8 +57,8 @@ class DriftTests(unittest.TestCase):
         # indented as its keys are.
         matrix = []
         for found in re.finditer(r"^( *)- preset: (\S+)\n((?:\1  .*\n)*)", workflow, re.MULTILINE):
-            skip = re.search(r"^\s*skip_tests: '(.*)'$", found.group(3), re.MULTILINE)
-            matrix.append((found.group(2), skip.group(1) if skip else ""))
+            device = re.search(r"^\s*software_device: (\S+)$", found.group(3), re.MULTILINE)
+            matrix.append((found.group(2), device.group(1).strip("'") if device else ""))
         self.assertTrue(matrix, "no matrix entries found in ci.yml")
         ci_presets = {preset for preset, _ in matrix}
         # Jobs outside the matrix name their preset literally.
@@ -67,17 +67,14 @@ class DriftTests(unittest.TestCase):
         tested = {preset["name"] for preset in presets["testPresets"]}
 
         gaps = {gap.preset: gap for gap in report.GAPS}
-        whole = {name for name, gap in gaps.items() if not gap.ci_skips}
+        whole = {name for name, gap in gaps.items() if not gap.real_driver}
         self.assertEqual(whole, tested - ci_presets)
-        skipped = {}
-        for preset, skip in matrix:
-            if skip:
-                found = re.fullmatch(r'-E "\^\(([A-Za-z0-9|]+)\)\$"', skip)
-                self.assertIsNotNone(found, f"unrecognised skip_tests for {preset}: {skip}")
-                skipped[preset] = tuple(found.group(1).split("|"))
-        self.assertEqual(skipped, {name: gap.ci_skips for name, gap in gaps.items() if gap.ci_skips})
+        software = {preset for preset, device in matrix if device}
+        self.assertEqual(software, {name for name, gap in gaps.items() if gap.real_driver})
         for gap in report.GAPS:
-            self.assertTrue(set(gap.ci_skips) <= set(gap.required), gap.preset)
+            self.assertTrue(set(gap.real_driver) <= set(gap.required), gap.preset)
+        # Nothing excludes a test any more; an exclusion would be a new gap.
+        self.assertNotIn("skip_tests", workflow)
 
 
 class JunitTests(unittest.TestCase):
@@ -182,7 +179,7 @@ class MainTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Nothing was run for `" + "a" * 40 + "`", text)
         self.assertIn("| `wasm-debug` | whole preset | planned: cmake --preset wasm-debug;", text)
-        self.assertIn("| `x64-debug-gl` | RenderPixelTests, MinimalSmokeTests | not run: not selected |", text)
+        self.assertIn("| `x64-debug-gl` | RenderPixelTests, MinimalSmokeTests on a real driver | not run: not selected |", text)
         self.assertEqual(text.count("\n| `"), len(report.GAPS))
 
     def test_execute_records_commit_dirty_tree_and_exit_code(self):

@@ -624,6 +624,11 @@ one is, and it should be decided rather than discovered.
 > disagree with the four backends that already rasterise the same images, and
 > the reason the matrix exists is that a backend rots by failing to compile long
 > before it rots by drawing the wrong thing.
+>
+> **Changed 2026-11-04.** Chrome already carries SwiftShader on the runner, so
+> the second install never had to happen, and the preset now runs
+> `RenderPixelTests` on it. That is a software rasteriser, not a device this
+> port would ship on.
 
 **It does not buy Android.** Stated once more because it is the thing this
 document exists to say: on the spine above, the Vulkan backend is one of five
