@@ -5,7 +5,8 @@
 # into its own tree and lists them there; nothing outside this folder links
 # ComponentsExample.
 add_library(ComponentsExample STATIC
-    animation_preview.cpp nine_slice.cpp option_row.cpp slider.cpp)
+    animation_preview.cpp nine_slice.cpp option_row.cpp pointer_capture.cpp
+    slider.cpp)
 target_link_libraries(ComponentsExample PUBLIC LabradorEngine labrador_settings)
 
 set(components_texture_files
@@ -67,6 +68,7 @@ add_executable(ComponentsTests
     animation_preview_content_tests.cpp
     nine_slice_tests.cpp
     option_row_tests.cpp
+    pointer_capture_tests.cpp
     slider_tests.cpp
     test_main.cpp
 )

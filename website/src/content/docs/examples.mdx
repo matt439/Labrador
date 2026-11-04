@@ -153,6 +153,11 @@ since the page already holds every row it built:
 	to="}"
 />
 
+A click, a tap or a drag goes through the page as well. The gallery's `update_pointer` follows one
+contact with the copyable <RepoLink path="samples/components/pointer_capture.h">pointer capture</RepoLink>,
+finds the row under it through the camera it draws with, and focuses that row, drags a slider's
+track or completes a click only over the row it began on.
+
 A compound that every game ends up copying unchanged is a candidate for the engine's widget set.
 One that every game edits stays a component. The
 <RepoLink path="samples/components/README.md">components README</RepoLink> explains the rule, and

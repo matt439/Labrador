@@ -265,7 +265,8 @@ Where this page was checked, in a fresh starter with vcpkg's packages cached, th
 9 seconds, the build 296 steps, and the three about two minutes together; the folder took
 381 MB, and ctest ended `100% tests passed, 0 tests failed out of 32`. That count includes the six
 samples' page tests, which configure registers only when it finds Chrome; without it, configure
-says `No Chromium found` and ctest runs 19. The configure also prints the three shared-library
+says `No Chromium found` and ctest runs 19. A tree from after 4 November 2026 has one more page
+test, the components gallery's mouse and touch run, so it ends `out of 33`. The configure also prints the three shared-library
 warnings the browser page describes. The first configure of a browser build can take a quarter of
 an hour at vcpkg's `Fetching registry information` or `Detecting compiler hash` line; leave it
 running.

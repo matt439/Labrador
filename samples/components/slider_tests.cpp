@@ -217,3 +217,55 @@ TEST_CASE("focus lights the label and the fill, and leaves the track and the num
 	CHECK(music.track().colour() == track_before);
 	CHECK(music.number().colour() == number_before);
 }
+
+TEST_CASE("a pointer's x maps to the value that far along the track")
+{
+	TestContent content;
+	const Slider slider = volume(content, 50);
+
+	// The track runs from 300 to 500: twenty units a step.
+	CHECK(slider.value_at(300.0f) == 0);
+	CHECK(slider.value_at(500.0f) == 100);
+	CHECK(slider.value_at(400.0f) == 50);
+
+	// Snapped to the nearest step: 9 units past 60 is still 60, 11 is 70.
+	CHECK(slider.value_at(429.0f) == 60);
+	CHECK(slider.value_at(431.0f) == 70);
+
+	// Past either end clamps rather than throwing or wrapping.
+	CHECK(slider.value_at(-1000.0f) == 0);
+	CHECK(slider.value_at(299.0f) == 0);
+	CHECK(slider.value_at(501.0f) == 100);
+	CHECK(slider.value_at(1.0e9f) == 100);
+}
+
+TEST_CASE("a range that is not a whole number of steps still reaches its top")
+{
+	TestContent content;
+	const Slider slider("odd", L"Odd", 0, 25, 10, 0, Vector2F(100.0f, 50.0f),
+		track, "font", TextureHandle(), &content.resources);
+
+	CHECK(slider.value_at(300.0f) == 0);
+	CHECK(slider.value_at(380.0f) == 10);
+	CHECK(slider.value_at(470.0f) == 20);
+	CHECK(slider.value_at(500.0f) == 25);
+}
+
+TEST_CASE("dragging moves the value and reports each change once")
+{
+	TestContent content;
+	std::vector<int> heard;
+	Slider slider = volume(content, 50,
+		[&heard](int value) { heard.push_back(value); });
+
+	CHECK(slider.drag_to(500.0f));
+	CHECK_FALSE(slider.drag_to(600.0f));
+	CHECK(slider.drag_to(300.0f));
+	CHECK_FALSE(slider.drag_to(305.0f));
+	CHECK(slider.drag_to(400.0f));
+
+	CHECK(slider.value() == 50);
+	CHECK(slider.number().text() == L"50");
+	CHECK(slider.fill().bounds().width == doctest::Approx(100.0f));
+	CHECK(heard == std::vector<int>{ 100, 0, 50 });
+}

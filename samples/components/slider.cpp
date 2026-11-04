@@ -4,6 +4,7 @@
 #include "engine/render/renderer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <utility>
 
@@ -144,6 +145,48 @@ namespace components
 		}
 
 		this->value_ = static_cast<int>(next);
+		this->show_value();
+
+		if (this->on_change_)
+		{
+			this->on_change_(this->value_);
+		}
+
+		return true;
+	}
+
+	int Slider::value_at(float x) const
+	{
+		const RectangleF& track = this->track_rectangle_;
+		if (!(track.width > 0.0f))
+		{
+			return this->value_;
+		}
+
+		// In double for the reason fill_rectangle gives.
+		const double fraction = std::clamp(
+			(static_cast<double>(x) - track.x) / track.width, 0.0, 1.0);
+		const double minimum = this->minimum_;
+		const double maximum = this->maximum_;
+		const double raw = minimum + fraction * (maximum - minimum);
+		const double snapped = std::min(maximum,
+			minimum + std::round((raw - minimum) / this->step_) * this->step_);
+
+		// A range that is not a whole number of steps still reaches its top.
+		const double chosen =
+			maximum - raw < std::abs(raw - snapped) ? maximum : snapped;
+		return static_cast<int>(chosen);
+	}
+
+	bool Slider::drag_to(float x)
+	{
+		const int next = this->value_at(x);
+		if (next == this->value_)
+		{
+			return false;
+		}
+
+		this->value_ = next;
 		this->show_value();
 
 		if (this->on_change_)

@@ -566,6 +566,7 @@ written.
 58. L58 Collide a round body: OCA-80 (selected from `IDEA#7` on 2026-11-04 by the owner)
 59. L59 Open the window at any size: OCA-81 (selected from `IDEA#10` on 2026-11-04 by the owner)
 60. L60 Draw a PNG without converting it: OCA-82 (selected from `GAP#4` on 2026-11-04 by the owner)
+61. L61 Click, tap and drag the components gallery: OCA-83 (selected from `IDEA#6` on 2026-11-04 by the owner)
 
 **Stories**
 
@@ -1078,11 +1079,39 @@ written.
 
 - [x] **[OCA-82](#oca-82)** Should - M - The Outside Adopter: Draw a PNG without converting it first
 
+- [x] **[OCA-83](#oca-83)** Could - S - The Outside Adopter: Click, tap and drag the components gallery's rows
+
 - [ ] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work is `WEB#10` in TODO.md: add LineSweeper and the bundle
   page's play, quit and replay to `tests/render/web/run_firefox.mjs`, and
   register its runs as ctest entries when configure finds a Firefox.
+
+<a id="oca-83"></a>
+### OCA-83. Click, tap and drag the components gallery's rows
+
+Selected 2026-11-04 by the owner from `IDEA#6` in
+[Feature candidates](../feature-candidates.md), against the
+[recommendations of 2026-11-04](../2026-11-04-decision-recommendations.md#idea6-pointer-interaction-in-the-components-gallery),
+which advised deferring it for want of a caller. It is OCA-50's optional
+follow-up: the gallery wired keys and pads only, and the slider had no
+pointer interaction. Pointer policy stays in the page and in copyable
+component code, not in `engine/ui/`.
+
+**Acceptance**
+
+- A click or a tap focuses a row and completes only over the row it began
+  on; an option row's value steps left or right by the half it lands on;
+  a slider's track is dragged and clamps past its ends; Quit quits.
+- One contact at a time: the first finger, or the mouse with no finger
+  near; a cancelled contact or lost focus completes nothing; keys and the
+  pad take precedence within a tick.
+- Headless tests cover the slider's endpoint, midpoint and clamped values,
+  disabled targets, cancellation on lost focus, release outside the row,
+  one active touch id and the mouse after a touch.
+- A browser page test drives the gallery through the canvas's CSS geometry
+  with a real mouse and Chromium's emulated touch. A real touchscreen stays
+  an open check in web-to-be-tested.md.
 
 <a id="oca-82"></a>
 ### OCA-82. Draw a PNG without converting it first

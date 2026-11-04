@@ -218,6 +218,17 @@ if(PROJECT_IS_TOP_LEVEL)
         # ComponentsTests covers widget/playback behavior, not these bindings.
         labrador_sample_page_test(ComponentsPageTests ComponentsGallery
             "ArrowDown,ArrowDown,ArrowLeft,ArrowUp,ArrowRight,KeyR,Escape,Escape")
+        # The same gallery by mouse and emulated touch: a slider dragged and
+        # clamped, a release off the pressed row, a tap on a value, and Quit
+        # tapped (samples/components/web/pointer_input.mjs).
+        add_test(NAME ComponentsPointerPageTests
+            COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
+                --browser "${LABRADOR_TEST_BROWSER}"
+                --page "$<TARGET_FILE:ComponentsGallery>"
+                --input "${CMAKE_CURRENT_SOURCE_DIR}/samples/components/web/pointer_input.mjs"
+                --timeout 60
+        )
 
         # The packaged host page mounts an ES-module factory on a click,
         # rather than exposing the development shell's Module. Its driver
