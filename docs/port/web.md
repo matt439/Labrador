@@ -635,8 +635,26 @@ with a new phone recording. That day the live `BUILD.json` named `0f4f503`
 with `dirty` false, and the served `linesweeper.js`, `linesweeper.wasm`,
 `NOTICE.txt` and `poster.png` matched its SHA-256 values; headers were not
 re-checked (`WEB#12`). `LineSweeperBundlePageTests` tests the
-bundle's example page, not the site's own page script, which has no automated
-check (`WEB#13`).
+bundle's example page. `LineSweeperHostPageTests` tests the site's own page
+script, driving the page and the module a host checkout holds after
+`sync-demo` through the same steps: the recording in place of Play for a
+phone, an unsupported browser or a failed download, each with nothing of the
+module or recording fetched; Play, focus, a forced context loss and its
+restoration, QUIT, replay and five games in a row; a 16:9 stage within the
+page at phone and desktop widths; the ten-second context wait and Try again;
+and each failure's sentence with its raw reason beneath. The host repository
+is private, so CI cannot run it. Configure a `wasm-*` preset with a browser and
+the host checkout's `public/` folder, then run it before each deploy:
+
+```text
+cmake --preset wasm-release -DLABRADOR_HOST_SITE=C:/Projects/PersonalWebsite/public
+ctest --preset wasm-release -R LineSweeperHostPageTests
+```
+
+It passed on 2026-11-04 against host commit `6b57e7c` (the `v0.3.0` bundle) in
+headless Chrome 153 on SwiftShader. Like the bundle test, it forces context
+loss through `WEBGL_lose_context` and fakes the tab switch; it checks the
+page's response, not a real GPU reset or a real phone.
 
 **When to re-sync.** After a change to LineSweeper's source or content, engine
 code included in its browser build, the browser shell/mount, bundle/notices

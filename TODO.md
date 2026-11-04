@@ -55,7 +55,6 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 | `SITE#4` | OPEN | should | S | iOS Safari shows a pill naming the host above the keyboard while typing in search; tapping it, or pressing Go on an empty box, leaves an empty page. Seen 2026-11-03 on the live site and the versioned fixture, so not versioning. Pagefind's form has `action="javascript:void(0);"`, the likely cause. |
 | `OCA-79` | DECISION | should | S | Push a current-release starter project, as *Put your project on GitHub* says, to a public test repository under the owner's account (owner's authorisation), and record its green `ci.yml` run in the guides. [Story](docs/product/BACKLOG.md#oca-79). |
 | `WEB#12` | OPEN | could | S | A script checking the live demo after each deploy: content types, both Cache-Control values, Brotli, sizes and SHA-256 against the served `BUILD.json`, and the served commit; its dated output replaces M5's manual ticks. [M5](docs/port/web-to-be-tested.md). |
-| `WEB#13` | OPEN | could | S | The host's page script (gate, failure UI, controls) has no automated check; `BDP-03` tests the bundle's example page. Serve the bundle page in a site wrapper, or run bundle-page cases against the host page. [web.md §7](docs/port/web.md#7-what-the-host-page-gets). |
 
 `SM-30`, the owner-only gate follow-up in [BACKLOG.md, Later](docs/product/BACKLOG.md#later), is ready now that `SM-29` is closed.
 

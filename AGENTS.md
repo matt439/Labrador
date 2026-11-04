@@ -61,7 +61,9 @@ web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audi
 `WebWindowTests`, all six sample `*PageTests`, `LineSweeperReducedMotionPageTests`,
 `LineSweeperPalettePageTests` and `LineSweeperBundlePageTests` registered. The bundle test loads `web-dist/linesweeper/index.html`, plays and
 replays, checks the touch gate, restores a context and asserts failure UI.
-It requires a rasterizing backend. The second pixel run hides
+It requires a rasterizing backend. `LineSweeperHostPageTests` drives the
+host site's own page the same way, registered only when `LABRADOR_HOST_SITE`
+names a host checkout's `public/`; CI has no such checkout. The second pixel run hides
 S3TC to test CPU block decoding. The page runner
 [run_page.mjs](tests/render/web/run_page.mjs) serves the page and uses Node's
 WebSocket and DevTools; sample pages must draw and call `Module.onQuit`, with

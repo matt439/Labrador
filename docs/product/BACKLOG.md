@@ -361,7 +361,8 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[BDP-24](STORIES.md#bdp-24)** Could · XS · The Browser and Phone Demo Player: The demo says what it offers players with access needs — after OCA-08
 - [x] **[BDP-03](STORIES.md#bdp-03)** Should · M · The Browser and Phone Demo Player: ctest loads and plays the bundle page a visitor gets
   *Amended 2026-11-03:* the tested page is the bundle's example, not the
-  host's deployed page; checking the host page is `WEB#13`.
+  host's deployed page; the host page is checked by
+  `LineSweeperHostPageTests` (`WEB#13`, 2026-11-04).
 - [x] **[BDP-04](STORIES.md#bdp-04)** Should · M · The Browser and Phone Demo Player: The bundle page's failure paths are tested — after BDP-03
 - [x] **[PI-05](STORIES.md#pi-05)** Could · S · The Pinned Submodule Integrator: The engine tells my build which revision of it I am shipping — after OCA-67
 - [x] **[SM-03](STORIES.md#sm-03)** Should · XS · The Sole Owner-Maintainer · **Owner**: Assign separate measurements to CPU phases, cadence, GPU execution and pipeline latency

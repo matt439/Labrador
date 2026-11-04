@@ -11,8 +11,8 @@
 //                     [--timeout <seconds>]
 //                     [--sample-input fixed-step]
 //
-// Either form also takes [--emulate-media <feature>=<value>] and
-// [--expect-console <text>].
+// Either form also takes [--emulate-media <feature>=<value>],
+// [--expect-console <text>] and [--root <folder>].
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
 // wasm-* presets (tests/render/CMakeLists.txt), for WebWindowTests
@@ -86,6 +86,12 @@
 // exit, in which no console message the page logged contains the text, so a
 // page's own report of what it read is held as well as its exit.
 //
+// --root serves a folder that holds the page's, at the server's root, and
+// loads the page at its path inside it. It is for a page that names files
+// outside its own folder: the site's demo page fetches its fonts from
+// ../fonts/ and its icon from /favicon.svg, so LineSweeperHostPageTests serves
+// the host checkout's public/ (docs/port/web.md, section 7).
+//
 // WHAT IT DOES, IN ORDER. Serves the page's folder over HTTP on a loopback
 // port, because a browser will not compile a module read from file://. Starts
 // the browser headless with a profile of its own, on a DevTools port the
@@ -109,15 +115,19 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
+import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { DevTools, browser_version } from './devtools.mjs';
 import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 
 const options = parse_arguments(process.argv.slice(2));
 const page_path = resolve(options.page);
-const root = dirname(page_path);
-const page_name = basename(page_path);
+const root = options.root === undefined ? dirname(page_path) : resolve(options.root);
+if (!page_path.startsWith(root + sep)) {
+	fail_usage(`--page ${page_path} is not inside --root ${root}`);
+}
+// The page's path under the served root, as a URL path.
+const page_name = relative(root, page_path).split(sep).map(encodeURIComponent).join('/');
 const timeout_ms = Number(options.timeout ?? 300) * 1000;
 
 const MEDIA_TYPES = {
@@ -127,6 +137,11 @@ const MEDIA_TYPES = {
 	'.wasm': 'application/wasm',
 	'.data': 'application/octet-stream',
 	'.json': 'application/json',
+	'.png': 'image/png',
+	'.svg': 'image/svg+xml',
+	'.woff2': 'font/woff2',
+	'.mp4': 'video/mp4',
+	'.txt': 'text/plain; charset=utf-8',
 };
 
 function parse_arguments(argv) {
@@ -178,7 +193,7 @@ function fail_usage(why) {
 		'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
 		'[--collect <folder>] [--timeout <seconds>] ' +
 		'[--browser-warnings fail] [--hide-extension <name>] ' +
-		'[--input <script.mjs>]\n' +
+		'[--input <script.mjs>] [--root <folder>]\n' +
 		'       node run_page.mjs --browser <chrome> --page <file.html> ' +
 		'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>] ' +
 		'[--sample-input fixed-step]\n');
