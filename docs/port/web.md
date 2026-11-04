@@ -634,7 +634,9 @@ bounded context-loss wait, accessibility note and iPhone-only gate wording,
 with a new phone recording. That day the live `BUILD.json` named `0f4f503`
 with `dirty` false, and the served `linesweeper.js`, `linesweeper.wasm`,
 `NOTICE.txt` and `poster.png` matched its SHA-256 values; headers were not
-re-checked (`WEB#12`). `LineSweeperBundlePageTests` tests the
+re-checked. `tools/web_bundle/check_live.mjs` checks the headers, sizes,
+hashes and commit after each deploy; its first live run is `WEB#12`
+([web-to-be-tested.md](web-to-be-tested.md#the-live-demo-m5-checked-2026-10-13)). `LineSweeperBundlePageTests` tests the
 bundle's example page. `LineSweeperHostPageTests` tests the site's own page
 script, driving the page and the module a host checkout holds after
 `sync-demo` through the same steps: the recording in place of Play for a
