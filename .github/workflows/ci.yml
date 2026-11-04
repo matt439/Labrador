@@ -324,17 +324,25 @@ jobs:
       - name: Point at the runner's vcpkg
         if: needs.changes.outputs.build == 'true'
         shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
 
       # The manifest's dependencies are built at configure time, which is most
       # of this job's wall clock. Keyed on vcpkg.json, so a run that changes no
-      # dependency reuses the last one's binaries.
+      # dependency reuses the last one's binaries, and on the runner image,
+      # because a new image's compiler changes every package's ABI hash: keyed
+      # on vcpkg.json alone, image 20261030.294.1 restored a cache of which none
+      # applied, rebuilt all seven packages each run and never saved them
+      # (job 125778748301). A new image restores the last image's cache by
+      # prefix and saves its own; pull requests read master's, which the
+      # weekly scheduled run refreshes.
       - name: Cache vcpkg binaries
         if: needs.changes.outputs.build == 'true'
         uses: actions/cache@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
           restore-keys: vcpkg-${{ runner.os }}-
 
       # Only for the preset that needs it. CMake's own FindVulkan reads
@@ -352,6 +360,17 @@ jobs:
       # land without the dxc, and that failure surfaces at configure time in
       # cmake/compile_shaders.cmake with VULKAN_SDK named and nothing wrong
       # with VULKAN_SDK.
+      # THE VERIFIED DOWNLOADS ARE CACHED, keyed on their digests, because the
+      # Vulkan SDK's download stalled twice in 262 runs (jobs 115126168409 and
+      # 125812674639), once for the whole step's 15 minutes. A cached file is
+      # checked against its digest again before it is used.
+      - name: Cache the Vulkan SDK installer and Mesa
+        if: needs.changes.outputs.build == 'true' && (matrix.vulkan_sdk || matrix.software_device == 'llvmpipe')
+        uses: actions/cache@v4
+        with:
+          path: C:\ci-downloads
+          key: ci-downloads-${{ matrix.preset }}-${{ env.VULKAN_SDK_SHA256 }}-${{ env.MESA_SHA256 }}
+
       - name: Install the Vulkan SDK
         if: needs.changes.outputs.build == 'true' && matrix.vulkan_sdk
         # A download and an install that take a minute or two; the installer
@@ -360,12 +379,17 @@ jobs:
         shell: pwsh
         run: |
           $name = "vulkansdk-windows-X64-$env:VULKAN_SDK_VERSION.exe"
-          $installer = Join-Path $env:RUNNER_TEMP $name
+          New-Item -ItemType Directory -Force C:\ci-downloads | Out-Null
+          $installer = Join-Path C:\ci-downloads $name
           $uri = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/$name"
           Write-Output "Installing Vulkan SDK $env:VULKAN_SDK_VERSION from $uri"
-          python tools/ci_download.py --url "$uri" --output "$installer"
-          if ($LASTEXITCODE -ne 0) {
-            throw "The Vulkan SDK download failed with exit code $LASTEXITCODE."
+          if (Test-Path $installer) {
+            Write-Output "Using the cached installer."
+          } else {
+            python tools/ci_download.py --url "$uri" --output "$installer"
+            if ($LASTEXITCODE -ne 0) {
+              throw "The Vulkan SDK download failed with exit code $LASTEXITCODE."
+            }
           }
           if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne $env:VULKAN_SDK_SHA256) {
             throw "$name does not match VULKAN_SDK_SHA256."
@@ -444,11 +468,14 @@ jobs:
         shell: pwsh
         run: |
           $name = "mesa3d-$env:MESA_VERSION-release-mingw.7z"
-          $archive = Join-Path $env:RUNNER_TEMP $name
+          New-Item -ItemType Directory -Force C:\ci-downloads | Out-Null
+          $archive = Join-Path C:\ci-downloads $name
           $uri = "https://github.com/pal1000/mesa-dist-win/releases/download/$env:MESA_VERSION/$name"
-          python tools/ci_download.py --url "$uri" --output "$archive"
-          if ($LASTEXITCODE -ne 0) {
-            throw "The Mesa download failed with exit code $LASTEXITCODE."
+          if (-not (Test-Path $archive)) {
+            python tools/ci_download.py --url "$uri" --output "$archive"
+            if ($LASTEXITCODE -ne 0) {
+              throw "The Mesa download failed with exit code $LASTEXITCODE."
+            }
           }
           if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $env:MESA_SHA256) {
             throw "$name does not match MESA_SHA256."
@@ -542,13 +569,15 @@ jobs:
 
       - name: Point at the runner's vcpkg
         shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
 
       - name: Cache vcpkg binaries
         uses: actions/cache@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
           restore-keys: vcpkg-wasm-
 
       # Saves the installed SDK for the two jobs beside this one.
@@ -697,13 +726,15 @@ jobs:
 
       - name: Point at the runner's vcpkg
         shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
 
       - name: Restore the wasm job's vcpkg binaries
         uses: actions/cache/restore@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
           restore-keys: vcpkg-wasm-
 
       - name: Install Emscripten and ccache
@@ -764,7 +795,9 @@ jobs:
 
       - name: Point at the runner's vcpkg
         shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
 
       # The consumer job's argument, for the wasm job's cache: a consumer's
       # packages are a subset of the engine's, so saving here could leave the
@@ -773,7 +806,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
           restore-keys: vcpkg-wasm-
 
       - name: Install Emscripten and ccache
@@ -900,7 +933,9 @@ jobs:
 
       - name: Point at the runner's vcpkg
         shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
 
       # THE WINDOWS JOBS' CACHE, RESTORED AND NEVER SAVED. The consumer's
       # packages are the engine's, built for the same triplet at the same
@@ -911,7 +946,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
           restore-keys: vcpkg-${{ runner.os }}-
 
       - name: Find vcvars64
