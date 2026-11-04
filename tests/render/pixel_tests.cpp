@@ -147,6 +147,67 @@ TEST_CASE("the renderer reports the rasterising device it selected")
 	}
 }
 
+TEST_CASE("the renderer reports the presentation policy set_vsync configured")
+{
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+
+	// Presented, unlike every other case here, because two backends apply a
+	// change at the next present rather than at the call (SEAM.md#6). Nothing
+	// is read back from these frames.
+	const auto present = [&harness, &renderer]()
+	{
+		std::ignore = harness.begin();
+		renderer.submit();
+		renderer.end_frame();
+	};
+
+	renderer.set_vsync(false);
+	CHECK_FALSE(renderer.vsync());
+	present();
+
+	const RenderDeviceInfo& info = renderer.device_info();
+	if (info.backend == "gl")
+	{
+#if defined(__EMSCRIPTEN__)
+		// A browser has no interval, so off changes nothing it reports.
+		CHECK(info.present_mode == "browser_animation_frame");
+		CHECK_FALSE(info.requested_swap_interval.has_value());
+#else
+		// What the driver stored is reported and not asserted: a driver
+		// setting may hold the interval at 1 whatever was asked.
+		REQUIRE(info.requested_swap_interval.has_value());
+		CHECK(*info.requested_swap_interval == 0);
+		CHECK(info.reported_swap_interval.has_value());
+#endif
+	}
+	else if (info.backend == "d3d11" || info.backend == "d3d12")
+	{
+		REQUIRE(info.requested_swap_interval.has_value());
+		CHECK(*info.requested_swap_interval == 0);
+	}
+	else
+	{
+		CHECK(info.backend == "vulkan");
+		CHECK((info.present_mode == "mailbox" ||
+			info.present_mode == "immediate" || info.present_mode == "fifo"));
+	}
+
+	renderer.set_vsync(true);
+	CHECK(renderer.vsync());
+	present();
+
+	const RenderDeviceInfo& again = renderer.device_info();
+	if (again.backend == "vulkan")
+	{
+		CHECK(again.present_mode == "fifo");
+	}
+	else if (again.requested_swap_interval.has_value())
+	{
+		CHECK(*again.requested_swap_interval == 1);
+	}
+}
+
 TEST_CASE("a frame nobody drew into is cleared to opaque black")
 {
 	Harness harness;

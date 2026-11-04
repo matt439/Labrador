@@ -204,6 +204,14 @@ namespace labrador
 
 	void Renderer::Impl::present()
 	{
+		if (this->swap_interval_stale)
+		{
+			this->swap_interval_stale = false;
+			this->device_info.requested_swap_interval = this->vsync ? 1 : 0;
+			this->device_info.reported_swap_interval = configure_swap_interval(
+				this->context->device_context,
+				*this->device_info.requested_swap_interval);
+		}
 		SwapBuffers(this->context->device_context);
 	}
 
@@ -380,7 +388,8 @@ namespace labrador
 		// because it is a property of the context rather than of a frame, and
 		// what the driver stored is reported beside what was asked for.
 		this->device_info.present_mode = "wgl_swap_interval";
-		this->device_info.requested_swap_interval = 1;
+		this->device_info.requested_swap_interval = this->vsync ? 1 : 0;
+		this->swap_interval_stale = false;
 		this->device_info.reported_swap_interval = configure_swap_interval(
 			made->device_context, *this->device_info.requested_swap_interval);
 		this->block_compression =

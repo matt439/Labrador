@@ -176,6 +176,13 @@ namespace labrador
 
 		RenderDeviceInfo device_info;
 
+		// What set_vsync last asked, and whether the context has yet to hear
+		// it. A swap interval is the context's, so a change made after
+		// create_context is applied by the next present, where the context
+		// is current. A browser has no interval and never reads either.
+		bool vsync = true;
+		bool swap_interval_stale = false;
+
 		// WHAT THE CONTEXT ANSWERED, filled in by create_context and read by
 		// the files that do not know which context they are in.
 		//

@@ -151,6 +151,22 @@ TEST_CASE("CONTRACT: device information names a device that was actually created
 	CHECK_THROWS_AS(std::ignore = renderer.device_info(), std::logic_error);
 }
 
+TEST_CASE("CONTRACT: vsync is on until asked otherwise, and is legal before there is a device")
+{
+	// A client reads its setting before Application makes the device, so the
+	// request has to be something a renderer with no device can hold. All five
+	// answer it the same way: what was last asked, with nothing presented.
+	Renderer renderer;
+
+	CHECK(renderer.vsync());
+
+	renderer.set_vsync(false);
+	CHECK_FALSE(renderer.vsync());
+
+	renderer.set_vsync(true);
+	CHECK(renderer.vsync());
+}
+
 TEST_CASE("CONTRACT: window_size_changed before there is a device rebuilds nothing")
 {
 	// TEST-GAP.md's A4. A shell can be sent a WM_SIZE between making its window

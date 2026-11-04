@@ -133,6 +133,7 @@ namespace labrador
 		// backend's per-view recording state once per thread the machine might
 		// ever run, to draw a frame that has four panes at the very most - see
 		// ApplicationOptions::view_capacity.
+		this->renderer_->set_vsync(this->options_.vsync);
 		this->renderer_->create_device(this->window_->handle(), size.x, size.y,
 			this->options_.view_capacity);
 

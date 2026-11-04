@@ -336,6 +336,24 @@ browser the canvas's drawing buffer, so `gl/` answers that. `vulkan/` draws into
 an engine-owned colour target and reports its extent; presentation scales it
 when the swapchain size differs.
 
+### What `set_vsync` configures on each backend
+
+Vsync is a request about presentation, and each API states it differently.
+With vsync on, the two Direct3D backends present with a sync interval of 1,
+`gl/` on Windows sets `WGL_EXT_swap_control`'s interval to 1, and `vulkan/`
+uses FIFO. With it off, the Direct3D backends present with an interval of 0 and
+no tearing flag, so a flip-model swap chain in a window is still composed and
+does not tear. `gl/` sets an interval of 0 and reports what the driver then says.
+`vulkan/` remakes its swapchain at the next present, preferring MAILBOX, then
+IMMEDIATE, then FIFO when the surface offers neither. `device_info()` names the
+mode it chose. A browser presents on its own animation frame, and the null
+backend presents nothing, so both record the request and change nothing.
+`RenderDeviceInfo` reports the configured policy, not measured scan-out.
+
+Off does not decouple a client's simulation from the display: `Application`
+runs fixed steps at `target_fps` whatever the present does, and a client that
+wants motion between steps reads `Application::step_position()`.
+
 ## 7. What holds the five to one another
 
 **Four runs and one set of images.** An assertion holds *one* backend to a

@@ -297,6 +297,22 @@ namespace labrador
 		// implementation this Renderer is using.
 		const RenderDeviceInfo& device_info() const;
 
+		// Whether end_frame waits for the display. true, the default, presents
+		// at most once per refresh; false hands the frame over as soon as it is
+		// submitted, so the frame rate is no longer the display's. Whether the
+		// picture can then tear is the platform's and the compositor's to say.
+		//
+		// Legal before and after create_device, and kept across a lost device.
+		// A change after create_device takes effect at the next present.
+		// vsync() answers what was last asked.
+		//
+		// A BACKEND WITH NO WAY TO HONOUR false KEEPS PRESENTING AT THE
+		// DISPLAY'S RATE: a browser's animation frame, a Vulkan surface that
+		// offers only FIFO, and the null backend, which presents nothing.
+		// device_info() describes the policy actually configured (SEAM.md#6).
+		void set_vsync(bool vsync);
+		bool vsync() const;
+
 		// Returns whether anything was rebuilt, which is the signal the shell
 		// wants for "re-run the layout".
 		//

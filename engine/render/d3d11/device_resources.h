@@ -37,7 +37,9 @@ namespace labrador
     //    DiscardView are gone rather than passed DXGI_FORMAT_UNKNOWN and
     //    skipped on every path.
     //  - No tearing. Nothing set the flag, so an IDXGIFactory5 probe measured a
-    //    capability no Present could reach. Present is vsync-locked.
+    //    capability no Present could reach. Present takes the sync interval
+    //    Renderer::set_vsync chose, and an interval of 0 without the flag is
+    //    still composed in a window rather than torn.
     //  - No HDR. Nothing set that flag either, and the window/output
     //    intersection walk it guarded - every adapter, every output, on every
     //    display change and every no-op resize - computed a value read only
@@ -71,7 +73,7 @@ namespace labrador
         bool WindowSizeChanged(int width, int height);
         void HandleDeviceLost();
         void RegisterDeviceNotify(D3DDeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
-        void Present();
+        void Present(UINT syncInterval);
         void UpdateColorSpace();
 
         // The accessors, and this is all of them.
