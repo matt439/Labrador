@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/app/application.h"
+#include "engine/math/vector2i.h"
 
 #include <stdexcept>
 #include <limits>
@@ -131,4 +132,44 @@ TEST_CASE("accepted frame rates always produce an advancing timer period")
 	}
 	catch (const Stop&) {}
 	CHECK(callbacks == 1);
+}
+
+TEST_CASE("a client size is optional, and refused below the minimum window size by name")
+{
+	{
+		const ApplicationOptions options;
+		CHECK_FALSE(options.client_size.has_value());
+	}
+	{
+		ApplicationOptions options;
+		options.client_size = Vector2I(1366, 768);
+		CHECK_NOTHROW(options.validate());
+		options.client_size = Vector2I(options.min_window_width,
+			options.min_window_height);
+		CHECK_NOTHROW(options.validate());
+	}
+
+	const auto refused_naming = [](const ApplicationOptions& options,
+		const char* field)
+		{
+			try
+			{
+				options.validate();
+				FAIL("validate() accepted a client size below the minimum");
+			}
+			catch (const std::invalid_argument& error)
+			{
+				const std::string message = error.what();
+				CHECK(message.find("client_size") != std::string::npos);
+				CHECK(message.find(field) != std::string::npos);
+			}
+		};
+
+	ApplicationOptions options;
+	options.client_size = Vector2I(options.min_window_width - 1, 600);
+	refused_naming(options, "min_window_width");
+	options.client_size = Vector2I(800, options.min_window_height - 1);
+	refused_naming(options, "min_window_height");
+	options.client_size = Vector2I(0, 0);
+	refused_naming(options, "min_window_width");
 }

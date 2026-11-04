@@ -52,6 +52,13 @@ namespace labrador
 			"ApplicationOptions::min_window_width must be greater than zero.");
 		require(this->min_window_height > 0,
 			"ApplicationOptions::min_window_height must be greater than zero.");
+		if (this->client_size.has_value())
+		{
+			require(this->client_size->x >= this->min_window_width,
+				"ApplicationOptions::client_size is narrower than min_window_width.");
+			require(this->client_size->y >= this->min_window_height,
+				"ApplicationOptions::client_size is shorter than min_window_height.");
+		}
 		require(!this->window_class_name.empty(),
 			"ApplicationOptions::window_class_name must not be empty.");
 	}
@@ -117,7 +124,7 @@ namespace labrador
 #endif
 
 		this->resolution_manager_ = std::make_unique<ResolutionManager>();
-		this->resolution_manager_->set_resolution(this->options_.resolution);
+		this->point_at_requested_size();
 
 		this->create_window();
 
@@ -247,6 +254,7 @@ namespace labrador
 	void Application::set_resolution(ScreenResolution resolution)
 	{
 		this->options_.resolution = resolution;
+		this->options_.client_size.reset();
 		this->resolution_manager_->set_resolution(resolution);
 
 		// The WM_SIZE this produces re-points the resolution manager at what
@@ -254,6 +262,19 @@ namespace labrador
 		// a size past the monitor's comes back clamped.
 		this->window_->resize_client(
 			this->resolution_manager_->resolution_ivec());
+	}
+
+	void Application::set_resolution(const Vector2I& client_size)
+	{
+		// Checked against a copy, so a refused size leaves the options as
+		// they were and the message names the same fields validate() does.
+		ApplicationOptions requested = this->options_;
+		requested.client_size = client_size;
+		requested.validate();
+
+		this->options_.client_size = client_size;
+		this->resolution_manager_->set_resolution_exactly(client_size);
+		this->window_->resize_client(client_size);
 	}
 
 	void Application::set_fullscreen(bool fullscreen)
@@ -271,12 +292,22 @@ namespace labrador
 			// requested preset, so while full screen
 			// it is the monitor - reading it here would keep the window at
 			// monitor size with a caption on it. options_.resolution is the last
-			// thing a game actually requested, so the manager is re-pointed at
-			// it, and the WM_SIZE below then corrects it to whatever client area
-			// that yields.
-			this->resolution_manager_->set_resolution(this->options_.resolution);
+			// thing a game actually requested, with client_size over it when
+			// one is set, so the manager is re-pointed at it, and the WM_SIZE
+			// below then corrects it to whatever client area that yields.
+			this->point_at_requested_size();
 			this->window_->leave_fullscreen(
 				this->resolution_manager_->resolution_ivec());
+		}
+	}
+
+	void Application::point_at_requested_size()
+	{
+		this->resolution_manager_->set_resolution(this->options_.resolution);
+		if (this->options_.client_size.has_value())
+		{
+			this->resolution_manager_->set_resolution_exactly(
+				*this->options_.client_size);
 		}
 	}
 
