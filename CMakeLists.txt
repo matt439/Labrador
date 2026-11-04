@@ -232,6 +232,23 @@ if(PROJECT_IS_TOP_LEVEL)
                     --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_input.mjs"
                     --timeout 120
             )
+            # The site's own page for the same bundle, from a checkout of the
+            # host repository after its sync-demo: the page is the host's, so
+            # it is registered only when configure is given that checkout's
+            # public/ folder, which the run serves whole for the page's fonts.
+            set(LABRADOR_HOST_SITE "" CACHE PATH
+                "A host site checkout's public/ folder, holding demo/linesweeper/index.html; registers LineSweeperHostPageTests")
+            if(LABRADOR_HOST_SITE)
+                add_test(NAME LineSweeperHostPageTests
+                    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                        "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
+                        --browser "${LABRADOR_TEST_BROWSER}"
+                        --root "${LABRADOR_HOST_SITE}"
+                        --page "${LABRADOR_HOST_SITE}/demo/linesweeper/index.html"
+                        --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/host_input.mjs"
+                        --timeout 120
+                )
+            endif()
             # Release-only instrument acceptance: completed CPU-frame rows
             # and exact fixture counts, without a physical pacing verdict.
             if(CMAKE_BUILD_TYPE STREQUAL "Release")

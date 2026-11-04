@@ -42,6 +42,10 @@ captured `onError` does the same after frames have drawn. These are automated
 browser checks, not real-phone or physical-controller acceptance. The driver
 is `tests/render/web/bundle_input.mjs`; its injected factory wrapper delegates
 to the packaged module, and only the truncated-response case changes its wasm.
+`LineSweeperHostPageTests` drives the host site's own page through the same
+steps (`tests/render/web/host_input.mjs`, sharing `bundle_page.mjs`); it is
+registered only when configure is given a host checkout's `public/` folder as
+`LABRADOR_HOST_SITE` ([web.md section 7](../../docs/port/web.md#7-what-the-host-page-gets)).
 
 **Status: playable, and both halves are here.** All three layers exist.
 `rules/` is the whole game — the
