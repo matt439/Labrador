@@ -869,10 +869,15 @@ picture with no transparency channel, or a format such as BC4 or a 16-bit one. C
 picture again with the command in [Put a picture in your game](/docs/guides/your-picture/),
 which writes a format the engine reads.
 
+### `Texture ... has two files`
+
+A texture's folder holds both `name.dds` and `name.png`, and the engine will not guess which one
+is current. Delete the one you no longer use.
+
 ### `No file at ...`
 
 The manifest names a file the game cannot find beside itself; the path in the message is where it
-looked. A misspelt name or `directory` in `manifest.json`, a file never converted, or a folder
+looked, and for a texture it names both the `.dds` and the `.png` it would have read. A misspelt name or `directory` in `manifest.json`, a file never converted, or a folder
 the build does not copy all give this. A new content folder needs a copy line in
 `game\CMakeLists.txt`, as
 [Put a picture in your game](/docs/guides/your-picture/) adds for `textures`.

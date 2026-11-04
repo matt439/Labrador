@@ -114,8 +114,9 @@ this repository.
   the Microsoft Software License Terms for it, which vcpkg installs as
   `share/xaudio2redist/copyright`.
 - **doctest** — MIT, Viktor Kirilov.
-- **lodepng** — zlib, Lode Vandevenne. Linked only by `RenderPixelTests`, to
-  read and write its golden PNGs.
+- **lodepng** — zlib, Lode Vandevenne. The engine decodes PNG textures with
+  it (`engine/render/png_file.cpp`), and `RenderPixelTests` reads and writes
+  its golden PNGs with it.
 
 What a game built on Labrador carries to its players, and the file that
 carries each notice, is the website's *Ship a Windows release* guide

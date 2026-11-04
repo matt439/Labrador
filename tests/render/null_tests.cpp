@@ -10,13 +10,21 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
+#include "engine/render/sprite_vertex.h"
 #include "engine/render/texture_object.h"
 #include "engine/render/viewport.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
+#include <lodepng.h>
+
+#include <algorithm>
+#include <exception>
+#include <filesystem>
+#include <fstream>
 #include <memory>
+#include <system_error>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -349,6 +357,150 @@ TEST_CASE("the load path is the real one, and its failures are the real ones")
 	CHECK_THROWS_AS(std::ignore =
 		harness.resources().resolve_texture("never_loaded"),
 		std::out_of_range);
+}
+
+namespace
+{
+	// A directory of its own under the temporary one, so the texture's file
+	// name is exactly `name` plus its extension, as a manifest's would be.
+	class ScratchDirectory
+	{
+	public:
+		explicit ScratchDirectory(const std::string& name) :
+			path_(std::filesystem::temp_directory_path() /
+				("labrador_png_" + name))
+		{
+			std::filesystem::remove_all(this->path_);
+			REQUIRE(std::filesystem::create_directories(this->path_));
+		}
+
+		~ScratchDirectory()
+		{
+			std::error_code ignored;
+			std::filesystem::remove_all(this->path_, ignored);
+		}
+
+		ScratchDirectory(const ScratchDirectory&) = delete;
+		ScratchDirectory& operator=(const ScratchDirectory&) = delete;
+
+		std::string directory() const
+		{
+			return this->path_.string() + "/";
+		}
+
+		void write(const std::string& file,
+			const std::vector<unsigned char>& bytes) const
+		{
+			std::ofstream out(this->path_ / file, std::ios::binary);
+			out.write(reinterpret_cast<const char*>(bytes.data()),
+				static_cast<std::streamsize>(bytes.size()));
+			REQUIRE(out.good());
+		}
+
+	private:
+		std::filesystem::path path_;
+	};
+
+	std::vector<unsigned char> png_of(unsigned width, unsigned height)
+	{
+		std::vector<unsigned char> png;
+		REQUIRE(lodepng::encode(png,
+			std::vector<unsigned char>(4u * width * height, 200),
+			width, height) == 0);
+		return png;
+	}
+
+	std::string message_of(Harness& harness, const std::string& directory,
+		const std::string& name)
+	{
+		std::string message;
+		try
+		{
+			load_texture_asset(harness.renderer(), harness.resources(),
+				directory, name);
+		}
+		catch (const std::exception& error)
+		{
+			message = error.what();
+		}
+		CHECK_FALSE(message.empty());
+		return message;
+	}
+}
+
+TEST_CASE("a texture may be a .png, read through the same load path as a .dds")
+{
+	Harness harness;
+	const ScratchDirectory scratch("only");
+	scratch.write("hero.png", png_of(4, 2));
+
+	load_texture_asset(harness.renderer(), harness.resources(),
+		scratch.directory(), "hero");
+	const TextureHandle hero = harness.resources().resolve_texture("hero");
+
+	// The whole of a 4x2 source spans texture coordinates 0 to 1, which is
+	// how a recording shows the size the backend was given.
+	DrawList list = harness.begin();
+	list.draw_sprite(hero, RectangleI(0, 0, 4, 2),
+		RectangleF(0.0f, 0.0f, 4.0f, 2.0f), Colour::white, 0.0f,
+		Vector2F::zero, SpriteFlip::none, 0.0f);
+	const std::vector<RecordedSprite> drawn = harness.end();
+	REQUIRE(drawn.size() == 1);
+	CHECK(drawn[0].texture.index() == hero.index());
+	float right = 0.0f;
+	float bottom = 0.0f;
+	for (const SpriteVertex& corner : drawn[0].corners)
+	{
+		right = std::max(right, corner.texcoord.x);
+		bottom = std::max(bottom, corner.texcoord.y);
+	}
+	CHECK(right == doctest::Approx(1.0f));
+	CHECK(bottom == doctest::Approx(1.0f));
+}
+
+TEST_CASE("a texture with both a .dds and a .png is refused, naming both")
+{
+	Harness harness;
+	const ScratchDirectory scratch("both");
+	scratch.write("hero.png", png_of(2, 2));
+	scratch.write("hero.dds", { 'D', 'D', 'S', ' ' });
+
+	CHECK_THROWS_AS(load_texture_asset(harness.renderer(),
+		harness.resources(), scratch.directory(), "hero"),
+		std::runtime_error);
+	const std::string message =
+		message_of(harness, scratch.directory(), "hero");
+	CHECK(message.find("hero.dds") != std::string::npos);
+	CHECK(message.find("hero.png") != std::string::npos);
+	CHECK_THROWS_AS(std::ignore =
+		harness.resources().resolve_texture("hero"), std::out_of_range);
+}
+
+TEST_CASE("a texture with neither file is out_of_range, naming both")
+{
+	Harness harness;
+	const ScratchDirectory scratch("neither");
+
+	CHECK_THROWS_AS(load_texture_asset(harness.renderer(),
+		harness.resources(), scratch.directory(), "hero"),
+		std::out_of_range);
+	const std::string message =
+		message_of(harness, scratch.directory(), "hero");
+	CHECK(message.find("hero.dds") != std::string::npos);
+	CHECK(message.find("hero.png") != std::string::npos);
+}
+
+TEST_CASE("a .png that will not decode is refused naming its path")
+{
+	Harness harness;
+	const ScratchDirectory scratch("broken");
+	scratch.write("hero.png", { 'n', 'o', 't', ' ', 'a', ' ', 'p', 'n', 'g' });
+
+	CHECK_THROWS_AS(load_texture_asset(harness.renderer(),
+		harness.resources(), scratch.directory(), "hero"),
+		std::runtime_error);
+	CHECK(message_of(harness, scratch.directory(), "hero").find("hero.png") !=
+		std::string::npos);
 }
 
 TEST_CASE("reading pixels back says plainly that there are none")

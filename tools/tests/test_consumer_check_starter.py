@@ -116,12 +116,12 @@ class StarterZipTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.quietly(assemble.project_files, self.engine)
 
-    def test_manifest_is_derived_without_the_test_only_package(self):
+    def test_manifest_carries_every_engine_package(self):
         manifest = json.loads(self.quietly(assemble.project_files, self.engine)["vcpkg.json"])
         self.assertEqual(manifest, {
             "name": "mygame",
             "version-string": "0.1.0",
-            "dependencies": ["directxtk", "doctest"],
+            "dependencies": ["directxtk", {"name": "lodepng", "platform": "windows"}, "doctest"],
             "builtin-baseline": "0123456789abcdef0123456789abcdef01234567",
         })
 

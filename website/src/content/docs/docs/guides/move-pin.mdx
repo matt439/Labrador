@@ -162,9 +162,9 @@ after `git`, or write long output to a file in your `%TEMP%` folder and open it 
 
    Make yours match by these rules, in Notepad (`notepad vcpkg.json`):
 
-   - Your `dependencies` are the engine's, without `lodepng`, which only the engine's own tests
-     use; with `doctest` if your project has tests, as every project made since `v0.2.0` does;
-     and with any library you added yourself. Copy an entry the engine gained, with its `{ }`
+   - Your `dependencies` are the engine's, with any library you added yourself. A project made
+     before the engine decoded PNG textures has no `lodepng` line; copy it in if the engine's
+     list has one. Copy an entry the engine gained, with its `{ }`
      and `features` if it has them, into your list, and put a comma after the entry before it.
    - Your `builtin-baseline` is the engine's, exactly: copy its 40 characters between the
      quotation marks.

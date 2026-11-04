@@ -86,6 +86,17 @@ cd /d C:\dev\mygame
    `mkdir` says `A subdirectory or file game\content\textures already exists.` if you run it
    again, which is harmless.
 
+   <Aside title="Or keep it a PNG">
+   The engine reads a PNG too, so the `texconv` line can be left out: after the `mkdir` line,
+   `copy hero.png game\content\textures` puts the picture where the `.dds` would have gone, and
+   the rest of the page is the same with `hero.png` wherever it says `hero.dds`. The picture's
+   width and height for step 6 are in File Explorer: right-click it, choose **Properties**, and
+   read **Dimensions** on the **Details** tab. Keep one of the two files in the folder, not both:
+   with both, the game stops with `Texture 'hero' has two files`. A PNG takes four bytes a pixel
+   and is decoded each time the game starts, so for many or large pictures the compressed
+   formats [Sprites and text](/docs/guides/sprites-and-text/) describes are smaller.
+   </Aside>
+
 3. **List it in the manifest.** The manifest lists the pictures, fonts and sounds the engine
    loads for the game when it starts. Open it:
 
@@ -469,8 +480,9 @@ channel masks`, `is in fourCC format` or `stores 16 bits a pixel`: the file was 
 way, renamed from a PNG, or converted to a format the engine does not read.
 </Aside>
 
-<Aside type="caution" title="startup failure: No file at C:\dev\mygame\out\build\x64-debug\game\.\./textures/hero.dds.">
-The manifest names a file the game cannot find beside itself. Read the end of the path:
+<Aside type="caution" title="startup failure: No file at C:\dev\mygame\out\build\x64-debug\game\.\./textures/hero.dds or C:\dev\mygame\out\build\x64-debug\game\.\./textures/hero.png.">
+The manifest names a picture the game cannot find beside itself, as either a `.dds` or a
+`.png`. Read the end of the first path:
 - If the name is misspelt, such as `heroo.dds`, fix the name in `manifest.json`.
 - If the folder is, such as `texture/hero.dds`, fix `"directory": "./textures/"` in
   `manifest.json`.
@@ -552,3 +564,8 @@ installed game started and drew. The note in step 3 about Play a sound in your g
 in that page's run: the starter's manifest with that page's sound code in place stopped the game with
 `SoundBank 'tones' was never loaded.`, and that page's second manifest tab put the group back;
 followed on this page's manifest, the same tab gave valid JSON.
+
+The *Or keep it a PNG* note under step 2 and the two-path message for a missing picture were
+added on 4 November 2026, when the engine began reading PNG textures, and have not been followed
+in a starter. The engine's tests load a `.png` through the same path, refuse a texture with both
+files and with neither, and check the colours a PNG decodes to.

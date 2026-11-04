@@ -40,11 +40,9 @@ PLACED = {
     "ci.yml": ".github/workflows/ci.yml",
 }
 
-# The page's <ConsumerManifest name="mygame" />, and the package only the
-# engine's own tests use, which a consumer does not build. doctest stays: the
-# game's own tests use it.
+# The page's <ConsumerManifest name="mygame" />. Every package the engine
+# names: lodepng decodes PNG textures and doctest runs the game's own tests.
 PROJECT_NAME = "mygame"
-TEST_ONLY = {"lodepng"}
 
 
 def tree_files(engine: Path) -> list[Path]:
@@ -86,11 +84,7 @@ def derived_manifest(engine_manifest: Path) -> dict:
     return {
         "name": PROJECT_NAME,
         "version-string": "0.1.0",
-        "dependencies": [
-            dependency
-            for dependency in engine["dependencies"]
-            if (dependency if isinstance(dependency, str) else dependency["name"]) not in TEST_ONLY
-        ],
+        "dependencies": engine["dependencies"],
         "builtin-baseline": engine["builtin-baseline"],
     }
 

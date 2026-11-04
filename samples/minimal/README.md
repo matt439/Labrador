@@ -41,6 +41,11 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-04.** The engine reads PNG textures and links `lodepng`, so the
+  project's `vcpkg.json` names it beside `doctest`. A copy adds `"lodepng"` to
+  its `dependencies`, with a comma after the entry before it; without it,
+  configure stops at `find_package(lodepng)`. A copy can then use a `.png` in
+  place of a converted `.dds`.
 - **2026-11-04.** The pad slot policy is a rule with tests. `combine_pads` in
   `rules/motion.h` takes each slot's deadzoned left stick and B edge as a
   `PadReading` and returns the summed stick and whether any slot asked to

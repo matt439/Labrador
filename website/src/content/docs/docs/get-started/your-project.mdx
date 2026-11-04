@@ -240,7 +240,8 @@ preset in `CMakePresets.json` with them.
    <ConsumerManifest name="mygame" />
 
    vcpkg reads only the top-level project's manifest, so your project names the engine's
-   dependencies itself, and `doctest`, the test framework your tests use. The
+   dependencies itself, among them `lodepng`, which reads PNG pictures, and `doctest`, the test
+   framework your tests use. The
    `builtin-baseline` is Labrador's own, which pins them to the versions the engine is built and
    tested with.
 

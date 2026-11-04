@@ -1,13 +1,17 @@
 #include "engine/render/resource_factory.h"
 
+#include "engine/core/file_path.h"
 #include "engine/render/dds_file.h"
 #include "engine/render/font.h"
+#include "engine/render/png_file.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_font_file.h"
 #include "engine/render/texture_data.h"
 
+#include <filesystem>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -70,8 +74,29 @@ namespace labrador
 		const std::string& directory,
 		const std::string& name)
 	{
-		add_texture_asset(renderer, resources, name,
-			read_dds_file(directory + name + ".dds"));
+		const std::string dds = directory + name + ".dds";
+		const std::string png = directory + name + ".png";
+		const bool has_dds = std::filesystem::exists(path_from_utf8(dds));
+		const bool has_png = std::filesystem::exists(path_from_utf8(png));
+
+		// Both is a content bug with no right answer - which one the artist
+		// last exported is not something a loader can know - so it is named
+		// rather than resolved by a precedence nobody would remember.
+		if (has_dds && has_png)
+		{
+			throw std::runtime_error("Texture '" + name + "' has two files, " +
+				dds + " and " + png + ": delete one.");
+		}
+		if (has_png)
+		{
+			add_texture_asset(renderer, resources, name, read_png_file(png));
+			return;
+		}
+		if (!has_dds)
+		{
+			throw std::out_of_range("No file at " + dds + " or " + png + ".");
+		}
+		add_texture_asset(renderer, resources, name, read_dds_file(dds));
 	}
 
 	void add_white_texture(const Renderer& renderer, RenderResources& resources)

@@ -23,9 +23,9 @@ Each name is a file in the group's directory, with an extension that depends on 
 
 | Kind | Files | What it is |
 | --- | --- | --- |
-| `texture` | `name.dds` | An image. |
+| `texture` | `name.dds` or `name.png` | An image. |
 | `font` | `name.spritefont` | A font, as a pre-rendered glyph atlas. |
-| `sprite_sheet` | `name.dds` and `name.json` | A texture plus named frames and animations cut from it. |
+| `sprite_sheet` | `name.dds` or `name.png`, and `name.json` | A texture plus named frames and animations cut from it. |
 | `sound_bank` | `name.xwb` and `name.json` | A bank of sounds, and the names of the sounds in it. |
 
 A group can say `"optional": true`. Only sound banks honour it today: a missing optional bank

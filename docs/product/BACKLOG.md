@@ -565,6 +565,7 @@ written.
 57. L57 The Firefox runner covers LineSweeper and the bundle page and registers as ctest: SM-11 (moved from Won't this time on 2026-11-03 by the owner; its work is `WEB#10`)
 58. L58 Collide a round body: OCA-80 (selected from `IDEA#7` on 2026-11-04 by the owner)
 59. L59 Open the window at any size: OCA-81 (selected from `IDEA#10` on 2026-11-04 by the owner)
+60. L60 Draw a PNG without converting it: OCA-82 (selected from `GAP#4` on 2026-11-04 by the owner)
 
 **Stories**
 
@@ -1075,11 +1076,39 @@ written.
 
 - [x] **[OCA-81](#oca-81)** Should - S - The Outside Adopter: Open the window at any client size, not only four presets
 
+- [x] **[OCA-82](#oca-82)** Should - M - The Outside Adopter: Draw a PNG without converting it first
+
 - [ ] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work is `WEB#10` in TODO.md: add LineSweeper and the bundle
   page's play, quit and replay to `tests/render/web/run_firefox.mjs`, and
   register its runs as ctest entries when configure finds a Firefox.
+
+<a id="oca-82"></a>
+### OCA-82. Draw a PNG without converting it first
+
+Selected 2026-11-04 by the owner from `GAP#4` in
+[the engine comparison](../survey/2026-10-27.md), taking option A of the
+[recommendations of 2026-11-04](../2026-11-04-decision-recommendations.md#gap4-png-and-other-common-image-formats).
+A beginner installed `texconv` and ran it with six options before their first
+picture appeared, the most expensive step of the first hour at the
+2026-10-30 adopter floor. lodepng was already in `vcpkg.json` for the golden
+images; it becomes a run-time dependency. Other image formats are not taken.
+
+**Acceptance**
+
+- A `texture` or `sprite_sheet` loads `name.png` when there is no
+  `name.dds`, through the same load path and device restore; both files is a
+  refusal naming both, and neither names both paths.
+- Any PNG colour type decodes to 8-bit RGBA, premultiplied and rounded to
+  nearest; headless tests cover opaque, translucent, RGB, grey, 16-bit,
+  palette-with-transparency, corrupt and missing files, and null-render tests
+  cover the load path's choices.
+- The starter's and the website's consumer manifests carry `lodepng`, the
+  release notices name it, and CHANGES.md and the minimal template's change
+  list give the `vcpkg.json` migration.
+- The picture guide offers keeping the PNG, and the texture references name
+  both extensions.
 
 <a id="oca-81"></a>
 ### OCA-81. Open the window at any client size, not only four presets

@@ -78,6 +78,14 @@ const NOTICES: Notice[] = [
 		builds: 'every Windows build',
 	},
 	{
+		component: 'lodepng',
+		licence: 'zlib',
+		carried: 'compiled into the game; the engine decodes PNG textures with it',
+		file: 'none required: the zlib licence asks nothing of a program built from it',
+		builds: 'every build',
+		ports: ['lodepng'],
+	},
+	{
 		component: 'JetBrains Mono',
 		licence: 'SIL Open Font License 1.1',
 		carried: 'fonts/jetbrains_mono_bold_16.spritefont, the template\'s font',
@@ -89,7 +97,6 @@ const NOTICES: Notice[] = [
 // Packages vcpkg.json names that no release carries, and why.
 const NOT_SHIPPED: Record<string, string> = {
 	doctest: 'the test framework, linked only by test programs',
-	lodepng: 'linked only by the engine\'s own render tests',
 };
 
 const manifest = JSON.parse(readRepositoryFile('vcpkg.json'));

@@ -183,8 +183,9 @@ namespace
 	// BOUGHT, BECAUSE IT IS A FORMAT EDGE (T9), and one codec on every platform
 	// rather than each platform's own. A browser has no codec this file can
 	// call synchronously, and two codecs reading one set would be two claims
-	// about what the set holds. lodepng is a test
-	// dependency only (vcpkg.json), and nothing the engine ships links it.
+	// about what the set holds. The engine's PNG
+	// textures use the same port (engine/render/png_file.h), but this file
+	// reads golden frames with no premultiplying, so it calls lodepng itself.
 	//
 	// LOSSLESS BOTH WAYS, AND NOT ON TRUST. The encoder may store a frame in
 	// whatever PNG colour type holds it exactly - RGB when every alpha is 255,

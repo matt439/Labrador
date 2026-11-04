@@ -64,9 +64,8 @@ folder followed by `\external\labrador`.
 
    This is the same preset name as your game's, but here it configures the engine as a project
    of its own, with its samples and tests, into `out\build\x64-debug` inside the engine's folder.
-   vcpkg reuses the packages it built for your game and adds one more, lodepng, which the
-   engine's tests use. On a fast desktop this took 10 seconds; a slower machine, or one where
-   vcpkg has to build lodepng, takes longer.
+   vcpkg reuses the packages it built for your game. On a fast desktop this took 10 seconds; a
+   slower machine, or one where vcpkg has to build a package again, takes longer.
 
    It has worked when the last lines are these:
 

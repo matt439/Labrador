@@ -69,10 +69,10 @@ substituting the runner's vcpkg checkout revision for the manifest baseline.
 vcpkg reads the top-level project's manifest. The public
 [ConsumerManifest component](../website/src/components/ConsumerManifest.astro)
 and [consumer assembler's derived_manifest](../tools/consumer_check/assemble.py)
-both copy the engine's dependencies and builtin-baseline, excluding lodepng
-because only engine tests use it. They keep doctest for the copied game's
-tests and preserve dependency objects such as directxtk's Windows condition
-and xaudio2redist feature. Keep both derivation rules in agreement.
+both copy every engine dependency and the builtin-baseline: lodepng because
+the engine decodes PNG textures with it, doctest for the copied game's tests.
+They preserve dependency objects such as directxtk's Windows condition and
+xaudio2redist feature. Keep both derivation rules in agreement.
 
 A baseline move therefore changes what a newly generated adopter manifest
 pins. An existing game's vcpkg.json is not rewritten by moving its engine

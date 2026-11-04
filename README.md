@@ -194,9 +194,8 @@ needs:
   [vcpkg.json](vcpkg.json) is not read when Labrador is a subdirectory, and
   the engine's `find_package(xaudio2redist)`, under the default audio
   backend, fails without one. Copy its dependencies and its
-  `builtin-baseline`, leaving out `lodepng`, which only the engine's own tests
-  use. `doctest` stays if your game's tests use it, as the minimal sample's
-  do.
+  `builtin-baseline`. `lodepng` decodes PNG textures; `doctest` is for your
+  game's tests, as the minimal sample's are.
 - **A configure preset that chains the vcpkg toolchain**: `toolchainFile` set
   to `$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake`, as every configure
   preset in this repository's [CMakePresets.json](CMakePresets.json) has.

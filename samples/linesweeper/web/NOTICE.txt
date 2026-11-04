@@ -16,6 +16,8 @@ Linked into linesweeper.wasm and linesweeper.js:
   their sources and terms, followed by Microsoft's full MIT licence text.
 - RapidJSON (MIT), Copyright (c) 2015 THL A29 Limited, a Tencent company,
   and Milo Yip. It reads the game's content manifest.
+- lodepng (zlib), Copyright (c) 2005-2018 Lode Vandevenne. The engine
+  decodes PNG textures with it; LineSweeper's own textures are .dds files.
 - Emscripten's runtime: the JavaScript loader and glue in linesweeper.js and
   the system libraries in the module (MIT or University of Illinois/NCSA,
   at the recipient's choice), Copyright (c) 2010-2014 Emscripten authors.
