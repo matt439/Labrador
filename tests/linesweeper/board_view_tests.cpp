@@ -84,7 +84,7 @@ namespace
 		}
 
 		// A copy, because the next begin_frame empties what recorded_sprites
-		// refers to (tests/render/null_tests.cpp, Harness::end).
+		// refers to (tests/render/null_test_harness.h, Harness::end).
 		std::vector<RecordedSprite> draw(const BoardView& board)
 		{
 			this->renderer_.begin_frame();

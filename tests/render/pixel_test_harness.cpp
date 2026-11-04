@@ -52,7 +52,7 @@ namespace render_tests::pixel
 
 	Harness::Harness()
 	{
-		// FOUR VIEWS OF CAPACITY, WHICH IS THE SAME NUMBER null_tests.cpp
+		// FOUR VIEWS OF CAPACITY, WHICH IS THE SAME NUMBER null_test_harness.h
 		// asks for, and it is not four because anything here draws four.
 		// A capacity is a property of the layout - four for split-screen,
 		// one for a sample - and the two files asking for the same one is

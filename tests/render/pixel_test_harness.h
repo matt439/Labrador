@@ -52,9 +52,10 @@ namespace render_tests::pixel
 
 		// Returns view 0, because almost every case here wants one view and
 		// wants it without saying so. The default and the signature are
-		// null_tests.cpp's, deliberately: the two harnesses are the same shape
-		// so that a multi-view case can be written once in each vocabulary -
-		// one asserting what was recorded, the other what was rasterised.
+		// null_test_harness.h's, deliberately: the two harnesses are the same
+		// shape so that a multi-view case can be written once in each
+		// vocabulary - one asserting what was recorded, the other what was
+		// rasterised.
 		labrador::DrawList begin(int views = 1);
 
 		labrador::DrawList view(int index);
@@ -66,7 +67,7 @@ namespace render_tests::pixel
 		// For the cases that build their own texture rather than loading one:
 		// the minified draw, the re-loaded name, and the two that finding 6 of
 		// docs/review/backend-equivalence-2/ asked for. Both are
-		// null_tests.cpp's accessors, spelt the same way.
+		// null_test_harness.h's accessors, spelt the same way.
 		labrador::RenderResources& resources();
 
 		// Deliberately no end_frame(). Presenting a FLIP_DISCARD swap chain

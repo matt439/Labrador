@@ -63,7 +63,7 @@ add_dependencies(RenderTests render_test_content)
 # why this is a source list and not an #ifdef. RenderTests is otherwise
 # identical in every configuration.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
-    target_sources(RenderTests PRIVATE null_tests.cpp)
+    target_sources(RenderTests PRIVATE null_tests.cpp null_resource_tests.cpp)
 endif()
 
 # The two Direct3D backends' HRESULT translation, which is Windows code by
