@@ -5,7 +5,8 @@ desktop has been, in headless Chrome (and headless Firefox for LineSweeper's
 drawing, the other five sample pages and `WebWindowTests`), under every preset, with the pixel tests on the RTX 5080, WARP and
 SwiftShader. What follows needs a person, hardware this machine does not have,
 a browser it does not run, or a push. Tick a box in the commit that checks it,
-and amend `web.md` §9 with the result.
+add the result to [web-as-built.md](web-as-built.md) under its milestone, and
+update `web.md` §9's status summary, milestone row or risk row.
 
 ## Needs a push (CI)
 
@@ -384,8 +385,8 @@ desktop Chrome. Phone memory remains `SM-13`'s.
       for every page, the legacy wasm exception handling warning that `try` is
       deprecated in favour of `try_table`. It is not a console entry of the
       tested tab, so the runner does not fail on it; it is the same warning
-      [web.md](web.md) §9 records for LineSweeper, and it lasts as long as
-      the build emits legacy exceptions.
+      [web-as-built.md](web-as-built.md)'s M3 entry records for LineSweeper,
+      and it lasts as long as the build emits legacy exceptions.
 - [x] Port and run `WebWindowTests`' input and shell-CSS checks.
       **2026-10-28, commit `0fcf3a7` with the port uncommitted; four
       consecutive runs passed all 39 steps.** The `wasm-release` page
@@ -467,4 +468,5 @@ Chromium.
 
 Record the build's source identity and each actual outcome before ticking a
 box. Old generated outputs are not evidence of the current checkout.
-LineSweeper's earlier Firefox run remains the separate `web.md` §9 M3 record.
+LineSweeper's earlier Firefox run remains the separate M3 entry in
+[web-as-built.md](web-as-built.md).

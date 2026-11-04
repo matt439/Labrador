@@ -38,7 +38,8 @@ three profiles; GL compiles GLSL at device creation.
 The browser presets require Emscripten and `EMSDK`; on this machine it is
 `C:\Tools\emsdk`, version 6.0.12, matching CI. Run `emsdk_env.bat` as well as
 vcvars. Emscripten's Node runs headless tests. Browser build details and open
-acceptance terms are in [docs/port/web.md](docs/port/web.md), especially §9.
+acceptance terms are in [docs/port/web.md](docs/port/web.md), especially §9,
+and what each milestone measured in [web-as-built.md](docs/port/web-as-built.md).
 
 Five render backends are selected by `LABRADOR_RENDER_BACKEND`: `d3d11`,
 `d3d12`, `gl`, `vulkan`, `null`. Three audio backends are independently selected

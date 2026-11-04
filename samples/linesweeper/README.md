@@ -196,7 +196,7 @@ through `EMSDK`. Limiting the build target does not remove those configure
 requirements.
 
 Known host/preset evidence is dated. The
-[port record](../../docs/port/web.md#9-milestones-and-what-to-spike-first)
+[port record](../../docs/port/web-as-built.md)
 records passing Windows `x64-debug`, `x64-debug-null`, `x64-debug-gl`,
 `x64-debug-d3d12`, `x64-debug-vulkan` and `x64-release` runs, and
 `wasm-debug`/`wasm-release` tests under Node from a Windows host. Those are

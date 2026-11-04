@@ -145,8 +145,10 @@ with profiler settings and overhead recorded; do not silently substitute its
 FPS chart for the saved interval samples.
 
 Repeat three runs per browser/display mode and retain them individually.
-Put measured results in [web.md](web.md)'s R5 record only after the real
-display session; report both modes even if one finds a defect.
+Put measured results in [web-as-built.md](web-as-built.md)'s M3 entry only
+after the real display session, and update R5's risk row in
+[web.md](web.md#risks-in-the-order-to-retire-them) to say where it stands;
+report both modes even if one finds a defect.
 
 | Run id / raw JSON / report / optional trace | Source/build | Browser/device/display and refresh source | Buffer/CSS/DPR/zoom/power | Eligible count / contiguous ms | p50 / p99 / max ms | Late callback count | Observed judder and timestamps | Outcome/limits |
 |---|---|---|---|---|---|---|---|---|
