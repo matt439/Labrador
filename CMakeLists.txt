@@ -243,6 +243,13 @@ if(PROJECT_IS_TOP_LEVEL)
                     --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_input.mjs"
                     --timeout 120
             )
+            # The longest page test, so ctest starts it first rather than in
+            # registration order; and never beside the pacing page, which
+            # times frames on the same software rasteriser. Run together on a
+            # loaded runner the two ran two to three times their usual time
+            # and timed out (jobs 125764194088, 126339685291).
+            set_tests_properties(LineSweeperBundlePageTests PROPERTIES
+                COST 1000 RESOURCE_LOCK linesweeper_frame_timing)
             # The site's own page for the same bundle, from a checkout of the
             # host repository after its sync-demo: the page is the host's, so
             # it is registered only when configure is given that checkout's
@@ -271,6 +278,8 @@ if(PROJECT_IS_TOP_LEVEL)
                         --input "${CMAKE_CURRENT_SOURCE_DIR}/tools/web_pacing/page_input.mjs"
                         --timeout 60
                 )
+                set_tests_properties(LineSweeperPacingPageTests PROPERTIES
+                    RESOURCE_LOCK linesweeper_frame_timing)
             endif()
         endif()
     endif()
