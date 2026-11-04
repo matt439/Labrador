@@ -53,6 +53,14 @@ env:
   EMSDK_VERSION: 6.0.12
   CCACHE_VERSION: 4.14.1
   CCACHE_SHA256: 6219f3865ca59aec41ee4b678df171d5d35855ecb2b6dbbbd20690b3a68af7b4
+  # Chrome's GPU watchdog is off in CI. With it on, the first page a runner's
+  # Chrome loaded lost its WebGL context in 128 runs of 130, and
+  # RenderContextLossTests lost a context it had not asked for in 6 of 125.
+  # With it off, 4 first loads in 5 kept theirs (runs 41874451571 to
+  # 41880819039): fewer losses, not none, so wasm-consumer still throws its
+  # first load away. The flag is appended by tests/render/web/run_page.mjs;
+  # a desktop run leaves it on.
+  LABRADOR_TEST_BROWSER_ARGS: --disable-gpu-watchdog
   CCACHE_DIR: C:\ccache
   CCACHE_MAXSIZE: 500M
 
@@ -862,11 +870,11 @@ jobs:
 
       # THE FIRST WEBGL PAGE A FRESH RUNNER LOADS LOSES ITS CONTEXT ONCE, and
       # the browser logs it, which a sample's page counts as a failure. It
-      # did on all three first loads this job has made (runs 40312661812
-      # twice and 40315133083), and the load after it has not. Why is not
-      # known: the wasm job's first page, three minutes later in a job of
-      # its own, has not lost one. So this load is the browser's first and
-      # is not the check; the step after it is.
+      # did in 128 of 130 runs, and the load after it has not. Why is not
+      # known. Turning off the GPU watchdog (the env above) made 4 first
+      # loads in 4 keep their context, but the next one, in run 41880819039,
+      # lost it, so this load is still the browser's first and is not the
+      # check; the step after it is.
       - name: Load the game's page once to start the browser's GPU process
         continue-on-error: true
         working-directory: C:\dev\mygame
