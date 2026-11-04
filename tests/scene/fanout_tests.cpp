@@ -83,7 +83,7 @@ namespace
 		}
 
 		// A COPY, WHERE THE ENGINE HANDS BACK A REFERENCE, for the reason
-		// null_tests.cpp gives: the recording is valid until the next
+		// null_test_harness.h gives: the recording is valid until the next
 		// begin_frame, which is the right contract for a frame path and the
 		// wrong one for a test comparing two frames.
 		std::vector<RecordedSprite> draw(const Scene& scene)

@@ -1092,8 +1092,8 @@ full screen on a dispatched Escape, so Escape itself is a person's check, as
 are a physical pad on the standard mapping, Firefox, and Safari.
 
 Closing the render half moved some coverage. The test sources gated on the
-null backend - `RenderTests`' `null_tests.cpp`, `SceneTests`'
-`fanout_tests.cpp` and `cull_tests.cpp`, `LineSweeperViewTests`'
+null backend - `RenderTests`' `null_tests.cpp` and `null_resource_tests.cpp`,
+`SceneTests`' `fanout_tests.cpp` and `cull_tests.cpp`, `LineSweeperViewTests`'
 `particle_draw_tests.cpp`, `LocalMultiplayerTests`' `draw_tests.cpp` and the
 null benchmark - drop out of executables that still exist, so the `wasm-*`
 presets still counted 14 ctest entries and compile none of those files
