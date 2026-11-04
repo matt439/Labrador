@@ -7,6 +7,13 @@
 // with no sidebar - the home, Why and Examples pages - also keep the theme
 // selector there, because they have no menu to hold preferences; a page with
 // a sidebar has its menu button in that place instead.
+//
+// Starlight's search button is named "Search" but shows "Search", then
+// "Ctrl K" (or the Command key on Apple devices), written with no space
+// between the pieces. WCAG 2.5.3 asks that a control's name contain its
+// visible label, so the script after it names the button by what it shows and
+// puts a space between the pieces, which a flex box does not draw. It runs
+// after Starlight's own inline script, which picks the platform's key.
 import Search from '@astrojs/starlight/components/Search.astro';
 import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
@@ -20,6 +27,18 @@ import SiteNavigation from '../SiteNavigation.astro';
 	</div>
 	<div class="sl-flex print:hidden search">
 		<Search />
+		<script is:inline>
+			(() => {
+				const button = document.querySelector('site-search button[data-open-modal]');
+				const hint = button?.querySelector(':scope > kbd');
+				const keys = hint ? Array.from(hint.querySelectorAll(':scope > kbd')) : [];
+				if (!button || keys.length === 0) return;
+				hint.before(' ');
+				for (const key of keys.slice(1)) key.before(' ');
+				const name = [button.getAttribute('aria-label'), ...keys.map((key) => key.textContent)];
+				button.setAttribute('aria-label', name.join(' '));
+			})();
+		</script>
 	</div>
 	<div class="sl-flex print:hidden right-group">
 		<SiteNavigation class="header-nav" />

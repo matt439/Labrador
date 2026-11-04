@@ -1301,15 +1301,17 @@ async function indexLoading(context) {
 // absent page's note, the arrival notice, and the release index with the list
 // open, each at a phone's width and at 1440 pixels in both themes. Rules
 // beyond A and AA (axe's best practices) are left out: they judge Starlight's
-// page structure rather than what versioning adds. Starlight's search button
-// is left out too: its visible "Ctrl K" hint is not in its accessible name
-// "Search" (label-content-name-mismatch), which is Starlight's markup and is
-// recorded as SITE#6, not a versioning defect.
+// page structure rather than what versioning adds. The header names
+// Starlight's search button by what it shows, "Search Ctrl K", so its label
+// is in its name (label-content-name-mismatch). A published snapshot keeps the
+// header it was built with, and v0.3.0's predates that, so on a frozen page
+// the search button is left out of the scan; every page built from this
+// checkout includes it.
 const AXE_SOURCE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const AXE_RUN = `
 	const done = arguments[arguments.length - 1];
-	window.axe.run({ exclude: [['site-search']] }, { runOnly: { type: 'tag', values: arguments[0] }, resultTypes: ['violations'] })
+	window.axe.run(arguments[1] ? { exclude: [['site-search']] } : document, { runOnly: { type: 'tag', values: arguments[0] }, resultTypes: ['violations'] })
 		.then((result) => done({
 			version: window.axe.version,
 			violations: result.violations.map((violation) => ({
@@ -1319,10 +1321,10 @@ const AXE_RUN = `
 			})),
 		}), (error) => done({ error: String(error) }));`;
 
-async function axeScan(context, where) {
+async function axeScan(context, where, { frozen = false } = {}) {
 	await context.script(`${AXE_SOURCE}
 return typeof window.axe;`);
-	const result = await context.session.executeAsyncScript(AXE_RUN, [AXE_TAGS]);
+	const result = await context.session.executeAsyncScript(AXE_RUN, [AXE_TAGS, frozen]);
 	if (result.error) throw new Error(`${where}: axe failed: ${result.error}`);
 	for (const violation of result.violations) {
 		context.expect(false, `${where}: ${violation.id} (${violation.impact}) at ${violation.nodes.map((node) => `${node.target}: ${node.summary}`).join(' | ')}`);
@@ -1360,7 +1362,7 @@ async function accessibilityScan(context) {
 				// The arrival notice, reached through that link's address.
 				await load(missing.rawHref, missing.rawHref.split('?')[0]);
 				await waitUntil(async () => (await context.script(NOTICE))?.text, { message: 'the arrival notice' });
-				await axeScan(context, `${at}, ${OLDEST}'s overview with the arrival notice`);
+				await axeScan(context, `${at}, ${OLDEST}'s overview with the arrival notice`, { frozen: true });
 
 				// The release index with the list open.
 				await load('/versions/');
