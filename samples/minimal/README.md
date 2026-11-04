@@ -41,6 +41,14 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-04.** The pad slot policy is a rule with tests. `combine_pads` in
+  `rules/motion.h` takes each slot's deadzoned left stick and B edge as a
+  `PadReading` and returns the summed stick and whether any slot asked to
+  quit; `HelloState::update()` only reads the four slots into it, and
+  `tests/motion_tests.cpp` checks a pad alone in slot 1 or 3, and slot 0
+  emptied, with no pad. What the game does is unchanged, so a copy needs
+  nothing; one that wants the same check copies the two structs, the
+  function, the loop and the cases.
 - **2026-10-31, `4bc1aa2`.** The project's `.gitignore` also ignores `.vs/`, the folder
   Visual Studio makes when it opens the project, so `git add .` does not
   record its databases. A copy adds the line `.vs/` to its own `.gitignore`;

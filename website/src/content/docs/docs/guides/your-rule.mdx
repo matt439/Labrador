@@ -363,14 +363,14 @@ once for Windows. This page adds no state, so it changes neither of those two li
    [doctest] doctest version is "2.5.3"
    [doctest] run with "--help" for options
    ===============================================================================
-   [doctest] test cases:  5 |  5 passed | 0 failed | 0 skipped
-   [doctest] assertions: 19 | 19 passed | 0 failed |
+   [doctest] test cases:  6 |  6 passed | 0 failed | 0 skipped
+   [doctest] assertions: 27 | 27 passed | 0 failed |
    [doctest] Status: SUCCESS!
    ```
 
-   It takes well under a second. `test cases: 5` is the starter's two tests in
-   `motion_tests.cpp` and your three; `assertions: 19` counts every `CHECK`, the starter's 9 and
-   your 10. **If it says `test cases: 2`**, your test file is not in the program: step 5's line is
+   It takes well under a second. `test cases: 6` is the starter's three tests in
+   `motion_tests.cpp` and your three; `assertions: 27` counts every `CHECK` run, the starter's 17
+   and your 10. **If it says `test cases: 3`**, your test file is not in the program: step 5's line is
    missing or misspelt, and nothing warns about that, because a file that is not listed is simply
    not built. To see the tests' names, add `--list-test-cases`:
 
@@ -386,8 +386,9 @@ once for Windows. This page adds no state, so it changes neither of those two li
    a greeting circling the centre's area stays in the window
    the stick and the keys add up to at most one unit
    a step moves the centre and turns the greeting
+   the only pad counts in whichever slot it is in
    ===============================================================================
-   [doctest] unskipped test cases passing the current filters: 5
+   [doctest] unskipped test cases passing the current filters: 6
    ```
 
 </Steps>
@@ -427,8 +428,8 @@ C:\dev\mygame\game\tests\bounds_tests.cpp(31): ERROR: CHECK( corner.x == doctest
   values: CHECK( 110 == Approx( 100 ) )
 
 ===============================================================================
-[doctest] test cases:  5 |  4 passed | 1 failed | 0 skipped
-[doctest] assertions: 19 | 18 passed | 1 failed |
+[doctest] test cases:  6 |  5 passed | 1 failed | 0 skipped
+[doctest] assertions: 27 | 26 passed | 1 failed |
 [doctest] Status: FAILURE!
 
     Start 2: MyGameSmokeTests
@@ -473,7 +474,7 @@ between asterisks. This runs only the one about the nearest edge:
 out\build\x64-debug\game\MyGameTests.exe --test-case="*nearest edge*"
 ```
 
-Its counts say `test cases: 1 | 1 passed | 0 failed | 4 skipped`, and it ends
+Its counts say `test cases: 1 | 1 passed | 0 failed | 5 skipped`, and it ends
 `Status: SUCCESS!`.
 
 ## The wall around the rules
@@ -685,7 +686,7 @@ Explorer, so a file that shows there as `bounds.h` can really be `bounds.h.txt`;
 whole name.
 </Aside>
 
-**`test cases: 2` where you expected 5.** The test file is not in the build: step 5's line is
+**`test cases: 3` where you expected 6.** The test file is not in the build: step 5's line is
 missing from `add_executable(MyGameTests`, or misspelt. The build and ctest both pass, since a
 file that is not listed is simply not built, so the count is the only sign. Add the line, save
 and build again.
@@ -762,7 +763,9 @@ line copied into the second test file, the `#include` line left out and misspelt
 file left out of `MyGameTests`, which still passed with two test cases. The `wasm-debug` build
 compiled and passed with the new files, ran the tests under Node with five test cases, gave the
 `undefined symbol` and `duplicate symbol` messages shown, and linked the rule with the Space check
-in it without an error.
+in it without an error. On 2026-11-04 the starter gained a third test, of which pad slots count,
+with 8 checks; the counts in the outputs above were raised by one test and 8 checks from that
+change, not seen in a run of these steps.
 
 A second agent then followed this page as worded in a fresh starter at `C:\dev\h4v\mygame`, with
 keys sent to the game and screenshots of its window. Every edit target was found once, the code

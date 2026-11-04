@@ -162,13 +162,13 @@ cd /d C:\dev\mygame
    <SourceFile
    	path="samples/minimal/states/hello_state.cpp"
    	from="// A single-player game accepts every slot"
-   	to="stick_deadzone);"
+   	to="const Vector2F stick_direction = pad_input.stick;"
    />
 
-   followed by a line with `}`. The starter adds every pad's stick together, so that one player's
-   pad works in whichever slot Windows put it. With two players, each needs a pad of their own,
-   and the comment is no longer true. Replace those lines, from the comment's first line down to
-   and including the `}`, with:
+   The starter adds every pad's stick together, so that one player's pad works in whichever slot
+   Windows put it. With two players, each needs a pad of their own, and the comment is no longer
+   true. Replace those lines, from the comment's first line down to and including the
+   `stick_direction` line, with:
 
    ```cpp
    	bool quit_requested = keyboard.pressed(Key::escape);
@@ -382,10 +382,10 @@ every line that names `second_greeting_`. `second_motion_` missing gives the sam
 line in `hello_state.h`.
 </Aside>
 
-<Aside type="caution" title="hello_state.cpp(187): error C2065: 'stick_direction': undeclared identifier">
+<Aside type="caution" title="hello_state.cpp(184): error C2065: 'stick_direction': undeclared identifier">
 The `step_motion` lines from step 5 were not changed: they still use the starter's
 `stick_direction`, which step 4 replaced. The next line is
-`hello_state.cpp(188): error C3861: 'keyboard_direction': identifier not found`, for the old
+`hello_state.cpp(185): error C3861: 'keyboard_direction': identifier not found`, for the old
 function, which step 2 replaced. Change the lines as step 5 shows: `first_stick` and
 `wasd_direction` for player 1, `second_stick` and `arrows_direction` for player 2.
 </Aside>
@@ -473,7 +473,10 @@ third fresh starter: they built and passed on `x64-debug` and `wasm-debug`, and 
 the game's own window, taken without sending it keys, showed both greetings and the new hint.
 With the comment replaced, step 5 left undone gives `C2065` for `stick_direction` at line 187 and
 then `C3861` at 188; the header's line left out gives `C2039` at 122; and the old function left
-where it was builds on Windows and stops the browser build at `43:11`.
+where it was builds on Windows and stops the browser build at `43:11`. On 2026-11-04 the
+starter's slot loop became a tested rule with shorter comments, which moves the first two
+messages three lines up, to 184 and 185, as the messages above now say; that was counted from the
+change, not seen in a build.
 
 A reviewer then did the camera page, its world's edge included, then this page and the split
 screen, in another fresh starter. On Windows each stage built and passed, and screenshots showed

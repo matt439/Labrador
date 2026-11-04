@@ -30,7 +30,7 @@ the player* links, waits on the owner.
 Ready agent rows from the 2026-11-03 persona re-review are listed in their sections.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration and play `PI-14`'s pad match) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
+- Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
 - Later: `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub).
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery).
 - Not yet placed: `GAP#1` to `GAP#13`, whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
@@ -42,7 +42,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-45` | OPEN | should | S | Owner decided no second pad (2026-11-03). Left: move minimal's slot scan into a pure rules function and assert in MinimalTests a pad only in slot 1 or 3 and slot 0 emptied; then informal one-pad play. [Decision](docs/product/BACKLOG.md#next). |
+| `OCA-45` | DECISION | should | S | Headless coverage landed (2026-11-04): minimal's `combine_pads` rule and its MinimalTests case for a pad alone in slot 1 or 3 and slot 0 emptied. Left: the owner's informal one-pad play, in `OCA-48`'s session; the unplug-slot-0 path stays unseen on hardware. [Decision](docs/product/BACKLOG.md#next). |
 | `PI-21` | OPEN | should | S | Add the missing browser-transport test (`dual-rumble` played and reset); then the owner's informal pad play, natively and in Chrome, in `OCA-48`'s session. [Re-plan](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 
 ## Website and the hosted demo

@@ -116,17 +116,20 @@ void HelloState::update(float dt)
 	const Keyboard& keyboard = *this->app_->keyboard();
 
 	// A single-player game accepts every slot: the system need not put its
-	// only pad in slot 0. Empty slots contribute neutral input, so neither
-	// the stick nor the button needs a connected() guard. Several pads share
-	// the greeting; their directions add, with the rules clamping the sum.
+	// only pad in slot 0. This loop only reads the four slots; what they mean
+	// together is the rules' combine_pads, which tests/motion_tests.cpp checks
+	// with a pad alone in slot 1 or 3, with slot 0 emptied, and with no pad.
 	bool quit_requested = keyboard.pressed(Key::escape);
-	Vector2F stick_direction = Vector2F::zero;
+	std::array<PadReading, Gamepads::max_count> readings;
 	for (int slot = 0; slot < Gamepads::max_count; ++slot)
 	{
-		quit_requested |= pads.pressed(slot, GamepadButton::b);
-		stick_direction += apply_deadzone(pads.state(slot).left_stick,
+		readings[slot].quit_pressed = pads.pressed(slot, GamepadButton::b);
+		readings[slot].stick = apply_deadzone(pads.state(slot).left_stick,
 			stick_deadzone);
 	}
+	const PadsInput pad_input = combine_pads(readings);
+	quit_requested |= pad_input.quit_requested;
+	const Vector2F stick_direction = pad_input.stick;
 
 	if (quit_requested)
 	{
@@ -146,12 +149,9 @@ void HelloState::update(float dt)
 		return;
 	}
 
-	// The stick is already in this engine's convention - +y is down, the
-	// same as every rectangle and viewport - and the deadzone is applied
-	// here, once, with the magnitude rescaled so a small push moves slowly
-	// instead of jumping to the threshold. The rules take both devices'
-	// answers as directions and never see a device, which is what lets
-	// tests/motion_tests.cpp run them with none.
+	// The stick is in this engine's convention, +y down like every rectangle,
+	// and its deadzone was applied once, above, rescaled so a small push moves
+	// slowly. The rules take both devices' answers and never see a device.
 	this->motion_ = step_motion(this->motion_,
 		stick_direction,
 		keyboard_direction(keyboard), dt);

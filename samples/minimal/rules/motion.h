@@ -2,19 +2,19 @@
 
 #include "engine/math/vector2f.h"
 
-// The template's rules: where the greeting is, and how it moves. HelloState
-// reads the devices and draws the result; everything between the two is here.
+#include <span>
+
+// The template's rules: where the greeting is, how it moves, and what the
+// pads said together. HelloState reads the devices and draws the result;
+// everything between the two is here.
 //
 // A LIBRARY OF ITS OWN THAT LINKS NO ENGINE, so a test can run it with no
 // window, no device and no input device behind it (CMakeLists.txt,
 // MinimalRules, and tests/motion_tests.cpp beside this). It takes what the
-// devices said as plain directions rather than reading a Keyboard or a Gamepads,
+// devices said as plain values rather than reading a Keyboard or a Gamepads,
 // which is the whole trick: a rule that asks the platform a question cannot be
-// tested without one. samples/linesweeper/rules/ is the same wall around a
-// whole game.
-//
-// A game grows its own rules here - a score, a timer, what a collision means -
-// and the states stay the part that talks to the engine.
+// tested without one. samples/linesweeper/rules/ walls in a whole game; a game
+// grows its own rules here - a score, a timer, what a collision means.
 
 // The two numbers the greeting's placement is worked out from: the point it
 // circles, which the stick and the keys move, and how far round the circle it
@@ -51,3 +51,27 @@ Motion step_motion(const Motion& motion, const labrador::Vector2F& stick,
 // Where the greeting is drawn: orbit_radius above the centre, turned about it
 // by the spin.
 labrador::Vector2F greeting_position(const Motion& motion);
+
+// What one pad slot said this tick, as HelloState reads it: the left stick
+// with the deadzone already applied, and whether B went down. An empty slot
+// reads as a stick at rest with nothing pressed, so it needs no flag here.
+struct PadReading
+{
+	labrador::Vector2F stick = { 0.0f, 0.0f };
+	bool quit_pressed = false;
+};
+
+// Every slot's reading taken together.
+struct PadsInput
+{
+	labrador::Vector2F stick = { 0.0f, 0.0f };
+	bool quit_requested = false;
+};
+
+// A one-player game's pad policy: every slot counts, because the system need
+// not put the only pad in slot 0 - after another pad is unplugged it can sit
+// in slot 1 or 3 with slot 0 empty. The sticks are summed, so several pads
+// share the greeting and opposite pushes cancel, and B on any slot asks to
+// quit. The sum is not clamped here; combined_direction clamps it with the
+// keys.
+PadsInput combine_pads(std::span<const PadReading> slots);
