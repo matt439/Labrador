@@ -368,10 +368,11 @@ the driver is fixed. Taps are still sometimes taken as a long press, and
 sessions and navigations sometimes time out, so the target is not yet
 reliable. Its Element Send
 Keys fires key events but inserts no text, so the suite types search queries
-on the Simulator's hardware keyboard through System Events instead. The scan leaves out Starlight's search button, whose visible
-shortcut hint is not in its accessible name (`SITE#6`), and axe's
-best-practice rules, which judge Starlight's page structure rather than what
-versioning adds. An emulator's layout is not a real phone's: informal play on
+on the Simulator's hardware keyboard through System Events instead. The scan includes Starlight's search button, which the
+site's header names by what it shows ("Search Ctrl K"), except on
+`v0.3.0`'s frozen overview, whose header predates that name; it leaves out
+axe's best-practice rules, which judge Starlight's page structure rather than
+what versioning adds. An emulator's layout is not a real phone's: informal play on
 a real iPhone is the owner's, and for `v0.3.0` the owner's iPhone use on
 2026-11-03 stood as it.
 
