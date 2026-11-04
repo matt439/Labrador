@@ -25,7 +25,7 @@
 #define GetGPUDescriptorHandleForHeapStart() GetGPUDescriptorHandleForHeapStart(); descriptor_query_counts::gpu_query(__func__)
 #define back_buffer_view() back_buffer_view(); descriptor_query_counts::back_buffer_query()
 #define wait_for_frame() wait_for_frame(); descriptor_query_counts::begin_frame()
-#define present() present(); descriptor_query_counts::end_frame()
+#define present(interval) present(interval); descriptor_query_counts::end_frame()
 #include "engine/render/d3d12/renderer.cpp"
 #undef present
 #undef wait_for_frame
