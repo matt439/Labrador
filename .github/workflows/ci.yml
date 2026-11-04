@@ -391,6 +391,8 @@ jobs:
           call "%VCVARS%"
           cmake --preset ${{ matrix.preset }}
 
+      # Through ci_build_retry.py, which builds once more only when a link edge
+      # fails on a locked output file, a runner flake whose cause is not known.
       # This includes cmake/check_engine_includes.cmake, so an engine file that
       # includes a game header, or reaches into another folder's backend,
       # fails here as well as locally.
@@ -398,7 +400,7 @@ jobs:
         if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
-          cmake --build --preset ${{ matrix.preset }}
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset ${{ matrix.preset }}
 
       # ctest passes with whatever is registered, so a CMake change that drops
       # a test would stay green without this.
@@ -415,7 +417,7 @@ jobs:
         if: needs.changes.outputs.build == 'true' && matrix.probes != ''
         run: |
           call "%VCVARS%"
-          cmake --build --preset ${{ matrix.preset }} --target ${{ matrix.probes }}
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset ${{ matrix.preset }} --target ${{ matrix.probes }}
 
       # THE REGISTRY VALUE AS WELL AS THE VARIABLE, because the Vulkan loader
       # ignores VK_DRIVER_FILES in an elevated process, which a runner's may be.
@@ -938,7 +940,7 @@ jobs:
         working-directory: C:\dev\mygame
         run: |
           call "%VCVARS%"
-          cmake --build --preset x64-debug
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset x64-debug
 
       # The consumer's root calls enable_testing() and its game registers two
       # tests, so every add_test() anywhere in its tree - the engine's
@@ -985,7 +987,7 @@ jobs:
         working-directory: C:\dev\mygame
         run: |
           call "%VCVARS%"
-          cmake --build --preset x64-release
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset x64-release
 
       - name: Install the release folder and check what is in it
         working-directory: C:\dev\mygame
