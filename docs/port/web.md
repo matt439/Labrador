@@ -642,7 +642,8 @@ script, driving the page and the module a host checkout holds after
 `sync-demo` through the same steps: the recording in place of Play for a
 phone, an unsupported browser or a failed download, each with nothing of the
 module or recording fetched; Play, focus, a forced context loss and its
-restoration, QUIT, replay and five games in a row; a 16:9 stage within the
+restoration, a real one from crashing Chrome's GPU process, a real tab
+switch, QUIT, replay and five games in a row; a 16:9 stage within the
 page at phone and desktop widths; the ten-second context wait and Try again;
 and each failure's sentence with its raw reason beneath. The host repository
 is private, so CI cannot run it. Configure a `wasm-*` preset with a browser and
@@ -654,9 +655,8 @@ ctest --preset wasm-release -R LineSweeperHostPageTests
 ```
 
 It passed on 2026-11-04 against host commit `6b57e7c` (the `v0.3.0` bundle) in
-headless Chrome 153 on SwiftShader. Like the bundle test, it forces context
-loss through `WEBGL_lose_context` and fakes the tab switch; it checks the
-page's response, not a real GPU reset or a real phone.
+headless Chrome 153 on SwiftShader. A GPU process restart on SwiftShader is
+not a real GPU's driver reset, and emulation is not a real phone.
 
 **When to re-sync.** After a change to LineSweeper's source or content, engine
 code included in its browser build, the browser shell/mount, bundle/notices

@@ -100,6 +100,11 @@ export function expected_complaint(state, { source, level, text }) {
 		((state.phase === 'truncated wasm' &&
 			/^(wasm streaming compile failed:|falling back to ArrayBuffer instantiation$|failed to asynchronously prepare wasm:|Aborted\(|LineSweeper failure:)/.test(text)) ||
 		(state.phase === 'runtime onError' && /^LineSweeper failure: bundle test failure$/.test(text)));
+	// A GPU process crash loses every context in the page, and Chrome warns
+	// once for each one the page had already lost on purpose - the support
+	// probe's scratch context - as if loseContext had been called again.
+	const crash = state.phase === 'gpu process crash' && level === 'warning' && /^WebGL: CONTEXT_LOST_WEBGL: loseContext: context lost$/.test(text);
+	if (crash) { state.expected_diagnostics.push(text); return true; }
 	if (expected) { state.expected_diagnostics.push(text); }
 	return expected;
 }
@@ -334,6 +339,63 @@ export function steps(page, state) {
 		console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
 	};
 
+	// WEB#14: what the forced loss and the synthetic visibility above stand in
+	// for, made real. Browser.crashGpuProcess kills Chrome's GPU process,
+	// which loses every WebGL context in the page and gives them back once a
+	// new one starts, as a driver reset does; opening another tab in front
+	// hides this one, and activating it again shows it, as a person switching
+	// tabs does. Both are Chrome's own events, not the page's.
+	const real_loss_and_tab_switch = async () => {
+		state.phase = 'gpu process crash';
+		await navigate('gpu-crash');
+		await click_play();
+		await loaded(0);
+		const instructions = await evaluate("document.getElementById('status').textContent");
+		const before_crash = await evaluate('window.labradorBundle.runs[0].canvas.labradorFrames');
+		await page.send_browser('Browser.crashGpuProcess');
+		await until("window.labradorBundle.runs[0].context[1]?.name === 'onContextRestored'",
+			'a GPU process crash was not heard as a loss and a restoration', false, 1500);
+		const context = await evaluate('window.labradorBundle.runs[0].context');
+		assert(context.length === 2 && context[0].name === 'onContextLost' &&
+			context[0].text === 'The browser took the graphics away; waiting for them to come back.' &&
+			context[1].text === instructions,
+			`the crash's callbacks or status texts were ${JSON.stringify(context)}`);
+		await until(`window.labradorBundle.runs[0].canvas.labradorFrames > ${before_crash + 5} && ` +
+			`document.getElementById('status').textContent === ${JSON.stringify(instructions)} && ` +
+			"!document.getElementById('status').classList.contains('error')",
+			'frames or the status did not come back after the GPU process restarted');
+		console.log('ok - a real GPU process crash loses and restores the context, and the game draws again');
+
+		state.phase = 'tab switch';
+		await evaluate(`(() => {
+			window.labradorBundle.visibility = [];
+			document.addEventListener('visibilitychange', () =>
+				window.labradorBundle.visibility.push(document.visibilityState));
+		})()`);
+		// Focus emulation keeps a page focused and visible whatever is in
+		// front of it, so it is off while another tab is.
+		await send('Emulation.setFocusEmulationEnabled', { enabled: false });
+		const { targetId: other } = await page.send_browser('Target.createTarget', { url: 'about:blank' });
+		await until("document.visibilityState === 'hidden'", 'opening a tab in front did not hide the game');
+		const hidden_frames = await evaluate('window.labradorBundle.runs[0].canvas.labradorFrames');
+		await page.wait(500);
+		assert(await evaluate(`window.labradorBundle.runs[0].canvas.labradorFrames <= ${hidden_frames + 1}`),
+			'the hidden game went on drawing');
+		await page.send_browser('Target.activateTarget', { targetId: page.target_id });
+		await until("document.visibilityState === 'visible'", 'activating the game\'s tab did not show it');
+		await page.send_browser('Target.closeTarget', { targetId: other });
+		await send('Emulation.setFocusEmulationEnabled', { enabled: true });
+		assert(await evaluate("JSON.stringify(window.labradorBundle.visibility) === '[\"hidden\",\"visible\"]'"),
+			'the tab switch was not one hide and one show');
+		await until(`window.labradorBundle.runs[0].canvas.labradorFrames > ${hidden_frames + 5}`,
+			'the game did not draw again after its tab came back');
+		// Hidden, the game lost the keyboard and paused, so QUIT is reached
+		// without Escape: had it played on, the arrows would move a piece.
+		await evaluate("document.querySelector('canvas').focus()");
+		await quit(0, true);
+		console.log('ok - a real tab switch hides and pauses the game, stops its frames, and shows it again');
+	};
+
 	// BDP-18: a finished game is released, so repeated play keeps at most one
 	// live context and one module heap however many games are played.
 	const repeated_play = async () => {
@@ -425,6 +487,7 @@ export function steps(page, state) {
 	return {
 		assert, until, frames, button_visible, button_exposed, accessibility_note,
 		click_play, key, loaded, clean_runs, quit, navigate, canvas_box,
-		play_restore_replay, repeated_play, context_timeout, truncated_and_runtime_failure,
+		play_restore_replay, real_loss_and_tab_switch, repeated_play, context_timeout,
+		truncated_and_runtime_failure,
 	};
 }

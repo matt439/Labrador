@@ -291,12 +291,21 @@ below predate it.
       engine's own `console.error` of the same startup failure was the only
       console message.
 - [ ] A real context loss (GPU reset, or a tab hidden while it is lost) shows
-      and clears the page's message. **Blocked on BDP-06**, which takes a real
-      tab switch and a real loss; `RenderContextLossTests` covers the engine
-      half with a forced loss. Not run against this deploy. Whether
-      DevTools can drive a real loss (`chrome://gpucrash`) and a real tab
-      switch in Chrome is `WEB#14`; what cannot be automated stays informal
-      play.
+      and clears the page's message. `RenderContextLossTests` covers the
+      engine half with a forced loss. **Automated in Chrome since 2026-11-04
+      (`WEB#14`)**: `LineSweeperBundlePageTests` and
+      `LineSweeperHostPageTests` crash Chrome's GPU process over DevTools
+      (`Browser.crashGpuProcess`, what `chrome://gpucrash` does; that page
+      cannot be navigated to from DevTools, which aborts it), and the page
+      hears `onContextLost` with its waiting message and `onContextRestored`
+      with its instructions back, and the game draws again. They then open a
+      tab in front of the game (`Target.createTarget`), which hides it, stops
+      its frames and pauses it, and activate the game's tab again, which
+      shows it. Both are Chrome's own events, not ones the page makes, and
+      both pass in headless Chrome 153 on SwiftShader against the `v0.3.0`
+      module, where the GPU process restarts on the same software device.
+      Not run against the live deploy, and not on a real GPU's driver reset.
+      Firefox's half is `WEB#10`.
 - [x] **Owner decision, 2026-10-27 (`BDP-20`): keep the existing 4.3 MB
       on-demand recording** (4,305,947 bytes); no smaller encode is needed.
       The site's page sets it to `preload="none"` with controls, so it neither
