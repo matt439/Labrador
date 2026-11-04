@@ -5,7 +5,10 @@
 ## Configurations CI cannot run
 
 <!--
-Required for a code change. Paste the output of
+Not required: CI's green is enough to merge, and this is run on a real GPU
+before each release. If you ran it - expected when this changes golden
+images, welcome when it changes engine/render/ or engine/app/ - paste the
+output of
 
     python tools/ci_gap_report.py --execute
 
@@ -15,7 +18,7 @@ RenderPixelTests and MinimalSmokeTests CI runs only on software rasterisers),
 the four release presets CI does not build, and wasm-debug. A preset left out
 with --preset stays in the
 table as "not run"; say why. Name the device below; the tool records none.
-For a documentation-only change, write "Not applicable: no code changed."
+Otherwise write "Not run."
 -->
 
 ## Manual checks

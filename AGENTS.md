@@ -105,6 +105,8 @@ The current mapping covers render paths only:
 (GL/Vulkan pixel and smoke tests on a real driver, four release presets,
 `wasm-debug`) and prints
 the PR template's section; its test fails if `ci.yml` drifts from its list.
+It is a release step, not a per-PR one: a pull request without a GPU writes
+"Not run" ([CONTRIBUTING](CONTRIBUTING.md#before-opening-a-pull-request)).
 
 The five native selections are `x64-debug`, `x64-debug-d3d12`, `x64-debug-gl`,
 `x64-debug-vulkan` and `x64-debug-null`. CI's wasm-null selection is an explicit
@@ -269,7 +271,9 @@ cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_whitespace.cmake
 [CONTRIBUTING.md](CONTRIBUTING.md) owns the contribution and landing procedure:
 branch from `master`, one self-contained commit with source, tests and every
 document it makes false, then a PR and rebase-merge on green. Master is protected,
-merges are linear, and required checks are strict. Adding, removing or renaming
+merges are linear, and required checks are strict. Update a branch with
+`git rebase origin/master`, never by merging master into it: the golden-review
+check in `lint` refuses merge commits. Adding, removing or renaming
 a CI job or matrix entry requires the owner to update branch protection and its
 required-check list.
 

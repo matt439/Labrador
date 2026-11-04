@@ -178,10 +178,12 @@ fixed inputs and moving selectors, the derived consumer manifest, coupled
 changes and the qualification each bump needs. A scheduled drift run does
 not replace that verification.
 
-A pull request's run is meant to finish in about five minutes, and it does
-so on caches: the windows jobs' vcpkg binaries, and ccache for the three
-browser builds. A run after a `vcpkg.json` change, or after a cache has been
-evicted, builds from source and takes longer.
+A pull request's run takes about seven minutes and nine at worst, measured
+over 51 runs from 2026-10-26 to 2026-11-04, on caches: the windows jobs'
+vcpkg binaries, and ccache for the three browser builds. The `wasm` job sets
+that time, and most of its build is linking, which ccache does not help. A run
+after a `vcpkg.json` change, or after a cache has been evicted, builds from
+source and takes longer.
 `gh api repos/matt439/Labrador/branches/master/protection` shows what the
 settings hold, and its contexts should be this list.
 
@@ -250,6 +252,14 @@ cut once PHILOSOPHY's settle criterion has run.
    anyway is re-run with `gh run rerun <id>`, never re-merged. Only a `master`
    commit whose push runs are green is tagged. `git show <sha>:vcpkg.json`
    names the version about to be tagged.
+
+   **Then run what CI cannot, on that commit, on a real GPU:** check it out
+   and run `python tools/ci_gap_report.py --execute` from a cmd shell with
+   vcvars and emsdk_env, as
+   [the procedure](docs/verification.md#configurations-ci-cannot-run) says.
+   Every preset passes before the commit is tagged. This is where a fault
+   that only a real driver shows is caught, since CI's GL and Vulkan jobs draw
+   on software rasterisers.
 4. **Tag that commit:** `git fetch origin`, so the clone has the commit the
    merge made, then `git tag -a vX.Y.Z <sha> -m "Labrador X.Y.Z"`, signed with
    `-s` if a key is to hand, then `git push origin vX.Y.Z`. A pushed tag is
@@ -373,7 +383,9 @@ python tools/check_golden_reviews.py --base BASE_SHA --head HEAD
 
 Replace `BASE_SHA` with the actual comparison commit. Each commit is compared
 with its own parent. Missing objects, shallow history and merge commits fail
-explicitly; the command does not fetch history. To inspect just one commit:
+explicitly; the command does not fetch history. So bring a branch up to date
+with `git rebase origin/master`, never by merging `master` into it: a merge
+commit fails CI's `lint` job. To inspect just one commit:
 
 ```text
 python tools/check_golden_reviews.py --commit HEAD
@@ -405,14 +417,16 @@ qualifications separately from a printed plan or fake-command test result.
   `ctest --preset x64-debug`). A change under `engine/render/` should be
   checked against every backend, and one in `gl/` under a `wasm-*` preset too;
   CI builds all of them, but it is slower than finding out first.
-- For a code change, run `python tools/ci_gap_report.py --execute` on the
-  branch head and paste its output under the pull request template's
-  "Configurations CI cannot run". It builds and tests what CI does not: the
-  GL and Vulkan pixel and smoke tests on a real driver (CI runs them on
-  software rasterisers), the release presets CI skips and `wasm-debug`.
-  Name the device it ran on;
-  [the procedure](docs/verification.md#configurations-ci-cannot-run) says
-  what the record does and does not show.
+- A green pull request needs no local test run. CI runs every test on
+  every backend, the GL and Vulkan device tests on software rasterisers.
+  What it cannot run is `python tools/ci_gap_report.py --execute`: the GL and
+  Vulkan device tests on a real driver, the release presets CI skips and
+  `wasm-debug`. That is run before a release is tagged (step 3 of *Cutting a
+  release*), and on a pull request only when it changes golden images or the
+  author has a GPU and has changed `engine/render/` or `engine/app/`. Paste its
+  output under the template's "Configurations CI cannot run", naming the
+  device; [the procedure](docs/verification.md#configurations-ci-cannot-run)
+  says what the record does and does not show. Otherwise write "Not run".
 - If you edited a public engine header, a line a website page quotes, or a
   file a design document links to, build the website (`npm ci` then
   `npm run build` inside `website/`).

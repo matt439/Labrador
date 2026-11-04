@@ -246,6 +246,8 @@ CI runs `RenderPixelTests` and `MinimalSmokeTests` on `x64-debug-gl` and
 SwiftShader, so a real driver is what those two presets leave out. Its matrix
 also leaves out the four release presets other than `x64-release` (CI's
 `wasm-release` is the browser one), and `wasm-debug`.
+It runs before each release on a real GPU, which CONTRIBUTING's *Cutting a
+release* makes a step, and is not required of a pull request.
 `tools/ci_gap_report.py` holds that list; its test derives the same list from
 `ci.yml` and `CMakePresets.json` and fails when they drift apart.
 

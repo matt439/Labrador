@@ -37,9 +37,10 @@ concurrency:
 
 # The three browser jobs share one compiler, so they share its pins. ccache is
 # what holds a pull request's browser build to a few minutes: a cold
-# wasm-release build is six minutes on this runner and a warm one two, every
-# compile a hit and the rest the links, because Emscripten compiles every
-# file through a Python driver and clang. .github/actions/emscripten installs
+# wasm-release build is six minutes on this runner and a warm one about three,
+# of which the compiles are under a minute and the rest is linking, which no
+# cache shortens. Emscripten compiles every file through a Python driver and
+# clang. .github/actions/emscripten installs
 # both.
 env:
   # Windows SDK installer and SHA-256 published at vulkan.lunarg.com/sdk/home.
