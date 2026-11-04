@@ -1,0 +1,109 @@
+{
+  "configurations": [
+    "x64-debug",
+    "x64-release",
+    "x64-debug-d3d12",
+    "x64-debug-gl",
+    "x64-debug-vulkan",
+    "x64-debug-null",
+    "wasm-release",
+    "wasm-release-null"
+  ],
+  "every_configuration": [
+    "AppTests",
+    "AssetsTests",
+    "AudioSampleTests",
+    "AudioTests",
+    "Benchmarks",
+    "CollisionSampleTests",
+    "CollisionTests",
+    "ComponentsTests",
+    "CoreTests",
+    "InputTests",
+    "LabradorMathTests",
+    "LineSweeperTests",
+    "LineSweeperViewTests",
+    "LocalMultiplayerTests",
+    "MinimalTests",
+    "RenderTests",
+    "SceneTests",
+    "UiTests"
+  ],
+  "some_configurations": {
+    "AudioPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "BrowserProtocolTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "CollisionPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "ComponentsPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "ComponentsPointerPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "D3D12SynchronizationTests": [
+      "x64-debug-d3d12"
+    ],
+    "LineSweeperBundlePageTests": [
+      "wasm-release"
+    ],
+    "LineSweeperPacingPageTests": [
+      "wasm-release"
+    ],
+    "LineSweeperPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "LineSweeperPalettePageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "LineSweeperReducedMotionPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "LocalMultiplayerPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "MinimalPageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
+    "MinimalSmokeTests": [
+      "x64-debug",
+      "x64-release",
+      "x64-debug-d3d12",
+      "x64-debug-gl",
+      "x64-debug-vulkan",
+      "x64-debug-null"
+    ],
+    "RenderContextLossTests": [
+      "wasm-release"
+    ],
+    "RenderPixelTests": [
+      "x64-debug",
+      "x64-release",
+      "x64-debug-d3d12",
+      "x64-debug-gl",
+      "x64-debug-vulkan",
+      "wasm-release"
+    ],
+    "RenderPixelTestsWithoutS3tc": [
+      "wasm-release"
+    ],
+    "WebWindowTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ]
+  }
+}

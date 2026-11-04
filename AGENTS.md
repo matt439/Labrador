@@ -237,6 +237,10 @@ pull request already passed. Citation checking skips `website/`.
   first line to be `@AGENTS.md`. Amend only this brief; CLAUDE imports it.
 - Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
   add each new `.cpp`, or it is silently absent from the build.
+- [ctest_inventory.json](tests/ctest_inventory.json) lists the ctest entries
+  each CI configuration must register, and CI fails on any difference. Adding,
+  removing or renaming an entry changes it in the same commit. It sees entries,
+  not the doctest cases inside them.
 - CI's `consumer` makes Get Started's starter ZIP from this checkout
   (`starter_zip.py`, the release asset), extracts it with Windows' `tar`,
   builds it, verifies only
