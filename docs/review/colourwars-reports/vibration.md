@@ -106,10 +106,15 @@ The per-motor physical record above is re-planned as follows.
   suspension refusing and stopping without replay on resume, destruction
   stopping only the slots with a request, and the empty-slot and suspended
   answers on each backend's own reader.
-- Listable and still missing: the browser transport itself. Nothing tests
-  that `engine/input/web/gamepad_reader.cpp` plays `dual-rumble` with the
-  requested strengths and resets it on stop, suspension and teardown; a
-  case driving it against a fake `vibrationActuator` under Node would.
+- Automated since 2026-11-04, in InputTests under Node on the browser
+  build (`tests/input/web_vibration_tests.cpp`): the browser transport
+  itself, through `GamepadReader` against a fake `navigator.getGamepads()`
+  whose pad's `vibrationActuator` records its calls. It asserts
+  `dual-rumble` played with the requested strong and weak strengths and
+  duration, reset on stop, on suspension and on teardown of a reader that
+  vibrated, nothing sent for an empty slot or while suspended, and an
+  actuator without `dual-rumble` answered as unavailable. A fake actuator
+  says nothing about what a browser or a motor does with the effect.
 - The owner's part is informal play with the XInput pad, natively and in
   Chrome, reporting how the motors feel and anything that looks wrong. It
   can ride OCA-48's pad session.
