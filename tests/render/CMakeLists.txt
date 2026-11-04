@@ -1,3 +1,7 @@
+# lodepng encodes png_file_tests.cpp's fixtures; the pixel tests below read
+# the golden set with it.
+find_package(lodepng CONFIG REQUIRED)
+
 labrador_add_test_suite(RenderTests
     SOURCES
         animation_strip_tests.cpp
@@ -8,6 +12,7 @@ labrador_add_test_suite(RenderTests
         draw_object_tests.cpp
         font_tests.cpp
         label_tests.cpp
+        png_file_tests.cpp
         render_resources_tests.cpp
         renderer_seam_tests.cpp
         resolution_manager_tests.cpp
@@ -19,7 +24,7 @@ labrador_add_test_suite(RenderTests
         viewport_manager_tests.cpp
         viewport_tests.cpp
         visual_tests.cpp
-    LINKS LabradorEngine
+    LINKS LabradorEngine lodepng
 )
 
 # The test content, beside the executables. ctest runs from the build
@@ -94,10 +99,9 @@ endif()
 # are the same files; what differs is the window (test_window.h), where the
 # set is read from, and who runs it - see the browser half below.
 if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
-    # The golden set's codec, on every platform (golden_image.cpp says why it
-    # is one codec rather than each platform's own). A test dependency only.
-    find_package(lodepng CONFIG REQUIRED)
-
+    # lodepng is the golden set's codec, on every platform (golden_image.cpp
+    # says why it is one codec rather than each platform's own). The engine
+    # decodes PNG textures with the same port (engine/render/png_file.h).
     add_executable(RenderPixelTests
         golden_image.cpp
         pixel_test_harness.cpp

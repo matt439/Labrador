@@ -22,11 +22,17 @@ behind them. If a build fails after you change your drawing code,
 
 | Kind | File | Made with |
 | --- | --- | --- |
-| Texture | `.dds` | Any tool that writes DDS, such as `texconv` from Microsoft's DirectXTex (below). |
+| Texture | `.dds` or `.png` | A PNG from any paint program, as it is; or any tool that writes DDS, such as `texconv` from Microsoft's DirectXTex (below). |
 | Font | `.spritefont` | `MakeSpriteFont` from Microsoft's DirectX Tool Kit, which renders an installed font into an atlas (below). |
-| Sprite sheet | `.dds` and `.json` with the same name | A texture, plus a JSON file naming rectangles in it (below). |
+| Sprite sheet | `.dds` or `.png`, and `.json`, with the same name | A texture, plus a JSON file naming rectangles in it (below). |
 
-A texture can be uncompressed 32-bit colour (`R8G8B8A8` or `B8G8R8A8`), 16-bit `B4G4R4A4`, or
+A PNG is read in whatever colour type it was saved, decoded to 32-bit colour and premultiplied
+as it loads. Its gamma and colour-profile chunks are not applied. It costs four bytes a pixel on
+the graphics card and a decode each time it loads, so a game with many or large pictures
+converts them to a block-compressed `.dds` instead. A name with both a `.dds` and a `.png` in its
+folder is refused, naming both.
+
+A `.dds` texture can be uncompressed 32-bit colour (`R8G8B8A8` or `B8G8R8A8`), 16-bit `B4G4R4A4`, or
 block-compressed BC1, BC2 or BC3. Anything else is refused at load, with the file named. Each
 file is listed in the [manifest](/docs/concepts/resources/#the-manifest) by name, without its
 extension.
@@ -413,8 +419,9 @@ the colour is simply added, so overlapping draws brighten towards white. That is
 
 <SourceFile path="samples/linesweeper/presentation/palette.h" from="constexpr labrador::Colour glowing(" to="}" />
 
-**A texture must arrive premultiplied, because the engine does no premultiplication at load.**
-A `.dds` file's texels are drawn as they are stored, so a soft-edged sprite is premultiplied when
+**A `.dds` texture must arrive premultiplied, because the engine does no premultiplication when
+it loads one.** A PNG is premultiplied as it loads, so a PNG that is premultiplied already comes
+out with darkened edges. A `.dds` file's texels are drawn as they are stored, so a soft-edged sprite is premultiplied when
 it is converted, which is what texconv's `-pmalpha` does
 ([Making textures and fonts](#making-textures-and-fonts), above). A texture converted without it
 keeps the full colour in its half-transparent edge texels and adds that colour to whatever is

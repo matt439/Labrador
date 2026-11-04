@@ -169,6 +169,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['texture_format.h', 'TextureFormat', 'renderer writer'],
 			['texture_data.h', 'TextureData', 'renderer writer'],
 			['dds_file.h', 'DDS files', 'renderer writer'],
+			['png_file.h', 'PNG files', 'renderer writer'],
 			['block_decode.h', 'Block decoding', 'renderer writer'],
 			['sprite_font_file.h', 'SpriteFontFile', 'renderer writer'],
 			['resource_factory.h', 'Resource factory', 'renderer writer'],

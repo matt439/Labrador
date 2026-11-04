@@ -42,6 +42,7 @@ add_library(LabradorEngine STATIC
     render/draw_object.cpp
     render/font.cpp
     render/label.cpp
+    render/png_file.cpp
     render/render_resources.cpp
     render/resolution_manager.cpp
     render/resource_factory.cpp
@@ -401,9 +402,13 @@ target_include_directories(LabradorEngine SYSTEM PRIVATE
 # makes, checked the same way, and the reason cmake/check_engine_includes.cmake
 # guards the audio, input and app backend folders as well as
 # engine/render/<backend>/.
+# The PNG decoder behind render/png_file.cpp, on every platform and backend,
+# from the same vcpkg port the golden-image tests read their set with.
+find_package(lodepng CONFIG REQUIRED)
+
 target_link_libraries(LabradorEngine
     PUBLIC LabradorMath
-    PRIVATE labrador_settings
+    PRIVATE labrador_settings lodepng
 )
 
 # And only the two backends that call it link it at all: audio/xaudio2/ and

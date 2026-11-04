@@ -77,6 +77,23 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-04 - Load textures from PNG files
+
+**Addition, and a dependency every game now names.** A `texture` or
+`sprite_sheet` asset is read from `name.png` when there is no `name.dds`, so a
+picture from a paint program draws with no converter. Any PNG colour type
+comes out as 8-bit RGBA with each colour channel premultiplied by its alpha,
+rounded to nearest; gamma and colour-profile chunks are not applied. A name
+with both files is refused with `std::runtime_error` naming both, and a name
+with neither is `std::out_of_range` reading `No file at <name>.dds or
+<name>.png.`, which named only the `.dds` before. `engine/render/png_file.h`
+declares `read_png_file` and `decode_png`.
+
+The engine now links `lodepng` on every platform, so a game's own `vcpkg.json`
+must name it: configure fails at `find_package(lodepng)` without it. Add
+`"lodepng"` to its `dependencies`, as the minimal template's change list
+says. Its zlib licence asks nothing of a release, so no notice file is added.
+
 ### 2026-11-04 - Open and resize the window at any client size
 
 **Addition.** `ApplicationOptions::client_size`, a `std::optional<Vector2I>`,

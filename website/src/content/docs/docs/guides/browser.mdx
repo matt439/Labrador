@@ -598,8 +598,9 @@ the record describes the checkout when packaging, and does not prove which
 sources or flags an older module used.
 
 Windows DLLs, DirectXTK, DirectXMath, XAudio2Redist and the MSVC runtime are absent from this
-browser release. The rules-test framework, doctest, is used only by the test program, and
-lodepng only by the engine's render tests. Neither test program is in the folder you upload.
+browser release. The rules-test framework, doctest, is used only by the test program, which
+is not in the folder you upload. lodepng, which decodes PNG textures, is compiled into the
+game's `.wasm`; its zlib licence asks nothing of a program built from it.
 
 Your game's own code and content have their own terms. Add a `--licence "Your game=LICENSE"`
 argument if you have a licence file to include, and add the notices of any libraries or content

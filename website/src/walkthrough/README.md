@@ -84,8 +84,9 @@ Studio's 4.3.1 not suitable, and a PowerShell 7.6.1 (114 MB), and fetched
 folder was 1.3 GB afterwards. From the clone to the project's own window took
 about six minutes. How long Visual Studio and Git take to install was not
 measured. The template has had its tests since, so a project made from the
-page now restores 6 packages rather than 5, doctest being the sixth, and
-Labrador's ctest has 20 entries.
+page now restores 7 packages rather than 5, doctest being the sixth and
+lodepng, since the engine reads PNG textures, the seventh, and Labrador's
+ctest has 20 entries.
 
 **The browser build, by hand.** On 25 October 2026 *Build for the browser*
 was followed against the project assembled from the tree at `76e939e`

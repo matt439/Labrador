@@ -173,6 +173,7 @@ if(EMSCRIPTEN)
             --licence "Labrador third-party record=${PROJECT_SOURCE_DIR}/NOTICE"
             --licence "Microsoft sample code=${PROJECT_SOURCE_DIR}/tools/web_bundle/Microsoft-LICENSE.txt"
             --licence "RapidJSON=${PROJECT_SOURCE_DIR}/external/rapidjson/license.txt"
+            --licence "lodepng=${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/lodepng/copyright"
             --licence "JetBrains Mono=${CMAKE_CURRENT_SOURCE_DIR}/content/fonts/OFL.txt"
             --licence "Emscripten=${EMSCRIPTEN_ROOT_PATH}/LICENSE"
             --licence "libc++=${emscripten_libraries}/libcxx/LICENSE.TXT"

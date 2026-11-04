@@ -821,12 +821,10 @@ jobs:
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
       # THE WINDOWS JOBS' CACHE, RESTORED AND NEVER SAVED. The consumer's
-      # packages are the engine's less lodepng, which only its tests use,
-      # built for the same triplet at the same baseline, so their binaries are
-      # already in that cache. Saving under the same key from here could win
-      # the race with those jobs and leave the key holding a set without
-      # lodepng; on a miss this job builds from source and leaves the saving
-      # to them.
+      # packages are the engine's, built for the same triplet at the same
+      # baseline, so their binaries are already in that cache. Saving under
+      # the same key from here could race those jobs for it; on a miss this
+      # job builds from source and leaves the saving to them.
       - name: Restore the windows jobs' vcpkg binaries
         uses: actions/cache/restore@v4
         with:

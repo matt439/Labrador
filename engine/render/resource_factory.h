@@ -25,18 +25,22 @@ namespace labrador
 	// is a missing symbol at link rather than a failure at run time (T5).
 	//
 	// THE FILE EXTENSION IS NOT A PARAMETER, AND IT IS NOT THE BACKEND'S. A kind
-	// owns its own file naming (resource_loader.h), and ".dds" and
-	// ".spritefont" are not what a backend decodes: both readers are
-	// engine/render/dds_file.* and engine/render/sprite_font_file.*, so every
-	// backend reads the same two files the same way and neither extension
-	// appears in engine/render/<backend>/ at all.
+	// owns its own file naming (resource_loader.h), and ".dds", ".png" and
+	// ".spritefont" are not what a backend decodes: the readers are
+	// engine/render/dds_file.*, png_file.* and sprite_font_file.*, so every
+	// backend reads the same files the same way and no extension appears in
+	// engine/render/<backend>/ at all.
 
 	// Loads the texture named by `directory` and `name` onto the renderer's
-	// device, and adds it to `resources` under `name`.
+	// device, and adds it to `resources` under `name`. The file is
+	// `name`.dds or `name`.png, whichever exists (png_file.h says what a PNG
+	// costs against a .dds).
 	//
-	// Throws std::out_of_range naming the path if there is no file there, and
-	// std::runtime_error naming the path and the problem if there is one and it
-	// will not decode (T6). One throw carrying an eight-digit HRESULT makes
+	// Throws std::out_of_range naming both paths if neither exists, and
+	// std::runtime_error naming both if both do: which one the artist last
+	// exported is not something a loader can know. A file that is there and
+	// will not decode throws std::runtime_error naming the path and the
+	// problem (T6). One throw carrying an eight-digit HRESULT makes
 	// "the artist has not exported it yet" and "the artist exported a cube map"
 	// the same message.
 	void load_texture_asset(const Renderer& renderer,
