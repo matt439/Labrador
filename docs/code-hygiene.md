@@ -568,3 +568,58 @@ retained-texture release; `D3D12PresentedSlotsProbe` again verified two
 queued, unretired presented slots at the reuse wait. No case induces genuine
 device removal, so none was run. All standalone lint and fixture checks pass.
 Logs are `out/ctest-<preset>.log` and `out/sm58-probes.log` in the working tree.
+
+## File-length re-audit, 2026-11-05
+
+Measured at `6ee9c70` against the 2026-10-28 table above. Every tracked
+first-party source, test, tool, workflow and live owner document of about 450
+lines or more was read whole, unless a dated verdict still covers it and it has
+not grown since: the D3D12 and Vulkan renderers (SM-54), Win32's `window.cpp`
+(SM-50), `tick.cpp`, `state_context_tests.cpp` and Web Audio's
+`audio_device.cpp` (SM-55). One reader per file mapped its responsibilities
+and gave a keep or split verdict under the rules above. Every file came back
+keep. Because those readers were told to prefer keep, the six least certain
+files were argued again by an advocate for the strongest split, and three
+independent judges ruled on each argument. A split went ahead only when at
+least two judges agreed it beat keeping the file.
+
+| File | Lines | Verdict |
+|---|---:|---|
+| `tests/app/window_tests.cpp` | 1,198 | Split, 3/3: three cases that create no window moved to `pointer_input_tests.cpp` and `system_command_tests.cpp`, beside SM-50's `keyboard_input_tests.cpp` |
+| `tests/render/null_tests.cpp` | 1,156 | Split, 2/3: the eight resource load-path and reload cases moved to `null_resource_tests.cpp`; the shared `Harness` moved to `null_test_harness.h` |
+| `docs/port/web.md` | 1,908 | Split, 2/3: its landing record moved to [web-as-built.md](port/web-as-built.md); the plan, decisions, contract and status stay |
+| `tools/cloud_performance/analysis.py` | 904 | Keep, 1/3: if a third capture source arrives, the pure verdict and statistics core is the cut |
+| `.github/workflows/ci.yml` | 1,044 | Keep: the jobs are its responsibilities, and their names are required checks |
+| `engine/render/d3d11/renderer.cpp` | 1,104 | Keep, 0/3: its readability cost is comment volume, which a comment pass would address |
+| `website/acceptance/suite.mjs` | 1,613 | Keep: one numbered check table over one context; the index proxy is the first cut if serving grows |
+| `engine/render/vulkan/device_resources.cpp` | 2,226 | Keep: SM-53's verdict holds after +60 lines |
+
+The other twenty readings were also keep and are not tabulated:
+`engine/app/web/window.cpp`, `engine/render/gl/renderer.cpp`,
+`engine/app/application.cpp`/`.h`, `engine/collision/narrow_phase.cpp`,
+D3D11's and D3D12's `device_resources.cpp`, `samples/components/gallery_state.cpp`,
+`tools/flash_check/flash_check.mjs`, `tests/render/web/run_page.mjs`,
+`tools/tests/test_cloud_performance_analysis.py`,
+`samples/linesweeper/README.md`, and the test files for LineSweeper's view,
+shape intersection, Ericson math, narrow phase, JSON, fonts, sprite pixels
+and audio-resource failure. Each split is mechanical movement in its own
+commit. Case names, assertions and registration are unchanged, and no ctest
+entry changed.
+
+On the branch carrying the three moves, the standalone lints passed, and so
+did `ctest` on `x64-debug-null` (19/19), `x64-debug` (20/20) and CI's
+`wasm-release-null` override (29/29). The last of these compiled both null
+sources with clang. AppTests listed the same cases and ran the same
+assertions as before on both native presets: 74 cases and 952 assertions on
+`x64-debug`, 82 and 1,294 on `x64-debug-null`. For RenderTests the evidence
+is a source inventory: 31 cases, 3 subcases and 148 assertion sites before
+and after, with every case block byte-identical. Null RenderTests passes
+201 cases. The website check, its tests and the 174-page build pass.
+
+Found while reading and left for their own changes:
+`tests/math/shape_intersect_tests.cpp` builds two inputs it never asserts on
+(the "just not touching" triangle in `test_rectangle_triangle_intersect` and
+the "just outside the corner" point in `test_point_rectangle_rotated_intersect`);
+the null test preamble's ctest census is stale; web.md §9's status paragraph
+still says M3 owes Safari although the record has Safari 27.0.1 on 2026-11-03;
+and `your-version.mdx` quotes `application.h` lines that have since moved.
