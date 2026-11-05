@@ -25,7 +25,7 @@ the last column. A finding is a question until its fix proves it.
 | [H15](README.md#h15-render-backend-mechanical-dedupe-and-convention) | Render backend mechanical dedupe and convention | 42 | Open | |
 | [H16](README.md#h16-website-source-and-scripts) | Website source and scripts | 27 | Open | |
 | [H17](README.md#h17-repository-configuration) | Repository configuration | 3 | Open | |
-| [H18](README.md#h18-orphaned-website-exploration) | Orphaned website exploration | 13 | Open | |
+| [H18](README.md#h18-orphaned-website-exploration) | Orphaned website exploration | 13 | Closed | Deleted: nothing built, tested or linked it. Its record is commit `9162f44`. |
 | [H19](README.md#h19-live-document-drift) | Live document drift | 11 | Open | |
 | [H20](README.md#h20-engine-comment-truth-outside-render-math-core-ui-collision-assets-input-audio-app) | Engine comment truth outside render (math, core, ui, collision, assets, input, audio, app) | 55 | Open | |
 | [H21](README.md#h21-render-comment-truth-and-archaeology-shared-seam-and-five-backends) | Render comment truth and archaeology (shared seam and five backends) | 61 | Open | |
