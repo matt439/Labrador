@@ -9,12 +9,16 @@
 #include <cstdlib>
 #include <exception>
 #include <stdexcept>
+#include <string>
 
 namespace
 {
 	using GetterValue = std::uint64_t;
 	volatile GetterValue observed_checksum = 0;
 	constexpr std::uint64_t warmup_iterations = 100000;
+	constexpr std::uint64_t default_iterations = 1000000;
+	constexpr std::uint64_t max_iterations = 100000000;
+	constexpr int repetitions = 7;
 
 	bool release_build()
 	{
@@ -72,7 +76,7 @@ namespace
 // starts; a run that fails exits 1 with the reason.
 int main(int argc, char* argv[])
 {
-	std::uint64_t iterations = 1000000;
+	std::uint64_t iterations = default_iterations;
 	if (argc > 2)
 	{
 		std::fprintf(stderr, "Usage: D3D12DescriptorQueryProbe [iterations]\n");
@@ -84,10 +88,11 @@ int main(int argc, char* argv[])
 		errno = 0;
 		iterations = std::strtoull(argv[1], &end, 10);
 		if (errno != 0 || end == argv[1] || *end != '\0' ||
-			iterations == 0 || iterations > 100000000)
+			iterations == 0 || iterations > max_iterations)
 		{
 			std::fprintf(stderr,
-				"D3D12DescriptorQueryProbe refused: iterations must be between 1 and 100000000\n");
+				"D3D12DescriptorQueryProbe refused: iterations must be between 1 and %llu\n",
+				static_cast<unsigned long long>(max_iterations));
 			return 2;
 		}
 	}
@@ -113,11 +118,12 @@ int main(int argc, char* argv[])
 			LABRADOR_DESCRIPTOR_DEVICE_SHA256);
 		std::printf("device=%s\napi=%s\nkind=%d\nvendor_id=%u\ndevice_id=%u\n"
 			"adapter_luid=%08lx:%08lx\ncompiler_msc=%d\nqpc_frequency=%lld\n"
-			"warmup_iterations=%llu\n", device.device_name.c_str(), device.api.c_str(),
+			"warmup_iterations=%llu\nrepetitions=%d\n", device.device_name.c_str(),
+			device.api.c_str(),
 			static_cast<int>(device.kind), device.vendor_id,
 			device.device_id, static_cast<unsigned long>(luid.HighPart),
 			luid.LowPart, _MSC_FULL_VER, frequency.QuadPart,
-			static_cast<unsigned long long>(warmup_iterations));
+			static_cast<unsigned long long>(warmup_iterations), repetitions);
 		std::puts("scope=unmodified engine methods; single calling thread; no affinity/power "
 			"changes");
 		std::puts("baseline=volatile cached handle load; includes loop/checksum work; no timing "
@@ -140,7 +146,7 @@ int main(int argc, char* argv[])
 		static_cast<void>(measure(warmup_iterations, texture_load));
 		static_cast<void>(measure(warmup_iterations, target_load));
 		std::puts("method,repetition,iterations,raw_qpc_ticks,checksum");
-		for (int repetition = 0; repetition < 7; ++repetition)
+		for (int repetition = 0; repetition < repetitions; ++repetition)
 		{
 			report("sampler_point", repetition, iterations, cached_sampler, sampler);
 			report("sampler_cached_load", repetition, iterations, cached_sampler, sampler_load);

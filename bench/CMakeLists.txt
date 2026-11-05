@@ -52,6 +52,7 @@ if(WIN32)
         frame_pacer.cpp
         frame_statistics.cpp
         linesweeper_frame_bench.cpp
+        linesweeper_frame_bench_main.cpp
         linesweeper_frame_result.cpp
         "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
@@ -74,7 +75,8 @@ if(WIN32)
     if(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         # Optional investigation tools, outside ALL and ctest. Timing links the
         # ordinary engine; the separate census replaces only renderer.cpp with
-        # an instrumented wrapper and reuses the real frame-benchmark workload.
+        # an instrumented wrapper and runs the real frame-benchmark workload
+        # through measure_frames (linesweeper_frame_bench.h) with its own main.
         # Its timings are explicitly labelled as instrumented, not acceptance.
         add_executable(D3D12DescriptorQueryProbe EXCLUDE_FROM_ALL
             d3d12_descriptor_query_probe.cpp
@@ -88,6 +90,7 @@ if(WIN32)
             d3d12_descriptor_count_renderer.cpp
             frame_pacer.cpp
             frame_statistics.cpp
+            linesweeper_frame_bench.cpp
             linesweeper_frame_result.cpp
             "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
@@ -96,9 +99,6 @@ if(WIN32)
         target_link_libraries(D3D12DescriptorCountProbe PRIVATE
             LineSweeperRules LabradorEngine labrador_settings
         )
-        target_include_directories(D3D12DescriptorCountProbe PRIVATE
-            "${LABRADOR_GENERATED_ROOT}"
-        )
         target_include_directories(D3D12DescriptorCountProbe SYSTEM PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
         )
@@ -106,15 +106,37 @@ if(WIN32)
             LabradorEngine linesweeper_frame_bench_content
         )
         # The probes print these digests as the provenance of the source they
-        # measured. file(SHA256) runs at configure time, so each file is a
-        # configure dependency: an edit reconfigures before the probe rebuilds,
-        # rather than compiling new code beside an old digest.
+        # measured, and the preload check below reads renderer.cpp's includes.
+        # Both run at configure time, so each file read is a configure
+        # dependency: an edit reconfigures before the probe rebuilds, rather
+        # than compiling new code beside an old digest or a stale preload.
         set(descriptor_renderer_source
             "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/renderer.cpp")
         set(descriptor_device_source
             "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/device_resources.cpp")
+        set(descriptor_preload_source
+            "${CMAKE_CURRENT_SOURCE_DIR}/d3d12_descriptor_count_renderer.cpp")
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-            "${descriptor_renderer_source}" "${descriptor_device_source}")
+            "${descriptor_renderer_source}" "${descriptor_device_source}"
+            "${descriptor_preload_source}")
+
+        # The renderer wrapper preloads renderer.cpp's headers before its
+        # instrumenting macros; a header renderer.cpp gains without a matching
+        # preload would be first included with its names rewritten.
+        file(STRINGS "${descriptor_renderer_source}"
+            descriptor_renderer_includes REGEX "^#include ")
+        file(STRINGS "${descriptor_preload_source}"
+            descriptor_preload_includes REGEX "^#include ")
+        list(TRANSFORM descriptor_renderer_includes STRIP)
+        list(TRANSFORM descriptor_preload_includes STRIP)
+        foreach(descriptor_include IN LISTS descriptor_renderer_includes)
+            if(NOT descriptor_include IN_LIST descriptor_preload_includes)
+                message(FATAL_ERROR "bench/d3d12_descriptor_count_renderer.cpp "
+                    "does not preload '${descriptor_include}', which "
+                    "engine/render/d3d12/renderer.cpp includes. Add it above "
+                    "the instrumenting macros.")
+            endif()
+        endforeach()
         file(SHA256 "${descriptor_renderer_source}" descriptor_renderer_sha256)
         file(SHA256 "${descriptor_device_source}" descriptor_device_sha256)
         foreach(descriptor_probe IN ITEMS

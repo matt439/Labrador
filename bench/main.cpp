@@ -15,6 +15,11 @@ void run_render_benchmarks();
 // this run, or where to go to see it do anything at all.
 std::string run_fanout_benchmarks();
 
+// Whether run_fanout_benchmarks recorded the two Scene::draw rows: true from
+// fanout_bench_null.cpp, false from fanout_bench_absent.cpp. Only those two
+// phases may be absent, and only from a build that does not measure them.
+bool fanout_measured();
+
 namespace
 {
 	// How much per-object cost a phase is allowed to gain between the smallest
@@ -27,14 +32,25 @@ namespace
 	// thing this is for: a phase that quietly became quadratic would show 64x.
 	constexpr double linear_slack = 8.0;
 
-	// The phases that must stay linear in the object count.
-	const char* const linear_phases[] = {
-		"Scene::update",
-		"Scene::end_tick",
-		"render cull (one view)",
+	// A phase that must stay linear in the object count. The names are
+	// matched against the names passed to bench::run in the other files, so
+	// a phase with fewer than two results fails rather than passing unseen:
+	// a rename on either side would otherwise turn its assertion off. `fanout`
+	// marks the two rows only fanout_bench_null.cpp records, which alone may
+	// be missing, and only from a build that does not measure them.
+	struct LinearPhase
+	{
+		const char* name = nullptr;
+		bool fanout = false;
+	};
+
+	const LinearPhase linear_phases[] = {
+		{ "Scene::update", false },
+		{ "Scene::end_tick", false },
+		{ "render cull (one view)", false },
 		// Linear because of the broad phase's grid; an all-pairs
 		// enumeration would be quadratic.
-		"Scene::resolve (broad phase)",
+		{ "Scene::resolve (broad phase)", false },
 
 		// The draw path's engine-side arithmetic (render_bench.cpp). Linear
 		// by construction - four corners a sprite, no lookup and no
@@ -44,9 +60,9 @@ namespace
 		// shape a bulk or instanced submission path has if it sorts or
 		// groups; docs/survey/2026-08-26.md 5 names that as the item this
 		// benchmark exists to let somebody argue.
-		"build_sprite_quad",
-		"build_sprite_quad (rotated)",
-		"build_scaled_quad",
+		{ "build_sprite_quad", false },
+		{ "build_sprite_quad (rotated)", false },
+		{ "build_scaled_quad", false },
 
 		// The per-view render fan-out, which exists in the null configuration
 		// alone (fanout_bench_null.cpp). Both rows are linear for the reason
@@ -56,8 +72,8 @@ namespace
 		// depend on how many objects there are. How much the fan-out actually
 		// won is a note below and not an assertion, because that is wall-clock
 		// and a property of the machine's core count.
-		"Scene::draw (4 views, serial)",
-		"Scene::draw (4 views, fan-out)",
+		{ "Scene::draw (4 views, serial)", true },
+		{ "Scene::draw (4 views, fan-out)", true },
 	};
 
 	std::vector<bench::Result> for_case(const std::string& name)
@@ -72,6 +88,39 @@ namespace
 		}
 		return out;
 	}
+
+	// Two cases' results at the same n, for the notes that print one as a
+	// multiple of the other.
+	struct ResultPair
+	{
+		bench::Result over;
+		bench::Result under;
+
+		double ratio() const
+		{
+			return this->over.median_ns / this->under.median_ns;
+		}
+	};
+
+	// Pairs by n rather than by position, and leaves out a pair whose
+	// denominator measured nothing: that ratio would be infinite and say
+	// nothing about either case.
+	std::vector<ResultPair> paired_by_n(const std::vector<bench::Result>& over,
+		const std::vector<bench::Result>& under)
+	{
+		std::vector<ResultPair> out;
+		for (const bench::Result& top : over)
+		{
+			for (const bench::Result& bottom : under)
+			{
+				if (top.n == bottom.n && bottom.median_ns > 0.0)
+				{
+					out.push_back({ top, bottom });
+				}
+			}
+		}
+		return out;
+	}
 }
 
 int main()
@@ -82,11 +131,21 @@ int main()
 	bench::report();
 
 	int failures = 0;
-	for (const char* phase : linear_phases)
+	const bool fanout = fanout_measured();
+	for (const LinearPhase& phase : linear_phases)
 	{
-		const std::vector<bench::Result> runs = for_case(phase);
+		if (phase.fanout && !fanout)
+		{
+			continue;
+		}
+
+		const std::vector<bench::Result> runs = for_case(phase.name);
 		if (runs.size() < 2)
 		{
+			std::printf("FAILED  %s: recorded %d result(s) where its complexity "
+				"class needs two. A case was renamed or not run.\n",
+				phase.name, static_cast<int>(runs.size()));
+			failures++;
 			continue;
 		}
 
@@ -99,7 +158,8 @@ int main()
 		}
 		else
 		{
-			std::printf("ok      %s stays linear in the object count\n", phase);
+			std::printf("ok      %s stays linear in the object count\n",
+				phase.name);
 		}
 	}
 
@@ -112,7 +172,7 @@ int main()
 	const std::vector<bench::Result> indexed =
 		for_case("Scene::resolve (broad phase)");
 
-	if (sweep.size() >= 2)
+	if (sweep.size() >= 2 && sweep.front().ns_per_n() > 0.0)
 	{
 		const double growth = sweep.back().ns_per_n() / sweep.front().ns_per_n();
 		std::printf("note    the all-pairs sweep is O(n^2): per-object cost "
@@ -124,15 +184,11 @@ int main()
 				static_cast<double>(sweep.front().n));
 	}
 
-	if (sweep.size() == indexed.size())
+	for (const ResultPair& pair : paired_by_n(sweep, indexed))
 	{
-		for (size_t i = 0; i < sweep.size(); i++)
-		{
-			std::printf("note    n=%-5lld the broad phase is %6.1fx faster "
-				"than the sweep\n",
-				static_cast<long long>(sweep[i].n),
-				sweep[i].median_ns / indexed[i].median_ns);
-		}
+		std::printf("note    n=%-5lld the broad phase is %6.1fx faster "
+			"than the sweep\n",
+			static_cast<long long>(pair.over.n), pair.ratio());
 	}
 
 	// What the angle branch inside build_quad buys, which is the one claim
@@ -146,22 +202,12 @@ int main()
 	const std::vector<bench::Result> turned =
 		for_case("build_sprite_quad (rotated)");
 
-	if (upright.size() == turned.size())
+	for (const ResultPair& pair : paired_by_n(turned, upright))
 	{
-		for (size_t i = 0; i < upright.size(); i++)
-		{
-			if (upright[i].ns_per_n() <= 0.0)
-			{
-				continue;
-			}
-
-			std::printf("note    n=%-5lld a rotated sprite costs %5.2fx an "
-				"upright one (%.2f against %.2f ns/sprite)\n",
-				static_cast<long long>(upright[i].n),
-				turned[i].ns_per_n() / upright[i].ns_per_n(),
-				turned[i].ns_per_n(),
-				upright[i].ns_per_n());
-		}
+		std::printf("note    n=%-5lld a rotated sprite costs %5.2fx an "
+			"upright one (%.2f against %.2f ns/sprite)\n",
+			static_cast<long long>(pair.over.n), pair.ratio(),
+			pair.over.ns_per_n(), pair.under.ns_per_n());
 	}
 
 	// What the fan-out bought, at each count, on this machine. Reported for the
@@ -173,20 +219,11 @@ int main()
 	const std::vector<bench::Result> fanned =
 		for_case("Scene::draw (4 views, fan-out)");
 
-	if (one_thread.size() == fanned.size())
+	for (const ResultPair& pair : paired_by_n(one_thread, fanned))
 	{
-		for (size_t i = 0; i < one_thread.size(); i++)
-		{
-			if (fanned[i].median_ns <= 0.0)
-			{
-				continue;
-			}
-
-			std::printf("note    n=%-5lld the fan-out draws four views %5.2fx "
-				"the speed of one thread\n",
-				static_cast<long long>(one_thread[i].n),
-				one_thread[i].median_ns / fanned[i].median_ns);
-		}
+		std::printf("note    n=%-5lld the fan-out draws four views %5.2fx "
+			"the speed of one thread\n",
+			static_cast<long long>(pair.over.n), pair.ratio());
 	}
 
 	std::printf("%s\n", fanout_note.c_str());

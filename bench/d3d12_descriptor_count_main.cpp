@@ -1,9 +1,6 @@
 #include "bench/d3d12_descriptor_count_state.h"
+#include "bench/linesweeper_frame_bench.h"
 #include "bench/linesweeper_frame_result.h"
-
-#include "engine/app/window.h"
-
-#include <Windows.h>
 
 #include <atomic>
 #include <cstdint>
@@ -33,31 +30,10 @@ namespace
 	std::size_t rows_used = 0;
 	bool incomplete = false;
 
-	labrador::WindowOptions hidden_options(const labrador::WindowOptions& options)
-	{
-		labrador::WindowOptions hidden = options;
-		hidden.visible = false;
-		return hidden;
-	}
-
-	class DescriptorCountWindow final : public labrador::Window
-	{
-	public:
-		DescriptorCountWindow(const labrador::WindowOptions& options,
-			labrador::WindowNotify* notify) : Window(hidden_options(options), notify)
-		{
-			RECT client = {};
-			if (!GetClientRect(static_cast<HWND>(this->handle()), &client))
-			{
-				throw std::runtime_error("The descriptor census could not query its hidden client "
-					"area");
-			}
-			// The normal benchmark receives WM_SIZE when shown. Counting uses
-			// a hidden window and supplies its actual queried size instead.
-			notify->on_window_size_changed(static_cast<int>(client.right - client.left),
-				static_cast<int>(client.bottom - client.top));
-		}
-	};
+	// The JSON's classification, so that nothing reads an instrumented run as
+	// performance or pacing acceptance.
+	const char* const measurement_class =
+		"instrumented_descriptor_counts_not_performance_acceptance";
 }
 
 namespace descriptor_query_counts
@@ -118,27 +94,10 @@ namespace descriptor_query_counts
 	}
 }
 
-namespace linesweeper_frame_bench
-{
-	std::string instrumented_result_json(const Options& options, const Result& result)
-	{
-		Result tagged = result;
-		tagged.measurement_class = "instrumented_descriptor_counts_not_performance_acceptance";
-		return result_json(options, tagged);
-	}
-}
-
-// Reuse the real workload, options, content loading and lifecycle. Only its
-// entry point, hidden startup and result labelling differ; no game code is
-// copied here. Hidden startup cannot supply display-pacing acceptance.
-#define wmain descriptor_count_workload_main
-#define result_json instrumented_result_json
-#define Window DescriptorCountWindow
-#include "bench/linesweeper_frame_bench.cpp"
-#undef Window
-#undef result_json
-#undef wmain
-
+// The real workload, options, content loading and lifecycle, through
+// LineSweeperFrameBench's measure_frames; no game code is copied here. Only
+// the hidden window and the result's classification differ, and hidden
+// startup cannot supply display-pacing acceptance.
 int wmain(int argc, wchar_t* argv[])
 {
 	try
@@ -150,11 +109,15 @@ int wmain(int argc, wchar_t* argv[])
 			static_cast<std::size_t>(options.sample));
 		std::puts("COUNTS ONLY: instrumented timings are intrusive; no pacing, low-tier or p99 "
 			"acceptance.");
-		const int result = descriptor_count_workload_main(argc, argv);
-		if (result != 0)
-		{
-			return result;
-		}
+		linesweeper_frame_bench::Result result = linesweeper_frame_bench::measure_frames(
+			options, linesweeper_frame_bench::WindowVisibility::hidden);
+		result.measurement_class = measurement_class;
+		linesweeper_frame_bench::atomic_write(options.output,
+			linesweeper_frame_bench::result_json(options, result));
+		std::printf("Wrote %d retained frames to %ls (%s, %s).\n",
+			options.sample, options.output.c_str(),
+			result.device.backend.c_str(), result.measurement_class.c_str());
+
 		if (incomplete || active.load(std::memory_order_relaxed) || rows_used != rows.size())
 		{
 			throw std::runtime_error("Descriptor census did not capture exactly the requested "
@@ -190,6 +153,9 @@ int wmain(int argc, wchar_t* argv[])
 	}
 	catch (const std::exception& error)
 	{
+		std::fputs("D3D12DescriptorCountProbe takes LineSweeperFrameBench's options.\n",
+			stderr);
+		linesweeper_frame_bench::print_usage();
 		std::fprintf(stderr, "D3D12DescriptorCountProbe refused: %s\n", error.what());
 		return 1;
 	}

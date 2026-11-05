@@ -67,7 +67,8 @@ namespace bench
 	// machine.
 	//
 	// Returns an empty string when the check passes, and the failure sentence
-	// when it does not, so the caller decides whether that is fatal.
+	// when it does not, so the caller decides whether that is fatal. A small
+	// case that measured no time at all fails: nothing was compared.
 	std::string check_scaling(const Result& small, const Result& large,
 		double allowed_growth);
 }

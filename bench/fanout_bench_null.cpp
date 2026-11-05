@@ -39,9 +39,9 @@
 // only Renderer that exists without a window and an adapter is this one -
 // bench/CMakeLists.txt lists this file or fanout_bench_absent.cpp beside it,
 // never both, and that file is where the four configurations without a fan-out
-// case say so out loud. scene_bench.cpp's hand-copied cull stays exactly as it
-// is: it builds in all five, and its comment already says why a duplicated
-// loop beats a case that measures a different thing depending on the preset.
+// case say so out loud. scene_bench.cpp keeps its copy of the cull: it builds
+// in all five, and its comment says why a copied loop beats a case that
+// measures a different thing depending on the preset.
 //
 // WHAT THE NUMBER IS AND IS NOT. Under this backend a draw is an entry pushed
 // into a vector - engine/render/null/recording.h - so what the workers are
@@ -315,4 +315,9 @@ std::string run_fanout_benchmarks()
 	}
 
 	return observe_threads(harness, partitioner, pool);
+}
+
+bool fanout_measured()
+{
+	return true;
 }

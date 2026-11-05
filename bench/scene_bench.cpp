@@ -48,13 +48,12 @@ namespace
 		{
 		}
 
-		void update(float dt) override { this->age_ += dt; }
+		void update(float /*dt*/) override {}
 		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 	private:
 		RectangleF rectangle_;
-		float age_ = 0.0f;
 	};
 
 	class BenchCollider final : public CollisionObject
@@ -66,7 +65,7 @@ namespace
 		{
 		}
 
-		void update(float dt) override { this->age_ += dt; }
+		void update(float /*dt*/) override {}
 		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
@@ -78,24 +77,21 @@ namespace
 		CollisionMask mask() const override { return this->mask_; }
 		CollisionTag tag() const override { return 0; }
 
-		// Counted rather than acted on. Separating here would move the
+		// Ignored rather than acted on. Separating here would move the
 		// rectangles and change what the next repetition measures, and what is
 		// being timed is the sweep that finds the contacts, not a game's
 		// response to them.
 		void on_contact(const CollisionObject& /*other*/,
 			const Vector2F& /*normal*/, float /*penetration*/) override
 		{
-			this->contacts_++;
 		}
 
 		bool for_deletion() const override { return false; }
 
 	private:
 		RectangleF rectangle_;
-		int contacts_ = 0;
 		CollisionLayer layer_ = 0;
 		CollisionMask mask_ = 0;
-		float age_ = 0.0f;
 	};
 
 	int side_of(int count)
@@ -115,55 +111,74 @@ namespace
 		return RectangleF(x, y, size, size);
 	}
 
+	struct BenchScene
+	{
+		std::unique_ptr<Scene> scene;
+
+		// The plain objects in insertion order. Scene keeps its own list of
+		// them private, and the cull below walks them as Scene::draw_views
+		// does.
+		std::vector<GameObject*> objects;
+	};
+
 	// Half world geometry and half movers, so the layer filter rejects some
 	// pairs and accepts others - a sweep where everything is filtered out
 	// measures the filter and nothing else.
-	std::unique_ptr<Scene> build_scene(int collider_count, int object_count)
+	BenchScene build_scene(int collider_count, int object_count)
 	{
-		std::unique_ptr<Scene> scene = std::make_unique<Scene>(nullptr, nullptr);
+		BenchScene built;
+		built.scene = std::make_unique<Scene>(nullptr, nullptr);
 
 		const int side = side_of(collider_count);
 		for (int i = 0; i < collider_count; i++)
 		{
 			const bool mover = (i % 2) == 1;
-			scene->add(std::make_unique<BenchCollider>(cell_at(i, side),
+			built.scene->add(std::make_unique<BenchCollider>(cell_at(i, side),
 				mover ? mover_layer : world_layer,
 				mover ? (world_layer | mover_layer) : mover_layer));
 		}
 
 		const int object_side = side_of(object_count);
+		built.objects.reserve(static_cast<size_t>(object_count));
 		for (int i = 0; i < object_count; i++)
 		{
-			scene->add(std::make_unique<BenchObject>(cell_at(i, object_side)));
+			built.objects.push_back(built.scene->add(
+				std::make_unique<BenchObject>(cell_at(i, object_side))));
 		}
 
-		scene->end_tick();
-		return scene;
+		built.scene->end_tick();
+		return built;
 	}
 
-	// The render cull, lifted out of Scene::draw_views.
+	// The world units per pixel of a camera at scale 1, which is what
+	// Scene::draw_views passes to cull_bounds as 1 / camera.scale.
+	constexpr float units_per_pixel = 1.0f;
+
+	// The per-view cull of Scene::draw_views (engine/scene/scene.cpp),
+	// copied: the plain objects and then the collision objects, each one's
+	// cull_bounds at the view's world units per pixel tested against the
+	// visible rectangle. A change to that loop changes this copy with it.
 	//
-	// It is duplicated here rather than driven through Scene::draw because
-	// draw needs a Renderer. The null backend now supplies one with no device
-	// (engine/render/null/), but only in the configuration that builds it, and
-	// this benchmark builds in all five - so driving it through scene.draw()
-	// would measure a different thing depending on which preset ran it, which
-	// is worse than a duplicated loop. The loop is the two lines that matter -
-	// bounds() against the visible rectangle - and measuring it separately is
-	// honest as long as this comment says so.
-	//
-	// THE REAL THING IS MEASURED NOW, NEXT DOOR AND NOT HERE.
-	// bench/fanout_bench_null.cpp drives Scene::draw itself, both branches of
-	// it, in the one configuration that can - which is the case this stand-in
-	// could never be, and it is also why this one stays: the two rows it adds
-	// are absent under four render backends out of five, and these four phases
-	// are not.
-	int cull_count(const Scene& scene, const RectangleF& visible)
+	// Copied rather than driven through Scene::draw because draw needs a
+	// Renderer, and only the null backend has one without a window and a
+	// device, while this benchmark builds under all five. Driving draw would
+	// measure a different thing depending on which preset ran it.
+	// bench/fanout_bench_null.cpp drives Scene::draw itself in the null
+	// configuration; this row is the cull every configuration measures.
+	int cull_count(const BenchScene& built, const RectangleF& visible)
 	{
 		int drawn = 0;
-		for (CollisionObject* const object : scene.collision_objects())
+		for (GameObject* const object : built.objects)
 		{
-			if (object->bounds().intersects(visible))
+			if (object->cull_bounds(units_per_pixel).intersects(visible))
+			{
+				drawn++;
+			}
+		}
+
+		for (CollisionObject* const object : built.scene->collision_objects())
+		{
+			if (object->cull_bounds(units_per_pixel).intersects(visible))
 			{
 				drawn++;
 			}
@@ -180,7 +195,8 @@ void run_scene_benchmarks()
 
 	for (int count : counts)
 	{
-		std::unique_ptr<Scene> scene = build_scene(count, count);
+		const BenchScene built = build_scene(count, count);
+		const std::unique_ptr<Scene>& scene = built.scene;
 		std::vector<Contact> swept;
 
 		bench::record(bench::run("Scene::update", count,
@@ -205,8 +221,8 @@ void run_scene_benchmarks()
 		// case it exists for.
 		const RectangleF visible(0.0f, 0.0f, 640.0f, 360.0f);
 		bench::record(bench::run("render cull (one view)", count,
-			[&scene, &visible] {
-				volatile int drawn = cull_count(*scene, visible);
+			[&built, &visible] {
+				volatile int drawn = cull_count(built, visible);
 				(void)drawn;
 			}));
 	}

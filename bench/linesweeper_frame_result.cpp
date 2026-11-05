@@ -24,20 +24,9 @@ namespace linesweeper_frame_bench
 		constexpr int max_frame_count = 100000;
 		constexpr int max_refresh = 1000;
 
-		bool ascii_token(const std::wstring& value)
-		{
-			if (value.empty() || value.size() > 96)
-			{
-				return false;
-			}
-			return std::all_of(value.begin(), value.end(), [](wchar_t character)
-				{
-					return (character >= L'a' && character <= L'z') ||
-						(character >= L'A' && character <= L'Z') ||
-						(character >= L'0' && character <= L'9') ||
-						character == L'-' || character == L'_' || character == L'.';
-				});
-		}
+		// The longest --run identifier accepted, which the result JSON records
+		// as its "run".
+		constexpr std::size_t max_run_length = 96;
 
 		std::string ascii_bytes(const std::wstring& value)
 		{
@@ -50,9 +39,24 @@ namespace linesweeper_frame_bench
 			return result;
 		}
 
-		std::string narrow_ascii(const std::wstring& value)
+		std::string run_identifier(const std::wstring& value)
 		{
-			if (!ascii_token(value))
+			if (value.empty())
+			{
+				throw std::invalid_argument("--run must not be empty.");
+			}
+			if (value.size() > max_run_length)
+			{
+				throw std::invalid_argument("--run must be at most " +
+					std::to_string(max_run_length) + " characters.");
+			}
+			if (!std::all_of(value.begin(), value.end(), [](wchar_t character)
+				{
+					return (character >= L'a' && character <= L'z') ||
+						(character >= L'A' && character <= L'Z') ||
+						(character >= L'0' && character <= L'9') ||
+						character == L'-' || character == L'_' || character == L'.';
+				}))
 			{
 				throw std::invalid_argument(
 					"Run identifiers must contain only ASCII letters, digits, '.', '_' or '-'.");
@@ -165,7 +169,9 @@ namespace linesweeper_frame_bench
 		std::fwprintf(stderr,
 			L"Usage: LineSweeperFrameBench --output FILE.json --run ID "
 			L"--release-hash SHA256 [--warmup FRAMES] [--sample FRAMES] "
-			L"[--refresh HZ] [--pacing software|presentation]\n");
+			L"[--refresh HZ] [--pacing software|presentation]\n"
+			L"ID is 1 to %zu ASCII letters, digits, '.', '_' or '-'.\n",
+			max_run_length);
 	}
 
 	Options parse_options(int argc, wchar_t* argv[])
@@ -196,7 +202,7 @@ namespace linesweeper_frame_bench
 			}
 			else if (name == L"--run" && !run_seen)
 			{
-				options.run = narrow_ascii(value);
+				options.run = run_identifier(value);
 				run_seen = true;
 			}
 			else if (name == L"--release-hash" && !release_seen)
