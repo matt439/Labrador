@@ -55,10 +55,6 @@ namespace labrador
 
 	UiWidget* FocusGroup::focused(int slot) const
 	{
-		// Throws rather than clamping. A slot index is a pad number or a
-		// viewport number, and a page that asks for one it did not reserve has
-		// a bug the player would otherwise experience as a cursor that will
-		// not move.
 		const int index = this->focused_.at(static_cast<size_t>(slot));
 		return index < 0 ? nullptr
 			: this->buttons_[static_cast<size_t>(index)].visual();
@@ -66,12 +62,13 @@ namespace labrador
 
 	bool FocusGroup::set_focused(int slot, const UiWidget* widget)
 	{
+		int& slot_focus = this->focused_.at(static_cast<size_t>(slot));
 		const int index = this->index_of(widget);
 		if (index < 0)
 		{
 			return false;
 		}
-		this->focused_.at(static_cast<size_t>(slot)) = index;
+		slot_focus = index;
 		this->refresh_style();
 		return true;
 	}
@@ -155,7 +152,7 @@ namespace labrador
 		this->refresh_style();
 	}
 
-	void FocusGroup::refresh_style() const
+	void FocusGroup::refresh_style()
 	{
 		for (size_t i = 0; i < this->buttons_.size(); i++)
 		{

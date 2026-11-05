@@ -69,7 +69,8 @@ namespace labrador
 	public:
 		UiContainer() = default;
 		explicit UiContainer(const std::string& name);
-		// child must be non-null. Stores its name and borrows the pointer.
+		// Stores the child's name and borrows the pointer. Throws
+		// std::invalid_argument for a null child.
 		void add_child(UiObject* child);
 		// Remove the first matching child, without destroying it. No-op if absent.
 		void remove_child(const std::string& name);

@@ -235,9 +235,9 @@ namespace labrador
 			return;
 		}
 
-		const std::vector<std::pair<int, int>> ranges =
-			this->partitioner_->partition(count,
-				this->thread_pool_->max_num_threads());
+		std::vector<std::pair<int, int>>& ranges = this->draw_ranges_;
+		this->partitioner_->partition(count,
+			this->thread_pool_->max_num_threads(), ranges);
 
 		try
 		{

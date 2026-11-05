@@ -97,11 +97,18 @@ namespace labrador
 
 		int slot_count() const;
 
+		// SLOTS ARE CHECKED. focused, set_focused, move and activate throw
+		// std::out_of_range if `slot` is outside [0, slot_count()), rather
+		// than clamping. A slot index is a pad number or a viewport number,
+		// and a page that asks for one it did not reserve has a bug the player
+		// would otherwise experience as a cursor that will not move.
 		UiWidget* focused(int slot) const;
+
 		// Moves the slot's focus. A widget that is not in this group is
 		// rejected rather than silently stored, because a focus pointing at
 		// something the walk cannot reach is a dead end a player cannot
-		// escape.
+		// escape. The slot is checked first, so a bad slot throws whatever
+		// the widget is.
 		//
 		// A disabled widget is accepted, and is not that dead end. move()
 		// takes `from` as itself rather than as a candidate, so a cursor on a
@@ -156,7 +163,9 @@ namespace labrador
 		// what this offers it is a repaint fighting a repaint, and the group
 		// wins every time, because the next add() or move() paints all of them
 		// back to one of two colours.
-		void refresh_style() const;
+		//
+		// Not const: it writes the colour of every widget the group holds.
+		void refresh_style();
 
 	private:
 		int index_of(const UiWidget* widget) const;

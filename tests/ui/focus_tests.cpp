@@ -353,6 +353,27 @@ TEST_CASE("a slot index outside the group throws rather than clamping")
 
 	CHECK_THROWS_AS(group.focused(2), std::out_of_range);
 	CHECK_THROWS_AS(group.focused(-1), std::out_of_range);
+	CHECK_THROWS_AS(group.move(2, Direction::down), std::out_of_range);
+	CHECK_THROWS_AS(group.activate(2), std::out_of_range);
+}
+
+TEST_CASE("set_focused checks the slot before the widget")
+{
+	// The same caller mistake gets the same answer whichever widget it
+	// passes: a bad slot throws, held widget or not.
+	StubWidget held(0.0f, 0.0f, 100.0f, 50.0f);
+	StubWidget outside(0.0f, 100.0f, 100.0f, 50.0f);
+
+	FocusGroup group(2);
+	group.add(&held);
+
+	CHECK_THROWS_AS(group.set_focused(2, &held), std::out_of_range);
+	CHECK_THROWS_AS(group.set_focused(2, &outside), std::out_of_range);
+	CHECK_THROWS_AS(group.set_focused(-1, nullptr), std::out_of_range);
+
+	CHECK(group.set_focused(1, &held));
+	CHECK_FALSE(group.set_focused(1, &outside));
+	CHECK(group.focused(1) == &held);
 }
 
 TEST_CASE("a group must have at least one slot, and widgets must be real")

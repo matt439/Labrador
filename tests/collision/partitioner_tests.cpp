@@ -2,7 +2,10 @@
 
 #include "engine/collision/partitioner.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using labrador::Partitioner;
@@ -27,12 +30,19 @@ namespace
 		}
 		return next == num_elements;
 	}
+
+	Ranges split(int num_elements, int num_partitions)
+	{
+		const Partitioner partitioner;
+		Ranges ranges;
+		partitioner.partition(num_elements, num_partitions, ranges);
+		return ranges;
+	}
 }
 
 TEST_CASE("an exact division gives equal ranges")
 {
-	const Partitioner partitioner;
-	const Ranges ranges = partitioner.partition(12, 4);
+	const Ranges ranges = split(12, 4);
 
 	CHECK(ranges == Ranges{ {0, 3}, {3, 6}, {6, 9}, {9, 12} });
 	CHECK(covers_exactly(ranges, 12));
@@ -40,8 +50,7 @@ TEST_CASE("an exact division gives equal ranges")
 
 TEST_CASE("the remainder is spread over the leading ranges, not piled on the last")
 {
-	const Partitioner partitioner;
-	const Ranges ranges = partitioner.partition(10, 4);
+	const Ranges ranges = split(10, 4);
 
 	CHECK(ranges == Ranges{ {0, 3}, {3, 6}, {6, 8}, {8, 10} });
 	CHECK(covers_exactly(ranges, 10));
@@ -49,8 +58,7 @@ TEST_CASE("the remainder is spread over the leading ranges, not piled on the las
 
 TEST_CASE("fewer elements than partitions gives one range each and no empties")
 {
-	const Partitioner partitioner;
-	const Ranges ranges = partitioner.partition(2, 8);
+	const Ranges ranges = split(2, 8);
 
 	CHECK(ranges == Ranges{ {0, 1}, {1, 2} });
 	CHECK(covers_exactly(ranges, 2));
@@ -59,24 +67,25 @@ TEST_CASE("fewer elements than partitions gives one range each and no empties")
 TEST_CASE("no elements gives no ranges")
 {
 	const Partitioner partitioner;
-	CHECK(partitioner.partition(0, 4).empty());
-	CHECK(partitioner.partition(size_t{ 0 }, 4).empty());
+	CHECK(split(0, 4).empty());
+
+	Ranges ranges{ {0, 1} };
+	partitioner.partition(size_t{ 0 }, 4, ranges);
+	CHECK(ranges.empty());
 }
 
 TEST_CASE("one partition gives the whole range")
 {
-	const Partitioner partitioner;
-	CHECK(partitioner.partition(7, 1) == Ranges{ {0, 7} });
+	CHECK(split(7, 1) == Ranges{ {0, 7} });
 }
 
 TEST_CASE("coverage holds across every element count and partition count")
 {
-	const Partitioner partitioner;
 	for (int elements = 0; elements <= 40; elements++)
 	{
 		for (int partitions = 1; partitions <= 17; partitions++)
 		{
-			const Ranges ranges = partitioner.partition(elements, partitions);
+			const Ranges ranges = split(elements, partitions);
 
 			CAPTURE(elements);
 			CAPTURE(partitions);
@@ -106,13 +115,48 @@ TEST_CASE("a partition count of zero is rejected rather than divided by")
 
 	// This is the live path: ApplicationOptions::max_threads reaches here
 	// through ThreadPool, on every frame of every view.
-	CHECK_THROWS_AS(partitioner.partition(10, 0), std::invalid_argument);
-	CHECK_THROWS_AS(partitioner.partition(10, -1), std::invalid_argument);
-	CHECK_THROWS_AS(partitioner.partition(size_t{ 10 }, 0), std::invalid_argument);
+	Ranges ranges;
+	CHECK_THROWS_AS(partitioner.partition(10, 0, ranges), std::invalid_argument);
+	CHECK_THROWS_AS(partitioner.partition(10, -1, ranges), std::invalid_argument);
+	CHECK_THROWS_AS(partitioner.partition(size_t{ 10 }, 0, ranges),
+		std::invalid_argument);
 }
 
 TEST_CASE("a negative element count is rejected")
 {
 	const Partitioner partitioner;
-	CHECK_THROWS_AS(partitioner.partition(-1, 4), std::invalid_argument);
+	Ranges ranges;
+	CHECK_THROWS_AS(partitioner.partition(-1, 4, ranges), std::invalid_argument);
+}
+
+TEST_CASE("the ranges replace what the vector held, and its storage is reused")
+{
+	// Scene::draw partitions its views every frame into one kept vector, so
+	// a second call must not append to the first and must not allocate.
+	const Partitioner partitioner;
+	Ranges ranges;
+	partitioner.partition(12, 4, ranges);
+	REQUIRE(ranges.size() == 4);
+	const std::pair<int, int>* storage = ranges.data();
+
+	partitioner.partition(10, 4, ranges);
+	CHECK(ranges == Ranges{ {0, 3}, {3, 6}, {6, 8}, {8, 10} });
+	CHECK(ranges.data() == storage);
+
+	partitioner.partition(size_t{ 3 }, 2, ranges);
+	CHECK(ranges == Ranges{ {0, 2}, {2, 3} });
+	CHECK(ranges.data() == storage);
+}
+
+TEST_CASE("a rejected call leaves the vector as it was")
+{
+	const Partitioner partitioner;
+	Ranges ranges;
+	partitioner.partition(4, 2, ranges);
+	const Ranges before = ranges;
+
+	CHECK_THROWS_AS(partitioner.partition(4, 0, ranges), std::invalid_argument);
+	CHECK(ranges == before);
+	CHECK_THROWS_AS(partitioner.partition(-1, 2, ranges), std::invalid_argument);
+	CHECK(ranges == before);
 }

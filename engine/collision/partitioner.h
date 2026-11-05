@@ -20,15 +20,22 @@ namespace labrador
 		// partitions: an empty range is work for a worker that has none, so
 		// num_elements == 0 returns no ranges at all.
 		//
+		// The ranges replace the contents of `ranges`, whose capacity is
+		// reused: a caller that keeps the vector across frames allocates
+		// nothing once it has held as many ranges as it is asked for
+		// (PHILOSOPHY, Performance: per-frame code performs no heap
+		// allocation).
+		//
 		// Preconditions, checked: num_partitions >= 1 and num_elements >= 0.
 		// num_partitions is a divisor on the first line, and it arrives from
 		// ApplicationOptions::max_threads by way of ThreadPool, and unchecked
 		// anywhere on that route a zero in a config file is an integer
-		// divide-by-zero on the first frame of the first match.
-		std::vector<std::pair<int, int>>
-			partition(int num_elements, int num_partitions) const;
+		// divide-by-zero on the first frame of the first match. A failed
+		// check throws std::invalid_argument and leaves `ranges` unchanged.
+		void partition(int num_elements, int num_partitions,
+			std::vector<std::pair<int, int>>& ranges) const;
 
-		std::vector<std::pair<int, int>>
-			partition(size_t num_elements, int num_partitions) const;
+		void partition(size_t num_elements, int num_partitions,
+			std::vector<std::pair<int, int>>& ranges) const;
 	};
 }

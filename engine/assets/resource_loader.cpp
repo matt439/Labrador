@@ -92,7 +92,7 @@ namespace labrador
 		this->manifest_ = std::move(manifest);
 	}
 
-	void ResourceLoader::reload_device_resources() const
+	void ResourceLoader::reload_device_resources()
 	{
 		// The manifest was walked once already, so every kind in it resolves -
 		// load_manifest threw if one did not.
@@ -111,21 +111,21 @@ namespace labrador
 	// that decides a manifest entry becomes one - which is this module's job and
 	// names no graphics type.
 	void ResourceLoader::load_texture(const std::string& directory,
-		const std::string& name) const
+		const std::string& name)
 	{
 		load_texture_asset(*this->renderer_, *this->render_resources_,
 			directory, name);
 	}
 
 	void ResourceLoader::load_sprite_font(const std::string& directory,
-		const std::string& name) const
+		const std::string& name)
 	{
 		load_font_asset(*this->renderer_, *this->render_resources_,
 			directory, name);
 	}
 
 	void ResourceLoader::load_sprite_sheet(const std::string& directory,
-		const std::string& name) const
+		const std::string& name)
 	{
 		// The sheet's texture is loaded under the sheet's own name: they are one
 		// asset with two files, and the manifest names it once.
@@ -137,7 +137,7 @@ namespace labrador
 	}
 
 	void ResourceLoader::load_sound_bank(bool optional,
-		const std::string& directory, const std::string& name) const
+		const std::string& directory, const std::string& name)
 	{
 		// THE DEFINITION IS READ FIRST, AND THE ORDER IS LOAD-BEARING. A backend
 		// with no container answers wave_index out of the wave list this parse

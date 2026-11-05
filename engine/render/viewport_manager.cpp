@@ -1,6 +1,7 @@
 #include "engine/render/viewport_manager.h"
 
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace labrador
@@ -23,6 +24,13 @@ namespace labrador
 
 	Viewport ViewportManager::player_viewport(int player_num) const
 	{
+		const int count = this->viewport_count_from_layout(this->layout_);
+		if (player_num < 0 || player_num >= count)
+		{
+			throw std::out_of_range("ViewportManager::player_viewport: index " +
+				std::to_string(player_num) + " is outside this layout's " +
+				std::to_string(count) + " viewports");
+		}
 		return this->calculate_viewport(
 			this->layout_, player_num, this->resolution_manager_->resolution_vec());
 	}
@@ -153,9 +161,7 @@ namespace labrador
 			// Three players occupy three quadrants; index 3 is the one nobody
 			// is in. It is a real viewport rather than an error because
 			// callers that cover the whole screen - the menus - still have to
-			// draw it. Note the index: asking all_viewports() for *4* instead
-			// falls through to the fullscreen fallback, and every menu draws a
-			// fourth full-screen pass over the other three.
+			// draw it.
 			case 3:
 				return top_right;
 			default:

@@ -279,6 +279,11 @@ namespace labrador
 		// it diverge. It is a scene function rather than a general parallel-for
 		// on ThreadPool because what it parallelises is views, which is a thing
 		// only a scene knows it has.
+		//
+		// Unlike an object's draw(), this is not entered by several threads
+		// at once: it is the fan-out's single caller, and it keeps the view
+		// ranges it hands to workers in a buffer reused across frames. Call it
+		// from one thread at a time.
 		void draw(Renderer& renderer, const ViewOverlay& overlay = {}) const;
 
 	private:
@@ -316,5 +321,12 @@ namespace labrador
 
 		ThreadPool* thread_pool_ = nullptr;
 		const Partitioner* partitioner_ = nullptr;
+
+		// The view ranges draw() hands to workers. Kept across frames so a
+		// split-screen frame allocates nothing after the first. Mutable
+		// because draw() is const to the world it reads; the buffer is
+		// scratch owned by the one thread driving the fan-out, never read by
+		// a worker.
+		mutable std::vector<std::pair<int, int>> draw_ranges_;
 	};
 }

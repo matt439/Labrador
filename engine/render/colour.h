@@ -9,12 +9,12 @@ namespace labrador
 	namespace detail
 	{
 		// Colour's constructors clamp, and they are constexpr so that the
-		// palette below costs no initialisation at all. clamp is
-		// neither, and making it so would be a change to a library this one
-		// only borrows from.
+		// palette below costs no initialisation at all. NaN maps to 0, as
+		// anything below 0 does, so a 0/0 channel from Colour division is in
+		// [0, 1] like every other channel.
 		constexpr float clamp01(float value)
 		{
-			return value < 0.0f ? 0.0f : (value > 1.0f ? 1.0f : value);
+			return !(value > 0.0f) ? 0.0f : (value > 1.0f ? 1.0f : value);
 		}
 	}
 
