@@ -227,9 +227,7 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 			() => `<p><a href="${sitePath(`/docs/reference/${header.module}/`)}">Browse the ${header.module} module</a></p>`
 		);
 		blocks.push(() => `<p class="ref-audience"><strong>Audience: ${header.audience}.</strong>` +
-			(header.source === 'engine/render/resource_factory.h'
-				? ' Game code can use <code>white_texture_name</code>; the factories are renderer implementation helpers.'
-				: '') + '</p>');
+			(header.audienceNote ? ` ${header.audienceNote}` : '') + '</p>');
 		blocks.push(
 			() =>
 				`<p class="ref-include"><code>#include "${escapeHtml(header.source)}"</code>` +
@@ -301,17 +299,22 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 			: '<p>No guide or concept page links to this header yet.</p>';
 	}
 
+	// A block that fails names the header it was generating.
+	function render(header: ReferenceHeader, block: () => string): string {
+		try {
+			return block();
+		} catch (error) {
+			throw new Error(`'${header.source}': ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+		}
+	}
+
 	function referencePage(header: ReferenceHeader): ReferencePage {
 		const { blocks, description } = layout(header);
 		const markdown = blocks
-			.map((block) => (typeof block === 'function' ? block() : `${'#'.repeat(block.depth)} ${block.text}`))
+			.map((block) => (typeof block === 'function' ? render(header, block) : `${'#'.repeat(block.depth)} ${block.text}`))
 			.filter(Boolean)
 			.join('\n\n');
 		return { header, markdown, description };
-	}
-
-	function referencePages(): ReferencePage[] {
-		return REFERENCE_HEADERS.map(referencePage);
 	}
 
 	// Module lists use the same inventory as the sidebar and the header pages, so
@@ -340,5 +343,5 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 				'[About the reference](/docs/reference/) lists every module and explains how these pages are generated.',
 		].join('\n\n');
 	}
-	return { layout, referencePage, referencePages, moduleReferencePage };
+	return { layout, referencePage, moduleReferencePage };
 }

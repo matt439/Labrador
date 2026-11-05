@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
 import {
-	chooseIosDevice, driverArguments, resolveDriver, safariTabsToLinks, targetCapabilities, TARGETS,
+	chooseIosDevice, driverArguments, findDriver, resolveDriver, safariTabsToLinks, targetCapabilities, TARGETS,
 } from '../acceptance/browsers.mjs';
 import {
 	ELEMENT_KEY, Keys, WebDriverError, command, keyActions, newSession, pressKeys, tap, waitUntil,
@@ -296,6 +296,11 @@ test('drivers come from an explicit path, the runner folder, then PATH', () => {
 	assert.equal(resolveDriver('chrome', { env: {}, platform: 'win32' }), 'chromedriver.exe');
 	assert.equal(resolveDriver('firefox', { env: { GECKOWEBDRIVER: '/no/such/folder' }, platform: 'linux' }), 'geckodriver');
 	assert.equal(resolveDriver('ios', { env: {}, platform: 'darwin' }), 'safaridriver');
+	const edge = { name: 'msedgedriver', folderVariable: 'EDGEWEBDRIVER' };
+	assert.equal(findDriver(edge, { driver: 'C:/x/msedgedriver.exe', env: {} }), 'C:/x/msedgedriver.exe');
+	assert.equal(findDriver(edge, { env: { EDGEWEBDRIVER: '/no/such/folder' }, platform: 'win32' }), 'msedgedriver.exe');
+	assert.equal(findDriver(edge, { env: {}, platform: 'linux' }), 'msedgedriver');
+	assert.throws(() => resolveDriver('edge', { env: {} }), /Unknown target "edge"/);
 	assert.deepEqual(driverArguments('chrome', 9515), ['--port=9515']);
 	assert.deepEqual(driverArguments('safari', 4444), ['-p', '4444']);
 	assert.deepEqual(driverArguments('firefox', 4444).slice(0, 2), ['--port', '4444']);

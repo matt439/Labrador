@@ -9,10 +9,10 @@
 
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { docsLoader } from '@astrojs/starlight/loaders';
-import { siteContentFileURL } from './markdown-plugins';
-import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug, validateReferenceAudiences, type PublishedDocument } from './published';
-import { EXPLANATION_FOLDERS, explanationDependencies, forgetIndexes, moduleReferencePage, referencePage, unlistedHeaders } from './reference';
-import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository';
+import { siteContentFileURL } from './markdown-plugins.ts';
+import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug, validateReferenceAudiences, type PublishedDocument } from './published.ts';
+import { EXPLANATION_FOLDERS, explanationDependencies, forgetIndexes, moduleReferencePage, referencePage, unlistedHeaders } from './reference.ts';
+import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository.ts';
 
 async function store(
 	context: LoaderContext,

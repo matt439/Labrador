@@ -216,6 +216,46 @@ test('a GitHub release that is not exactly the pinned immutable asset and its st
 	await assert.rejects(verifyPublishedVersions(options(fixture, { fetch, token: '' })), /expected GITHUB_TOKEN for the GitHub releases API, found none/);
 });
 
+test('the GitHub releases API is retried through network errors, 5xx and 429, and other answers are decisive', async (t) => {
+	const fixture = checkout(t);
+	const { entry, archives } = await published(t, fixture);
+	write(fixture.website, 'published-versions.json', manifest([entry]));
+	const url = `${API}v0.3.0`;
+	const answering = (...steps) => {
+		const { fetch: answer } = site({ releases: { 'v0.3.0': githubRelease(entry) }, archives });
+		const calls = [];
+		let call = 0;
+		const fetch = async (target, requestOptions) => {
+			if (target !== url) return answer(target, requestOptions);
+			calls.push(target);
+			const step = steps[Math.min(call++, steps.length - 1)];
+			return step ? step() : answer(target, requestOptions);
+		};
+		return { fetch, calls };
+	};
+	const failed = () => { throw new TypeError('fetch failed'); };
+	const busy = () => response('busy', { status: 502, url });
+	const limited = () => response('slow down', { status: 429, url });
+	for (const first of [failed, busy, limited]) {
+		const slept = [];
+		const { fetch, calls } = answering(first, first, null);
+		await verifyPublishedVersions(options(fixture, { fetch, sleep: async (ms) => { slept.push(ms); } }));
+		assert.deepEqual(calls, [url, url, url]);
+		assert.deepEqual(slept.slice(0, 2), [1000, 2000]);
+	}
+	for (const [always, expected] of [
+		[failed, /GitHub release: expected a response from .*, found fetch failed \(after 4 attempts\)/],
+		[busy, /GitHub release: expected HTTP 200 from .*, found 502 \(after 4 attempts\)/],
+	]) {
+		const { fetch, calls } = answering(always);
+		await assert.rejects(verifyPublishedVersions(options(fixture, { fetch })), expected);
+		assert.deepEqual(calls, [url, url, url, url]);
+	}
+	const { fetch, calls } = answering(() => response('Forbidden', { status: 403, url }));
+	await assert.rejects(verifyPublishedVersions(options(fixture, { fetch })), /GitHub release: expected HTTP 200 from .*, found 403$/);
+	assert.deepEqual(calls, [url]);
+});
+
 test("an entry whose commit is not the one origin's tag peels to is refused", async (t) => {
 	const fixture = checkout(t);
 	const { archive, entry } = await releaseAsset(t, { commit: 'b'.repeat(40), sourceDate: SOURCE_DATE });

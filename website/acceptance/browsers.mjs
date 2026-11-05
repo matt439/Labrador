@@ -72,6 +72,10 @@ export const SIMULATOR_BOOT_TIMEOUT_MS = 180_000;
 const SIMULATOR_BOOT_ATTEMPTS = 3;
 const DRIVER_START_ATTEMPTS = 3;
 const SESSION_ATTEMPTS = 4;
+// A pause after the simulator's Safari is relaunched, before a session is
+// asked for. It is a chosen allowance, not a measured one, and it does not
+// establish readiness: newSession's attempts after it do.
+const SAFARI_RELAUNCH_PAUSE_MS = 5_000;
 const OUTPUT_LIMIT = 8_192;
 
 const DRIVERS = Object.freeze({
@@ -85,11 +89,10 @@ function executableName(name, platform) {
 	return platform === 'win32' ? `${name}.exe` : name;
 }
 
-// The driver to spawn: an explicit path, the runner's folder variable when it
-// holds the driver, or the bare name for PATH lookup.
-export function resolveDriver(target, { driver, env = process.env, platform = process.platform } = {}) {
-	const entry = DRIVERS[target];
-	if (!entry) throw new Error(`Unknown target "${target}"; expected one of ${Object.keys(TARGETS).join(', ')}.`);
+// The driver { name, folderVariable } to spawn: an explicit path, the
+// runner's folder variable when it holds the driver, or the bare name for
+// PATH lookup.
+export function findDriver(entry, { driver, env = process.env, platform = process.platform } = {}) {
 	if (driver) return driver;
 	const folder = entry.folderVariable ? env[entry.folderVariable] : undefined;
 	if (folder) {
@@ -97,6 +100,13 @@ export function resolveDriver(target, { driver, env = process.env, platform = pr
 		if (existsSync(candidate)) return candidate;
 	}
 	return executableName(entry.name, platform);
+}
+
+// The driver to spawn for an acceptance target, as findDriver finds it.
+export function resolveDriver(target, options = {}) {
+	const entry = DRIVERS[target];
+	if (!entry) throw new Error(`Unknown target "${target}"; expected one of ${Object.keys(TARGETS).join(', ')}.`);
+	return findDriver(entry, options);
 }
 
 export function driverArguments(target, port) {
@@ -226,7 +236,7 @@ export async function restartSimulatorSafari(udid, log = () => {}) {
 		.catch((error) => log(`quitting Safari in the simulator failed: ${error.message}`));
 	await simctl(['launch', udid, 'com.apple.mobilesafari'], 120_000)
 		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
-	await new Promise((resolve) => setTimeout(resolve, 5_000));
+	await new Promise((resolve) => setTimeout(resolve, SAFARI_RELAUNCH_PAUSE_MS));
 }
 
 // Types text on the hardware keyboard that the Simulator app connects to the

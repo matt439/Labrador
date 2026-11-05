@@ -9,9 +9,10 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { REPOSITORY_URL } from '../../scripts/published-versions.mjs';
 import { verifySnapshotSource } from '../../scripts/snapshot-source.mjs';
 
-export const GITHUB_REPOSITORY = 'https://github.com/matt439/Labrador';
+export const GITHUB_REPOSITORY = REPOSITORY_URL;
 
 // Edits go to the branch, never to a commit: GitHub cannot open an editor on a
 // revision that is not a branch head.

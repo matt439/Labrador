@@ -1,7 +1,7 @@
 // The Emscripten version Labrador's browser build is built and tested with,
 // read from the pin in CI's wasm job, so a page that tells a reader which
 // version to install cannot name another one.
-import { readRepositoryFile } from './repository';
+import { readRepositoryFile } from './repository.ts';
 
 const WORKFLOW = '.github/workflows/ci.yml';
 const pin = readRepositoryFile(WORKFLOW).match(/^\s*EMSDK_VERSION:\s*(\S+)\s*$/m);

@@ -1,17 +1,19 @@
 // Read-only qualification of one independently built release site. This does
 // not create a published-release record or copy files into a deployment.
-import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { parse } from 'parse5';
+import { REPOSITORY_PATH } from './published-versions.mjs';
+import { regularFiles } from './snapshot-archive.mjs';
+import { FULL_COMMIT, STABLE_TAG } from './snapshot-source.mjs';
 
 const SITE_ORIGIN = 'https://labradorengine.com';
-const REPOSITORY_PATH = '/matt439/Labrador';
 const VERSION_INDEX = `${SITE_ORIGIN}/versions/`;
 
 function sourcePrefix(source) {
-	if (source?.schemaVersion !== 1 || !/^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/.test(source.tag)
-		|| !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(source.commit)
+	if (source?.schemaVersion !== 1 || !STABLE_TAG.test(source.tag)
+		|| !FULL_COMMIT.test(source.commit)
 		|| source.snapshotPath !== `/versions/${source.tag}/`) {
 		throw new Error('Snapshot output requires a verified release-source record.');
 	}
@@ -19,18 +21,8 @@ function sourcePrefix(source) {
 }
 
 function outputFiles(directory) {
-	const files = [];
-	function walk(folder) {
-		for (const entry of readdirSync(folder, { withFileTypes: true })) {
-			const filename = path.join(folder, entry.name);
-			if (entry.isSymbolicLink()) throw new Error(`Snapshot output contains a symbolic link: ${filename}`);
-			if (entry.isDirectory()) walk(filename);
-			else if (entry.isFile()) files.push(path.relative(directory, filename).split(path.sep).join('/'));
-			else throw new Error(`Snapshot output contains a non-file entry: ${filename}`);
-		}
-	}
-	walk(directory);
-	return files;
+	const kinds = { 'a symbolic link': 'a symbolic link', 'a special entry': 'a non-file entry' };
+	return regularFiles(directory, (found, name) => `Snapshot output contains ${kinds[found]}: ${path.join(directory, name)}`);
 }
 
 /** The route an output HTML file is served at, relative to its site's base. */
@@ -166,11 +158,11 @@ export async function verifySnapshotOutput(outputDirectory, sourceRecord) {
 			return;
 		}
 		if (url.origin === 'https://github.com' && url.pathname.toLowerCase().startsWith(`${REPOSITORY_PATH.toLowerCase()}/`)) {
-			const match = /^\/matt439\/Labrador\/(blob|tree|edit)\/([^/]+)(?:\/|$)/i.exec(url.pathname);
+			const match = /^\/(blob|tree|edit)\/([^/]+)(?:\/|$)/i.exec(url.pathname.slice(REPOSITORY_PATH.length));
 			// A guide may deliberately compare historical releases. Only an
 			// explicitly marked stable-tag example can leave the current source.
 			const historical = releaseExample && match && match[1].toLowerCase() !== 'edit'
-				&& /^v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/.test(match[2]);
+				&& STABLE_TAG.test(match[2]);
 			if (match && !historical && (match[1].toLowerCase() === 'edit' || match[2] !== sourceRecord.commit)) {
 				throw new Error(`${location}: source link does not name the full release commit: ${url.href}`);
 			}

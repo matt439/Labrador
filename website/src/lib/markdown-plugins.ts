@@ -6,9 +6,13 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { defineMdastPlugin, type MdastPluginEntry, type MdastVisitorContext } from 'satteri';
+import {
+	defineMdastPlugin, type MdastPluginEntry, type MdastVisitorContext, type MdxJsxFlowElement, type MdxJsxTextElement,
+} from 'satteri';
 import { DESIGN_DOCUMENTS, publishedPages } from './published.ts';
 import { codeLink } from './reference.ts';
+import { isJsxLinkName } from './reference-mentions.ts';
+import { escapeHtml } from './reference-prose.ts';
 import { REPOSITORY_ROOT, absolutePath, sourceUrl, toRepositoryPath } from './repository.ts';
 import { sitePath } from './site-path.ts';
 
@@ -60,6 +64,18 @@ function resolveRelative(url: string, fromSource: string): string {
 	return (page ?? sourceUrl(repositoryPath)) + anchor;
 }
 
+// A JSX element's href and src are site paths, as a Markdown link's URL is.
+function jsxSitePaths(node: MdxJsxFlowElement | MdxJsxTextElement, ctx: MdastVisitorContext): void {
+	const attributes = node.attributes.map((attribute) =>
+		attribute.type === 'mdxJsxAttribute' && ['href', 'src'].includes(attribute.name)
+			&& typeof attribute.value === 'string'
+			&& sitePath(attribute.value) !== attribute.value
+			? { ...attribute, value: sitePath(attribute.value) } : attribute);
+	if (attributes.some((attribute, index) => attribute !== node.attributes[index])) {
+		ctx.replaceNode(node, { ...node, attributes });
+	}
+}
+
 // Repository-relative links are resolved only for published checkout documents.
 // Every rendered root link then stays inside the selected documentation version.
 export const checkoutLinks: MdastPluginEntry = ({ fileURL }) => {
@@ -85,26 +101,8 @@ export const checkoutLinks: MdastPluginEntry = ({ fileURL }) => {
 			}
 			ctx.setProperty(node, 'url', sitePath(node.url));
 		},
-		mdxJsxFlowElement(node, ctx) {
-			const attributes = node.attributes.map((attribute) =>
-				attribute.type === 'mdxJsxAttribute' && ['href', 'src'].includes(attribute.name)
-					&& typeof attribute.value === 'string'
-					&& sitePath(attribute.value) !== attribute.value
-					? { ...attribute, value: sitePath(attribute.value) } : attribute);
-			if (attributes.some((attribute, index) => attribute !== node.attributes[index])) {
-				ctx.replaceNode(node, { ...node, attributes });
-			}
-		},
-		mdxJsxTextElement(node, ctx) {
-			const attributes = node.attributes.map((attribute) =>
-				attribute.type === 'mdxJsxAttribute' && ['href', 'src'].includes(attribute.name)
-					&& typeof attribute.value === 'string'
-					&& sitePath(attribute.value) !== attribute.value
-					? { ...attribute, value: sitePath(attribute.value) } : attribute);
-			if (attributes.some((attribute, index) => attribute !== node.attributes[index])) {
-				ctx.replaceNode(node, { ...node, attributes });
-			}
-		},
+		mdxJsxFlowElement: jsxSitePaths,
+		mdxJsxTextElement: jsxSitePaths,
 	});
 };
 
@@ -120,7 +118,7 @@ function enclosing(node: Parameters<MdastVisitorContext['parent']>[0], ctx: Mdas
 		if (type === 'link' || type === 'linkReference') {
 			return 'link';
 		}
-		if ((type === 'mdxJsxTextElement' || type === 'mdxJsxFlowElement') && /^a$|Link$/.test(name ?? '')) {
+		if ((type === 'mdxJsxTextElement' || type === 'mdxJsxFlowElement') && isJsxLinkName(name)) {
 			return 'link';
 		}
 	}
@@ -162,8 +160,6 @@ export const referenceLinks: MdastPluginEntry = ({ fileURL }) => {
 	});
 };
 
-const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
-
 // A fenced `mermaid` block becomes the element the diagram script looks for,
 // instead of a highlighted code block. ARCHITECTURE.md draws its two diagrams
 // this way because GitHub renders them, so the site has to as well.
@@ -173,7 +169,6 @@ export const mermaidBlocks = defineMdastPlugin({
 		if (node.lang !== 'mermaid') {
 			return;
 		}
-		const escaped = node.value.replace(/[&<>"]/g, (character) => ESCAPES[character]);
-		ctx.replaceNode(node, { type: 'html', value: `<pre class="mermaid">${escaped}</pre>` });
+		ctx.replaceNode(node, { type: 'html', value: `<pre class="mermaid">${escapeHtml(node.value)}</pre>` });
 	},
 });

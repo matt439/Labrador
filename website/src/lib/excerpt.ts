@@ -51,8 +51,10 @@ function find(lines: string[], text: string, from: number, path: string, role: s
 	return matches[0];
 }
 
+// Tabs and spaces both count as indentation, as find() measures it: an
+// excerpt of a space-indented JSON or CMake file loses its common indent too.
 function dedent(lines: string[]): string {
-	const indents = lines.filter((line) => line.trim() !== '').map((line) => line.match(/^\t*/)![0].length);
+	const indents = lines.filter((line) => line.trim() !== '').map((line) => line.match(/^[\t ]*/)![0].length);
 	const common = indents.length > 0 ? Math.min(...indents) : 0;
 	return lines.map((line) => line.slice(common)).join('\n');
 }

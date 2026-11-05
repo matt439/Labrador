@@ -381,7 +381,7 @@ export function createReferenceIndexes(layout: (header: ReferenceHeader) => Layo
 		excerptDependencies = [];
 	}
 	return {
-		unlistedHeaders, symbols, explanationSources, indexExplanations,
+		unlistedHeaders, symbols, indexExplanations,
 		explanationDependencies, explanations, includers, tradeOffAnchors,
 		freeFunctions, memberAnchors, codeLink, forgetIndexes,
 	};

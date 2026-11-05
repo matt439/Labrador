@@ -46,7 +46,15 @@ export function codeReferences(code: string, resolver: ReferenceResolver): CodeR
 	return links;
 }
 
-const CPP = new Set(['cpp', 'c++', 'cxx', 'cc', 'h', 'hpp']);
+// The fence languages read as C++, here and by the highlighting plugin
+// (code-links.ts), so an index counts exactly the code blocks that link.
+export const CPP_LANGUAGES: ReadonlySet<string> = new Set(['cpp', 'c++', 'cxx', 'cc', 'h', 'hpp']);
+
+// Whether a JSX element renders a link: <a>, or a component whose name ends in
+// Link. markdown-plugins.ts uses the same test to keep links out of links.
+export function isJsxLinkName(name: string | null | undefined): boolean {
+	return /^a$|Link$/.test(name ?? '');
+}
 const REFERENCE_PATH = /^\/docs\/reference\/[^/]+\/[^/]+\//;
 
 export type ExcerptReader = (source: string, from?: string, to?: string) => string;
@@ -72,18 +80,18 @@ export function referenceMentions(
 		if (node.type === 'link') add(node.url);
 		if (node.type === 'linkReference') add(definitions.get(node.identifier.toLowerCase()));
 		if (node.type === 'inlineCode' && !inHeading && !inLink) add(resolver.codeLink(node.value, page));
-		if (node.type === 'code' && CPP.has(node.lang ?? '')) code(node.value);
+		if (node.type === 'code' && CPP_LANGUAGES.has(node.lang ?? '')) code(node.value);
 		let jsxLink = false;
 		if (node.type === 'mdxJsxFlowElement' || node.type === 'mdxJsxTextElement') {
 			const attributes = new Map(node.attributes.flatMap((attribute) =>
 				attribute.type === 'mdxJsxAttribute' && typeof attribute.value === 'string'
 					? [[attribute.name, attribute.value] as const] : []));
-			jsxLink = /^a$|Link$/.test(node.name ?? '');
+			jsxLink = isJsxLinkName(node.name);
 			add(attributes.get('href'));
 			if (node.name === 'SourceFile' && readExcerpt && attributes.has('path')) {
 				const source = attributes.get('path')!;
 				const language = attributes.get('lang') ?? sourceLanguage(source);
-				if (CPP.has(language)) code(readExcerpt(source, attributes.get('from'), attributes.get('to')));
+				if (CPP_LANGUAGES.has(language)) code(readExcerpt(source, attributes.get('from'), attributes.get('to')));
 			}
 		}
 		if ('children' in node) node.children.forEach((child) => visit(child,

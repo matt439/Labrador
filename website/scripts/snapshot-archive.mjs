@@ -30,8 +30,31 @@ const TYPE_NAMES = {
 };
 const UTF8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 
-function byteCompare(a, b) {
+/** Ascending UTF-8 byte order of two strings, the order archives and indexes list paths in. */
+export function byteCompare(a, b) {
 	return Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+}
+
+/**
+ * Every regular file under directory, as forward-slash paths relative to it,
+ * in the order the directory listing gives them. A symbolic link or any other
+ * entry that is neither a file nor a directory throws refused(what, name),
+ * where what is "a symbolic link" or "a special entry" and name is the
+ * relative path.
+ */
+export function regularFiles(directory, refused) {
+	const files = [];
+	function walk(relative) {
+		for (const entry of readdirSync(path.join(directory, relative), { withFileTypes: true })) {
+			const name = relative ? `${relative}/${entry.name}` : entry.name;
+			if (entry.isSymbolicLink()) throw new Error(refused('a symbolic link', name));
+			if (entry.isDirectory()) walk(name);
+			else if (entry.isFile()) files.push(name);
+			else throw new Error(refused('a special entry', name));
+		}
+	}
+	walk('');
+	return files;
 }
 
 function checkPath(name) {
@@ -127,18 +150,8 @@ function fileHeader(name, size) {
 }
 
 function treeFiles(directory) {
-	const files = [];
-	function walk(folder) {
-		for (const entry of readdirSync(folder, { withFileTypes: true })) {
-			const filename = path.join(folder, entry.name);
-			if (entry.isSymbolicLink()) throw new Error(`Snapshot tree: expected regular files, found a symbolic link: ${filename}`);
-			if (entry.isDirectory()) walk(filename);
-			else if (entry.isFile()) files.push(path.relative(directory, filename).split(path.sep).join('/'));
-			else throw new Error(`Snapshot tree: expected regular files, found a special entry: ${filename}`);
-		}
-	}
-	walk(directory);
-	return files.sort(byteCompare);
+	return regularFiles(directory, (found, name) => `Snapshot tree: expected regular files, found ${found}: ${path.join(directory, name)}`)
+		.sort(byteCompare);
 }
 
 /**

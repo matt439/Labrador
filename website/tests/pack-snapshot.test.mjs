@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +9,7 @@ import { packSnapshot } from '../scripts/pack-snapshot.mjs';
 import { canonicalize, validateManifest } from '../scripts/published-versions.mjs';
 import { readArchive } from '../scripts/snapshot-archive.mjs';
 import { verifySnapshotOutput } from '../scripts/snapshot-output.mjs';
+import { temporaryDirectory, write } from './fixtures/snapshot-site.mjs';
 
 const TAG = 'v0.3.0';
 const SOURCE_DATE = '2026-10-20';
@@ -29,23 +29,6 @@ function git(root, ...args) {
 	}).trim();
 }
 
-function write(root, file, contents) {
-	const target = path.join(root, file);
-	mkdirSync(path.dirname(target), { recursive: true });
-	writeFileSync(target, contents);
-}
-
-function temporaryDirectory(t) {
-	const root = mkdtempSync(path.join(tmpdir(), 'labrador-pack-snapshot-'));
-	t.after(() => {
-		const target = realpathSync(root);
-		assert.equal(path.dirname(target), realpathSync(tmpdir()));
-		assert.ok(path.basename(target).startsWith('labrador-pack-snapshot-'));
-		rmSync(target, { recursive: true, force: true });
-	});
-	return root;
-}
-
 function page(route, commit) {
 	return `<!doctype html><html><head><link rel="canonical" href="${ORIGIN}${PREFIX}${route}"></head>
 	<body><p>Documentation for Labrador ${TAG} <a href="https://github.com/matt439/Labrador/commit/${commit}">Source commit</a></p></body></html>`;
@@ -53,7 +36,7 @@ function page(route, commit) {
 
 // A tagged checkout with a candidate output, as npm run snapshot:build leaves it.
 async function candidate(t, { record = true } = {}) {
-	const root = temporaryDirectory(t);
+	const root = temporaryDirectory(t, 'labrador-pack-snapshot-');
 	git(root, 'init', '--quiet');
 	git(root, 'config', 'user.name', 'Snapshot fixture');
 	git(root, 'config', 'user.email', 'snapshot@example.invalid');

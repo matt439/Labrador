@@ -15,8 +15,19 @@ const inputPaths = [
 	':(top,glob)website/*',
 ];
 
+// The grammars every release script shares. This module imports no other
+// script, so its command line runs from a copy of this file alone.
+/** A stable release tag, vMAJOR.MINOR.PATCH, capturing the three numbers. */
+export const STABLE_TAG = /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/;
+/** A full lowercase commit: SHA-1 or SHA-256. */
+export const FULL_COMMIT = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+
+export function describeError(error) {
+	return error instanceof Error ? error.message : String(error);
+}
+
 export function releaseVersion(tag) {
-	const match = /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(tag);
+	const match = STABLE_TAG.exec(tag);
 	if (!match || match[0] !== tag) {
 		throw new Error('Use a stable release tag of the form vMAJOR.MINOR.PATCH.');
 	}
@@ -26,7 +37,11 @@ export function releaseVersion(tag) {
 	return tag.slice(1);
 }
 
-function gitEnvironment() {
+/**
+ * The environment for Git and for builds that read Git: the caller's, without
+ * anything that routes Git to another repository or changes what it reads.
+ */
+export function gitEnvironment() {
 	// -C must select the supplied checkout even inside a caller's Git hook or
 	// alternate-index shell. Repository routing variables would override it.
 	const environment = { ...process.env };
@@ -68,7 +83,7 @@ export function verifySnapshotSource(root, tag) {
 		throw new Error('Release source must be its own Git checkout, not an archive inside another repository.');
 	}
 	const commit = git('rev-parse', '--verify', 'HEAD^{commit}');
-	if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(commit)) {
+	if (!FULL_COMMIT.test(commit)) {
 		throw new Error('Git did not return a full source commit.');
 	}
 	const tagRef = `refs/tags/${tag}`;

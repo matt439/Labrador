@@ -15,7 +15,7 @@ import VersionSelect from '../VersionSelect.astro';
 	// of sight. Bring it into view, after any restore, only when it is hidden.
 	const pane = document.querySelector<HTMLElement>('.sidebar-pane');
 	const current = pane?.querySelector<HTMLElement>('.sidebar-content a[aria-current="page"]');
-	if (pane && current && matchMedia('(min-width: 50em)').matches) {
+	if (pane && current && matchMedia('(min-width: 50rem)').matches) {
 		const view = pane.getBoundingClientRect();
 		const link = current.getBoundingClientRect();
 		if (link.top < view.top || link.bottom > view.bottom) {

@@ -28,20 +28,23 @@
 // with full capture, which hears NVDA read the new page as it opens, notice
 // included. Everything heard is printed; --screenshot saves the final
 // viewport.
-import { existsSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { killDriver, startDriver } from './browsers.mjs';
+import { compareTags } from '../scripts/published-versions.mjs';
+import { findDriver, killDriver, startDriver } from './browsers.mjs';
+import { FIXTURE_ONLY_PATH, FIXTURE_TAGS } from './fixture.mjs';
 import { startServer } from './server.mjs';
-import { Keys, newSession, pressKeys } from './webdriver.mjs';
+import { Keys, newSession, pressKeys, waitUntil } from './webdriver.mjs';
 
-const START = 'docs/guides/fixture-only/';
-const TARGET_LABEL = 'v0.3.0';
+// The fixture-only guide, and the oldest fixture release, which lacks it.
+const START = FIXTURE_ONLY_PATH.slice(1);
+const TARGET_LABEL = [...FIXTURE_TAGS].sort(compareTags)[0];
 const FOREGROUND_ATTEMPTS = 10;
 
 const BROWSERS = {
-	chrome: { driver: 'chromedriver', folderVariable: 'CHROMEWEBDRIVER', browserName: 'chrome', options: 'goog:chromeOptions', application: 'chrome' },
-	edge: { driver: 'msedgedriver', folderVariable: 'EDGEWEBDRIVER', browserName: 'MicrosoftEdge', options: 'ms:edgeOptions', application: 'edge' },
+	chrome: { name: 'chromedriver', folderVariable: 'CHROMEWEBDRIVER', browserName: 'chrome', options: 'goog:chromeOptions', application: 'chrome' },
+	edge: { name: 'msedgedriver', folderVariable: 'EDGEWEBDRIVER', browserName: 'MicrosoftEdge', options: 'ms:edgeOptions', application: 'edge' },
 };
 
 function parseArguments(argv) {
@@ -54,13 +57,6 @@ function parseArguments(argv) {
 	if (!options['serve-dist']) throw new Error('--serve-dist <dist> is required.');
 	if (!BROWSERS[options.browser]) throw new Error('--browser must be chrome or edge.');
 	return options;
-}
-
-function driverPath(entry, explicit) {
-	if (explicit) return explicit;
-	const folder = process.env[entry.folderVariable];
-	const candidate = folder && path.join(folder, `${entry.driver}.exe`);
-	return candidate && existsSync(candidate) ? candidate : `${entry.driver}.exe`;
 }
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -104,7 +100,7 @@ async function main() {
 		nvdaStarted = true;
 		// msedgedriver takes chromedriver's command line. A driver that cannot
 		// start throws here, and the finally below still stops NVDA.
-		driver = await startDriver(driverPath(entry, options.driver), 'chrome', {
+		driver = await startDriver(findDriver(entry, { driver: options.driver }), 'chrome', {
 			log: (line) => process.stderr.write(`${line}
 `),
 		});
@@ -137,15 +133,10 @@ async function main() {
 			window.__acceptanceOpened = false;
 			details.addEventListener('toggle', () => { if (details.open) window.__acceptanceOpened = true; }, { once: true });`);
 		await pressKeys(session, Keys.Enter);
-		const deadline = Date.now() + 10_000;
-		for (;;) {
-			const ready = await session.executeScript(`
-				const list = document.querySelector('[data-version-select] .version-choices');
-				return window.__acceptanceOpened === true && list.getAttribute('aria-busy') !== 'true' && !!list.querySelector('.current');`);
-			if (ready) break;
-			if (Date.now() > deadline) throw new Error('The selector never listed the versions.');
-			await delay(100);
-		}
+		await waitUntil(() => session.executeScript(`
+			const list = document.querySelector('[data-version-select] .version-choices');
+			return window.__acceptanceOpened === true && list.getAttribute('aria-busy') !== 'true' && !!list.querySelector('.current');`),
+		{ message: 'the selector to list the versions' });
 		let link = null;
 		for (let tabs = 0; tabs < 10 && !(link ?? '').startsWith(TARGET_LABEL); tabs += 1) {
 			await pressKeys(session, Keys.Tab);
