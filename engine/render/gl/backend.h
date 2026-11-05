@@ -106,8 +106,7 @@ namespace labrador
 	{
 	public:
 		// One table, and it is the only one whose resource type this folder
-		// owns. The font and sheet tables are RenderResources' own members;
-		// engine/render/render_resources.h says why, and what it saved.
+		// owns.
 		void add_texture(const std::string& name,
 			std::unique_ptr<GlTexture> texture);
 

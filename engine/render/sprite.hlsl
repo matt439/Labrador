@@ -1,20 +1,19 @@
 // The only shader this engine has, and it is not a backend's.
 //
-// IT LIVES HERE RATHER THAN IN engine/render/d3d11/, WHICH IS WHERE IT USED TO
-// LIVE AND WHERE ITS ONLY READER WAS. Three backends compile HLSL now, and the
-// source they compile is character for character the same: the transform is a
-// float4 at b0 whichever way a backend binds it, the texture is t0, the sampler
-// is s0, and every decision that shows on screen was settled on the CPU before
-// any of them saw a vertex. A second copy of this file under d3d12/ or vulkan/
-// would be a generated artifact by another name - a file that can disagree with
-// its source and have nothing notice, which is the failure
-// cmake/compile_shaders.cmake refuses to check bytecode in to avoid.
+// IT LIVES IN engine/render/ RATHER THAN IN ANY BACKEND'S FOLDER, because three
+// backends compile HLSL and the source they compile is character for character
+// the same: the transform is a float4 at b0 whichever way a backend binds it,
+// the texture is t0, the sampler is s0, and every decision that shows on screen
+// was settled on the CPU before any of them saw a vertex. A copy of this file
+// under d3d11/, d3d12/ or vulkan/ would be a generated artifact by another name
+// - a file that can disagree with its source and have nothing notice, which is
+// the failure cmake/compile_shaders.cmake refuses to check bytecode in to avoid.
 //
 // THE THIRD READER USES A DIFFERENT COMPILER AND INTERMEDIATE. The Vulkan backend
 // compiles this file with the Vulkan SDK's dxc into SPIR-V, where the two
-// Direct3D ones use fxc and get DXBC, and the source still did not move. What
-// it needed instead was three register shifts on the command line, because HLSL
-// has a register space per resource kind and Vulkan has one binding number per
+// Direct3D ones use fxc and get DXBC, from the same source. What it needs
+// instead is three register shifts on the command line, because HLSL has a
+// register space per resource kind and Vulkan has one binding number per
 // descriptor set - so b0, t0 and s0 would all arrive at the same slot.
 // cmake/compile_shaders.cmake makes that shift and says why it belongs to the
 // build rather than to this file, which is the same argument as the profile
@@ -24,13 +23,11 @@
 // down in two different places. The profile is in engine/CMakeLists.txt where
 // the backend is chosen - D3D11 asks for vs_4_0_level_9_1 and ps_4_0_level_9_1,
 // D3D12 for 5_1, Vulkan for 6_0 - along with the header each one's bytes land
-// in. The binding
-// is in each backend's renderer.cpp, because it is a call and not a build
-// setting: D3D11 gives the vertex shader its b0 through a constant buffer,
-// D3D12 gives it the same b0 as four root constants, and Vulkan as a uniform
-// buffer in a descriptor set. one difference reaches
-// this file and it is worth knowing before that sentence is read as none: the
-// declaration order of VertexIn's three members is an ABI term on the Vulkan
+// in. The binding is in each backend's renderer.cpp, because it is a call and
+// not a build setting: D3D11 gives the vertex shader its b0 through a constant
+// buffer, D3D12 gives it the same b0 as four root constants, and Vulkan as a
+// uniform buffer in a descriptor set. One difference reaches this file and it
+// is worth knowing before that sentence is read as none: the declaration order of VertexIn's three members is an ABI term on the Vulkan
 // backend, because dxc assigns SPIR-V locations in declaration order and a
 // Vulkan pipeline binds attributes by number rather than by semantic. It is
 // stated again where those members are, which is where somebody would reorder
@@ -54,23 +51,23 @@
 // rendered output, with the per-channel allowance in tests/render/golden_image.cpp.
 // They do not prove identical compiler arithmetic or lower-profile rendering.
 //
-// IT IS NOT WHAT LETS THE ENGINE RUN ON A 9.1 MACHINE. The D3D11 backend's
+// THE PROFILE IS NOT THE FEATURE-LEVEL FLOOR. The D3D11 backend's
 // DeviceResources requests no level below D3D_FEATURE_LEVEL_10_0
-// (engine/render/d3d11/device_resources.cpp). The floor is 10.0 and the shader
-// profile is below it, which is the safe direction to be wrong in and still
-// worth not claiming the reverse. The D3D12 backend's floor is 11_0, because
-// that API has no level below it.
+// (engine/render/d3d11/device_resources.cpp), so the engine does not run on a
+// 9.1 machine. The floor is 10.0 and the shader profile is below it, which is
+// the safe direction for the two to differ. The D3D12 backend's floor is 11_0,
+// because that API has no level below it.
 
 // Pixels to clip space, as two multiply-adds rather than a 4x4 matrix.
 //
-// A matrix is what SpriteBatch used, and sixteen floats to express a 2D scale
-// and offset is fifteen more than the arithmetic needs. The values are
-// (2/width, -2/height, -1, 1): the y term is negative because the seam's y runs
-// down the screen and Direct3D's and GL's clip space runs up.
+// Sixteen floats to express a 2D scale and offset is fifteen more than the
+// arithmetic needs. The values are (2/width, -2/height, -1, 1): the y term is
+// negative because the seam's y runs down the screen and Direct3D's and GL's
+// clip space runs up.
 //
 // AND THIS IS NOT THE ONLY LINE WHERE IT IS DECIDED. Vulkan's clip space runs
-// y DOWN, so this term and that one would
-// cancel and every frame would be upside down - the Vulkan backend answers it
+// y DOWN, so this term and that one would cancel and every frame would be
+// upside down - the Vulkan backend answers it
 // by handing the rasteriser a negative viewport height, which flips y a second
 // time (engine/render/vulkan/renderer.cpp, submit). Where a pane sits in the
 // buffer is the one term renderer.h leaves to a backend, and all three answers

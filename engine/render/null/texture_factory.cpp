@@ -32,9 +32,10 @@ namespace labrador
 		// call before create_device because they have to - an ID3D11Device, an
 		// ID3D12Device, a WGL context or a VkDevice is null and there is
 		// nothing to build on - and a backend with no device would sail
-		// through, hand back a resolvable handle and draw with it. That is the wrong way round: this is the configuration
-		// a client is most likely to be tested in, so a rule it cannot enforce
-		// is a rule that reaches a shipping build unbroken. The seam states the
+		// through, hand back a resolvable handle and draw with it. That is the
+		// wrong way round: this is the configuration a client is most likely to
+		// be tested in, so a rule it cannot enforce is a rule that reaches a
+		// shipping build unbroken. The seam states the
 		// ordering (resource_factory.h) and all five keep it, each throwing a
 		// runtime_error that names the texture.
 		if (!renderer.impl()->device_created)

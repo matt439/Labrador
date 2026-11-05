@@ -37,9 +37,9 @@ namespace labrador
 
 	// Every viewport the layout covers the screen with, which is not the same
 	// as one per player: a three-player split leaves a quadrant nobody is in,
-	// and a caller drawing the whole screen still has to draw it. Callers
-	// index set_viewport() by position in this vector, so the counts
-	// and the indices have to be the same ones calculate_viewport() knows.
+	// and a caller drawing the whole screen still has to draw it. Element i
+	// is player_viewport(i), so the counts and the indices are the same ones
+	// calculate_viewport() knows.
 	std::vector<Viewport> ViewportManager::all_viewports() const
 	{
 		const int count = this->viewport_count_from_layout(this->layout_);
@@ -110,8 +110,7 @@ namespace labrador
 		}
 	}
 
-	// Pure arithmetic on a layout, an index and a size - no member is read, so
-	// this is the piece of the class a test can drive without a device.
+	// Pure arithmetic on a layout, an index and a size; no member is read.
 	//
 	// Every layout returns from its own block, because inner switches that
 	// fall through chain the layouts together: two_player's invalid-index
@@ -160,8 +159,7 @@ namespace labrador
 				return bottom_left;
 			// Three players occupy three quadrants; index 3 is the one nobody
 			// is in. It is a real viewport rather than an error because
-			// callers that cover the whole screen - the menus - still have to
-			// draw it.
+			// callers that cover the whole screen still have to draw it.
 			case 3:
 				return top_right;
 			default:

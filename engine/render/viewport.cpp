@@ -35,10 +35,6 @@ namespace labrador
 	{
 		return RectangleF(this->x, this->y, this->width, this->height);
 	}
-	//RectangleF Viewport::rectangle(float minDepth, float maxDepth) const
-	//{
-	//	return RectangleF(this->x, this->y, this->width, this->height);
-	//}
 	Vector2F Viewport::position() const
 	{
 		return Vector2F(this->x, this->y);

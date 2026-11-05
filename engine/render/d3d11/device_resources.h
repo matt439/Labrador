@@ -13,7 +13,7 @@ namespace labrador
 {
     // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.
     //
-    // Named D3DDeviceNotify rather than DeviceNotify, which is now the seam's
+    // Named D3DDeviceNotify rather than DeviceNotify, which is the seam's
     // (engine/render/renderer.h) and is what a game implements. Renderer::Impl
     // implements this one and forwards; nothing outside this folder sees it.
     interface D3DDeviceNotify
@@ -27,30 +27,23 @@ namespace labrador
 
     // Controls all the DirectX device resources.
     //
-    // TRIMMED TO WHAT THIS ENGINE ASKS FOR. Three capabilities came from the
-    // upstream sample this file started as, and each was configured off at the
-    // only construction site while its machinery still ran. They are named here
-    // rather than left for the next reader to prove dead a second time.
+    // ONLY WHAT THIS ENGINE ASKS FOR. Three capabilities a general device
+    // wrapper offers are absent, and each is named here so a reader need not
+    // look for it.
     //
-    //  - No depth buffer. The renderer draws 2D and nothing else, so the depth
-    //    format parameter, the depth texture, its view and its per-frame
-    //    DiscardView are gone rather than passed DXGI_FORMAT_UNKNOWN and
-    //    skipped on every path.
-    //  - No tearing. Nothing set the flag, so an IDXGIFactory5 probe measured a
-    //    capability no Present could reach. Present takes the sync interval
-    //    Renderer::set_vsync chose, and an interval of 0 without the flag is
-    //    still composed in a window rather than torn.
-    //  - No HDR. Nothing set that flag either, and the window/output
-    //    intersection walk it guarded - every adapter, every output, on every
-    //    display change and every no-op resize - computed a value read only
-    //    inside the branch the flag turns on.
+    //  - No depth buffer. The renderer draws 2D and nothing else, so there is
+    //    no depth format, depth texture, depth view or per-frame DiscardView.
+    //  - No tearing. Present takes the sync interval Renderer::set_vsync
+    //    chose, and an interval of 0 without the tearing flag is composed in a
+    //    window rather than torn.
+    //  - No HDR. The back buffer is always sRGB, so there is no colour-space
+    //    choice and no window/output intersection walk to make one.
     //
     // The back-buffer count (2) and the feature-level floor (10_0) are fixed
     // in device_resources.cpp, whose level list starts at the floor.
     //
-    // What is left of the options word is one runtime fact, whether this OS has
-    // flip-model swap effects, so it is a bool and not a flags word with a
-    // single permanently-set flag.
+    // The one runtime option is whether this OS has flip-model swap effects,
+    // so it is a bool and not a flags word.
     class DeviceResources
     {
     public:
@@ -70,14 +63,9 @@ namespace labrador
         void RegisterDeviceNotify(D3DDeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
         void Present(UINT syncInterval);
 
-        // The accessors, and this is all of them.
-        //
-        // There were seventeen. Twelve had no caller anywhere in the repository
-        // - the swap chain, the factory, the window, the feature level, the
-        // back buffer texture, its format and count, the colour space, the
-        // options word, and the three depth-stencil ones whose members no
-        // longer exist. An accessor nobody calls is a promise about a member
-        // that a second backend would have to keep.
+        // The accessors, and this is all of them. Each has a caller; an
+        // accessor nobody calls is a promise about a member that would still
+        // have to be kept.
         RECT                    GetOutputSize() const noexcept          { return m_outputSize; }
         auto                    GetD3DDevice() const noexcept           { return m_d3dDevice.Get(); }
         auto                    GetD3DDeviceContext() const noexcept    { return m_d3dContext.Get(); }

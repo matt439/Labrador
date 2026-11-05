@@ -134,8 +134,8 @@ namespace labrador
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong,
-		// because both answers look plausible and every opaque sprite in both
-		// samples renders identically either way.
+		// because both answers look plausible and every opaque sprite renders
+		// identically either way.
 		pipeline.BlendState.AlphaToCoverageEnable = FALSE;
 		pipeline.BlendState.IndependentBlendEnable = FALSE;
 		pipeline.BlendState.RenderTarget[0].BlendEnable = TRUE;
@@ -154,9 +154,9 @@ namespace labrador
 
 		pipeline.SampleMask = UINT_MAX;
 
-		// NO CULLING, WHERE SpriteBatch CULLED BACK FACES. A sprite is a quad
-		// whose winding never changes: a flip mirrors the texture coordinates
-		// and leaves the corners where they were (sprite_geometry.cpp).
+		// NO CULLING. A sprite is a quad whose winding never changes: a flip
+		// mirrors the texture coordinates and leaves the corners where they
+		// were (sprite_geometry.cpp).
 		pipeline.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		pipeline.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 		pipeline.RasterizerState.FrontCounterClockwise = FALSE;

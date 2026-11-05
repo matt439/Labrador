@@ -15,11 +15,10 @@ namespace labrador
 	// complete type only inside a backend folder; render_resources.h says why.
 	//
 	// WHAT IS WRITTEN ONCE PER BACKEND, and it is the honest remainder rather
-	// than an oversight: the constructor, the
-	// destructor, the moves, resolve_texture and release_device_resources. Every one of them either touches the
-	// texture table or needs Impl complete in order to make or destroy one -
-	// which is the rule this class states, arriving at a file list instead of
-	// at a paragraph.
+	// than an oversight: the constructor, the destructor, the moves,
+	// resolve_texture and release_device_resources. Every one of them either
+	// touches the texture table or needs Impl complete in order to make or
+	// destroy one, which is the rule this class states.
 
 	void RenderResources::add_sprite_sheet(const std::string& sprite_sheet_name,
 		std::unique_ptr<SpriteSheet> sprite_sheet)
@@ -95,8 +94,7 @@ namespace labrador
 	}
 
 	// The queries below forward to arithmetic in engine/render/font.cpp and
-	// perform none themselves, which is what made having three copies of them
-	// survivable and is not what makes one copy right. measure_text is a term
+	// perform none themselves. There is one copy because measure_text is a term
 	// of the pixel contract; a backend that answered it differently would move
 	// every glyph a client had laid out against it.
 

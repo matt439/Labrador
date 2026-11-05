@@ -17,8 +17,8 @@ namespace labrador
 		AnimationStrip(const RectangleI& first_frame,
 			int frame_count, float frame_time, bool looping);
 
-		// A RectangleI rather than a RECT*: see SpriteFrame::source_rectangle.
-		// By const reference rather than by value, into the strip's own cache.
+		// By const reference rather than by value, into the strip's own cache,
+		// so it lives as long as the strip does.
 		// Throws std::out_of_range for a frame index this strip does not have.
 		const RectangleI& frame_rect(int frame_index) const;
 		int frame_count() const;

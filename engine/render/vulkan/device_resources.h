@@ -19,15 +19,15 @@
 
 // The Vulkan instance, the device, the surface, the swapchain and the timeline.
 //
-// THE PART OF AN API THAT IS NOT ABOUT DRAWING, which is what renderer.h says a
-// backend's fourth translation unit is for. Both Direct3D folders have one of
-// these, and the GL folder has one per context (wgl_context.cpp or
-// web_context.cpp, one per build); this is the same kind of file, holding
-// everything that exists before a frame does and outlives every frame
-// after it. It is written the way CONVENTIONS says - snake_case, trailing
-// underscore on privates, accessors named for the noun - for the reason
-// engine/render/d3d12/device_resources.h gives: nothing here is vendored, so
-// nothing here has somebody else's style to preserve.
+// THE PART OF AN API THAT IS NOT ABOUT DRAWING, which is what
+// engine/render/SEAM.md#4 says a backend's fourth translation unit is for.
+// Both Direct3D folders have one of these, and the GL folder has one per
+// context (wgl_context.cpp or web_context.cpp, one per build); this is the
+// same kind of file, holding everything that exists before a frame does and
+// outlives every frame after it. It is written the way CONVENTIONS says -
+// snake_case, trailing underscore on privates, accessors named for the noun
+// - for the reason engine/render/d3d12/device_resources.h gives: nothing
+// here is vendored, so nothing here has somebody else's style to preserve.
 //
 // WHAT THIS BACKEND OWNS THAT NO OTHER ONE DOES, and it is one thing rather
 // than a list: THE IMAGE THE FRAME IS DRAWN INTO IS NOT A SWAPCHAIN IMAGE. On
@@ -151,9 +151,9 @@ namespace labrador
 		VkDeviceSize uniform_alignment = 16;
 
 		// Whether this device takes BC1/2/3. Asked at selection rather than at
-		// the first texture, so a refusal can name the whole content set: 41 of
-		// the 43 .dds this engine loads are block compressed and every font
-		// atlas is (engine/render/texture_format.h).
+		// the first texture, so a refusal can name the whole content set:
+		// compressed art is the common case and every font atlas is block
+		// compressed (engine/render/texture_format.h).
 		bool block_compression = false;
 
 		// The index of a memory type that is in `allowed` and has every bit of

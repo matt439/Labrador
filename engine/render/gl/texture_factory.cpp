@@ -58,8 +58,7 @@ namespace labrador
 		// LineSweeper's one texture is b8g8r8a8, so the browser has to swap;
 		// the desktop swaps too, because a path only the browser took is one
 		// RenderPixelTests never saw. The cost is a pass over the bytes on the
-		// load path, and it reaches only the two .dds in either client that are
-		// not block compressed.
+		// load path, for b8g8r8a8 textures only.
 		void check_uncompressed(TextureFormat format, const std::string& name)
 		{
 			switch (format)
@@ -150,10 +149,10 @@ namespace labrador
 		}
 
 		// A CONTEXT WITHOUT S3TC IS HANDED THE PIXELS THE BLOCKS ENCODE, decoded
-		// by the engine (block_decode.h) rather than refused. Forty-one of the
-		// forty-three .dds between this repository and its client are block
-		// compressed and every font atlas is, so refusing would leave such a
-		// context with no art and no text - and it is the common case in a
+		// by the engine (block_decode.h) rather than refused. Compressed art
+		// is the common case and every font atlas is block compressed
+		// (texture_format.h), so refusing would leave such a context with
+		// little art and no text - and such a context is the usual one in a
 		// browser on a phone, GLES 3.0 itself having no S3TC. The decoded copy
 		// is uploaded exactly as an r8g8b8a8 texture from a file would be, so
 		// the path is the uncompressed one below and not a third. Decoding
@@ -195,11 +194,11 @@ namespace labrador
 		// sampler expects is incomplete - which draws black rather than
 		// failing, and is the classic way a single-level texture disappears.
 		//
-		// It is belt and braces since the seam settled on level zero, because
-		// this backend's min filters are the non-mipmap ones and so ask for no
-		// level this could be wrong about. It stays because completeness is a
-		// property of the texture rather than of whoever samples it, and the
-		// day a sampler here changes is not the day to rediscover that.
+		// It is belt and braces, because this backend's min filters are the
+		// non-mipmap ones and so ask for no level this could be wrong about.
+		// It stays because completeness is a property of the texture rather
+		// than of whoever samples it, and the day a sampler here changes is
+		// not the day to rediscover that.
 		glTexParameteri(GL_TEXTURE_2D, static_cast<GLenum>(
 			GL_TEXTURE_BASE_LEVEL_), 0);
 		glTexParameteri(GL_TEXTURE_2D, static_cast<GLenum>(

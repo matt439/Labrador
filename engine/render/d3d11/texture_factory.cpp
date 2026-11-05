@@ -83,12 +83,11 @@ namespace labrador
 	}
 
 	// The whole of this backend's share of loading content, and it does not
-	// know which file the bytes came from - a .dds and the atlas inside a
-	// .spritefont differ in how they are decoded and not at all in what comes
-	// out (engine/render/texture_data.h).
+	// know which file the bytes came from - a .dds, a .png and the atlas
+	// inside a .spritefont differ in how they are decoded and not at all in
+	// what comes out (engine/render/texture_data.h).
 	//
-	// IMMUTABLE, because nothing ever writes to one of these, and that is what
-	// DirectXTK asked for on the same textures.
+	// IMMUTABLE, because nothing ever writes to one of these.
 	void add_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& name,
@@ -98,8 +97,8 @@ namespace labrador
 		// GetD3DDevice() and it is null until create_device has run. The two
 		// calls that use it check their HRESULTs, which reads like a guard and
 		// is not one: the dereference happens first, so a load before the
-		// device existed was an access violation inside the D3D runtime with
-		// nothing catchable and no name in it. The seam states the ordering
+		// device exists would be an access violation inside the D3D runtime
+		// with nothing catchable and no name in it. The seam states the ordering
 		// (resource_factory.h); this is one of the FIVE places it is kept, one
 		// per backend, each throwing a runtime_error that names the texture.
 		if (!renderer.impl()->has_device())

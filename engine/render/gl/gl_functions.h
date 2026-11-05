@@ -132,11 +132,10 @@ namespace labrador
 	LABRADOR_GL_FUNCTIONS(LABRADOR_GL_DECLARE)
 #undef LABRADOR_GL_DECLARE
 
-	// How many entry points the list above declares, counted from the list.
-	//
-	// The compiler answers a question a comment kept getting wrong (T5). It is
-	// constexpr because the only caller is a message, and a message should not
-	// pay for arithmetic that was decidable at compile time.
+	// How many entry points the list above declares, counted from the list
+	// (T5). It is constexpr because the only caller is a message, and a
+	// message should not pay for arithmetic that was decidable at compile
+	// time.
 	constexpr int gl_function_count()
 	{
 		int count = 0;

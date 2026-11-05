@@ -23,10 +23,8 @@ namespace labrador
 		                     const Vector2F& origin =
 			                     Vector2F::zero);
 
-		// A RectangleI, and not a RECT*. Handing out a pointer means keeping
-		// both forms of the same rectangle for a stable address to return, and
-		// the two can drift. The seam takes a RectangleI, so there is no
-		// duplicate and the conversion happens once, in the backend.
+		// The frame's rectangle in the sheet's texture, by const reference into
+		// this frame, so it lives as long as the frame does.
 		const RectangleI& source_rectangle() const;
 
 		// The pivot the sheet authored, in unscaled source texels measured from

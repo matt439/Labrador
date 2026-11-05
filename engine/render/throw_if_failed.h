@@ -8,15 +8,15 @@
 namespace labrador
 {
     // WHERE THIS LIVES, and why it is not in core/. Its only engine
-    // includers are the two Direct3D backends - three translation units each
-    // - so the rule that a backend's headers are its own leaves two shapes: a
+    // includers are the two Direct3D backends, so the rule that a
+    // backend's headers are its own leaves two shapes: a
     // copy in d3d11/ and a copy in d3d12/, or one file here that neither owns.
     // It is the second, for the reason render/sprite.hlsl beside it gives for
     // being one file rather than one per backend: a second copy is a file
     // that can silently disagree with the first, and what these two would
     // disagree about is an exception type whose whole point is that a catch
     // site cannot tell (tests/render/throw_if_failed_tests.cpp pins it, and
-    // compiles in every configuration).
+    // compiles in every Windows configuration, not in browser builds).
     //
     // NOT core/. This file carries <Windows.h> and an HRESULT, which is
     // exactly what the one module everything may lean on must not.
@@ -26,8 +26,8 @@ namespace labrador
     // PascalCase where CONVENTIONS wants snake_case and com_exception is
     // snake_case where it wants PascalCase, because upstream spells them so -
     // and one of the callers is upstream's own file, carried with upstream's
-    // naming: engine/render/d3d11/device_resources.cpp reaches it at fifteen
-    // sites. Renaming would make that file call an engine function in the
+    // naming: engine/render/d3d11/device_resources.cpp calls it throughout.
+    // Renaming would make that file call an engine function in the
     // engine's style, which is the one thing NOTICE says these files do not
     // do. The two-argument overloads keep upstream's names so that one call
     // spelling covers both forms; hresult_name is the engine's own and is

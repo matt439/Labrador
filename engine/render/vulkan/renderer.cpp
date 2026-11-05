@@ -416,13 +416,12 @@ namespace labrador
 		dynamic.dynamicStateCount = 2;
 		dynamic.pDynamicStates = dynamic_states;
 
-		// NO CULLING, WHERE SpriteBatch CULLED BACK FACES. A sprite is a quad
-		// whose winding never changes: a flip mirrors the texture coordinates
-		// and leaves the corners where they were (sprite_geometry.cpp). It
-		// matters more here than anywhere else, because the negative viewport
-		// height in submit() reverses the winding as it reverses y - so a
-		// backend that culled would have to match its front-face convention
-		// to that viewport.
+		// NO CULLING. A sprite is a quad whose winding never changes: a flip
+		// mirrors the texture coordinates and leaves the corners where they
+		// were (sprite_geometry.cpp). It matters more here than anywhere
+		// else, because the negative viewport height in submit() reverses the
+		// winding as it reverses y - so a backend that culled would have to
+		// match its front-face convention to that viewport.
 		VkPipelineRasterizationStateCreateInfo rasteriser = {};
 		rasteriser.sType =
 			VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -577,9 +576,7 @@ namespace labrador
 		// queue afterwards, so this looks redundant - and it is exactly as
 		// redundant as texture_factory.cpp's TRANSFER -> FRAGMENT_SHADER
 		// barrier, which is there because a host wait is not an availability
-		// operation for a later queue access. The asymmetry was the finding; a
-		// buffer this engine reads on every draw call it ever makes is not the
-		// place to be the exception.
+		// operation for a later queue access.
 		VkBufferMemoryBarrier to_index = {};
 		to_index.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 		to_index.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1316,8 +1313,8 @@ namespace labrador
 	}
 
 	// THE THREE MARKERS DO NOTHING, AND THAT IS THE HONEST ANSWER RATHER THAN A
-	// GAP - which is worth arguing here rather than pointing at the other three
-	// backends that say it, because this is the one API that HAS the feature.
+	// GAP - which is worth arguing here rather than pointing at the D3D12 and
+	// GL backends that say it, because this is the one API that HAS the feature.
 	// VK_EXT_debug_utils' labels are real and are in the box. What they are not
 	// is available where this seam puts them WITHOUT A CHOICE THIS FILE WOULD
 	// HAVE TO MAKE: the useful label belongs to a COMMAND BUFFER, and these

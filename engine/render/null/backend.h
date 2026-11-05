@@ -110,10 +110,10 @@ namespace labrador
 		bool vsync = true;
 
 		// Whether submit() has already run for this frame. renderer.h makes a
-		// second submit a no-op. This backend answered that correctly by
-		// accident - its submit re-gathers rather than appends - and keeps the
-		// flag anyway, because the one configuration that can assert the rule
-		// should be running the same mechanism as the four that cannot.
+		// second submit a no-op. This backend's submit re-gathers rather than
+		// appends, so it would hold without the flag; the flag is kept because
+		// the one configuration that can assert the rule should be running the
+		// same mechanism as the four that cannot.
 		bool frame_submitted = false;
 
 		int width = 0;

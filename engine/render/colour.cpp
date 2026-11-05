@@ -103,12 +103,9 @@ namespace labrador
 	}
 	void Colour::set_from_hex(const std::string& hex)
 	{
-		// The length check alone is not the guard it looks like. This was six
-		// std::stoi calls on substr temporaries, and stoi throws
-		// std::invalid_argument on a string of the right length whose digits
-		// are not hex - so "nonsense" is eight characters, takes the RRGGBBAA
-		// branch and throws, past the else that promises opaque black. Read
-		// the digits directly and there is nothing to throw.
+		// Every digit is checked before any is read, so a malformed string of
+		// the right length - "nonsense" is eight characters - becomes opaque
+		// black like any other, and nothing here throws.
 		const size_t length = hex.length();
 		const bool has_alpha = length == 8;
 		if ((length != 6 && !has_alpha) || !all_hex_digits(hex))

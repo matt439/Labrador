@@ -70,11 +70,8 @@ namespace labrador
 		}
 	}
 
-	// The whole of this backend's share of loading content, and it is the
-	// second longest of the five because this API has no initial-data
-	// parameter. Vulkan's is longer still and for the same reason - 382 lines
-	// to this one's 342, with gl at 168, d3d11 at 116 and null at 49, which
-	// renderer.h lists in one place and holds all five against.
+	// The whole of this backend's share of loading content. This API has no
+	// initial-data parameter, so the backend stages, copies and waits itself.
 	//
 	// WHAT A TEXTURE COSTS HERE THAT IT DOES NOT COST NEXT DOOR. D3D11 takes an
 	// array of D3D11_SUBRESOURCE_DATA and is done - the runtime copies the
@@ -87,16 +84,15 @@ namespace labrador
 	//
 	// A FULL STALL PER TEXTURE, AND THAT IS THE RIGHT ANSWER HERE RATHER THAN A
 	// SHORTCUT - and it is the stall of the two backends that own their
-	// uploads, which the sentence here has now had wrong in both directions.
-	// Loading is a synchronous, blocking path on all five (resource_factory.h
-	// says why it reads its file that way); this backend and vulkan/ wait on a
-	// GPU inside it, because both record a copy and both own the staging buffer
-	// it reads - vulkan/texture_factory.cpp calls end_upload for exactly this
-	// reason. d3d11 hands the bytes to the runtime, gl hands them to the
-	// driver, and null keeps them. It runs at load and never on the frame
-	// path, and the alternative - keeping every upload buffer alive until some
-	// later fence - is a pool and a lifetime rule for a path that reads files
-	// off a disk.
+	// uploads. Loading is a synchronous, blocking path on all five
+	// (resource_factory.h says why it reads its file that way); this backend
+	// and vulkan/ wait on a GPU inside it, because both record a copy and both
+	// own the staging buffer it reads - vulkan/texture_factory.cpp calls
+	// end_upload for exactly this reason. d3d11 hands the bytes to the
+	// runtime, gl hands them to the driver, and null keeps them. It runs at
+	// load and never on the frame path, and the alternative - keeping every
+	// upload buffer alive until some later fence - is a pool and a lifetime
+	// rule for a path that reads files off a disk.
 	void add_texture_asset(const Renderer& renderer,
 		RenderResources& resources,
 		const std::string& name,
@@ -164,7 +160,6 @@ namespace labrador
 			// this one the format most likely to arrive here is b4g4r4a4_unorm:
 			// D3D12 makes 4-bit-per-channel support optional, so a device that
 			// takes every other entry in texture_format.h can refuse that one.
-			// No file in either client uses it.
 			//
 			// AND THE CODE, BECAUSE THE SENTENCE ASSERTS A CAUSE AND ONLY ONE
 			// OF FOUR ANSWERS HAS IT. CreateCommittedResource returns
@@ -186,10 +181,10 @@ namespace labrador
 		// WHERE EACH LEVEL GOES IN THE STAGING BUFFER, ASKED RATHER THAN
 		// COMPUTED. A copy's rows are padded to 256 bytes and each level starts
 		// on a 512-byte boundary, and neither number is this engine's to assume
-		// - which matters most for the block-compressed levels that are 41 of
-		// the 43 images both clients load between them (docs/port/content-
-		// probe.md counted them), where a "row" is a row of 4x4 blocks and the
-		// obvious arithmetic is four times too large (texture_data.h).
+		// - which matters most for block-compressed levels, the common case
+		// for art and every font atlas (texture_format.h), where a "row" is a
+		// row of 4x4 blocks and the obvious arithmetic is four times too large
+		// (texture_data.h).
 		const UINT subresources = level_count;
 		std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(
 			subresources);
@@ -271,16 +266,9 @@ namespace labrador
 		// The descriptor, which is what a draw call actually names. Claimed
 		// last, so a texture the device refused never takes a slot.
 		//
-		// AND THE NAME'S OWN SLOT IF IT ALREADY HAS ONE, which is the whole of
-		// what re-loading a texture costs this backend. registry.h and
-		// render_resources.h both make re-adding a name a first-class operation
-		// - "Re-adding a name reuses its slot" - and Registry::add duly replaces
-		// the entry and destroys the old D3D12Texture. Its slot number is a
-		// plain int with no destructor, so allocating a second one per re-load
-		// spends the heap on textures that are no longer live: a client
-		// re-walking a manifest per level runs out of a 256-entry heap with a few
-		// dozen textures in it, and a single manifest naming one asset as both a
-		// texture and a sprite sheet does it inside one walk.
+		// AND THE NAME'S OWN SLOT IF IT ALREADY HAS ONE: re-adding a name is a
+		// first-class operation (registry.h, render_resources.h), and
+		// backend.h states the slot rule at texture_capacity.
 		//
 		// OVERWRITING A SHADER-VISIBLE DESCRIPTOR IS SAFE HERE AND NOWHERE ELSE
 		// IN THIS FILE, which is the obvious objection and worth answering: the
