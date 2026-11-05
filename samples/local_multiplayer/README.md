@@ -112,8 +112,8 @@ movement routing. Native null render/audio adds four real-menu cases with a
 hidden Application and synthetic keyboard input: independent focus slots,
 held-direction gating, resized recordings and the READY-to-arena transition.
 These cases poll no physical pad and run no application loop or graphics/audio
-API device. The Debug-null test and sample targets build, the test entry passes,
-and the existing null smoke run exits 0. These recordings do not establish
+API device. Under null render `LocalMultiplayerSmokeTests` runs the smoke test
+below, which records the draws without a device. These recordings do not establish
 appearance: the join screen is looked at on a desktop build and in a browser.
 No physical pad has driven the menu.
 

@@ -4,26 +4,23 @@
 #include "engine/assets/asset_manifest_loader.h"
 #include "engine/assets/sound_bank_loader.h"
 #include "samples/audio/sound_board.h"
-
-#include <memory>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
 #include "engine/audio/null/recording.h"
 #endif
-
 #if defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
 #include "engine/app/content_root.h"
 #include "engine/assets/resource_loader.h"
 #include "engine/audio/audio_resources.h"
-
-#include <utility>
 #endif
 
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
 using namespace labrador;
-using namespace audio_sample;
+using namespace audio;
 
 namespace
 {
@@ -31,6 +28,16 @@ namespace
 	{
 		return read_sound_bank_definition(
 			LABRADOR_AUDIO_SAMPLE_CONTENT "/sounds/tones.json");
+	}
+
+	AssetEntry entry_of(const char* kind, const char* name, bool optional)
+	{
+		AssetEntry entry;
+		entry.kind = kind;
+		entry.directory = "./";
+		entry.name = name;
+		entry.optional = optional;
+		return entry;
 	}
 }
 
@@ -63,6 +70,30 @@ TEST_CASE("the audio example refuses the missing-content substitute")
 	std::unique_ptr<SoundBank> silent = SoundBank::silent();
 	CHECK_THROWS_AS(SoundBoard(silent.get()), std::runtime_error);
 	CHECK_THROWS_AS(SoundBoard(nullptr), std::runtime_error);
+}
+
+TEST_CASE("the audio entries are the manifest's sound banks, in order, under its path")
+{
+	AssetManifest manifest;
+	manifest.source_path = "content/manifest.json";
+	manifest.entries.push_back(entry_of("sprite_font", "font", false));
+	manifest.entries.push_back(entry_of("sound_bank", "tones", false));
+	manifest.entries.push_back(entry_of("texture", "panel", false));
+	manifest.entries.push_back(entry_of("sound_bank", "music", true));
+
+	const AssetManifest audio_manifest = audio_entries(manifest);
+	CHECK(audio_manifest.source_path == "content/manifest.json");
+	REQUIRE(audio_manifest.entries.size() == 2);
+	CHECK(audio_manifest.entries[0].name == "tones");
+	CHECK_FALSE(audio_manifest.entries[0].optional);
+	CHECK(audio_manifest.entries[1].name == "music");
+	CHECK(audio_manifest.entries[1].optional);
+
+	// The sample's own manifest has its font beside the one bank.
+	const AssetManifest sample = audio_entries(read_asset_manifest(
+		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json"));
+	REQUIRE(sample.entries.size() == 1);
+	CHECK(sample.entries[0].name == "tones");
 }
 
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
@@ -147,12 +178,7 @@ TEST_CASE("the sample's bank loads through Web Audio and its drone keeps its sta
 	ResourceLoader loader(nullptr, nullptr, &resources, &device);
 	const AssetManifest manifest = anchored_to_source(read_asset_manifest(
 		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json"));
-	AssetManifest audio_manifest;
-	audio_manifest.source_path = manifest.source_path;
-	for (const AssetEntry& entry : manifest.entries)
-	{
-		if (entry.kind == "sound_bank") { audio_manifest.entries.push_back(entry); }
-	}
+	AssetManifest audio_manifest = audio_entries(manifest);
 	REQUIRE(audio_manifest.entries.size() == 1);
 	loader.load_manifest(std::move(audio_manifest));
 

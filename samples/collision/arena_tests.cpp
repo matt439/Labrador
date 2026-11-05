@@ -9,7 +9,7 @@
 #include <memory>
 
 using namespace labrador;
-using namespace collisiondemo;
+using namespace collision;
 
 namespace
 {

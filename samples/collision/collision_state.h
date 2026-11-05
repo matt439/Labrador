@@ -8,8 +8,14 @@
 #include <memory>
 #include <string>
 
-namespace collisiondemo
+namespace collision
 {
+	// The smoke test's fixed step, and how many of them main.cpp runs: the
+	// route in collision_state.cpp ends where verify_smoke_test() expects only
+	// after exactly this many.
+	inline constexpr float smoke_step_time = 1.0f / 60.0f;
+	inline constexpr int smoke_route_ticks = 315;
+
 	// The sample's one screen: the arena, moved by the keys or a stick, and the
 	// labels that say what each rectangle is. main.cpp and main_web.cpp both
 	// run it; only main.cpp drives it as a smoke test.

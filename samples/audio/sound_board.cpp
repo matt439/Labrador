@@ -4,13 +4,27 @@
 
 #include <stdexcept>
 
-namespace audio_sample
+namespace audio
 {
+	labrador::AssetManifest audio_entries(const labrador::AssetManifest& manifest)
+	{
+		labrador::AssetManifest audio_manifest;
+		audio_manifest.source_path = manifest.source_path;
+		for (const labrador::AssetEntry& entry : manifest.entries)
+		{
+			if (entry.kind == "sound_bank")
+			{
+				audio_manifest.entries.push_back(entry);
+			}
+		}
+		return audio_manifest;
+	}
+
 	SoundBoard::SoundBoard(labrador::SoundBank* bank) : bank_(bank)
 	{
 		if (this->bank_ == nullptr || !this->bank_->audible())
 		{
-			throw std::runtime_error("AudioSample requires the tones wave bank.");
+			throw std::runtime_error("The sample requires the tones wave bank");
 		}
 		this->ping_ = this->bank_->resolve_wave("ping");
 		this->chime_ = this->bank_->resolve_wave("chime");

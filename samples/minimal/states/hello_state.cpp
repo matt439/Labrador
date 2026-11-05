@@ -16,9 +16,9 @@ using namespace labrador;
 
 namespace
 {
-	// Asset names, matching content/manifest.json. They are spelt once and
-	// resolved to handles once (PHILOSOPHY T7, T8) - nothing below looks a
-	// resource up by name per frame.
+	// Asset names, matching content/manifest.json. They are spelt once in this
+	// file and resolved to handles once (PHILOSOPHY T7, T8) - nothing below
+	// looks a resource up by name per frame. confirm_state.cpp names its own.
 	const std::string font_name = "jetbrains_mono_bold_16";
 
 	// How far the stick has to move before it counts. One number, applied
@@ -164,17 +164,23 @@ void HelloState::update(float dt)
 	for (size_t i = 0; i < this->touch_markers_.size(); ++i)
 	{
 		Label* marker = this->touch_markers_[i];
+
+		// Zero is never a point's id, so it stands for a blank marker. The text
+		// changes only when the id does: set_text re-measures on every call
+		// (engine/render/label.h), and a finger held still shows the same
+		// text frame after frame.
+		const uint32_t id = i < points.size() ? points[i].id : 0;
+		if (id != this->touch_marker_ids_[i])
+		{
+			marker->set_text(id == 0 ? std::wstring() : L"+" + std::to_wstring(id));
+			this->touch_marker_ids_[i] = id;
+		}
 		if (i < points.size())
 		{
-			marker->set_text(L"+" + std::to_wstring(points[i].id));
 			marker->set_position(Vector2F(
 				static_cast<float>(points[i].position.x),
 				static_cast<float>(points[i].position.y)) +
 				touch_marker_offset);
-		}
-		else
-		{
-			marker->set_text(L"");
 		}
 	}
 

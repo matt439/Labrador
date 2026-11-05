@@ -63,3 +63,26 @@ TEST_CASE("unjoined sources contribute nothing and assigned pads keep the moveme
 	CHECK(directions[0] == Vector2F::zero);
 	CHECK(directions[1] == Vector2F::zero);
 }
+
+TEST_CASE("each keyboard half's keys come from one table, and a pad has none")
+{
+	const KeyBindings* left = key_bindings(InputSource::keyboard_left);
+	const KeyBindings* right = key_bindings(InputSource::keyboard_right);
+	REQUIRE(left != nullptr);
+	REQUIRE(right != nullptr);
+	CHECK(left == &keyboard_bindings[source_index(InputSource::keyboard_left)]);
+	CHECK(right == &keyboard_bindings[source_index(InputSource::keyboard_right)]);
+	CHECK(left->up == Key::w);
+	CHECK(left->confirm == Key::f);
+	CHECK(left->leave == Key::g);
+	CHECK(right->down == Key::down);
+	CHECK(right->confirm == Key::enter);
+	CHECK(right->leave == Key::backspace);
+	CHECK(key_bindings(InputSource::pad_0) == nullptr);
+	CHECK(key_bindings(InputSource::pad_3) == nullptr);
+	CHECK(key_bindings(InputSource::none) == nullptr);
+
+	// The source order is the index of every per-source array.
+	CHECK(source_index(InputSource::keyboard_left) == 0);
+	CHECK(source_index(InputSource::pad_0) + 3 == source_index(InputSource::pad_3));
+}

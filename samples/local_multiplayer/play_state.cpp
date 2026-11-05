@@ -12,21 +12,25 @@ using namespace labrador;
 
 namespace multiplayer
 {
-	PlayState::PlayState(Application* app, bool smoke_test) :
-		app_(app), smoke_test_(smoke_test) {}
+	namespace
+	{
+		// The smoke test's route: player 1 right and player 2 up, every tick.
+		const std::array<Vector2F, Arena::player_count> smoke_directions = {
+			Vector2F(1.0f, 0.0f), Vector2F(0.0f, -1.0f)
+		};
+	}
 
 	PlayState::PlayState(Application* app,
 		const std::array<InputSource, Arena::player_count>& sources) :
-		PlayState(app)
-	{
-		this->bound_sources_ = true;
-		this->sources_ = sources;
-	}
+		app_(app), sources_(sources) {}
+
+	PlayState::PlayState(Application* app, SmokeTest) :
+		app_(app), smoke_test_(true) {}
 
 	void PlayState::init()
 	{
 		this->white_ = this->app_->render_resources()->resolve_texture(white_texture_name);
-		this->font_ = this->app_->render_resources()->resolve_sprite_font("jetbrains_mono_bold_16");
+		this->font_ = this->app_->render_resources()->resolve_sprite_font(font_name);
 		this->scene_ = std::make_unique<Scene>(this->app_->thread_pool(), this->app_->partitioner());
 		this->arena_ = this->scene_->add(std::make_unique<Arena>(this->white_));
 		this->scene_->end_tick();
@@ -36,44 +40,29 @@ namespace multiplayer
 
 	void PlayState::update(float dt)
 	{
-		const Keyboard& keyboard = *this->app_->keyboard();
-		const Gamepads& pads = *this->app_->gamepads();
-		bool quit = keyboard.pressed(Key::escape);
-		if (this->bound_sources_)
+		std::array<Vector2F, Arena::player_count> directions = smoke_directions;
+		if (!this->smoke_test_)
 		{
+			const Keyboard& keyboard = *this->app_->keyboard();
+			const Gamepads& pads = *this->app_->gamepads();
+			bool quit = keyboard.pressed(Key::escape);
 			for (const InputSource source : this->sources_)
 			{
 				const int slot = pad_slot(source);
 				quit = quit || (slot >= 0 && pads.pressed(slot, GamepadButton::b));
 			}
-		}
-		else
-		{
-			quit = quit || pads.pressed(0, GamepadButton::b) ||
-				pads.pressed(1, GamepadButton::b);
-		}
-		if (!this->smoke_test_ && quit)
-		{
-			this->app_->quit();
-			return;
-		}
+			if (quit)
+			{
+				this->app_->quit();
+				return;
+			}
 
-		const std::array<Vector2F, Arena::player_count> sticks = {
-			pads.state(0).left_stick, pads.state(1).left_stick
-		};
-		std::array<Vector2F, Arena::player_count> directions = read_directions(keyboard, sticks);
-		if (this->bound_sources_)
-		{
 			std::array<Vector2F, Gamepads::max_count> all_sticks;
 			for (int slot = 0; slot < Gamepads::max_count; ++slot)
 			{
 				all_sticks[static_cast<std::size_t>(slot)] = pads.state(slot).left_stick;
 			}
 			directions = read_bound_directions(keyboard, all_sticks, this->sources_);
-		}
-		if (this->smoke_test_)
-		{
-			directions = { Vector2F(1.0f, 0.0f), Vector2F(0.0f, -1.0f) };
 		}
 		this->arena_->set_directions(directions);
 		this->scene_->update(dt);
@@ -102,9 +91,12 @@ namespace multiplayer
 			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
 				RectangleF(0.0f, 0.0f, viewport.width, 68.0f), Colour(12, 18, 27),
 				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+			// The smoke test joins no one, so its titles are fixed text, which
+			// its capture shows; a match names the source each player joined
+			// with.
 			std::wstring title = player == 0 ?
 				L"PLAYER 1  |  WASD / pad slot 0" : L"PLAYER 2  |  Arrows / pad slot 1";
-			if (this->bound_sources_)
+			if (!this->smoke_test_)
 			{
 				title = L"PLAYER " + std::to_wstring(player + 1) + L"  |  " +
 					source_name(this->sources_[player]);
@@ -127,7 +119,7 @@ namespace multiplayer
 			second.x != 960.0f || std::abs(second.y - 60.0f) > 0.01f ||
 			this->scene_->view_count() != 2)
 		{
-			throw std::runtime_error("LocalMultiplayerSample: scripted players or views diverged");
+			throw std::runtime_error("Smoke test: scripted players or views diverged");
 		}
 	}
 }

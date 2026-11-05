@@ -246,8 +246,8 @@ python -m unittest discover -s tools/tests -p test_verification_runner.py
 
 ## Configurations CI cannot run
 
-CI runs `RenderPixelTests` and `MinimalSmokeTests` on `x64-debug-gl` and
-`x64-debug-vulkan` with software rasterisers, Mesa's llvmpipe and Chrome's
+CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on
+`x64-debug-gl` and `x64-debug-vulkan` with software rasterisers, Mesa's llvmpipe and Chrome's
 SwiftShader, so a real driver is what those two presets leave out. Its matrix
 also leaves out the four release presets other than `x64-release` (CI's
 `wasm-release` is the browser one), and `wasm-debug`.

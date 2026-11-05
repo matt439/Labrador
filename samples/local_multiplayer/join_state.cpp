@@ -28,12 +28,12 @@ namespace multiplayer
 	{
 		RenderResources* resources = this->app_->render_resources();
 		this->white_ = resources->resolve_texture(white_texture_name);
-		this->font_ = resources->resolve_sprite_font("jetbrains_mono_bold_16");
+		this->font_ = resources->resolve_sprite_font(font_name);
 		this->scene_ = std::make_unique<Scene>(nullptr, nullptr);
 		this->rows_[0] = this->scene_->add(std::make_unique<UiText>(
-			"ready", L"READY", "jetbrains_mono_bold_16", Vector2F(78.0f, 118.0f), resources));
+			"ready", L"READY", font_name, Vector2F(78.0f, 118.0f), resources));
 		this->rows_[1] = this->scene_->add(std::make_unique<UiText>(
-			"leave", L"LEAVE", "jetbrains_mono_bold_16", Vector2F(78.0f, 164.0f), resources));
+			"leave", L"LEAVE", font_name, Vector2F(78.0f, 164.0f), resources));
 		this->focus_.add(this->rows_[0], [this]()
 		{
 			this->lobby_ = choose_lobby(this->lobby_, this->activating_player_, JoinChoice::ready);
@@ -50,19 +50,12 @@ namespace multiplayer
 	Direction JoinState::held_direction(InputSource source) const
 	{
 		const Keyboard& keys = *this->app_->keyboard();
-		if (source == InputSource::keyboard_left)
+		if (const KeyBindings* bound = key_bindings(source); bound != nullptr)
 		{
-			if (keys.held(Key::w)) return Direction::up;
-			if (keys.held(Key::s)) return Direction::down;
-			if (keys.held(Key::a)) return Direction::left;
-			if (keys.held(Key::d)) return Direction::right;
-		}
-		else if (source == InputSource::keyboard_right)
-		{
-			if (keys.held(Key::up)) return Direction::up;
-			if (keys.held(Key::down)) return Direction::down;
-			if (keys.held(Key::left)) return Direction::left;
-			if (keys.held(Key::right)) return Direction::right;
+			if (keys.held(bound->up)) return Direction::up;
+			if (keys.held(bound->down)) return Direction::down;
+			if (keys.held(bound->left)) return Direction::left;
+			if (keys.held(bound->right)) return Direction::right;
 		}
 		else if (const int slot = pad_slot(source); slot >= 0)
 		{
@@ -73,16 +66,20 @@ namespace multiplayer
 
 	bool JoinState::confirm_pressed(InputSource source) const
 	{
-		if (source == InputSource::keyboard_left) return this->app_->keyboard()->pressed(Key::f);
-		if (source == InputSource::keyboard_right) return this->app_->keyboard()->pressed(Key::enter);
+		if (const KeyBindings* bound = key_bindings(source); bound != nullptr)
+		{
+			return this->app_->keyboard()->pressed(bound->confirm);
+		}
 		const int slot = pad_slot(source);
 		return slot >= 0 && this->app_->gamepads()->pressed(slot, GamepadButton::a);
 	}
 
 	bool JoinState::leave_pressed(InputSource source) const
 	{
-		if (source == InputSource::keyboard_left) return this->app_->keyboard()->pressed(Key::g);
-		if (source == InputSource::keyboard_right) return this->app_->keyboard()->pressed(Key::backspace);
+		if (const KeyBindings* bound = key_bindings(source); bound != nullptr)
+		{
+			return this->app_->keyboard()->pressed(bound->leave);
+		}
 		const int slot = pad_slot(source);
 		return slot >= 0 && this->app_->gamepads()->pressed(slot, GamepadButton::b);
 	}
@@ -99,13 +96,16 @@ namespace multiplayer
 
 		static_assert(input_source_count == static_cast<std::size_t>(Gamepads::max_count) + 2);
 		std::array<JoinInput, input_source_count> input = {};
-		input[0].connected = true;
-		input[0].join_pressed = keyboard.pressed(Key::f);
-		input[1].connected = true;
-		input[1].join_pressed = keyboard.pressed(Key::enter);
+		for (const InputSource half : { InputSource::keyboard_left, InputSource::keyboard_right })
+		{
+			JoinInput& source = input[source_index(half)];
+			source.connected = true;
+			source.join_pressed = keyboard.pressed(key_bindings(half)->confirm);
+		}
 		for (int slot = 0; slot < Gamepads::max_count; ++slot)
 		{
-			JoinInput& source = input[static_cast<std::size_t>(slot) + 2];
+			JoinInput& source = input[source_index(InputSource::pad_0) +
+				static_cast<std::size_t>(slot)];
 			source.connected = pads.connected(slot);
 			source.just_connected = pads.just_connected(slot);
 			source.just_disconnected = pads.just_disconnected(slot);

@@ -49,7 +49,8 @@ flowchart TD
         linesweeper["LineSweeperSample<br/>whole sample game"]
         collision_sample["CollisionSample"]
         gallery["ComponentsGallery"]
-        guides["AudioSample<br/>LocalMultiplayerSample"]
+        audio_sample["AudioSample"]
+        multiplayer_sample["LocalMultiplayerSample"]
         throughput["LabradorBench<br/>complexity gates"]
         frame["LineSweeperFrameBench<br/>declared hardware measurement"]
         capture["LineSweeperCapture<br/>exact images of the sample"]
@@ -60,6 +61,7 @@ flowchart TD
         math["LabradorMath"]
         rules["LineSweeperRules"]
         collision_example["CollisionExample"]
+        multiplayer_example["LocalMultiplayerExample"]
         components["ComponentsExample"]
     end
     subgraph edge["the bought edge (T9)"]
@@ -74,7 +76,9 @@ flowchart TD
     collision_example --> engine
     gallery --> components
     components --> engine
-    guides --> engine
+    audio_sample --> engine
+    multiplayer_sample --> multiplayer_example
+    multiplayer_example --> engine
     throughput --> engine
     frame --> engine
     frame --> rules

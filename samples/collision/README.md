@@ -44,7 +44,7 @@ under Node there instead.
 
 | Control | Action |
 | --- | --- |
-| WASD, arrows or player one's left stick | Move |
+| WASD, arrows or any pad's left stick | Move |
 | R or gamepad Y | Reset position and counters |
 | Escape or gamepad B | Quit |
 
@@ -75,12 +75,19 @@ collision detection, gravity, moving-body solver or guarantee for arbitrary
 speeds and level layouts. Validate movement together with geometry when
 adapting the sample.
 
-`CollisionSampleTests` runs the same `Arena` and `Body` without a window,
-graphics device or loaded content. It runs on every backend. To exercise the
+Every pad slot counts, as in the template: the system need not put the only
+pad in slot 0. `pads.h` combines the slots, summing the sticks and taking Y
+or B from any of them.
+
+`CollisionSampleTests` runs the same `Arena` and `Body`, and the pad
+combination, without a window, graphics device or loaded content. It runs on
+every backend. To exercise the
 application, manifest and drawing too, launch `CollisionSample.exe --smoke-test`.
 It runs hidden for 315 fixed steps, follows a route into the wall and around it
-to the trigger, checks the result and exits with code zero on success. This is
-a device test, separate from CTest; use a rasterising preset to inspect pixels.
+to the trigger, checks the result and exits with code zero on success.
+`CollisionSmokeTests` runs it on every Windows preset, as `MinimalSmokeTests`
+runs the template's; like that one it needs the selected renderer's device.
+Use a rasterising preset to inspect pixels.
 Add `--capture path.png` after `--smoke-test` to write its final frame through
 the existing PNG writer. Capture is available on rasterising presets only.
 

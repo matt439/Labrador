@@ -15,7 +15,7 @@
 
 using namespace labrador;
 
-namespace audio_sample
+namespace audio
 {
 	namespace
 	{
@@ -49,15 +49,10 @@ namespace audio_sample
 		const std::string manifest_path = executable_directory() + "manifest.json";
 		const AssetManifest manifest = anchored_to_source(
 			read_asset_manifest(manifest_path.c_str()));
-		AssetManifest audio_manifest;
-		audio_manifest.source_path = manifest.source_path;
-		for (const AssetEntry& entry : manifest.entries)
+		AssetManifest audio_manifest = audio_entries(manifest);
+		for (const AssetEntry& entry : audio_manifest.entries)
 		{
-			if (entry.kind == "sound_bank")
-			{
-				require(!entry.optional, "AudioSample's bank must be required.");
-				audio_manifest.entries.push_back(entry);
-			}
+			require(!entry.optional, "The sound bank must be required");
 		}
 		report_step("loading required bank");
 		loader.load_manifest(std::move(audio_manifest));
@@ -71,22 +66,22 @@ namespace audio_sample
 		report_step("starting loop");
 		board.start_loop();
 		require(board.loop_state() == SoundState::playing && board.is_looping(),
-			"The drone did not start. An active audio output device is required.");
+			"The drone did not start: an active audio output device is required");
 		update_for(device, 200);
 		board.set_volume(0.25f);
 		board.set_pan(-0.5f);
 		board.set_pitch(0.25f);
 		report_step("pausing loop");
 		board.toggle_pause();
-		require(board.loop_state() == SoundState::paused, "The drone did not pause.");
+		require(board.loop_state() == SoundState::paused, "The drone did not pause");
 		update_for(device, 50);
 		report_step("resuming loop");
 		board.toggle_pause();
-		require(board.loop_state() == SoundState::playing, "The drone did not resume.");
+		require(board.loop_state() == SoundState::playing, "The drone did not resume");
 		update_for(device, 200);
 		report_step("stopping loop");
 		board.stop_loop();
-		require(board.loop_state() == SoundState::stopped, "The drone did not stop.");
+		require(board.loop_state() == SoundState::stopped, "The drone did not stop");
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
 		std::puts("AudioSample smoke passed (null audio: recorded calls, no playback).");
 #else

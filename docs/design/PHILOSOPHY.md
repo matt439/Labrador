@@ -302,7 +302,8 @@ the tests share one dependency direction and one compiler-settings target
 | `CollisionExample` | static library | `samples/collision/` | LabradorEngine |
 | `CollisionSample` | application | `samples/collision/` | CollisionExample |
 | `AudioSample` | application | `samples/audio/` | LabradorEngine |
-| `LocalMultiplayerSample` | application | `samples/local_multiplayer/` | LabradorEngine |
+| `LocalMultiplayerExample` | static library, so the sample and its tests compile its sources once | `samples/local_multiplayer/` | LabradorEngine |
+| `LocalMultiplayerSample` | application | `samples/local_multiplayer/` | LocalMultiplayerExample |
 | `ComponentsExample` | static library, so the gallery and the tests compile the components once; games copy the sources instead | `samples/components/` | LabradorEngine |
 | `ComponentsGallery` | application | `samples/components/` | ComponentsExample |
 | `LabradorBench` | benchmark application | `bench/` | LabradorEngine |

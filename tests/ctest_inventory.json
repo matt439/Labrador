@@ -34,6 +34,9 @@
       "wasm-release",
       "wasm-release-null"
     ],
+    "AudioSmokeTests": [
+      "x64-debug-null"
+    ],
     "BrowserProtocolTests": [
       "wasm-release",
       "wasm-release-null"
@@ -41,6 +44,14 @@
     "CollisionPageTests": [
       "wasm-release",
       "wasm-release-null"
+    ],
+    "CollisionSmokeTests": [
+      "x64-debug",
+      "x64-release",
+      "x64-debug-d3d12",
+      "x64-debug-gl",
+      "x64-debug-vulkan",
+      "x64-debug-null"
     ],
     "ComponentsPageTests": [
       "wasm-release",
@@ -98,6 +109,9 @@
     "LocalMultiplayerPageTests": [
       "wasm-release",
       "wasm-release-null"
+    ],
+    "LocalMultiplayerSmokeTests": [
+      "x64-debug-null"
     ],
     "MinimalPageTests": [
       "wasm-release",

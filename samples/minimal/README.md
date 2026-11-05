@@ -41,6 +41,14 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-05.** `HelloState` sets a touch marker's text only when its
+  finger changes, as `engine/render/label.h` asks of a caller that would
+  otherwise re-measure every frame: `touch_marker_ids_` in `hello_state.h`
+  holds the id each marker shows, zero for blank, and `update()` compares
+  before it calls `set_text`. What is drawn is unchanged; a copy that kept
+  the markers wants the member and the comparison. `tests/motion_tests.cpp`
+  now checks the two-pad state before slot 0 is emptied, which a copy can
+  take as it is.
 - **2026-11-04.** The engine reads PNG textures and links `lodepng`, so the
   project's `vcpkg.json` names it beside `doctest`. A copy adds `"lodepng"` to
   its `dependencies`, with a comma after the entry before it; without it,

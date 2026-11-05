@@ -11,7 +11,7 @@
 
 using namespace labrador;
 
-namespace audio_sample
+namespace audio
 {
 	AudioState::AudioState(Application* app) : app_(app) {}
 
@@ -88,14 +88,24 @@ namespace audio_sample
 
 	void AudioState::refresh_status()
 	{
-		const SoundState state = this->board_->loop_state();
-		const wchar_t* name = state == SoundState::playing ? L"playing" :
-			state == SoundState::paused ? L"paused" : L"stopped";
+		const StatusValues now{ this->board_->loop_state(), this->board_->volume(),
+			this->board_->pan(), this->board_->pitch() };
+		if (this->status_shown_ && now.loop == this->shown_.loop &&
+			now.volume == this->shown_.volume && now.pan == this->shown_.pan &&
+			now.pitch == this->shown_.pitch)
+		{
+			return;
+		}
+		this->shown_ = now;
+		this->status_shown_ = true;
+
+		const wchar_t* name = now.loop == SoundState::playing ? L"playing" :
+			now.loop == SoundState::paused ? L"paused" : L"stopped";
 		std::wostringstream text;
 		text << L"Drone: " << name << std::fixed << std::setprecision(2)
-			<< L"\n\nVolume: " << this->board_->volume()
-			<< L"    Pan: " << this->board_->pan()
-			<< L"    Pitch: " << this->board_->pitch();
+			<< L"\n\nVolume: " << now.volume
+			<< L"    Pan: " << now.pan
+			<< L"    Pitch: " << now.pitch;
 		this->status_->set_text(text.str());
 	}
 

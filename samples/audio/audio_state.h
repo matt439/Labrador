@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace audio_sample
+namespace audio
 {
 	class AudioState final : public labrador::State
 	{
@@ -28,6 +28,19 @@ namespace audio_sample
 		// Owned by scene_ and retained until this state is destroyed.
 		labrador::Label* status_ = nullptr;
 		bool resume_loop_ = false;
+
+		// What the status line shows, so that refresh_status() rebuilds and
+		// re-measures it only when one of them changes rather than every tick
+		// (engine/render/label.h).
+		struct StatusValues
+		{
+			labrador::SoundState loop = labrador::SoundState::stopped;
+			float volume = 0.0f;
+			float pan = 0.0f;
+			float pitch = 0.0f;
+		};
+		StatusValues shown_;
+		bool status_shown_ = false;
 		void refresh_status();
 	};
 }
