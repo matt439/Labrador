@@ -23,23 +23,21 @@ namespace labrador
 			{ ScreenResolution::s_3840_2160, Vector2I(3840, 2160), "3840x2160" },
 		};
 
-		// The preset with this label, or null for a value outside the enum.
-		const Preset* find_preset(ScreenResolution resolution)
+		// The preset with this label. A value outside the enum is refused by
+		// number (T6) rather than answered with a size nothing can lay out
+		// against.
+		const Preset& preset_for(ScreenResolution resolution)
 		{
 			for (const Preset& preset : presets)
 			{
 				if (preset.resolution == resolution)
 				{
-					return &preset;
+					return preset;
 				}
 			}
-			return nullptr;
-		}
-
-		Vector2I convert_resolution_to_ivec(ScreenResolution resolution)
-		{
-			const Preset* preset = find_preset(resolution);
-			return preset != nullptr ? preset->size : Vector2I(-1, -1);
+			throw std::invalid_argument("ScreenResolution " +
+				std::to_string(static_cast<int>(resolution)) +
+				" is not one of the four presets.");
 		}
 
 		// The preset this size is exactly, and s_1280_720 for any other.
@@ -100,8 +98,9 @@ namespace labrador
 	{
 		// Both members, from the one argument. Every other overload lands here,
 		// so there is one place that decides what a preset means.
-		this->resolution_ = resolution;
-		this->size_ = convert_resolution_to_ivec(resolution);
+		const Preset& preset = preset_for(resolution);
+		this->resolution_ = preset.resolution;
+		this->size_ = preset.size;
 	}
 
 	void ResolutionManager::set_resolution(const Vector2F& resolution)
@@ -140,7 +139,7 @@ namespace labrador
 		// difference between "this size IS 720p" and "this size has just been
 		// replaced by 720p". A size with no name keeps the last named one.
 		const ScreenResolution candidate = convert_ivec_to_resolution(size);
-		if (convert_resolution_to_ivec(candidate) == size)
+		if (preset_for(candidate).size == size)
 		{
 			this->resolution_ = candidate;
 		}
@@ -149,7 +148,6 @@ namespace labrador
 	std::string ResolutionManager::convert_resolution_to_string(
 		ScreenResolution resolution)
 	{
-		const Preset* preset = find_preset(resolution);
-		return std::string(preset != nullptr ? preset->name : "-1x-1");
+		return std::string(preset_for(resolution).name);
 	}
 }

@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Refuse a ScreenResolution outside the four presets
+
+**Behaviour change.** `ResolutionManager::set_resolution(ScreenResolution)` and `ResolutionManager::convert_resolution_to_string` now throw `std::invalid_argument` for a value that is not one of the four presets. Only a cast can produce such a value. Before this change, `set_resolution` stored it with a size of -1 by -1, which reached `ViewportManager` and everything that divides by the size, and `convert_resolution_to_string` named it "-1x-1". `set_resolution` now throws before it changes either the label or the size. A game that casts an integer to `ScreenResolution` should keep the integer between 0 and `ScreenResolution::max`, which is the range ColourWars' option cycling already uses.
+
 ### 2026-11-05 - Rename Shape::AABB_intersects to bounding_boxes_intersect
 
 **Source break: `Shape::AABB_intersects` is now `Shape::bounding_boxes_intersect(const Shape&)`, and the pointer overload is removed.** To migrate, replace `a.AABB_intersects(b)` with `a.bounding_boxes_intersect(b)`, and replace `a->AABB_intersects(b_pointer)` with `a->bounding_boxes_intersect(*b_pointer)`. The answer is unchanged. No sample called it, and the engine's one caller, the contact pass, is updated.

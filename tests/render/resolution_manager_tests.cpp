@@ -6,6 +6,7 @@
 #include "engine/math/vector2i.h"
 
 #include <stdexcept>
+#include <tuple>
 
 using labrador::ResolutionManager;
 using labrador::ScreenResolution;
@@ -135,4 +136,29 @@ TEST_CASE("a non-positive extent is refused rather than divided by")
 
 	// And it threw before it wrote.
 	CHECK(manager.resolution_ivec() == Vector2I(1280, 720));
+}
+
+TEST_CASE("a value outside the presets is refused rather than given a size")
+{
+	ResolutionManager manager;
+	manager.set_resolution(ScreenResolution::s_1920_1080);
+
+	const ScreenResolution past_the_end = static_cast<ScreenResolution>(
+		static_cast<int>(ScreenResolution::max) + 1);
+	const ScreenResolution negative = static_cast<ScreenResolution>(-1);
+
+	CHECK_THROWS_AS(manager.set_resolution(past_the_end),
+		std::invalid_argument);
+	CHECK_THROWS_AS(manager.set_resolution(negative), std::invalid_argument);
+	CHECK_THROWS_AS(std::ignore =
+		ResolutionManager::convert_resolution_to_string(past_the_end),
+		std::invalid_argument);
+
+	// It threw before it wrote either member.
+	CHECK(manager.resolution() == ScreenResolution::s_1920_1080);
+	CHECK(manager.resolution_ivec() == Vector2I(1920, 1080));
+
+	// And every preset still has its name.
+	CHECK(ResolutionManager::convert_resolution_to_string(
+		ScreenResolution::s_3840_2160) == "3840x2160");
 }
