@@ -12,12 +12,12 @@ labrador_add_test_suite(InputTests
 
 # The browser pad's translation, which Node can reach with no Gamepad API, and
 # its rumble transport, driven against a fake navigator.getGamepads() that
-# web_vibration_tests.cpp installs for each case. Compiled only where that
+# web/web_vibration_tests.cpp installs for each case. Compiled only where that
 # backend is.
 if(LABRADOR_INPUT_BACKEND STREQUAL "web")
     target_sources(InputTests PRIVATE
-        standard_gamepad_tests.cpp
-        web_vibration_tests.cpp)
+        web/standard_gamepad_tests.cpp
+        web/web_vibration_tests.cpp)
 endif()
 
 # The XInput pad's translation, the part of engine/input/xinput/ that needs no
@@ -27,6 +27,6 @@ endif()
 if(LABRADOR_INPUT_BACKEND STREQUAL "xinput")
     find_package(xaudio2redist CONFIG REQUIRED)
     find_package(directxtk CONFIG REQUIRED)
-    target_sources(InputTests PRIVATE xinput_gamepad_tests.cpp)
+    target_sources(InputTests PRIVATE xinput/xinput_gamepad_tests.cpp)
     target_link_libraries(InputTests PRIVATE Microsoft::DirectXTK)
 endif()

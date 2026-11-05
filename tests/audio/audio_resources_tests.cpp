@@ -20,9 +20,9 @@ using namespace labrador;
 // RenderResources".
 //
 // Every bank below is SoundBank::silent(), though a bank over
-// engine/audio/null/ can be built and read back (tests/audio/null_tests.cpp),
-// because a bank with
-// no content needs no device and compiles in all six configurations, and none
+// engine/audio/null/ can be built and read back (tests/audio/null/null_tests.cpp),
+// because a bank with no content needs no device and compiles in every
+// configuration, and none
 // of this file is about what a bank plays - a registry does not know what it
 // holds, which is the property being asserted.
 //

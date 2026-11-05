@@ -6,6 +6,7 @@
 #include "samples/local_multiplayer/arena.h"
 #include "samples/local_multiplayer/controls.h"
 
+#include <array>
 #include <memory>
 
 using namespace labrador;

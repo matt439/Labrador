@@ -48,12 +48,10 @@ add_dependencies(AudioTests audio_test_content)
 # names one only compiles when that one is built. The private definition also
 # gates the null fixture in the Debug allocation-failure cases above.
 #
-# THIS IS THE FILE docs/survey/2026-08-26.md 3.4b EXISTS TO PRODUCE. It is
-# where the eight methods 3.4a found to have no observable behaviour say what
-# they did, and where the five level clamps that had never executed are read
-# back off the numbers that reached the device.
+# It is where SoundBank's effect verbs say what they did, and where the level
+# clamp is read back off the numbers that reached the device.
 if(LABRADOR_AUDIO_BACKEND STREQUAL "null")
-    target_sources(AudioTests PRIVATE null_tests.cpp)
+    target_sources(AudioTests PRIVATE null/null_tests.cpp)
     target_compile_definitions(AudioTests PRIVATE LABRADOR_TEST_NULL_AUDIO)
 endif()
 
@@ -61,12 +59,12 @@ endif()
 # wave_bank_policy.h) against stand-ins; no endpoint, DirectXTK graph or
 # WaveBank is created.
 if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2")
-    target_sources(AudioTests PRIVATE xaudio2_recovery_tests.cpp)
+    target_sources(AudioTests PRIVATE xaudio2/xaudio2_recovery_tests.cpp)
 endif()
 
 # The Web Audio backend's, by the same rule. It is a browser build's, whose
 # tests run under Node with no Web Audio, so these are what that backend answers
 # without making a sound; webaudio_tests.cpp says what is left for a page.
 if(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")
-    target_sources(AudioTests PRIVATE webaudio_tests.cpp)
+    target_sources(AudioTests PRIVATE webaudio/webaudio_tests.cpp)
 endif()

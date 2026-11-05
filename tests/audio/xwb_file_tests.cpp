@@ -1,11 +1,11 @@
 #include <doctest/doctest.h>
 
 #include "engine/audio/xwb_file.h"
+#include "engine/core/byte_reader.h"
 #include "tests/scratch_file.h"
 
 #include <algorithm>
 #include <cstdint>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -27,19 +27,10 @@ namespace
 	using labrador::WaveBankData;
 	using labrador::WaveData;
 	using labrador::WaveEncoding;
+	using labrador::read_file_bytes;
 	using labrador::read_xwb_file;
 	using labrador_tests::ScratchFile;
-
-	std::vector<unsigned char> file_bytes(const std::string& path)
-	{
-		std::ifstream file(path, std::ios::binary | std::ios::ate);
-		REQUIRE(file.good());
-		const std::streamoff size = file.tellg();
-		std::vector<unsigned char> bytes(static_cast<size_t>(size));
-		file.seekg(0, std::ios::beg);
-		file.read(reinterpret_cast<char*>(bytes.data()), size);
-		return bytes;
-	}
+	using labrador_tests::put_u32_le;
 
 	uint32_t u32_at(const std::vector<unsigned char>& bytes, size_t at)
 	{
@@ -49,20 +40,11 @@ namespace
 			(static_cast<uint32_t>(bytes[at + 3]) << 24);
 	}
 
-	void put_u32(std::vector<unsigned char>& bytes, size_t at, uint32_t value)
-	{
-		for (size_t i = 0; i < 4; i++)
-		{
-			bytes[at + i] =
-				static_cast<unsigned char>((value >> (8 * i)) & 0xFFu);
-		}
-	}
-
 	// The samples in a 16-bit PCM WAV's data chunk. The source WAVs are
 	// written by Python's wave module, so the chunks are the plain ones.
 	std::vector<int16_t> wav_samples(const std::string& path)
 	{
-		const std::vector<unsigned char> bytes = file_bytes(path);
+		const std::vector<unsigned char> bytes = read_file_bytes(path);
 		size_t at = 12;
 		while (at + 8 <= bytes.size())
 		{
@@ -132,35 +114,35 @@ namespace
 		}
 
 		std::vector<unsigned char> bytes(data_at + data_length, 0);
-		put_u32(bytes, 0, 0x444E4257);
-		put_u32(bytes, 4, 46);
-		put_u32(bytes, 8, 44);
+		put_u32_le(bytes, 0, 0x444E4257);
+		put_u32_le(bytes, 4, 46);
+		put_u32_le(bytes, 8, 44);
 		const std::vector<uint32_t> segments = { 52, 96, entries_at,
 			24 * count, names_at, 0, names_at, names_length, data_at,
 			data_length };
 		for (size_t i = 0; i < segments.size(); i++)
 		{
-			put_u32(bytes, 12 + 4 * i, segments[i]);
+			put_u32_le(bytes, 12 + 4 * i, segments[i]);
 		}
 
-		put_u32(bytes, 52, named ? 0x00010000u : 0u);
-		put_u32(bytes, 56, count);
+		put_u32_le(bytes, 52, named ? 0x00010000u : 0u);
+		put_u32_le(bytes, 56, count);
 		bytes[60] = 'b';
-		put_u32(bytes, 124, 24);
-		put_u32(bytes, 128, named ? 64u : 0u);
-		put_u32(bytes, 132, 4);
+		put_u32_le(bytes, 124, 24);
+		put_u32_le(bytes, 128, named ? 64u : 0u);
+		put_u32_le(bytes, 132, 4);
 
 		uint32_t offset = 0;
 		for (uint32_t i = 0; i < count; i++)
 		{
 			const Entry& entry = entries[i];
 			const size_t at = entries_at + 24 * i;
-			put_u32(bytes, at, entry.duration << 4);
-			put_u32(bytes, at + 4, entry.format);
-			put_u32(bytes, at + 8, offset);
-			put_u32(bytes, at + 12, static_cast<uint32_t>(entry.data.size()));
-			put_u32(bytes, at + 16, entry.loop_start);
-			put_u32(bytes, at + 20, entry.loop_length);
+			put_u32_le(bytes, at, entry.duration << 4);
+			put_u32_le(bytes, at + 4, entry.format);
+			put_u32_le(bytes, at + 8, offset);
+			put_u32_le(bytes, at + 12, static_cast<uint32_t>(entry.data.size()));
+			put_u32_le(bytes, at + 16, entry.loop_start);
+			put_u32_le(bytes, at + 20, entry.loop_length);
 			if (named)
 			{
 				for (size_t c = 0; c < entry.name.size(); c++)
@@ -419,7 +401,7 @@ TEST_CASE("entries are found by offset, carry their loop, and may be unnamed")
 	// A streaming bank lays its entries out the same way; only how a player
 	// would fetch them differs, and this reader holds the whole file.
 	std::vector<unsigned char> streaming = build_bank({ first, second });
-	put_u32(streaming, 52, 0x00010001);
+	put_u32_le(streaming, 52, 0x00010001);
 	CHECK(read_bank(streaming).waves[1].samples ==
 		std::vector<int16_t>{ 3, 4, 5 });
 
@@ -450,14 +432,14 @@ TEST_CASE("a bank this engine cannot play says which way")
 	SUBCASE("a big-endian bank")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 0, 0x57424E44);
+		put_u32_le(bytes, 0, 0x57424E44);
 		CHECK(contains(refusal(bytes), "big-endian"));
 	}
 
 	SUBCASE("another version")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 8, 43);
+		put_u32_le(bytes, 8, 43);
 		CHECK(contains(refusal(bytes), "version 43"));
 	}
 
@@ -479,7 +461,7 @@ TEST_CASE("a bank this engine cannot play says which way")
 	SUBCASE("more entries than the metadata holds")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 56, 1000000);
+		put_u32_le(bytes, 56, 1000000);
 		CHECK(contains(refusal(bytes), "1000000 entries"));
 	}
 
@@ -548,7 +530,7 @@ TEST_CASE("a bank this engine cannot play says which way")
 	SUBCASE("compact entries")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 52, 0x00030000);
+		put_u32_le(bytes, 52, 0x00030000);
 		CHECK(contains(refusal(bytes), "compact"));
 	}
 
@@ -571,7 +553,7 @@ TEST_CASE("a bank this engine cannot play says which way")
 	SUBCASE("a play region past the wave data")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 52 + 96 + 8, 2);              // play offset
+		put_u32_le(bytes, 52 + 96 + 8, 2);              // play offset
 		const std::string message = refusal(bytes);
 		CHECK(contains(message, "entry 0 (\"tone\")"));
 		CHECK(contains(message, "bytes 2 to 6"));

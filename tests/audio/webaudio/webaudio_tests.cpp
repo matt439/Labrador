@@ -21,8 +21,8 @@ using namespace labrador;
 // sound: the container read through the engine's reader, the two throws the
 // seam tells apart by type, and DirectXTK's state transitions, which this
 // backend keeps on the C++ side so that what a game is told does not wait on
-// the browser. What reaches a speaker needs a page and a person, and the
-// commit that added this file says how it was checked.
+// the browser. What reaches a speaker needs a page and a person;
+// samples/audio/README.md owns playback.
 //
 // The bank is the audio sample's tones.xwb, which this folder's CMakeLists
 // copies beside the executable for xwb_file_tests.cpp.
@@ -187,11 +187,12 @@ TEST_CASE("a playing voice keeps the loop it was started with")
 	CHECK(fixture.bank->effect_state(ping) == SoundState::playing);
 }
 
-TEST_CASE("a group's volume reaches this device as plain level calls")
+TEST_CASE("group volume calls are accepted and leave each voice's state alone")
 {
 	// The group arithmetic is SoundBank's, above the seam, so all this
 	// backend sees is the product through the verbs it already has - and
-	// a paused voice taking a new level is one of them.
+	// a paused voice taking a new level is one of them. This device keeps no
+	// level a test can read back; null_tests.cpp pins the products.
 	AudioDevice device;
 	SoundBankDefinition definition;
 	definition.source_path = "tones.json";

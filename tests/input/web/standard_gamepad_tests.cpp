@@ -11,7 +11,7 @@ using namespace labrador;
 // The browser pad's translation and slot assignment, asserted with no
 // browser. Node has no Gamepad API, so the event Emscripten would fill from
 // navigator.getGamepads() is filled here by hand. Compiled into the browser
-// build only, beside the file it tests, as dom_events_tests.cpp is.
+// build only, beside the file it tests.
 
 namespace
 {
@@ -143,6 +143,11 @@ TEST_CASE("a standard pad short of the buttons or axes the engine reads is absen
 	EmscriptenGamepadEvent no_guide = standard_pad(0);
 	no_guide.numButtons = 16;
 	CHECK(is_standard_gamepad(no_guide));
+
+	// And on a pad that has one, pressing it sets no engine button.
+	EmscriptenGamepadEvent guide = standard_pad(0);
+	guide.digitalButton[16] = true;
+	CHECK(gamepad_state_from_standard(guide).buttons == 0);
 }
 
 TEST_CASE("a disconnected pad reads as an empty slot")

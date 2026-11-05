@@ -95,7 +95,8 @@ namespace
 	constexpr int reset = 2;
 
 	// The fake pad for one case's length, so no other case in the suite
-	// sees a Gamepad API: gamepad_tests.cpp expects Node to have none.
+	// sees a Gamepad API: vibration_tests.cpp's Gamepads cases expect Node
+	// to have none, and every slot empty.
 	struct FakePad
 	{
 		explicit FakePad(bool dual_rumble)

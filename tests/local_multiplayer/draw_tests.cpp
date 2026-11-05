@@ -9,6 +9,7 @@
 #include "samples/local_multiplayer/arena.h"
 
 #include <memory>
+#include <vector>
 
 using namespace labrador;
 using namespace multiplayer;

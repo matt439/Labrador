@@ -7,8 +7,8 @@ labrador_add_test_suite(AppTests
     SOURCES
         application_options_tests.cpp
         content_root_tests.cpp
-        dom_events_tests.cpp
         frame_timer_tests.cpp
+        web/dom_events_tests.cpp
     LINKS LabradorEngine
 )
 if(NOT EMSCRIPTEN)

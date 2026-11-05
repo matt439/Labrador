@@ -17,14 +17,14 @@ using namespace labrador;
 // So every case below runs against SoundBank::silent(), and what
 // they pin is the contract that survives missing content.
 //
-// tests/audio/null_tests.cpp covers content-backed bank calls through the
+// tests/audio/null/null_tests.cpp covers content-backed bank calls through the
 // null backend's recording. The null-only allocation case in
 // audio_resources_failure_tests.cpp also records calls after restoring its
 // allocation probe. These checks establish command and state behavior;
 // listening remains separate.
 //
 // The audible bank's observable behaviour is pinned in the null configuration
-// (engine/audio/null/), where tests/audio/null_tests.cpp reads back what
+// (engine/audio/null/), where tests/audio/null/null_tests.cpp reads back what
 // reached the device, the clamp included. What is left here is the other bank,
 // and it is a different question: not "what can a test see", but what a game
 // gets when the wave bank a manifest marked optional is not on disk.
@@ -64,7 +64,7 @@ TEST_CASE("a bank with no content resolves any name, including an impossible one
 
 	// Slot zero rather than an unresolved handle, and sound_bank.cpp says why
 	// in its own words: every play below rejects an unresolved handle in every
-	// build now, and a bank with no content must not reject a name.
+	// build, and a bank with no content must not reject a name.
 	CHECK(wave.index() == 0);
 	CHECK(effect.index() == 0);
 }
@@ -110,6 +110,17 @@ TEST_CASE("a bank with no content plays nothing, and every verb still runs")
 	CHECK_NOTHROW(bank->set_effect_pitch(effect, 0.5f));
 	CHECK_NOTHROW(bank->set_effect_pan(effect, 0.5f));
 
+	// Nonsense levels are accepted too - a volume five hundred times full, a
+	// pitch and a pan an order of magnitude outside their range - because
+	// there is nothing to play them. The clamp they would meet is above the
+	// check for content, but a bank with no device behind it has nowhere to
+	// show the clamped number: null_tests.cpp reads it back.
+	CHECK_NOTHROW(bank->play_wave(wave, 500.0f, -12.0f, 9.0f));
+	CHECK_NOTHROW(bank->play_effect(effect, false, -1.0f, 40.0f, -40.0f));
+	CHECK_NOTHROW(bank->set_effect_volume(effect, 1000.0f));
+	CHECK_NOTHROW(bank->set_effect_pitch(effect, -1000.0f));
+	CHECK_NOTHROW(bank->set_effect_pan(effect, 1000.0f));
+
 	// The two readers answer rather than throwing, and what they answer is
 	// true: nothing is playing, because nothing can.
 	CHECK(bank->effect_state(effect) == SoundState::stopped);
@@ -149,33 +160,6 @@ TEST_CASE("a handle nobody resolved is refused by a bank with no content too")
 	CHECK_THROWS_AS(
 		std::ignore = bank->is_effect_looping(never_resolved_effect),
 		std::out_of_range);
-}
-
-TEST_CASE("a bank with no content still runs the arithmetic it owns")
-{
-	const std::unique_ptr<SoundBank> bank = SoundBank::silent();
-	const SoundBank::WaveHandle wave = bank->resolve_wave("shot");
-	const SoundBank::EffectHandle effect = bank->resolve_effect("engine_loop");
-
-	// Nonsense on every axis - a volume five hundred times full, a pitch and a
-	// pan an order of magnitude outside their range - and none of it is
-	// refused, because there is nothing to play it.
-	//
-	// WHAT THIS CASE CANNOT SEE, AND WHY IT IS STILL HERE. The clamp runs
-	// now: it sits above the check for content rather than below it, which is
-	// where docs/survey/2026-08-26.md 3.4a measured that it belonged, because
-	// folding a volume into [0,1] is arithmetic this module owns and not the
-	// platform's. A bank with nothing behind it still cannot show you the
-	// result - there is no device to have received the clamped number. That
-	// is what null_tests.cpp is for, and the split between these two files is
-	// the honest statement of what a seam bought: the order is a claim about
-	// which side of the wall the arithmetic is on, and the headless backend
-	// is what makes the claim checkable.
-	CHECK_NOTHROW(bank->play_wave(wave, 500.0f, -12.0f, 9.0f));
-	CHECK_NOTHROW(bank->play_effect(effect, false, -1.0f, 40.0f, -40.0f));
-	CHECK_NOTHROW(bank->set_effect_volume(effect, 1000.0f));
-	CHECK_NOTHROW(bank->set_effect_pitch(effect, -1000.0f));
-	CHECK_NOTHROW(bank->set_effect_pan(effect, 1000.0f));
 }
 
 TEST_CASE("a bank no AudioResources holds has no groups to put a sound in")

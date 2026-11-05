@@ -23,7 +23,6 @@ namespace
 		bool output = true;
 		bool reset_output = false;
 		bool reset_throws = false;
-		bool critical_error = false;
 		int updates = 0;
 		int resets = 0;
 
@@ -36,8 +35,6 @@ namespace
 		bool Reset()
 		{
 			++this->resets;
-			// The pinned DirectXTK clears this even when no endpoint exists.
-			this->critical_error = false;
 			if (this->reset_throws)
 			{
 				throw std::runtime_error("reset failure");
@@ -66,7 +63,6 @@ TEST_CASE("XAudio2 retries initially silent output at one second intervals")
 	detail::DeviceRecovery recovery;
 	RecoveryEngine engine;
 	engine.output = false;
-	CHECK_FALSE(engine.critical_error);
 	recovery.update(engine, start);
 	CHECK(engine.resets == 1);
 	engine.reset_output = true;
@@ -80,14 +76,12 @@ TEST_CASE("XAudio2 retries initially silent output at one second intervals")
 	CHECK(engine.resets == 2);
 }
 
-TEST_CASE("XAudio2 keeps retrying after reset clears the critical error")
+TEST_CASE("XAudio2 keeps retrying a reset that finds no output, and a fresh loss starts a new interval")
 {
 	detail::DeviceRecovery recovery;
 	RecoveryEngine engine;
 	engine.output = false;
-	engine.critical_error = true;
 	recovery.update(engine, start);
-	CHECK_FALSE(engine.critical_error);
 	CHECK(engine.resets == 1);
 	recovery.update(engine, start + std::chrono::seconds(1));
 	CHECK(engine.resets == 2);
@@ -123,7 +117,7 @@ TEST_CASE("XAudio2 defers silent recovery while suspended and retries on resume"
 	CHECK(engine.output);
 }
 
-TEST_CASE("XAudio2 resume can recover output that became silent without a critical error")
+TEST_CASE("XAudio2 resume retries output that became silent while suspended")
 {
 	detail::DeviceRecovery recovery;
 	RecoveryEngine engine;

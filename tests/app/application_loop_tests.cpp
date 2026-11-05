@@ -25,6 +25,18 @@ namespace
 {
 	using namespace labrador;
 
+	// A hidden window with null render and audio, one view and one thread:
+	// what every live case here starts from, before its own options.
+	ApplicationOptions hidden_options(const wchar_t* class_name)
+	{
+		ApplicationOptions options;
+		options.window_class_name = class_name;
+		options.visible = false;
+		options.view_capacity = 1;
+		options.max_threads = 1;
+		return options;
+	}
+
 	// Records what frame_timings() says from inside the loop, and quits after
 	// a handful of updates. Halfway through it draws a frame of its own, the
 	// way a capture does (Renderer::read_back_buffer), which the null
@@ -54,18 +66,18 @@ namespace
 
 			this->seen_->push_back(this->app_->frame_timings());
 			this->updates_++;
-			this->steps_.push_back(this->app_->step_position());
+			this->steps.push_back(this->app_->step_position());
 
 			if (this->updates_ == capture_at)
 			{
-				this->capture_before_ = this->app_->frame_timings().frame;
+				this->capture_before = this->app_->frame_timings().frame;
 				this->capturing_ = true;
 				Renderer& renderer = *this->app_->renderer();
 				renderer.begin_frame();
 				this->app_->draw(renderer);
 				renderer.submit();
 				this->capturing_ = false;
-				this->capture_after_ = this->app_->frame_timings().frame;
+				this->capture_after = this->app_->frame_timings().frame;
 			}
 
 			if (this->updates_ == update_count)
@@ -89,11 +101,11 @@ namespace
 		static constexpr int capture_at = 4;
 		static constexpr int update_count = 8;
 
-		std::uint64_t capture_before_ = 0;
-		std::uint64_t capture_after_ = 0;
+		std::uint64_t capture_before = 0;
+		std::uint64_t capture_after = 0;
 
 		// What step_position() said inside each update.
-		std::vector<StepPosition> steps_;
+		std::vector<StepPosition> steps;
 
 	private:
 		Application* app_ = nullptr;
@@ -166,11 +178,7 @@ TEST_CASE("quitting in update finishes owed steps without drawing or publishing 
 	SUBCASE("quit on the first update") {}
 	SUBCASE("quit after completed frames") { wait_for_frame = true; }
 
-	ApplicationOptions options;
-	options.window_class_name = L"QuitDuringUpdateTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"QuitDuringUpdateTestWindow");
 	options.target_fps = 240;
 	Application app(std::move(options));
 	app.initialize();
@@ -196,11 +204,7 @@ TEST_CASE("quitting in update finishes owed steps without drawing or publishing 
 
 TEST_CASE("frame_timings follows the loop's own frames and no others")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"FrameTimingsTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"FrameTimingsTestWindow");
 	// Fast enough that the test takes a fraction of a second.
 	options.target_fps = 240;
 
@@ -239,7 +243,7 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 	CHECK(first_out_of_step == drawn.size());
 
 	// The frame drawn inside the update is not one of the loop's.
-	CHECK(state->capture_after_ == state->capture_before_);
+	CHECK(state->capture_after == state->capture_before);
 
 	for (const FrameTimings& timings : seen)
 	{
@@ -259,11 +263,7 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 
 TEST_CASE("step_position is published before each of the loop's draws")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"StepPositionTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"StepPositionTestWindow");
 	options.target_fps = 240;
 
 	Application app(std::move(options));
@@ -284,11 +284,11 @@ TEST_CASE("step_position is published before each of the loop's draws")
 
 	// Inside an update it is that update's own step, counted from one, and
 	// no fraction.
-	REQUIRE(state->steps_.size() == static_cast<size_t>(TimingState::update_count));
-	for (size_t index = 0; index < state->steps_.size(); index++)
+	REQUIRE(state->steps.size() == static_cast<size_t>(TimingState::update_count));
+	for (size_t index = 0; index < state->steps.size(); index++)
 	{
-		CHECK(state->steps_[index].step == index + 1);
-		CHECK(state->steps_[index].fraction == 0.0f);
+		CHECK(state->steps[index].step == index + 1);
+		CHECK(state->steps[index].fraction == 0.0f);
 	}
 
 	// A draw sees the step count of the updates that ran before it - at
@@ -300,7 +300,7 @@ TEST_CASE("step_position is published before each of the loop's draws")
 	{
 		const StepPosition& position = positions[index];
 		if (position.step < 1 || position.step < previous ||
-			position.step > state->steps_.back().step ||
+			position.step > state->steps.back().step ||
 			!(position.fraction >= 0.0f) || !(position.fraction < 1.0f))
 		{
 			out_of_contract = index;
@@ -322,11 +322,7 @@ TEST_CASE("step_position is published before each of the loop's draws")
 
 TEST_CASE("the shell puts the white texture in the table, with no manifest loaded")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"WhiteTextureTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"WhiteTextureTestWindow");
 
 	Application app(std::move(options));
 	app.initialize();
@@ -371,11 +367,7 @@ namespace
 
 TEST_CASE("on_closed releases the states, then every service but the window")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"OnClosedTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"OnClosedTestWindow");
 	Application app(std::move(options));
 	app.initialize();
 

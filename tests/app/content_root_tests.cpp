@@ -5,10 +5,12 @@
 #include "engine/assets/asset_manifest_loader.h"
 #include "engine/core/byte_reader.h"
 #include "engine/core/file_path.h"
+#include "tests/scratch_file.h"
 
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <vector>
 
 using labrador::AssetManifest;
 using labrador::anchored_to_source;
@@ -17,9 +19,9 @@ using labrador::resolved_under;
 
 // Where a game's content is, asserted from a process that is somewhere else.
 //
-// The review's reproduction was the sample's loader run from the repository
-// root: "cannot open './manifest.json'" (docs/review/gpt6/README.md, G6-09).
-// The cases below never change the working directory - a test that did would
+// A game started from another folder - a sample's loader run from the
+// repository root, say - still finds './manifest.json' beside itself. The
+// cases below never change the working directory - a test that did would
 // change it for every case after it - and never need to: the policy is that
 // the working directory is not consulted, so the assertions are about what a
 // relative path resolves to, and the last case reads a real manifest from a
@@ -151,9 +153,8 @@ TEST_CASE("a real manifest read from elsewhere names the folders beside itself")
 	// process is not in that folder; after the two steps
 	// Application::load_manifest takes, the directory the loader would open
 	// is the one beside the file.
-	const std::filesystem::path folder =
-		std::filesystem::temp_directory_path() / "labrador_content_root_test";
-	std::filesystem::create_directories(folder);
+	const labrador_tests::ScratchFolder scratch("content_root_test");
+	const std::filesystem::path& folder = scratch.path();
 	const std::filesystem::path file = folder / "manifest.json";
 	{
 		std::ofstream out(file);
@@ -181,15 +182,13 @@ TEST_CASE("a real manifest read from elsewhere names the folders beside itself")
 	REQUIRE(anchored.entries.size() == 1);
 	CHECK(anchored.entries[0].directory ==
 		(folder / "./fonts/").string());
-
-	std::filesystem::remove_all(folder);
 }
 
 
 TEST_CASE("UTF-8 manifest and binary content load under non-ANSI directory names")
 {
-	const std::filesystem::path folder = std::filesystem::temp_directory_path() /
-		L"labrador_content_\u6f22_\U0001f680";
+	const labrador_tests::ScratchFolder scratch(L"content_\u6f22_\U0001f680");
+	const std::filesystem::path& folder = scratch.path();
 	std::filesystem::create_directories(folder / L"textures-\u6f22");
 	const std::filesystem::path manifest_file = folder / "manifest.json";
 	{
@@ -208,5 +207,4 @@ TEST_CASE("UTF-8 manifest and binary content load under non-ANSI directory names
 	const std::vector<unsigned char> bytes = labrador::read_file_bytes(
 		manifest.entries[0].directory + "tile.bin");
 	CHECK(std::string(bytes.begin(), bytes.end()) == "binary payload");
-	std::filesystem::remove_all(folder);
 }

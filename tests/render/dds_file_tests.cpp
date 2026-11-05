@@ -1,14 +1,14 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/dds_file.h"
+#include "engine/core/byte_reader.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 #include "tests/scratch_file.h"
 
 #include <cstdint>
-#include <fstream>
-#include <stdexcept>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -31,28 +31,13 @@ namespace
 	using labrador::read_dds_file;
 	using labrador::texture_level;
 	using labrador_tests::ScratchFile;
+	using labrador_tests::put_u32_le;
 
 	const char* quad_path = "./content/quad.dds";
 
 	std::vector<unsigned char> quad_bytes()
 	{
-		std::ifstream file(quad_path, std::ios::binary | std::ios::ate);
-		REQUIRE(file.good());
-		const std::streamoff size = file.tellg();
-		std::vector<unsigned char> bytes(static_cast<size_t>(size));
-		file.seekg(0, std::ios::beg);
-		file.read(reinterpret_cast<char*>(bytes.data()), size);
-		return bytes;
-	}
-
-	// A little-endian DWORD, into a header being edited in place.
-	void poke(std::vector<unsigned char>& bytes, size_t offset, uint32_t value)
-	{
-		for (size_t i = 0; i < 4; i++)
-		{
-			bytes[offset + i] =
-				static_cast<unsigned char>((value >> (8 * i)) & 0xFFu);
-		}
+		return labrador::read_file_bytes(quad_path);
 	}
 
 	// Byte offsets into a .dds, which are fixed for every file there is: a
@@ -173,7 +158,7 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 	SUBCASE("a cube map")
 	{
 		std::vector<unsigned char> bytes = quad_bytes();
-		poke(bytes, caps2, 0x200);
+		put_u32_le(bytes, caps2, 0x200);
 		const ScratchFile file("cube.dds", bytes);
 
 		// Six faces, and this engine has somewhere to put one. Handing back
@@ -187,8 +172,8 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 		// Clear DDPF_ALPHAPIXELS, leaving DDPF_RGB and a zero alpha mask -
 		// which is what an image exported without transparency looks like, and
 		// is by far the likeliest way a real file lands here.
-		poke(bytes, pixel_flags, 0x40);
-		poke(bytes, alpha_mask, 0);
+		put_u32_le(bytes, pixel_flags, 0x40);
+		put_u32_le(bytes, alpha_mask, 0);
 		const ScratchFile file("opaque.dds", bytes);
 
 		CHECK_THROWS_AS(read_dds_file(file.path()), std::runtime_error);
@@ -199,7 +184,7 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 		std::vector<unsigned char> bytes = quad_bytes();
 		// Two, which a 2x2 texture can have - 2x2 and 1x1 - and which this
 		// file does not carry the twenty bytes for.
-		poke(bytes, mip_count, 2);
+		put_u32_le(bytes, mip_count, 2);
 		const ScratchFile file("too_many_mips.dds", bytes);
 
 		// The levels are back to back with no table, so a count that lies is a
@@ -211,7 +196,7 @@ TEST_CASE("a file that is not a texture this engine draws says which way")
 	SUBCASE("a file that claims more mips than can exist")
 	{
 		std::vector<unsigned char> bytes = quad_bytes();
-		poke(bytes, mip_count, 70000);
+		put_u32_le(bytes, mip_count, 70000);
 		const ScratchFile file("impossible_mips.dds", bytes);
 
 		// REFUSED ON THE COUNT AND NOT ON THE BYTES, which is a different
@@ -289,8 +274,8 @@ TEST_CASE("DDS rejects malformed large dimensions before payload acceptance")
 	for (unsigned int width : { 0x20000000u, 0x40000001u, 0x7fffffffu, 0x80000000u })
 	{
 		std::vector<unsigned char> bytes = quad_bytes();
-		poke(bytes, 12, 1);
-		poke(bytes, 16, width);
+		put_u32_le(bytes, 12, 1);
+		put_u32_le(bytes, 16, width);
 		bytes.resize(132);
 		const ScratchFile file("overflow_width.dds", bytes);
 		try

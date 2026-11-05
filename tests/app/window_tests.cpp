@@ -19,12 +19,16 @@ using labrador::WindowOptions;
 // WindowOptions::visible false, so a test run puts nothing on screen and
 // steals no focus - and every assertion is about what the object does with the
 // native window and the messages it receives.
-//
-// The lifetime cases are docs/review/gpt6/README.md#G6-01 and the restore case
-// is #G6-06. Both were probes against a hidden window before they were tests.
 
 namespace
 {
+	// How RecordingNotify logs a size, so a case can spell the entry it
+	// expects.
+	std::string size_entry(long width, long height)
+	{
+		return "size " + std::to_string(width) + "x" + std::to_string(height);
+	}
+
 	// Records what the window told it, in order.
 	class RecordingNotify : public WindowNotify
 	{
@@ -50,8 +54,7 @@ namespace
 		void on_window_moved() const override {}
 		void on_window_size_changed(int width, int height) override
 		{
-			this->log.push_back("size " + std::to_string(width) + "x" +
-				std::to_string(height));
+			this->log.push_back(size_entry(width, height));
 			if (this->on_size)
 			{
 				this->on_size();
@@ -105,6 +108,35 @@ namespace
 		{
 			this->touches.push_back("cancel " + std::to_string(point));
 		}
+	};
+
+	// A key message's lParam: the scan code in bits 16-23, the extended-key
+	// bit, and a repeat count of one. A key-up also sets the previous-state
+	// and transition bits, as Windows does.
+	constexpr LPARAM extended_bit = LPARAM{ 1 } << 24;
+	constexpr LPARAM previous_state_bit = LPARAM{ 1 } << 30;
+	constexpr LPARAM transition_bit = LPARAM{ 1 } << 31;
+
+	LPARAM key_down_lparam(unsigned int scan, bool extended = false)
+	{
+		return (static_cast<LPARAM>(scan) << 16) |
+			(extended ? extended_bit : 0) | 1;
+	}
+
+	LPARAM key_up_lparam(unsigned int scan, bool extended = false)
+	{
+		return key_down_lparam(scan, extended) | previous_state_bit |
+			transition_bit;
+	}
+
+	// The messages that take focus or the whole application away, each of
+	// which ends whatever input was in progress.
+	struct FocusLoss { UINT message; WPARAM parameter; };
+	constexpr FocusLoss focus_losses[] = {
+		{ WM_KILLFOCUS, 0 },
+		{ WM_ACTIVATEAPP, FALSE },
+		{ WM_POWERBROADCAST, PBT_APMSUSPEND },
+		{ WM_SIZE, SIZE_MINIMIZED },
 	};
 
 	// One class name for every test, deliberately. The constructor registers
@@ -179,9 +211,9 @@ TEST_CASE("an ordinary close destroys the window and ends the pump")
 TEST_CASE("leaving scope with the window still up destroys it")
 {
 	// The shape of every exit that is not the pump returning: the owner is
-	// unwound while the native window still exists. This is the probe the
-	// review ran - it found IsWindow true and the user data still pointing at
-	// the destroyed object.
+	// unwound while the native window still exists. Afterwards the native
+	// window and its class are gone, and nothing the teardown sent reached
+	// the destroyed owner.
 	RecordingNotify notify;
 	HWND handle = nullptr;
 	size_t told_before_teardown = 0;
@@ -377,9 +409,9 @@ TEST_CASE("restoring from minimised delivers the new size, then the resume")
 
 TEST_CASE("a minimise is one suspend and a restore is one resume")
 {
-	// The collapsing the header describes, and the branch the restore fix
-	// sits inside: a second SIZE_MINIMIZED while already minimised says
-	// nothing, and neither does a restore that was never preceded by one.
+	// The collapsing the header describes: a second SIZE_MINIMIZED while
+	// already minimised says nothing, and neither does a restore that was
+	// never preceded by one.
 	RecordingNotify notify;
 	Window window(hidden_options(), &notify);
 	notify.log.clear();
@@ -419,14 +451,13 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
 	};
 	for (const Mapping& mapping : mappings)
 	{
-		const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) |
-			(mapping.extended ? (1LL << 24) : 0) | 1;
+		const LPARAM position = key_down_lparam(mapping.scan, mapping.extended);
 		SendMessageW(hwnd(window), WM_KEYDOWN, mapping.key, position);
-		SendMessageW(hwnd(window), WM_KEYUP, mapping.key, position | (1LL << 31));
+		SendMessageW(hwnd(window), WM_KEYUP, mapping.key, position | transition_bit);
 		CHECK(notify.last_down == mapping.expected);
 		CHECK(notify.last_up == mapping.expected);
 	}
-	SendMessageW(hwnd(window), WM_SYSKEYDOWN, VK_MENU, (0x38LL << 16) | 1);
+	SendMessageW(hwnd(window), WM_SYSKEYDOWN, VK_MENU, key_down_lparam(0x38));
 	CHECK(notify.last_down == Key::alt);
 
 	// F10 and Alt alone arrive as the SYS pair, and are keys like any other,
@@ -436,12 +467,12 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
 	{
 		notify.last_down = Key::none;
 		notify.last_up = Key::none;
-		const LPARAM position = static_cast<LPARAM>(mapping.scan << 16) | 1;
-		SendMessageW(hwnd(window), WM_SYSKEYDOWN, mapping.key, position);
+		SendMessageW(hwnd(window), WM_SYSKEYDOWN, mapping.key,
+			key_down_lparam(mapping.scan));
 		CHECK(notify.last_down == mapping.expected);
 		CHECK(notify.last_up == Key::none);
 		SendMessageW(hwnd(window), WM_SYSKEYUP, mapping.key,
-			position | (1LL << 30) | (1LL << 31));
+			key_up_lparam(mapping.scan));
 		CHECK(notify.last_up == mapping.expected);
 	}
 
@@ -468,14 +499,7 @@ TEST_CASE("UTF-16 character assembly belongs to each hidden window")
 
 TEST_CASE("pending UTF-16 assembly survives unrelated focus and suspension messages")
 {
-	struct Loss { UINT message; WPARAM parameter; };
-	const Loss losses[] = {
-		{ WM_KILLFOCUS, 0 },
-		{ WM_ACTIVATEAPP, FALSE },
-		{ WM_POWERBROADCAST, PBT_APMSUSPEND },
-		{ WM_SIZE, SIZE_MINIMIZED },
-	};
-	for (const Loss& loss : losses)
+	for (const FocusLoss& loss : focus_losses)
 	{
 		RecordingNotify notify;
 		Window window(hidden_options(), &notify);
@@ -518,13 +542,13 @@ TEST_CASE("modifier keys stay held until both physical sides are released")
 				{
 					const unsigned int scan = right
 						? modifier.right_scan : modifier.left_scan;
-					const LPARAM position = static_cast<LPARAM>(scan << 16) |
-						(right && modifier.extended_right ? (1LL << 24) : 0) | 1;
+					const bool extended = right && modifier.extended_right;
 					const UINT message = modifier.key == Key::alt
 						? (down ? WM_SYSKEYDOWN : WM_SYSKEYUP)
 						: (down ? WM_KEYDOWN : WM_KEYUP);
 					SendMessageW(hwnd(window), message, modifier.virtual_key,
-						position | (down ? 0 : (1LL << 30) | (1LL << 31)));
+						down ? key_down_lparam(scan, extended)
+							: key_up_lparam(scan, extended));
 					notify.keyboard.poll();
 				};
 
@@ -549,27 +573,20 @@ TEST_CASE("modifier keys stay held until both physical sides are released")
 
 TEST_CASE("focus and suspension loss discard remembered modifier sides")
 {
-	struct Loss { UINT message; WPARAM parameter; };
-	const Loss losses[] = {
-		{ WM_KILLFOCUS, 0 },
-		{ WM_ACTIVATEAPP, FALSE },
-		{ WM_POWERBROADCAST, PBT_APMSUSPEND },
-		{ WM_SIZE, SIZE_MINIMIZED },
-	};
-	for (const Loss& loss : losses)
+	for (const FocusLoss& loss : focus_losses)
 	{
 		RecordingNotify notify;
 		Window window(hidden_options(), &notify);
 		SendMessageW(hwnd(window), WM_KEYDOWN, VK_CONTROL,
-			(0x1dLL << 16) | 1);
+			key_down_lparam(0x1d));
 		SendMessageW(hwnd(window), loss.message, loss.parameter, 0);
 		notify.last_up = Key::none;
 		// A right-side press after the loss cannot inherit the left-side
 		// hold, whose key-up went to another window while this one was away.
 		SendMessageW(hwnd(window), WM_KEYDOWN, VK_CONTROL,
-			(0x1dLL << 16) | (1LL << 24) | 1);
+			key_down_lparam(0x1d, true));
 		SendMessageW(hwnd(window), WM_KEYUP, VK_CONTROL,
-			(0x1dLL << 16) | (1LL << 24) | (1LL << 30) | (1LL << 31) | 1);
+			key_up_lparam(0x1d, true));
 		CAPTURE(loss.message);
 		CHECK(notify.last_up == Key::control);
 	}
@@ -583,10 +600,9 @@ TEST_CASE("modifier sides belong to each window")
 	WindowOptions second_options = hidden_options();
 	second_options.window_class_name += L"Second";
 	Window second(second_options, &second_notify);
-	SendMessageW(hwnd(first), WM_KEYDOWN, VK_SHIFT, (0x2aLL << 16) | 1);
-	SendMessageW(hwnd(second), WM_KEYDOWN, VK_SHIFT, (0x36LL << 16) | 1);
-	SendMessageW(hwnd(second), WM_KEYUP, VK_SHIFT,
-		(0x36LL << 16) | (1LL << 30) | (1LL << 31) | 1);
+	SendMessageW(hwnd(first), WM_KEYDOWN, VK_SHIFT, key_down_lparam(0x2a));
+	SendMessageW(hwnd(second), WM_KEYDOWN, VK_SHIFT, key_down_lparam(0x36));
+	SendMessageW(hwnd(second), WM_KEYUP, VK_SHIFT, key_up_lparam(0x36));
 	CHECK(second_notify.last_up == Key::shift);
 }
 
@@ -807,11 +823,6 @@ namespace
 		return "";
 	}
 
-	std::string size_entry(LONG width, LONG height)
-	{
-		return "size " + std::to_string(width) + "x" + std::to_string(height);
-	}
-
 	RECT monitor_of(HWND handle)
 	{
 		MONITORINFO info = {};
@@ -824,7 +835,7 @@ namespace
 	RECT client_of(HWND handle)
 	{
 		RECT client = {};
-		GetClientRect(handle, &client);
+		REQUIRE(GetClientRect(handle, &client) != FALSE);
 		return client;
 	}
 
@@ -1046,6 +1057,10 @@ namespace
 			DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) :
 			previous_(SetThreadDpiAwarenessContext(context))
 		{
+			// NULL is the call's failure: the thread kept its old awareness,
+			// and a case would run unaware while appearing to test per-monitor
+			// behaviour.
+			REQUIRE(this->previous_ != nullptr);
 		}
 
 		~PerMonitorAware()
@@ -1063,7 +1078,7 @@ namespace
 	SIZE window_extent(HWND handle)
 	{
 		RECT rect = {};
-		GetWindowRect(handle, &rect);
+		REQUIRE(GetWindowRect(handle, &rect) != FALSE);
 		return SIZE{ rect.right - rect.left, rect.bottom - rect.top };
 	}
 

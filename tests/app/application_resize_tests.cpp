@@ -20,6 +20,18 @@ namespace
 {
 	using namespace labrador;
 
+	// A hidden window with null render and audio, one view and one thread:
+	// what every live case here starts from, before its own options.
+	ApplicationOptions hidden_options(const wchar_t* class_name)
+	{
+		ApplicationOptions options;
+		options.window_class_name = class_name;
+		options.visible = false;
+		options.view_capacity = 1;
+		options.max_threads = 1;
+		return options;
+	}
+
 	Vector2I client_size(HWND window)
 	{
 		RECT client = {};
@@ -72,11 +84,7 @@ namespace
 
 TEST_CASE("a live Application keeps fullscreen viewport and back buffer in step after native resizing")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"ApplicationResizeTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"ApplicationResizeTestWindow");
 	SUBCASE("default startup size") {}
 	SUBCASE("large startup size") { options.resolution = ScreenResolution::s_3840_2160; }
 	Application app(std::move(options));
@@ -104,11 +112,7 @@ TEST_CASE("a live Application keeps fullscreen viewport and back buffer in step 
 
 TEST_CASE("a live Application hands the pointer's options and calls to its window")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"ApplicationCursorTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"ApplicationCursorTestWindow");
 	options.cursor_visible = false;
 	options.cursor_confined = true;
 	Application app(std::move(options));
@@ -142,11 +146,7 @@ TEST_CASE("a live Application hands the pointer's options and calls to its windo
 
 TEST_CASE("a live Application opens at, and resizes to, a client size no preset names")
 {
-	ApplicationOptions options;
-	options.window_class_name = L"ApplicationClientSizeTestWindow";
-	options.visible = false;
-	options.view_capacity = 1;
-	options.max_threads = 1;
+	ApplicationOptions options = hidden_options(L"ApplicationClientSizeTestWindow");
 	options.client_size = Vector2I(900, 500);
 	Application app(std::move(options));
 	app.initialize();
