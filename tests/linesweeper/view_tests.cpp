@@ -353,19 +353,32 @@ namespace
 		CHECK(field.live() == locked(4));
 	}
 
+	// What a field holds after `world` tops out, read on that frame. Its own
+	// frame, for the reason piece_landing's comment below gives: three
+	// fields in one debug test case overflow the default stack.
+	struct TopOut
+	{
+		int live = 0;
+		std::uint32_t dropped = 0;
+	};
+
+	TopOut top_out(World world)
+	{
+		TickResult result;
+		ParticleField field(&world, &result, TextureHandle{});
+
+		world.topped_out = 1;
+		++world.tick;
+		field.update(frame);
+
+		return TopOut{ field.live(), field.dropped() };
+	}
+
 	TEST_CASE("a top-out shatters the cells that are there and no others")
 	{
 		SUBCASE("an empty well tops out with nothing to shatter")
 		{
-			World world;
-			TickResult result;
-			ParticleField field(&world, &result, TextureHandle{});
-
-			world.topped_out = 1;
-			++world.tick;
-			field.update(frame);
-
-			CHECK(field.live() == 0);
+			CHECK(top_out(World{}).live == 0);
 		}
 
 		SUBCASE("a full row is worth more per cell than a clear is")
@@ -373,16 +386,11 @@ namespace
 			World world;
 			fill_row(world, well_rows - 1, {});
 
-			TickResult result;
-			ParticleField field(&world, &result, TextureHandle{});
+			const TopOut shattered = top_out(world);
 
-			world.topped_out = 1;
-			++world.tick;
-			field.update(frame);
-
-			CHECK(field.live() > 0);
-			CHECK(field.live() % well_columns == 0);
-			CHECK(field.live() / well_columns >
+			CHECK(shattered.live > 0);
+			CHECK(shattered.live % well_columns == 0);
+			CHECK(shattered.live / well_columns >
 				one_row_cleared() / well_columns);
 		}
 
@@ -395,18 +403,13 @@ namespace
 				fill_row(world, y, {});
 			}
 
-			TickResult result;
-			ParticleField field(&world, &result, TextureHandle{});
-
-			world.topped_out = 1;
-			++world.tick;
-			field.update(frame);
+			const TopOut shattered = top_out(world);
 
 			// Two hundred visible cells, and it fits with room over. The two
 			// buffer rows are never drawn and never shatter.
-			CHECK(field.live() > 0);
-			CHECK(field.live() <= particle_capacity);
-			CHECK(field.dropped() == 0);
+			CHECK(shattered.live > 0);
+			CHECK(shattered.live <= particle_capacity);
+			CHECK(shattered.dropped == 0);
 		}
 	}
 

@@ -557,7 +557,7 @@ TEST_CASE("Vulkan never releases what a refused texture allocation left in its o
 		try
 		{
 			add_texture_asset(fixture.renderer, fixture.resources,
-				"refused_memory", white_texture());
+				"refused_memory", render_tests::flat_texture(255, 255, 255));
 		}
 		catch (const std::runtime_error& error)
 		{
@@ -573,7 +573,7 @@ TEST_CASE("Vulkan never releases what a refused texture allocation left in its o
 
 		// The next allocation is not refused, and the name loads.
 		add_texture_asset(fixture.renderer, fixture.resources,
-			"refused_memory", white_texture());
+			"refused_memory", render_tests::flat_texture(255, 255, 255));
 		CHECK_NOTHROW(std::ignore =
 			fixture.resources.resolve_texture("refused_memory"));
 	}
