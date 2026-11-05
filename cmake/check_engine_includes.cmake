@@ -112,5 +112,7 @@ if(backend_offenders)
         "  builds a resource on a device goes through render/resource_factory.h.\n"
         "  Everything that makes a noise goes through audio/audio_device.h.\n"
         "  Everything that reads a pad goes through input/gamepad_reader.h.\n"
+        "  Everything that talks to the platform's window goes through\n"
+        "  app/window.h.\n"
         "  See docs/design/ARCHITECTURE.md, Modules.")
 endif()

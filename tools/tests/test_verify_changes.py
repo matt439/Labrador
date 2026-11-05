@@ -302,6 +302,46 @@ class PlanTests(unittest.TestCase):
                     self.plan()
                 (self.root / "CMakePresets.json").write_bytes(original)
 
+    def test_test_presets_inherit_output_only_from_hidden_output_presets(self):
+        document = json.loads((self.root / "CMakePresets.json").read_text(encoding="utf-8"))
+        index = planner.preset_index(document, "testPresets")
+        for name in (*planner.NATIVE, "wasm-debug", "wasm-release"):
+            self.assertEqual(planner.test_preset_output(index, name), {"outputOnFailure": True})
+        mutations = [lambda data: next(item for item in data["testPresets"] if item["name"] == "test-base").pop("hidden"),
+                     lambda data: next(item for item in data["testPresets"] if item["name"] == "test-base").update(
+                         filter={"exclude": {"name": "Pixel"}}),
+                     lambda data: next(item for item in data["testPresets"] if item["name"] == "test-base").update(
+                         inherits="x64-debug"),
+                     lambda data: data["testPresets"][0].update(inherits="missing"),
+                     lambda data: data["testPresets"][0].update(inherits=["test-base"])]
+        original = (self.root / "CMakePresets.json").read_bytes()
+        for change in mutations:
+            with self.subTest(change=change):
+                self.change_presets(change)
+                with self.assertRaises(planner.PlanError):
+                    self.plan()
+                (self.root / "CMakePresets.json").write_bytes(original)
+
+    def test_null_render_exclusions_follow_page_registrations(self):
+        path = self.root / "CMakeLists.txt"
+        original = path.read_bytes()
+        source = original.decode("utf-8")
+        self.assertIn("labrador_page_test(LineSweeperPacingPageTests", source)
+        for registration in ("labrador_page_test(LineSweeperPacingPageTests",
+                             "labrador_page_test(LineSweeperBundlePageTests"):
+            with self.subTest(registration=registration):
+                path.write_text(source.replace(registration, "labrador_page_test(LineSweeperOtherPageTests"),
+                                encoding="utf-8")
+                with self.assertRaisesRegex(planner.PlanError, "null bundle/pacing exclusions changed"):
+                    self.plan()
+                path.write_bytes(original)
+        unguarded = source.replace('if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")',
+                                   'if(LABRADOR_RENDER_BACKEND)')
+        path.write_text(unguarded, encoding="utf-8")
+        with self.assertRaisesRegex(planner.PlanError, "null bundle/pacing exclusions changed"):
+            self.plan()
+        path.write_bytes(original)
+
     def test_current_source_defaults_and_ci_override_are_pinned(self):
         path = self.root / "engine/CMakeLists.txt"
         path.write_text(path.read_text(encoding="utf-8").replace('set(labrador_default_render_backend "d3d11")',

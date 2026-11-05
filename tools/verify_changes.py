@@ -105,6 +105,28 @@ def configure_preset(index: dict[str, dict], name: str, parents: tuple[str, ...]
     return result
 
 
+def test_preset_output(index: dict[str, dict], name: str, parents: tuple[str, ...] = ()) -> dict:
+    """The output a test preset resolves to through single-parent inheritance from hidden output-only presets."""
+    if name in parents:
+        raise PlanError(f"test preset inheritance cycle: {' -> '.join((*parents, name))}")
+    if name not in index:
+        raise PlanError(f"missing test preset: {name}")
+    entry = index[name]
+    if parents and (not entry.get("hidden") or set(entry) - {"name", "hidden", "output", "inherits"}):
+        raise PlanError(f"only hidden output-only test presets can be inherited: {name}")
+    parent = entry.get("inherits")
+    if parent is not None and not isinstance(parent, str):
+        raise PlanError(f"only single-parent test preset inheritance is modeled: {name}")
+    result = test_preset_output(index, parent, (*parents, name)) if parent else {}
+    if "output" in entry:
+        output = entry["output"]
+        if (not isinstance(output, dict) or set(output) - {"outputOnFailure"}
+                or any(not isinstance(value, bool) for value in output.values())):
+            raise PlanError(f"unsupported testPresets output shape for {name}")
+        result = {**result, **output}
+    return result
+
+
 def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
     try:
         sources = {name: (root / name).read_text(encoding="utf-8") for name in SOURCE_FILES}
@@ -127,14 +149,11 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
                 raise PlanError(f"{section} must link {name} to its matching configure preset")
             allowed = {"name", "displayName", "description", "configurePreset"}
             if section == "testPresets":
-                allowed.add("output")
+                allowed |= {"output", "inherits"}
             if set(linked[name]) - allowed:
                 raise PlanError(f"unsupported {section} behavior for {name}")
-            if "output" in linked[name]:
-                output = linked[name]["output"]
-                if (not isinstance(output, dict) or set(output) - {"outputOnFailure"}
-                        or any(not isinstance(value, bool) for value in output.values())):
-                    raise PlanError(f"unsupported testPresets output shape for {name}")
+            if section == "testPresets":
+                test_preset_output(linked, name)
     engine = re.sub(r"(?m)#.*$", "", sources["engine/CMakeLists.txt"])
     for axis, browser, native in (("render", "gl", "d3d11"), ("audio", "webaudio", "xaudio2"),
                                   ("input", "web", "xinput")):
@@ -155,7 +174,7 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
         raise PlanError("browser page source rules changed; review required registrations")
     guards = []
     guarded = set()
-    for command in re.finditer(r"\b(if|elseif|else|endif|add_test)\s*\(([^)]*)\)",
+    for command in re.finditer(r"\b(if|elseif|else|endif|add_test|labrador_page_test)\s*\(([^)]*)\)",
                                re.sub(r"(?m)#.*$", "", sources["CMakeLists.txt"])):
         kind, arguments = command[1], command[2].strip()
         if kind == "if":
@@ -164,8 +183,8 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
             guards[-1] = "alternative branch"
         elif kind == "endif" and guards:
             guards.pop()
-        elif kind == "add_test" and 'NOT LABRADOR_RENDER_BACKEND STREQUAL "null"' in guards:
-            match = re.match(r"NAME\s+(LineSweeper(?:Bundle|Pacing)PageTests)\b", arguments)
+        elif kind in {"add_test", "labrador_page_test"} and 'NOT LABRADOR_RENDER_BACKEND STREQUAL "null"' in guards:
+            match = re.match(r"(?:NAME\s+)?(LineSweeper(?:Bundle|Pacing)PageTests)\b", arguments)
             if match:
                 guarded.add(match[1])
     if guarded != {"LineSweeperBundlePageTests", "LineSweeperPacingPageTests"}:

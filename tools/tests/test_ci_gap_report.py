@@ -64,7 +64,7 @@ class DriftTests(unittest.TestCase):
         # Jobs outside the matrix name their preset literally.
         ci_presets |= set(re.findall(r"ctest --preset ([A-Za-z0-9-]+)", workflow))
         presets = json.loads((REPOSITORY / "CMakePresets.json").read_text(encoding="utf-8"))
-        tested = {preset["name"] for preset in presets["testPresets"]}
+        tested = {preset["name"] for preset in presets["testPresets"] if not preset.get("hidden")}
 
         gaps = {gap.preset: gap for gap in report.GAPS}
         whole = {name for name, gap in gaps.items() if not gap.real_driver}

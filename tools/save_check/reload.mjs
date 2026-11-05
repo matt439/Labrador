@@ -1,6 +1,8 @@
 // run_page.mjs --input: prove that C++ reads an IDBFS save after a page reload.
 import assert from 'node:assert/strict';
 
+import { is_navigation_race } from '../../tests/render/web/devtools.mjs';
+
 // This driver owns completion across a reload. The original page's exit
 // promise disappears with its execution context and must not end the run.
 export const ready = 'typeof Module === "object" && Module.settingsReady === true';
@@ -12,7 +14,7 @@ export default async function check({ evaluate, send, wait }) {
 			try {
 				if (await evaluate(expression) === true) return;
 			} catch (error) {
-				if (!/Execution context was destroyed|Cannot find context|Inspected target navigated/.test(error.message)) {
+				if (!is_navigation_race(error)) {
 					throw error;
 				}
 			}

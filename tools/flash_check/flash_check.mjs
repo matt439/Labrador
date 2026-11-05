@@ -7,7 +7,8 @@
 // The frames are what LineSweeperCapture --sequence writes
 // (tools/linesweeper_capture/README.md, Footage). It prints what it found and
 // exits 0 when no one-second window has more than three general flashes or
-// more than three red flashes, 1 when one has, and 2 on bad input.
+// more than three red flashes by the pixel bound below, 1 when one has, and 2
+// on bad input, a malformed PNG included.
 // samples/linesweeper/README.md, The bursts against WCAG 2.3.1, records the
 // method, the result and the commit it was taken at.
 //
@@ -19,7 +20,8 @@
 // does; every pixel's level is first read at FIRST, so a range that starts
 // mid-burst does not give the figures a whole run gives. --field sets the
 // field in pixels and --edge the frames a concurrent edge may span; both
-// exist to price the assumptions below, not to change the verdict.
+// exist to price the assumptions below. --edge changes only the concurrent
+// count, which is not the verdict.
 //
 // THE DEFINITIONS, as WCAG 2.2 gives them and as this file applies them:
 //
@@ -50,27 +52,27 @@
 // and at every position of the field. More than six transitions in a window,
 // more than three flashes, is a failure.
 //
-// - The concurrent count is the definition, and is the verdict. A field makes
-//   a transition on a frame when more than 25% of its pixels completed a
-//   transition in the same direction within the last CONCURRENT_FRAMES
-//   frames, and its direction is the opposite of the field's last one; a
-//   second rise with no fall between is the same rise continuing. Allowing
-//   three frames rather than one counts an edge that motion or a ramp
-//   smears across neighbouring frames, which can only add transitions. A
-//   field where more than 25% rose and more than 25% fell in that span has
-//   made neither transition: that is light moving across it, the way a burst
-//   of sparks moves, and the field as a whole has not brightened or
-//   darkened. This rule is the one the result rests on, and it is the
-//   reading of "concurrently" a reviewer should argue with if any. WCAG
-//   exempts balanced flashing only when it is a fine pattern, with elements
-//   smaller than 0.1 degree, and that exemption counts against this rule
-//   for anything coarser.
-// - The pixel bound is an upper bound, and is reported beside it. The
-//   window's count is the largest n for which more than 25% of some field's
-//   pixels each made at least n transitions in that second, whenever they
-//   made them. Flashes that are not concurrent are counted together, so it
-//   can only overstate the rate: under it, a pass is beyond argument, and a
-//   failure says only that the concurrent count has to be read.
+// - The pixel bound is the strict reading, and is the verdict: any pixels in
+//   the field flickering at any time in the second count together, which is
+//   the reading samples/linesweeper/README.md, The bursts against WCAG 2.3.1,
+//   records as the one taken. The window's count is the largest n for which
+//   more than 25% of some field's pixels each made at least n transitions in
+//   that second, whenever they made them. Flashes that are not concurrent
+//   are counted together, so it can only overstate the loose reading's rate.
+//   WCAG exempts balanced flashing only when it is a fine pattern, with
+//   elements smaller than 0.1 degree, and a spark is coarser than that.
+// - The concurrent count is the loose reading, and is reported beside it as
+//   a diagnostic. A field makes a transition on a frame when more than 25%
+//   of its pixels completed a transition in the same direction within the
+//   last CONCURRENT_FRAMES frames, and its direction is the opposite of the
+//   field's last one; a second rise with no fall between is the same rise
+//   continuing. Allowing three frames rather than one counts an edge that
+//   motion or a ramp smears across neighbouring frames, which can only add
+//   transitions. A field where more than 25% rose and more than 25% fell in
+//   that span has made neither transition: that is light moving across it,
+//   the way a burst of sparks moves, and the field as a whole has not
+//   brightened or darkened. It says how far the strict verdict's failures
+//   are moving light rather than the field changing.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
@@ -134,8 +136,15 @@ export function readPng(file) {
 		}
 		offset += 12 + length;
 	}
+	if (width === 0 || height === 0) {
+		throw new Error(`${file} has no IHDR image header, or an empty image.`);
+	}
 	const raw = inflateSync(Buffer.concat(compressed));
 	const stride = width * channels;
+	if (raw.length !== height * (stride + 1)) {
+		throw new Error(`${file} holds ${raw.length} bytes of image data where a ${width}x${height} image ` +
+			`holds ${height * (stride + 1)}.`);
+	}
 	const rows = new Uint8Array(stride * height);
 	for (let y = 0; y < height; ++y) {
 		const filter = raw[y * (stride + 1)];
@@ -455,7 +464,8 @@ class Measure {
 			transitions: concurrent.transitions,
 			flashes: concurrent.transitions / 2,
 			frame: concurrent.frame,
-			passes: concurrent.transitions <= 2 * MAX_FLASHES,
+			// The verdict is the pixel bound's (the TWO COUNTS above).
+			passes: this.boundWorst.transitions <= 2 * MAX_FLASHES,
 			atLeast: concurrent.transitions >= EVENT_RING,
 			widestRise: { fraction: widest.rises / area, frame: widest.risesFrame },
 			widestFall: { fraction: widest.falls / area, frame: widest.fallsFrame },
@@ -470,7 +480,7 @@ class Measure {
 export class FlashAnalyser {
 	// `first` is the number of the first frame fed, so that a report names
 	// frames as the sequence numbers them; `edge` is CONCURRENT_FRAMES unless
-	// a reading of "concurrently" other than the verdict's is being priced.
+	// another span for the concurrent count is being priced.
 	constructor(width, height, field = defaultField(width, height),
 		{ first = 0, edge = CONCURRENT_FRAMES } = {}) {
 		if (field.width > width || field.height > height) {
@@ -531,10 +541,10 @@ function describe(name, measure) {
 	const widest = (edge) => (edge.frame === null ? 'none' : `${percent(edge.fraction)} at frame ${edge.frame}`);
 	const single = measure.singlePixel.frame === null ? '' : `, window ending at frame ${measure.singlePixel.frame}`;
 	return [
-		`${name}: ${measure.atLeast ? 'at least ' : ''}${measure.transitions} concurrent transitions (${measure.flashes} flashes) in one second${where}; ` +
+		`${name}: pixel bound ${measure.bound.transitions} transitions (${measure.bound.flashes} flashes) in one second${bound}; ` +
 			`${measure.passes ? 'passes' : 'FAILS'}.`,
+		`  Concurrent: ${measure.atLeast ? 'at least ' : ''}${measure.transitions} transitions (${measure.flashes} flashes)${where}.`,
 		`  Widest concurrent change in one field: rising ${widest(measure.widestRise)}, falling ${widest(measure.widestFall)}.`,
-		`  Pixel bound: ${measure.bound.transitions} transitions (${measure.bound.flashes} flashes)${bound}.`,
 		`  One pixel, ignoring area: ${measure.singlePixel.transitions} transitions${single}.`,
 	].join('\n');
 }
@@ -595,8 +605,8 @@ function main(argv) {
 	console.log(describe('General flashes', result.general));
 	console.log(describe('Red flashes', result.red));
 	console.log(result.passes
-		? `Passes WCAG 2.3.1: no window has more than ${MAX_FLASHES} concurrent flashes.`
-		: `FAILS WCAG 2.3.1: a window has more than ${MAX_FLASHES} concurrent flashes.`);
+		? `Passes WCAG 2.3.1: no window has more than ${MAX_FLASHES} flashes by the pixel bound.`
+		: `FAILS WCAG 2.3.1: a window has more than ${MAX_FLASHES} flashes by the pixel bound.`);
 	return result.passes ? 0 : 1;
 }
 

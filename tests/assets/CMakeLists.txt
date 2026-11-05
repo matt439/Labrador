@@ -15,5 +15,5 @@ labrador_add_test_suite(AssetsTests
 # The recipe's drawing check is a recording only, selected with null render.
 # The other cases use metadata and create no renderer on any backend.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
-    target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_RENDER_NULL)
+    target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_NULL_RENDER)
 endif()

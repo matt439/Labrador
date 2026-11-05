@@ -9,6 +9,13 @@ target_compile_features(labrador_settings INTERFACE cxx_std_20)
 # The standard language, not a vendor's dialect of it: CMake otherwise asks
 # clang for gnu++20. MSVC has no dialect to ask for, and /permissive- below is
 # the same refusal in its spelling.
+#
+# UNLIKE EVERYTHING ELSE IN THIS FILE, THIS DOES NOT TRAVEL WITH
+# labrador_settings. It is a directory variable, so it applies to the targets
+# this repository's tree creates and not to a consumer's: a game that adds the
+# engine with add_subdirectory and links labrador_settings still compiles its
+# own targets as gnu++20 under clang unless it sets CMAKE_CXX_EXTENSIONS OFF
+# itself.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)

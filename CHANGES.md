@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Refuse a pad backend at configure where its API does not exist
+
+**Changed: configure refuses a pad backend on the wrong platform.** Setting `LABRADOR_INPUT_BACKEND=xinput` in a browser (Emscripten) build, or `LABRADOR_INPUT_BACKEND=web` in a native build, now stops configure with a message naming the variable and the value it must have. The render and audio backends were already refused this way. Before, the first error came later and named something else: an unnamed `find_package(directxtk)` failure, or a missing Emscripten header at compile time. The defaults are unchanged, so a project that never sets the variable sees no difference.
+
 ### 2026-11-05 - Release GL bootstrap, shader and program objects on every failure
 
 **Behaviour change: one OpenGL start-up message.** When `SetPixelFormat` refuses the pixel format chosen for the window, the OpenGL renderer now throws `SetPixelFormat refused the OpenGL pixel format chosen for this window, with Windows error <n>. ...` instead of repeating the message for a window with no suitable format. Nothing else a game sees changes.

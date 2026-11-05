@@ -10,7 +10,7 @@
 #include "engine/render/text_encoding.h"
 #include "tests/scratch_file.h"
 
-#if defined(LABRADOR_TEST_RENDER_NULL)
+#if defined(LABRADOR_TEST_NULL_RENDER)
 #include "engine/render/null/recording.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
@@ -149,7 +149,7 @@ TEST_SUITE("StringTableTextRecipeTests")
 		CHECK(error.find("UTF-16 unit 0") != std::string::npos);
 	}
 
-#if defined(LABRADOR_TEST_RENDER_NULL)
+#if defined(LABRADOR_TEST_NULL_RENDER)
 	TEST_CASE("the string-table Text records four glyphs with the null renderer")
 	{
 		labrador::RenderResources resources;

@@ -25,8 +25,11 @@ jobs:
   watch:
     name: master watch
     runs-on: ubuntu-latest
-    # Long enough to wait out a rerun of the slowest workflow.
-    timeout-minutes: 45
+    # Long enough to wait out a rerun of the slowest chain of jobs: the
+    # script blocks until its rerun completes, and ci.yml's wasm job (90
+    # minutes) followed by the safari job that needs it (30) is 120, plus
+    # time queued for runners.
+    timeout-minutes: 150
     permissions:
       contents: read
       actions: write

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DevTools, browser_version } from './devtools.mjs';
+import { DevTools, browser_version, is_navigation_race } from './devtools.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -71,6 +71,22 @@ test('browser identity keeps the product version and uses the browser session', 
 	devtools.socket.reply({ id: 1, result: { product: 'HeadlessChrome/142.0.7444.60',
 		protocolVersion: '1.3', revision: '@fixture' } });
 	assert.equal(await identity, 'HeadlessChrome/142.0.7444.60 (DevTools 1.3, revision @fixture)');
+});
+
+test('each wording of a navigation race is one, and other failures are not', () => {
+	for (const message of [
+		'Runtime.evaluate: Execution context was destroyed.',
+		'Runtime.evaluate: Cannot find context with specified id',
+		'Runtime.evaluate: Cannot find default execution context',
+		'Runtime.evaluate: Inspected target navigated or closed',
+	]) {
+		assert.equal(is_navigation_race(new Error(message)), true, message);
+	}
+	for (const message of ['Runtime.evaluate: Uncaught ReferenceError: Module is not defined',
+		'the browser went away']) {
+		assert.equal(is_navigation_race(new Error(message)), false, message);
+	}
+	assert.equal(is_navigation_race(undefined), false);
 });
 
 test('missing browser identity fails by the command that returned it', async () => {

@@ -1,8 +1,20 @@
 // Runtime acceptance driver for the wasm-release development page.
 // Node protocol tests and C++ headless counts do not substitute for this
 // actual page run.
+import { is_navigation_race } from '../../tests/render/web/devtools.mjs';
+
 export const ready = "window.labradorPacingInitialized === true";
 export const strict_complaints = true;
+
+// The fixture's particle count: pacing_particle_count in
+// samples/linesweeper/web/pacing_fixture.h. Each particle is one quad, six
+// indices.
+const FIXTURE_PARTICLES = 9600;
+// labradorPacingFrame's argument positions (tools/web_pacing/page.js) for the
+// top-out marker frame, the live particles and the refused emissions.
+const MARKER = 9;
+const LIVE = 10;
+const DROPPED = 11;
 
 export async function prepare(page) {
 	await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
@@ -23,9 +35,9 @@ export async function prepare(page) {
 						const heard = function (...snapshot) {
 							const [timestamp, frame] = snapshot;
 							const canvas = value.canvas;
-							if (frame > 0 && frame === snapshot[9] && snapshot[10] === 9600 && snapshot[11] === 0 &&
-								!canvas.labradorPacingMarkedDraw) {
-								canvas.labradorPacingMarkedDraw = { frame, marker: snapshot[9], observer_timestamp_ms: timestamp,
+							if (frame > 0 && frame === snapshot[${MARKER}] && snapshot[${LIVE}] === ${FIXTURE_PARTICLES} &&
+								snapshot[${DROPPED}] === 0 && !canvas.labradorPacingMarkedDraw) {
+								canvas.labradorPacingMarkedDraw = { frame, marker: snapshot[${MARKER}], observer_timestamp_ms: timestamp,
 									draw_calls: canvas.labradorPacingDrawCalls ?? 0,
 									elements: canvas.labradorPacingElements ?? 0 };
 							}
@@ -80,17 +92,17 @@ function check(report, mode, progress) {
 		}
 	}
 	const burst = report.top_out;
-	requireValue(burst?.counts_match === true && burst.live_particles === 9600 && burst.dropped_particles === 0,
-		'The marked completed browser frame did not report exactly 9,600 live particles and zero dropped.');
+	requireValue(burst?.counts_match === true && burst.live_particles === FIXTURE_PARTICLES && burst.dropped_particles === 0,
+		`The marked completed browser frame did not report exactly ${FIXTURE_PARTICLES} live particles and zero dropped.`);
 	requireValue(burst.frame === burst.top_out_frame, 'The top-out marker belongs to a different frame.');
 	requireValue(progress.marked?.frame === burst.frame && progress.marked.marker === burst.top_out_frame,
 		'WebGL drawing was not observed for the marked completed frame.');
-	requireValue(progress.marked.draw_calls > 0 && progress.marked.elements >= 9600 * 6,
-		'The marked frame submitted fewer than 9,600 quads through WebGL drawElements.');
+	requireValue(progress.marked.draw_calls > 0 && progress.marked.elements >= FIXTURE_PARTICLES * 6,
+		`The marked frame submitted fewer than ${FIXTURE_PARTICLES} quads through WebGL drawElements.`);
 	requireValue(Number.isFinite(burst.next_interval_ns), 'The interval after the top-out frame is absent.');
 	if (mode === 'topout-frozen') {
 		requireValue(report.samples.filter((row) => row.frame >= burst.frame)
-			.every((row) => row.live_particles === 9600 && row.dropped_particles === 0),
+			.every((row) => row.live_particles === FIXTURE_PARTICLES && row.dropped_particles === 0),
 			'The frozen workload did not keep its exact live count.');
 	}
 }
@@ -109,7 +121,7 @@ export default async function (page) {
 			try {
 				report = await page.evaluate("typeof Module === 'object' ? Module['labradorPacingResult'] : null");
 			} catch (error) {
-				if (!/Execution context was destroyed|Cannot find context with specified id/.test(error.message)) throw error;
+				if (!is_navigation_race(error)) throw error;
 			}
 			if (report?.run?.fixture_mode === mode) break;
 			await page.wait(25);
@@ -121,6 +133,6 @@ export default async function (page) {
 		})()`);
 		check(report, mode, progress);
 		console.log(`SM-08 ${mode}: ${report.samples.length} completed frames; marked frame ${report.top_out.frame}, ` +
-			`9600 live, 0 dropped, CPU total ${report.top_out.cpu_total_ns} ns. Headless browser evidence only.`);
+			`${FIXTURE_PARTICLES} live, 0 dropped, CPU total ${report.top_out.cpu_total_ns} ns. Headless browser evidence only.`);
 	}
 }

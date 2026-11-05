@@ -46,7 +46,8 @@ Five render backends are selected by `LABRADOR_RENDER_BACKEND`: `d3d11`,
 by `LABRADOR_AUDIO_BACKEND`: `xaudio2`, `webaudio`, `null`. Two pad backends
 are selected by `LABRADOR_INPUT_BACKEND`: `xinput`, `web`. Keys, mouse and
 touch are fed by the window. Browser defaults are GL/WebGL2, Web Audio and
-web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audio.
+web input; configure refuses browser Direct3D/Vulkan/XAudio2/XInput and native
+Web Audio and web input.
 
 | Preset pair | Render / audio | ctest entries and device requirements |
 |---|---|---|

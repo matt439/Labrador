@@ -40,8 +40,7 @@ PLACED = {
     "ci.yml": ".github/workflows/ci.yml",
 }
 
-# The page's <ConsumerManifest name="mygame" />. Every package the engine
-# names: lodepng decodes PNG textures and doctest runs the game's own tests.
+# The page's <ConsumerManifest name="mygame" />.
 PROJECT_NAME = "mygame"
 
 
@@ -80,6 +79,7 @@ def edited_includes(source: bytes) -> tuple[bytes, list[str]]:
 
 
 def derived_manifest(engine_manifest: Path) -> dict:
+    """The game's vcpkg.json: every dependency the engine's vcpkg.json names, unchanged, at its baseline."""
     engine = json.loads(engine_manifest.read_text(encoding="utf-8"))
     return {
         "name": PROJECT_NAME,

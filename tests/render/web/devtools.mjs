@@ -62,6 +62,15 @@ export class DevTools {
 	}
 }
 
+// Whether a failed Runtime.evaluate is the race with a navigation or reload
+// that destroyed the page's execution context while it ran, which a driver
+// polling across that navigation retries rather than fails on. Chrome words it
+// in each of these ways depending on when the context went.
+export function is_navigation_race(error) {
+	return /Execution context was destroyed|Cannot find (?:default execution )?context|Inspected target navigated/
+		.test(error?.message ?? '');
+}
+
 // Browser.getVersion is a browser-level command, without a page session. Its
 // product field includes the product name and full browser version together.
 export async function browser_version(devtools) {

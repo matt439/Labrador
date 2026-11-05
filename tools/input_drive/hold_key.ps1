@@ -94,20 +94,33 @@ $scans = @{
 # Physical pixels, so the capture rectangle matches the window at any scaling.
 [void][InputDrive]::SetProcessDPIAware()
 
+# $path is absolute: .NET resolves a relative one against the process's
+# directory, which Set-Location does not move.
 function Save-Client([IntPtr] $window, [string] $path) {
     $rect = New-Object InputDrive+RECT
-    [void][InputDrive]::GetClientRect($window, [ref]$rect)
+    if (-not [InputDrive]::GetClientRect($window, [ref]$rect) -or $rect.Right -le 0 -or $rect.Bottom -le 0) {
+        throw "Could not read the game window's client area."
+    }
     $origin = New-Object InputDrive+POINT
-    [void][InputDrive]::ClientToScreen($window, [ref]$origin)
+    if (-not [InputDrive]::ClientToScreen($window, [ref]$origin)) {
+        throw "Could not find the game window's client area on the screen."
+    }
     $bitmap = New-Object System.Drawing.Bitmap $rect.Right, $rect.Bottom
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphics.CopyFromScreen($origin.X, $origin.Y, 0, 0, $bitmap.Size)
-    $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-    $graphics.Dispose()
-    $bitmap.Dispose()
+    try {
+        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+        try {
+            $graphics.CopyFromScreen($origin.X, $origin.Y, 0, 0, $bitmap.Size)
+        } finally {
+            $graphics.Dispose()
+        }
+        $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    } finally {
+        $bitmap.Dispose()
+    }
 }
 
 New-Item -ItemType Directory -Force $OutDirectory | Out-Null
+$outPath = (Resolve-Path -LiteralPath $OutDirectory).Path
 $exePath = (Resolve-Path -LiteralPath $Exe).Path
 $game = Start-Process -FilePath $exePath -WorkingDirectory (Split-Path $exePath) -PassThru
 try {
@@ -130,13 +143,13 @@ try {
         throw 'The game is not the foreground window, so it would not receive the key.'
     }
 
-    Save-Client $window (Join-Path $OutDirectory 'before.png')
+    Save-Client $window (Join-Path $outPath 'before.png')
     $scan, $extended = $scans[$Key]
     [InputDrive]::Key($scan, $extended, $false)
     Start-Sleep -Milliseconds $HoldMilliseconds
     [InputDrive]::Key($scan, $extended, $true)
     Start-Sleep -Milliseconds 200
-    Save-Client $window (Join-Path $OutDirectory 'after.png')
+    Save-Client $window (Join-Path $outPath 'after.png')
     Write-Output "Held $Key for $HoldMilliseconds ms; wrote before.png and after.png to $OutDirectory."
 } finally {
     if (-not $game.HasExited) {

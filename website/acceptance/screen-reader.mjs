@@ -8,8 +8,9 @@
 //
 // This runs only on a Windows CI runner, never on a developer's machine:
 // NVDA speaks aloud and takes over the keyboard. It refuses to start unless
-// CI is set. The runner prepares NVDA first:
-//   npm install --no-save @guidepup/guidepup @guidepup/setup
+// CI is set. The runner prepares NVDA first, at the versions
+// .github/workflows/website.yml pins:
+//   npm install --no-save @guidepup/guidepup@<version> @guidepup/setup@<version>
 //   npx guidepup setup --ci
 //   npx guidepup install nvda
 //
