@@ -6,25 +6,25 @@
 
 namespace labrador
 {
-	void Partitioner::partition(int num_elements, int num_partitions,
+	void Partitioner::partition(int element_count, int partition_count,
 		std::vector<std::pair<int, int>>& ranges) const
 	{
-		if (num_partitions < 1)
+		if (partition_count < 1)
 		{
 			throw std::invalid_argument(
-				"Partitioner::partition: num_partitions must be at least 1.");
+				"Partitioner::partition: partition_count must be at least 1.");
 		}
-		if (num_elements < 0)
+		if (element_count < 0)
 		{
 			throw std::invalid_argument(
-				"Partitioner::partition: num_elements must not be negative.");
+				"Partitioner::partition: element_count must not be negative.");
 		}
 
 		ranges.clear();
-		int elements_per_partition = num_elements / num_partitions;
-		int remainder = num_elements % num_partitions;
+		int elements_per_partition = element_count / partition_count;
+		int remainder = element_count % partition_count;
 		int start = 0;
-		for (int i = 0; i < num_partitions && i < num_elements; i++)
+		for (int i = 0; i < partition_count && i < element_count; i++)
 		{
 			int end = start + elements_per_partition;
 			if (remainder > 0)
@@ -37,20 +37,20 @@ namespace labrador
 		}
 	}
 
-	void Partitioner::partition(size_t num_elements, int num_partitions,
+	void Partitioner::partition(size_t element_count, int partition_count,
 		std::vector<std::pair<int, int>>& ranges) const
 	{
 		// The int overload's ranges are ints, so a count that does not fit in
 		// one cannot be answered - and narrowing it silently would hand back
 		// ranges that do not cover the collection.
-		if (num_elements >
+		if (element_count >
 			static_cast<size_t>(std::numeric_limits<int>::max()))
 		{
 			throw std::invalid_argument(
-				"Partitioner::partition: num_elements exceeds the range this "
+				"Partitioner::partition: element_count exceeds the range this "
 				"partitioner can address.");
 		}
-		Partitioner::partition(static_cast<int>(num_elements), num_partitions,
+		Partitioner::partition(static_cast<int>(element_count), partition_count,
 			ranges);
 	}
 }

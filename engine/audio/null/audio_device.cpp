@@ -1,9 +1,8 @@
 #include "engine/audio/audio_device.h"
 #include "engine/audio/null/recording.h"
+#include "engine/audio/wave_tables.h"
 
-#include <algorithm>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -30,52 +29,19 @@
 
 namespace labrador
 {
-	namespace
-	{
-		// One voice's state, transcribed from DirectXTK's SoundCommon.h rather
-		// than invented, because a model that disagrees with the backend it
-		// stands in for is worse than no model at all. recording.h names the
-		// one transition that cannot be reproduced here and why.
-		struct NullVoice
-		{
-			AudioDevice::WaveBankHandle bank;
-			int wave = -1;
-			SoundState state = SoundState::stopped;
-			bool looping = false;
-		};
-	}
-
+	// Each voice's state follows DirectXTK's transitions (VoiceRecord),
+	// because a model that disagrees with the backend it stands in for is
+	// worse than no model at all. recording.h names the one transition that
+	// cannot be reproduced here and why.
 	struct AudioDevice::Impl
 	{
-		std::vector<std::vector<std::string>> banks;
-		std::vector<NullVoice> voices;
+		WaveTables tables;
 		std::vector<RecordedSound> recording;
 		bool suspended = false;
 
-		const std::vector<std::string>& bank(WaveBankHandle handle)
+		VoiceRecord& voice(VoiceHandle handle)
 		{
-			const size_t index = static_cast<size_t>(handle.index());
-			if (!handle.valid() || index >= this->banks.size())
-			{
-				throw std::out_of_range(
-					"A wave bank was reached through an unresolved handle.");
-			}
-			return this->banks[index];
-		}
-
-		// The same throw the XAudio2 backend makes for the same mistake, and
-		// the same words: a handle nobody resolved is a program bug, and the
-		// two backends disagreeing about how loudly to say so is a difference
-		// no client should be able to see.
-		NullVoice& voice(VoiceHandle handle)
-		{
-			const size_t index = static_cast<size_t>(handle.index());
-			if (!handle.valid() || index >= this->voices.size())
-			{
-				throw std::out_of_range(
-					"A voice was reached through an unresolved handle.");
-			}
-			return this->voices[index];
+			return this->tables.voice(handle);
 		}
 
 		void record(const RecordedSound& call)
@@ -105,40 +71,24 @@ namespace labrador
 		std::ignore = directory;
 		std::ignore = name;
 
-		this->impl_->banks.push_back(wave_names);
-		return WaveBankHandle(static_cast<int>(this->impl_->banks.size()) - 1);
+		return this->impl_->tables.add_bank(wave_names);
 	}
 
 	int AudioDevice::wave_index(WaveBankHandle bank,
 		const std::string& wave_name) const
 	{
-		const std::vector<std::string>& names = this->impl_->bank(bank);
-		const std::vector<std::string>::const_iterator found =
-			std::find(names.begin(), names.end(), wave_name);
-
-		// -1 for a name the bank does not have, which is the seam's spelling
-		// and DirectXTK's. A linear walk over a list a definition wrote by hand
-		// is load-time work on a handful of names, and this backend is not
-		// where anybody measures anything.
-		return found == names.end()
-			? -1
-			: static_cast<int>(found - names.begin());
+		// A linear walk over a list a definition wrote by hand is load-time
+		// work on a handful of names, and this backend is not where anybody
+		// measures anything.
+		return this->impl_->tables.wave_index(bank, wave_name);
 	}
 
 	AudioDevice::VoiceHandle AudioDevice::create_voice(WaveBankHandle bank,
 		int wave_index)
 	{
-		const std::vector<std::string>& names = this->impl_->bank(bank);
-		if (wave_index < 0 ||
-			static_cast<size_t>(wave_index) >= names.size())
-		{
-			throw std::out_of_range(
-				"A voice was asked for a wave the bank does not hold.");
-		}
-
-		this->impl_->voices.push_back(NullVoice{ bank, wave_index,
-			SoundState::stopped, false });
-		return VoiceHandle(static_cast<int>(this->impl_->voices.size()) - 1);
+		this->impl_->tables.check_voice_wave(bank, wave_index);
+		return VoiceHandle(this->impl_->tables.add_voice(VoiceRecord{ bank,
+			wave_index, SoundState::stopped, false }));
 	}
 
 	void AudioDevice::play_wave(WaveBankHandle bank, int wave_index,
@@ -148,13 +98,7 @@ namespace labrador
 		// rather than leaving it to its API: DirectXTK's Play drops an index
 		// past the end without a word. A wave index that came from nowhere, or
 		// from another bank, fails here rather than being recorded as fine.
-		const std::vector<std::string>& names = this->impl_->bank(bank);
-		if (wave_index < 0 ||
-			static_cast<size_t>(wave_index) >= names.size())
-		{
-			throw std::out_of_range(
-				"A wave was played that the bank does not hold.");
-		}
+		this->impl_->tables.check_played_wave(bank, wave_index);
 
 		// A one-shot asked for while suspended is dropped on every backend
 		// (audio_device.h), so it is not recorded as played.
@@ -176,7 +120,7 @@ namespace labrador
 	void AudioDevice::play_voice(VoiceHandle voice, bool loop, float volume,
 		float pitch, float pan) const
 	{
-		NullVoice& state = this->impl_->voice(voice);
+		VoiceRecord& state = this->impl_->voice(voice);
 
 		// DirectXTK's Play, which webaudio/ transcribes too: a paused voice
 		// resumes and keeps its loop, a playing one is left alone, and only a
@@ -206,7 +150,7 @@ namespace labrador
 
 	void AudioDevice::stop_voice(VoiceHandle voice, bool immediate) const
 	{
-		NullVoice& state = this->impl_->voice(voice);
+		VoiceRecord& state = this->impl_->voice(voice);
 
 		// THE THREE BRANCHES ARE DirectXTK'S, IN ITS ORDER. An immediate stop
 		// is the only one that stops anything: asking a looping voice to stop
@@ -234,7 +178,7 @@ namespace labrador
 
 	void AudioDevice::pause_voice(VoiceHandle voice) const
 	{
-		NullVoice& state = this->impl_->voice(voice);
+		VoiceRecord& state = this->impl_->voice(voice);
 		if (state.state == SoundState::playing)
 		{
 			state.state = SoundState::paused;
@@ -250,7 +194,7 @@ namespace labrador
 
 	void AudioDevice::resume_voice(VoiceHandle voice) const
 	{
-		NullVoice& state = this->impl_->voice(voice);
+		VoiceRecord& state = this->impl_->voice(voice);
 		if (state.state == SoundState::paused)
 		{
 			state.state = SoundState::playing;
@@ -266,7 +210,7 @@ namespace labrador
 
 	void AudioDevice::set_voice_volume(VoiceHandle voice, float volume) const
 	{
-		const NullVoice& state = this->impl_->voice(voice);
+		const VoiceRecord& state = this->impl_->voice(voice);
 
 		RecordedSound call;
 		call.call = SoundCall::set_voice_volume;
@@ -279,7 +223,7 @@ namespace labrador
 
 	void AudioDevice::set_voice_pitch(VoiceHandle voice, float pitch) const
 	{
-		const NullVoice& state = this->impl_->voice(voice);
+		const VoiceRecord& state = this->impl_->voice(voice);
 
 		RecordedSound call;
 		call.call = SoundCall::set_voice_pitch;
@@ -292,7 +236,7 @@ namespace labrador
 
 	void AudioDevice::set_voice_pan(VoiceHandle voice, float pan) const
 	{
-		const NullVoice& state = this->impl_->voice(voice);
+		const VoiceRecord& state = this->impl_->voice(voice);
 
 		RecordedSound call;
 		call.call = SoundCall::set_voice_pan;
@@ -338,6 +282,6 @@ namespace labrador
 	const std::vector<std::string>& recorded_wave_names(
 		const AudioDevice& device, AudioDevice::WaveBankHandle bank)
 	{
-		return device.impl()->bank(bank);
+		return device.impl()->tables.bank(bank);
 	}
 }

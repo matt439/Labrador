@@ -8,9 +8,7 @@ namespace labrador
 {
 	bool GamepadState::is_down(GamepadButton button) const
 	{
-		const uint16_t bit =
-			static_cast<uint16_t>(1u << static_cast<unsigned int>(button));
-		return (this->buttons & bit) != 0;
+		return (this->buttons & gamepad_button_bit(button)) != 0;
 	}
 
 	float GamepadState::trigger(GamepadTrigger trigger) const

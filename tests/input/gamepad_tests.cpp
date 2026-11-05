@@ -3,6 +3,7 @@
 #include "engine/input/gamepad.h"
 #include "engine/math/vector2f.h"
 
+#include <cstdint>
 #include <initializer_list>
 
 using namespace labrador;
@@ -37,6 +38,19 @@ namespace
 
 TEST_SUITE("GamepadTests")
 {
+	TEST_CASE("each button has its own bit, in declaration order")
+	{
+		CHECK(gamepad_button_bit(GamepadButton::a) == uint16_t{ 0x0001 });
+		CHECK(gamepad_button_bit(GamepadButton::b) == uint16_t{ 0x0002 });
+		CHECK(gamepad_button_bit(GamepadButton::dpad_right) == uint16_t{ 0x2000 });
+		static_assert(gamepad_button_bit(GamepadButton::start) == uint16_t{ 0x0200 });
+
+		GamepadState state;
+		state.buttons = gamepad_button_bit(GamepadButton::left_shoulder);
+		CHECK(state.is_down(GamepadButton::left_shoulder));
+		CHECK_FALSE(state.is_down(GamepadButton::right_shoulder));
+	}
+
 	TEST_CASE("a button is down or it is not")
 	{
 		const GamepadState state = pad({ GamepadButton::a,

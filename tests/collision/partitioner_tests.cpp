@@ -15,9 +15,9 @@ namespace
 	using Ranges = std::vector<std::pair<int, int>>;
 
 	// The property that matters to every caller: the ranges are contiguous,
-	// they start at zero, they end at num_elements, and together they name
+	// they start at zero, they end at element_count, and together they name
 	// every element exactly once.
-	bool covers_exactly(const Ranges& ranges, int num_elements)
+	bool covers_exactly(const Ranges& ranges, int element_count)
 	{
 		int next = 0;
 		for (const std::pair<int, int>& range : ranges)
@@ -28,14 +28,14 @@ namespace
 			}
 			next = range.second;
 		}
-		return next == num_elements;
+		return next == element_count;
 	}
 
-	Ranges split(int num_elements, int num_partitions)
+	Ranges split(int element_count, int partition_count)
 	{
 		const Partitioner partitioner;
 		Ranges ranges;
-		partitioner.partition(num_elements, num_partitions, ranges);
+		partitioner.partition(element_count, partition_count, ranges);
 		return ranges;
 	}
 }

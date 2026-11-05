@@ -13,7 +13,7 @@ namespace labrador
 		// for.
 		const JsonDocument document = read_json_file(json_path);
 		const JsonValue root = document.root();
-		asset_details::reject_unknown_keys(root, { "assets" });
+		detail::reject_unknown_keys(root, { "assets" });
 
 		AssetManifest manifest;
 		manifest.source_path = document.source_path();
@@ -22,7 +22,7 @@ namespace labrador
 		for (size_t group_index = 0; group_index < groups.size(); ++group_index)
 		{
 			const JsonValue group = groups.at(group_index);
-			asset_details::reject_unknown_keys(group, { "kind", "directory", "names", "optional" });
+			detail::reject_unknown_keys(group, { "kind", "directory", "names", "optional" });
 
 			// The kind and directory are the group's; only the name varies down
 			// the list, which is the whole reason the file groups and the loader

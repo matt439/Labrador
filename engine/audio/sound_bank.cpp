@@ -162,6 +162,7 @@ namespace labrador
 		this->device_->play_voice(voice, loop,
 			volume * this->group_volume(record->group), pitch, pan);
 	}
+
 	void SoundBank::stop_effect(EffectHandle effect, bool immediate) const
 	{
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
@@ -172,6 +173,7 @@ namespace labrador
 
 		this->device_->stop_voice(voice, immediate);
 	}
+
 	void SoundBank::pause_effect(EffectHandle effect) const
 	{
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
@@ -182,6 +184,7 @@ namespace labrador
 
 		this->device_->pause_voice(voice);
 	}
+
 	void SoundBank::resume_effect(EffectHandle effect) const
 	{
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
@@ -192,6 +195,7 @@ namespace labrador
 
 		this->device_->resume_voice(voice);
 	}
+
 	void SoundBank::set_effect_volume(EffectHandle effect, float volume) const
 	{
 		volume = clamp(volume, 0.0f, 1.0f);
@@ -206,6 +210,7 @@ namespace labrador
 		this->device_->set_voice_volume(voice,
 			volume * this->group_volume(record->group));
 	}
+
 	void SoundBank::set_effect_pitch(EffectHandle effect, float pitch) const
 	{
 		pitch = clamp(pitch, -1.0f, 1.0f);
@@ -217,6 +222,7 @@ namespace labrador
 
 		this->device_->set_voice_pitch(voice, pitch);
 	}
+
 	void SoundBank::set_effect_pan(EffectHandle effect, float pan) const
 	{
 		pan = clamp(pan, -1.0f, 1.0f);
@@ -228,6 +234,7 @@ namespace labrador
 
 		this->device_->set_voice_pan(voice, pan);
 	}
+
 	SoundState SoundBank::effect_state(EffectHandle effect) const
 	{
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
@@ -238,6 +245,7 @@ namespace labrador
 
 		return this->device_->voice_state(voice);
 	}
+
 	bool SoundBank::is_effect_looping(EffectHandle effect) const
 	{
 		const AudioDevice::VoiceHandle voice = this->voice(effect);

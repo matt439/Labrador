@@ -2,6 +2,10 @@
 
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/assets/sprite_sheet_loader.h"
+#include "engine/audio/audio_device.h"
+#include "engine/audio/audio_resources.h"
+#include "engine/render/render_resources.h"
+#include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
 
 #include <cstdio>

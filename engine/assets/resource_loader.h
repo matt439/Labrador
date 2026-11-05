@@ -1,16 +1,18 @@
 #pragma once
 
 #include "engine/assets/asset_manifest.h"
-#include "engine/audio/audio_device.h"
-#include "engine/audio/audio_resources.h"
-#include "engine/render/render_resources.h"
-#include "engine/render/renderer.h"
+
 #include <functional>
 #include <map>
 #include <string>
 
 namespace labrador
 {
+	class AudioDevice;
+	class AudioResources;
+	class RenderResources;
+	class Renderer;
+
 	// Turns a manifest into loaded resources, and does it again when the GPU
 	// throws the first set away.
 	//

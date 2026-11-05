@@ -13,7 +13,7 @@
 // Fixed-schema checks private to the manifest, sprite-sheet and sound-bank
 // loaders.
 // JsonValue itself permits caller-owned dictionaries and arbitrary metadata.
-namespace labrador::asset_details
+namespace labrador::detail
 {
 	inline std::string json_key_label(const std::string& key)
 	{
@@ -31,7 +31,9 @@ namespace labrador::asset_details
 			else
 			{
 				if (character == '\\' || character == '\'')
+				{
 					label += '\\';
+				}
 				label += character;
 			}
 		}

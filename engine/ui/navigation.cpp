@@ -3,6 +3,7 @@
 #include "engine/ui/widget.h"
 #include "engine/math/vector2f.h"
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 

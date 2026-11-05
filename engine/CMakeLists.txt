@@ -9,6 +9,7 @@ add_library(LabradorEngine STATIC
     app/application.cpp
     app/content_root.cpp
     app/frame_timer.cpp
+    app/modifier_sides.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp
     assets/resource_loader.cpp
@@ -28,6 +29,7 @@ add_library(LabradorEngine STATIC
     core/state.cpp
     core/state_context.cpp
     core/thread_pool.cpp
+    core/utf8.cpp
     input/direction.cpp
     input/gamepad.cpp
     input/gamepads.cpp

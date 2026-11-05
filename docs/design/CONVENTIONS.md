@@ -38,6 +38,10 @@ Almost everything below falls out of one rule:
 - Acronyms are cased as words: `JsonLoader`, `UiButton`. Proper nouns and
   trademarks keep their own spelling: `D3D11Renderer`, `XInputDevice`.
 - Template parameters are types, so they follow types: `T`, `VertexType`.
+- One exception: a member alias a template exposes for generic code keeps
+  the standard library's lowercase member-type spelling (`value_type`), as
+  `Registry::handle` and `RegistryStorage::pointer_type` do. `Handle` there
+  would redeclare the template it names.
 
 ## Functions
 

@@ -146,7 +146,7 @@ namespace labrador
 		// True while held_ is a push the page was opened under rather than a
 		// press the page saw. Cleared by any change of direction.
 		bool opened_under_ = false;
-		float first_delay_ = 0.4f;
-		float repeat_interval_ = 0.1f;
+		float first_delay_;
+		float repeat_interval_;
 	};
 }

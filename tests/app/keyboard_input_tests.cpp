@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+#include "engine/app/modifier_sides.h"
 #include "engine/app/win32/keyboard_input.h"
 #include "engine/input/keyboard.h"
 
@@ -83,6 +84,28 @@ TEST_CASE("Win32 key translation ignores message flags and rejects unknown posit
 	CHECK(key_from_message('W', key_position(0xff)) == Key::none);
 	CHECK(key_from_message('W', key_position(0x11, true)) == Key::none);
 	CHECK(key_from_message(VK_ADD, key_position(0x4e, true)) == Key::none);
+}
+
+TEST_CASE("Win32 modifier sides come from right Shift's scan and the extended bit")
+{
+	CHECK_FALSE(is_right_modifier(Key::shift, key_position(0x2a)));
+	CHECK(is_right_modifier(Key::shift, key_position(0x36)));
+	CHECK_FALSE(is_right_modifier(Key::control, key_position(0x1d)));
+	CHECK(is_right_modifier(Key::control, key_position(0x1d, true)));
+	CHECK_FALSE(is_right_modifier(Key::alt, key_position(0x38)));
+	CHECK(is_right_modifier(Key::alt, key_position(0x38, true)));
+}
+
+TEST_CASE("Win32 modifier sides hold one public key until both are released")
+{
+	ModifierSides sides;
+	const intptr_t left = key_position(0x1d);
+	const intptr_t right = key_position(0x1d, true);
+	CHECK(sides.update(Key::control, is_right_modifier(Key::control, left), true));
+	CHECK(sides.update(Key::control, is_right_modifier(Key::control, right), true));
+	CHECK_FALSE(sides.update(Key::control, is_right_modifier(Key::control, left), false));
+	CHECK(sides.update(Key::control, is_right_modifier(Key::control, right), false));
+	CHECK(sides.update(Key::w, false, false));
 }
 
 TEST_CASE("every named key remains reachable through Win32 translation")

@@ -30,6 +30,13 @@ namespace labrador
 		dpad_right,
 	};
 
+	// The bit `button` occupies in GamepadState::buttons, for a backend
+	// filling a snapshot or a test constructing one.
+	constexpr uint16_t gamepad_button_bit(GamepadButton button)
+	{
+		return static_cast<uint16_t>(1u << static_cast<unsigned int>(button));
+	}
+
 	// Analogue triggers use caller-supplied thresholds for button-like edges.
 	enum class GamepadTrigger
 	{

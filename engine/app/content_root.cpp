@@ -19,6 +19,13 @@ namespace labrador
 		// every platform: a backslash means nothing to a POSIX path.
 		constexpr char separator =
 			static_cast<char>(std::filesystem::path::preferred_separator);
+
+		// Whether a non-empty directory already ends in either separator,
+		// which Windows accepts both of.
+		bool ends_with_separator(const std::string& directory)
+		{
+			return directory.back() == '\\' || directory.back() == '/';
+		}
 	}
 
 	std::string executable_directory()
@@ -29,7 +36,7 @@ namespace labrador
 		// the root is where the content is, which is the question this
 		// function answers.
 		return "/";
-#else
+#elif defined(_WIN32)
 		// Keep the native path wide until explicitly encoding it as UTF-8.
 		// Grow the buffer until GetModuleFileNameW returns an untruncated path.
 		std::vector<wchar_t> buffer(MAX_PATH);
@@ -57,6 +64,8 @@ namespace labrador
 			directory += separator;
 		}
 		return directory;
+#else
+#error "executable_directory has no implementation for this platform"
 #endif
 	}
 
