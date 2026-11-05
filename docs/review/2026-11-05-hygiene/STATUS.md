@@ -8,8 +8,8 @@ the last column. A finding is a question until its fix proves it.
 
 | Theme | Name | Findings | State | Story and evidence |
 |---|---|---:|---|---|
-| [H1](README.md#h1-engine-behaviour-and-contract-fixes-outside-render) | Engine behaviour and contract fixes outside render | 27 | Open | |
-| [H2](README.md#h2-untrusted-input-and-exception-safety) | Untrusted input and exception safety | 11 | Open | |
+| [H1](README.md#h1-engine-behaviour-and-contract-fixes-outside-render) | Engine behaviour and contract fixes outside render | 27 | In progress | [SM-73](../../product/BACKLOG.md#sm-73) |
+| [H2](README.md#h2-untrusted-input-and-exception-safety) | Untrusted input and exception safety | 11 | In progress | [SM-74](../../product/BACKLOG.md#sm-74) |
 | [H3](README.md#h3-render-backend-error-handling-and-resource-ownership) | Render backend error handling and resource ownership | 17 | Open | |
 | [H4](README.md#h4-build-ci-and-remaining-tools) | Build, CI and remaining tools | 40 | Open | |
 | [H5](README.md#h5-python-tooling-hygiene) | Python tooling hygiene | 25 | Open | |
