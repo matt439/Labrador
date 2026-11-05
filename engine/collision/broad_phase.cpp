@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <vector>
 
 namespace labrador
@@ -38,9 +40,47 @@ namespace labrador
 				static_cast<uint64_t>(static_cast<uint32_t>(y));
 		}
 
+		// The cell a coordinate falls in, clamped to the range a cell key can
+		// address.
+		//
+		// Divided in double and clamped before the conversion, because a
+		// float-to-int32 conversion of a value outside that range is undefined
+		// behaviour, and a finite box can still have an infinite edge where
+		// x + width overflows. Clamping is monotonic, so two boxes that
+		// overlap still share a cell; boxes far apart that clamp to the same
+		// edge cell are separated by the box test every pair passes before it
+		// is emitted. A NaN cannot reach here (collect_candidates sets those
+		// boxes aside), but it maps to the lowest cell rather than to
+		// undefined behaviour.
 		int32_t cell_of(float value, float cell_size)
 		{
-			return static_cast<int32_t>(std::floor(value / cell_size));
+			const double cell = std::floor(
+				static_cast<double>(value) / static_cast<double>(cell_size));
+			constexpr double lowest =
+				static_cast<double>(std::numeric_limits<int32_t>::min());
+			constexpr double highest =
+				static_cast<double>(std::numeric_limits<int32_t>::max());
+			if (!(cell > lowest))
+			{
+				return std::numeric_limits<int32_t>::min();
+			}
+			if (cell >= highest)
+			{
+				return std::numeric_limits<int32_t>::max();
+			}
+			return static_cast<int32_t>(cell);
+		}
+
+		bool is_finite(const RectangleF& box)
+		{
+			return std::isfinite(box.x) && std::isfinite(box.y)
+				&& std::isfinite(box.width) && std::isfinite(box.height);
+		}
+
+		bool has_nan(const RectangleF& box)
+		{
+			return std::isnan(box.x) || std::isnan(box.y)
+				|| std::isnan(box.width) || std::isnan(box.height);
 		}
 	}
 
@@ -115,26 +155,53 @@ namespace labrador
 			{
 				continue;
 			}
+
+			// A box with a NaN field intersects nothing (test_AABB_AABB), so
+			// the sweep can never measure it and neither does the grid.
+			const RectangleF box = object->shape()->bounding_box();
+			if (has_nan(box))
+			{
+				continue;
+			}
 			this->candidates_.push_back(static_cast<int>(i));
-			this->boxes_.push_back(object->shape()->bounding_box());
+			this->boxes_.push_back(box);
 		}
 	}
 
 	// The cell edge, from the mean extent of what is actually in the scene. A
 	// grid sized against a constant would be wrong for every scene except the
 	// one it was tuned on.
+	//
+	// Only finite boxes count towards the mean: one infinite extent would
+	// make every cell infinite. The size is computed in double and clamped to
+	// the largest float, which finite extents near that limit would
+	// otherwise overflow.
 	void BroadPhase::choose_cell_size()
 	{
 		double extent_total = 0.0;
+		size_t finite_count = 0;
 		for (const RectangleF& box : this->boxes_)
 		{
+			if (!is_finite(box))
+			{
+				continue;
+			}
 			extent_total += static_cast<double>(box.width) +
 				static_cast<double>(box.height);
+			finite_count++;
 		}
-		const float mean_extent = static_cast<float>(extent_total /
-			(2.0 * static_cast<double>(this->boxes_.size())));
+		if (finite_count == 0)
+		{
+			this->cell_size_ = min_cell_size;
+			return;
+		}
+		const double mean_extent =
+			extent_total / (2.0 * static_cast<double>(finite_count));
+		const double cell_size = std::min(
+			mean_extent * static_cast<double>(cell_size_factor),
+			static_cast<double>(std::numeric_limits<float>::max()));
 		this->cell_size_ =
-			std::max(min_cell_size, mean_extent * cell_size_factor);
+			std::max(min_cell_size, static_cast<float>(cell_size));
 	}
 
 	// Each object into the cells its box touches, or set aside as large, and
@@ -148,27 +215,50 @@ namespace labrador
 		{
 			const RectangleF& box = this->boxes_[c];
 
-			const int32_t min_x = cell_of(box.left(), this->cell_size_);
-			const int32_t max_x = cell_of(box.right(), this->cell_size_);
-			const int32_t min_y = cell_of(box.top(), this->cell_size_);
-			const int32_t max_y = cell_of(box.bottom(), this->cell_size_);
-
-			const int64_t spanned =
-				static_cast<int64_t>(max_x - min_x + 1) *
-				static_cast<int64_t>(max_y - min_y + 1);
-
-			if (spanned > max_cells_per_object)
+			// An infinite field has no cell range, but its box can still
+			// overlap others - a circle whose doubled radius overflows has a
+			// finite centre and radius and real contacts - so it is tested
+			// against everything rather than dropped.
+			if (!is_finite(box))
 			{
 				this->large_.push_back(static_cast<int>(c));
 				continue;
 			}
 
-			for (int32_t y = min_y; y <= max_y; y++)
+			const int32_t min_x = cell_of(box.left(), this->cell_size_);
+			const int32_t max_x = cell_of(box.right(), this->cell_size_);
+			const int32_t min_y = cell_of(box.top(), this->cell_size_);
+			const int32_t max_y = cell_of(box.bottom(), this->cell_size_);
+
+			// In 64 bits, and each axis bounded before the product: a span
+			// across the whole clamped range is 2^32 cells, and two of those
+			// multiplied overflow even 64 bits. A span below one is a box
+			// built inside out, with a negative extent; it covers no cell
+			// range but can still intersect a box, so it goes to the list
+			// that tests everything too.
+			const int64_t span_x =
+				static_cast<int64_t>(max_x) - static_cast<int64_t>(min_x) + 1;
+			const int64_t span_y =
+				static_cast<int64_t>(max_y) - static_cast<int64_t>(min_y) + 1;
+
+			if (span_x < 1 || span_y < 1 ||
+				span_x > max_cells_per_object ||
+				span_y > max_cells_per_object ||
+				span_x * span_y > max_cells_per_object)
 			{
-				for (int32_t x = min_x; x <= max_x; x++)
+				this->large_.push_back(static_cast<int>(c));
+				continue;
+			}
+
+			// The counters are 64-bit so that a box in the last cell, at the
+			// top of the int32 range, ends the loop instead of overflowing it.
+			for (int64_t y = min_y; y <= max_y; y++)
+			{
+				for (int64_t x = min_x; x <= max_x; x++)
 				{
-					this->entries_.push_back(
-						Entry{ pack(x, y), static_cast<int>(c) });
+					this->entries_.push_back(Entry{
+						pack(static_cast<int32_t>(x), static_cast<int32_t>(y)),
+						static_cast<int>(c) });
 				}
 			}
 		}

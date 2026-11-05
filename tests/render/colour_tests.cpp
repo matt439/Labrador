@@ -34,6 +34,28 @@ TEST_SUITE("Colour")
 		CHECK(brightened == Colour(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 
+	TEST_CASE("a NaN channel clamps to 0, so 0/0 stays in [0, 1]")
+	{
+		// Black's colour channels are 0, so dividing by black is 0/0 in each.
+		const Colour divided = Colour::black / Colour::black;
+		CHECK(divided.r == 0.0f);
+		CHECK(divided.g == 0.0f);
+		CHECK(divided.b == 0.0f);
+		CHECK(divided.a == 1.0f);
+
+		Colour assigned = Colour::black;
+		assigned /= Colour::black;
+		CHECK(assigned == divided);
+
+		const Colour by_zero = Colour::black / 0.0f;
+		CHECK(by_zero.r == 0.0f);
+		CHECK(by_zero.a == 1.0f);
+
+		// The constructor is the same clamp, constexpr as the palette is.
+		constexpr Colour from_constants(0.5f, 2.0f, -3.0f, 0.25f);
+		static_assert(from_constants.g == 1.0f && from_constants.b == 0.0f);
+	}
+
 	TEST_CASE("hex parses the way the palette was built")
 	{
 		// The palette is 148 literal channel values, not 148 hex strings

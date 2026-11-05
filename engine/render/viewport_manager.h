@@ -27,6 +27,13 @@ namespace labrador
 		// DrawList::set_viewport, which is why this class names no graphics
 		// type. What a viewport shows of the world through a camera is
 		// Camera::visible_rectangle, which is why it names no Camera either.
+		//
+		// player_num indexes all_viewports(): [0, 1) for one player, [0, 2)
+		// for two, and [0, 4) for three and four players, since three players
+		// leave a fourth quadrant a whole-screen caller still draws. Throws
+		// std::out_of_range outside that range rather than answering with a
+		// fullscreen pane, which would draw a whole extra pass over the others
+		// (T6), as Renderer refuses a view nobody set up.
 		Viewport player_viewport(int player_num) const;
 
 		std::vector<Viewport> all_viewports() const;

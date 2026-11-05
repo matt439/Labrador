@@ -6,7 +6,8 @@
 
 namespace labrador
 {
-	std::vector<std::pair<int, int>> Partitioner::partition(int num_elements, int num_partitions) const
+	void Partitioner::partition(int num_elements, int num_partitions,
+		std::vector<std::pair<int, int>>& ranges) const
 	{
 		if (num_partitions < 1)
 		{
@@ -19,7 +20,7 @@ namespace labrador
 				"Partitioner::partition: num_elements must not be negative.");
 		}
 
-		std::vector<std::pair<int, int>> result;
+		ranges.clear();
 		int elements_per_partition = num_elements / num_partitions;
 		int remainder = num_elements % num_partitions;
 		int start = 0;
@@ -31,13 +32,13 @@ namespace labrador
 				end++;
 				remainder--;
 			}
-			result.push_back(std::make_pair(start, end));
+			ranges.push_back(std::make_pair(start, end));
 			start = end;
 		}
-		return result;
 	}
 
-	std::vector<std::pair<int, int>> Partitioner::partition(size_t num_elements, int num_partitions) const
+	void Partitioner::partition(size_t num_elements, int num_partitions,
+		std::vector<std::pair<int, int>>& ranges) const
 	{
 		// The int overload's ranges are ints, so a count that does not fit in
 		// one cannot be answered - and narrowing it silently would hand back
@@ -49,6 +50,7 @@ namespace labrador
 				"Partitioner::partition: num_elements exceeds the range this "
 				"partitioner can address.");
 		}
-		return Partitioner::partition(static_cast<int>(num_elements), num_partitions);
+		Partitioner::partition(static_cast<int>(num_elements), num_partitions,
+			ranges);
 	}
 }

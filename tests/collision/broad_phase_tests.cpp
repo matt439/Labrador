@@ -4,16 +4,21 @@
 #include "engine/collision/collision_layer.h"
 #include "engine/collision/collision_object.h"
 #include "engine/collision/contacts.h"
+#include "engine/math/circle.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 using labrador::BroadPhase;
+using labrador::Circle;
 using labrador::CollisionLayer;
 using labrador::CollisionMask;
 using labrador::CollisionObject;
@@ -36,12 +41,24 @@ namespace
 		{
 		}
 
+		// A round object, so a bounding box can be infinite while the shape
+		// itself has a finite centre and radius.
+		Box(const Circle& circle, CollisionLayer layer, CollisionMask mask) :
+			rectangle_(circle.bounding_box()), circle_(circle), layer_(layer),
+			mask_(mask)
+		{
+		}
+
 		void update(float /*dt*/) override {}
 		void draw(labrador::DrawList& /*list*/) const override {}
 		RectangleF bounds() const override { return this->rectangle_; }
 
 		const labrador::Shape* shape() const override
 		{
+			if (this->circle_.has_value())
+			{
+				return &*this->circle_;
+			}
 			return &this->rectangle_;
 		}
 		CollisionLayer layer() const override { return this->layer_; }
@@ -61,6 +78,7 @@ namespace
 
 	private:
 		RectangleF rectangle_;
+		std::optional<Circle> circle_;
 		CollisionLayer layer_ = 0;
 		CollisionMask mask_ = 0;
 		bool for_deletion_ = false;
@@ -290,5 +308,112 @@ TEST_SUITE("BroadPhaseTests")
 		boxes.pop_back();
 		broad_phase.find_pairs(pointers(boxes), pairs);
 		CHECK(broad_phase.large_object_count() == 0);
+	}
+
+	// Converting a NaN or an out-of-range value to a cell coordinate is
+	// undefined behaviour, so these boxes are the ones a grid gets wrong
+	// quietly. The sweep is still the specification: NaN boxes intersect
+	// nothing, infinite and enormous ones intersect what they cover.
+	TEST_CASE("the grid agrees with the sweep on NaN, infinite and enormous boxes")
+	{
+		const float nan = std::numeric_limits<float>::quiet_NaN();
+		const float inf = std::numeric_limits<float>::infinity();
+		const float biggest = std::numeric_limits<float>::max();
+
+		Rng rng;
+		for (int round = 0; round < 20; round++)
+		{
+			CAPTURE(round);
+
+			std::vector<std::unique_ptr<Box>> boxes =
+				scatter(60, rng, 500.0f, 5.0f, 40.0f);
+
+			for (int k = 0; k < 24; k++)
+			{
+				const float x = rng.in(0.0f, 500.0f);
+				const float y = rng.in(0.0f, 500.0f);
+				const float side = rng.in(5.0f, 40.0f);
+				const bool mover = (k % 2) == 0;
+				const CollisionLayer layer = mover ? mover_layer : world_layer;
+				const CollisionMask mask =
+					mover ? (world_layer | mover_layer) : mover_layer;
+
+				RectangleF box(x, y, side, side);
+				switch (rng.next() % 10u)
+				{
+				case 0: box.x = nan; break;
+				case 1: box.height = nan; break;
+				case 2: box.width = inf; break;
+				case 3: box.y = -inf; break;
+				case 4: box.x = (k % 4 == 0) ? -1.0e30f : 1.0e30f; break;
+				case 5: box.y = -biggest; box.height = biggest; break;
+				// Finite fields whose right edge overflows to infinity.
+				case 6: box.x = biggest; box.width = biggest; break;
+				case 7: box.x = -biggest; box.width = biggest; break;
+				// Built inside out: no cell range, but the sweep still
+				// tests its box.
+				case 8: box.width = -side; break;
+				default: break;
+				}
+
+				const unsigned int round_kind = rng.next() % 4u;
+				if (round_kind == 0)
+				{
+					// A doubled radius that overflows: the box is infinite,
+					// the circle is finite and overlaps the scene.
+					boxes.push_back(std::make_unique<Box>(
+						Circle(Vector2F(x, y), 2.0e38f), layer, mask));
+				}
+				else if (round_kind == 1)
+				{
+					// Finite, but far wider than the int32 cell range.
+					boxes.push_back(std::make_unique<Box>(
+						Circle(Vector2F(x, y), 1.0e20f), layer, mask));
+				}
+				else
+				{
+					boxes.push_back(std::make_unique<Box>(box, layer, mask));
+				}
+			}
+
+			const std::vector<CollisionObject*> objects = pointers(boxes);
+
+			std::vector<Contact> swept;
+			find_contacts(objects, swept);
+
+			BroadPhase broad_phase;
+			std::vector<Contact> indexed;
+			find_contacts(objects, indexed, &broad_phase);
+
+			CHECK(same(swept, indexed));
+			CHECK(std::isfinite(broad_phase.cell_size()));
+		}
+	}
+
+	TEST_CASE("a scene of only enormous boxes keeps a finite cell size")
+	{
+		// Every mean extent near the largest float: doubling it in float
+		// would make the cell infinite and every coordinate's cell zero or
+		// NaN.
+		const float biggest = std::numeric_limits<float>::max();
+		std::vector<std::unique_ptr<Box>> boxes;
+		boxes.push_back(std::make_unique<Box>(
+			RectangleF(-biggest, -biggest, biggest, biggest),
+			mover_layer, world_layer | mover_layer));
+		boxes.push_back(std::make_unique<Box>(
+			RectangleF(-biggest * 0.5f, -biggest * 0.5f, biggest, biggest),
+			world_layer, mover_layer));
+
+		const std::vector<CollisionObject*> objects = pointers(boxes);
+
+		std::vector<Contact> swept;
+		find_contacts(objects, swept);
+
+		BroadPhase broad_phase;
+		std::vector<Contact> indexed;
+		find_contacts(objects, indexed, &broad_phase);
+
+		CHECK(std::isfinite(broad_phase.cell_size()));
+		CHECK(same(swept, indexed));
 	}
 }

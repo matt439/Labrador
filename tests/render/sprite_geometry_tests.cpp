@@ -522,3 +522,26 @@ TEST_CASE("world cull bounds contain camera-snapped corners with distant pivots"
 		}
 	}
 }
+
+TEST_CASE("unrotated world cull bounds are the destination, shifted and padded exactly")
+{
+	// The unrotated branch takes no cos/sin. Its box is the destination
+	// moved back by its origin, padded on each side by one unit per pixel
+	// plus twice the farther origin fraction - every value here exact.
+	const RectangleI source(0, 0, 8, 6);
+	const RectangleF destination(10.0f, 20.0f, 30.0f, 40.0f);
+	const Vector2F origin(4.0f, 3.0f);
+	const RectangleF box = sprite_world_bounds(destination, source, 0.0f,
+		origin, 0.25f);
+	CHECK(box.x == -5.5f);
+	CHECK(box.y == -0.5f);
+	CHECK(box.width == 31.0f);
+	CHECK(box.height == 41.0f);
+
+	const RectangleF negative_zero = sprite_world_bounds(destination, source,
+		-0.0f, origin, 0.25f);
+	CHECK(negative_zero.x == box.x);
+	CHECK(negative_zero.y == box.y);
+	CHECK(negative_zero.width == box.width);
+	CHECK(negative_zero.height == box.height);
+}

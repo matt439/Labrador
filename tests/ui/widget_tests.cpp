@@ -5,6 +5,7 @@
 #include "tests/ui/stub_widget.h"
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 using labrador::Activation;
@@ -124,6 +125,15 @@ TEST_CASE("an empty container occupies nothing, and an empty child drags nothing
 
 	CHECK(parent.bounds().x == doctest::Approx(900.0f));
 	CHECK(parent.bounds().y == doctest::Approx(400.0f));
+}
+
+TEST_CASE("a container refuses a null child")
+{
+	// As FocusGroup::add does: a named failure at the call, rather than a
+	// null read inside it.
+	UiContainer container("row");
+	CHECK_THROWS_AS(container.add_child(nullptr), std::invalid_argument);
+	CHECK(container.child_count() == 0);
 }
 
 TEST_CASE("set_colour reaches every child, through nesting and past what has none")

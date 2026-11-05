@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+#include <stdexcept>
 #include <vector>
 
 #include "engine/render/resolution_manager.h"
@@ -123,22 +124,33 @@ TEST_CASE("all_viewports tile the screen exactly, with no overlap")
 	}
 }
 
-TEST_CASE("an out-of-range index does not answer from the next layout down")
+TEST_CASE("an index outside the layout's viewports throws")
 {
-	// An inner switch that falls through to the next layout's cases has
-	// two_player(9) answered by the three-player table.
+	// Neither a fullscreen pane, which would draw a whole extra pass over
+	// the others, nor an answer from the next layout's table, which an inner
+	// switch falling through would give.
 	ResolutionManager resolution = default_resolution();
 	ViewportManager manager(&resolution);
 
-	manager.set_layout(ScreenLayout::two_player);
-	CHECK(is_fullscreen(manager.player_viewport(9)));
-	CHECK(is_fullscreen(manager.player_viewport(-1)));
+	manager.set_layout(ScreenLayout::one_player);
+	CHECK_THROWS_AS(manager.player_viewport(1), std::out_of_range);
+	CHECK_THROWS_AS(manager.player_viewport(-1), std::out_of_range);
 
+	manager.set_layout(ScreenLayout::two_player);
+	CHECK_THROWS_AS(manager.player_viewport(2), std::out_of_range);
+	CHECK_THROWS_AS(manager.player_viewport(9), std::out_of_range);
+	CHECK_THROWS_AS(manager.player_viewport(-1), std::out_of_range);
+
+	// Three players have four viewports: index 3 is the empty quadrant and
+	// is answered, index 4 is not.
 	manager.set_layout(ScreenLayout::three_player);
-	CHECK(is_fullscreen(manager.player_viewport(9)));
+	CHECK(same(manager.player_viewport(3), 640.0f, 0.0f, 640.0f, 360.0f));
+	CHECK_THROWS_AS(manager.player_viewport(4), std::out_of_range);
 
 	manager.set_layout(ScreenLayout::four_player);
-	CHECK(is_fullscreen(manager.player_viewport(9)));
+	CHECK_NOTHROW(manager.player_viewport(3));
+	CHECK_THROWS_AS(manager.player_viewport(4), std::out_of_range);
+	CHECK_THROWS_AS(manager.player_viewport(9), std::out_of_range);
 }
 
 TEST_CASE("the divider count matches the layout")

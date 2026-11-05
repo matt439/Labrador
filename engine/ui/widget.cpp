@@ -3,6 +3,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -64,6 +65,10 @@ namespace labrador
 	}
 	void UiContainer::add_child(UiObject* child)
 	{
+		if (child == nullptr)
+		{
+			throw std::invalid_argument("UiContainer::add_child: null child");
+		}
 		this->children_.push_back(std::make_pair(child->name(), child));
 	}
 	void UiContainer::remove_child(const std::string& name)

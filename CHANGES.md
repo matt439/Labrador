@@ -80,6 +80,51 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Drop const from ResourceLoader's reload and load helpers
+
+**Source break.** `ResourceLoader::reload_device_resources()` is no longer
+`const`, since it rebuilds every device resource the manifest named: call it
+on a non-const loader. No sample needed the change.
+
+### 2026-11-05 - Refuse an unset viewport index, clamp NaN colour channels, skip trig unrotated
+
+**Behaviour change.** `ViewportManager::player_viewport` throws
+`std::out_of_range` for an index outside the current layout's viewports (one
+for one player, two for two, four for three and four) instead of returning a
+fullscreen viewport. Check the index against the layout before asking. A
+colour channel that computes to NaN, such as dividing by a colour with a zero
+channel, now clamps to 0.
+
+### 2026-11-05 - State the UI module's loud failures at their declarations
+
+**Behaviour change and source break.** `UiContainer::add_child(nullptr)`
+throws `std::invalid_argument` instead of dereferencing null.
+`FocusGroup::set_focused` checks the slot before the widget, so an
+out-of-range slot throws `std::out_of_range` even for a widget the group does
+not hold; it returned false. `FocusGroup::refresh_style()` is no longer
+`const`, since it writes every held widget's colour: call it on a non-const
+group. No sample needed the change.
+
+### 2026-11-05 - Partition into a caller-owned vector so a split-screen frame allocates nothing
+
+**Source break and contract change.** `Partitioner::partition` fills a
+caller-owned vector instead of returning one: `ranges =
+partitioner.partition(n, k);` becomes `partitioner.partition(n, k, ranges);`.
+The vector is cleared first and its capacity reused; a rejected argument
+leaves it unchanged. No sample calls it. `Scene::draw` keeps its ranges in a
+buffer reused across frames and must not be entered by two threads at once on
+the same scene, which its setting of the renderer's view count already
+required.
+
+### 2026-11-05 - Give the broad-phase grid defined answers for nonfinite and huge boxes
+
+**Behaviour change.** `BroadPhase` gives defined results for bounding boxes
+with NaN, infinite, inside-out or very large fields, matching the all-pairs
+sweep: a NaN box forms no pair, an infinite or inside-out box is tested
+against every object, and cell coordinates clamp to the 32-bit range. These
+inputs were undefined behaviour. Finite, ordinary boxes form the same pairs
+as before.
+
 ### 2026-11-05 - Bound what a hand-edited JSON file can ask of the loaders
 
 **Behaviour change.** Hand-edited JSON is bounded:

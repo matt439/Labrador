@@ -40,6 +40,12 @@ namespace labrador
 	// game reads, and dispatch re-measures each pair in list order, so a
 	// different order is a different resolution. tests/collision asserts the
 	// two enumerations agree object-for-object on randomised scenes.
+	//
+	// That includes boxes no grid cell can hold. A bounding box with a NaN
+	// field intersects nothing, so it forms no pair. One with an infinite
+	// field or a negative extent is tested against every other object, as
+	// an oversized object is, and cell coordinates beyond the 32-bit range
+	// clamp to its edge.
 	class BroadPhase
 	{
 	public:
@@ -63,7 +69,8 @@ namespace labrador
 
 		// How many objects the last call put in the large-object list - the
 		// ones whose bounding box covers so much of the grid that indexing
-		// them costs more than testing them against everything.
+		// them costs more than testing them against everything, or that no
+		// cell range describes.
 		int large_object_count() const;
 
 		// The pair list this object keeps across frames, so find_contacts has

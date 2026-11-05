@@ -110,7 +110,7 @@ namespace labrador
 		// Kinds with no `reload_device` are skipped: they are not device resources,
 		// and callers hold borrowed SoundBank* and level-definition pointers into
 		// them that a reload would invalidate.
-		void reload_device_resources() const;
+		void reload_device_resources();
 
 	private:
 		RenderResources* render_resources_ = nullptr;
@@ -127,12 +127,12 @@ namespace labrador
 		void register_builtin_kinds();
 
 		void load_texture(const std::string& directory,
-			const std::string& name) const;
+			const std::string& name);
 		void load_sprite_font(const std::string& directory,
-			const std::string& name) const;
+			const std::string& name);
 		void load_sprite_sheet(const std::string& directory,
-			const std::string& name) const;
+			const std::string& name);
 		void load_sound_bank(bool optional, const std::string& directory,
-			const std::string& name) const;
+			const std::string& name);
 	};
 }

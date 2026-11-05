@@ -248,8 +248,12 @@ namespace labrador
 			size, rotation, ratio * size);
 		const float x = std::max(std::abs(ratio.x), std::abs(1.0f - ratio.x));
 		const float y = std::max(std::abs(ratio.y), std::abs(1.0f - ratio.y));
-		const float cosine = std::abs(std::cos(rotation));
-		const float sine = std::abs(std::sin(rotation));
+		// quad_bounds' branch, for its reason: this is the cull path, per
+		// object per view, and almost nothing is rotated. cos(0) and sin(0)
+		// are exactly 1 and 0, so the box is the same either way.
+		const bool unrotated = rotation == 0.0f;
+		const float cosine = unrotated ? 1.0f : std::abs(std::cos(rotation));
+		const float sine = unrotated ? 0.0f : std::abs(std::sin(rotation));
 		const float pad_x = units_per_pixel * (1.0f + 2.0f * (x * cosine + y * sine));
 		const float pad_y = units_per_pixel * (1.0f + 2.0f * (x * sine + y * cosine));
 		return RectangleF(result.x - pad_x, result.y - pad_y,
