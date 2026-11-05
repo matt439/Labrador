@@ -171,6 +171,32 @@ jobs:
           }
           exit $LASTEXITCODE
 
+      # CHANGES.md's rule, per commit and over the same scope as the step
+      # above: a commit touching a path the rule names touches CHANGES.md,
+      # says `not consumer-visible`, or is the exception CHANGES.md records.
+      # Whether that classification is right stays the reviewer's and the
+      # release audit's (CONTRIBUTING.md).
+      - name: Check CHANGES.md's rule for each commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          EVENT_HEAD: ${{ github.sha }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ($env:EVENT_NAME -eq 'pull_request') {
+            python tools/check_changes_rule.py --base "$env:PR_BASE" --head "$env:PR_HEAD"
+          } elseif ($env:EVENT_NAME -eq 'push' -and $env:EVENT_BEFORE -and $env:EVENT_BEFORE -notmatch '^0+$') {
+            python tools/check_changes_rule.py --base "$env:EVENT_BEFORE" --head "$env:EVENT_HEAD"
+          } elseif ($env:EVENT_NAME -in @('schedule', 'workflow_dispatch') -or
+                    ($env:EVENT_NAME -eq 'push' -and $env:EVENT_BEFORE -match '^0+$')) {
+            Write-Output 'No PR/push comparison base: checking only the event head commit, not ancestor/new-branch history.'
+            python tools/check_changes_rule.py --commit "$env:EVENT_HEAD"
+          } else {
+            throw 'No supported CHANGES.md rule scope; refusing to guess a comparison range.'
+          }
+          exit $LASTEXITCODE
+
       - name: Check every document a comment cites resolves
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_doc_citations.cmake
 
@@ -442,6 +468,14 @@ jobs:
           call "%VCVARS%"
           python tools\check_ctest_inventory.py --configuration ${{ matrix.preset }} --build-dir out\build\${{ matrix.preset }}
 
+      # Each sample's program embeds samples/minimal/dpi_aware.manifest, so
+      # Windows does not stretch it on a scaled display. This reads the
+      # manifest the linker embedded; whether the template looks right at
+      # 150% stays the owner's to see (OCA-66).
+      - name: Check that each sample declares per-monitor DPI awareness
+        if: needs.changes.outputs.build == 'true'
+        run: python tools\check_dpi_manifest.py out\build\${{ matrix.preset }}\samples
+
       # The opt-in GPU probes are EXCLUDE_FROM_ALL and outside ctest, because
       # running them needs hardware a runner has not got. Compiling them does
       # not, and keeps the evidence docs/review/INDEX.md cites from rotting.
@@ -669,7 +703,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -R "WebWindowTests" --no-tests=error --output-on-failure
+          ctest --preset wasm-release -R "WebWindowTests" -E "^Firefox" --no-tests=error --output-on-failure
 
       # WHAT A BROWSER BUILD SHIPS, LOADED: each sample's built page, served
       # and played to its own way out, which no other step does. A content
@@ -680,7 +714,20 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -j 3 -R "PageTests" --no-tests=error --output-on-failure
+          ctest --preset wasm-release -j 3 -R "PageTests" -E "^Firefox" --no-tests=error --output-on-failure
+
+      # THE SAME PAGES IN FIREFOX, which the runner image carries: each
+      # sample's page drawn and quit, the window's input sequence, and the
+      # bundle page played, its context lost and restored, quit and played
+      # again, over WebDriver BiDi by tests/render/web/run_firefox.mjs. A
+      # step of its own so a failure names the browser. --no-tests=error, so
+      # an image without Firefox fails here rather than passing by running
+      # nothing; the inventory check above says the same earlier.
+      - name: Load and quit the pages in headless Firefox
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          ctest --preset wasm-release -j 3 -R "^Firefox" --no-tests=error --output-on-failure
 
       # WHAT A HOST SERVES: the build writes LineSweeper's bundle to
       # web-dist/linesweeper/ - the module, its example page, the notices for

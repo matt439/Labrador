@@ -74,10 +74,9 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-48` | DECISION | should | S | Informal play with the physical XInput pad: an `x64-release` sample, noting whether pad input reached it with another window focused, and the pad in Chrome (`BDP-06`). Mapping is SM-40's test; `BDP-06`'s Firefox half is `WEB#10`. |
+| `OCA-48` | DECISION | should | S | Informal play with the physical XInput pad: an `x64-release` sample, noting whether pad input reached it with another window focused, and the pad in Chrome (`BDP-06`). Mapping is SM-40's test; `BDP-06`'s Firefox half runs as `FirefoxLineSweeperBundlePageTests`. |
 | `SM-09` | DECISION | should | S | Ceiling recorded: Safari 27.0.1 on macOS 27.0.1, above the 18.4 floor. Left: the owner's informal play on the Air; the scripted match, quit and replay is `WEB#1`'s automated run. |
 | `WEB#1` | OPEN | should | M | M3's Safari half automated: safaridriver on `macos-latest` drives CI's `wasm-release` sample pages and bundle (frames, keys, quit, replay, context loss) and reads `RENDERER`. If WebGL2 is unusable there, drawing stays informal play on the Air. |
-| `WEB#10` | OPEN | should | S | Add LineSweeper and the bundle page's play, quit and replay to `run_firefox.mjs`, and register its runs as ctest entries when configure finds a Firefox; CI only if the image has one. Covers `BDP-06`'s Firefox half; story `SM-11` (Later L57). |
 | `SM-14` | DECISION | should | S | Drafted, untried: [lan-serve.md](docs/port/lan-serve.md) and `tools/lan_serve.py` (LAN binding, secure context, mkcert HTTPS, Web Inspector, Android Chrome). Left: follow it in `SM-13`'s iPhone session, correct it, tick the box. |
 | `WEB#3` | DECISION | should | S | Hear the audio sample through speakers (each sound, pan, pitch, volume, held keys), the first-gesture unlock in each browser, resume after a hidden tab, and `ping_adpcm.xwb` on XAudio2. Nobody has listened yet. |
 | `BDP-07` | DECISION | could | M | R5, M3's second open term: collect `requestAnimationFrame` intervals by script at 60 Hz (four screens) and 144 Hz (one screen, three unplugged); the owner judges only visible judder. [Method](docs/port/pacing-method.md). |
@@ -116,16 +115,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Waits on that pin move. [Scope](docs/product/BACKLOG.md#later). |
-| `OCA-66` | DECISION | could | S | DPI declaration implemented. Closes when `CI#4` checks it and the owner has informally played the template on a screen at 150% scaling. [Re-plan](docs/product/BACKLOG.md#later). |
-
-## CI
-
-**Owner:** [.github/workflows/ci.yml](.github/workflows/ci.yml), [docs/dependency-updates.md](docs/dependency-updates.md) and the story each row names. A new required job or matrix entry needs the owner to update branch protection.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `CI#3` | OPEN | should | S | Check CHANGES.md's rule per commit in the lint job and the release audit: a commit touching the listed engine files touches CHANGES.md, says `not consumer-visible`, or is a recorded exception. `OCA-68`'s third criterion. [Note](docs/product/BACKLOG.md#now). |
-| `CI#4` | OPEN | could | S | Assert PerMonitorV2 in the embedded manifest of the built samples and of the installed Get Started game (`check_release.py`), so CI proves the DPI declaration on every change. `OCA-66`'s automated half. |
+| `OCA-66` | DECISION | could | S | DPI declaration implemented, and CI reads it from each sample and the installed Get Started game. Closes when the owner has informally played the template on a screen at 150% scaling. [Re-plan](docs/product/BACKLOG.md#later). |
 
 ## Features other engines have
 
@@ -191,6 +181,7 @@ A new row for one of these gets its section back.
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
 | Code hygiene (L36 to L54) | [Code hygiene](docs/code-hygiene.md) and [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new bounded repair or review story reaching the front |
 | The rest of Later (L1 to L40) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | its next ready batch reaching the front under the scheduling amendment; the hygiene lane runs alongside product work |
+| CI (`CI#`) | [.github/workflows/ci.yml](.github/workflows/ci.yml), [docs/dependency-updates.md](docs/dependency-updates.md) | a new CI check or job; a new required job or matrix entry needs the owner to update branch protection |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9, and [docs/port/web-as-built.md](docs/port/web-as-built.md) for what each measured | a regression, or a change the port meets that a decision must settle |
 | macOS and iOS | [docs/port/android.md](docs/port/android.md) sections 5 and 6 | a plan document; none is in the tree |

@@ -53,6 +53,30 @@
     "D3D12SynchronizationTests": [
       "x64-debug-d3d12"
     ],
+    "FirefoxAudioPageTests": [
+      "wasm-release"
+    ],
+    "FirefoxCollisionPageTests": [
+      "wasm-release"
+    ],
+    "FirefoxComponentsPageTests": [
+      "wasm-release"
+    ],
+    "FirefoxLineSweeperBundlePageTests": [
+      "wasm-release"
+    ],
+    "FirefoxLineSweeperPageTests": [
+      "wasm-release"
+    ],
+    "FirefoxLocalMultiplayerPageTests": [
+      "wasm-release"
+    ],
+    "FirefoxMinimalPageTests": [
+      "wasm-release"
+    ],
+    "FirefoxWebWindowTests": [
+      "wasm-release"
+    ],
     "LineSweeperBundlePageTests": [
       "wasm-release"
     ],

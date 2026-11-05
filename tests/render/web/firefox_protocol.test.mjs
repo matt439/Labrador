@@ -3,8 +3,10 @@ import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import vm from 'node:vm';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
-import { SAMPLES, SAMPLE_HOOK, WINDOW_HOOK, bidi_endpoint, drive_sample, drive_window_page,
-	firefox_arguments, key_actions, launch_firefox, parse_options, window_input } from './run_firefox.mjs';
+import { FACTORY_WRAPPER, PRELUDE } from './bundle_page.mjs';
+import { SAMPLES, SAMPLE_HOOK, WINDOW_HOOK, bidi_endpoint, bundle_input, bundle_substitute, drive_bundle,
+	drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox, parse_options,
+	window_input } from './run_firefox.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -224,11 +226,25 @@ test('synchronous send failures remove their waiter and closing rejects pending 
 	assert.equal(protocol.socket.readyState, 3);
 });
 
-test('Firefox CLI accepts five samples or WebWindowTests and uses a fresh-profile launch without security overrides', () => {
+test('Firefox CLI accepts six samples, WebWindowTests or the bundle and uses a fresh-profile launch without security overrides', () => {
 	const options = parse_options(['--browser', 'firefox.exe', '--build-dir', 'out/build/wasm-release', '--sample', 'audio']);
 	assert.equal(options.frames, 60);
 	assert.equal(options.timeout_ms, 60000);
-	for (const sample of ['linesweeper', 'WebWindowTests', '__proto__']) {
+	assert.deepEqual(Object.keys(SAMPLES).sort(),
+		['audio', 'collision', 'components', 'linesweeper', 'local_multiplayer', 'minimal']);
+	assert.equal(parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--sample', 'linesweeper']).sample,
+		'linesweeper');
+	assert.deepEqual(key_actions(SAMPLES.linesweeper.keys)[0].actions.filter((action) => action.type === 'keyDown')
+		.map((action) => action.value), ['\uE00C', '\uE015', '\uE015', '\uE015', '\uE007']);
+	const bundle = parse_options(['--browser', 'firefox.exe', '--bundle', 'web-dist/linesweeper', '--timeout', '120']);
+	assert.equal(bundle.bundle, 'web-dist/linesweeper');
+	assert.equal(bundle.timeout_ms, 120000);
+	for (const extra of [['--bundle', 'dist', '--build-dir', 'build'], ['--bundle', 'dist', '--frames', '10'],
+		['--bundle', 'dist', '--sample', 'minimal'], ['--bundle', 'dist', '--test', 'WebWindowTests'], ['--bundle', ''],
+		['--sample', 'minimal']]) {
+		assert.throws(() => parse_options(['--browser', 'firefox.exe', ...extra]));
+	}
+	for (const sample of ['LineSweeper', 'WebWindowTests', '__proto__']) {
 		assert.throws(() => parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--sample', sample]));
 	}
 	assert.throws(() => parse_options(['--browser', 'firefox.exe', '--page', 'other.html']));
@@ -341,7 +357,7 @@ test('sample control requires continuing draws then uses BiDi key actions before
 	assert.equal(input.params.context, 'synthetic-tab');
 	assert.equal(input.params.actions[0].type, 'key');
 	assert.deepEqual(input.params.actions[0].actions.filter((action) => action.type === 'keyDown').map((action) => action.value),
-		['\uE015', '\uE015', '\uE012', '\uE013', '\uE014', '\uE00C']);
+		['\uE015', '\uE015', '\uE012', '\uE013', '\uE014', 'r', '\uE00C', '\uE00C']);
 	assert.equal(protocol.calls.at(-1).method, 'input.releaseActions');
 	assert.deepEqual(key_actions(SAMPLES.audio.keys)[0].actions.filter((action) => action.type === 'keyDown')
 		.map((action) => action.value), ['s', '\uE00C']);
@@ -559,4 +575,75 @@ test('window control fails on the page ending, a complaint the tab logs, or a fa
 		destroyed.listener({ method: 'browsingContext.contextDestroyed', params: { context: 'synthetic-tab' } });
 	}, { pause: async () => {}, log: () => {} });
 	assert.equal(destroyed.failed, 'the tested Firefox context was destroyed');
+});
+
+test('bundle input sends the DevTools steps as BiDi actions and refuses any other method', async () => {
+	const sent = [];
+	const protocol = { send: async (method, params) => { sent.push({ method, params }); return {}; } };
+	const evaluated = [];
+	const page = bundle_input(protocol, 'synthetic-tab', async (expression) => {
+		evaluated.push(expression);
+		return JSON.stringify({ value: { x: 1.5, list: [true] } });
+	}, async () => {});
+	await page.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 10.4, y: 20.6, button: 'left' });
+	await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 10.4, y: 20.6, button: 'left' });
+	await page.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', code: 'Tab', key: 'Tab' });
+	await page.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'ArrowDown', key: 'ArrowDown' });
+	await page.send('Page.navigate', { url: 'http://127.0.0.1:1/index.html?bundle-case=desktop' });
+	assert.deepEqual(sent.map(({ method }) => method), ['input.performActions', 'input.performActions',
+		'input.performActions', 'input.performActions', 'browsingContext.navigate']);
+	assert.deepEqual(sent[0].params.actions[0].actions,
+		[{ type: 'pointerMove', x: 10, y: 21 }, { type: 'pointerDown', button: 0 }]);
+	assert.equal(sent[1].params.actions[0].actions[1].type, 'pointerUp');
+	assert.deepEqual(sent[2].params.actions[0].actions, [{ type: 'keyDown', value: '\uE004' }]);
+	assert.deepEqual(sent[3].params.actions[0].actions, [{ type: 'keyUp', value: '\uE015' }]);
+	assert.deepEqual(sent[4].params, { context: 'synthetic-tab',
+		url: 'http://127.0.0.1:1/index.html?bundle-case=desktop', wait: 'complete' });
+	for (const [method, params] of [['HeapProfiler.collectGarbage', {}], ['Emulation.setTouchEmulationEnabled', {}],
+		['Input.dispatchKeyEvent', { type: 'keyDown', code: 'KeyQ' }]]) {
+		await assert.rejects(page.send(method, params));
+	}
+	assert.equal(sent.length, 5);
+	assert.deepEqual(await page.evaluate('window.labradorBundle'), { x: 1.5, list: [true] });
+	assert.match(evaluated[0], /JSON\.stringify\(\{ value: await \(window\.labradorBundle\) \}\)/);
+	const undefined_value = bundle_input(protocol, 'synthetic-tab', async () => JSON.stringify({}));
+	assert.equal(await undefined_value.evaluate('void 0'), undefined);
+});
+
+test('the bundle server substitutes only the unqueried loader', () => {
+	const wrapper = bundle_substitute(new URL('http://127.0.0.1:1/linesweeper.js'));
+	assert.equal(wrapper.type, 'text/javascript; charset=utf-8');
+	assert.equal(String(wrapper.body), FACTORY_WRAPPER);
+	assert.match(FACTORY_WRAPPER, /from '\.\/linesweeper\.js\?labrador-bundle-source'/);
+	for (const url of ['http://127.0.0.1:1/linesweeper.js?labrador-bundle-source',
+		'http://127.0.0.1:1/linesweeper.wasm', 'http://127.0.0.1:1/index.html', 'http://127.0.0.1:1/m/linesweeper.js']) {
+		assert.equal(bundle_substitute(new URL(url)), null);
+	}
+});
+
+test('bundle control installs the prelude, loads the page and fails on a complaint the tab logs', async () => {
+	const calls = [];
+	let listener;
+	const protocol = {
+		on(value) { listener = value; return () => { listener = null; }; },
+		async send(method, params) { calls.push({ method, params }); return {}; },
+		fail() {},
+		async evaluate() {
+			listener({ method: 'log.entryAdded', params: { level: 'warn', text: 'synthetic bundle warning' } });
+			return JSON.stringify({ value: false });
+		},
+	};
+	await assert.rejects(drive_bundle(protocol, 'synthetic-tab', 'http://127.0.0.1:1/index.html',
+		{ pause: async () => {}, log: () => {} }), /synthetic bundle warning/);
+	assert.equal(listener, null);
+	assert.deepEqual(calls.map(({ method }) => method), ['session.subscribe', 'script.addPreloadScript',
+		'browsingContext.activate', 'browsingContext.navigate']);
+	assert.equal(calls[1].params.functionDeclaration, `() => ${PRELUDE}`);
+	assert.deepEqual(calls[3].params, { context: 'synthetic-tab', url: 'http://127.0.0.1:1/index.html', wait: 'complete' });
+	const context = vm.createContext({ location: { search: '' }, HTMLCanvasElement: class { getContext() {} },
+		WebAssembly: { instantiate() {}, instantiateStreaming() {} }, WebGL2RenderingContext: class { clear() {} },
+		WeakRef });
+	context.window = context;
+	vm.runInContext(`(${calls[1].params.functionDeclaration})()`, context);
+	assert.deepEqual(JSON.parse(JSON.stringify(context.labradorBundle)), { runs: [], contexts: [], memories: [] });
 });

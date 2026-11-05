@@ -6,6 +6,9 @@ website/src/walkthrough/release-files.txt, which the Ship a Windows release
 guide shows a reader: every file the install puts there, and nothing else.
 This fails, naming each one, if a listed file is missing or a file the list
 does not name is present. Windows paths ignore case, so the comparison does.
+It also reads the installed game's embedded manifest and fails unless it
+declares PerMonitorV2 first (tools/check_dpi_manifest.py), the declaration
+the project's dpi_aware.manifest makes.
 """
 
 from __future__ import annotations
@@ -13,6 +16,9 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import check_dpi_manifest  # noqa: E402
 
 LIST = Path("website/src/walkthrough/release-files.txt")
 
@@ -61,7 +67,7 @@ def main() -> int:
         print(f"{folder} does not match {LIST.as_posix()}.", file=sys.stderr)
         return 1
     print(f"{folder}: the {len(listed)} files {LIST.as_posix()} lists, and no others.")
-    return 0
+    return check_dpi_manifest.check_paths([folder])
 
 
 if __name__ == "__main__":

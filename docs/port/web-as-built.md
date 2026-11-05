@@ -243,6 +243,14 @@ commit `0fcf3a7`, passed that runner in headless Firefox 158.0.1, and so did
 `WebWindowTests`' 39 steps, with BiDi's own input in place of the DevTools
 protocol's. Touch cancellation is the one step BiDi cannot send.
 
+**WEB#10, 2026-11-05:** the runner adds LineSweeper's development page and
+its bundle page's play, forced context loss, quit and replay, and configure
+registers all eight runs as `Firefox*` ctest entries where it finds a
+Firefox; CI's wasm job runs them in the runner image's Firefox. All eight
+passed in headless Firefox 159.0.1; the
+[record](web-to-be-tested.md#firefox-sample-checks-web4) gives the counts and
+what the bundle run leaves to Chromium.
+
 **M6's first item is done: `RenderPixelTests` runs in headless Chrome
 against the same golden set, and on this machine it is byte-identical to
 it.** All 45 cases and 4,532 assertions pass in `wasm-debug` and

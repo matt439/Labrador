@@ -1,5 +1,7 @@
-// What the two LineSweeper host-page drivers share: bundle_input.mjs, for the
-// bundle's example page, and host_input.mjs, for the site's own page. Both
+// What the LineSweeper host-page drivers share: bundle_input.mjs, for the
+// bundle's example page, and host_input.mjs, for the site's own page, both in
+// Chromium; and run_firefox.mjs's bundle mode, which serves the wrapper below
+// itself and translates the steps' few DevTools input calls to BiDi. Both
 // pages mount the same ES-module factory on a click, use the same element ids
 // (#start, #play, #status and #accessibility) and the same player-facing
 // sentences for play, quit, context loss and failure, so the hooks, the
@@ -13,7 +15,7 @@
 
 export const READY = "document.readyState === 'complete' && typeof window.labradorBundle === 'object'";
 
-const PRELUDE = `(() => {
+export const PRELUDE = `(() => {
 	window.labradorBundle = { runs: [] };
 	if (location.search.includes('controller-gate')) {
 		window.labradorBundle.pad = { connected: true, buttons: [{ pressed: false }] };
@@ -56,7 +58,7 @@ const PRELUDE = `(() => {
 
 // Imported relative to the loader's own address, so it finds the real loader
 // whether the page names ./linesweeper.js or a folder such as ./m/<hash>/.
-const FACTORY_WRAPPER = `
+export const FACTORY_WRAPPER = `
 import factory from './linesweeper.js?labrador-bundle-source';
 export default function createLineSweeper(config) {
 	// The config becomes the instance's Module, so it is held weakly: a strong
@@ -284,6 +286,14 @@ export function steps(page, state) {
 			view_width: innerWidth, view_height: innerHeight };
 	})()`);
 
+	// The desktop page's instructions name the controller and soft drop.
+	const desktop_instructions = async () => {
+		assert(await evaluate("document.getElementById('status').textContent.includes('Controller:') && " +
+			"document.getElementById('status').textContent.includes('Down soft-drops') && " +
+			"document.getElementById('status').textContent.includes('Start pauses')"),
+			'the desktop page omitted controller or soft-drop instructions');
+	};
+
 	// Play, focus, Tab out, a forced context loss and its restoration, QUIT,
 	// and a replay on a fresh canvas that hears a synthetic tab switch.
 	const play_restore_replay = async () => {
@@ -495,7 +505,7 @@ export function steps(page, state) {
 	return {
 		assert, until, frames, button_visible, button_exposed, accessibility_note,
 		click_play, key, loaded, clean_runs, quit, navigate, canvas_box,
-		play_restore_replay, real_loss_and_tab_switch, repeated_play, context_timeout,
+		desktop_instructions, play_restore_replay, real_loss_and_tab_switch, repeated_play, context_timeout,
 		truncated_and_runtime_failure,
 	};
 }

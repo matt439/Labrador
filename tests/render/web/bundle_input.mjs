@@ -22,7 +22,7 @@ export function prepare(page) {
 export default async function drive(page) {
 	const { evaluate, send } = page;
 	const { assert, until, frames, button_visible, button_exposed, accessibility_note,
-		click_play, key, loaded, quit, navigate, canvas_box, play_restore_replay,
+		click_play, key, loaded, quit, navigate, canvas_box, desktop_instructions, play_restore_replay,
 		real_loss_and_tab_switch, repeated_play, context_timeout,
 		truncated_and_runtime_failure } = steps(page, state);
 	const requests = state.requests;
@@ -66,10 +66,7 @@ export default async function drive(page) {
 	console.log('ok - unsupported graphics or exceptions show advice without downloading the module');
 	state.phase = 'play and replay';
 	await navigate('desktop');
-	assert(await evaluate("document.getElementById('status').textContent.includes('Controller:') && " +
-		"document.getElementById('status').textContent.includes('Down soft-drops') && " +
-		"document.getElementById('status').textContent.includes('Start pauses')"),
-		'the desktop page omitted controller or soft-drop instructions');
+	await desktop_instructions();
 	await play_restore_replay();
 
 	// BDP-09: the stage follows the screen. Upright on a phone-sized viewport
