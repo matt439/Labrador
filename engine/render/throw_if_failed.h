@@ -31,18 +31,28 @@ namespace labrador
     // naming: engine/render/d3d11/device_resources.cpp reaches it at fifteen
     // sites. Renaming would make that file call an engine function in the
     // engine's style, which is the one thing NOTICE says these files do not
-    // do.
+    // do. The two-argument overloads keep upstream's names so that one call
+    // spelling covers both forms; hresult_name is the engine's own and is
+    // spelt the engine's way.
+
+    // An HRESULT as the engine's own messages spell it: "HRESULT 80004005",
+    // eight upper-case hexadecimal digits, the same digits com_exception's
+    // one-argument message prints, so a search for a code finds both.
+    inline std::string hresult_name(HRESULT hr)
+    {
+        char text[24] = {};
+        sprintf_s(text, "HRESULT %08X", static_cast<unsigned int>(hr));
+        return text;
+    }
 
     // Helper class for COM exceptions
     //
-    // std::runtime_error, NOT std::exception, AND THE DIFFERENCE IS A CONTRACT.
-    // render/resource_factory.h declares that add_texture_asset throws
-    // std::runtime_error naming the texture and the format when the device
-    // will not take it. The GL backend does exactly that at four sites; both
-    // Direct3D backends reach this class instead, and deriving from
-    // std::runtime_error here is what holds every ThrowIfFailed site to that
-    // contract at once. A backend is free to keep throwing this, which is the
-    // point.
+    // std::runtime_error, NOT std::exception. render/resource_factory.h
+    // declares that add_texture_asset throws std::runtime_error, so a caller
+    // catches one type whichever backend refused. This base keeps the type
+    // half of that promise at every ThrowIfFailed site; it does not keep the
+    // message half. A message naming the texture and the format is written by
+    // each backend's add_texture_asset, which is the code that knows them.
     //
     // The message is formatted once, in the constructor, and held by the base
     // - not written into a function-local static on each call to what(), which
@@ -54,6 +64,10 @@ namespace labrador
         // constructs one of these outside a throw expression.
         explicit com_exception(HRESULT hr) : std::runtime_error(format(hr)) {}
 
+        // The message is `what`, then the HRESULT in hresult_name's spelling:
+        // "The swap chain could not be created (HRESULT 887A0005)."
+        com_exception(HRESULT hr, const char* what) : std::runtime_error(format(hr, what)) {}
+
     private:
         static std::string format(HRESULT hr)
         {
@@ -61,6 +75,11 @@ namespace labrador
             sprintf_s(text, "Failure with HRESULT of %08X",
                 static_cast<unsigned int>(hr));
             return text;
+        }
+
+        static std::string format(HRESULT hr, const char* what)
+        {
+            return std::string(what) + " (" + hresult_name(hr) + ").";
         }
     };
 
@@ -70,6 +89,19 @@ namespace labrador
         if (FAILED(hr))
         {
             throw com_exception(hr);
+        }
+    }
+
+    // The engine's form: `what` says which operation failed, in a sentence
+    // such as "The swap chain could not be created", and the thrown
+    // com_exception's message is that sentence followed by the HRESULT.
+    // Engine-written Direct3D code calls this one; the one-argument form is
+    // kept for the files carried from upstream.
+    inline void ThrowIfFailed(HRESULT hr, const char* what)
+    {
+        if (FAILED(hr))
+        {
+            throw com_exception(hr, what);
         }
     }
 }

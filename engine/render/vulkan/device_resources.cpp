@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace labrador
@@ -217,6 +218,10 @@ namespace labrador
 		}
 	}
 
+	// EVERY CREATE IN THIS BACKEND WRITES INTO A LOCAL, and the local is
+	// published to a member or a cleanup record only after this has seen
+	// VK_SUCCESS. The spec leaves a failed command's outputs undefined, and
+	// every destroy path here treats a non-null handle as owned.
 	void check_vk(VkResult result, const char* what)
 	{
 		if (result == VK_SUCCESS)
@@ -303,8 +308,10 @@ namespace labrador
 		description.usage = usage;
 		description.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
+		VkBuffer created = VK_NULL_HANDLE;
 		check_vk(vkCreateBuffer(owner.device, &description, nullptr,
-			&result.buffer), what);
+			&created), what);
+		result.buffer = created;
 
 		// The buffer is owned here until every allocation/bind/map succeeds.
 		// Keep that ownership through memory_type() and check_vk() exceptions.
@@ -375,6 +382,23 @@ namespace labrador
 			buffer.memory = VK_NULL_HANDLE;
 		}
 		buffer.bytes = 0;
+	}
+
+	ScopedVulkanBuffer::ScopedVulkanBuffer(
+		std::shared_ptr<VulkanDevice> owner, VkDeviceSize bytes,
+		VkBufferUsageFlags usage, VkMemoryPropertyFlags memory,
+		const char* what)
+		: owner_(std::move(owner)),
+		buffer_(create_vulkan_buffer(*this->owner_, bytes, usage, memory,
+			what))
+	{
+	}
+
+	ScopedVulkanBuffer::~ScopedVulkanBuffer()
+	{
+		// Before the shared owner goes, which may be the last one and take
+		// the device with it.
+		destroy_vulkan_buffer(this->owner_->device, this->buffer_);
 	}
 
 	// --- DeviceResources -----------------------------------------------------
@@ -523,9 +547,11 @@ namespace labrador
 			description.pNext = &messenger;
 #endif
 
+		VkInstance instance = VK_NULL_HANDLE;
 		const VkResult created = vkCreateInstance(&description, nullptr,
-			&this->owner_->instance);
+			&instance);
 		check_vk(created, "The Vulkan instance could not be created");
+		this->owner_->instance = instance;
 
 #if defined(_DEBUG)
 		if (validation)
@@ -535,10 +561,17 @@ namespace labrador
 					vkGetInstanceProcAddr(this->owner_->instance,
 						"vkCreateDebugUtilsMessengerEXT"));
 
+			// Optional, so a refusal is not an error: validation still
+			// reports through the instance's own pNext messenger. Only a
+			// messenger that was made is kept for ~VulkanDevice to destroy.
 			if (create != nullptr)
 			{
-				std::ignore = create(this->owner_->instance, &messenger,
-					nullptr, &this->owner_->messenger);
+				VkDebugUtilsMessengerEXT made = VK_NULL_HANDLE;
+				if (create(this->owner_->instance, &messenger, nullptr,
+					&made) == VK_SUCCESS)
+				{
+					this->owner_->messenger = made;
+				}
 			}
 		}
 #endif
@@ -710,9 +743,11 @@ namespace labrador
 		description.enabledExtensionCount = 1;
 		description.ppEnabledExtensionNames = extensions;
 
+		VkDevice made = VK_NULL_HANDLE;
 		check_vk(vkCreateDevice(this->owner_->physical_device, &description,
-			nullptr, &this->owner_->device),
+			nullptr, &made),
 			"This Vulkan device would not be created");
+		this->owner_->device = made;
 
 		vkGetDeviceQueue(this->owner_->device, this->owner_->queue_family, 0,
 			&this->owner_->queue);
@@ -735,9 +770,11 @@ namespace labrador
 		{
 			Frame& frame = this->frames_[static_cast<size_t>(i)];
 
+			VkCommandPool command_pool = VK_NULL_HANDLE;
 			check_vk(vkCreateCommandPool(device, &pool, nullptr,
-				&frame.command_pool),
+				&command_pool),
 				"A frame's command pool could not be created");
+			frame.command_pool = command_pool;
 
 			VkCommandBufferAllocateInfo allocation = {};
 			allocation.sType =
@@ -746,15 +783,19 @@ namespace labrador
 			allocation.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 			allocation.commandBufferCount = 1;
 
+			VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 			check_vk(vkAllocateCommandBuffers(device, &allocation,
-				&frame.commands),
+				&command_buffer),
 				"A frame's command buffer could not be allocated");
+			frame.commands = command_buffer;
 
 			VkSemaphoreCreateInfo semaphore = {};
 			semaphore.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+			VkSemaphore acquired = VK_NULL_HANDLE;
 			check_vk(vkCreateSemaphore(device, &semaphore, nullptr,
-				&frame.acquired),
+				&acquired),
 				"A frame's acquire semaphore could not be created");
+			frame.acquired = acquired;
 
 			frame.timeline_value = 0;
 		}
@@ -763,9 +804,11 @@ namespace labrador
 		upload.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		upload.queueFamilyIndex = this->owner_->queue_family;
 		upload.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		VkCommandPool upload_pool = VK_NULL_HANDLE;
 		check_vk(vkCreateCommandPool(device, &upload, nullptr,
-			&this->upload_pool_),
+			&upload_pool),
 			"The upload command pool could not be created");
+		this->upload_pool_ = upload_pool;
 	}
 
 	void DeviceResources::destroy_frames()
@@ -884,9 +927,11 @@ namespace labrador
 		description.dependencyCount = 2;
 		description.pDependencies = dependencies;
 
+		VkRenderPass made_render_pass = VK_NULL_HANDLE;
 		check_vk(vkCreateRenderPass(this->owner_->device, &description, nullptr,
-			&this->render_pass_),
+			&made_render_pass),
 			"The sprite render pass could not be created");
+		this->render_pass_ = made_render_pass;
 	}
 
 	void DeviceResources::create_device_resources()
@@ -905,9 +950,11 @@ namespace labrador
 		surface.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 		surface.hinstance = GetModuleHandleW(nullptr);
 		surface.hwnd = this->window_;
+		VkSurfaceKHR made_surface = VK_NULL_HANDLE;
 		check_vk(vkCreateWin32SurfaceKHR(this->owner_->instance, &surface,
-			nullptr, &this->surface_),
+			nullptr, &made_surface),
 			"This window could not be given a Vulkan surface");
+		this->surface_ = made_surface;
 
 		this->select_physical_device();
 		this->create_logical_device();
@@ -922,9 +969,11 @@ namespace labrador
 		timeline.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		timeline.pNext = &type;
 
+		VkSemaphore made_timeline = VK_NULL_HANDLE;
 		check_vk(vkCreateSemaphore(this->owner_->device, &timeline, nullptr,
-			&this->timeline_),
+			&made_timeline),
 			"The frame timeline could not be created");
+		this->timeline_ = made_timeline;
 		this->timeline_value_ = 0;
 
 		this->create_frames();
@@ -962,9 +1011,10 @@ namespace labrador
 		description.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		check_vk(vkCreateImage(device, &description, nullptr,
-			&this->colour_image_),
+		VkImage image = VK_NULL_HANDLE;
+		check_vk(vkCreateImage(device, &description, nullptr, &image),
 			"The colour target could not be created");
+		this->colour_image_ = image;
 
 		VkMemoryRequirements requirements = {};
 		vkGetImageMemoryRequirements(device, this->colour_image_,
@@ -977,9 +1027,10 @@ namespace labrador
 			requirements.memoryTypeBits,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "The colour target");
 
-		check_vk(vkAllocateMemory(device, &allocation, nullptr,
-			&this->colour_memory_),
+		VkDeviceMemory memory = VK_NULL_HANDLE;
+		check_vk(vkAllocateMemory(device, &allocation, nullptr, &memory),
 			"The colour target's memory could not be allocated");
+		this->colour_memory_ = memory;
 		check_vk(vkBindImageMemory(device, this->colour_image_,
 			this->colour_memory_, 0),
 			"The colour target's memory could not be bound");
@@ -993,8 +1044,10 @@ namespace labrador
 		view.subresourceRange.levelCount = 1;
 		view.subresourceRange.layerCount = 1;
 
-		check_vk(vkCreateImageView(device, &view, nullptr, &this->colour_view_),
+		VkImageView image_view = VK_NULL_HANDLE;
+		check_vk(vkCreateImageView(device, &view, nullptr, &image_view),
 			"The colour target's view could not be created");
+		this->colour_view_ = image_view;
 
 		VkFramebufferCreateInfo framebuffer = {};
 		framebuffer.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1005,9 +1058,11 @@ namespace labrador
 		framebuffer.height = height;
 		framebuffer.layers = 1;
 
+		VkFramebuffer made_framebuffer = VK_NULL_HANDLE;
 		check_vk(vkCreateFramebuffer(device, &framebuffer, nullptr,
-			&this->framebuffer_),
+			&made_framebuffer),
 			"The colour target's framebuffer could not be created");
+		this->framebuffer_ = made_framebuffer;
 
 		// A fresh image is in no layout at all, which is what UNDEFINED means -
 		// and the first barrier out of it is free, because the contents it
@@ -1236,9 +1291,11 @@ namespace labrador
 		semaphore.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		for (size_t i = 0; i < this->presentable_.size(); i++)
 		{
+			VkSemaphore presentable = VK_NULL_HANDLE;
 			check_vk(vkCreateSemaphore(device, &semaphore, nullptr,
-				&this->presentable_[i]),
+				&presentable),
 				"A present semaphore could not be created");
+			this->presentable_[i] = presentable;
 		}
 
 		return true;
@@ -1494,8 +1551,9 @@ namespace labrador
 			// usually free, because the one caller that gets here is
 			// read_back_buffer's, which has already waited for the whole queue.
 			this->wait_for_frame();
-			std::ignore = vkResetCommandPool(this->owner_->device,
-				frame.command_pool, 0);
+			check_vk(vkResetCommandPool(this->owner_->device,
+				frame.command_pool, 0),
+				"The frame's command pool could not be reset");
 			this->submitted_ = false;
 		}
 
@@ -1617,8 +1675,15 @@ namespace labrador
 		// command pool may not be reset while anything allocated from it is
 		// still executing: begin_frame has run wait_for_frame, and the resize
 		// path a full device wait. There is no third caller.
-		std::ignore = vkResetCommandPool(this->owner_->device,
-			frame.command_pool, 0);
+		//
+		// CHECKED, because the flags below say the buffer is back in its
+		// initial state, and a reset that ran out of memory has not put it
+		// there: vkBeginCommandBuffer on it would be invalid usage rather than
+		// a named failure. vkResetDescriptorPool below is defined always to
+		// succeed, which is why it alone is ignored.
+		check_vk(vkResetCommandPool(this->owner_->device,
+			frame.command_pool, 0),
+			"The frame's command pool could not be reset");
 		this->recording_ = false;
 		this->submitted_ = false;
 

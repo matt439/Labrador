@@ -98,5 +98,37 @@ namespace ThrowIfFailedTests
 			CHECK(first_text.find("80004005") != std::string::npos);
 			CHECK(second_text.find("80070057") != std::string::npos);
 		}
+
+		TEST_CASE("the named form says which operation failed and with what code")
+		{
+			// The engine-written Direct3D sites pass the operation, the way
+			// Vulkan's check_vk does, so a failure report names the call
+			// rather than leaving a bare code and many candidate sites.
+			CHECK_NOTHROW(ThrowIfFailed(S_OK, "The swap chain could not be created"));
+			CHECK_NOTHROW(ThrowIfFailed(S_FALSE, "The swap chain could not be created"));
+
+			std::string message;
+			try
+			{
+				ThrowIfFailed(E_INVALIDARG, "The swap chain could not be created");
+			}
+			catch (const std::runtime_error& error)
+			{
+				message = error.what();
+			}
+			CHECK(message ==
+				"The swap chain could not be created (HRESULT 80070057).");
+
+			// Still a com_exception, so the type contract above covers it.
+			CHECK_THROWS_AS(ThrowIfFailed(E_FAIL, "Anything"), com_exception);
+		}
+
+		TEST_CASE("hresult_name spells a code as eight upper-case digits")
+		{
+			CHECK(hresult_name(E_FAIL) == "HRESULT 80004005");
+			CHECK(hresult_name(DXGI_ERROR_DEVICE_REMOVED) ==
+				"HRESULT 887A0005");
+			CHECK(hresult_name(S_OK) == "HRESULT 00000000");
+		}
 	}
 }

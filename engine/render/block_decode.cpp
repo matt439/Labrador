@@ -151,6 +151,10 @@ namespace labrador
 			}
 		}
 
+		// Every enumerator is listed and none falls through a default label,
+		// so a new format is a -Wswitch error under clang rather than a silent
+		// decode as BC3. decode_block_compressed refuses anything that is not
+		// block compressed before either of these is reached.
 		void decode_block(TextureFormat format, const unsigned char* block,
 			Texel out[16])
 		{
@@ -158,17 +162,37 @@ namespace labrador
 			{
 			case TextureFormat::bc1_unorm:
 				decode_colour(block, true, out);
-				break;
+				return;
 			case TextureFormat::bc2_unorm:
 				decode_colour(block + 8, false, out);
 				decode_explicit_alpha(block, out);
-				break;
+				return;
 			case TextureFormat::bc3_unorm:
-			default:
 				decode_colour(block + 8, false, out);
 				decode_interpolated_alpha(block, out);
+				return;
+			case TextureFormat::r8g8b8a8_unorm:
+			case TextureFormat::b8g8r8a8_unorm:
+			case TextureFormat::b4g4r4a4_unorm:
 				break;
 			}
+			throw std::logic_error("decode_block: not a block-compressed format.");
+		}
+
+		size_t bytes_per_block(TextureFormat format)
+		{
+			switch (format)
+			{
+			case TextureFormat::bc1_unorm: return 8u;
+			case TextureFormat::bc2_unorm: return 16u;
+			case TextureFormat::bc3_unorm: return 16u;
+			case TextureFormat::r8g8b8a8_unorm:
+			case TextureFormat::b8g8r8a8_unorm:
+			case TextureFormat::b4g4r4a4_unorm:
+				break;
+			}
+			throw std::logic_error(
+				"bytes_per_block: not a block-compressed format.");
 		}
 
 		std::string level_error(size_t index, const std::string& why)
@@ -191,8 +215,7 @@ namespace labrador
 				"no levels.");
 		}
 
-		const size_t block_bytes =
-			texture.format == TextureFormat::bc1_unorm ? 8u : 16u;
+		const size_t block_bytes = bytes_per_block(texture.format);
 
 		TextureData decoded;
 		decoded.width = texture.width;

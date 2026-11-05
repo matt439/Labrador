@@ -300,9 +300,11 @@ namespace labrador
 		set_description.bindingCount = 3;
 		set_description.pBindings = bindings;
 
+		VkDescriptorSetLayout made_set_layout = VK_NULL_HANDLE;
 		check_vk(vkCreateDescriptorSetLayout(device, &set_description, nullptr,
-			&this->set_layout),
+			&made_set_layout),
 			"The sprite descriptor set layout could not be created");
+		this->set_layout = made_set_layout;
 
 		VkPipelineLayoutCreateInfo layout_description = {};
 		layout_description.sType =
@@ -310,9 +312,11 @@ namespace labrador
 		layout_description.setLayoutCount = 1;
 		layout_description.pSetLayouts = &this->set_layout;
 
+		VkPipelineLayout made_pipeline_layout = VK_NULL_HANDLE;
 		check_vk(vkCreatePipelineLayout(device, &layout_description, nullptr,
-			&this->pipeline_layout),
+			&made_pipeline_layout),
 			"The sprite pipeline layout could not be created");
+		this->pipeline_layout = made_pipeline_layout;
 
 		// --- The pipeline ----------------------------------------------------
 		//
@@ -477,13 +481,15 @@ namespace labrador
 		description.renderPass = this->device_resources.render_pass();
 		description.subpass = 0;
 
+		VkPipeline made_pipeline = VK_NULL_HANDLE;
 		const VkResult built = vkCreateGraphicsPipelines(device,
-			VK_NULL_HANDLE, 1, &description, nullptr, &this->pipeline);
+			VK_NULL_HANDLE, 1, &description, nullptr, &made_pipeline);
 
 		vkDestroyShaderModule(device, vertex_shader, nullptr);
 		vkDestroyShaderModule(device, pixel_shader, nullptr);
 
 		check_vk(built, "The sprite pipeline could not be created");
+		this->pipeline = made_pipeline;
 
 		// --- The samplers ----------------------------------------------------
 		//
@@ -512,15 +518,19 @@ namespace labrador
 
 		sampler_description.magFilter = VK_FILTER_NEAREST;
 		sampler_description.minFilter = VK_FILTER_NEAREST;
+		VkSampler made_point_sampler = VK_NULL_HANDLE;
 		check_vk(vkCreateSampler(device, &sampler_description, nullptr,
-			&this->point_sampler),
+			&made_point_sampler),
 			"The point sampler could not be created");
+		this->point_sampler = made_point_sampler;
 
 		sampler_description.magFilter = VK_FILTER_LINEAR;
 		sampler_description.minFilter = VK_FILTER_LINEAR;
+		VkSampler made_linear_sampler = VK_NULL_HANDLE;
 		check_vk(vkCreateSampler(device, &sampler_description, nullptr,
-			&this->linear_sampler),
+			&made_linear_sampler),
 			"The linear sampler could not be created");
+		this->linear_sampler = made_linear_sampler;
 
 		// --- The index buffer -------------------------------------------------
 		//
@@ -556,62 +566,49 @@ namespace labrador
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "The sprite index buffer");
 
-		VulkanBuffer staging = create_vulkan_buffer(
-			this->device_resources.owner(),
+		// RELEASED ON EVERY WAY OUT, because begin_upload, end_upload and the
+		// wait inside it all throw, and this path also runs inside
+		// handle_device_lost's restore, where a leak is a leak per loss rather
+		// than one per process.
+		const ScopedVulkanBuffer staging(this->device_resources.shared_device(),
 			index_bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			"The sprite index buffer's staging copy");
 
-		// AND EVERY FAILURE FROM HERE TO THE RELEASE HAS TO PUT IT BACK, which
-		// is texture_factory.cpp's sentence over the identical three steps.
-		// begin_upload, end_upload and the wait inside it all throw, and a
-		// VulkanBuffer has no destructor to lean on. This path also runs inside
-		// handle_device_lost's restore, where a leak is a leak per loss rather
-		// than one per process.
-		try
-		{
-			std::memcpy(staging.mapped, index_data.data(),
-				static_cast<size_t>(index_bytes));
+		std::memcpy(staging.buffer().mapped, index_data.data(),
+			static_cast<size_t>(index_bytes));
 
-			VkCommandBuffer upload = this->device_resources.begin_upload();
+		VkCommandBuffer upload = this->device_resources.begin_upload();
 
-			VkBufferCopy copy = {};
-			copy.size = index_bytes;
-			vkCmdCopyBuffer(upload, staging.buffer, this->indices.buffer, 1,
-				&copy);
+		VkBufferCopy copy = {};
+		copy.size = index_bytes;
+		vkCmdCopyBuffer(upload, staging.buffer().buffer, this->indices.buffer,
+			1, &copy);
 
-			// TRANSFER_WRITE -> INDEX_READ, WHICH IS THE SAME BARRIER THE
-			// TEXTURE PATH EMITS AND FOR THE SAME REASON. end_upload waits for
-			// the whole queue afterwards, so this looks redundant - and it is
-			// exactly as redundant as texture_factory.cpp's TRANSFER ->
-			// FRAGMENT_SHADER barrier, which is there because a host wait is
-			// not an availability operation for a later queue access. The
-			// asymmetry was the finding; a buffer this engine reads on every
-			// draw call it ever makes is not the place to be the exception.
-			VkBufferMemoryBarrier to_index = {};
-			to_index.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-			to_index.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			to_index.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
-			to_index.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			to_index.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			to_index.buffer = this->indices.buffer;
-			to_index.offset = 0;
-			to_index.size = VK_WHOLE_SIZE;
+		// TRANSFER_WRITE -> INDEX_READ, WHICH IS THE SAME BARRIER THE TEXTURE
+		// PATH EMITS AND FOR THE SAME REASON. end_upload waits for the whole
+		// queue afterwards, so this looks redundant - and it is exactly as
+		// redundant as texture_factory.cpp's TRANSFER -> FRAGMENT_SHADER
+		// barrier, which is there because a host wait is not an availability
+		// operation for a later queue access. The asymmetry was the finding; a
+		// buffer this engine reads on every draw call it ever makes is not the
+		// place to be the exception.
+		VkBufferMemoryBarrier to_index = {};
+		to_index.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		to_index.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		to_index.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
+		to_index.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		to_index.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		to_index.buffer = this->indices.buffer;
+		to_index.offset = 0;
+		to_index.size = VK_WHOLE_SIZE;
 
-			vkCmdPipelineBarrier(upload, VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
-				&to_index, 0, nullptr);
+		vkCmdPipelineBarrier(upload, VK_PIPELINE_STAGE_TRANSFER_BIT,
+			VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1,
+			&to_index, 0, nullptr);
 
-			this->device_resources.end_upload(upload);
-		}
-		catch (...)
-		{
-			destroy_vulkan_buffer(device, staging);
-			throw;
-		}
-
-		destroy_vulkan_buffer(device, staging);
+		this->device_resources.end_upload(upload);
 	}
 
 	void Renderer::Impl::destroy_device_dependent_resources()
@@ -1267,12 +1264,9 @@ namespace labrador
 		// a cached read-back buffer would be one more thing to remake on a
 		// device loss.
 		// Recovery can replace the coordinating device before returning or
-		// throwing. This local buffer must keep its creating generation alive
-		// and use that device for every cleanup path.
-		const std::shared_ptr<VulkanDevice> readback_owner =
-			device_resources.shared_device();
-		const VkDevice readback_device = readback_owner->device;
-		VulkanBuffer readback = create_vulkan_buffer(*readback_owner,
+		// throwing. ScopedVulkanBuffer keeps this buffer's creating generation
+		// alive and releases it through that device on every way out.
+		const ScopedVulkanBuffer readback(device_resources.shared_device(),
 			static_cast<VkDeviceSize>(pixels.size()),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -1283,97 +1277,85 @@ namespace labrador
 		// permits this buffer's cleanup.
 		bool lost = false;
 
-		// VulkanBuffer has no destructor. Every path after allocation releases
-		// it explicitly through the retained creating device.
-		try
+		const VkImageLayout previous = device_resources.colour_layout();
+
+		device_resources.transition_colour(
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+		// TIGHTLY PACKED, WHICH IS WHY THERE IS NO ROW PITCH HERE AND THERE
+		// IS ONE ON D3D12. A zero bufferRowLength means "as wide as the
+		// image", so the copy lands exactly width * height * 4 bytes with
+		// nothing between the rows - where a D3D12 copy pads every row to
+		// 256 bytes and the runtime is the only thing that knows to what.
+		VkBufferImageCopy copy = {};
+		copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copy.imageSubresource.layerCount = 1;
+		copy.imageExtent = { extent.width, extent.height, 1 };
+
+		vkCmdCopyImageToBuffer(device_resources.commands(),
+			device_resources.colour_target(),
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readback.buffer().buffer,
+			1, &copy);
+
+		// AND THE HOST IS A DOMAIN THE WAIT BELOW DOES NOT REACH. A
+		// timeline wait is an EXECUTION dependency: it says the copy has
+		// finished, not that what it wrote is available to a CPU load.
+		// HOST_COHERENT makes the write visible without making it
+		// available, and there is no other barrier into the host domain
+		// anywhere in this folder. This is the one hazard on this path that
+		// synchronization validation cannot report, because it cannot
+		// observe a CPU read - and it is the path every golden image goes
+		// through.
+		VkBufferMemoryBarrier to_host = {};
+		to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+		to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		to_host.buffer = readback.buffer().buffer;
+		to_host.offset = 0;
+		to_host.size = VK_WHOLE_SIZE;
+
+		vkCmdPipelineBarrier(device_resources.commands(),
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0,
+			0, nullptr, 1, &to_host, 0, nullptr);
+
+		// PUT BACK WHERE IT WAS, not into a layout this function decided.
+		// The seam says this is called between submit() and end_frame(), so
+		// the frame is not over; a caller that reads twice, or that reads
+		// and then presents, gets what it would have got without the read.
+		// UNDEFINED is not a layout anything can be transitioned INTO, so a
+		// colour target nothing has drawn into yet is simply left where the
+		// copy put it.
+		if (previous != VK_IMAGE_LAYOUT_UNDEFINED)
 		{
-			const VkImageLayout previous = device_resources.colour_layout();
-
-			device_resources.transition_colour(
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-			// TIGHTLY PACKED, WHICH IS WHY THERE IS NO ROW PITCH HERE AND THERE
-			// IS ONE ON D3D12. A zero bufferRowLength means "as wide as the
-			// image", so the copy lands exactly width * height * 4 bytes with
-			// nothing between the rows - where a D3D12 copy pads every row to
-			// 256 bytes and the runtime is the only thing that knows to what.
-			VkBufferImageCopy copy = {};
-			copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			copy.imageSubresource.layerCount = 1;
-			copy.imageExtent = { extent.width, extent.height, 1 };
-
-			vkCmdCopyImageToBuffer(device_resources.commands(),
-				device_resources.colour_target(),
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readback.buffer, 1,
-				&copy);
-
-			// AND THE HOST IS A DOMAIN THE WAIT BELOW DOES NOT REACH. A
-			// timeline wait is an EXECUTION dependency: it says the copy has
-			// finished, not that what it wrote is available to a CPU load.
-			// HOST_COHERENT makes the write visible without making it
-			// available, and there is no other barrier into the host domain
-			// anywhere in this folder. This is the one hazard on this path that
-			// synchronization validation cannot report, because it cannot
-			// observe a CPU read - and it is the path every golden image goes
-			// through.
-			VkBufferMemoryBarrier to_host = {};
-			to_host.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-			to_host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			to_host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-			to_host.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			to_host.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			to_host.buffer = readback.buffer;
-			to_host.offset = 0;
-			to_host.size = VK_WHOLE_SIZE;
-
-			vkCmdPipelineBarrier(device_resources.commands(),
-				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0,
-				0, nullptr, 1, &to_host, 0, nullptr);
-
-			// PUT BACK WHERE IT WAS, not into a layout this function decided.
-			// The seam says this is called between submit() and end_frame(), so
-			// the frame is not over; a caller that reads twice, or that reads
-			// and then presents, gets what it would have got without the read.
-			// UNDEFINED is not a layout anything can be transitioned INTO, so a
-			// colour target nothing has drawn into yet is simply left where the
-			// copy put it.
-			if (previous != VK_IMAGE_LAYOUT_UNDEFINED)
-			{
-				device_resources.transition_colour(previous);
-			}
-
-			// False means recovery rebuilt the renderer. Its old frame cannot
-			// supply pixels, and a recovery exception must keep its own error.
-			lost = !device_resources.execute();
-
-			if (!lost)
-			{
-				// It stalls on the GPU by construction, and the seam says so.
-				device_resources.wait_for_gpu();
-
-				// B AND R SWAP ON THE WAY OUT: the colour target is B8G8R8A8
-				// and the seam promises RGBA. No flip, though - Vulkan's
-				// framebuffer origin is the top left like Direct3D's, so the
-				// row order is already the one the seam asks for and only the
-				// GL backend has to turn its rows over.
-				const unsigned char* bytes =
-					static_cast<const unsigned char*>(readback.mapped);
-				for (size_t i = 0; i < width * height; i++)
-				{
-					pixels[i * 4 + 0] = bytes[i * 4 + 2];
-					pixels[i * 4 + 1] = bytes[i * 4 + 1];
-					pixels[i * 4 + 2] = bytes[i * 4 + 0];
-					pixels[i * 4 + 3] = bytes[i * 4 + 3];
-				}
-			}
-		}
-		catch (...)
-		{
-			destroy_vulkan_buffer(readback_device, readback);
-			throw;
+			device_resources.transition_colour(previous);
 		}
 
-		destroy_vulkan_buffer(readback_device, readback);
+		// False means recovery rebuilt the renderer. Its old frame cannot
+		// supply pixels, and a recovery exception must keep its own error.
+		lost = !device_resources.execute();
+
+		if (!lost)
+		{
+			// It stalls on the GPU by construction, and the seam says so.
+			device_resources.wait_for_gpu();
+
+			// B AND R SWAP ON THE WAY OUT: the colour target is B8G8R8A8
+			// and the seam promises RGBA. No flip, though - Vulkan's
+			// framebuffer origin is the top left like Direct3D's, so the
+			// row order is already the one the seam asks for and only the
+			// GL backend has to turn its rows over.
+			const unsigned char* bytes =
+				static_cast<const unsigned char*>(readback.buffer().mapped);
+			for (size_t i = 0; i < width * height; i++)
+			{
+				pixels[i * 4 + 0] = bytes[i * 4 + 2];
+				pixels[i * 4 + 1] = bytes[i * 4 + 1];
+				pixels[i * 4 + 2] = bytes[i * 4 + 0];
+				pixels[i * 4 + 3] = bytes[i * 4 + 3];
+			}
+		}
 
 		if (lost)
 		{

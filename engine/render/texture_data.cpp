@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <stdexcept>
+#include <string>
 
 namespace labrador
 {
@@ -10,7 +11,11 @@ namespace labrador
 		// Bytes per 4x4 block for a compressed format, or bytes per pixel for
 		// one that is not. The two are never confused because nothing outside
 		// this file reads either.
-		int unit_bytes(TextureFormat format)
+		//
+		// No default label, so a new enumerator is a -Wswitch error under
+		// clang rather than a silent four bytes. A value outside the enum is
+		// refused by name.
+		int unit_bytes(TextureFormat format, const std::string& context)
 		{
 			switch (format)
 			{
@@ -18,18 +23,29 @@ namespace labrador
 			case TextureFormat::bc2_unorm:      return 16;
 			case TextureFormat::bc3_unorm:      return 16;
 			case TextureFormat::b4g4r4a4_unorm: return 2;
-			case TextureFormat::r8g8b8a8_unorm:
-			case TextureFormat::b8g8r8a8_unorm:
-			default:                            return 4;
+			case TextureFormat::r8g8b8a8_unorm: return 4;
+			case TextureFormat::b8g8r8a8_unorm: return 4;
 			}
+			throw std::runtime_error(context + ": TextureFormat " +
+				std::to_string(static_cast<int>(format)) +
+				" is not a format this engine lays out.");
 		}
 	}
 
 	bool is_block_compressed(TextureFormat format)
 	{
-		return format == TextureFormat::bc1_unorm ||
-			format == TextureFormat::bc2_unorm ||
-			format == TextureFormat::bc3_unorm;
+		switch (format)
+		{
+		case TextureFormat::bc1_unorm:
+		case TextureFormat::bc2_unorm:
+		case TextureFormat::bc3_unorm:
+			return true;
+		case TextureFormat::r8g8b8a8_unorm:
+		case TextureFormat::b8g8r8a8_unorm:
+		case TextureFormat::b4g4r4a4_unorm:
+			return false;
+		}
+		return false;
 	}
 
 	TextureLevel texture_level(TextureFormat format, int width, int height,
@@ -56,7 +72,7 @@ namespace labrador
 			columns = (columns + 3) / 4;
 			rows = (rows + 3) / 4;
 		}
-		const size_t bytes = static_cast<size_t>(unit_bytes(format));
+		const size_t bytes = static_cast<size_t>(unit_bytes(format, context));
 		if (columns > static_cast<size_t>((std::numeric_limits<int>::max)()) / bytes)
 		{
 			throw std::runtime_error(context + ": texture row stride exceeds int range.");

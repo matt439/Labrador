@@ -9,7 +9,6 @@
 
 #include <wrl/client.h>
 
-#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -29,18 +28,6 @@ namespace labrador
 		ID3D12Device* device_of(const Renderer& renderer)
 		{
 			return renderer.impl()->device_resources.device();
-		}
-
-		// The one hand-written message in this file that reports an HRESULT,
-		// spelt the way com_exception spells one so that a search for a code
-		// finds both. Not put beside that class, because throw_if_failed.h is
-		// carried with upstream's naming (its own header says why) and this is
-		// the engine's own sentence.
-		std::string hresult_name(HRESULT hr)
-		{
-			char text[24] = {};
-			sprintf_s(text, "HRESULT %08X", static_cast<unsigned int>(hr));
-			return text;
 		}
 
 		// The engine's format vocabulary, back into this API's. The other
@@ -70,13 +57,18 @@ namespace labrador
 			case TextureFormat::bc3_unorm:
 				return DXGI_FORMAT_BC3_UNORM;
 			case TextureFormat::r8g8b8a8_unorm:
-			default:
 				return DXGI_FORMAT_R8G8B8A8_UNORM;
 			}
+
+			// Every enumerator returns above. A value outside the enum is
+			// refused rather than uploaded as some other format's bytes.
+			throw std::invalid_argument("TextureFormat " +
+				std::to_string(static_cast<int>(format)) +
+				" has no Direct3D 12 format.");
 		}
 
 		// For the throw, because an eight-digit HRESULT is not an answer (T6).
-		const char* format_name(TextureFormat format)
+		std::string format_name(TextureFormat format)
 		{
 			switch (format)
 			{
@@ -85,9 +77,9 @@ namespace labrador
 			case TextureFormat::bc1_unorm:      return "bc1_unorm";
 			case TextureFormat::bc2_unorm:      return "bc2_unorm";
 			case TextureFormat::bc3_unorm:      return "bc3_unorm";
-			case TextureFormat::r8g8b8a8_unorm:
-			default:                            return "r8g8b8a8_unorm";
+			case TextureFormat::r8g8b8a8_unorm: return "r8g8b8a8_unorm";
 			}
+			return "TextureFormat " + std::to_string(static_cast<int>(format));
 		}
 	}
 
@@ -194,10 +186,8 @@ namespace labrador
 			// device that has gone, so reporting all three as an unsupported
 			// format at a size asserts a cause the code has not established. The
 			// Vulkan factory next door names its VkResult in the same position and
-			// for the same reason; both Direct3D backends have com_exception's
-			// "Failure with HRESULT of" available at every ThrowIfFailed site, so
-			// there is no reason to assert a cause and throw the evidence away
-			// (T6).
+			// for the same reason, so there is no reason to assert a cause and
+			// throw the evidence away (T6).
 			throw std::runtime_error("Texture '" + name + "' is " +
 				format_name(texture.format) + " at " +
 				std::to_string(texture.width) + "x" +
@@ -241,11 +231,13 @@ namespace labrador
 		ThrowIfFailed(device->CreateCommittedResource(&upload_heap,
 			D3D12_HEAP_FLAG_NONE, &staging_description,
 			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-			IID_PPV_ARGS(staging.GetAddressOf())));
+			IID_PPV_ARGS(staging.GetAddressOf())),
+			"A texture's staging buffer could not be created");
 
 		void* mapped = nullptr;
 		const D3D12_RANGE nothing_read = { 0, 0 };
-		ThrowIfFailed(staging->Map(0, &nothing_read, &mapped));
+		ThrowIfFailed(staging->Map(0, &nothing_read, &mapped),
+			"A texture's staging buffer could not be mapped");
 
 		// ROW BY ROW, BECAUSE THE TWO STRIDES DIFFER. The engine's stride is
 		// what the file has (TextureLevel::stride); the copy's is whatever

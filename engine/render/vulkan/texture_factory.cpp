@@ -8,6 +8,7 @@
 
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -223,12 +224,11 @@ namespace labrador
 		VkDeviceMemory memory = VK_NULL_HANDLE;
 		VkImageView view = VK_NULL_HANDLE;
 
-		// DECLARED OUT HERE SO THE catch CAN NAME IT. As a local of the try
-		// below, a VkBuffer and a still-mapped allocation the full size of the
-		// texture sit outside the reach of the block whose own comment says every
-		// failure has to put everything back - with five throwing calls between
-		// its creation and its release.
-		VulkanBuffer staging;
+		// DECLARED OUT HERE SO IT OUTLIVES THE catch BELOW, whose wait has to
+		// finish before a buffer an upload may still be reading is released.
+		// It releases itself, at the end of the upload or at this function's
+		// exit, whichever comes first.
+		std::optional<ScopedVulkanBuffer> staging;
 		std::unique_ptr<VulkanTexture> owned_texture;
 
 		// FROM HERE THE IMAGE IS OWNED BY NOBODY UNTIL THE LAST LINE, so every
@@ -242,8 +242,10 @@ namespace labrador
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				"A texture image");
 
-			check_vk(vkAllocateMemory(device, &allocation, nullptr, &memory),
+			VkDeviceMemory allocated = VK_NULL_HANDLE;
+			check_vk(vkAllocateMemory(device, &allocation, nullptr, &allocated),
 				"A texture image's memory could not be allocated");
+			memory = allocated;
 			check_vk(vkBindImageMemory(device, image, memory, 0),
 				"A texture image's memory could not be bound");
 
@@ -253,14 +255,14 @@ namespace labrador
 			// level rather than a row walk - which is where this backend is
 			// cheaper than the D3D12 one, whose runtime pads every row to 256
 			// bytes and has to be asked to what.
-			staging = create_vulkan_buffer(owner,
+			staging.emplace(device_resources.shared_device(),
 				static_cast<VkDeviceSize>(texture.pixels.size()),
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 				"A texture's staging copy");
 
-			std::memcpy(staging.mapped, texture.pixels.data(),
+			std::memcpy(staging->buffer().mapped, texture.pixels.data(),
 				texture.pixels.size());
 
 			std::vector<VkBufferImageCopy> copies;
@@ -310,7 +312,7 @@ namespace labrador
 				VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
 				&to_destination);
 
-			vkCmdCopyBufferToImage(commands, staging.buffer, image,
+			vkCmdCopyBufferToImage(commands, staging->buffer().buffer, image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 				static_cast<uint32_t>(copies.size()), copies.data());
 
@@ -327,7 +329,7 @@ namespace labrador
 			// Ends, submits and waits, which is what the staging buffer's
 			// lifetime demands.
 			device_resources.end_upload(commands);
-			destroy_vulkan_buffer(device, staging);
+			staging.reset();
 
 			VkImageViewCreateInfo view_description = {};
 			view_description.sType =
@@ -340,8 +342,10 @@ namespace labrador
 			view_description.subresourceRange.levelCount = levels;
 			view_description.subresourceRange.layerCount = 1;
 
+			VkImageView made_view = VK_NULL_HANDLE;
 			check_vk(vkCreateImageView(device, &view_description, nullptr,
-				&view), "A texture's image view could not be created");
+				&made_view), "A texture's image view could not be created");
+			view = made_view;
 
 			// Keep raw-handle cleanup active until allocation gives the wrapper
 			// ownership. Nothing after this handoff in the try may throw.
@@ -361,9 +365,9 @@ namespace labrador
 			// device_resources.h gives on try_wait_for_gpu: a throw out of a
 			// handler that is already unwinding replaces the real failure with
 			// a worse-reported one (T6).
+			// The staging copy goes after this wait too: it is released when
+			// the exception leaves this function.
 			std::ignore = device_resources.try_wait_for_gpu();
-
-			destroy_vulkan_buffer(device, staging);
 
 			if (view != VK_NULL_HANDLE)
 			{

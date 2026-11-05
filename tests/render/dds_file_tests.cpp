@@ -256,6 +256,34 @@ TEST_CASE("texture layouts reject stride and accumulated offset overflow")
 		(std::numeric_limits<size_t>::max)() - 3), std::runtime_error);
 }
 
+TEST_CASE("texture layouts refuse a format outside TextureFormat by name")
+{
+	// What a TextureFormat added without a layout, or a corrupt value, would
+	// reach. It once laid out as four bytes a pixel with no word said.
+	const TextureFormat unknown = static_cast<TextureFormat>(99);
+	CHECK_FALSE(labrador::is_block_compressed(unknown));
+
+	std::string message;
+	try
+	{
+		const TextureLevel level = texture_level(unknown, 4, 4, 0, "probe.dds");
+		FAIL_CHECK("an unknown format was laid out at stride " << level.stride);
+	}
+	catch (const std::runtime_error& error)
+	{
+		message = error.what();
+	}
+	CHECK(message.find("probe.dds") != std::string::npos);
+	CHECK(message.find("TextureFormat 99") != std::string::npos);
+
+	// Every listed format still lays out.
+	CHECK(texture_level(TextureFormat::b4g4r4a4_unorm, 4, 4, 0).stride == 8);
+	CHECK(texture_level(TextureFormat::b8g8r8a8_unorm, 4, 4, 0).stride == 16);
+	CHECK(texture_level(TextureFormat::bc2_unorm, 4, 4, 0).size == 16);
+	CHECK(labrador::is_block_compressed(TextureFormat::bc2_unorm));
+	CHECK_FALSE(labrador::is_block_compressed(TextureFormat::r8g8b8a8_unorm));
+}
+
 TEST_CASE("DDS rejects malformed large dimensions before payload acceptance")
 {
 	for (unsigned int width : { 0x20000000u, 0x40000001u, 0x7fffffffu, 0x80000000u })

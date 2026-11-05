@@ -26,16 +26,25 @@ namespace labrador
 		const GLenum COMPRESSED_RGBA_S3TC_DXT5 = 0x83F3;
 
 		// Which S3TC format a block-compressed texture is uploaded as, on a
-		// context that has S3TC.
-		GLenum compressed_format(TextureFormat format)
+		// context that has S3TC. Every enumerator is listed and none falls
+		// through a default label, so a new block format is a -Wswitch error
+		// under clang and a refusal by name here, never a DXT5 upload.
+		GLenum compressed_format(TextureFormat format, const std::string& name)
 		{
 			switch (format)
 			{
 			case TextureFormat::bc1_unorm: return COMPRESSED_RGBA_S3TC_DXT1;
 			case TextureFormat::bc2_unorm: return COMPRESSED_RGBA_S3TC_DXT3;
-			case TextureFormat::bc3_unorm:
-			default:                       return COMPRESSED_RGBA_S3TC_DXT5;
+			case TextureFormat::bc3_unorm: return COMPRESSED_RGBA_S3TC_DXT5;
+			case TextureFormat::r8g8b8a8_unorm:
+			case TextureFormat::b8g8r8a8_unorm:
+			case TextureFormat::b4g4r4a4_unorm:
+				break;
 			}
+
+			throw std::runtime_error("Texture '" + name + "' is in a block "
+				"format this backend has no S3TC format for (TextureFormat " +
+				std::to_string(static_cast<int>(format)) + ").");
 		}
 
 		// The uncompressed layouts this backend uploads, and both are given to
@@ -56,7 +65,11 @@ namespace labrador
 			case TextureFormat::r8g8b8a8_unorm:
 			case TextureFormat::b8g8r8a8_unorm:
 				return;
-			default: break;
+			case TextureFormat::b4g4r4a4_unorm:
+			case TextureFormat::bc1_unorm:
+			case TextureFormat::bc2_unorm:
+			case TextureFormat::bc3_unorm:
+				break;
 			}
 
 			throw std::runtime_error("Texture '" + name + "' is in a pixel "
@@ -99,8 +112,14 @@ namespace labrador
 
 		struct TextureOwner
 		{
-			GLuint name = 0;
+			TextureOwner() = default;
 			~TextureOwner() { glDeleteTextures(1, &name); }
+
+			// One owner per name: a copy would delete it twice.
+			TextureOwner(const TextureOwner&) = delete;
+			TextureOwner& operator=(const TextureOwner&) = delete;
+
+			GLuint name = 0;
 		};
 	}
 
@@ -149,7 +168,7 @@ namespace labrador
 		GLenum compressed_upload = 0;
 		if (compressed)
 		{
-			compressed_upload = compressed_format(source.format);
+			compressed_upload = compressed_format(source.format, name);
 		}
 		else
 		{

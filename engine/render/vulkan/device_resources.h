@@ -189,6 +189,34 @@ namespace labrador
 
 	void destroy_vulkan_buffer(VkDevice device, VulkanBuffer& buffer);
 
+	// A VulkanBuffer for one operation - a staging or read-back copy - that
+	// releases itself on every way out, through the device that made it. It
+	// holds that device's shared owner, so a recovery that replaces the
+	// renderer's device before the operation ends cannot strand the buffer on
+	// a handle that has gone. Long-lived buffers stay plain VulkanBuffer
+	// members, released where their owner releases its device.
+	class ScopedVulkanBuffer
+	{
+	public:
+		// Throws what create_vulkan_buffer throws, having released anything
+		// it made.
+		ScopedVulkanBuffer(std::shared_ptr<VulkanDevice> owner,
+			VkDeviceSize bytes, VkBufferUsageFlags usage,
+			VkMemoryPropertyFlags memory, const char* what);
+		~ScopedVulkanBuffer();
+
+		ScopedVulkanBuffer(const ScopedVulkanBuffer&) = delete;
+		ScopedVulkanBuffer& operator=(const ScopedVulkanBuffer&) = delete;
+		ScopedVulkanBuffer(ScopedVulkanBuffer&&) = delete;
+		ScopedVulkanBuffer& operator=(ScopedVulkanBuffer&&) = delete;
+
+		const VulkanBuffer& buffer() const { return this->buffer_; }
+
+	private:
+		std::shared_ptr<VulkanDevice> owner_;
+		VulkanBuffer buffer_;
+	};
+
 	class DeviceResources
 	{
 	public:

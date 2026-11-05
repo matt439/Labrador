@@ -52,9 +52,44 @@ namespace labrador
 			case TextureFormat::bc3_unorm:
 				return DXGI_FORMAT_BC3_UNORM;
 			case TextureFormat::r8g8b8a8_unorm:
-			default:
 				return DXGI_FORMAT_R8G8B8A8_UNORM;
 			}
+
+			// Every enumerator returns above. A value outside the enum is
+			// refused rather than uploaded as some other format's bytes.
+			throw std::invalid_argument("TextureFormat " +
+				std::to_string(static_cast<int>(format)) +
+				" has no Direct3D 11 format.");
+		}
+
+		// For the throw, because an eight-digit HRESULT is not an answer (T6).
+		std::string format_name(TextureFormat format)
+		{
+			switch (format)
+			{
+			case TextureFormat::b8g8r8a8_unorm: return "b8g8r8a8_unorm";
+			case TextureFormat::b4g4r4a4_unorm: return "b4g4r4a4_unorm";
+			case TextureFormat::bc1_unorm:      return "bc1_unorm";
+			case TextureFormat::bc2_unorm:      return "bc2_unorm";
+			case TextureFormat::bc3_unorm:      return "bc3_unorm";
+			case TextureFormat::r8g8b8a8_unorm: return "r8g8b8a8_unorm";
+			}
+			return "TextureFormat " + std::to_string(static_cast<int>(format));
+		}
+
+		// THE ANSWER resource_factory.h PROMISES WHEN THE DEVICE WILL NOT TAKE
+		// A TEXTURE: its name, its format and size, and the code. The likeliest
+		// format to arrive here is b4g4r4a4_unorm, which Direct3D 11 makes
+		// optional. The HRESULT stays in the message rather than being read as
+		// a cause, because E_OUTOFMEMORY and a removed device fail here too.
+		[[noreturn]] void refuse(const std::string& name,
+			const TextureData& texture, const char* step, HRESULT hr)
+		{
+			throw std::runtime_error("Texture '" + name + "' is " +
+				format_name(texture.format) + " at " +
+				std::to_string(texture.width) + "x" +
+				std::to_string(texture.height) + ", and this device would "
+				"not create its " + step + " (" + hresult_name(hr) + ").");
 		}
 	}
 
@@ -72,7 +107,7 @@ namespace labrador
 	{
 		// BEFORE ANY OF THE DESCRIPTION BELOW, because device_of is a bare
 		// GetD3DDevice() and it is null until create_device has run. The two
-		// calls that use it are ThrowIfFailed'd, which reads like a check and
+		// calls that use it check their HRESULTs, which reads like a guard and
 		// is not one: the dereference happens first, so a load before the
 		// device existed was an access violation inside the D3D runtime with
 		// nothing catchable and no name in it. The seam states the ordering
@@ -104,12 +139,20 @@ namespace labrador
 		}
 
 		ComPtr<ID3D11Texture2D> texture_2d;
-		ThrowIfFailed(device_of(renderer)->CreateTexture2D(&description,
-			initial.data(), texture_2d.GetAddressOf()));
+		const HRESULT created = device_of(renderer)->CreateTexture2D(
+			&description, initial.data(), texture_2d.GetAddressOf());
+		if (FAILED(created))
+		{
+			refuse(name, texture, "texture", created);
+		}
 
 		ComPtr<ID3D11ShaderResourceView> view;
-		ThrowIfFailed(device_of(renderer)->CreateShaderResourceView(
-			texture_2d.Get(), nullptr, view.GetAddressOf()));
+		const HRESULT viewed = device_of(renderer)->CreateShaderResourceView(
+			texture_2d.Get(), nullptr, view.GetAddressOf());
+		if (FAILED(viewed))
+		{
+			refuse(name, texture, "shader resource view", viewed);
+		}
 
 		resources.impl()->add_texture(name, view.Get());
 	}

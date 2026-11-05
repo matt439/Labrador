@@ -27,7 +27,8 @@ namespace labrador
 		{
 			ComPtr<IDXGIFactory4> factory;
 			ThrowIfFailed(CreateDXGIFactory1(
-				IID_PPV_ARGS(factory.GetAddressOf())));
+				IID_PPV_ARGS(factory.GetAddressOf())),
+				"The DXGI factory could not be created");
 
 			ComPtr<IDXGIAdapter1> adapter;
 			const LUID selected = device->GetAdapterLuid();
@@ -43,20 +44,25 @@ namespace labrador
 				// selected.
 				ComPtr<IDXGIAdapter> warp;
 				ThrowIfFailed(factory->EnumWarpAdapter(
-					IID_PPV_ARGS(warp.GetAddressOf())));
-				ThrowIfFailed(warp.As(&adapter));
+					IID_PPV_ARGS(warp.GetAddressOf())),
+					"The WARP adapter could not be enumerated");
+				ThrowIfFailed(warp.As(&adapter),
+					"The WARP adapter has no IDXGIAdapter1 interface");
 
 				DXGI_ADAPTER_DESC1 warp_description = {};
-				ThrowIfFailed(adapter->GetDesc1(&warp_description));
+				ThrowIfFailed(adapter->GetDesc1(&warp_description),
+					"The WARP adapter's description could not be read");
 				if (warp_description.AdapterLuid.HighPart != selected.HighPart ||
 					warp_description.AdapterLuid.LowPart != selected.LowPart)
 				{
-					ThrowIfFailed(enumeration);
+					ThrowIfFailed(enumeration,
+						"The device's adapter could not be found by its LUID");
 				}
 			}
 
 			DXGI_ADAPTER_DESC1 description = {};
-			ThrowIfFailed(adapter->GetDesc1(&description));
+			ThrowIfFailed(adapter->GetDesc1(&description),
+				"The adapter's description could not be read");
 
 			RenderDeviceInfo info;
 			info.backend = "d3d12";
@@ -146,7 +152,8 @@ namespace labrador
 			ComPtr<ID3D12Resource> buffer;
 			ThrowIfFailed(device->CreateCommittedResource(&properties,
 				D3D12_HEAP_FLAG_NONE, &description, state, nullptr,
-				IID_PPV_ARGS(buffer.GetAddressOf())));
+				IID_PPV_ARGS(buffer.GetAddressOf())),
+				"A buffer could not be created");
 			return buffer;
 		}
 
@@ -239,7 +246,8 @@ namespace labrador
 			// for. The read range is empty because nothing here ever reads it.
 			void* mapped = nullptr;
 			const D3D12_RANGE nothing_read = { 0, 0 };
-			ThrowIfFailed(fresh.buffer->Map(0, &nothing_read, &mapped));
+			ThrowIfFailed(fresh.buffer->Map(0, &nothing_read, &mapped),
+				"A vertex page could not be mapped");
 
 			fresh.mapped = static_cast<SpriteVertex*>(mapped);
 			fresh.address = fresh.buffer->GetGPUVirtualAddress();
@@ -321,10 +329,12 @@ namespace labrador
 		// wait_for_gpu, which is stronger, and which has to be: frame_index_ is
 		// re-read from the swap chain after ResizeBuffers and may not be the
 		// index begin_frame waited on.
-		ThrowIfFailed(this->allocators[static_cast<size_t>(frame)]->Reset());
+		ThrowIfFailed(this->allocators[static_cast<size_t>(frame)]->Reset(),
+			"A view's command allocator could not be reset");
 		ThrowIfFailed(this->list->Reset(
 			this->allocators[static_cast<size_t>(frame)].Get(),
-			owner_impl.sprite_pipeline.pipeline_state()));
+			owner_impl.sprite_pipeline.pipeline_state()),
+			"A view's command list could not be reset");
 
 		ID3D12DescriptorHeap* heaps[] = { owner_impl.texture_heap.Get(),
 			owner_impl.sampler_heap.Get() };
@@ -360,7 +370,8 @@ namespace labrador
 		}
 
 		this->flush();
-		ThrowIfFailed(this->list->Close());
+		ThrowIfFailed(this->list->Close(),
+			"A view's command list could not be closed");
 		this->recording = false;
 	}
 
@@ -569,7 +580,8 @@ namespace labrador
 	{
 		const int frame = this->device_resources.frame_index();
 		ThrowIfFailed(
-			this->frame_allocators[static_cast<size_t>(frame)]->Reset());
+			this->frame_allocators[static_cast<size_t>(frame)]->Reset(),
+			"The frame command allocator could not be reset");
 
 		this->transition_back_buffer(D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -601,7 +613,8 @@ namespace labrador
 			const int frame = this->device_resources.frame_index();
 			ThrowIfFailed(this->frame_list->Reset(
 				this->frame_allocators[static_cast<size_t>(frame)].Get(),
-				nullptr));
+				nullptr),
+				"The frame command list could not be reset");
 			this->frame_list_open = true;
 		}
 
@@ -615,7 +628,8 @@ namespace labrador
 			return;
 		}
 
-		ThrowIfFailed(this->frame_list->Close());
+		ThrowIfFailed(this->frame_list->Close(),
+			"The frame command list could not be closed");
 		this->frame_list_open = false;
 
 		ID3D12CommandList* lists[] = { this->frame_list.Get() };
@@ -662,7 +676,8 @@ namespace labrador
 		texture_heap_description.Flags =
 			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		ThrowIfFailed(device->CreateDescriptorHeap(&texture_heap_description,
-			IID_PPV_ARGS(this->texture_heap.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->texture_heap.ReleaseAndGetAddressOf())),
+			"The texture descriptor heap could not be created");
 
 		D3D12_DESCRIPTOR_HEAP_DESC sampler_heap_description = {};
 		sampler_heap_description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
@@ -670,7 +685,8 @@ namespace labrador
 		sampler_heap_description.Flags =
 			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		ThrowIfFailed(device->CreateDescriptorHeap(&sampler_heap_description,
-			IID_PPV_ARGS(this->sampler_heap.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->sampler_heap.ReleaseAndGetAddressOf())),
+			"The sampler descriptor heap could not be created");
 
 		this->texture_descriptor_size =
 			device->GetDescriptorHandleIncrementSize(
@@ -721,18 +737,21 @@ namespace labrador
 		{
 			ThrowIfFailed(device->CreateCommandAllocator(
 				D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(
-					this->frame_allocators[i].ReleaseAndGetAddressOf())));
+					this->frame_allocators[i].ReleaseAndGetAddressOf())),
+				"A frame command allocator could not be created");
 		}
 
 		ThrowIfFailed(device->CreateCommandList(0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT, this->frame_allocators[0].Get(),
 			nullptr, IID_PPV_ARGS(
-				this->frame_list.ReleaseAndGetAddressOf())));
+				this->frame_list.ReleaseAndGetAddressOf())),
+			"The frame command list could not be created");
 		// CreateCommandList hands back an OPEN list, which is the one place
 		// this API differs from every other create call in this file. Closed
 		// here so that open_frame_list's Reset is the only thing that ever
 		// opens it.
-		ThrowIfFailed(this->frame_list->Close());
+		ThrowIfFailed(this->frame_list->Close(),
+			"The frame command list could not be closed");
 		this->frame_list_open = false;
 
 		// A list and an allocator per frame in flight, per view - and the View
@@ -747,7 +766,8 @@ namespace labrador
 			{
 				ThrowIfFailed(device->CreateCommandAllocator(
 					D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(
-						view.allocators[i].ReleaseAndGetAddressOf())));
+						view.allocators[i].ReleaseAndGetAddressOf())),
+					"A view's command allocator could not be created");
 
 				// The pages go with the device that made them. They are not
 				// recreated here: a page is taken the first time a frame needs
@@ -758,8 +778,10 @@ namespace labrador
 			ThrowIfFailed(device->CreateCommandList(0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT, view.allocators[0].Get(),
 				this->sprite_pipeline.pipeline_state(),
-				IID_PPV_ARGS(view.list.ReleaseAndGetAddressOf())));
-			ThrowIfFailed(view.list->Close());
+				IID_PPV_ARGS(view.list.ReleaseAndGetAddressOf())),
+				"A view's command list could not be created");
+			ThrowIfFailed(view.list->Close(),
+				"A view's command list could not be closed");
 			view.recording = false;
 
 			view.reset();
@@ -804,7 +826,8 @@ namespace labrador
 
 		void* index_mapped = nullptr;
 		const D3D12_RANGE nothing_read = { 0, 0 };
-		ThrowIfFailed(index_upload->Map(0, &nothing_read, &index_mapped));
+		ThrowIfFailed(index_upload->Map(0, &nothing_read, &index_mapped),
+			"The index upload buffer could not be mapped");
 		std::memcpy(index_mapped, index_data.data(),
 			static_cast<size_t>(index_bytes));
 		index_upload->Unmap(0, nullptr);
@@ -971,13 +994,9 @@ namespace labrador
 		// that argument is a swap chain's size here and the live client rect on
 		// the GL backend - and the shell calls it again on WM_EXITSIZEMOVE with
 		// a size the drag may well have returned to. The comparison is the one
-		// DeviceResources::window_size_changed makes itself; it is repeated
-		// here rather than reached for through a new accessor because this is
-		// the only caller and the alternative is a method whose whole purpose
-		// is to be asked twice.
-		const RECT size = impl.device_resources.output_size();
-		if (static_cast<long>(width) == size.right - size.left &&
-			static_cast<long>(height) == size.bottom - size.top)
+		// DeviceResources::window_size_changed makes itself, asked through
+		// has_size so that both answer alike after a rebuild that threw.
+		if (impl.device_resources.has_size(width, height))
 		{
 			return false;
 		}
@@ -1255,7 +1274,8 @@ namespace labrador
 
 		void* mapped = nullptr;
 		const D3D12_RANGE everything = { 0, static_cast<SIZE_T>(total_bytes) };
-		ThrowIfFailed(readback->Map(0, &everything, &mapped));
+		ThrowIfFailed(readback->Map(0, &everything, &mapped),
+			"The read-back buffer could not be mapped");
 
 		// B and R swap on the way out: the back buffer is B8G8R8A8 and the seam
 		// promises RGBA.

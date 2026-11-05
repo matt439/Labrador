@@ -173,6 +173,20 @@ namespace labrador
 			}
 			return shader;
 		}
+
+		// One shader name, deleted on every way out of create_gl_resources.
+		// A linked program keeps what it needs, and a failed compile or link
+		// leaves no shader behind on a context that stays in use.
+		struct ShaderOwner
+		{
+			explicit ShaderOwner(GLuint shader) : name(shader) {}
+			~ShaderOwner() { glDeleteShader(this->name); }
+
+			ShaderOwner(const ShaderOwner&) = delete;
+			ShaderOwner& operator=(const ShaderOwner&) = delete;
+
+			GLuint name = 0;
+		};
 	}
 
 	// --- DrawList::View ------------------------------------------------------
@@ -282,14 +296,14 @@ namespace labrador
 
 	void Renderer::Impl::create_gl_resources()
 	{
-		const GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER_,
-			this->shader_prelude, sprite_vertex_shader, "sprite vertex");
-		const GLuint pixel_shader = compile_shader(GL_FRAGMENT_SHADER_,
-			this->shader_prelude, sprite_pixel_shader, "sprite fragment");
+		const ShaderOwner vertex_shader(compile_shader(GL_VERTEX_SHADER_,
+			this->shader_prelude, sprite_vertex_shader, "sprite vertex"));
+		const ShaderOwner pixel_shader(compile_shader(GL_FRAGMENT_SHADER_,
+			this->shader_prelude, sprite_pixel_shader, "sprite fragment"));
 
 		this->program = glCreateProgram();
-		glAttachShader(this->program, vertex_shader);
-		glAttachShader(this->program, pixel_shader);
+		glAttachShader(this->program, vertex_shader.name);
+		glAttachShader(this->program, pixel_shader.name);
 
 		// BOUND BEFORE LINKING, so the attribute indices are this file's choice
 		// rather than the driver's. The alternative is to link, ask where each
@@ -307,12 +321,11 @@ namespace labrador
 		if (linked == GL_FALSE)
 		{
 			const std::string log = program_log(this->program);
+			glDeleteProgram(this->program);
+			this->program = 0;
 			throw std::runtime_error(
 				"The sprite shaders did not link on this driver:\n" + log);
 		}
-
-		glDeleteShader(vertex_shader);
-		glDeleteShader(pixel_shader);
 
 		this->transform_uniform =
 			glGetUniformLocation(this->program, "pixels_to_clip");

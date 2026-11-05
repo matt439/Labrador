@@ -87,7 +87,8 @@ namespace labrador
 	// mip, and the .spritefont reader, which checks an atlas against it, agree
 	// by construction.
 	// Throws std::runtime_error naming context for nonpositive dimensions,
-	// a row wider than int can hold, or an unrepresentable size/end offset.
+	// a `format` outside TextureFormat, a row wider than int can hold, or an
+	// unrepresentable size/end offset.
 	TextureLevel texture_level(TextureFormat format, int width, int height,
 		size_t offset, const std::string& context = "texture_level");
 }

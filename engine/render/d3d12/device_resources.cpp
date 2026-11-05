@@ -77,13 +77,9 @@ namespace labrador
 		// out of the wait would be std::terminate on an ordinary exit, and the
 		// wait it was raised from would not have happened either way. T6:
 		// teardown stays silent.
+		// The fence event closes after this body, with the members, so the
+		// wait above has finished with it.
 		std::ignore = this->try_wait_for_gpu();
-
-		if (this->fence_event_ != nullptr)
-		{
-			CloseHandle(this->fence_event_);
-			this->fence_event_ = nullptr;
-		}
 	}
 
 	void DeviceResources::set_window(HWND window, int width, int height)
@@ -133,7 +129,8 @@ namespace labrador
 #endif
 
 		ThrowIfFailed(CreateDXGIFactory2(flags, IID_PPV_ARGS(
-			this->factory_.ReleaseAndGetAddressOf())));
+			this->factory_.ReleaseAndGetAddressOf())),
+			"The DXGI factory could not be created");
 	}
 
 	void DeviceResources::hardware_adapter(IDXGIAdapter1** adapter)
@@ -152,7 +149,8 @@ namespace labrador
 				index++)
 			{
 				DXGI_ADAPTER_DESC1 description;
-				ThrowIfFailed(candidate->GetDesc1(&description));
+				ThrowIfFailed(candidate->GetDesc1(&description),
+					"An adapter's description could not be read");
 
 				if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
 				{
@@ -189,7 +187,8 @@ namespace labrador
 				index++)
 			{
 				DXGI_ADAPTER_DESC1 description;
-				ThrowIfFailed(candidate->GetDesc1(&description));
+				ThrowIfFailed(candidate->GetDesc1(&description),
+					"An adapter's description could not be read");
 
 				if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
 				{
@@ -252,7 +251,8 @@ namespace labrador
 		}
 #endif
 
-		ThrowIfFailed(hr);
+		ThrowIfFailed(hr,
+			"The Direct3D 12 device could not be created");
 
 #ifndef NDEBUG
 		{
@@ -278,21 +278,24 @@ namespace labrador
 		queue_description.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		queue_description.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		ThrowIfFailed(this->device_->CreateCommandQueue(&queue_description,
-			IID_PPV_ARGS(this->command_queue_.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->command_queue_.ReleaseAndGetAddressOf())),
+			"The command queue could not be created");
 
 		D3D12_DESCRIPTOR_HEAP_DESC heap_description = {};
 		heap_description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		heap_description.NumDescriptors = frame_count;
 		heap_description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		ThrowIfFailed(this->device_->CreateDescriptorHeap(&heap_description,
-			IID_PPV_ARGS(this->render_target_heap_.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->render_target_heap_.ReleaseAndGetAddressOf())),
+			"The render target descriptor heap could not be created");
 
 		this->render_target_size_ =
 			this->device_->GetDescriptorHandleIncrementSize(
 				D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 		ThrowIfFailed(this->device_->CreateFence(0, D3D12_FENCE_FLAG_NONE,
-			IID_PPV_ARGS(this->fence_.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->fence_.ReleaseAndGetAddressOf())),
+			"The frame fence could not be created");
 
 		this->fence_value_ = 0;
 		for (int i = 0; i < frame_count; i++)
@@ -300,13 +303,14 @@ namespace labrador
 			this->frame_fences_[i] = 0;
 		}
 
-		if (this->fence_event_ == nullptr)
+		if (!this->fence_event_.IsValid())
 		{
-			this->fence_event_ = CreateEventEx(nullptr, nullptr, 0,
-				EVENT_MODIFY_STATE | SYNCHRONIZE);
-			if (this->fence_event_ == nullptr)
+			this->fence_event_.Attach(CreateEventEx(nullptr, nullptr, 0,
+				EVENT_MODIFY_STATE | SYNCHRONIZE));
+			if (!this->fence_event_.IsValid())
 			{
-				ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+				ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()),
+					"The fence event could not be created");
 			}
 		}
 	}
@@ -354,7 +358,8 @@ namespace labrador
 				return;
 			}
 
-			ThrowIfFailed(E_FAIL);
+			ThrowIfFailed(E_FAIL,
+				"The GPU could not be waited for before the resize, and the device was not removed");
 		}
 
 		for (int i = 0; i < frame_count; i++)
@@ -382,7 +387,8 @@ namespace labrador
 				return;
 			}
 
-			ThrowIfFailed(hr);
+			ThrowIfFailed(hr,
+				"The swap chain could not be resized");
 		}
 		else
 		{
@@ -420,13 +426,16 @@ namespace labrador
 			ComPtr<IDXGISwapChain1> swap_chain;
 			ThrowIfFailed(this->factory_->CreateSwapChainForHwnd(
 				this->command_queue_.Get(), this->window_, &description,
-				&fullscreen, nullptr, swap_chain.GetAddressOf()));
+				&fullscreen, nullptr, swap_chain.GetAddressOf()),
+				"The swap chain could not be created");
 
-			ThrowIfFailed(swap_chain.As(&this->swap_chain_));
+			ThrowIfFailed(swap_chain.As(&this->swap_chain_),
+				"The swap chain has no IDXGISwapChain3 interface");
 
 			// No exclusive full screen, and therefore no ALT+ENTER.
 			ThrowIfFailed(this->factory_->MakeWindowAssociation(this->window_,
-				DXGI_MWA_NO_ALT_ENTER));
+				DXGI_MWA_NO_ALT_ENTER),
+				"The window association could not be set");
 		}
 
 		D3D12_CPU_DESCRIPTOR_HANDLE handle =
@@ -439,7 +448,8 @@ namespace labrador
 		for (int i = 0; i < frame_count; i++)
 		{
 			ThrowIfFailed(this->swap_chain_->GetBuffer(static_cast<UINT>(i),
-				IID_PPV_ARGS(this->back_buffers_[i].ReleaseAndGetAddressOf())));
+				IID_PPV_ARGS(this->back_buffers_[i].ReleaseAndGetAddressOf())),
+				"A back buffer could not be read from the swap chain");
 
 			this->device_->CreateRenderTargetView(this->back_buffers_[i].Get(),
 				&view_description, handle);
@@ -460,8 +470,7 @@ namespace labrador
 			return false;
 		}
 
-		if (static_cast<long>(width) == this->output_size_.right &&
-			static_cast<long>(height) == this->output_size_.bottom)
+		if (this->has_size(width, height))
 		{
 			return false;
 		}
@@ -471,8 +480,24 @@ namespace labrador
 		this->output_size_.right = static_cast<long>(width);
 		this->output_size_.bottom = static_cast<long>(height);
 
+		// The size is committed before the rebuild because a device-loss
+		// recovery inside it rebuilds at output_size_. A rebuild that throws
+		// has already released the back buffers, so the size is marked stale
+		// and the next call rebuilds even at the same size, rather than
+		// answering that nothing changed over buffers that are gone.
+		this->size_stale_ = true;
 		this->create_window_size_dependent_resources();
+		this->size_stale_ = false;
 		return true;
+	}
+
+	bool DeviceResources::has_size(int width, int height) const
+	{
+		return !this->size_stale_ &&
+			static_cast<long>(width) ==
+				this->output_size_.right - this->output_size_.left &&
+			static_cast<long>(height) ==
+				this->output_size_.bottom - this->output_size_.top;
 	}
 
 	void DeviceResources::handle_device_lost()
@@ -525,7 +550,8 @@ namespace labrador
 			return;
 		}
 
-		ThrowIfFailed(hr);
+		ThrowIfFailed(hr,
+			"The frame could not be presented");
 
 		this->move_to_next_frame();
 	}
@@ -558,25 +584,40 @@ namespace labrador
 		}
 
 		const HRESULT hr = this->fence_->SetEventOnCompletion(target,
-			this->fence_event_);
+			this->fence_event_.Get());
 		if (FAILED(hr))
 		{
 			return hr;
 		}
 
-		WaitForSingleObjectEx(this->fence_event_, INFINITE, FALSE);
-		return S_OK;
+		// A failed wait has not seen the fence reach the target, so it is
+		// reported rather than taken as completion: the callers reset
+		// allocators and release memory the GPU may still be reading.
+		const DWORD waited = WaitForSingleObjectEx(this->fence_event_.Get(),
+			INFINITE, FALSE);
+		if (waited == WAIT_OBJECT_0)
+		{
+			return S_OK;
+		}
+		if (waited == WAIT_FAILED)
+		{
+			const DWORD error = GetLastError();
+			return error == ERROR_SUCCESS ? E_FAIL : HRESULT_FROM_WIN32(error);
+		}
+		return E_FAIL;
 	}
 
 	void DeviceResources::signal_frame()
 	{
-		ThrowIfFailed(this->record_signal());
+		ThrowIfFailed(this->record_signal(),
+			"The frame fence could not be signalled");
 	}
 
 	void DeviceResources::wait_for_frame()
 	{
 		ThrowIfFailed(this->block_until(
-			this->frame_fences_[static_cast<size_t>(this->frame_index_)]));
+			this->frame_fences_[static_cast<size_t>(this->frame_index_)]),
+			"The wait for the frame's previous work failed");
 	}
 
 	void DeviceResources::wait_for_gpu()
@@ -591,13 +632,14 @@ namespace labrador
 		// E_FAIL stands in for the case that cannot be explained that way,
 		// because ThrowIfFailed(S_OK) would be a silent return.
 		const HRESULT reason = this->device_->GetDeviceRemovedReason();
-		ThrowIfFailed(FAILED(reason) ? reason : E_FAIL);
+		ThrowIfFailed(FAILED(reason) ? reason : E_FAIL,
+			"The wait for the GPU to finish failed");
 	}
 
 	bool DeviceResources::try_wait_for_gpu() noexcept
 	{
 		if (!this->command_queue_ || !this->fence_ ||
-			this->fence_event_ == nullptr)
+			!this->fence_event_.IsValid())
 		{
 			return true;
 		}

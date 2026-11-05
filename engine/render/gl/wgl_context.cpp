@@ -42,6 +42,42 @@ namespace labrador
 				? nullptr : address;
 		}
 
+		// The 1.1 context that exists only to fetch wglCreateContextAttribsARB,
+		// released on every way out of create_context: made current only by
+		// the bootstrap, so it is made not current only if it still is.
+		class BootstrapContext
+		{
+		public:
+			BootstrapContext(HDC device_context, HGLRC context)
+				: device_context_(device_context), context_(context)
+			{
+			}
+			~BootstrapContext() { this->release(); }
+
+			BootstrapContext(const BootstrapContext&) = delete;
+			BootstrapContext& operator=(const BootstrapContext&) = delete;
+
+			HGLRC get() const { return this->context_; }
+
+			void release()
+			{
+				if (this->context_ == nullptr)
+				{
+					return;
+				}
+				if (wglGetCurrentContext() == this->context_)
+				{
+					wglMakeCurrent(this->device_context_, nullptr);
+				}
+				wglDeleteContext(this->context_);
+				this->context_ = nullptr;
+			}
+
+		private:
+			HDC device_context_ = nullptr;
+			HGLRC context_ = nullptr;
+		};
+
 		bool has_wgl_extension(HDC device_context, std::string_view extension)
 		{
 			using ExtensionsArb = const char*(WINAPI*)(HDC);
@@ -330,29 +366,36 @@ namespace labrador
 
 		if (!SetPixelFormat(made->device_context, format, &wanted))
 		{
-			throw std::runtime_error("This window cannot be given a 32-bit "
-				"double-buffered OpenGL pixel format.");
+			// The format was chosen and checked above, so what failed is the
+			// setting of it. A window keeps one pixel format for its life, so
+			// a format already set on it is the usual cause.
+			const DWORD error = GetLastError();
+			throw std::runtime_error("SetPixelFormat refused the OpenGL pixel "
+				"format chosen for this window, with Windows error " +
+				std::to_string(error) + ". A window takes one pixel format for "
+				"its lifetime; one already set on it is the usual cause.");
 		}
 
 		// The bootstrap. A 1.1 context exists only so that
 		// wglCreateContextAttribsARB can be asked for, because an extension
 		// entry point is fetched through a context and the context that can
 		// create a 3.3 core one is the thing being fetched.
-		HGLRC legacy = wglCreateContext(made->device_context);
-		if (legacy == nullptr ||
-			!wglMakeCurrent(made->device_context, legacy))
+		BootstrapContext legacy(made->device_context,
+			wglCreateContext(made->device_context));
+		if (legacy.get() == nullptr ||
+			!wglMakeCurrent(made->device_context, legacy.get()))
 		{
 			throw std::runtime_error(
 				"This machine has no OpenGL driver at all.");
 		}
 
-		CreateContextAttribs create_context_attribs =
+		// Through load_entry_point like every other entry point here, so a
+		// failure sentinel is the named refusal below rather than a call.
+		const CreateContextAttribs create_context_attribs =
 			reinterpret_cast<CreateContextAttribs>(
-				wglGetProcAddress("wglCreateContextAttribsARB"));
+				load_entry_point("wglCreateContextAttribsARB"));
 		if (create_context_attribs == nullptr)
 		{
-			wglMakeCurrent(made->device_context, nullptr);
-			wglDeleteContext(legacy);
 			throw std::runtime_error("This driver has no "
 				"WGL_ARB_create_context, so it cannot make an OpenGL 3.3 core "
 				"context. It is an OpenGL 2.1 driver or a software fallback.");
@@ -368,8 +411,7 @@ namespace labrador
 		made->gl_context = create_context_attribs(made->device_context,
 			nullptr, attributes);
 
-		wglMakeCurrent(made->device_context, nullptr);
-		wglDeleteContext(legacy);
+		legacy.release();
 
 		if (made->gl_context == nullptr ||
 			!wglMakeCurrent(made->device_context, made->gl_context))
