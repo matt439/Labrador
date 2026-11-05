@@ -270,14 +270,31 @@ export function steps(page, state) {
 		const errors = await evaluate('window.labradorBundle.runs.flatMap((run) => run.errors)');
 		assert(errors.length === 0, `unexpected onError: ${errors.join(' | ')}`);
 	};
+	// What the page was doing, for a quit that did not arrive: keys reach the
+	// game only while its canvas has the keyboard.
+	const quit_state = (index) => evaluate(`JSON.stringify({
+		focused: document.activeElement?.tagName ?? null,
+		page_focused: document.hasFocus(), visibility: document.visibilityState,
+		quit: window.labradorBundle.runs[${index}]?.quit ?? null,
+		frames: window.labradorBundle.runs[${index}]?.canvas?.labradorFrames ?? null,
+		status: document.getElementById('status').textContent,
+	})`);
 	const quit = async (index, already_paused = false) => {
+		// The page gives the canvas the keyboard when it mounts it; a key sent
+		// before that goes to whatever had focus and the game never hears it.
+		await until("document.activeElement === document.querySelector('canvas')",
+			'the running canvas never took the keyboard');
 		if (!already_paused) { await key('Escape', 27); }
 		for (const [code, vk] of [['ArrowDown', 40], ['ArrowDown', 40],
 			['ArrowDown', 40], ['Enter', 13]]) {
 			await key(code, vk);
 		}
-		await until(`window.labradorBundle.runs[${index}].quit === true && ${button_visible}`,
-			'QUIT did not reach the host callback and replay button');
+		try {
+			await until(`window.labradorBundle.runs[${index}].quit === true && ${button_visible}`,
+				'QUIT did not reach the host callback and replay button');
+		} catch (error) {
+			throw new Error(`${error.message}; page ${await quit_state(index)}`);
+		}
 		assert(await evaluate("document.getElementById('status').textContent === 'Thanks for playing.'"),
 			'QUIT did not show its status');
 		assert(await evaluate("document.getElementById('play').textContent === 'Play again'"),
