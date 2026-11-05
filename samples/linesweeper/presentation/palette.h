@@ -178,9 +178,10 @@ namespace linesweeper
 	// draw_sprite blends premultiplied on every backend (renderer.h;
 	// engine/render/SEAM.md#5): the equation is
 	// `dst = src.rgb + dst.rgb * (1 - a)`, so the source's colour channels are
-	// expected to have been multiplied by its alpha already. A tint of (r, g, b, 0.25) therefore does not fade
-	// the quad to a quarter - it adds nearly all of the colour and lets nearly
-	// all of the background through, which reads as a glow.
+	// expected to have been multiplied by its alpha already. A tint of
+	// (r, g, b, 0.25) therefore does not fade the quad to a quarter - it adds
+	// nearly all of the colour and lets nearly all of the background through,
+	// which reads as a glow.
 	//
 	// Which is a feature elsewhere and a bug here. The inside of the shadow
 	// under a falling piece wants to be dimmer than the piece, so it

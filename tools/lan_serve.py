@@ -26,13 +26,14 @@ from pathlib import Path
 
 # The types a browser build needs that Python's own table may lack. The Node
 # page runners and the website acceptance server share one table,
-# website/acceptance/server.mjs's CONTENT_TYPES; this one is kept to agree.
+# website/acceptance/server.mjs's CONTENT_TYPES; each entry here agrees with
+# that table's entry for the same extension.
 TYPES = {
     ".wasm": "application/wasm",
-    ".js": "text/javascript",
-    ".mjs": "text/javascript",
-    ".html": "text/html",
-    ".json": "application/json",
+    ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
     ".data": "application/octet-stream",
 }
 

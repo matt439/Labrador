@@ -77,19 +77,17 @@ endif()
 #
 # A separate executable from RenderTests, which is pure arithmetic and wants no
 # device. This one creates a device and a hidden window, so it is one of the
-# ctest entries that need a device (with MinimalSmokeTests and, under D3D12,
-# D3D12SynchronizationTests) and can fail for a reason outside the
-# repository: a Direct3D debug
-# build falls back to WARP and needs no GPU, but a release build has no such
-# fallback (device_resources.cpp), and neither the OpenGL backend nor the
-# Vulkan one has any fallback at all - Vulkan's software implementations are
-# installed rather than shipped - so all three need an adapter. THE RELEASE
-# HALF OF THAT IS ALSO A MEASUREMENT: CI runs this executable under x64-release
-# on a machine with no GPU and it passes, which is how a build machine is known
-# to offer an adapter rather than to fall back to one
-# (.github/workflows/ci.yml). Keeping it
-# apart means that failure names itself
-# instead of taking the arithmetic down with it.
+# ctest entries that need a device (with MinimalSmokeTests, CollisionSmokeTests
+# and, under D3D12, D3D12SynchronizationTests) and can fail for a reason
+# outside the repository: a Direct3D debug build falls back to WARP and needs
+# no GPU, but a release build has no such fallback (device_resources.cpp), and
+# neither the OpenGL backend nor the Vulkan one has any fallback at all -
+# Vulkan's software implementations are installed rather than shipped - so all
+# three need an adapter. THE RELEASE HALF OF THAT IS ALSO A MEASUREMENT: CI
+# runs this executable under x64-release on a machine with no GPU and it
+# passes, which is how a build machine is known to offer an adapter rather
+# than to fall back to one (.github/workflows/ci.yml). Keeping it apart means
+# that failure names itself instead of taking the arithmetic down with it.
 #
 # NOT BUILT AT ALL AGAINST THE NULL BACKEND, rather than built and excluded. It
 # records what it was asked to draw and never draws it, so read_back_buffer

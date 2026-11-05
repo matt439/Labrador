@@ -37,7 +37,8 @@ namespace labrador
 		// direction is in dds_file.cpp and sprite_font_file.cpp, where files
 		// that spell their format as a fourCC or a DXGI number are decoded;
 		// this is the half that belongs to a backend and it is a switch.
-		DXGI_FORMAT to_dxgi_format(TextureFormat format)
+		DXGI_FORMAT to_dxgi_format(TextureFormat format,
+			const std::string& name)
 		{
 			switch (format)
 			{
@@ -56,10 +57,11 @@ namespace labrador
 			}
 
 			// Every enumerator returns above. A value outside the enum is
-			// refused rather than uploaded as some other format's bytes.
-			throw std::invalid_argument("TextureFormat " +
-				std::to_string(static_cast<int>(format)) +
-				" has no Direct3D 11 format.");
+			// refused by name, as resource_factory.h promises, rather than
+			// uploaded as some other format's bytes.
+			throw std::runtime_error("Texture '" + name + "' is in a format "
+				"this backend has no Direct3D 11 format for (TextureFormat " +
+				std::to_string(static_cast<int>(format)) + ").");
 		}
 
 		// For the throw, because an eight-digit HRESULT is not an answer (T6).
@@ -124,7 +126,7 @@ namespace labrador
 		description.Height = static_cast<UINT>(texture.height);
 		description.MipLevels = static_cast<UINT>(texture.levels.size());
 		description.ArraySize = 1;
-		description.Format = to_dxgi_format(texture.format);
+		description.Format = to_dxgi_format(texture.format, name);
 		description.SampleDesc.Count = 1;
 		description.Usage = D3D11_USAGE_IMMUTABLE;
 		description.BindFlags = D3D11_BIND_SHADER_RESOURCE;

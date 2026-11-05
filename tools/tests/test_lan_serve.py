@@ -42,7 +42,7 @@ class ServeTests(unittest.TestCase):
             self.assertEqual(response.headers["Cache-Control"], "no-store")
             self.assertEqual(response.read(), b"\0asm\1\0\0\0")
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/Page.js") as response:
-            self.assertEqual(response.headers["Content-Type"], "text/javascript")
+            self.assertEqual(response.headers["Content-Type"], "text/javascript; charset=utf-8")
 
     @unittest.skipUnless(shutil.which("openssl"), "openssl makes the test certificate")
     def test_https_with_a_certificate(self):

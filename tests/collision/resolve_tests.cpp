@@ -74,7 +74,8 @@ TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 
 TEST_CASE("separation_along checks the preconditions its header states")
 {
-	// The header says `axis` must be unit length, and a longer one throws.
+	// The header says `normal` and `axis` must be unit length, and a longer
+	// one of either throws.
 	CHECK_THROWS_AS(separation_along(Vector2F::direction_down, 5.0f,
 		Vector2F(0.0f, 3.0f)), std::invalid_argument);
 	CHECK_THROWS_AS(separation_along(Vector2F(0.0f, 3.0f), 5.0f,

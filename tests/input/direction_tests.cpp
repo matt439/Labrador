@@ -194,9 +194,11 @@ TEST_SUITE("DirectionTests")
 			}
 		}
 
-		// One second: the press, nothing more until 0.4 s (frame 24), then
-		// one repeat per 0.1 s over the remaining 0.6 s. A rate halved, or
-		// a first delay dropped, changes either count.
+		// One second at 60 Hz: the press on frame 0, the first repeat on
+		// frame 24, then a repeat every seventh frame (31, 38, 45, 52 and
+		// 59), not every sixth, because the timer restarts at each repeat
+		// without carrying the overshoot. Seven moves in all. A rate
+		// halved, or a first delay dropped, changes either count.
 		CHECK(moves_before_first_delay == 1);
 		CHECK(moves == 7);
 	}

@@ -48,6 +48,10 @@ TEST_CASE("GL texture refusal leaves the caller's binding untouched and permits 
 	CHECK_NOTHROW(fixture.resources.resolve_texture("unsupported"));
 }
 
+// This pins the refusal a value outside the enum already meets:
+// is_block_compressed answers false for it, so check_uncompressed refuses it by
+// name. compressed_format's own refusal is unreachable while both switches list
+// every enumerator, and nothing here exercises it.
 TEST_CASE("GL refuses a format outside TextureFormat by name, before allocating")
 {
 	using namespace labrador;

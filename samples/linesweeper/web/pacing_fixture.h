@@ -9,7 +9,7 @@ namespace linesweeper
 	// web_full_well_top_out_first_burst_v1: all 200 visible cells. The native
 	// frame benchmark builds its board and HUD from these same functions; the
 	// browser's evolving burst is a separate workload from the benchmark's
-	// frozen zero-time frame. Rules-only and portable, so the bench and the
+	// frozen zero-time frame. Portable (no Emscripten), so the bench and the
 	// view tests compile it natively as well.
 	inline constexpr int pacing_particle_count = 9600;
 

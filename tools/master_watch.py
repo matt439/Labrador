@@ -13,7 +13,8 @@ GITHUB_EVENT_PATH and GH_TOKEN set; it calls gh and nothing else. It waits
 for its own rerun rather than hearing of it later, because a rerun started
 with the workflow's token raises no workflow_run event of its own. The wait
 is bounded inside the job's timeout, so a rerun that never finishes ends in a
-printed outcome rather than a killed job.
+printed outcome and a failed job rather than a killed one, and never in a
+green job.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ RERUN_INTERVAL = 30.0
 
 @dataclass(frozen=True)
 class Action:
-    kind: str  # "rerun", "report", "close" or "none"
+    kind: str  # "rerun", "report", "close", "expired" or "none"
     reason: str
 
 
@@ -81,7 +82,7 @@ def act(run: dict, gh: Callable[[Sequence[str]], str],
         gh(["run", "rerun", str(run["id"]), "--failed"])
         rerun = wait_for_rerun(run, gh, sleep)
         if rerun is None:
-            return Action("none", f"no rerun attempt completed after {RERUN_POLLS} polls")
+            return Action("expired", f"no rerun attempt completed after {RERUN_POLLS} polls")
         run = rerun
         action = decide(run)
     title = TITLE.format(workflow=run.get("name", "?"))
@@ -105,11 +106,17 @@ def gh_cli(arguments: Sequence[str]) -> str:
     return subprocess.run(["gh", *arguments], check=True, capture_output=True, text=True).stdout
 
 
-def main() -> int:
+def main(gh: Callable[[Sequence[str]], str] = gh_cli,
+         sleep: Callable[[float], None] = time.sleep) -> int:
     with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event:
         run = json.load(event)["workflow_run"]
-    action = act(run, gh_cli)
+    action = act(run, gh, sleep)
     print(f"{run.get('name')} #{run.get('run_number')}: {action.kind} ({action.reason})")
+    if action.kind == "expired":
+        # Neither green nor red is known, so the job must not end green.
+        print("The rerun did not finish inside this job's wait; its result is unknown "
+              "and this job fails so that it is looked at.", file=sys.stderr)
+        return 1
     return 0
 
 

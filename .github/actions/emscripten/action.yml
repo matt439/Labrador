@@ -3,11 +3,11 @@
 # CCACHE_SHA256, CCACHE_DIR and CCACHE_MAXSIZE in that workflow's env).
 #
 # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
-# reason ci.yml's Windows jobs find vcvars64 through vswhere: the tools to do
-# it are git and the SDK itself, and a build that can be done with those
-# should not add a supply chain to do it. The version is pinned because it is the one this
-# build was proven on, and a compiler that moves under a -Werror build moves
-# it from green to red with no commit to blame. The manager is cloned at
+# reason .github/actions/msvc-env finds vcvars64 through vswhere: the tools to
+# do it are git and the SDK itself, and a build that can be done with those
+# should not add a supply chain to do it. The version is pinned because it is
+# the one this build was proven on, and a compiler that moves under a -Werror
+# build moves it from green to red with no commit to blame. The manager is cloned at
 # emsdk's tag for that same version, so the scripts that install it and their
 # release table do not move with emsdk's default branch either. ccache is
 # downloaded and checked against its release's digest for the same reason.

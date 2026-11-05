@@ -42,7 +42,8 @@ namespace labrador
 		// place a DXGI number may not be named at all (texture_format.h says
 		// so). Six lines of duplication is the price of that rule, and it is
 		// the rule that makes a backend a folder rather than a convention.
-		DXGI_FORMAT to_dxgi_format(TextureFormat format)
+		DXGI_FORMAT to_dxgi_format(TextureFormat format,
+			const std::string& name)
 		{
 			switch (format)
 			{
@@ -61,10 +62,11 @@ namespace labrador
 			}
 
 			// Every enumerator returns above. A value outside the enum is
-			// refused rather than uploaded as some other format's bytes.
-			throw std::invalid_argument("TextureFormat " +
-				std::to_string(static_cast<int>(format)) +
-				" has no Direct3D 12 format.");
+			// refused by name, as resource_factory.h promises, rather than
+			// uploaded as some other format's bytes.
+			throw std::runtime_error("Texture '" + name + "' is in a format "
+				"this backend has no Direct3D 12 format for (TextureFormat " +
+				std::to_string(static_cast<int>(format)) + ").");
 		}
 
 		// For the throw, because an eight-digit HRESULT is not an answer (T6).
@@ -157,7 +159,7 @@ namespace labrador
 		description.Height = static_cast<UINT>(texture.height);
 		description.DepthOrArraySize = 1;
 		description.MipLevels = level_count;
-		description.Format = to_dxgi_format(texture.format);
+		description.Format = to_dxgi_format(texture.format, name);
 		description.SampleDesc.Count = 1;
 		description.SampleDesc.Quality = 0;
 		description.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;

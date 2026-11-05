@@ -83,14 +83,15 @@ namespace labrador
 
 		// Signal and wait for all previously queued work. Used for resource
 		// upload, read-back and creation rather than ordinary frame-slot reuse.
-		// Throws com_exception when signaling or arranging completion fails.
+		// Throws com_exception when signaling or arranging completion fails, or
+		// the wait itself fails: the device-removed reason when the device has
+		// gone, and otherwise the failing call's HRESULT.
 		void wait_for_gpu();
 
-		// The non-throwing form for teardown (T6) and resize recovery. Returns
-		// false if signaling or arranging completion fails; callers must not
-		// treat that as completed work. Returns true without waiting when queue,
-		// fence or event resources are absent. Resize can then reach its
-		// device-removal handling instead of unwinding through window dispatch.
+		// The non-throwing form for teardown (T6). Returns false if signaling
+		// or arranging completion fails, or the wait itself fails; callers must
+		// not treat that as completed work. Returns true without waiting when
+		// queue, fence or event resources are absent.
 		bool try_wait_for_gpu() noexcept;
 
 		// After a present: the swap chain decides which buffer is next.
@@ -136,6 +137,13 @@ namespace labrador
 		// non-throwing wait entry points.
 		HRESULT record_signal() noexcept;
 		HRESULT block_until(UINT64 target) noexcept;
+
+		// Signal and wait for all queued work, answering the failing call's
+		// HRESULT, or S_OK without waiting when queue, fence or event resources
+		// are absent. Resize calls it directly so that it can reach its
+		// device-removal handling instead of unwinding through window dispatch,
+		// and still report a live device's failure by its own code.
+		HRESULT signal_and_wait() noexcept;
 
 		Microsoft::WRL::ComPtr<IDXGIFactory4> factory_;
 		Microsoft::WRL::ComPtr<ID3D12Device> device_;

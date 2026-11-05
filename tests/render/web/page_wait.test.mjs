@@ -1,7 +1,8 @@
 // page_wait.mjs's bounded wait, against a fixture page and clock.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { NAVIGATION_ERROR, wait_for } from './page_wait.mjs';
+import { is_navigation_race } from './devtools.mjs';
+import { wait_for } from './page_wait.mjs';
 
 // A clock that only the wait's own pauses move.
 function clock() {
@@ -46,7 +47,7 @@ test('a navigation\'s failure is not yet only while navigating, and a check ends
 	try {
 		for (const text of ['Execution context was destroyed.', 'Cannot find default execution context',
 			'Cannot find context with specified id', 'Cannot find context', 'Inspected target navigated or closed']) {
-			assert.match(text, NAVIGATION_ERROR);
+			assert.equal(is_navigation_race(new Error(text)), true, text);
 		}
 		const answers = [new Error('Execution context was destroyed.'), true];
 		const evaluate = async () => {

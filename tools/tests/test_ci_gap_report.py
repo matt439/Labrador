@@ -98,11 +98,12 @@ class JunitTests(unittest.TestCase):
         gl = report.GAPS[0]
         result, detail = report.judge(gl, report.junit_summary(junit(["CoreTests", "RenderPixelTests"])))
         self.assertEqual(result, "failed")
-        self.assertIn("not registered: MinimalSmokeTests", detail)
+        self.assertIn("not registered: MinimalSmokeTests, CollisionSmokeTests", detail)
         result, detail = report.judge(gl, report.junit_summary(
-            junit(["CoreTests", "RenderPixelTests", "MinimalSmokeTests"])))
+            junit(["CoreTests", "RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"])))
         self.assertEqual((result, detail),
-                         ("passed", "3/3 passed; RenderPixelTests and MinimalSmokeTests passed"))
+                         ("passed", "4/4 passed; RenderPixelTests, MinimalSmokeTests and "
+                                    "CollisionSmokeTests passed"))
         # Without a Chromium, configure registers 19 of wasm-debug's 33 tests.
         wasm = report.GAPS[-1]
         unregistered = [f"Headless{index}" for index in range(19)]
@@ -183,7 +184,8 @@ class MainTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Nothing was run for `" + "a" * 40 + "`", text)
         self.assertIn("| `wasm-debug` | whole preset | planned: cmake --preset wasm-debug;", text)
-        self.assertIn("| `x64-debug-gl` | RenderPixelTests, MinimalSmokeTests on a real driver | not run: not selected |", text)
+        self.assertIn("| `x64-debug-gl` | RenderPixelTests, MinimalSmokeTests, CollisionSmokeTests on a real driver "
+                      "| not run: not selected |", text)
         self.assertEqual(text.count("\n| `"), len(report.GAPS))
 
     def test_execute_records_commit_dirty_tree_and_exit_code(self):

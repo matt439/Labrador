@@ -114,15 +114,24 @@ export const BUNDLE_KEYS = key_table(['Escape', 'Enter', 'Tab', 'KeyA',
 // dispatch latency to every level, so a shorter level leaves that walk room.
 const KEY_LEVEL_MS = 100;
 
-// How long a step waits for the page by default, in ms: a few frames' work on
-// a software rasteriser that a loaded runner can stretch many times over.
-const UNTIL_MS = 20000;
-// How long a GPU process crash may take to lose and restore the context.
-const GPU_RESTART_MS = 45000;
+// How long a step waits for the page, in ms. Every runner shares these, and
+// the slowest to ask is Safari: run_safari's evaluate is several WebDriver
+// round trips, so one attempt there costs about 80 ms where Chromium's costs a
+// few. Each deadline is at least what the step's attempt count gave at that
+// cost when the waits were counted in attempts, so no runner's allowance is
+// shorter than it was.
+//
+// By default: a few frames' work on a software rasteriser that a loaded
+// runner can stretch many times over (500 attempts).
+const UNTIL_MS = 60000;
+// How long a GPU process crash may take to lose and restore the context
+// (1,500 attempts).
+const GPU_RESTART_MS = 120000;
 // The page offers a new game once a lost context has stayed away for
-// CONTEXT_WAIT_MS, its own timer; the step waits that and a margin.
+// CONTEXT_WAIT_MS, its own timer; the step waits that and a margin (750
+// attempts together).
 const CONTEXT_WAIT_MS = 10000;
-const CONTEXT_WAIT_MARGIN_MS = 15000;
+const CONTEXT_WAIT_MARGIN_MS = 50000;
 
 // One run's shared state: the case being driven, every request the page
 // made, and what the interception and the expected diagnostics saw.

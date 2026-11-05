@@ -184,7 +184,7 @@ if(PROJECT_IS_TOP_LEVEL)
     # sample's folder because minimal's is the template a new project
     # copies, and the runner is this repository's, not the project's.
     if(EMSCRIPTEN AND LABRADOR_TEST_BROWSER)
-        # Every Chromium page entry: run_page.mjs serving PAGE, with the
+        # Every page entry this file registers: run_page.mjs serving PAGE, with the
         # runner's TIMEOUT in seconds (60 unless given), and every argument
         # after ARGS passed to the runner as it is.
         function(labrador_page_test name)

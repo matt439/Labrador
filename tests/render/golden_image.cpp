@@ -5,6 +5,8 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #include <filesystem>
@@ -183,17 +185,18 @@ namespace
 	// BOUGHT, BECAUSE IT IS A FORMAT EDGE (T9), and one codec on every platform
 	// rather than each platform's own. A browser has no codec this file can
 	// call synchronously, and two codecs reading one set would be two claims
-	// about what the set holds. The engine's PNG
-	// textures use the same port (engine/render/png_file.h), but this file
-	// reads golden frames with no premultiplying, so it calls lodepng itself.
+	// about what the set holds. The engine's PNG textures use the same port
+	// (engine/render/png_file.h), but this file reads golden frames with no
+	// premultiplying, so it calls lodepng itself.
 	//
 	// LOSSLESS BOTH WAYS, AND NOT ON TRUST. The encoder may store a frame in
 	// whatever PNG colour type holds it exactly - RGB when every alpha is 255,
 	// a palette when there are few enough colours - and read_png asks
 	// lodepng::decode for 8-bit RGBA whatever it chose, with no colour
-	// management anywhere on the path. The check-mode run that follows every regeneration compares each
-	// frame against the file just written from it, so a build where that
-	// stopped being true would fail once per image in the set.
+	// management anywhere on the path. The check-mode run that follows every
+	// regeneration compares each frame against the file just written from it,
+	// so a build where that stopped being true would fail once per image in
+	// the set.
 	bool read_file(const std::filesystem::path& path,
 		std::vector<unsigned char>& bytes)
 	{
@@ -349,8 +352,9 @@ namespace
 	//
 	// MEASURED, NOT GUESSED, with this number set to zero, against every image
 	// the set held when the allowance was measured; images added since are
-	// held to the same allowance and have not needed more. This machine's GPU writes every frame byte for byte through
-	// all four desktop backends and through Chrome's ANGLE. SwiftShader writes
+	// held to the same allowance and have not needed more. This machine's GPU
+	// writes every frame byte for byte through all four desktop backends and
+	// through Chrome's ANGLE. SwiftShader writes
 	// every frame byte for byte too. WARP differs on two frames, both of them
 	// blend cases, by 1. CI's run 41053232985 measured the runner's two:
 	// its Direct3D adapter, under x64-debug, x64-debug-d3d12 and x64-release
@@ -552,8 +556,19 @@ TEST_CASE("a golden frame that cannot be written says why")
 	// create, and when that fails the cause is the one thing the developer
 	// needs. A regular file where the directory should be makes either the
 	// directory or the file fail, and both say which path it was.
+	//
+	// Named for this process, so two test runs at once never share it, and
+	// anything a crashed run left under the name is removed first.
+#if defined(_WIN32)
+	const std::string process = std::to_string(GetCurrentProcessId());
+#else
+	const std::string process = std::to_string(static_cast<long>(getpid()));
+#endif
 	const std::filesystem::path blocker =
-		std::filesystem::temp_directory_path() / "labrador_golden_write_blocker";
+		std::filesystem::temp_directory_path() /
+		("labrador_golden_write_blocker_" + process);
+	std::error_code removed;
+	std::filesystem::remove_all(blocker, removed);
 	{
 		std::ofstream file(blocker, std::ios::binary | std::ios::trunc);
 		REQUIRE(file.is_open());
@@ -564,6 +579,5 @@ TEST_CASE("a golden frame that cannot be written says why")
 		std::vector<unsigned char>(4, 255), error));
 	CHECK(error.find(blocker.string()) != std::string::npos);
 
-	std::error_code removed;
-	std::filesystem::remove(blocker, removed);
+	std::filesystem::remove_all(blocker, removed);
 }

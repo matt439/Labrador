@@ -40,7 +40,7 @@ class Gap:
     required: tuple[str, ...] = ()
 
 
-DEVICE_TESTS = ("RenderPixelTests", "MinimalSmokeTests")
+DEVICE_TESTS = ("RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests")
 # The entries a wasm build that rasterizes registers only when configure finds
 # a Chromium; tests/ctest_inventory.json owns the list.
 BROWSER_TESTS = tuple(json.loads((REPOSITORY / "tests/ctest_inventory.json").read_text(
@@ -117,7 +117,9 @@ def judge(gap: Gap, groups: dict[str, list[str]]) -> tuple[str, str]:
     if problems:
         return "failed", summary + "; " + "; ".join(problems)
     if gap.real_driver:
-        summary += "; " + " and ".join(gap.real_driver) + " passed"
+        names = list(gap.real_driver)
+        spoken = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+        summary += "; " + spoken + " passed"
     elif gap.required:
         summary += f"; including {len(gap.required)} required tests"
     return "passed", summary

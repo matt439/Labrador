@@ -384,8 +384,8 @@ read as the record of why the tree is the shape it is.
 A script, runner or tool program in this repository exits 0 when it ran and
 passed, 1 when it ran and found a failure, and 2 when it could not run as
 asked: a bad command line, or a folder or checkout not in the state it needs.
-A usage error prints its reason and the usage, not a stack trace, and starts
-nothing first. ctest and CI fail on any nonzero status; the split tells a
+A usage error prints its reason (and the usage where the tool has one), not a
+stack trace, and starts nothing first. ctest and CI fail on any nonzero status; the split tells a
 person reading a log whether to fix the command or the code.
 
 ## Golden image review records

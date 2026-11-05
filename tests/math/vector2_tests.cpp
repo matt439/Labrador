@@ -21,7 +21,7 @@ TEST_SUITE("Vector2")
 		CHECK(v + (-v) == Vector2F::zero);
 		CHECK(-Vector2F::zero == Vector2F::zero);
 
-		// It agrees with the spelling it replaces.
+		// It agrees with multiplying by -1.
 		CHECK(-v == v * -1.0f);
 	}
 	TEST_CASE("cross is the signed parallelogram area, and it is a scalar")

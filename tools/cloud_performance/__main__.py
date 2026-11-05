@@ -12,10 +12,10 @@ from typing import Any
 
 from . import analysis, infrastructure, release
 from .common import (
+    BUNDLED_WORKER,
     RUN_STARTUP_SLACK_SECONDS,
     canonical,
     deadline,
-    BUNDLED_WORKER,
     inside,
     launch_key,
     load_config,

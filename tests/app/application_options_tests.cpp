@@ -68,7 +68,7 @@ TEST_CASE("a view capacity below one is rejected, naming the field")
 	}
 }
 
-TEST_CASE("a zero frame rate, inverted thread range, zero window minimum or empty class name is rejected")
+TEST_CASE("a zero frame rate or thread minimum, inverted thread range, zero window minimum or empty class name is rejected")
 {
 	// Each of these would otherwise fail after startup: at a divisor, in an
 	// inverted thread range or at a window class with no name.

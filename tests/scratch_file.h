@@ -97,6 +97,10 @@ namespace labrador_tests
 				"labrador_" + std::to_string(next_scratch_id()) + "_");
 			leaf += name;
 			this->path_ = std::filesystem::temp_directory_path() / leaf;
+			// A crashed run's folder of the same name is emptied first, so
+			// none of its content is read as this run's.
+			std::error_code ignored;
+			std::filesystem::remove_all(this->path_, ignored);
 			std::filesystem::create_directories(this->path_);
 		}
 

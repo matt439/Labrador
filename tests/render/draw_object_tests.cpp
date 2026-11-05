@@ -2,8 +2,8 @@
 
 #include "engine/render/draw_object.h"
 #include "engine/math/rectangle_rotated.h"
-#include "engine/math/segment.h"
 #include "engine/math/scalar.h"
+#include "engine/math/segment.h"
 #include "engine/math/vector2f.h"
 
 #include <cmath>
