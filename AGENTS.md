@@ -83,6 +83,11 @@ loss, quit and replay over WebDriver BiDi
 ([run_firefox.mjs](tests/render/web/run_firefox.mjs)). CI's image has a
 Firefox but no WebGL2 in it (no GPU, and no software WebGL by default), so CI
 runs only `FirefoxWebWindowTests`; the drawing entries need a GPU.
+CI's `safari` job, on macos-latest, runs the six sample pages and the bundle
+page from the `wasm` job's artifacts in desktop Safari through
+[run_safari.mjs](tests/render/web/run_safari.mjs) and safaridriver; it is not
+a ctest entry. Locally, `--driver geckodriver --browser-name firefox` checks
+the runner, not Safari.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 Changes confined to `.md` files or `docs/` run the standalone CMake lint

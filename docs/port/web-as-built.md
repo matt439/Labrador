@@ -146,7 +146,7 @@ What M2 could not show was a frame, because the browser build drew with null.
 Its size number was taken without a renderer: at `wasm-release` the module was
 343 KB and its loader 85 KB, 109 KB and 20 KB under Brotli.
 
-**M3 draws LineSweeper in Chrome and Firefox, and Safari is owed.** D1 is as
+**M3 draws LineSweeper in Chrome, Firefox and Safari, and R5 is owed.** D1 is as
 decided: `gl/` holds the three translation units every backend has and two
 context files, `wgl_context.cpp` (the WGL loader and context, which was
 `gl_functions.cpp`) and `web_context.cpp`, and `engine/CMakeLists.txt`
@@ -218,12 +218,20 @@ and the vendor and renderer names. What it met and where it departed:
   bucket, `ANGLE (NVIDIA, NVIDIA GeForce GTX 980 ...), or similar`. The Win32 GL
   LineSweeper and minimal samples were looked at on screen: no channel-swap
   tint, legible text, the pause menu, and exit 0.
-- **Safari, so far.** The owner's current MacBook Air runs macOS 27.0.1 and
-  Safari 27.0.1 (About Safari, read by the owner on 2026-11-03), above the
-  18.4 that dropping legacy wasm exceptions needs. The live demo loaded and was
-  played briefly there that day; that is evidence for Safari 27.0.1 only.
-- **Owed before M3 is done.** In Safari: one full match on the live demo, quit
-  and played again (SM-09), and the six sample pages (WEB#1). And R5: headless Chrome gave 181
+- **Safari.** CI's `safari` job drives the six sample pages and the bundle page
+  in desktop Safari through safaridriver on GitHub's hosted macOS runner
+  ([run_safari.mjs](../../tests/render/web/run_safari.mjs)). Its first run,
+  on 2026-11-05 in Safari 26.6.2, drew every page, heard a forced context loss
+  and restoration and drew again, took each page's keys and quit, and played,
+  quit and replayed the bundle; `RENDERER` read `WebKit WebGL` and the
+  extension unmasked `Apple GPU`. The
+  [Safari section](web-to-be-tested.md#safari-sample-checks-web1) of the
+  to-be-tested list has the run and what it does not prove. The owner's
+  current MacBook Air runs macOS 27.0.1 and Safari 27.0.1 (About Safari, read
+  by the owner on 2026-11-03), above the 18.4 that dropping legacy wasm
+  exceptions needs; the live demo loaded and was played briefly there that day.
+- **Owed before M3 is done.** The owner's informal play of the live demo on
+  the Air (SM-09). And R5: headless Chrome gave 181
   animation-frame callbacks in 3 s, a median of 16.7 ms between them (14.7 to
   16.9), which is a headless measurement and not the judder measurement on a
   60 Hz and a high-refresh display that R5 asks for.

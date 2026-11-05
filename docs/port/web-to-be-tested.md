@@ -43,14 +43,18 @@ update `web.md` §9's status summary, milestone row or risk row.
 
 ## Needs Safari (M3's done-when)
 
-- [ ] LineSweeper, local_multiplayer, minimal, collision, the audio sample and
-      the components gallery in desktop Safari: drawing, keys, quit, context loss and restore. The owner's
-      current MacBook Air is the machine: macOS 27.0.1, Safari 27.0.1
-      (2026-11-03). Moving off legacy wasm exceptions needs Safari 18.4 on
-      every browser the demo claims. So far the live demo has loaded and been
-      played briefly there; no sample page has been checked.
-- [ ] Safari masks `RENDERER` as "WebKit WebGL", as assumed, so the device
-      strings are unmasked through the extension.
+- [x] LineSweeper, local_multiplayer, minimal, collision, the audio sample and
+      the components gallery in desktop Safari: drawing, keys, quit, context loss and restore.
+      Moving off legacy wasm exceptions needs Safari 18.4 on every browser the
+      demo claims. Checked 2026-11-05 in Safari 26.6.2 on GitHub's hosted
+      `macos-26-arm64` runner; the [Safari section](#safari-sample-checks-web1)
+      has the run. The owner's current MacBook Air (macOS 27.0.1, Safari
+      27.0.1, 2026-11-03) has loaded and briefly played the live demo; play
+      there stays informal (SM-09).
+- [x] Safari masks `RENDERER` as "WebKit WebGL", as assumed, so the device
+      strings are unmasked through the extension. The same run read
+      `RENDERER` as `WebKit WebGL` and, through `WEBGL_debug_renderer_info`,
+      `Apple GPU` from `Apple Inc.`.
 
 *Amended 2026-11-03:* re-planned as an automated safaridriver run on
 `macos-latest` (`WEB#1` in TODO.md) plus the owner's informal play on the Air.
@@ -518,6 +522,48 @@ ctest --preset wasm-release -R "^Firefox" --output-on-failure
 node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --sample linesweeper
 node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --bundle out/build/wasm-release/web-dist/linesweeper
 ```
+
+## Safari sample checks (WEB#1)
+
+- [x] Run the six sample pages and LineSweeper's bundle page in desktop Safari
+      with the [Safari WebDriver runner](../../tests/render/web/run_safari.mjs),
+      as CI's `safari` job does on every change that builds.
+      **2026-11-05, CI run 41956008919 of pull request 120 (branch head
+      `dee1830`); all seven passed.** Safari 26.6.2 under safaridriver on
+      GitHub's hosted `macos-26-arm64` image 20261026.0455.2, Node 24.22.1,
+      one session per page, from the `wasm` job's `wasm-sample-pages` and
+      `linesweeper-web` artifacts. WebGL2 was available: `RENDERER` read
+      `WebKit WebGL` and `WEBGL_debug_renderer_info` unmasked `Apple GPU`
+      from `Apple Inc.`. Every sample page initialised, cleared and submitted
+      `drawElements` across 60 more animation frames, heard a forced
+      `WEBGL_lose_context` loss and its restoration, drew again on the restored
+      context across 60 more frames, took its trusted keys, reached
+      `Module.onQuit`, and made no console warning or error, uncaught error,
+      unhandled rejection or `Module.onError`. The runner's own totals at quit:
+
+      | Page | `.wasm` bytes, SHA-256 prefix | Clears | `drawElements` | Elements |
+      |---|---|---:|---:|---:|
+      | linesweeper | 482,462, `a341aee50ade` | 265 | 1,336 | 310,794 |
+      | minimal | 438,365, `0c766f25e541` | 163 | 163 | 89,940 |
+      | collision | 458,067, `34bf9d5f7635` | 135 | 270 | 146,610 |
+      | audio | 516,025, `6113af6f1d81` | 158 | 158 | 150,732 |
+      | local_multiplayer | 455,510, `533c728ab08a` | 135 | 270 | 302,940 |
+      | components | 476,936, `68c1d01380b9` | 362 | 2,520 | 564,858 |
+
+      The bundle page (`linesweeper.wasm` 476,013 bytes, `aef5c7e08877`) ran
+      the same desktop play, Tab out of the game, forced context loss and
+      restore, quit and replay that its Chromium and Firefox entries run.
+
+      What these runs do not prove: pixels (nothing was read back or looked
+      at), a physical Mac's GPU (the runner is a virtual machine whose WebGL2
+      draws on a virtual Apple GPU), Safari 27 (the owner's Air runs 27.0.1;
+      the runner's Safari is the image's), sound (`WEB#3`), a physical pad or
+      display, WebWindow input or shell CSS, and a warning Safari prints itself
+      without a console call: classic WebDriver has no console log, so the
+      runner's hooks, which its server puts at the top of each page's
+      `<head>`, hear only what the page says. The bundle's touch and
+      controller gates, failure pages, real GPU loss, real tab switch and
+      repeated-play memory run only in Chromium.
 
 Record the build's source identity and each actual outcome before ticking a
 box. Old generated outputs are not evidence of the current checkout.
