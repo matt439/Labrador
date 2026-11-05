@@ -334,8 +334,8 @@ namespace labrador
 		//
 		// So the frame that was in progress contributes nothing, exactly as a
 		// frame begun and never submitted does (begin_frame below), and the
-		// caller sees one frame's drawing lost rather than an exception it has
-		// nowhere to catch.
+		// caller sees one frame's drawing lost rather than an exception that
+		// closes the window.
 		//
 		// AND BEFORE create_device IT REBUILDS NOTHING AND ANSWERS false, which
 		// is a statement about an ordering Win32 allows: a shell can be sent a

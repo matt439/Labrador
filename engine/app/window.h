@@ -212,6 +212,9 @@ namespace labrador
 		// the monitor's, and a windowed one makes no report at all. Either has
 		// the client size it asked for, unless that is below the smallest
 		// window the system allows.
+		//
+		// A handler that throws during construction ends it: what was made
+		// is taken down and the handler's exception comes out of this call.
 		Window(const WindowOptions& options, WindowNotify* notify);
 
 		// Takes down what the constructor made, on every path out - not only
@@ -260,7 +263,12 @@ namespace labrador
 		// Ticking only on an empty queue is the loop, not an implementation
 		// detail of it - draining the queue first is a defensible design and
 		// a different one, and it changes frame pacing. An exception out of
-		// tick() or out of a handler comes out of this call.
+		// tick() or out of a handler comes out of this call. A handler's is
+		// caught where its message arrived, however it arrived - from this
+		// loop, sent by a call below such as resize_client, or dispatched by
+		// the system's own loop while the player drags the window - and the
+		// window is closed there, with no tick and no notify call after it.
+		// The loop then ends and the exception is rethrown here.
 		//
 		// IN A BROWSER THIS CALL DOES NOT RETURN, and the stack below it does
 		// not survive it. The loop is the browser's: tick() runs once per
@@ -282,6 +290,10 @@ namespace labrador
 		// the page's Module.onQuit if it supplied one, because the page is
 		// what decides what a finished game looks like. A second call, or a
 		// call after the window has already gone, does nothing.
+		//
+		// The same holds for every call below: once the window has closed -
+		// by close(), by the player, or by an exception it caught - each of
+		// them does nothing and reports nothing to notify.
 		void close() const;
 
 		// Resizes so `client_size` pixels are left to draw into, under

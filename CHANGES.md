@@ -80,6 +80,32 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Keep handler exceptions inside the Win32 window, and make a closed window inert
+
+**Behaviour change.** An exception thrown by a `WindowNotify` handler on
+Windows closes the window and comes out of `pump_until_quit`, or out of the
+`Window` constructor, instead of unwinding through user32, including one
+thrown from a message sent during construction, `resize_client` or a window
+drag. A constructor that throws leaves no window and no registered class.
+Once a window has closed, every `Window` call does nothing on both platforms;
+on Windows `resize_client`, the full-screen calls and the cursor calls acted
+on a destroyed window before.
+
+### 2026-11-05 - Close Application's COM apartment last, and answer calls before initialize
+
+**Behaviour change.** Before `initialize()`, `Application::window()` answers
+null and `quit()` does nothing; `set_resolution` and `set_fullscreen` record
+the request in the options, and the window opens with it. Each of these
+dereferenced a null window before. COM on Windows is now uninitialised after
+the audio device, renderer and window are destroyed, not before.
+
+### 2026-11-05 - Make a suspended XInput reader answer every slot disconnected
+
+**Behaviour change.** A suspended `GamepadReader` answers every slot
+disconnected on Windows, as it already did in a browser. XInput kept
+reporting connected pads with live buttons while the game was in the
+background. A game that read pads while suspended now sees none.
+
 ### 2026-11-05 - Make the three audio backends agree on one-shots, bad indices and bank opens
 
 **Behaviour change.** The three audio backends now agree:

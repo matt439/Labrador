@@ -48,25 +48,13 @@ namespace labrador
 		// window lost the foreground or was minimised, and in a browser the
 		// page was hidden. Not the keyboard leaving a canvas, which a player
 		// on a pad never asked for (Application says how the two are told
-		// apart). A suspended reader answers disconnected for every slot, so a
-		// button held down while the game is in the background is not waiting
-		// to be delivered as input the moment it comes back.
-		//
-		// THAT LAST CLAUSE IS NOT THIS CLASS'S TO KEEP, and it should not be
-		// read as the thing that makes it true. Both calls forward straight to
-		// the backend with no flag of their own, the backend implements
-		// suspension differently per pad API, and which pad API this build
-		// compiles is not chosen here: the vcpkg DirectXTK target carries
-		// USING_XINPUT in its interface definitions, which pre-empts the
-		// selection inside GamePad.h before it runs. Whether XInput honours a
-		// suspend on a current Windows is the backend's affair and is not
-		// verified in this tree.
-		//
-		// What is guaranteed is narrower and lives in gamepad.h: an edge
-		// requires the slot to have been occupied on both frames, so every
-		// absence this reader DOES report - a replug, the first poll, a
-		// suspension that works - is suppressed rather than delivered as a
-		// press. That holds whichever backend is behind this seam.
+		// apart). Every sample() taken while suspended answers disconnected
+		// for every slot, whatever the pad API would say, so a button held
+		// down while the game is in the background is not waiting to be
+		// delivered as input the moment it comes back. The first sample()
+		// after resume() reads the pads again; gamepad.h's rule that an edge
+		// needs the slot occupied on both frames keeps that return, like a
+		// replug or the first poll, from arriving as a press.
 		//
 		// Suspension also stops every pad's motors and refuses vibration
 		// until resume, and resume replays nothing: a rumble asked for before

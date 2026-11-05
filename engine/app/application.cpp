@@ -84,18 +84,21 @@ namespace labrador
 		// path, since run() returns the instant WM_QUIT arrives with the stack
 		// still full. Reordering the base list cannot fix it. See
 		// StateContext::clear.
-		//
-		// CoUninitialize below is the same hazard in the destructor's own body
-		// rather than in its member list, and this line is what puts the states
-		// in front of it too.
 		this->clear();
 
 		if (this->audio_device_)
 		{
 			this->audio_device_->suspend();
 		}
+
+		// The COM apartment closes after this body, when com_apartment_ is
+		// destroyed: last of all, behind every service (application.h).
+	}
+
+	Application::ComApartment::~ComApartment()
+	{
 #if defined(_WIN32)
-		if (this->com_initialized_)
+		if (this->initialized)
 		{
 			CoUninitialize();
 		}
@@ -120,7 +123,7 @@ namespace labrador
 		{
 			throw std::runtime_error("CoInitializeEx failed.");
 		}
-		this->com_initialized_ = true;
+		this->com_apartment_.initialized = true;
 #endif
 
 		this->resolution_manager_ = std::make_unique<ResolutionManager>();
@@ -246,15 +249,27 @@ namespace labrador
 		return this->window_->exit_code();
 	}
 
+	// Before initialize() there is no window to close, and nothing is
+	// running for a quit to end.
 	void Application::quit() const
 	{
-		this->window_->close();
+		if (this->window_)
+		{
+			this->window_->close();
+		}
 	}
 
+	// The three below keep what was asked in the options, as set_cursor_*
+	// do, so a call before the window exists is the option it would have
+	// been: initialize() sizes the window from them.
 	void Application::set_resolution(ScreenResolution resolution)
 	{
 		this->options_.resolution = resolution;
 		this->options_.client_size.reset();
+		if (!this->window_)
+		{
+			return;
+		}
 		this->resolution_manager_->set_resolution(resolution);
 
 		// The WM_SIZE this produces re-points the resolution manager at what
@@ -273,6 +288,10 @@ namespace labrador
 		requested.validate();
 
 		this->options_.client_size = client_size;
+		if (!this->window_)
+		{
+			return;
+		}
 		this->resolution_manager_->set_resolution_exactly(client_size);
 		this->window_->resize_client(client_size);
 	}
@@ -280,6 +299,10 @@ namespace labrador
 	void Application::set_fullscreen(bool fullscreen)
 	{
 		this->options_.fullscreen = fullscreen;
+		if (!this->window_)
+		{
+			return;
+		}
 
 		if (fullscreen)
 		{
@@ -812,7 +835,7 @@ namespace labrador
 	}
 	void* Application::window() const
 	{
-		return this->window_->handle();
+		return this->window_ ? this->window_->handle() : nullptr;
 	}
 
 }

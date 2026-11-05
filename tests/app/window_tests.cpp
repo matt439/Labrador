@@ -52,7 +52,15 @@ namespace
 		{
 			this->log.push_back("size " + std::to_string(width) + "x" +
 				std::to_string(height));
+			if (this->on_size)
+			{
+				this->on_size();
+			}
 		}
+
+		// What a size report does after it is logged, so a case can make a
+		// handler throw from inside window_proc.
+		std::function<void()> on_size;
 
 		mutable Key last_down = Key::none;
 		mutable Key last_up = Key::none;
@@ -236,6 +244,95 @@ TEST_CASE("an exception out of the loop leaves no window behind")
 	}
 
 	CHECK_FALSE(IsWindow(handle));
+	CHECK_FALSE(quit_is_queued());
+}
+
+TEST_CASE("a handler that throws on a dispatched message closes the window, and the pump rethrows")
+{
+	// A posted WM_SIZE reaches window_proc through DispatchMessage, which is
+	// user32's frame and not one an exception may cross. The window keeps it
+	// and the loop ends without another tick.
+	RecordingNotify notify;
+	notify.on_size = []() { throw std::runtime_error("resize failed"); };
+
+	HWND handle = nullptr;
+	{
+		Window window(hidden_options(), &notify);
+		handle = hwnd(window);
+		notify.log.clear();
+		REQUIRE(PostMessageW(handle, WM_SIZE, SIZE_RESTORED,
+			MAKELPARAM(80, 80)) != FALSE);
+
+		CHECK_THROWS_WITH_AS(window.pump_until_quit(), "resize failed",
+			std::runtime_error);
+		CHECK(notify.log == std::vector<std::string>{ "size 80x80" });
+		CHECK_FALSE(IsWindow(handle));
+		CHECK(hwnd(window) == nullptr);
+	}
+
+	CHECK_FALSE(class_is_registered());
+	CHECK_FALSE(quit_is_queued());
+}
+
+TEST_CASE("a handler that throws on a sent message closes the window, and the next pump rethrows")
+{
+	// SetWindowPos sends its WM_SIZE straight to window_proc, with no pump
+	// on the stack. The call returns, the window is gone, every later call
+	// does nothing, and the loop rethrows before its first tick.
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	notify.on_size = []() { throw std::runtime_error("resize failed"); };
+	notify.log.clear();
+
+	// Past the smallest window, so the size changes and Windows reports it.
+	CHECK_NOTHROW(window.resize_client(labrador::Vector2I(400, 300)));
+	REQUIRE(notify.log.size() == 1);
+	CHECK(notify.log[0].rfind("size ", 0) == 0);
+	CHECK_FALSE(IsWindow(handle));
+	CHECK(hwnd(window) == nullptr);
+
+	CHECK_THROWS_WITH_AS(window.pump_until_quit(), "resize failed",
+		std::runtime_error);
+	CHECK(notify.log.size() == 1);
+	CHECK_FALSE(quit_is_queued());
+}
+
+TEST_CASE("a handler that throws while the window is made leaves nothing behind")
+{
+	// Created hidden and full screen, the window reports the size it asked
+	// for before the constructor returns. A handler throwing there is the
+	// constructor's exception, with no window and no class left over.
+	RecordingNotify notify;
+	notify.on_size = []() { throw std::runtime_error("first size refused"); };
+	WindowOptions options = hidden_options();
+	options.fullscreen = true;
+
+	CHECK_THROWS_WITH_AS(Window(options, &notify), "first size refused",
+		std::runtime_error);
+	CHECK_FALSE(notify.log.empty());
+	CHECK(FindWindowW(L"LabradorWindowTests", nullptr) == nullptr);
+	CHECK_FALSE(class_is_registered());
+	CHECK_FALSE(quit_is_queued());
+}
+
+TEST_CASE("every call after the window has closed does nothing")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	window.close();
+	window.pump_until_quit();
+	notify.log.clear();
+
+	CHECK_NOTHROW(window.resize_client(labrador::Vector2I(96, 80)));
+	CHECK_NOTHROW(window.enter_fullscreen());
+	CHECK_NOTHROW(window.leave_fullscreen(labrador::Vector2I(96, 80)));
+	CHECK_NOTHROW(window.set_cursor_visible(false));
+	CHECK_NOTHROW(window.set_cursor_confined(true));
+	CHECK_NOTHROW(window.close());
+
+	CHECK(notify.log.empty());
+	CHECK(hwnd(window) == nullptr);
 	CHECK_FALSE(quit_is_queued());
 }
 

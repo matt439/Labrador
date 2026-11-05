@@ -215,3 +215,33 @@ TEST_CASE("a live Application opens at, and resizes to, a client size no preset 
 		check_size(app, window);
 	}
 }
+
+TEST_CASE("before initialize there is no window, and its calls are the options it opens with")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"ApplicationBeforeInitializeTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	options.fullscreen = true;
+	Application app(std::move(options));
+
+	CHECK(app.window() == nullptr);
+	CHECK_NOTHROW(app.quit());
+	CHECK_NOTHROW(app.set_resolution(ScreenResolution::s_1920_1080));
+	CHECK_NOTHROW(app.set_resolution(Vector2I(700, 450)));
+	CHECK_NOTHROW(app.set_fullscreen(false));
+	CHECK_FALSE(app.fullscreen());
+
+	// A size below the minimum is still refused before there is a window.
+	CHECK_THROWS_AS(app.set_resolution(Vector2I(100, 450)),
+		std::invalid_argument);
+
+	app.initialize();
+	const HWND window = static_cast<HWND>(app.window());
+	REQUIRE(window != nullptr);
+	CHECK(client_size(window) == Vector2I(700, 450));
+	CHECK(app.resolution_manager()->resolution_ivec() == Vector2I(700, 450));
+	CHECK(app.resolution_manager()->resolution() ==
+		ScreenResolution::s_1920_1080);
+}

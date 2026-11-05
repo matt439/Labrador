@@ -69,7 +69,14 @@ only because it is inherited from.
 
 ## 4. Why the members are declared in the order they are
 
-**The audio device first.** What order the audio objects die in is not the
+**The COM apartment before everything.** On Windows `initialize()` opens a
+COM apartment on its thread, and the XAudio2 engine and the other Windows
+services are made under it. Closing it with `CoUninitialize` in the
+destructor's body would close it before any member had been destroyed, with
+those services still alive. It is a member declared first instead, so its
+destructor runs after every other member's.
+
+**The audio device first among the services.** What order the audio objects die in is not the
 shell's business, which is what the audio seam bought. DirectXTK requires its
 `AudioEngine` to outlive every `WaveBank` and `SoundEffectInstance`; that rule
 sits beside the library that imposes it, in
