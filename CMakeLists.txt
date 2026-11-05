@@ -118,6 +118,7 @@ if(PROJECT_IS_TOP_LEVEL)
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_key.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_input_bridge.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_host.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/safari_protocol.test.mjs"
         )
 
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium

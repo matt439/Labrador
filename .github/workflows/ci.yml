@@ -747,6 +747,22 @@ jobs:
           path: out/build/wasm-release/web-dist/linesweeper/
           if-no-files-found: error
 
+      # The six development sample pages, for the safari job below: each
+      # sample's page, loader and module, nothing else of the build.
+      - name: Keep the sample pages
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-sample-pages
+          path: |
+            out/build/wasm-release/samples/linesweeper/LineSweeperSample.*
+            out/build/wasm-release/samples/minimal/MinimalSample.*
+            out/build/wasm-release/samples/collision/CollisionSample.*
+            out/build/wasm-release/samples/audio/AudioSample.*
+            out/build/wasm-release/samples/local_multiplayer/LocalMultiplayerSample.*
+            out/build/wasm-release/samples/components/ComponentsGallery.*
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Keep the frames a golden check rejected
         if: failure()
         uses: actions/upload-artifact@v4
@@ -754,6 +770,50 @@ jobs:
           name: golden-actual-wasm-release
           path: out/build/wasm-release/tests/render/golden-actual/
           if-no-files-found: ignore
+
+  # THE WASM JOB'S PAGES IN DESKTOP SAFARI, M3's Safari half
+  # (docs/port/web-to-be-tested.md, "Needs Safari"). Nothing is built here:
+  # the six sample pages and the packaged bundle come from the wasm job, and
+  # tests/render/web/run_safari.mjs drives each through safaridriver - draws,
+  # a forced context loss and restore, trusted keys, quit, and the bundle's
+  # play and replay. It first prints the WebGL2 renderer strings Safari
+  # reports, masked and unmasked. The runner is a hosted macOS virtual
+  # machine, not a Mac anyone plays on: its WebGL2 is real Safari on a
+  # virtual GPU, and physical displays, pads and listening stay informal play.
+  safari:
+    name: safari
+    needs: [changes, wasm]
+    if: needs.changes.outputs.build == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasm-sample-pages
+          path: ${{ runner.temp }}/samples
+      - uses: actions/download-artifact@v4
+        with:
+          name: linesweeper-web
+          path: ${{ runner.temp }}/linesweeper
+      - name: Enable safaridriver
+        run: sudo safaridriver --enable
+      - name: Safari's WebGL2 renderer
+        run: node tests/render/web/run_safari.mjs --renderer
+      - name: Sample pages in Safari
+        run: |
+          for sample in linesweeper minimal collision audio local_multiplayer components; do
+            echo "::group::$sample"
+            node tests/render/web/run_safari.mjs --pages "$RUNNER_TEMP/samples" --sample "$sample" --timeout 90
+            echo "::endgroup::"
+          done
+      - name: LineSweeper's bundle page in Safari
+        run: node tests/render/web/run_safari.mjs --bundle "$RUNNER_TEMP/linesweeper" --timeout 180
 
   # THE SAME PRESET A SECOND TIME WITH BOTH NULL BACKENDS, because the sources
   # that assert drawing and playing are compiled only when the backend is null:
