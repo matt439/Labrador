@@ -24,6 +24,9 @@ import ssl
 import sys
 from pathlib import Path
 
+# The types a browser build needs that Python's own table may lack. The Node
+# page runners and the website acceptance server share one table,
+# website/acceptance/server.mjs's CONTENT_TYPES; this one is kept to agree.
 TYPES = {
     ".wasm": "application/wasm",
     ".js": "text/javascript",

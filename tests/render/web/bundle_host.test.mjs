@@ -53,7 +53,7 @@ function host(options = {}) {
 				} };
 			}
 			probes++;
-			if (options.graphicsThrows) { throw new Error('synthetic graphics refusal'); }
+			if (options.graphics_throws) { throw new Error('synthetic graphics refusal'); }
 			if (options.graphics === false) { return null; }
 			return { getExtension: (name) => {
 				assert.equal(name, 'WEBGL_lose_context');
@@ -74,7 +74,7 @@ function host(options = {}) {
 		console: { error: (...args) => diagnostics.push(args) },
 		matchMedia: () => ({ matches: options.coarse === true }),
 		navigator: { getGamepads: () => {
-			if (options.padsForbidden) { throw new Error('synthetic pad policy'); }
+			if (options.pads_forbidden) { throw new Error('synthetic pad policy'); }
 			return options.pads ?? [];
 		} },
 		addEventListener: (name, callback) => events.set(name, callback),
@@ -92,13 +92,13 @@ function host(options = {}) {
 		clearTimeout: (id) => timeouts.delete(id),
 		location: { reload: () => reloads++ },
 		Uint8Array,
-		WebAssembly: options.wasmMissing ? undefined : {
+		WebAssembly: options.wasm_missing ? undefined : {
 			validate: (bytes) => options.exceptions === false ? false : WebAssembly.validate(bytes),
 		},
 		requestAnimationFrame: (callback) => frames.push(callback),
 		loadModule: async () => {
 			imports++;
-			if (options.importFailure) { throw new Error('synthetic download failure'); }
+			if (options.import_failure) { throw new Error('synthetic download failure'); }
 			return { default: async (config) => {
 				runs.push(config);
 				await options.factory?.(config);
@@ -158,7 +158,7 @@ test('page load does not import a module or create a graphics probe; each click 
 	assert.equal(page.runs.length, 2);
 });
 
-for (const options of [{ exceptions: false }, { wasmMissing: true }, { graphics: false }, { graphicsThrows: true }]) {
+for (const options of [{ exceptions: false }, { wasm_missing: true }, { graphics: false }, { graphics_throws: true }]) {
 	test(`unsupported browser ${JSON.stringify(options)} downloads nothing and offers no retry`, async () => {
 		const page = host(options);
 		await page.click();
@@ -167,17 +167,17 @@ for (const options of [{ exceptions: false }, { wasmMissing: true }, { graphics:
 		assert.equal(page.elements.get('status').classList.contains('error'), true);
 		assert.equal(page.elements.get('play').hidden, true);
 		assert.equal(page.elements.get('start').hidden, true);
-		assert.match(page.status, options.graphics === false || options.graphicsThrows ? /hardware acceleration/ : /WebAssembly exception support/);
+		assert.match(page.status, options.graphics === false || options.graphics_throws ? /hardware acceleration/ : /WebAssembly exception support/);
 	});
 }
 
 test('a failed download gives connection advice, preserves diagnostics and can retry', async () => {
-	const options = { importFailure: true };
+	const options = { import_failure: true };
 	const page = host(options);
 	await page.click();
 	retry_visible(page, 'The game could not download. Check your connection and try again.');
 	assert.match(String(page.diagnostics[0][1]), /synthetic download failure/);
-	options.importFailure = false;
+	options.import_failure = false;
 	await page.click();
 	assert.equal(page.runs.length, 1);
 	assert.equal(page.elements.get('status').classList.contains('error'), false);
@@ -282,7 +282,7 @@ test('a controller button lifts the gate without a download, then disconnect can
 });
 
 test('a page that forbids controller access still opens the gate with a keyboard', () => {
-	const page = host({ coarse: true, padsForbidden: true });
+	const page = host({ coarse: true, pads_forbidden: true });
 	page.poll();
 	assert.equal(page.elements.get('play').hidden, true);
 	page.event('keydown');

@@ -1,11 +1,14 @@
 // Keep each input level observable by the page's fixed-step loop. A Node
 // timer can expire while the renderer delivers no frames, so wall time alone
-// does not ensure that a press or release reaches Keyboard::poll().
+// does not ensure that a press or release reaches Keyboard::poll(). Each level
+// lasts two animation frames and KEY_LEVEL_MS; bundle_page.mjs's steps hold
+// theirs the same way for less, and say why.
+const KEY_LEVEL_MS = 150;
 const INTERVAL = `new Promise((done) => {
 	const started = performance.now();
 	let frames = 0;
 	const step = (timestamp) => {
-		if (++frames >= 2 && timestamp - started >= 150) { done(true); }
+		if (++frames >= 2 && timestamp - started >= ${KEY_LEVEL_MS}) { done(true); }
 		else { requestAnimationFrame(step); }
 	};
 	requestAnimationFrame(step);

@@ -37,8 +37,9 @@ EM_JS(int, labrador_test_canvas_create, (int width, int height), {
 // until it is collected, and a browser keeps sixteen or so at once and evicts
 // the oldest past that, with a warning per eviction. A run makes one per case,
 // so without this a passing run warns about contexts nothing is using once
-// for every case past the sixteenth. WEBGL_lose_context is the one call that releases one now, and
-// getContext hands back the canvas's existing context rather than a new one.
+// for every case past the sixteenth. WEBGL_lose_context is the one call that
+// releases one now, and getContext hands back the canvas's existing context
+// rather than a new one.
 EM_JS(void, labrador_test_canvas_remove, (int number), {
 	var canvas = document.getElementById("labrador-test-canvas-" + number);
 	if (!canvas) {

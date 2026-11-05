@@ -46,6 +46,19 @@ PLACED = {
 PROJECT_NAME = "mygame"
 
 
+class Refusal(SystemExit):
+    """A run that cannot start as asked: a folder or checkout not in the state
+    it needs. It exits 2, the status argparse gives a bad command line, where
+    a check that ran and failed exits 1; the entry point prints its reason."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(2)
+        self.reason = reason
+
+    def __str__(self) -> str:
+        return self.reason
+
+
 def tree_files(engine: Path) -> list[Path]:
     """The files a commit of the engine tree would hold, as they are on disk.
 
@@ -125,7 +138,7 @@ def project_files(engine: Path, files: list[Path] | None = None) -> dict[str, by
 
 def assemble(engine: Path, project: Path) -> None:
     if project.exists() and any(project.iterdir()):
-        raise SystemExit(f"{project} is not empty; assemble into a new folder.")
+        raise Refusal(f"{project} is not empty; assemble into a new folder.")
     copy_engine(engine, project / ENGINE)
     for placed, content in project_files(engine).items():
         target = project / placed
@@ -148,4 +161,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Refusal as refusal:
+        print(refusal, file=sys.stderr)
+        sys.exit(refusal.code)

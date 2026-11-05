@@ -1,7 +1,10 @@
 // What the LineSweeper host-page drivers share: bundle_input.mjs, for the
 // bundle's example page, and host_input.mjs, for the site's own page, both in
-// Chromium; and run_firefox.mjs's bundle mode, which serves the wrapper below
-// itself and translates the steps' few DevTools input calls to BiDi. Both
+// Chromium; run_firefox.mjs's bundle mode, which serves the wrapper below
+// itself and translates the steps' few DevTools input calls to BiDi; and
+// run_safari.mjs's bundle mode, which serves the wrapper the same way, puts
+// PRELUDE in a script at the top of the page's <head> rather than a preload
+// script, and translates the same calls to classic WebDriver actions. Both
 // pages mount the same ES-module factory on a click, use the same element ids
 // (#start, #play, #status and #accessibility) and the same player-facing
 // sentences for play, quit, context loss and failure, so the hooks, the
@@ -13,7 +16,8 @@
 // setting `state.phase`; `expected_complaint` recognizes the diagnostics those
 // two injected failures and the injected onError log.
 
-import { is_navigation_race } from './devtools.mjs';
+import { key_table } from './page_harness.mjs';
+import { wait_for } from './page_wait.mjs';
 
 export const READY = "document.readyState === 'complete' && typeof window.labradorBundle === 'object'";
 
@@ -85,6 +89,40 @@ export default function createLineSweeper(config) {
 	return factory(config);
 }
 `;
+
+// The packaged folder's files, for a runner that serves the folder itself.
+export const BUNDLE_FILES = Object.freeze(['index.html', 'linesweeper.js', 'linesweeper.wasm', 'poster.png']);
+
+// For a runner that serves the packaged folder itself rather than
+// intercepting its responses as prepare() does: the loader, asked for without
+// a query, is FACTORY_WRAPPER; the wrapper's own import of it, with the
+// query, is the real file.
+export function bundle_substitute(url) {
+	return url.pathname === '/linesweeper.js' && url.search === '' ?
+		{ type: 'text/javascript; charset=utf-8', body: Buffer.from(FACTORY_WRAPPER) } : null;
+}
+
+// What the steps' Input.dispatchKeyEvent calls press, as WebDriver values,
+// for a runner that translates them to WebDriver actions.
+export const BUNDLE_KEYS = key_table(['Escape', 'Enter', 'Tab', 'KeyA',
+	'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']);
+
+// The least a key level lasts in the steps, in ms, beside its two frames.
+// sample_key.mjs's development-page presses hold 150 ms; these hold less
+// because quit() abandons a walk to QUIT in which an arrow may have been down
+// for the pause menu's 400 ms repeat delay, and a loaded runner adds its own
+// dispatch latency to every level, so a shorter level leaves that walk room.
+const KEY_LEVEL_MS = 100;
+
+// How long a step waits for the page by default, in ms: a few frames' work on
+// a software rasteriser that a loaded runner can stretch many times over.
+const UNTIL_MS = 20000;
+// How long a GPU process crash may take to lose and restore the context.
+const GPU_RESTART_MS = 45000;
+// The page offers a new game once a lost context has stayed away for
+// CONTEXT_WAIT_MS, its own timer; the step waits that and a margin.
+const CONTEXT_WAIT_MS = 10000;
+const CONTEXT_WAIT_MARGIN_MS = 15000;
 
 // One run's shared state: the case being driven, every request the page
 // made, and what the interception and the expected diagnostics saw.
@@ -171,6 +209,19 @@ async function intercept(state, page, paused) {
 	});
 }
 
+// What a host-page driver exports for run_page.mjs's --input contract, bound
+// to its run's state: the page is ready when READY holds, every complaint
+// fails the run but those expected_complaint recognises, and prepare installs
+// the hooks and the interception before the page loads.
+export function bundle_driver(state) {
+	return {
+		ready: READY,
+		strict_complaints: true,
+		expected_complaint: (complaint) => expected_complaint(state, complaint),
+		prepare: (page) => prepare(state, page),
+	};
+}
+
 // Whether a request since `from` fetched the loader or the module.
 export function fetched_module(state, from = 0) {
 	return state.requests.slice(from).some((url) => /\/linesweeper\.(js|wasm)$/.test(new URL(url).pathname));
@@ -182,19 +233,13 @@ export function steps(page, state) {
 	const assert = (condition, message) => {
 		if (!condition) { throw new Error(`${state.phase}: ${message}`); }
 	};
-	const until = async (expression, message, navigating = false, attempts = 500) => {
-		for (let attempt = 0; attempt < attempts; attempt++) {
-			assert(state.interception_errors.length === 0, state.interception_errors.join('\n'));
-			try {
-				if (await evaluate(expression) === true) { return; }
-			} catch (error) {
-				if (!navigating || !is_navigation_race(error)) {
-					throw error;
-				}
-			}
-			await page.wait(20);
-		}
-		throw new Error(`${state.phase}: ${message}`);
+	// Waits for `expression` to be true, failing with `message`; an
+	// interception that failed meanwhile ends the wait. `navigating` is for
+	// a page that is being replaced while it is asked.
+	const until = async (expression, message, navigating = false, timeout_ms = UNTIL_MS) => {
+		await wait_for(evaluate, expression, { timeout_ms, navigating, wait: page.wait,
+			check: () => assert(state.interception_errors.length === 0, state.interception_errors.join('\n')),
+			message: `${state.phase}: ${message}` });
 	};
 	const frames = (count) => evaluate(`new Promise((done) => {
 		let left = ${count};
@@ -243,17 +288,17 @@ export function steps(page, state) {
 		await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at,
 			button: 'left', buttons: 0, clickCount: 1 });
 	};
-	// Each level lasts two animation frames and 100 ms, so the module's
+	// Each level lasts two animation frames and KEY_LEVEL_MS, so the module's
 	// once-a-frame keyboard poll sees it. Wall time alone does not: on a
 	// software rasteriser drawing a phone-sized buffer one frame can outlast
-	// the whole press, and the game never hears it (sample_key.mjs, the same
-	// rule for the development pages).
+	// the whole press, and the game never hears it. sample_key.mjs holds the
+	// development pages' levels the same way, for longer; see KEY_LEVEL_MS.
 	// Each level resolves with the frames it lasted and their span in ms.
 	const held = () => evaluate(`new Promise((done) => {
 		const started = performance.now();
 		let seen = 0;
 		const step = (timestamp) => {
-			if (++seen >= 2 && timestamp - started >= 100) { done([seen, Math.round(timestamp - started)]); }
+			if (++seen >= 2 && timestamp - started >= ${KEY_LEVEL_MS}) { done([seen, Math.round(timestamp - started)]); }
 			else { requestAnimationFrame(step); }
 		};
 		requestAnimationFrame(step);
@@ -436,7 +481,7 @@ export function steps(page, state) {
 		const before_crash = await evaluate('window.labradorBundle.runs[0].canvas.labradorFrames');
 		await page.send_browser('Browser.crashGpuProcess');
 		await until("window.labradorBundle.runs[0].context[1]?.name === 'onContextRestored'",
-			'a GPU process crash was not heard as a loss and a restoration', false, 1500);
+			'a GPU process crash was not heard as a loss and a restoration', false, GPU_RESTART_MS);
 		const context = await evaluate('window.labradorBundle.runs[0].context');
 		assert(context.length === 2 && context[0].name === 'onContextLost' &&
 			context[0].text === 'The browser took the graphics away; waiting for them to come back.' &&
@@ -517,7 +562,8 @@ export function steps(page, state) {
 		await loaded(0);
 		await evaluate(`window.labradorBundle.runs[0].canvas.getContext('webgl2')
 			.getExtension('WEBGL_lose_context').loseContext()`);
-		await until(button_visible, 'an unreturned context never offered a new game', false, 750);
+		await until(button_visible, 'an unreturned context never offered a new game', false,
+			CONTEXT_WAIT_MS + CONTEXT_WAIT_MARGIN_MS);
 		assert(await evaluate("document.getElementById('play').textContent === 'Try again' && " +
 			`document.getElementById('status').textContent.includes(${JSON.stringify(unreturned)}) && ` +
 			'window.labradorBundle.runs[0].canvas.isConnected'),

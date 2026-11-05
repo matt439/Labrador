@@ -21,6 +21,9 @@ import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from assemble import Refusal  # noqa: E402
+
 SANDBOX_DESKTOP = r"C:\Users\WDAGUtilityAccount\Desktop"
 RELEASE_IN_SANDBOX = SANDBOX_DESKTOP + r"\release"
 RESULTS_IN_SANDBOX = SANDBOX_DESKTOP + r"\results"
@@ -78,7 +81,7 @@ WSB = """<Configuration>
 
 def write(release: Path, results: Path, program: str, vgpu: str) -> None:
     if not (release / program).is_file():
-        raise SystemExit(f"{release} has no {program}; stage the release with cmake --install first.")
+        raise Refusal(f"{release} has no {program}; stage the release with cmake --install first.")
     results.mkdir(parents=True, exist_ok=True)
     (results / "run.cmd").write_text(
         RUN_CMD.format(release=RELEASE_IN_SANDBOX, program=program).replace("\n", "\r\n"),
@@ -115,4 +118,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Refusal as refusal:
+        print(refusal, file=sys.stderr)
+        sys.exit(refusal.code)

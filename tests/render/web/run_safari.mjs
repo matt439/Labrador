@@ -29,22 +29,26 @@
 // --driver and --browser-name exist so the protocol can be checked where
 // there is no Safari: `--driver geckodriver --browser-name firefox` drives a
 // headless Firefox the same way. That checks this runner, not Safari.
-import { execFile, spawn } from 'node:child_process';
+//
+// The WebDriver client, the driver's start and its end are the website
+// acceptance suite's (website/acceptance/webdriver.mjs and browsers.mjs), so
+// hardening either gets for Safari's iOS and site runs reaches this one too.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { createServer } from 'node:http';
-import { createServer as createNetServer } from 'node:net';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
-import { FACTORY_WRAPPER, PRELUDE, READY, bundle_state, steps } from './bundle_page.mjs';
-import { SAMPLES } from './run_firefox.mjs';
+import { driverArguments, killDriver, safariTabsToLinks, startDriver, targetCapabilities }
+	from '../../../website/acceptance/browsers.mjs';
+import { WebDriverError, command } from '../../../website/acceptance/webdriver.mjs';
+import { BUNDLE_FILES, PRELUDE, READY, bundle_state, bundle_substitute, steps } from './bundle_page.mjs';
+import { SAMPLES, WEBDRIVER_OPTION, close_server, deadline_after, frames_expression,
+	key_actions as webdriver_key_actions, key_table, module_hook, serve_files } from './page_harness.mjs';
 
 export { SAMPLES };
 
-const KEY_VALUES = Object.freeze({ Escape: '', Enter: '', Tab: '', KeyS: 's', KeyR: 'r', KeyA: 'a',
-	ArrowLeft: '', ArrowUp: '', ArrowRight: '', ArrowDown: '' });
-const OPTION_KEY = '';
+// The keys a sample run and the bundle's steps press.
+const KEY_VALUES = key_table(['Escape', 'Enter', 'Tab', 'KeyS', 'KeyR', 'KeyA',
+	'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']);
 
 export function parse_options(arguments_) {
 	const options = {};
@@ -84,51 +88,23 @@ export function parse_options(arguments_) {
 }
 
 // ---------------------------------------------------------------------------
-// A classic W3C WebDriver session over HTTP: only the commands this runner
-// uses. https://www.w3.org/TR/webdriver2/
-export class WebDriverError extends Error {
-	constructor(code, message) {
-		super(`${code}: ${message}`);
-		this.code = code;
-	}
-}
+// The classic W3C WebDriver commands this runner uses, over the acceptance
+// suite's client. https://www.w3.org/TR/webdriver2/
+export { WebDriverError };
+export const webdriver_command = command;
 
-export async function webdriver_command(base, method, path, body, { timeout_ms = 30000, fetch_ = fetch } = {}) {
-	let response;
-	try {
-		response = await fetch_(`${base}${path}`, {
-			method,
-			headers: body === undefined ? {} : { 'Content-Type': 'application/json; charset=utf-8' },
-			body: body === undefined ? undefined : JSON.stringify(body),
-			signal: AbortSignal.timeout(timeout_ms),
-		});
-	} catch (error) {
-		throw new WebDriverError(error.name === 'TimeoutError' ? 'client timeout' : 'connection failed',
-			`${method} ${path}: ${error.message}`);
-	}
-	const text = await response.text();
-	let parsed;
-	try { parsed = JSON.parse(text); }
-	catch { throw new WebDriverError('invalid response', `${method} ${path}: HTTP ${response.status}: ${text.slice(0, 200)}`); }
-	const value = parsed?.value;
-	if (!response.ok || (value && typeof value === 'object' && typeof value.error === 'string')) {
-		throw new WebDriverError(value?.error ?? `HTTP ${response.status}`, `${method} ${path}: ${value?.message ?? text.slice(0, 200)}`);
-	}
-	return value;
-}
-
-export function session_commands(base, session_id, command = webdriver_command) {
+export function session_commands(base, session_id, send = command) {
 	const at = `/session/${session_id}`;
 	return {
 		id: session_id,
-		navigate: (url, timeout_ms = 60000) => command(base, 'POST', `${at}/url`, { url }, { timeout_ms }),
+		navigate: (url, timeout_ms = 60000) => send(base, 'POST', `${at}/url`, { url }, { timeoutMs: timeout_ms }),
 		// The body runs as a function; its last argument is the callback.
 		execute_async: (script, args = [], timeout_ms = 30000) =>
-			command(base, 'POST', `${at}/execute/async`, { script, args }, { timeout_ms: timeout_ms + 5000 }),
-		set_timeouts: (timeouts) => command(base, 'POST', `${at}/timeouts`, timeouts),
-		perform: (actions) => command(base, 'POST', `${at}/actions`, { actions }),
-		release: () => command(base, 'DELETE', `${at}/actions`),
-		close: () => command(base, 'DELETE', at, undefined, { timeout_ms: 10000 }),
+			send(base, 'POST', `${at}/execute/async`, { script, args }, { timeoutMs: timeout_ms + 5000 }),
+		set_timeouts: (timeouts) => send(base, 'POST', `${at}/timeouts`, timeouts),
+		perform: (actions) => send(base, 'POST', `${at}/actions`, { actions }),
+		release: () => send(base, 'DELETE', `${at}/actions`),
+		close: () => send(base, 'DELETE', at, undefined, { timeoutMs: 10000 }),
 	};
 }
 
@@ -174,33 +150,7 @@ export const SAMPLE_HOOK = `(() => {
 		clears: 0, draw_calls: 0, elements: 0, lost: 0, restored: 0,
 		raw_api: null, raw_renderer: null, unmasked_renderer: null };
 	window.labradorSafari = heard;
-	let module;
-	Object.defineProperty(window, 'Module', {
-		configurable: true, enumerable: true,
-		get() { return module; },
-		set(value) {
-			module = value;
-			if (!value || typeof value !== 'object' || value.labradorSafariHooked) return;
-			Object.defineProperty(value, 'labradorSafariHooked', { value: true });
-			for (const [name, flag] of [['onRuntimeInitialized', 'initialized'], ['onQuit', 'quit']]) {
-				const original = value[name];
-				if (name === 'onQuit') {
-					heard.has_quit = typeof original === 'function';
-					if (!heard.has_quit) continue;
-				}
-				value[name] = function (...args) {
-					const result = typeof original === 'function' ? original.apply(this, args) : undefined;
-					heard[flag] = true;
-					return result;
-				};
-			}
-			const original = value.onError;
-			value.onError = function (message, ...args) {
-				heard.errors.push(String(message));
-				if (typeof original === 'function') return original.call(this, message, ...args);
-			};
-		}
-	});
+	${module_hook('labradorSafariHooked')}
 	let watched = null;
 	const watch = (canvas) => {
 		if (watched === canvas) return;
@@ -244,42 +194,13 @@ export function inject_head(html, scripts) {
 // Input.
 
 export function key_actions(keys, { hold_ms = 150 } = {}) {
-	return [{ type: 'key', id: 'keyboard', actions: keys.flatMap((key) => {
-		if (!Object.hasOwn(KEY_VALUES, key)) throw new Error(`Unsupported sample key ${key}.`);
-		return [{ type: 'keyDown', value: KEY_VALUES[key] }, { type: 'pause', duration: hold_ms },
-			{ type: 'keyUp', value: KEY_VALUES[key] }, { type: 'pause', duration: hold_ms }];
-	}) }];
+	return webdriver_key_actions(keys, { table: KEY_VALUES, hold_ms });
 }
 
-// Whether desktop Safari's Tab moves to links and buttons. Off by default,
-// when Option-Tab does instead; LABRADOR_SAFARI_TAB_TO_LINKS (1 or 0)
-// overrides what the preferences say. The same reading as the website's
-// acceptance suite (website/acceptance/browsers.mjs).
-export async function safari_tabs_to_links({ env = process.env, read = read_default } = {}) {
-	if (env.LABRADOR_SAFARI_TAB_TO_LINKS === '1') return true;
-	if (env.LABRADOR_SAFARI_TAB_TO_LINKS === '0') return false;
-	const domains = [
-		`${env.HOME ?? ''}/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari`,
-		'com.apple.Safari',
-	];
-	const keys = ['WebKitTabToLinksPreferenceKey', 'com.apple.Safari.ContentPageGroupIdentifier.WebKit2TabsToLinks'];
-	for (const domain of domains) {
-		for (const key of keys) {
-			const value = await read(domain, key);
-			if (value !== null) return value === '1' || value === 'true';
-		}
-	}
-	return false;
-}
-
-async function read_default(domain, key) {
-	try {
-		const { stdout } = await promisify(execFile)('defaults', ['read', domain, key], { timeout: 10000 });
-		return stdout.trim();
-	} catch {
-		return null;
-	}
-}
+// Whether desktop Safari's Tab moves to links and buttons: off by default,
+// when Option-Tab does instead. The acceptance suite's reading of Safari's
+// preferences and of LABRADOR_SAFARI_TAB_TO_LINKS.
+export const safari_tabs_to_links = safariTabsToLinks;
 
 // bundle_page.mjs's steps speak DevTools: these are its mouse, key and
 // navigation calls as WebDriver actions. Any other method refuses rather
@@ -294,8 +215,8 @@ export function bundle_input(session, evaluate, { option_tab = false, pause = wa
 		if (!Object.hasOwn(KEY_VALUES, code)) throw new Error(`Unsupported bundle key ${code}.`);
 		const value = KEY_VALUES[code];
 		const actions = code === 'Tab' && option_tab ?
-			(key_action === 'keyDown' ? [{ type: 'keyDown', value: OPTION_KEY }, { type: 'keyDown', value }] :
-				[{ type: 'keyUp', value }, { type: 'keyUp', value: OPTION_KEY }]) :
+			(key_action === 'keyDown' ? [{ type: 'keyDown', value: WEBDRIVER_OPTION }, { type: 'keyDown', value }] :
+				[{ type: 'keyUp', value }, { type: 'keyUp', value: WEBDRIVER_OPTION }]) :
 			[{ type: key_action, value }];
 		return session.perform([{ type: 'key', id: 'keyboard', actions }]);
 	};
@@ -318,23 +239,6 @@ export function bundle_input(session, evaluate, { option_tab = false, pause = wa
 
 const wait = (milliseconds) => new Promise((done) => setTimeout(done, milliseconds));
 
-function frames_expression(count) {
-	return `new Promise((done) => {
-		let left = ${count};
-		const next = () => --left <= 0 ? done(true) : requestAnimationFrame(next);
-		requestAnimationFrame(next);
-	})`;
-}
-
-function deadline_after(timeout_ms, what) {
-	const deadline = Date.now() + timeout_ms;
-	return () => {
-		const duration = deadline - Date.now();
-		if (duration <= 0) throw new Error(`${what} deadline expired.`);
-		return Math.min(duration, 15000);
-	};
-}
-
 async function complaints_of(evaluate) {
 	const complaints = await evaluate('window.labradorComplaints ?? []');
 	if (complaints.length > 0) throw new Error(`Page complaints: ${complaints.join('; ')}`);
@@ -342,7 +246,7 @@ async function complaints_of(evaluate) {
 
 export async function drive_sample(session, url, sample,
 	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari' } = {}) {
-	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} sample`));
+	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} sample`, 15000));
 	const state = async () => {
 		await complaints_of(evaluate);
 		const heard = await evaluate('window.labradorSafari ?? null');
@@ -412,7 +316,7 @@ export async function drive_sample(session, url, sample,
 
 export async function drive_bundle(session, url,
 	{ timeout_ms = 120000, pause = wait, log = console.log, option_tab = false, label = 'Safari' } = {}) {
-	const page_evaluate = evaluator(session, deadline_after(timeout_ms, `${label} bundle`));
+	const page_evaluate = evaluator(session, deadline_after(timeout_ms, `${label} bundle`, 15000));
 	const evaluate = async (expression) => {
 		await complaints_of(page_evaluate);
 		const value = await page_evaluate(expression);
@@ -447,7 +351,7 @@ export const RENDERER_EXPRESSION = `(() => {
 })()`;
 
 export async function report_renderer(session, url, { timeout_ms = 60000, log = console.log, label = 'Safari' } = {}) {
-	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} renderer`));
+	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} renderer`, 15000));
 	await session.navigate(url);
 	const found = await evaluate(RENDERER_EXPRESSION);
 	log(`${label} WebGL2: ${JSON.stringify(found)}`);
@@ -457,10 +361,6 @@ export async function report_renderer(session, url, { timeout_ms = 60000, log = 
 
 // ---------------------------------------------------------------------------
 // Serving, the driver and the session.
-
-const BUNDLE_FILES = Object.freeze(['index.html', 'linesweeper.js', 'linesweeper.wasm', 'poster.png']);
-const CONTENT_TYPES = Object.freeze({ '.wasm': 'application/wasm', '.js': 'text/javascript',
-	'.png': 'image/png', '.html': 'text/html; charset=utf-8' });
 
 export function artifact_files(options) {
 	if (options.renderer) return [];
@@ -477,106 +377,29 @@ export function page_scripts(options) {
 
 // The bundle's loader, asked for without a query, is bundle_page.mjs's
 // wrapper; the wrapper's own import of it, with the query, is the real file.
+// The renderer run's page is an empty document at the root.
 export function substitute(options, url) {
-	if (options.bundle !== undefined && url.pathname === '/linesweeper.js' && url.search === '') {
-		return { type: 'text/javascript; charset=utf-8', body: Buffer.from(FACTORY_WRAPPER) };
+	if (options.bundle !== undefined) return bundle_substitute(url);
+	if (options.renderer && url.pathname === '/') {
+		return { type: 'text/html; charset=utf-8', body: Buffer.from('<!doctype html><title>renderer</title>') };
 	}
 	return null;
 }
 
-async function serve(options, files) {
-	let fatal;
-	const failed = new Promise((_, refuse) => { fatal = refuse; });
-	failed.catch(() => {});
-	const allowed = new Map(files.map((file) => ['/' + basename(file), file]));
-	const scripts = page_scripts(options);
-	const server = createServer((request, response) => {
-		const requested = new URL(request.url, 'http://127.0.0.1');
-		const wanted = requested.pathname;
-		if (wanted === '/favicon.ico') { response.writeHead(204).end(); return; }
-		if (options.renderer && wanted === '/') {
-			response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-			response.end('<!doctype html><title>renderer</title>');
-			return;
-		}
-		const substituted = substitute(options, requested);
-		if (substituted) {
-			response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': substituted.type });
-			response.end(substituted.body);
-			return;
-		}
-		const file = allowed.get(wanted);
-		if (!file) {
-			response.writeHead(404).end();
-			fatal(new Error(`Unexpected page resource request: ${wanted}`));
-			return;
-		}
-		try {
-			let bytes = readFileSync(file);
-			const extension = /\.[^.]+$/.exec(file)?.[0] ?? '';
-			if (extension === '.html') bytes = Buffer.from(inject_head(bytes.toString('utf8'), scripts));
-			response.writeHead(200, { 'Cache-Control': 'no-store',
-				'Content-Type': CONTENT_TYPES[extension] ?? 'application/octet-stream' });
-			response.end(bytes);
-		} catch (error) {
-			response.writeHead(500).end();
-			fatal(new Error(`${file}: ${error.code ?? error.name}: ${error.message}`));
-		}
-	});
-	await new Promise((ready, refused) => {
-		server.once('error', refused);
-		server.listen(0, '127.0.0.1', ready);
-	});
-	const page = options.renderer ? '' : basename(files[0]);
-	return { server, failed, url: `http://127.0.0.1:${server.address().port}/${page}` };
-}
-
-async function free_port() {
-	const probe = createNetServer();
-	await new Promise((ready, refused) => { probe.once('error', refused); probe.listen(0, '127.0.0.1', ready); });
-	const { port } = probe.address();
-	await new Promise((done) => probe.close(done));
-	return port;
-}
-
 export function driver_arguments(browser_name, port) {
-	return browser_name === 'safari' ? ['-p', String(port)] : ['--port', String(port), '--host', '127.0.0.1'];
+	return driverArguments(browser_name, port);
 }
 
 export function capabilities(browser_name) {
-	return browser_name === 'safari' ? { browserName: 'safari' } :
-		{ browserName: 'firefox', 'moz:firefoxOptions': { args: ['-headless'] } };
+	return targetCapabilities(browser_name);
 }
 
+// The acceptance suite's start: a port race is retried, readiness is /status
+// answering ready, and a driver that never gets there is ended before the
+// error is thrown.
 async function start_driver(options) {
-	const port = await free_port();
-	const base = `http://127.0.0.1:${port}`;
-	const child = spawn(options.driver, driver_arguments(options.browser_name, port),
-		{ stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
-	let output = '';
-	const keep = (chunk) => { output = (output + String(chunk)).slice(-16384); };
-	child.stdout.on('data', keep);
-	child.stderr.on('data', keep);
-	let exited = null;
-	child.on('error', (error) => { exited = `spawn ${options.driver}: ${error.code ?? error.name}: ${error.message}`; });
-	child.on('exit', (code, signal) => { exited ??= `driver exited: code=${code}, signal=${signal ?? 'none'}`; });
-	const started = Date.now();
-	for (;;) {
-		if (exited) throw new Error(`${exited}\n${output}`);
-		try {
-			const status = await webdriver_command(base, 'GET', '/status', undefined, { timeout_ms: 2000 });
-			if (status?.ready !== false) break;
-		} catch { /* not listening yet */ }
-		if (Date.now() - started > 20000) throw new Error(`${options.driver} did not answer /status in 20 seconds.\n${output}`);
-		await wait(200);
-	}
-	return { base, child, output: () => output,
-		stop: async () => {
-			if (child.exitCode !== null || child.signalCode !== null) return;
-			const gone = new Promise((done) => child.once('exit', done));
-			child.kill();
-			await Promise.race([gone, wait(5000)]);
-		} };
+	const started = await startDriver(options.driver, options.browser_name, { log: (line) => console.log(line) });
+	return { base: started.url, output: started.output, stop: () => killDriver(started.child) };
 }
 
 async function new_session(base, browser_name) {
@@ -584,8 +407,8 @@ async function new_session(base, browser_name) {
 	// it was still closing counts; a few retries cover that.
 	for (let attempt = 1; ; attempt++) {
 		try {
-			const created = await webdriver_command(base, 'POST', '/session',
-				{ capabilities: { alwaysMatch: capabilities(browser_name) } }, { timeout_ms: 120000 });
+			const created = await command(base, 'POST', '/session',
+				{ capabilities: { alwaysMatch: capabilities(browser_name) } }, { timeoutMs: 120000 });
 			return { created, session: session_commands(base, created.sessionId) };
 		} catch (error) {
 			if (attempt >= 3 || error.code !== 'session not created') throw error;
@@ -608,7 +431,9 @@ export async function main(options) {
 	let session;
 	let failure = null;
 	try {
-		service = await serve(options, files);
+		const scripts = page_scripts(options);
+		service = await serve_files(files, { substitute: (url) => substitute(options, url),
+			transform: (html) => inject_head(html, scripts), page: options.renderer ? '' : undefined });
 		driver = await start_driver(options);
 		const opened = await new_session(driver.base, options.browser_name);
 		session = opened.session;
@@ -638,15 +463,19 @@ export async function main(options) {
 			await driver.stop();
 			if (failure) console.error(`last driver output (16 KiB maximum):\n${driver.output() || '(empty)'}`);
 		}
-		if (service) await new Promise((done) => {
-			service.server.close(done);
-			service.server.closeAllConnections();
-		});
+		if (service) await close_server(service.server);
 	}
 	if (failure) throw failure;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-	try { await main(parse_options(process.argv.slice(2))); }
-	catch (error) { console.error(`run_safari: ${error.stack ?? error}`); process.exitCode = 1; }
+	// A command line it cannot run exits 2 with the reason; a run that
+	// fails exits 1 with its stack.
+	let options = null;
+	try { options = parse_options(process.argv.slice(2)); }
+	catch (error) { console.error(`run_safari: ${error.message}`); process.exitCode = 2; }
+	if (options) {
+		try { await main(options); }
+		catch (error) { console.error(`run_safari: ${error.stack ?? error}`); process.exitCode = 1; }
+	}
 }

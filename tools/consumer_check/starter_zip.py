@@ -61,17 +61,17 @@ def version_string(engine: Path) -> str:
 def check_release(engine: Path, tag: str) -> None:
     """Refuse to name a release that the tree is not, exactly."""
     if not TAG.fullmatch(tag):
-        raise SystemExit(f"{tag} is not a release tag such as v0.3.0.")
+        raise assemble.Refusal(f"{tag} is not a release tag such as v0.3.0.")
     if f"v{version_string(engine)}" != tag:
-        raise SystemExit(f"vcpkg.json's version-string is {version_string(engine)}, not {tag[1:]}.")
+        raise assemble.Refusal(f"vcpkg.json's version-string is {version_string(engine)}, not {tag[1:]}.")
     try:
         tagged = git(engine, "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}^{{commit}}")
     except git_local.GitError:
-        raise SystemExit(f"There is no tag {tag} in {engine}; fetch it with git fetch origin --tags.")
+        raise assemble.Refusal(f"There is no tag {tag} in {engine}; fetch it with git fetch origin --tags.")
     if tagged != git(engine, "rev-parse", "HEAD"):
-        raise SystemExit(f"HEAD is not {tag}; check it out with git checkout {tag}.")
+        raise assemble.Refusal(f"HEAD is not {tag}; check it out with git checkout {tag}.")
     if git(engine, "status", "--porcelain", "--untracked-files=all"):
-        raise SystemExit(f"{engine} has changes or new files; a release's ZIP is made from a clean checkout.")
+        raise assemble.Refusal(f"{engine} has changes or new files; a release's ZIP is made from a clean checkout.")
 
 
 def readme(engine: Path, release: str | None) -> bytes:
@@ -175,4 +175,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except assemble.Refusal as refusal:
+        print(refusal, file=sys.stderr)
+        sys.exit(refusal.code)
