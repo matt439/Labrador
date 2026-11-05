@@ -333,7 +333,7 @@ run of the website workflow. `fixture.mjs` clones the checkout's `HEAD`, builds
 and packs a `v0.3.0` snapshot, adds one guide, builds and packs `v0.4.0`, and
 assembles both into the development site with one erratum on `v0.3.0`. It
 names no real release and needs no network beyond npm. `suite.mjs` serves that
-build with the host's 404 behaviour and runs fourteen checks: a shared page and
+build with the host's 404 behaviour and runs fifteen checks: a shared page and
 heading kept across every switch; a page `v0.3.0` lacks leading to its overview
 with a note in the link and an arrival notice in an initially empty
 `role=status` region; keyboard opening, walking and switching; phone widths of
@@ -343,7 +343,9 @@ the release index against `index.json`; search confined to each version; each
 version's 404 page; the static list when the index cannot be fetched or is
 still loading; the served markup without JavaScript; and axe-core's WCAG 2.x
 A and AA rules on the open list with an absent page's note, the arrival
-notice and `/versions/`, at 360 and 1440 pixels in both themes. `suite.mjs`
+notice and `/versions/`, at 360 and 1440 pixels in both themes; and Return
+in the search box, empty or with a query, leaving the reader on the page,
+with no `javascript:` action on the search form (`SITE#4`). `suite.mjs`
 states each check.
 
 CI builds the fixture once (`acceptance fixture`) and runs the suite as

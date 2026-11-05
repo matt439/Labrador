@@ -43,7 +43,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_WINDOW, TARGETS, startBrowser, typeOnSimulatorKeyboard } from './browsers.mjs';
+import { DEFAULT_WINDOW, TARGETS, pressReturnOnSimulatorKeyboard, startBrowser, typeOnSimulatorKeyboard } from './browsers.mjs';
 import { FIXTURE_ONLY_HEADING, FIXTURE_ONLY_PATH } from './fixture.mjs';
 import { startServer } from './server.mjs';
 import { Keys, WebDriverError, pressKeys, tap, waitUntil } from './webdriver.mjs';
@@ -1079,10 +1079,9 @@ async function releaseIndex(context) {
 	context.note(`followed ${OLDEST}'s documentation link to ${location.href}`);
 }
 
-// Searches a version's site through its search box and returns every result,
-// loading more until all are shown.
-async function search(context, label, query) {
-	await context.go(`${versionPath(label)}docs/`);
+// Opens the search box on the current page and returns its input, ready for
+// typing.
+async function openSearch(context) {
 	const button = await context.session.findElement('site-search button[data-open-modal]');
 	await waitUntil(async () => !(await context.session.elementProperty(button, 'disabled')), { message: 'search to be enabled' });
 	await context.activate(button);
@@ -1092,6 +1091,14 @@ async function search(context, label, query) {
 	}, { timeoutMs: 15_000, message: 'the search box' });
 	// On a phone a reader taps the box before typing into it.
 	if (context.flags.phone) await context.activate(input);
+	return input;
+}
+
+// Searches a version's site through its search box and returns every result,
+// loading more until all are shown.
+async function search(context, label, query) {
+	await context.go(`${versionPath(label)}docs/`);
+	const input = await openSearch(context);
 	await context.type(input, query);
 	// The simulator can drop the first text sent to a box it is still
 	// focusing; a reader whose text did not appear types it again.
@@ -1180,6 +1187,59 @@ async function searchPerVersion(context) {
 	const listed = erratum.links.filter((link) => link.href.startsWith(context.abs('/versions/')));
 	context.expect(listed.length === 0, `search found the release list: ${listed.map((link) => link.href).join(', ')}.`);
 	context.note(`Development, "${ERRATUM_TITLE}": "${erratum.message}"`);
+}
+
+// Pressing Return, or Go on a phone's keyboard, in the search box keeps the
+// reader on the page they searched from, whether the box is empty or holds a
+// query. The search form must not submit anywhere: iOS Safari followed the
+// form's former action, javascript:void(0), to an empty page (SITE#4), so the
+// action is also read. A phone's keyboard is the Simulator's hardware keyboard.
+const SEARCH_FORM = `
+	const form = document.querySelector('site-search .pagefind-ui__form');
+	const dialog = document.querySelector('site-search dialog');
+	return {
+		href: location.href,
+		heading: document.querySelector('main h1')?.textContent.trim() ?? null,
+		action: form ? form.getAttribute('action') : null,
+		method: form ? form.getAttribute('method') : null,
+		open: Boolean(dialog && dialog.open),
+		typed: dialog?.querySelector('.pagefind-ui__search-input')?.value ?? null,
+	};`;
+const SEARCH_SUBMIT_WATCH_MS = 3_000;
+
+async function searchSubmission(context) {
+	if (!context.flags.keyboard && !context.flags.simulatorKeyboard) {
+		throw new Skip(`${context.target} delivers no Return key to the page`);
+	}
+	const page = `${versionPath('Development')}docs/`;
+	for (const query of ['', SHARED_TITLE]) {
+		const described = query ? `"${query}"` : 'an empty box';
+		await context.go(page);
+		const input = await openSearch(context);
+		if (query) {
+			await context.type(input, query);
+			await waitUntil(() => context.script('return arguments[0].value;', [input]), { timeoutMs: 5_000, message: 'the typed text' });
+		}
+		const before = await context.script(SEARCH_FORM);
+		context.expect(before.action === null || !/^\s*javascript:/i.test(before.action),
+			`the search form's action is ${JSON.stringify(before.action)}, which a phone's Go can follow to an empty page.`);
+		if (context.flags.simulatorKeyboard) await pressReturnOnSimulatorKeyboard();
+		else await pressKeys(context.session, Keys.Enter);
+		// Nothing should happen, so the page is watched for a while instead.
+		const deadline = Date.now() + SEARCH_SUBMIT_WATCH_MS;
+		let after = before;
+		while (Date.now() < deadline) {
+			await new Promise((resolve) => setTimeout(resolve, 200));
+			after = await context.script(SEARCH_FORM).catch((error) => ({ href: `unreadable (${error.message})` }));
+			if (after.href !== before.href || after.heading !== before.heading) break;
+		}
+		context.expect(after.href === before.href, `Return in ${described} left ${before.href} for ${after.href}.`);
+		context.expect(after.heading === before.heading && Boolean(before.heading),
+			`Return in ${described} changed the page's heading from ${JSON.stringify(before.heading)} to ${JSON.stringify(after.heading)}.`);
+		context.note(`${described}: form action ${JSON.stringify(before.action)}, method ${JSON.stringify(before.method)}; `
+			+ `after Return still at ${after.href}, search ${after.open ? 'open' : 'closed'}, box ${JSON.stringify(after.typed)}`);
+		await pressKeys(context.session, Keys.Escape).catch(() => {});
+	}
 }
 
 async function notFound(context) {
@@ -1392,6 +1452,7 @@ export const CHECKS = [
 	{ id: 12, name: 'static markup', run: staticMarkup },
 	{ id: 13, name: 'index loading', run: indexLoading },
 	{ id: 14, name: 'accessibility scan', run: accessibilityScan },
+	{ id: 15, name: 'search submission', run: searchSubmission },
 ];
 
 // ---------------------------------------------------------------------------
