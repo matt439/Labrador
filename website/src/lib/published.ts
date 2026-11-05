@@ -111,7 +111,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 	},
 	{
 		name: 'core',
-		summary: 'Game objects, the state stack, handles and the tables that issue them, the thread pool, and a seeded random stream.',
+		summary: 'Game objects, the state stack, handles and the tables that issue them, the thread pool and the partitioner that slices its work, and a seeded random stream.',
 		headers: [
 			['state.h', 'State', 'game code'],
 			['state_context.h', 'StateContext', 'game code'],
@@ -120,6 +120,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['registry.h', 'Registry', 'game code'],
 			['name_table.h', 'NameTable', 'game code'],
 			['thread_pool.h', 'ThreadPool', 'game code'],
+			['partitioner.h', 'Partitioner', 'game code'],
 			['byte_reader.h', 'ByteReader', 'game code'],
 			['file_path.h', 'UTF-8 paths', 'game code'],
 			['step_position.h', 'StepPosition', 'game code'],
@@ -138,7 +139,6 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['resolve.h', 'Resolution', 'game code'],
 			['broad_phase.h', 'BroadPhase', 'game code'],
 			['tunnelling.h', 'Tunnelling', 'game code'],
-			['partitioner.h', 'Partitioner', 'game code'],
 		],
 	},
 	{

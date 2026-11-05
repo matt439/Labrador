@@ -21,10 +21,10 @@ add_library(LabradorEngine STATIC
     collision/broad_phase.cpp
     collision/contacts.cpp
     collision/narrow_phase.cpp
-    collision/partitioner.cpp
     collision/resolve.cpp
     core/byte_reader.cpp
     core/file_path.cpp
+    core/partitioner.cpp
     core/random.cpp
     core/state.cpp
     core/state_context.cpp

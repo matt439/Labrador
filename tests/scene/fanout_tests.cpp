@@ -1,8 +1,8 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/null/recording.h"
-#include "engine/collision/partitioner.h"
 #include "engine/core/game_object.h"
+#include "engine/core/partitioner.h"
 #include "engine/core/thread_pool.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"

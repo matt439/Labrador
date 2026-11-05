@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Move Partitioner from collision to core, beside ThreadPool
+
+**Source break: `Partitioner` moved from `engine/collision/partitioner.h` to `engine/core/partitioner.h`.** The class is unchanged. It splits work for the thread pool and is not part of collision, so it now sits beside `ThreadPool`, and its reference page moved from the collision module to core. Change `#include "engine/collision/partitioner.h"` to `#include "engine/core/partitioner.h"`. Code that reaches it only through `application.h` or `app.partitioner()` needs no change, and no sample includes the header directly. ColourWars includes the old path in five files, among them `game/objects/level_builder.h`, `scripts/acceptance/debug_console/cpu_level.h` and `scripts/acceptance/paint/jump_through_checks.h`; each changes its include when it takes this pin.
+
 ### 2026-11-05 - Say what Partitioner is for, and spell out its counts
 
 **Changed: `Partitioner::partition`'s parameters are `element_count` and `partition_count`.** They were `num_elements` and `num_partitions`. Callers are unaffected because only parameter names changed. The three `std::invalid_argument` messages that name the parameters now use the new names, for example `Partitioner::partition: partition_count must be at least 1.` The class also has a comment saying what it is for.

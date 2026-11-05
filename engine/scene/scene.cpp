@@ -1,7 +1,7 @@
 #include "engine/scene/scene.h"
 
 #include "engine/collision/collision_object.h"
-#include "engine/collision/partitioner.h"
+#include "engine/core/partitioner.h"
 #include "engine/core/thread_pool.h"
 #include "engine/render/renderer.h"
 

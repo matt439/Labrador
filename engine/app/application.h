@@ -5,7 +5,7 @@
 #include "engine/assets/resource_loader.h"
 #include "engine/audio/audio_device.h"
 #include "engine/audio/audio_resources.h"
-#include "engine/collision/partitioner.h"
+#include "engine/core/partitioner.h"
 #include "engine/core/state_context.h"
 #include "engine/core/step_position.h"
 #include "engine/core/step_timer.h"
