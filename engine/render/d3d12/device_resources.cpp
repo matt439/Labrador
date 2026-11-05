@@ -328,9 +328,9 @@ namespace labrador
 		// arrives with the removal still clearing, and this wait is the first
 		// thing to touch D3D afterwards - so a throw here skipped
 		// handle_device_lost in exactly the ordering it was written for and
-		// unwound into DispatchMessage instead, where the shell has nowhere to
-		// catch it. Same recovery, reached from the wait as well as from
-		// ResizeBuffers.
+		// unwound out of the window message instead, which the shell can only
+		// answer by closing the window. Same recovery, reached from the wait
+		// as well as from ResizeBuffers.
 		//
 		// AND WHAT MAKES IT A LOSS IS THE DEVICE SAYING SO, NOT THE WAIT
 		// ANSWERING FALSE. try_wait_for_gpu answers false for any failed

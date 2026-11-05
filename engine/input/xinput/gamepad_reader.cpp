@@ -34,6 +34,12 @@ namespace labrador
 
 	struct GamepadReader::Impl
 	{
+		// Set between suspend() and resume(). DirectXTK's Suspend sends
+		// nothing on Windows 10 and later, and XInputEnable(FALSE) would
+		// still answer a connected pad, so this flag is what makes a
+		// suspended reader answer disconnected.
+		bool suspended = false;
+
 		DirectX::GamePad gamepad;
 
 		// What the last sample() read, by XInput user index, which is already
@@ -66,6 +72,17 @@ namespace labrador
 
 	void GamepadReader::sample()
 	{
+		// Asking XInput is skipped too: nothing is read in the background
+		// that could be handed back as a held button.
+		if (this->impl_->suspended)
+		{
+			for (GamepadState& state : this->impl_->states)
+			{
+				state = GamepadState();
+			}
+			return;
+		}
+
 		const double now = vibration_clock_seconds();
 		for (int slot = 0; slot < Gamepads::max_count; ++slot)
 		{
@@ -94,10 +111,12 @@ namespace labrador
 		// the background.
 		this->impl_->vibration.suspend();
 		this->impl_->gamepad.Suspend();
+		this->impl_->suspended = true;
 	}
 
 	void GamepadReader::resume()
 	{
+		this->impl_->suspended = false;
 		this->impl_->gamepad.Resume();
 		this->impl_->vibration.resume();
 	}

@@ -5,6 +5,7 @@
 
 #include <Windows.h>
 
+#include <exception>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -229,6 +230,19 @@ namespace labrador
 		Vector2I outer_size(
 			const Vector2I& client_size) const;
 
+		// Destroys the window, if there still is one, without a word to
+		// notify and without posting WM_QUIT, and lets go of a clip this
+		// window made. The destructor's path, a failed constructor's and
+		// fail()'s.
+		void take_down();
+
+		// What an exception that reached window_proc from a handler becomes:
+		// kept, if it is the first, and the window taken down, so the owner
+		// hears nothing more and the pump ends and rethrows it. Called from
+		// inside a catch block, with the window the message was for, which
+		// `handle` does not name yet while CreateWindowExW is running.
+		void fail(HWND window);
+
 		static LRESULT CALLBACK window_proc(HWND window, UINT message,
 			WPARAM w_param, LPARAM l_param);
 
@@ -248,6 +262,15 @@ namespace labrador
 			LPARAM l_param);
 		LRESULT on_destroy_message(HWND window, UINT message, WPARAM w_param,
 			LPARAM l_param);
+
+		// window_proc's messages for a window this object owns, handed to
+		// the groups above.
+		LRESULT dispatch(HWND window, UINT message, WPARAM w_param,
+			LPARAM l_param);
+
+		// The constructor's half after CreateWindowExW: the frame measured
+		// again at the window's own DPI, and the first show.
+		void show(const WindowOptions& options);
 
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE, for the reason
 		// the constructor gives: messages arrive while it is still running, so
@@ -301,9 +324,20 @@ namespace labrador
 		HINSTANCE instance = GetModuleHandleW(nullptr);
 		std::wstring class_name;
 
+		// THE FIRST EXCEPTION A HANDLER THREW INSIDE window_proc. Messages
+		// reach window_proc through user32 - sent by SetWindowPos or
+		// ShowWindow, or dispatched from a modal loop of DefWindowProc's while
+		// the player drags the window - and a C++ exception unwinding through
+		// those frames is either swallowed or ends the process, depending on
+		// the process's policy for exceptions in kernel callbacks. So none is
+		// let through: window_proc catches it and fail() keeps it here for
+		// pump_until_quit, or for the constructor, to rethrow.
+		std::exception_ptr failure;
+
 		// Null before CreateWindowExW returns and null again from WM_NCDESTROY
-		// on, which is the last message a window receives. The destructor
-		// reads it to decide whether there is anything left to destroy.
+		// on, which is the last message a window receives, or once
+		// take_down() has destroyed it. The destructor reads it to decide
+		// whether there is anything left to destroy.
 		HWND handle = nullptr;
 	};
 
@@ -359,6 +393,14 @@ namespace labrador
 			CW_USEDEFAULT, CW_USEDEFAULT, outer.x, outer.y,
 			nullptr, nullptr, this->instance, this);
 
+		// A handler that threw while the window was being created has
+		// already had it taken down, and what CreateWindowExW answered names
+		// nothing; its exception is the one to report.
+		if (this->failure)
+		{
+			this->handle = nullptr;
+		}
+
 		if (this->handle == nullptr)
 		{
 			// The destructor does not run for an object whose constructor
@@ -367,9 +409,32 @@ namespace labrador
 			// process - fails one step earlier, with a message about the class
 			// rather than about whatever was actually wrong.
 			UnregisterClassW(this->class_name.c_str(), this->instance);
+			if (this->failure)
+			{
+				std::rethrow_exception(this->failure);
+			}
 			throw std::runtime_error("Could not create the window.");
 		}
 
+		// FROM HERE ON A THROW TAKES THE WINDOW DOWN WITH IT, for the same
+		// reason: the destructor will not, and a window left up would go on
+		// receiving messages with its user data pointing at an object that
+		// no longer exists. The size report show() fires reaches notify, and
+		// a handler that throws there is kept by fail() and rethrown by it.
+		try
+		{
+			this->show(options);
+		}
+		catch (...)
+		{
+			this->take_down();
+			UnregisterClassW(this->class_name.c_str(), this->instance);
+			throw;
+		}
+	}
+
+	void Window::Impl::show(const WindowOptions& options)
+	{
 		// AND THE WM_SIZE THIS PRODUCES IS WORTH SOMETHING. It arrives before
 		// the device exists, so the renderer half of on_window_size_changed
 		// still does nothing - DeviceResources::WindowSizeChanged returns early
@@ -407,16 +472,32 @@ namespace labrador
 		ShowWindow(this->handle,
 			!options.visible ? SW_HIDE :
 			options.fullscreen ? SW_SHOWMAXIMIZED : SW_SHOWDEFAULT);
+
+		if (this->failure)
+		{
+			std::rethrow_exception(this->failure);
+		}
 	}
 
 	Window::Impl::~Impl()
+	{
+		this->take_down();
+
+		// After the window, because it refuses while one of the class exists.
+		// The return value is not checked: this is teardown, and T6 says it
+		// stays silent.
+		UnregisterClassW(this->class_name.c_str(), this->instance);
+	}
+
+	void Window::Impl::take_down()
 	{
 		// Null on the ordinary exit: the pump returned on WM_QUIT, which came
 		// from WM_DESTROY, and WM_NCDESTROY below cleared it on the way out.
 		// Non-null is every other exit - an initialisation step that threw
 		// after the window was up, a manifest that would not open, an
-		// exception out of the loop - and on those the native window is still
-		// there with its user data pointing at this object.
+		// exception out of the loop or caught from a handler - and on those
+		// the native window is still there with its user data pointing at
+		// this object.
 		if (this->handle != nullptr)
 		{
 			// DETACH FIRST. DestroyWindow sends WM_DESTROY and WM_NCDESTROY
@@ -448,11 +529,16 @@ namespace labrador
 			ClipCursor(nullptr);
 			this->clipping = false;
 		}
+	}
 
-		// After the window, because it refuses while one of the class exists.
-		// The return value is not checked: this is teardown, and T6 says it
-		// stays silent.
-		UnregisterClassW(this->class_name.c_str(), this->instance);
+	void Window::Impl::fail(HWND window)
+	{
+		if (!this->failure)
+		{
+			this->failure = std::current_exception();
+		}
+		this->handle = window;
+		this->take_down();
 	}
 
 	Window::Window(const WindowOptions& options, WindowNotify* notify) :
@@ -474,8 +560,12 @@ namespace labrador
 
 	void Window::pump_until_quit()
 	{
+		// A failure ends the loop as WM_QUIT does, whether it came during
+		// this loop or before it began, and no tick runs after it: fail()
+		// took the window down without posting a quit, so there is none to
+		// wait for.
 		MSG message = {};
-		while (message.message != WM_QUIT)
+		while (message.message != WM_QUIT && !this->impl_->failure)
 		{
 			if (PeekMessage(&message, nullptr, 0, 0, PM_REMOVE))
 			{
@@ -486,6 +576,10 @@ namespace labrador
 			{
 				this->impl_->notify->tick();
 			}
+		}
+		if (this->impl_->failure)
+		{
+			std::rethrow_exception(this->impl_->failure);
 		}
 		this->impl_->exit_code = static_cast<int>(message.wParam);
 	}
@@ -498,8 +592,15 @@ namespace labrador
 		}
 	}
 
+	// EVERY CALL BELOW DOES NOTHING ONCE THE WINDOW HAS GONE (window.h), as
+	// close() does: there is no handle to size, style or clip.
 	void Window::resize_client(const Vector2I& client_size) const
 	{
+		if (this->impl_->handle == nullptr)
+		{
+			return;
+		}
+
 		// Adjusted for whatever frame the window is currently wearing, so the
 		// caller gets the client area it asked for rather than that minus a
 		// caption. The WM_SIZE this produces reports what the window actually
@@ -524,6 +625,10 @@ namespace labrador
 	void Window::enter_fullscreen() const
 	{
 		const HWND handle = this->impl_->handle;
+		if (handle == nullptr)
+		{
+			return;
+		}
 		const bool shown = IsWindowVisible(handle) != FALSE;
 		SetWindowLongPtr(handle, GWL_STYLE, WS_POPUP | (shown ? WS_VISIBLE : 0));
 		SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_TOPMOST);
@@ -547,6 +652,10 @@ namespace labrador
 	void Window::leave_fullscreen(const Vector2I& client_size) const
 	{
 		const HWND handle = this->impl_->handle;
+		if (handle == nullptr)
+		{
+			return;
+		}
 		const bool shown = IsWindowVisible(handle) != FALSE;
 
 		// The style is restored BEFORE the frame arithmetic below, so that
@@ -572,20 +681,22 @@ namespace labrador
 
 	void Window::set_cursor_visible(bool visible) const
 	{
-		this->impl_->cursor_hidden = !visible;
-		if (this->impl_->handle != nullptr)
+		if (this->impl_->handle == nullptr)
 		{
-			this->impl_->apply_cursor_shape(this->impl_->handle);
+			return;
 		}
+		this->impl_->cursor_hidden = !visible;
+		this->impl_->apply_cursor_shape(this->impl_->handle);
 	}
 
 	void Window::set_cursor_confined(bool confined) const
 	{
-		this->impl_->cursor_confined = confined;
-		if (this->impl_->handle != nullptr)
+		if (this->impl_->handle == nullptr)
 		{
-			this->impl_->update_cursor_clip(this->impl_->handle);
+			return;
 		}
+		this->impl_->cursor_confined = confined;
+		this->impl_->update_cursor_clip(this->impl_->handle);
 	}
 
 	void Window::Impl::update_cursor_clip(HWND window)
@@ -1189,6 +1300,24 @@ namespace labrador
 			}
 		}
 
+		// EVERY HANDLER THAT REACHES notify IS BELOW, so this is the one
+		// place an exception can come from, and it goes no further than
+		// here (Impl::failure says why). The window is gone when fail()
+		// returns, so there is nothing to hand to DefWindowProc.
+		try
+		{
+			return self->dispatch(window, message, w_param, l_param);
+		}
+		catch (...)
+		{
+			self->fail(window);
+			return 0;
+		}
+	}
+
+	LRESULT Window::Impl::dispatch(HWND window, UINT message, WPARAM w_param,
+		LPARAM l_param)
+	{
 		switch (message)
 		{
 		case WM_PAINT:
@@ -1197,22 +1326,22 @@ namespace labrador
 		case WM_ENTERSIZEMOVE:
 		case WM_EXITSIZEMOVE:
 		case WM_GETMINMAXINFO:
-			return self->on_size_message(window, message, w_param, l_param);
+			return this->on_size_message(window, message, w_param, l_param);
 
 		case WM_KILLFOCUS:
 		case WM_ACTIVATEAPP:
 		case WM_POWERBROADCAST:
-			return self->on_activation_message(window, message, w_param,
+			return this->on_activation_message(window, message, w_param,
 				l_param);
 
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
-			return self->on_key_message(window, message, w_param, l_param);
+			return this->on_key_message(window, message, w_param, l_param);
 
 		case WM_CHAR:
-			return self->on_char_message(window, w_param, l_param);
+			return this->on_char_message(window, w_param, l_param);
 
 		case WM_MOUSEMOVE:
 		case WM_LBUTTONDOWN:
@@ -1226,20 +1355,20 @@ namespace labrador
 		case WM_CAPTURECHANGED:
 		case WM_MOUSEWHEEL:
 		case WM_MOUSEHWHEEL:
-			return self->on_mouse_message(window, message, w_param, l_param);
+			return this->on_mouse_message(window, message, w_param, l_param);
 
 		case WM_SETCURSOR:
-			return self->on_cursor_message(window, message, w_param, l_param);
+			return this->on_cursor_message(window, message, w_param, l_param);
 
 		case WM_POINTERDOWN:
 		case WM_POINTERUPDATE:
 		case WM_POINTERUP:
 		case WM_POINTERCAPTURECHANGED:
-			return self->on_pointer_message(window, message, w_param, l_param);
+			return this->on_pointer_message(window, message, w_param, l_param);
 
 		case WM_DESTROY:
 		case WM_NCDESTROY:
-			return self->on_destroy_message(window, message, w_param, l_param);
+			return this->on_destroy_message(window, message, w_param, l_param);
 
 		default:
 			return DefWindowProc(window, message, w_param, l_param);

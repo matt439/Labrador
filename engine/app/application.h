@@ -208,7 +208,8 @@ namespace labrador
 		// In a browser the page is told, and decides what comes next; the
 		// states and services are released on a later task (APPLICATION.md#7).
 		// If called during update, the tick completes its remaining fixed steps
-		// but does not draw or publish another completed frame.
+		// but does not draw or publish another completed frame. Before
+		// initialize() there is no window, and it does nothing.
 		void quit() const;
 
 		// THE LAYOUT SIZE FOLLOWS THE WINDOW. However the window comes to change
@@ -218,6 +219,10 @@ namespace labrador
 		// the window's size report - WM_SIZE on Windows - so
 		// on_window_size_changed is the single place that holds the invariant,
 		// and it cannot be got at from a game (APPLICATION.md#2).
+		//
+		// Called before initialize(), each of the three below only records
+		// what was asked, as the cursor calls further down do, and the window
+		// initialize() opens is the one it would have been.
 
 		// Resizes the window so the game gets `resolution` pixels of CLIENT area,
 		// and re-points the resolution manager at what it actually got. The game
@@ -359,16 +364,35 @@ namespace labrador
 		Touch* touch() const;
 
 		// The native window, as Renderer::create_device takes it
-		// (Window::handle): an HWND on Windows, the canvas in a browser.
+		// (Window::handle): an HWND on Windows, the canvas in a browser. Null
+		// before initialize(), like the services.
 		void* window() const;
 
 	private:
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE.
 		//
+		// The COM apartment initialize() opens on Windows, closed when this
+		// member is destroyed. Declared before everything, so it is destroyed
+		// after every service that was made or used under it, the audio
+		// device and the renderer included (APPLICATION.md#4). Elsewhere it
+		// holds nothing.
+		struct ComApartment
+		{
+			ComApartment() = default;
+			~ComApartment();
+
+			ComApartment(const ComApartment&) = delete;
+			ComApartment& operator=(const ComApartment&) = delete;
+
+			bool initialized = false;
+		};
+		ComApartment com_apartment_;
+
 		// Members destruct in reverse declaration order, and the audio device
 		// owns every wave bank and every voice opened against it, so it is
-		// declared FIRST and dies LAST - after the AudioResources whose banks
-		// hold a borrowed pointer to it (APPLICATION.md#4).
+		// the FIRST SERVICE declared and the LAST to die - after the
+		// AudioResources whose banks hold a borrowed pointer to it
+		// (APPLICATION.md#4).
 		std::unique_ptr<AudioDevice> audio_device_ = nullptr;
 
 		ApplicationOptions options_;
@@ -401,9 +425,6 @@ namespace labrador
 		std::unique_ptr<Mouse> mouse_ = nullptr;
 		std::unique_ptr<Touch> touch_ = nullptr;
 
-		// Whether initialize() opened a COM apartment the destructor has to
-		// close. Only a Windows build has one to open.
-		[[maybe_unused]] bool com_initialized_ = false;
 		bool content_loaded_ = false;
 
 		void update();

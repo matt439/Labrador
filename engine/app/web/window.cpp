@@ -43,12 +43,19 @@ EM_JS(void, labrador_show_canvas_cursor, (int visible), {
 	specialHTMLTargets["!canvas"].style.cursor = visible ? "" : "none";
 });
 
-EM_JS(double, labrador_canvas_left, (), {
-	return specialHTMLTargets["!canvas"].getBoundingClientRect().left;
+// The canvas's corner in the page's CSS pixels, from one
+// getBoundingClientRect: it builds a DOMRect and may force a layout, and it
+// runs for every mouse and touch event, mousemove on the whole page among
+// them. The first call measures and answers the left edge; the second
+// answers the top edge that measurement kept.
+EM_JS(double, labrador_measure_canvas_left, (), {
+	const rect = specialHTMLTargets["!canvas"].getBoundingClientRect();
+	Module.labradorCanvasTop = rect.top;
+	return rect.left;
 });
 
-EM_JS(double, labrador_canvas_top, (), {
-	return specialHTMLTargets["!canvas"].getBoundingClientRect().top;
+EM_JS(double, labrador_measured_canvas_top, (), {
+	return Module.labradorCanvasTop;
 });
 
 // A refused full-screen request has no event in the html5 API: the
@@ -478,8 +485,10 @@ namespace labrador
 			this->buffer_width / this->css_width : 1.0;
 		const double scale_y = this->css_height > 0.0 ?
 			this->buffer_height / this->css_height : 1.0;
-		return client_pixels(client_x - labrador_canvas_left(),
-			client_y - labrador_canvas_top(), scale_x, scale_y);
+		const double left = labrador_measure_canvas_left();
+		const double top = labrador_measured_canvas_top();
+		return client_pixels(client_x - left, client_y - top,
+			scale_x, scale_y);
 	}
 
 	bool Window::Impl::inside(const Vector2I& position) const
@@ -878,8 +887,15 @@ namespace labrador
 		this->impl_->schedule_closed();
 	}
 
+	// Every call from here down does nothing once the window has closed
+	// (window.h), as close() does: a closed window listens to nothing and
+	// reports nothing.
 	void Window::resize_client(const Vector2I&) const
 	{
+		if (this->impl_->closed)
+		{
+			return;
+		}
 		this->impl_->report_size();
 	}
 
@@ -908,6 +924,11 @@ namespace labrador
 
 	void Window::leave_fullscreen(const Vector2I&) const
 	{
+		if (this->impl_->closed)
+		{
+			return;
+		}
+
 		// The box changes when the browser has finished leaving, which is
 		// after this returns, and the next frame's measure() reports it then.
 		// The report here is of the size the canvas has now, which keeps the

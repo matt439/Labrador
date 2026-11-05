@@ -1199,8 +1199,9 @@ namespace labrador
 		// DXGI_ERROR_DEVICE_REMOVED out of ResizeBuffers as well as out of the
 		// wait, and says so - "Same recovery, reached from the wait as well as
 		// from ResizeBuffers". Here the wait was answered and this was not, so
-		// a TDR landing between the two threw out of a window procedure into
-		// DispatchMessage: the exact outcome that paragraph exists to prevent.
+		// a TDR landing between the two threw out of a window procedure and
+		// closed the window: the exact outcome that paragraph exists to
+		// prevent.
 		//
 		// ONLY WHEN THERE WAS ONE TO REPLACE, for the reason the D3D12 file's
 		// `if (this->swap_chain_)` gives without stating it: the recovery
@@ -1386,8 +1387,8 @@ namespace labrador
 		// engine/render/d3d12/device_resources.cpp gives at the same place: the
 		// device-lost branch is a few lines below, this wait is the first thing
 		// to touch the device after a removal, and a throw here unwinds out of
-		// a window procedure into DispatchMessage where the shell has nowhere
-		// to catch it.
+		// a window procedure, which the shell can only answer by closing the
+		// window.
 		if (!this->try_wait_for_gpu())
 		{
 			this->handle_device_lost();

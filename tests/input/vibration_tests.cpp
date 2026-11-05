@@ -308,3 +308,22 @@ TEST_CASE("a suspended reader refuses a request and resumes taking them")
 	CHECK_FALSE(reader.vibrate(Gamepads::max_count, rumble(1.0f)));
 	CHECK_NOTHROW(reader.stop_vibration(0));
 }
+
+TEST_CASE("a suspended reader answers every slot disconnected until it resumes")
+{
+	// The build's own reader. With a pad plugged in on the machine running
+	// the tests, this is what keeps a held button from reaching the game
+	// while it is in the background; with none, it still pins the answer.
+	GamepadReader reader;
+	reader.sample();
+	reader.suspend();
+	reader.sample();
+	for (int slot = 0; slot < Gamepads::max_count; ++slot)
+	{
+		CHECK_FALSE(reader.read(slot).connected);
+	}
+
+	// Resuming reads the pads again without throwing.
+	reader.resume();
+	CHECK_NOTHROW(reader.sample());
+}

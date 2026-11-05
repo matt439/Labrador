@@ -766,8 +766,9 @@ namespace labrador
 		// frame's render target view in its deferred context, and DXGI will
 		// not resize a swap chain while anything still references its buffers:
 		// ResizeBuffers answers DXGI_ERROR_INVALID_CALL, and the throw comes out
-		// of a window message where the shell has nowhere to catch it. So the
-		// recordings go first, which is also what releases the reference.
+		// of a window message, which the shell can only answer by closing the
+		// window. So the recordings go first, which is also what releases the
+		// reference.
 		//
 		// discard() rather than finish(): what these contexts hold was drawn
 		// against a buffer that is about to stop existing, so there is nothing
