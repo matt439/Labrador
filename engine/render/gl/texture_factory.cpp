@@ -73,12 +73,13 @@ namespace labrador
 				break;
 			}
 
-			throw std::runtime_error("Texture '" + name + "' is in a pixel "
-				"format this backend cannot upload (texture_format.h). "
-				"b4g4r4a4 is the one this reaches: no file in either client "
-				"uses it, and GL's nearest packing puts the channels in a "
-				"different order, so it is a conversion rather than a "
-				"constant and is not written until something needs it.");
+			throw std::runtime_error("Texture '" + name + "' is " +
+				format_name(format) + ", a pixel format this backend cannot "
+				"upload (texture_format.h). "
+				"b4g4r4a4 is the one this reaches: GL's nearest packing puts "
+				"the channels in a different order, so it is a conversion "
+				"rather than a constant and is not written until a file "
+				"needs it.");
 		}
 
 		// The pixels of a b8g8r8a8 texture, every level, as r8g8b8a8. The

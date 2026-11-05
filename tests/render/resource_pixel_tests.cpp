@@ -116,7 +116,7 @@ TEST_CASE("CONTRACT: every format the seam names is uploaded, or refused by name
 	// succeeds and the name resolves, or it throws with the format in the
 	// message. A backend that quietly substituted a blank texture, or threw an
 	// eight-digit code, fails this on the format it cannot take - which is the
-	// case nobody could reach before, because no file in either client is in
+	// case no content file reaches, because no file in this repository is in
 	// four-bit or in a format the local driver refuses.
 	struct Named
 	{

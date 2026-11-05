@@ -78,9 +78,9 @@ namespace labrador
 				throw std::runtime_error("Texture '" + name + "' is block "
 					"compressed and this Vulkan device has no "
 					"textureCompressionBC. Desktop drivers all provide it; most "
-					"mobile GPUs do not, and 41 of the 43 .dds this engine "
-					"loads are in it, every font atlas included - so a device "
-					"without it has no art and no text.");
+					"mobile GPUs do not. Block-compressed .dds is the common "
+					"form for art and every font atlas is one, so a device "
+					"without it has no text and, for most content, no art.");
 			}
 
 			switch (format)
