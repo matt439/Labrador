@@ -380,9 +380,27 @@ export async function drive_sample(session, url, sample,
 	heard = await until((value) => value.draw_calls > restored.draw_calls + 3 && value.clears > restored.clears + 3);
 	if (heard.quit) throw new Error('The sample quit before trusted key input.');
 
+	// Keys reach the sample only while its canvas has the keyboard, which the
+	// shell gives it at start-up; keys sent while it does not are lost and the
+	// sample never quits. The page's focus is reported if the quit is missing.
+	// Read with its own allowance, so it can still explain a run whose
+	// deadline has expired.
+	const focus_state = () => evaluator(session, () => 15000)(`JSON.stringify({
+		focused: document.activeElement?.tagName ?? null, page_focused: document.hasFocus(),
+		visibility: document.visibilityState })`);
+	const canvas_has_keyboard = 'document.hasFocus() && document.activeElement === Module.canvas';
+	const focus_by = Date.now() + 10000;
+	while (!(await evaluate(canvas_has_keyboard))) {
+		if (Date.now() > focus_by) throw new Error(`The sample's canvas never took the keyboard; page ${await focus_state()}`);
+		await pause(50);
+	}
 	await session.perform(key_actions(sample.keys));
 	await session.release();
-	heard = await until((value) => value.quit);
+	try {
+		heard = await until((value) => value.quit);
+	} catch (error) {
+		throw new Error(`${error.message} The keys did not quit the sample; page ${await focus_state().catch(() => 'unreadable')}`);
+	}
 	await evaluate(frames_expression(10));
 	heard = await state();
 	log(`${label} sample: ${heard.clears} clears, ${heard.draw_calls} drawElements calls, ` +

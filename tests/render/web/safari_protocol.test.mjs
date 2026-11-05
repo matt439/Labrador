@@ -224,8 +224,9 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 
 // A page that answers drive_sample's evaluations as a sample would: it draws
 // on every evaluation, loses and restores its context when asked, and quits
-// once the keys have been pressed and released.
-function sample_session({ complaint = null, error = null, draws_after_restore = true, quits = true } = {}) {
+// once the keys have been pressed and released, if its canvas has the
+// keyboard.
+function sample_session({ complaint = null, error = null, draws_after_restore = true, quits = true, focused = true } = {}) {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: true, clears: 0, draw_calls: 0,
 		elements: 0, lost: 0, restored: 0, raw_api: 'WebGL 2.0', raw_renderer: 'WebKit WebGL', unmasked_renderer: 'Apple GPU' };
 	const log = [];
@@ -252,6 +253,10 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 				log.push(['restore']); lost = false; heard.restored += 1;
 			} else if (expression.includes('requestAnimationFrame')) {
 				draw(); value = true;
+			} else if (expression.includes('activeElement === Module.canvas')) {
+				value = focused;
+			} else if (expression.includes('visibilityState')) {
+				value = JSON.stringify({ focused: focused ? 'CANVAS' : 'BODY', page_focused: focused, visibility: 'visible' });
 			} else {
 				throw new Error(`unexpected expression ${expression}`);
 			}
@@ -282,7 +287,22 @@ test('a sample run fails on a complaint, on onError, and on draws that never res
 	await assert.rejects(drive_sample(sample_session({ draws_after_restore: false }).session, 'u', SAMPLES.minimal,
 		{ pause: async () => {}, log: () => {}, timeout_ms: 200 }), /deadline expired/);
 	await assert.rejects(drive_sample(sample_session({ quits: false }).session, 'u', SAMPLES.minimal,
-		{ pause: async () => {}, log: () => {}, timeout_ms: 200 }), /deadline expired/);
+		{ pause: async () => {}, log: () => {}, timeout_ms: 200 }), /deadline expired.*did not quit the sample; page .*CANVAS/);
+});
+
+test('a sample run sends no keys until its canvas has the keyboard, and names the focus when it never does', async () => {
+	const { log, session } = sample_session({ focused: false });
+	let now = 0;
+	const real_now = Date.now;
+	Date.now = () => (now += 1000);
+	try {
+		await assert.rejects(drive_sample(session, 'u', SAMPLES.minimal,
+			{ pause: async () => {}, log: () => {}, timeout_ms: 10_000_000 }),
+		/canvas never took the keyboard; page .*BODY/);
+	} finally {
+		Date.now = real_now;
+	}
+	assert.equal(log.some(([kind]) => kind === 'perform'), false);
 });
 
 test('the bundle steps\' DevTools calls become WebDriver actions, with Option held round Tab on request', async () => {
