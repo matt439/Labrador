@@ -262,9 +262,11 @@ below predate it.
       page's "Thanks for playing.", and "Play again" mounted a fresh canvas,
       fetched the module again from the browser's cache, started from an
       empty board, and played and quit the same way, with no console message
-      and no browser warning throughout. **Firefox waits on BDP-06** (the
-      Firefox BiDi runner, `run_firefox.mjs`, does not yet cover LineSweeper
-      or the bundle page: `WEB#10`) and **Safari on SM-09**.
+      and no browser warning throughout. **Firefox's half runs as
+      `FirefoxLineSweeperBundlePageTests`** (the
+      [Firefox record](#firefox-sample-checks-web4)), which plays, loses and
+      restores the context, quits and plays again on the bundle page, and
+      **Safari waits on SM-09**.
 - [x] The live demo plays the calm top-out (BDP-23). `c369e8b` contains
       `8c69272`, the commit that calmed it, and in headless Chrome a third
       game, Space pressed until the well filled, showed the stack on every
@@ -310,7 +312,8 @@ below predate it.
       both pass in headless Chrome 153 on SwiftShader against the `v0.3.0`
       module, where the GPU process restarts on the same software device.
       Not run against the live deploy, and not on a real GPU's driver reset.
-      Firefox's half is `WEB#10`.
+      Firefox's entry plays the bundle page with a forced loss and restore;
+      the GPU process crash and the tab switch run in Chromium only.
 - [x] **Owner decision, 2026-10-27 (`BDP-20`): keep the existing 4.3 MB
       on-demand recording** (4,305,947 bytes); no smaller encode is needed.
       The site's page sets it to `preload="none"` with controls, so it neither
@@ -437,34 +440,78 @@ desktop Chrome. Phone memory remains `SM-13`'s.
       `UrlClassifierListManager` error from Firefox's own modules; neither is
       a console entry of the tested tab.
 
+- [x] Cover LineSweeper's development page and its bundle page, and
+      register every run as a ctest entry where configure finds a Firefox
+      (`WEB#10`, story SM-11). **2026-11-05, commit `11292fa` with the change
+      uncommitted; all eight entries passed** under `ctest --preset
+      wasm-release -R "^Firefox"`, in headless Firefox 159.0.1 (build
+      20261102144711) under Node 24.14.0, each removing its profile. The
+      development pages' totals at quit:
+
+      | Page | `.wasm` bytes, SHA-256 prefix | Clears | `drawElements` | Elements |
+      |---|---|---:|---:|---:|
+      | linesweeper | 482,481, `bc3eb73fd899` | 135 | 686 | 158,598 |
+      | minimal | 438,365, `0c766f25e541` | 81 | 81 | 45,684 |
+      | collision | 458,067, `34bf9d5f7635` | 62 | 124 | 67,332 |
+      | audio | 516,019, `2ed67de96843` | 81 | 81 | 145,800 |
+      | local_multiplayer | 455,510, `533c728ab08a` | 62 | 124 | 139,128 |
+      | components | 476,936, `68c1d01380b9` | 191 | 1,323 | 295,542 |
+
+      `FirefoxWebWindowTests` passed all 41 steps (`.wasm` 48,986 bytes,
+      `2c9245d2cb54`). The bundle entry (`linesweeper.wasm` 476,013 bytes,
+      `aef5c7e08877`) passed `bundle_page.mjs`'s desktop instructions and its
+      play, focus and Tab, forced `WEBGL_lose_context` loss and restore, QUIT,
+      and replay on a fresh canvas that hears a synthetic visibility change:
+      the steps and assertions `LineSweeperBundlePageTests` runs in Chromium.
+      The runner serves the bundle folder itself, with
+      `bundle_page.mjs`'s factory wrapper in place of the unqueried loader,
+      and translates the steps' DevTools clicks, keys and navigations to
+      BiDi. It does not run the touch and controller gates, the unsupported,
+      download, truncated and runtime failure pages, a GPU process crash, a
+      tab switch or repeated-play memory, which this runner does not yet
+      drive over BiDi.
+
+      Two of the earlier entries had drifted since 2026-10-28 and failed
+      before this change: `components` stalled in full screen, because the
+      gallery's keys had grown a restart and a second Escape that
+      `ComponentsPageTests` sends and the Firefox list did not; and
+      `WebWindowTests` failed on its own last step's deliberate error, which
+      `window_input.mjs`'s `expected_complaint` now names to both runners.
+      The first launch of the day exited at once and left a Firefox running
+      the newer build on the runner's profile, which looks like a pending
+      update applied on launch; that process was stopped by its PID, and
+      every later run passed.
+
 The runner uses an owned temporary profile, loopback-only serving and default
 Firefox security settings. For a sample it requires continuing real WebGL
 clear/draw submissions, trusted key actions and the page's existing
 `Module.onQuit`; for `WebWindowTests` it requires every step's whole log, and
-fails if the shell settles its failure promise. Warnings and errors logged to
-the tested tab, and `Module.onError`, fail either. Artifact byte
+fails if the shell settles its failure promise, except the one error its
+last step causes on purpose. For the bundle page it requires each of
+`bundle_page.mjs`'s assertions. Warnings and errors logged to
+the tested tab, and `Module.onError`, fail any of them. Artifact byte
 lengths/hashes, session/browser capabilities, for a sample raw WebGL strings, and Firefox's
 last 16 KiB of stderr are logged. Submission counts do not prove pixel
 correctness, audible audio or a physical adapter. No browser run is claimed by
-the 24 offline BiDi transport, control and input-translation fixtures;
+the 27 offline BiDi transport, control and input-translation fixtures;
 `BrowserProtocolTests` runs them under Node, without a browser or device,
-with Chromium's six transport fixtures and three sample-key fixtures, 33 cases
-in all.
+beside Chromium's transport, sample-key, input-bridge and bundle-host
+fixtures, 78 cases in all.
 
-After building the five current pages and `WebWindowTests`, run each sample
-name through the same command (`minimal`, `collision`, `audio`,
-`local_multiplayer`, `components`), and the window's page through `--test`:
+Configure registers eight entries where it finds a Firefox
+(`LABRADOR_TEST_FIREFOX`) and the render backend rasterizes:
+`FirefoxLineSweeperPageTests`, `FirefoxMinimalPageTests`,
+`FirefoxCollisionPageTests`, `FirefoxAudioPageTests`,
+`FirefoxLocalMultiplayerPageTests`, `FirefoxComponentsPageTests`,
+`FirefoxWebWindowTests` and `FirefoxLineSweeperBundlePageTests`. CI's wasm
+job runs them in the runner image's Firefox, in a step of their own. To run
+them, or one page by hand:
 
 ```text
-cmake --build --preset wasm-release --target MinimalSample CollisionSample AudioSample LocalMultiplayerSample ComponentsGallery WebWindowTests --parallel 1
-node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --sample minimal
-node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --test WebWindowTests
+ctest --preset wasm-release -R "^Firefox" --output-on-failure
+node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --sample linesweeper
+node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --bundle out/build/wasm-release/web-dist/linesweeper
 ```
-
-Firefox is not in CI and these runs are not ctest entries (`WEB#10` would
-register them when configure finds a Firefox); Chromium's
-`WebWindowTests` entry runs the same sequence wherever configure finds a
-Chromium.
 
 Record the build's source identity and each actual outcome before ticking a
 box. Old generated outputs are not evidence of the current checkout.

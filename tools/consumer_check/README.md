@@ -87,6 +87,9 @@ echo %errorlevel%
 ```
 
 `check_release.py` names each file that is missing or not in the list, and
+fails unless the installed game's embedded manifest declares PerMonitorV2
+first (`tools/check_dpi_manifest.py`, which reads the file and runs
+nothing), and
 the smoke test must exit 0; if it does not, `startup.txt` holds the reason
 the game wrote to standard error, which reaches the file only through
 `start`'s `/b`. Install into a folder that does not exist yet, or

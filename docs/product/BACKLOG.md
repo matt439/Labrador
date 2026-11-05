@@ -162,7 +162,7 @@ Trust and clocks: the public face and the tree's records stop misleading readers
 | SRL-03 | G36: concept pages say false things about the samples they cite, and the quote check cannot catch prose. |
 | OCA-73 | G148 (merged with SM-42): a public repository with no private vulnerability route; delay compounds with exposure. The setting is owner-only. |
 | OCA-72 | G21 (merged with PI-07): no stated route for questions and exhibit-backed requests. Same PR as SECURITY.md; PI-09 files into it in Next. |
-| OCA-68 | G18 (merged with PI-01, SM-34, PI-02): no consumer-visible change list, and every merge without one widens the backfill (test 1). The backfill to 4cefb68 serves ColourWars' next ordinary bump. *Amended 2026-11-03 by the persona re-review:* the third criterion has one recorded failure, `0c15f34` (2026-10-21), which changed a comment in `engine/CMakeLists.txt` without a CHANGES.md entry or `not consumer-visible`; `v0.2.0`'s release audit caught it and CHANGES.md names it as the exception. Only that manual audit checks the rule; automating it is `CI#3` in TODO.md. |
+| OCA-68 | G18 (merged with PI-01, SM-34, PI-02): no consumer-visible change list, and every merge without one widens the backfill (test 1). The backfill to 4cefb68 serves ColourWars' next ordinary bump. *Amended 2026-11-03 by the persona re-review:* the third criterion has one recorded failure, `0c15f34` (2026-10-21), which changed a comment in `engine/CMakeLists.txt` without a CHANGES.md entry or `not consumer-visible`; `v0.2.0`'s release audit caught it and CHANGES.md names it as the exception. Only that manual audit checks the rule; automating it is `CI#3` in TODO.md. *Amended 2026-11-05:* `CI#3` landed: the lint job checks each commit for an entry, the declaration or an exception CHANGES.md records (`tools/check_changes_rule.py`), and the release audit runs the same check over its range; whether a classification is right stays review's. |
 | SM-21 | G134: required contexts are matrix strings held only in GitHub settings; renaming an entry wedges PRs. Must precede adding the consumer job's context. |
 | OCA-11 | G08 (merged with PI-06): nothing builds the project shape Get Started teaches. The only M in Now; it consumes the PR's own engine tree from a short path (critique). |
 | OCA-09 | G06: Get Started's long-path advice fails as written (seven C1083 failures observed). |
@@ -279,6 +279,8 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   for the existing BiDi runner, `tests/render/web/run_firefox.mjs`, serves
   `web-dist/linesweeper/` and plays, quits and plays again with the bundle
   page test's assertions, registered when a Firefox is found (`WEB#10`).
+  *2026-11-05:* that half landed as `FirefoxLineSweeperBundlePageTests`,
+  which runs in CI's wasm job; the physical pad in Chrome remains.
   Whether DevTools can drive a real context loss and a real tab switch in
   Chrome was investigated for the same treatment (`WEB#14`): it can, and
   since 2026-11-04 the bundle and host page tests crash Chrome's GPU process
@@ -741,7 +743,9 @@ written.
   manifest of the built minimal executable, and of the installed game in
   `tools/consumer_check/check_release.py`, and asserts PerMonitorV2, so CI
   proves on every change that each sample and the Get Started project carry
-  it (`CI#4` in TODO.md). Nothing checks this today. (b) The look at 150% is
+  it (`CI#4` in TODO.md). *2026-11-05:* (a) landed: the windows jobs run
+  `tools/check_dpi_manifest.py` over each build's samples, and
+  `check_release.py` reads the installed game's manifest. (b) The look at 150% is
   the owner's informal play with one of the owned QHD screens set to 150%,
   with no checklist. The story closes when (a) lands and that play has
   happened, and the release guide's sentence that nobody has looked at the
@@ -1081,11 +1085,15 @@ written.
 
 - [x] **[OCA-83](#oca-83)** Could - S - The Outside Adopter: Click, tap and drag the components gallery's rows
 
-- [ ] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
+- [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
-  remaining work is `WEB#10` in TODO.md: add LineSweeper and the bundle
+  remaining work was `WEB#10`: add LineSweeper and the bundle
   page's play, quit and replay to `tests/render/web/run_firefox.mjs`, and
   register its runs as ctest entries when configure finds a Firefox.
+  *Closed 2026-11-05:* configure registers eight `Firefox*` entries where it
+  finds a Firefox and the render backend rasterizes, and CI's wasm job runs
+  them in the image's Firefox; the record is
+  [web-to-be-tested.md](../port/web-to-be-tested.md#firefox-sample-checks-web4).
 
 <a id="oca-83"></a>
 ### OCA-83. Click, tap and drag the components gallery's rows

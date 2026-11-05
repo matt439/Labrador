@@ -21,7 +21,10 @@ A commit that touches `engine/**/*.h`, `engine/CMakeLists.txt`,
 `cmake/settings.cmake` or `vcpkg.json` either adds an entry to this file in
 the same commit or says `not consumer-visible` in its commit message. The
 merge procedure in [CONTRIBUTING.md](CONTRIBUTING.md) asks for it, and so does
-the agent brief.
+the agent brief; CI's lint job fails a commit of a pull request that neither
+touches this file, nor says `not consumer-visible`, nor is the commit this file
+names as the exception to it (`tools/check_changes_rule.py`). Whether the classification is right is
+review's and the release audit's.
 
 An entry is written for someone who did not make the change and is moving a
 pin across it. It says what kind of change it is. A source break names the old

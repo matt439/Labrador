@@ -1,15 +1,25 @@
-// Five development sample pages, and WebWindowTests' page, in Firefox over
-// WebDriver BiDi, separate from Chromium's runner (run_page.mjs). No
-// geckodriver, browser preferences, shared profile or GPU/security flags.
+// The six development sample pages, WebWindowTests' page and LineSweeper's
+// bundle page in Firefox over WebDriver BiDi, separate from Chromium's runner
+// (run_page.mjs). No geckodriver, browser preferences, shared profile or
+// GPU/security flags. The root CMakeLists registers each as a ctest entry
+// when configure finds a Firefox.
 //
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --build-dir out/build/wasm-release --sample minimal [--timeout 60] [--frames 60]
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --build-dir out/build/wasm-release --test WebWindowTests [--timeout 60]
+// node tests/render/web/run_firefox.mjs --browser <firefox.exe>
+//   --bundle out/build/wasm-release/web-dist/linesweeper [--timeout 120]
 //
 // --test WebWindowTests runs tests/app/web/window_input.mjs's sequence against
 // tests/app/web/window_page.cpp's page with window_input below: the same
 // steps and expected logs Chromium's run has, through BiDi's trusted input.
+//
+// --bundle serves the packaged folder and runs bundle_page.mjs's desktop
+// play, forced context loss and restore, quit and replay, with the same
+// assertions LineSweeperBundlePageTests makes in Chromium. The runner's own
+// server stands in for Chromium's response interception, and bundle_input
+// below translates the steps' DevTools input calls to BiDi actions.
 //
 // Protocol/bootstrap sources (Mozilla's current WebDriver documentation):
 // https://developer.mozilla.org/en-US/docs/Web/WebDriver/How_to/Create_BiDi_connection
@@ -23,23 +33,29 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { drive_window } from '../../app/web/window_input.mjs';
+import { drive_window, expected_complaint as window_expected_complaint } from '../../app/web/window_input.mjs';
+import { FACTORY_WRAPPER, PRELUDE, READY, bundle_state, steps } from './bundle_page.mjs';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
 
 export const SAMPLES = Object.freeze({
+	// The pause menu: RESUME, RESTART, COLOURS, QUIT.
+	linesweeper: { target: 'LineSweeperSample', keys: ['Escape', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'Enter'] },
 	minimal: { target: 'MinimalSample', keys: ['Escape', 'Enter'] },
 	collision: { target: 'CollisionSample', keys: ['Escape'] },
 	audio: { target: 'AudioSample', keys: ['KeyS', 'Escape'] },
 	local_multiplayer: { target: 'LocalMultiplayerSample', keys: ['Escape'] },
-	components: { target: 'ComponentsGallery', keys: ['ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'Escape'] },
+	// The keys ComponentsPageTests presses: a browser can take the first
+	// Escape to leave full screen, so a second one quits the gallery.
+	components: { target: 'ComponentsGallery',
+		keys: ['ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'KeyR', 'Escape', 'Escape'] },
 });
 
-const KEY_VALUES = Object.freeze({ Escape: '\uE00C', Enter: '\uE007', KeyS: 's',
+const KEY_VALUES = Object.freeze({ Escape: '\uE00C', Enter: '\uE007', KeyS: 's', KeyR: 'r',
 	ArrowLeft: '\uE012', ArrowUp: '\uE013', ArrowRight: '\uE014', ArrowDown: '\uE015' });
 
 export function parse_options(arguments_) {
 	const options = {};
-	const allowed = new Set(['browser', 'build-dir', 'sample', 'test', 'timeout', 'frames']);
+	const allowed = new Set(['browser', 'build-dir', 'sample', 'test', 'bundle', 'timeout', 'frames']);
 	for (let index = 0; index < arguments_.length; index += 2) {
 		const name = arguments_[index].replace(/^--/, '');
 		if (!arguments_[index].startsWith('--') || !allowed.has(name) ||
@@ -48,11 +64,16 @@ export function parse_options(arguments_) {
 		}
 		options[name] = arguments_[index + 1];
 	}
-	const page_named = options.test === undefined ? Object.hasOwn(SAMPLES, options.sample ?? '') :
-		options.test === 'WebWindowTests' && options.sample === undefined && options.frames === undefined;
-	if (!options.browser || !options['build-dir'] || !page_named) {
-		throw new Error('--browser, --build-dir and either --sample (minimal/collision/audio/local_multiplayer/components) ' +
-			'or --test WebWindowTests (without --frames) are required.');
+	const named = ['sample', 'test', 'bundle'].filter((name) => options[name] !== undefined);
+	const page_named = named.length === 1 && (
+		named[0] === 'sample' ? Object.hasOwn(SAMPLES, options.sample) && options['build-dir'] !== undefined :
+		named[0] === 'test' ? options.test === 'WebWindowTests' && options['build-dir'] !== undefined &&
+			options.frames === undefined :
+		options.bundle !== '' && options['build-dir'] === undefined && options.frames === undefined);
+	if (!options.browser || !page_named) {
+		throw new Error('--browser and one of: --build-dir with --sample ' +
+			`(${Object.keys(SAMPLES).join('/')}) or --test WebWindowTests (without --frames); ` +
+			'or --bundle <web-dist/linesweeper folder> (without --build-dir or --frames).');
 	}
 	options.timeout_ms = Number(options.timeout ?? 60) * 1000;
 	options.frames = Number(options.frames ?? 60);
@@ -309,9 +330,11 @@ export const WINDOW_HOOK = `() => {
 
 // Exported for offline control fixtures; `drive` is window_input.mjs's
 // drive_window in a real run. A page that ends, a warning or error the tab
-// logs, or a destroyed context fails the run while the sequence goes on.
+// logs, or a destroyed context fails the run while the sequence goes on,
+// except the error the sequence's last step causes on purpose, which
+// window_input.mjs's expected_complaint names for run_page.mjs too.
 export async function drive_window_page(protocol, context, url, drive,
-	{ timeout_ms = 60000, pause = wait, log = console.log } = {}) {
+	{ timeout_ms = 60000, pause = wait, log = console.log, expected_complaint = () => false } = {}) {
 	const deadline = Date.now() + timeout_ms;
 	const remaining = () => {
 		const duration = deadline - Date.now();
@@ -323,7 +346,10 @@ export async function drive_window_page(protocol, context, url, drive,
 		if (message.method === 'log.entryAdded') {
 			const entry = message.params;
 			log(`Firefox ${entry.level}: ${entry.text ?? '(no text)'}`);
-			if (entry.level === 'warn' || entry.level === 'error') complaints.push(`${entry.level}: ${entry.text}`);
+			if ((entry.level === 'warn' || entry.level === 'error') &&
+				expected_complaint({ level: entry.level, text: entry.text }) !== true) {
+				complaints.push(`${entry.level}: ${entry.text}`);
+			}
 		} else if (message.method === 'browsingContext.contextDestroyed' && message.params.context === context) {
 			protocol.fail('the tested Firefox context was destroyed');
 		}
@@ -365,14 +391,114 @@ export async function drive_window_page(protocol, context, url, drive,
 	}
 }
 
+// bundle_page.mjs's steps speak DevTools: they click Play, press keys and
+// navigate with Input.dispatchMouseEvent, Input.dispatchKeyEvent and
+// Page.navigate, and read whole values back. These are those calls as BiDi
+// commands, and an evaluation that returns any JSON value rather than only a
+// primitive. Any other DevTools method refuses rather than being skipped.
+const BUNDLE_KEYS = Object.freeze({ Escape: '', Enter: '', Tab: '', KeyA: 'a',
+	ArrowLeft: '', ArrowUp: '', ArrowRight: '', ArrowDown: '' });
+
+export function bundle_input(protocol, context, evaluate_primitive, pause = wait) {
+	const perform = (actions) => protocol.send('input.performActions', { context, actions });
+	const mouse = (button_action, { x, y }) => perform([{ type: 'pointer', id: 'mouse',
+		parameters: { pointerType: 'mouse' }, actions: [
+			{ type: 'pointerMove', x: Math.round(x), y: Math.round(y) }, { type: button_action, button: 0 }] }]);
+	const key = (key_action, code) => {
+		if (!Object.hasOwn(BUNDLE_KEYS, code)) throw new Error(`Unsupported bundle key ${code}.`);
+		return perform([{ type: 'key', id: 'keyboard', actions: [{ type: key_action, value: BUNDLE_KEYS[code] }] }]);
+	};
+	const send = async (method, params) => {
+		if (method === 'Input.dispatchMouseEvent' && params.type === 'mousePressed') return mouse('pointerDown', params);
+		if (method === 'Input.dispatchMouseEvent' && params.type === 'mouseReleased') return mouse('pointerUp', params);
+		if (method === 'Input.dispatchKeyEvent' && (params.type === 'rawKeyDown' || params.type === 'keyDown')) {
+			return key('keyDown', params.code);
+		}
+		if (method === 'Input.dispatchKeyEvent' && params.type === 'keyUp') return key('keyUp', params.code);
+		if (method === 'Page.navigate') {
+			return protocol.send('browsingContext.navigate', { context, url: params.url, wait: 'complete' });
+		}
+		throw new Error(`${method} has no BiDi translation in the Firefox bundle run.`);
+	};
+	const evaluate = async (expression) => JSON.parse(await evaluate_primitive(
+		`(async () => JSON.stringify({ value: await (${expression}) }))()`)).value;
+	return { evaluate, send, wait: pause };
+}
+
+// Exported for offline control fixtures. The page is served by main with
+// FACTORY_WRAPPER in place of the loader, as Chromium's interception does,
+// so the same hooks hear each instance's callbacks.
+export async function drive_bundle(protocol, context, url,
+	{ timeout_ms = 120000, pause = wait, log = console.log } = {}) {
+	const deadline = Date.now() + timeout_ms;
+	const remaining = () => {
+		const duration = deadline - Date.now();
+		if (duration <= 0) throw new Error('Firefox bundle deadline expired.');
+		return Math.min(duration, 10000);
+	};
+	const complaints = [];
+	const unsubscribe = protocol.on((message) => {
+		if (message.method === 'log.entryAdded') {
+			const entry = message.params;
+			log(`Firefox ${entry.level}: ${entry.text ?? '(no text)'}`);
+			if (entry.level === 'warn' || entry.level === 'error') complaints.push(`${entry.level}: ${entry.text}`);
+		} else if (message.method === 'browsingContext.contextDestroyed' && message.params.context === context) {
+			protocol.fail('the tested Firefox context was destroyed');
+		}
+	});
+	const healthy = () => {
+		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+	};
+	const evaluate_primitive = async (expression) => {
+		healthy();
+		const value = await protocol.evaluate(context, expression, remaining());
+		healthy();
+		return value;
+	};
+	try {
+		await protocol.send('session.subscribe', { events: ['log.entryAdded', 'browsingContext.contextDestroyed'], contexts: [context] });
+		await protocol.send('script.addPreloadScript', { functionDeclaration: `() => ${PRELUDE}`, contexts: [context] });
+		await protocol.send('browsingContext.activate', { context });
+		await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+		const state = bundle_state();
+		state.phase = 'play and replay';
+		const page = bundle_input(protocol, context, evaluate_primitive, pause);
+		const { until, navigate, desktop_instructions, play_restore_replay } = steps(page, state);
+		await until(READY, 'the bundle page did not settle');
+		await navigate('desktop');
+		await desktop_instructions();
+		await play_restore_replay();
+		await protocol.send('input.releaseActions', { context });
+		healthy();
+		log('Firefox bundle: desktop play, forced context loss and restore, quit and replay passed. ' +
+			'Not run here: the touch and controller gates, unsupported-browser and failure pages, ' +
+			'a real GPU loss, a real tab switch and repeated-play memory, which Chromium runs.');
+	} finally {
+		unsubscribe();
+	}
+}
+
+const BUNDLE_FILES = Object.freeze(['index.html', 'linesweeper.js', 'linesweeper.wasm', 'poster.png']);
+
 function artifact_files(options) {
+	if (options.bundle !== undefined) return BUNDLE_FILES.map((name) => join(resolve(options.bundle), name));
 	const [directory, target] = options.test !== undefined ?
 		[resolve(options['build-dir'], 'tests', 'app'), options.test] :
 		[resolve(options['build-dir'], 'samples', options.sample), SAMPLES[options.sample].target];
 	return ['html', 'js', 'wasm'].map((extension) => join(directory, `${target}.${extension}`));
 }
 
-async function serve(files) {
+// The bundle's loader, asked for without a query, is the wrapper; the
+// wrapper's own import of it, with the query, is the real file.
+export function bundle_substitute(url) {
+	return url.pathname === '/linesweeper.js' && url.search === '' ?
+		{ type: 'text/javascript; charset=utf-8', body: Buffer.from(FACTORY_WRAPPER) } : null;
+}
+
+const CONTENT_TYPES = Object.freeze({ '.wasm': 'application/wasm', '.js': 'text/javascript',
+	'.png': 'image/png', '.html': 'text/html; charset=utf-8' });
+
+async function serve(files, substitute = () => null) {
 	let fatal;
 	const failed = new Promise((_, refuse) => { fatal = refuse; });
 	failed.catch(() => {});
@@ -380,8 +506,15 @@ async function serve(files) {
 	let denied = false;
 	const server = createServer((request, response) => {
 		if (denied) { response.writeHead(503).end(); return; }
-		const wanted = new URL(request.url, 'http://127.0.0.1').pathname;
+		const requested = new URL(request.url, 'http://127.0.0.1');
+		const wanted = requested.pathname;
 		if (wanted === '/favicon.ico') { response.writeHead(204).end(); return; }
+		const substituted = substitute(requested);
+		if (substituted) {
+			response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': substituted.type });
+			response.end(substituted.body);
+			return;
+		}
 		const file = allowed.get(wanted);
 		if (!file) {
 			denied = true;
@@ -391,8 +524,9 @@ async function serve(files) {
 		}
 		try {
 			const bytes = readFileSync(file);
-			response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': file.endsWith('.wasm') ?
-				'application/wasm' : file.endsWith('.js') ? 'text/javascript' : 'text/html; charset=utf-8' });
+			const extension = /\.[^.]+$/.exec(file)?.[0] ?? '';
+			response.writeHead(200, { 'Cache-Control': 'no-store',
+				'Content-Type': CONTENT_TYPES[extension] ?? 'application/octet-stream' });
 			response.end(bytes);
 		} catch (error) {
 			denied = true;
@@ -477,7 +611,7 @@ export async function main(options) {
 	let failure = null;
 	try {
 		profile = mkdtempSync(join(tmpdir(), 'labrador-firefox-'));
-		service = await serve(files);
+		service = await serve(files, options.bundle !== undefined ? bundle_substitute : undefined);
 		launched = launch_firefox(options.browser, profile);
 		console.log(`Firefox task profile=${profile}, pid=${launched.child.pid ?? 'unavailable'}`);
 		const endpoint = await bounded(launched.endpoint, 30000, 'Firefox did not report its BiDi endpoint in 30 seconds.');
@@ -489,14 +623,19 @@ export async function main(options) {
 		console.log(`Firefox session ${session.sessionId}: ${JSON.stringify(session.capabilities)}`);
 		const { context } = await protocol.send('browsingContext.create', { type: 'tab', background: false });
 		if (typeof context !== 'string') throw new Error('Firefox created no browsing context.');
-		const driven = options.test !== undefined ?
-			drive_window_page(protocol, context, service.url, drive_window, options) :
-			drive_sample(protocol, context, service.url, SAMPLES[options.sample], options);
+		const driven = options.bundle !== undefined ?
+			drive_bundle(protocol, context, service.url, options) :
+			options.test !== undefined ?
+				drive_window_page(protocol, context, service.url, drive_window,
+					{ ...options, expected_complaint: window_expected_complaint }) :
+				drive_sample(protocol, context, service.url, SAMPLES[options.sample], options);
 		await bounded(Promise.race([service.failed, driven]),
 			options.timeout_ms, 'Firefox page timed out.', () => protocol.fail('Firefox page deadline expired'));
-		console.log(options.test !== undefined ?
-			'Firefox WebWindowTests: input sequence passed. No real visibility change, touch cancellation or physical-device acceptance.' :
-			`Firefox ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
+		console.log(options.bundle !== undefined ?
+			'Firefox bundle: page protocol passed. No listening or physical-device acceptance.' :
+			options.test !== undefined ?
+				'Firefox WebWindowTests: input sequence passed. No real visibility change, touch cancellation or physical-device acceptance.' :
+				`Firefox ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
 	} catch (error) {
 		failure = error;
 	} finally {

@@ -150,6 +150,23 @@ if(PROJECT_IS_TOP_LEVEL)
                 "WebWindowTests and the samples' pages are built and not "
                 "registered with ctest. Set LABRADOR_TEST_BROWSER to run them.")
         endif()
+
+        # A FIREFOX, FOR THE SAME PAGES OVER WEBDRIVER BIDI, by
+        # tests/render/web/run_firefox.mjs: each sample's page, the window's
+        # and LineSweeper's bundle page, registered at the end of this file.
+        # Absent rather than skipped where configure finds none, as above.
+        find_program(LABRADOR_TEST_FIREFOX
+            NAMES firefox
+            PATHS
+                "$ENV{ProgramFiles}/Mozilla Firefox"
+            NO_CMAKE_FIND_ROOT_PATH
+            DOC "A Firefox to run a browser build's pages in over WebDriver BiDi"
+        )
+        if(NOT LABRADOR_TEST_FIREFOX)
+            message(STATUS "No Firefox found, so the Firefox* page entries "
+                "are not registered with ctest. Set LABRADOR_TEST_FIREFOX "
+                "to run them.")
+        endif()
     endif()
 
     add_subdirectory(tests)
@@ -282,5 +299,52 @@ if(PROJECT_IS_TOP_LEVEL)
                     RESOURCE_LOCK linesweeper_frame_timing)
             endif()
         endif()
+    endif()
+
+    # THE SAME PAGES IN FIREFOX, over WebDriver BiDi rather than DevTools
+    # (tests/render/web/run_firefox.mjs says what each run requires and
+    # what it does not claim). Each sample's page is loaded, drawn and quit
+    # by its own keys; the window's page runs window_input.mjs's sequence;
+    # the bundle page is played, its context lost and restored, quit and
+    # played again with bundle_page.mjs's assertions. Only with a rasterizing
+    # backend, because a sample's run counts real WebGL draws. Named Firefox*
+    # so the CI steps that run Chromium's pages can leave them out.
+    if(EMSCRIPTEN AND LABRADOR_TEST_FIREFOX
+        AND NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
+        set(labrador_firefox_runner
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_firefox.mjs")
+        set(labrador_firefox_samples
+            linesweeper minimal collision audio local_multiplayer components)
+        set(labrador_firefox_names
+            LineSweeper Minimal Collision Audio LocalMultiplayer Components)
+        foreach(sample name IN ZIP_LISTS
+                labrador_firefox_samples labrador_firefox_names)
+            add_test(NAME Firefox${name}PageTests
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} "${labrador_firefox_runner}"
+                    --browser "${LABRADOR_TEST_FIREFOX}"
+                    --build-dir "${CMAKE_BINARY_DIR}"
+                    --sample ${sample}
+                    --timeout 60
+            )
+            set_tests_properties(Firefox${name}PageTests PROPERTIES TIMEOUT 90)
+        endforeach()
+        add_test(NAME FirefoxWebWindowTests
+            COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} "${labrador_firefox_runner}"
+                --browser "${LABRADOR_TEST_FIREFOX}"
+                --build-dir "${CMAKE_BINARY_DIR}"
+                --test WebWindowTests
+                --timeout 60
+        )
+        set_tests_properties(FirefoxWebWindowTests PROPERTIES TIMEOUT 90)
+        add_test(NAME FirefoxLineSweeperBundlePageTests
+            COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} "${labrador_firefox_runner}"
+                --browser "${LABRADOR_TEST_FIREFOX}"
+                --bundle "${CMAKE_BINARY_DIR}/web-dist/linesweeper"
+                --timeout 120
+        )
+        # Never beside the other LineSweeper pages that time frames on the
+        # same software rasteriser, for the reason Chromium's bundle entry gives.
+        set_tests_properties(FirefoxLineSweeperBundlePageTests PROPERTIES
+            TIMEOUT 180 COST 900 RESOURCE_LOCK linesweeper_frame_timing)
     endif()
 endif()

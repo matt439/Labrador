@@ -81,8 +81,10 @@ gh label create declined --color b60205 --description "Request declined; the clo
    same commit, or says
    `not consumer-visible` in its message. CHANGES.md's opening paragraph
    defines the term and its rule says what an entry holds: for a source break,
-   the old spelling, the new one and the sample diff that migrates it. Review
-   checks this before merging, because nothing else does.
+   the old spelling, the new one and the sample diff that migrates it. The
+   lint job fails a commit that has neither (`tools/check_changes_rule.py`);
+   whether the entry or the declaration is right is review's to check before
+   merging, because nothing else does.
    A commit that changes what `samples/minimal/` does or how it builds, or an
    engine behaviour that folder depends on, in a way a copy of it would want,
    adds a dated line to the change list in
@@ -242,7 +244,11 @@ cut once PHILOSOPHY's settle criterion has run.
    `git log --format='%h %s' vPREV..origin/master -- 'engine/*.h' 'engine/*.cpp' engine/CMakeLists.txt cmake/settings.cmake vcpkg.json`,
    where `vPREV` is the newest tag. Every commit it prints that touches a path
    the rule names has an entry in CHANGES.md or says `not consumer-visible` in
-   its message, and a change to a source file is read for a behaviour change a
+   its message.
+   `python tools/check_changes_rule.py --base vPREV --head origin/master`
+   names each one that neither touches CHANGES.md, nor says so, nor is the
+   exception CHANGES.md records; whether a touch is that commit's own entry
+   is read here. A change to a source file is read for a behaviour change a
    game would see, which the rule's paths do not catch. A commit the audit
    finds unclassified is given an entry, or a line under the release's heading
    saying why it has none, in the next step.

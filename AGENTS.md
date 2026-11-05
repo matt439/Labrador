@@ -55,7 +55,7 @@ web input; configure refuses browser Direct3D/Vulkan/XAudio2 and native Web Audi
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 20; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 20; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 19; no graphics/audio API; no RenderPixelTests |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 33 Debug / 34 Release with Chromium, 19 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 33 Debug / 34 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
@@ -76,6 +76,11 @@ instrument's frame protocol and exact fixture counts; it makes no physical
 pacing claim and does not run in the null-render browser configuration.
 `BrowserProtocolTests` holds Chromium and Firefox command replies and crash
 teardown to fake WebSockets under Node, with no browser or device.
+`LABRADOR_TEST_FIREFOX` names a Firefox. Where configure finds one and the
+render backend rasterizes, eight `Firefox*` entries run the six sample pages,
+`WebWindowTests`' sequence and the bundle page's desktop play, forced context
+loss, quit and replay over WebDriver BiDi
+([run_firefox.mjs](tests/render/web/run_firefox.mjs)); CI's image has one.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 Changes confined to `.md` files or `docs/` run the standalone CMake lint
@@ -288,7 +293,8 @@ per commit. Push or open a PR only when the owner asks.
 A consumer-visible change goes in [CHANGES.md](CHANGES.md), newest first under
 `## Unreleased`. Touching `engine/**/*.h`, `engine/CMakeLists.txt`,
 `cmake/settings.cmake` or `vcpkg.json` requires an entry or `not consumer-visible`
-in the commit message. The rule includes silent behaviour and dependency/flag
+in the commit message, which the lint job checks per commit
+(`tools/check_changes_rule.py`). The rule includes silent behaviour and dependency/flag
 changes. A source break names old/new spellings and the sample migration diff.
 Keep history there, never in header comments. Releases are owner-cut tags by
 CONTRIBUTING's release procedure, with entries under the tag carrying them.
