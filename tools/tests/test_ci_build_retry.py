@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 from pathlib import Path
-import sys
 import unittest
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("ci_build_retry", REPOSITORY / "tools/ci_build_retry.py")
-retry = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = retry
-SPEC.loader.exec_module(retry)
+retry = load_tool("tools/ci_build_retry.py")
 
 # The shape of job 125693580862's log: the edge, then the bare text.
 LOCKED_LOG = ("FAILED: samples/local_multiplayer/LocalMultiplayerSample.exe\n"

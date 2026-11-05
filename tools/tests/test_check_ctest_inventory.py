@@ -3,21 +3,17 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
 from pathlib import Path
 import re
 import subprocess
-import sys
 import unittest
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("check_ctest_inventory",
-                                              REPOSITORY / "tools/check_ctest_inventory.py")
-inventory_check = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = inventory_check
-SPEC.loader.exec_module(inventory_check)
+inventory_check = load_tool("tools/check_ctest_inventory.py")
 
 INVENTORY = json.loads(inventory_check.INVENTORY.read_text(encoding="utf-8"))
 
@@ -81,6 +77,20 @@ class Drift(unittest.TestCase):
         checked = set(re.findall(r"check_ctest_inventory\.py --configuration (\S+)", workflow))
         # The windows job passes its matrix preset, which reads as "${{" here.
         self.assertEqual(checked, {"${{", "wasm-release", "wasm-release-null"})
+
+    def test_chromium_registered_names_every_chromium_page_wasm_release_registers(self):
+        chromium = INVENTORY["chromium_registered"]
+        self.assertEqual(len(chromium), len(set(chromium)))
+        release = inventory_check.expected_tests(INVENTORY, "wasm-release")
+        self.assertLessEqual(set(chromium), release)
+        cmake = (REPOSITORY / "CMakeLists.txt").read_text(encoding="utf-8")
+        pages = set(re.findall(r"\blabrador_sample_page_test\(\s*([A-Z]\w+)", cmake))
+        pages |= set(re.findall(r"\badd_test\(NAME\s+(\w+PageTests)\b", cmake))
+        # Firefox has its own runner, the host page needs a host checkout and
+        # pacing is registered only in Release.
+        pages -= {"LineSweeperHostPageTests", "LineSweeperPacingPageTests"}
+        pages = {name for name in pages if not name.startswith("Firefox")}
+        self.assertEqual(pages, {name for name in chromium if name.endswith("PageTests")})
 
 
 if __name__ == "__main__":

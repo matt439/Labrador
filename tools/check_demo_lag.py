@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import git_local  # noqa: E402
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 HOST_BUILD = "public/demo/linesweeper/BUILD.json"
@@ -27,21 +29,7 @@ class CheckError(RuntimeError):
 def git(repository: Path, *arguments: str, accepted: tuple[int, ...] = (0,)) -> subprocess.CompletedProcess:
     # Ambient Git routing/configuration must not substitute another checkout,
     # object store, namespace or replacement history for the explicit roots.
-    environment = {name: value for name, value in os.environ.items()
-                   if not name.upper().startswith("GIT_")}
-    environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
-                        "GIT_GRAFT_FILE": os.devnull, "GIT_TERMINAL_PROMPT": "0"})
-    try:
-        result = subprocess.run(
-            ["git", "--no-pager", "--no-optional-locks", "--no-lazy-fetch", "--no-replace-objects",
-             "-C", str(repository), *arguments],
-            capture_output=True, env=environment, shell=False, timeout=30, check=False)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise CheckError(f"cannot read local Git objects: {error}") from error
-    if result.returncode not in accepted:
-        detail = result.stderr.decode("utf-8", errors="replace").strip()
-        raise CheckError(f"git {arguments[0]} failed: {detail or 'no diagnostic'}")
-    return result
+    return git_local.git(repository, *arguments, accepted=accepted, error=CheckError)
 
 
 def checkout_root(path: Path, label: str) -> Path:

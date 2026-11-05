@@ -41,20 +41,42 @@ function Resolve-Inside([string]$Root, [string]$Relative) {
     return $candidate
 }
 
-function Get-ImdsDocument {
-    $token = Invoke-RestMethod -Method Put -Uri 'http://169.254.169.254/latest/api/token' `
+function Get-ImdsToken {
+    return Invoke-RestMethod -Method Put -Uri 'http://169.254.169.254/latest/api/token' `
         -Headers @{'X-aws-ec2-metadata-token-ttl-seconds' = '21600'} -TimeoutSec 2
+}
+
+function Get-ImdsDocument {
     return Invoke-RestMethod -Method Get `
         -Uri 'http://169.254.169.254/latest/dynamic/instance-identity/document' `
-        -Headers @{'X-aws-ec2-metadata-token' = $token} -TimeoutSec 2
+        -Headers @{'X-aws-ec2-metadata-token' = (Get-ImdsToken)} -TimeoutSec 2
 }
 
 function Get-ImdsRoleName {
-    $token = Invoke-RestMethod -Method Put -Uri 'http://169.254.169.254/latest/api/token' `
-        -Headers @{'X-aws-ec2-metadata-token-ttl-seconds' = '21600'} -TimeoutSec 2
     return Invoke-RestMethod -Method Get `
         -Uri 'http://169.254.169.254/latest/meta-data/iam/security-credentials/' `
-        -Headers @{'X-aws-ec2-metadata-token' = $token} -TimeoutSec 2
+        -Headers @{'X-aws-ec2-metadata-token' = (Get-ImdsToken)} -TimeoutSec 2
+}
+
+# One row per GPU: name, PCI device, driver, P-state, temperature and clocks.
+function Get-NvidiaSmiRows([string]$Executable, [string]$When) {
+    $rows = @(& $Executable `
+        '--query-gpu=name,pci.device_id,driver_version,pstate,temperature.gpu,clocks.gr,clocks.mem' `
+        '--format=csv,noheader,nounits')
+    if ($LASTEXITCODE -ne 0) {
+        throw "nvidia-smi failed $When measurement"
+    }
+    $rows
+}
+
+# Each row's name, PCI device and driver as 'name|device|driver', parsed the
+# same way before and after measurement so a comparison sees only real change.
+function ConvertTo-GpuIdentity([string[]]$Rows, [string]$When) {
+    $Rows | ForEach-Object {
+        $fields = @($_ -split ',' | Select-Object -First 3 | ForEach-Object { $_.Trim() })
+        if ($fields.Count -ne 3) { throw "nvidia-smi identity $When measurement was malformed" }
+        $fields -join '|'
+    }
 }
 
 function Convert-VendorId($Value) {
@@ -285,17 +307,9 @@ try {
     if ($null -eq $nvidiaCommand) {
         throw 'nvidia-smi.exe is absent from the qualified image'
     }
-    $nvidiaBefore = @(& $nvidiaCommand.Source `
-        '--query-gpu=name,pci.device_id,driver_version,pstate,temperature.gpu,clocks.gr,clocks.mem' `
-        '--format=csv,noheader,nounits')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'nvidia-smi failed before measurement'
-    }
-    $driverVersions = @($nvidiaBefore | ForEach-Object {
-        $fields = @($_ -split ',' | Select-Object -First 3 | ForEach-Object { $_.Trim() })
-        if ($fields.Count -ne 3) { throw 'nvidia-smi identity before measurement was malformed' }
-        $fields[2]
-    } | Select-Object -Unique)
+    $nvidiaBefore = @(Get-NvidiaSmiRows $nvidiaCommand.Source 'before')
+    $gpuIdentityBefore = @(ConvertTo-GpuIdentity $nvidiaBefore 'before')
+    $driverVersions = @($gpuIdentityBefore | ForEach-Object { ($_ -split '\|')[2] } | Select-Object -Unique)
     if ($driverVersions.Count -ne 1) {
         throw 'The runner exposed more than one NVIDIA driver version'
     }
@@ -439,22 +453,8 @@ try {
             }
         }
     }
-    $nvidiaAfter = @(& $nvidiaCommand.Source `
-        '--query-gpu=name,pci.device_id,driver_version,pstate,temperature.gpu,clocks.gr,clocks.mem' `
-        '--format=csv,noheader,nounits')
-    if ($LASTEXITCODE -ne 0) {
-        throw 'nvidia-smi failed after measurement'
-    }
-    $gpuIdentityBefore = @($nvidiaBefore | ForEach-Object {
-        $fields = @($_ -split ',' | Select-Object -First 3 | ForEach-Object { $_.Trim() })
-        if ($fields.Count -ne 3) { throw 'nvidia-smi identity before measurement was malformed' }
-        $fields -join '|'
-    })
-    $gpuIdentityAfter = @($nvidiaAfter | ForEach-Object {
-        $fields = @($_ -split ',' | Select-Object -First 3 | ForEach-Object { $_.Trim() })
-        if ($fields.Count -ne 3) { throw 'nvidia-smi identity after measurement was malformed' }
-        $fields -join '|'
-    })
+    $nvidiaAfter = @(Get-NvidiaSmiRows $nvidiaCommand.Source 'after')
+    $gpuIdentityAfter = @(ConvertTo-GpuIdentity $nvidiaAfter 'after')
     if (@(Compare-Object $gpuIdentityBefore $gpuIdentityAfter).Count -ne 0) {
         throw 'GPU name, PCI device or driver changed during measurement'
     }

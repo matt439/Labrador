@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import copy
-import importlib.util
 import io
 import json
 from pathlib import Path
@@ -12,19 +11,15 @@ import unittest
 from unittest import mock
 import xml.etree.ElementTree as ElementTree
 
-import test_verify_changes as fixtures
+from tools.tests.tool_fixtures import PlannerCheckout, load_tool
 
-planner = fixtures.planner
-SPEC = importlib.util.spec_from_file_location("verification_runner", planner.REPOSITORY / "tools/verification_runner.py")
-sweep = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(sweep)
+planner = load_tool("tools/verify_changes.py")
+sweep = load_tool("tools/verification_runner.py")
 
 
 class RunnerTests(unittest.TestCase):
     def setUp(self):
-        fixture = fixtures.PlanTests(methodName="runTest")
-        fixture.setUp()
-        self.addCleanup(fixture.doCleanups)
+        fixture = PlannerCheckout(self, planner)
         self.fixture = fixture
         self.root = fixture.root
         self.environment, self.tools, self.browser = fixture.fake_tooling()

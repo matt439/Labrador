@@ -1,10 +1,9 @@
 """Act on a finished run of a workflow on master: rerun a failure once, then say so.
 
 A merge to master is tested by its pull request, so a red run on master is
-either a runner flake or something the pull request could not see, and before
-this nobody was told: 3 of the 4 red master pushes from 2026-10-25 to
-2026-11-04 were never rerun. On a first failed attempt this reruns the failed
-jobs, which tells a flake from a fault on a tree already tested. A failure
+either a runner flake or something the pull request could not see. On a first
+failed attempt this reruns the failed jobs, which tells a flake from a fault
+on a tree already tested. A failure
 that survives it opens one issue per workflow, or comments on the open one,
 and GitHub notifies the repository's watchers. The next green run on master
 closes it.
@@ -12,7 +11,9 @@ closes it.
 Run by .github/workflows/master-watch.yml with the workflow_run payload in
 GITHUB_EVENT_PATH and GH_TOKEN set; it calls gh and nothing else. It waits
 for its own rerun rather than hearing of it later, because a rerun started
-with the workflow's token raises no workflow_run event of its own.
+with the workflow's token raises no workflow_run event of its own. The wait
+is bounded inside the job's timeout, so a rerun that never finishes ends in a
+printed outcome rather than a killed job.
 """
 
 from __future__ import annotations
@@ -27,6 +28,9 @@ from typing import Callable, Sequence
 
 FAILED = {"failure", "timed_out", "startup_failure"}
 TITLE = "master is red: {workflow}"
+# 80 polls 30 seconds apart end inside master-watch.yml's 45-minute timeout.
+RERUN_POLLS = 80
+RERUN_INTERVAL = 30.0
 
 
 @dataclass(frozen=True)
@@ -58,13 +62,16 @@ def body(run: dict) -> str:
 
 
 def wait_for_rerun(run: dict, gh: Callable[[Sequence[str]], str],
-                   sleep: Callable[[float], None], interval: float = 30.0) -> dict:
-    """The run as it stands once the rerun has finished."""
-    while True:
+                   sleep: Callable[[float], None], interval: float = RERUN_INTERVAL,
+                   polls: int = RERUN_POLLS) -> dict | None:
+    """The run as it stands once the rerun has finished, or None if no later
+    attempt has completed after `polls` views."""
+    for _ in range(polls):
         sleep(interval)
         state = json.loads(gh(["run", "view", str(run["id"]), "--json", "status,conclusion,attempt"]))
         if state["status"] == "completed" and state["attempt"] > run.get("run_attempt", 1):
             return {**run, "conclusion": state["conclusion"], "run_attempt": state["attempt"]}
+    return None
 
 
 def act(run: dict, gh: Callable[[Sequence[str]], str],
@@ -72,10 +79,11 @@ def act(run: dict, gh: Callable[[Sequence[str]], str],
     action = decide(run)
     if action.kind == "rerun":
         gh(["run", "rerun", str(run["id"]), "--failed"])
-        run = wait_for_rerun(run, gh, sleep)
+        rerun = wait_for_rerun(run, gh, sleep)
+        if rerun is None:
+            return Action("none", f"no rerun attempt completed after {RERUN_POLLS} polls")
+        run = rerun
         action = decide(run)
-        if action.kind == "rerun":
-            return Action("none", "the rerun did not record a new attempt")
     title = TITLE.format(workflow=run.get("name", "?"))
     if action.kind in ("report", "close"):
         found = json.loads(gh(["issue", "list", "--state", "open", "--search",

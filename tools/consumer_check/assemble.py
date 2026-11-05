@@ -21,9 +21,11 @@ import argparse
 import io
 import json
 import shutil
-import subprocess
 import sys
 from pathlib import Path, PurePosixPath
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import git_local  # noqa: E402
 
 ENGINE = Path("external/labrador")
 SAMPLE = PurePosixPath("samples/minimal")
@@ -50,12 +52,7 @@ def tree_files(engine: Path) -> list[Path]:
     Tracked and untracked-but-not-ignored, so a local run sees uncommitted work
     and never copies out/, node_modules/ or a worktree folder.
     """
-    listing = subprocess.run(
-        ["git", "-C", str(engine), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-        check=True,
-        capture_output=True,
-    ).stdout.decode("utf-8")
-    return sorted({Path(name) for name in listing.split("\0") if name and (engine / name).is_file()})
+    return sorted({Path(name) for name in git_local.tree_files(engine) if (engine / name).is_file()})
 
 
 def copy_engine(engine: Path, destination: Path) -> None:

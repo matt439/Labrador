@@ -47,15 +47,6 @@ def is_exception(commit: str, exceptions: set[str]) -> bool:
     return any(commit.startswith(prefix) for prefix in exceptions)
 
 
-def changed_paths(repository: Path, commit: str, parents: list[str]) -> set[str]:
-    if len(parents) > 1:
-        raise CheckError(f"{commit} is a merge commit; merge diffs are unsupported, not treated as empty")
-    revisions = [parents[0], commit] if parents else ["--root", commit]
-    raw = golden.git(repository, "diff-tree", "--no-commit-id", "--name-only", "-r",
-                     "--no-renames", "--no-ext-diff", "--no-textconv", "-z", *revisions)
-    return {path.decode("utf-8", errors="surrogateescape") for path in raw.split(b"\0") if path}
-
-
 def head_changes(repository: Path, head: str) -> str:
     try:
         return golden.git(repository, "show", f"{head}:{CHANGES}").decode("utf-8", errors="replace")
@@ -67,13 +58,8 @@ def unclassified(repository: Path, commits: list[str], exceptions: set[str]) -> 
     failures = []
     governed = 0
     for commit in commits:
-        contents = golden.git(repository, "cat-file", "commit", commit)
-        headers, separator, message_bytes = contents.partition(b"\n\n")
-        if not separator:
-            raise CheckError(f"{commit} has no commit-message separator")
-        parents = [line[len(b"parent "):].decode("ascii")
-                   for line in headers.split(b"\n") if line.startswith(b"parent ")]
-        paths = changed_paths(repository, commit, parents)
+        parents, message_bytes = golden.commit_parts(repository, commit)
+        paths = golden.changed_paths(repository, commit, parents)
         rule = sorted(path for path in paths if is_rule_path(path))
         if not rule:
             continue

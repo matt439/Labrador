@@ -10,7 +10,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .common import _integer, canonical, deadline, digest, safe_relative, validate_config
+from .common import (
+    BUNDLED_WORKER,
+    RELEASE_SCOPE,
+    canonical,
+    deadline,
+    digest,
+    integer,
+    safe_relative,
+    validate_config,
+)
 
 PHASES = (
     "update_ns", "begin_ns", "record_submit_ns", "present_ns", "whole_frame_ns",
@@ -22,6 +31,8 @@ PRESENTATION_FIELDS = (
     "present_mode", "requested_swap_interval", "reported_swap_interval",
 )
 DEVICE_FIELDS = ("api", "device_name", "vendor_id", "device_id", "kind")
+# Windows' built-in High performance power scheme, which the host must attest.
+HIGH_PERFORMANCE_POWER_PLAN = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
 
 
 INTERPRETATION = {
@@ -59,6 +70,11 @@ INTERPRETATION = {
 }
 
 
+def _target_frame_ns(refresh_hz: int) -> int:
+    """The frame period in whole nanoseconds, rounded as the bench and worker.ps1 round it."""
+    return (1_000_000_000 + refresh_hz // 2) // refresh_hz
+
+
 def _json(path: Path) -> Any:
     with path.open("r", encoding="utf-8-sig") as stream:
         return json.load(stream)
@@ -71,7 +87,7 @@ def _withheld(reason: str, **evidence: Any) -> dict[str, Any]:
 def _vendor_id(value: Any) -> int:
     if isinstance(value, str):
         return int(value, 0)
-    return _integer(value, "device.vendor_id")
+    return integer(value, "device.vendor_id")
 
 
 def _percentile(values: list[int], fraction: float) -> int:
@@ -330,7 +346,7 @@ def _validate_identity(root: Path, marker: dict[str, Any],
     if host.get("schema_version") != 1 or launch.get("schema_version") != 1:
         raise ValueError("host or launch identity has the wrong schema")
     if (release.get("schema_version") != 1
-            or release.get("scope") != "labrador-cloud-performance-payload"):
+            or release.get("scope") != RELEASE_SCOPE):
         raise ValueError("release identity has the wrong schema or scope")
     release_sha = hashlib.sha256(canonical(release)).hexdigest()
     config_sha = hashlib.sha256(canonical(config)).hexdigest()
@@ -363,7 +379,7 @@ def _validate_identity(root: Path, marker: dict[str, Any],
     release_files = release.get("files")
     if not isinstance(release_files, dict):
         raise TypeError("release file table must be an object")
-    bundled_worker_record = release_files.get("source/tools/cloud_performance/worker.ps1")
+    bundled_worker_record = release_files.get(BUNDLED_WORKER)
     if not isinstance(bundled_worker_record, dict):
         raise TypeError("release worker identity is absent")
     bundled_worker = bundled_worker_record.get("sha256")
@@ -403,7 +419,7 @@ def _validate_identity(root: Path, marker: dict[str, Any],
     } if isinstance(runtime, list) else set()
     if runtime_names != {"MSVCP140.DLL", "VCRUNTIME140.DLL", "VCRUNTIME140_1.DLL"}:
         raise ValueError("host Visual C++ runtime identity is incomplete")
-    if "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c" not in str(host.get("power_plan", "")).lower():
+    if HIGH_PERFORMANCE_POWER_PLAN not in str(host.get("power_plan", "")).lower():
         raise ValueError("host did not attest the High performance Windows power plan")
     video = host.get("video")
     if not isinstance(video, list):
@@ -496,7 +512,7 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
         "sample_frames": expected["sample_frames"],
         "refresh_hz": expected["refresh_hz"],
     }
-    target_frame_ns = (1_000_000_000 + expected["refresh_hz"] // 2) // expected["refresh_hz"]
+    target_frame_ns = _target_frame_ns(expected["refresh_hz"])
     resolution = workload.get("resolution", {})
     if (workload.get("name") != "full_well_top_out"
             or resolution != {"width": expected["width"], "height": expected["height"]}
@@ -544,7 +560,7 @@ def _sample_phases(samples: list[Any], timing: dict[str, Any], reported: dict[st
         if not isinstance(sample, dict) or sample.get("ordinal") != ordinal:
             raise ValueError("benchmark sample ordinals are not contiguous")
         for phase in phase_names:
-            phases[phase].append(_integer(sample.get(phase), f"sample.{phase}"))
+            phases[phase].append(integer(sample.get(phase), f"sample.{phase}"))
         if sample["whole_frame_ns"] != sum(sample[phase] for phase in FRAME_PHASES):
             raise ValueError("benchmark whole-frame duration differs from its phase sum")
     if timing.get("sample_count") != len(samples):
@@ -676,7 +692,7 @@ def analyze(folder: str | Path) -> dict[str, Any]:
     measurement_identity: tuple[bool, bool] | None = None
     seen: set[tuple[str, int]] = set()
     refresh_hz = config["workload"]["refresh_hz"]
-    target_frame_ns = (1_000_000_000 + refresh_hz // 2) // refresh_hz
+    target_frame_ns = _target_frame_ns(refresh_hz)
     try:
         for path in result_files:
             result = _json(path)
@@ -770,10 +786,6 @@ def _refresh_valid(refresh_hz: Any) -> bool:
     """The bench's own range, so that the period is never rounded to zero."""
     return (isinstance(refresh_hz, int) and not isinstance(refresh_hz, bool)
             and 0 < refresh_hz <= MAX_REFRESH_HZ)
-
-
-def _target_frame_ns(refresh_hz: int) -> int:
-    return (1_000_000_000 + refresh_hz // 2) // refresh_hz
 
 
 def _validate_local_result(result: Any) -> tuple[dict[str, list[int]], bool]:

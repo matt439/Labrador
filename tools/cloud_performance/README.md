@@ -273,7 +273,8 @@ pacing or presentation policy and legacy captures without it. Entire legacy
 runs remain readable and explicitly labelled `unrecorded_legacy`; missing
 measurements are never synthesized. Pacing and presentation metadata entered
 the producer together, so a capture must include both groups or neither.
-Raw samples remain the authority.
+Raw samples remain the authority. A refusal still writes its report, names
+the reason in `analysis_withheld` and exits 1, as `analyze-local` does.
 
 Read `cadence_pools`, `repetitions` and `repetition_ranges` before the pooled
 `summary`. `cadence_pools` separates whole repetitions by the existing

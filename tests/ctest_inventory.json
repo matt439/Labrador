@@ -129,5 +129,21 @@
       "wasm-release",
       "wasm-release-null"
     ]
-  }
+  },
+  "chromium_registered": [
+    "RenderPixelTests",
+    "RenderPixelTestsWithoutS3tc",
+    "RenderContextLossTests",
+    "WebWindowTests",
+    "MinimalPageTests",
+    "CollisionPageTests",
+    "AudioPageTests",
+    "LocalMultiplayerPageTests",
+    "ComponentsPageTests",
+    "ComponentsPointerPageTests",
+    "LineSweeperPageTests",
+    "LineSweeperReducedMotionPageTests",
+    "LineSweeperPalettePageTests",
+    "LineSweeperBundlePageTests"
+  ]
 }

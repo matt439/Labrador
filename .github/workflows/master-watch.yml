@@ -1,7 +1,6 @@
 # What happens when a run on master ends: tools/master_watch.py reruns a failed
 # run's failed jobs once, opens or updates an issue if they fail again, and
-# closes that issue when master is green again. Before it, a red master run
-# was seen only by whoever opened the commit.
+# closes that issue when master is green again.
 #
 # workflow_run always runs this file as it is on master, never a pull
 # request's copy, and checks out master for the script. Its job is not a

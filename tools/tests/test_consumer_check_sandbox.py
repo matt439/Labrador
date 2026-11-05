@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import tempfile
 import unittest
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location(
-    "sandbox", REPOSITORY / "tools/consumer_check/sandbox.py"
-)
-sandbox = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(sandbox)
+sandbox = load_tool("tools/consumer_check/sandbox.py")
 
 
 class SandboxTests(unittest.TestCase):

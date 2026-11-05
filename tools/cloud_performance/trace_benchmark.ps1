@@ -70,6 +70,8 @@ function Invoke-RecordedProcess([string]$File, [string[]]$Arguments,
     try {
         $started = $process.Start()
         if (-not $started) { throw "$Name did not start" }
+        # Reading Handle opens the process handle now, so ExitCode can still be
+        # read once the process has exited.
         $processHandle = $process.Handle
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
@@ -80,7 +82,6 @@ function Invoke-RecordedProcess([string]$File, [string[]]$Arguments,
             $process.WaitForExit()
             throw "$Name exceeded its $LimitSeconds second deadline; its process was terminated"
         }
-        if ($null -eq $process.ExitCode) { throw "$Name has no exit code" }
         return $process.ExitCode
     }
     finally {

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import os
 from pathlib import Path
@@ -14,11 +13,11 @@ import tempfile
 import unittest
 from unittest import mock
 
+from tools.tests.tool_fixtures import isolate_repository, isolated_git_environment, load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
 SCRIPT = REPOSITORY / "tools/check_golden_reviews.py"
-SPEC = importlib.util.spec_from_file_location("check_golden_reviews", SCRIPT)
-checker = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(checker)
+checker = load_tool("tools/check_golden_reviews.py")
 GOLDEN = "tests/render/golden/example.png"
 OTHER = "tests/render/golden/other.png"
 
@@ -56,21 +55,21 @@ class DeclarationTests(unittest.TestCase):
 
     def test_git_reads_use_argv_without_a_shell_and_disable_pagers(self):
         result = subprocess.CompletedProcess([], 0, b"read", b"")
-        with mock.patch.object(checker.subprocess, "run", return_value=result) as run:
+        with mock.patch.object(checker.git_local.subprocess, "run", return_value=result) as run:
             self.assertEqual(checker.git(Path("path with spaces"), "cat-file", "commit", "a" * 40), b"read")
-        self.assertEqual(run.call_args.args[0][:6],
-                         ["git", "--no-pager", "--no-lazy-fetch", "--no-replace-objects",
-                          "-C", "path with spaces"])
-        self.assertNotIn("shell", run.call_args.kwargs)
-        self.assertEqual(run.call_args.kwargs["env"]["GIT_OPTIONAL_LOCKS"], "0")
+        self.assertEqual(run.call_args.args[0][:7],
+                         ["git", "--no-pager", "--no-optional-locks", "--no-lazy-fetch",
+                          "--no-replace-objects", "-C", "path with spaces"])
+        self.assertFalse(run.call_args.kwargs["shell"])
         self.assertEqual(run.call_args.kwargs["env"]["GIT_TERMINAL_PROMPT"], "0")
+        self.assertEqual(run.call_args.kwargs["env"]["GIT_CONFIG_GLOBAL"], os.devnull)
 
     def test_git_failure_and_missing_executable_are_actionable(self):
         result = subprocess.CompletedProcess([], 128, b"", b"missing object")
-        with mock.patch.object(checker.subprocess, "run", return_value=result):
+        with mock.patch.object(checker.git_local.subprocess, "run", return_value=result):
             with self.assertRaisesRegex(checker.CheckError, "git cat-file failed: missing object"):
                 checker.git(Path("fixture"), "cat-file", "commit", "missing")
-        with mock.patch.object(checker.subprocess, "run", side_effect=FileNotFoundError("git unavailable")):
+        with mock.patch.object(checker.git_local.subprocess, "run", side_effect=FileNotFoundError("git unavailable")):
             with self.assertRaisesRegex(checker.CheckError, "cannot read local Git history"):
                 checker.git(Path("fixture"), "rev-parse", "HEAD")
 
@@ -101,23 +100,13 @@ class GitFixtureTests(unittest.TestCase):
         self.temporary = Path(temporary.name)
         self.repository = self.temporary / "repository"
         self.repository.mkdir()
-        hooks = self.temporary / "empty-hooks"
-        hooks.mkdir()
-        config = self.temporary / "empty-gitconfig"
-        config.write_text("", encoding="ascii")
-        environment = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")}
-        environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": str(config),
-                            "GIT_AUTHOR_NAME": "Golden fixture", "GIT_AUTHOR_EMAIL": "fixture@example.invalid",
-                            "GIT_COMMITTER_NAME": "Golden fixture", "GIT_COMMITTER_EMAIL": "fixture@example.invalid",
-                            "GIT_TERMINAL_PROMPT": "0", "GIT_TEMPLATE_DIR": str(hooks)})
+        environment, hooks = isolated_git_environment(self.temporary, "Golden fixture")
         isolation = mock.patch.dict(os.environ, environment, clear=True)
         isolation.start()
         self.addCleanup(isolation.stop)
         self.hooks = hooks
         self.git("init", "-q", "--initial-branch=fixture")
-        self.git("config", "core.autocrlf", "false")
-        self.git("config", "core.hooksPath", str(hooks))
-        self.git("config", "commit.gpgsign", "false")
+        isolate_repository(self.git, hooks)
         self.base = self.commit("Initial fixture", {"README.md": b"fixture\n"})
 
     def git(self, *arguments, data=None):

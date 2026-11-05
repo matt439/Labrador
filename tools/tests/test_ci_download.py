@@ -15,7 +15,9 @@ import unittest
 from unittest.mock import call, patch
 from urllib.error import HTTPError, URLError
 
-from tools import ci_download
+from tools.tests.tool_fixtures import load_tool
+
+ci_download = load_tool("tools/ci_download.py")
 
 
 URL = "https://example.invalid/pinned-input.exe"

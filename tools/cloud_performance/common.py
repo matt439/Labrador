@@ -83,7 +83,14 @@ def _number(value: Any, field: str, *, minimum: float = 0, maximum: float | None
     return float(value)
 
 
-def _integer(value: Any, field: str, *, minimum: int = 0, maximum: int | None = None) -> int:
+# The release manifest's scope, written by release.bundle and read back by
+# release.verify and analysis.
+RELEASE_SCOPE = "labrador-cloud-performance-payload"
+# Where the release bundle's source snapshot holds the worker launch uploads.
+BUNDLED_WORKER = "source/tools/cloud_performance/worker.ps1"
+
+
+def integer(value: Any, field: str, *, minimum: int = 0, maximum: int | None = None) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
         raise ValueError(f"{field} must be an integer >= {minimum}")
     if maximum is not None and value > maximum:
@@ -108,6 +115,11 @@ def run_prefix(config: dict[str, Any]) -> str:
     return f"{config['artifact_prefix']}/runs/{config['run_id']}"
 
 
+def launch_key(prefix: str) -> str:
+    """The launch record's object key under a run prefix."""
+    return f"{prefix}/control/launch.json"
+
+
 def object_keys(config: dict[str, Any]) -> dict[str, str]:
     prefix = run_prefix(config)
     return {
@@ -115,7 +127,7 @@ def object_keys(config: dict[str, Any]) -> dict[str, str]:
         "config": f"{prefix}/input/config.json",
         "worker": f"{prefix}/input/worker.ps1",
         "template": f"{prefix}/input/template.json",
-        "launch": f"{prefix}/control/launch.json",
+        "launch": launch_key(prefix),
         "output": f"{prefix}/output",
         "ssm": f"{prefix}/ssm",
     }
@@ -167,8 +179,8 @@ def validate_config(document: dict[str, Any], *, now: datetime | None = None,
     if not isinstance(cpu, dict):
         raise TypeError("cpu_options must be an object")
     _exact_keys(cpu, ("core_count", "threads_per_core"), "cpu_options")
-    _integer(cpu["core_count"], "cpu_options.core_count", minimum=1, maximum=192)
-    _integer(cpu["threads_per_core"], "cpu_options.threads_per_core", minimum=1, maximum=2)
+    integer(cpu["core_count"], "cpu_options.core_count", minimum=1, maximum=192)
+    integer(cpu["threads_per_core"], "cpu_options.threads_per_core", minimum=1, maximum=2)
     if not isinstance(config["artifact_bucket"], str) or not BUCKET.fullmatch(config["artifact_bucket"]):
         raise ValueError("artifact_bucket is not a valid S3 bucket name")
     prefix = safe_relative(config["artifact_prefix"], field="artifact_prefix")
@@ -200,7 +212,7 @@ def validate_config(document: dict[str, Any], *, now: datetime | None = None,
     if (not isinstance(config["root_device_name"], str)
             or not config["root_device_name"].startswith("/dev/")):
         raise ValueError("root_device_name must be an EC2 device name")
-    _integer(config["root_volume_gib"], "root_volume_gib", minimum=40, maximum=500)
+    integer(config["root_volume_gib"], "root_volume_gib", minimum=40, maximum=500)
     if not isinstance(config["associate_public_ip"], bool):
         raise TypeError("associate_public_ip must be boolean")
 
@@ -237,13 +249,13 @@ def validate_config(document: dict[str, Any], *, now: datetime | None = None,
         "width", "height", "live_particles", "warmup_frames", "sample_frames",
         "refresh_hz", "repetitions", "backends",
     ), "workload")
-    _integer(workload["width"], "workload.width", minimum=1, maximum=16384)
-    _integer(workload["height"], "workload.height", minimum=1, maximum=16384)
-    _integer(workload["live_particles"], "workload.live_particles", minimum=1, maximum=10_000_000)
-    _integer(workload["warmup_frames"], "workload.warmup_frames", minimum=1, maximum=100_000)
-    _integer(workload["sample_frames"], "workload.sample_frames", minimum=100, maximum=100_000)
-    _integer(workload["refresh_hz"], "workload.refresh_hz", minimum=1, maximum=1000)
-    _integer(workload["repetitions"], "workload.repetitions", minimum=1, maximum=100)
+    integer(workload["width"], "workload.width", minimum=1, maximum=16384)
+    integer(workload["height"], "workload.height", minimum=1, maximum=16384)
+    integer(workload["live_particles"], "workload.live_particles", minimum=1, maximum=10_000_000)
+    integer(workload["warmup_frames"], "workload.warmup_frames", minimum=1, maximum=100_000)
+    integer(workload["sample_frames"], "workload.sample_frames", minimum=100, maximum=100_000)
+    integer(workload["refresh_hz"], "workload.refresh_hz", minimum=1, maximum=1000)
+    integer(workload["repetitions"], "workload.repetitions", minimum=1, maximum=100)
     fixed = {"width": 1280, "height": 720, "live_particles": 9600, "refresh_hz": 60}
     if any(workload[name] != value for name, value in fixed.items()):
         raise ValueError(
@@ -273,7 +285,7 @@ def validate_config(document: dict[str, Any], *, now: datetime | None = None,
         backend["executable"] = executable.as_posix()
         if not isinstance(backend["expected_device"], str) or not backend["expected_device"]:
             raise ValueError(f"{scope}.expected_device must be non-empty")
-        _integer(backend["expected_vendor_id"], f"{scope}.expected_vendor_id",
+        integer(backend["expected_vendor_id"], f"{scope}.expected_vendor_id",
                  minimum=0, maximum=0xFFFFFFFF)
         if backend["name"] == "gl" and backend["expected_vendor_id"] != 0:
             raise ValueError("OpenGL expected_vendor_id must be 0; that API exposes no PCI ID")

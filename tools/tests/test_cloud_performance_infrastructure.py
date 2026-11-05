@@ -170,6 +170,15 @@ class InfrastructureTests(unittest.TestCase):
             cli._validated_runner(CloudFormation(wrong, resources), stack["StackName"])
         with self.assertRaisesRegex(ValueError, "namespace"):
             cli._validated_runner(CloudFormation(stack, resources), "unrelated-stack")
+        # What launch used to accept: a Runner output with no EC2 resource
+        # behind it, or a resource that disagrees with the output.
+        for kind, physical in (("AWS::EC2::LaunchTemplate", "i-runner"),
+                               ("AWS::EC2::Instance", "i-other")):
+            with self.subTest(kind=kind, physical=physical):
+                changed = [{**resources[0], "ResourceType": kind, "PhysicalResourceId": physical}]
+                with self.assertRaisesRegex(ValueError, "Runner"):
+                    cli._validated_runner(CloudFormation(copy.deepcopy(stack), changed),
+                                          stack["StackName"])
 
 
 if __name__ == "__main__":

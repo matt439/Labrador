@@ -256,7 +256,8 @@ pull request already passed. Citation checking skips `website/`.
 - [ctest_inventory.json](tests/ctest_inventory.json) lists the ctest entries
   each CI configuration must register, and CI fails on any difference. Adding,
   removing or renaming an entry changes it in the same commit. It sees entries,
-  not the doctest cases inside them.
+  not the doctest cases inside them. Its `chromium_registered` list names the
+  entries configure adds only with a Chromium, for the two verification tools.
 - CI's `consumer` makes Get Started's starter ZIP from this checkout
   (`starter_zip.py`, the release asset), extracts it with Windows' `tar`,
   builds it, verifies only

@@ -5,12 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import stat
-import subprocess
 import zipfile
 from pathlib import Path
 from typing import Any
 
-from .common import SCHEMA_VERSION, canonical, digest, safe_relative
+from .. import git_local
+from .common import RELEASE_SCOPE, SCHEMA_VERSION, canonical, digest, safe_relative
 
 RELEVANT_ROOTS = {
     ".github", "bench", "cmake", "engine", "external", "samples", "tests", "tools",
@@ -30,12 +30,7 @@ FORBIDDEN_NAMES = {".env", "credentials", "credentials.json"}
 
 
 def _git(root: Path, *arguments: str) -> bytes:
-    result = subprocess.run(
-        ["git", "-C", str(root), *arguments],
-        check=True,
-        capture_output=True,
-    )
-    return result.stdout
+    return git_local.git(root, *arguments).stdout
 
 
 def _relevant(relative: str) -> bool:
@@ -53,11 +48,8 @@ def _reject_sensitive(path: Path, relative: str) -> None:
 def source_files(root: str | Path) -> list[Path]:
     """Return tracked and untracked, non-ignored source inputs for this lane."""
     repository = Path(root).resolve()
-    listed = _git(repository, "-c", "core.quotepath=false", "ls-files", "-z",
-                  "--cached", "--others", "--exclude-standard", "--", ".")
-    names = [name.decode("utf-8") for name in listed.split(b"\0") if name]
     files: list[Path] = []
-    for name in names:
+    for name in git_local.tree_files(repository):
         normalized = name.replace("\\", "/")
         if not _relevant(normalized):
             continue
@@ -127,7 +119,7 @@ def bundle(payload: str | Path, output: str | Path, *, root: str | Path) -> dict
     status = _git(repository, "status", "--porcelain=v1", "-z", "--untracked-files=all")
     manifest = {
         "schema_version": SCHEMA_VERSION,
-        "scope": "labrador-cloud-performance-payload",
+        "scope": RELEASE_SCOPE,
         "git": {
             "commit": _git(repository, "rev-parse", "HEAD").decode("ascii").strip(),
             "dirty": bool(status),
@@ -182,7 +174,7 @@ def verify(path: str | Path, expected_archive_sha256: str | None = None) -> dict
         if raw_manifest != canonical(manifest):
             raise ValueError("release.json is not canonical JSON")
         if (manifest.get("schema_version") != SCHEMA_VERSION
-                or manifest.get("scope") != "labrador-cloud-performance-payload"
+                or manifest.get("scope") != RELEASE_SCOPE
                 or not isinstance(manifest.get("files"), dict)):
             raise ValueError("bundle release manifest has the wrong schema or scope")
         expected_names = {"release.json", *manifest["files"]}

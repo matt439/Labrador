@@ -13,8 +13,9 @@ display.
 A PATH that is a file is checked whatever its subsystem. A PATH that is a
 folder is searched for .exe files, and each Windows-subsystem (GUI) program
 in it is checked; console programs, such as test runners, are counted and
-skipped. A folder holding no GUI program fails, so a moved build cannot
-pass by checking nothing. Standard library only.
+skipped. An .exe that cannot be read as a PE image fails, named, rather than
+being counted as a console program. A folder holding no GUI program fails,
+so a moved build cannot pass by checking nothing. Standard library only.
 """
 
 from __future__ import annotations
@@ -141,19 +142,21 @@ def check_program(data: bytes) -> str:
     return declared.strip()
 
 
-def programs(path: Path) -> tuple[list[Path], int]:
-    """The GUI programs a folder holds, and how many console ones it skipped."""
-    found, skipped = [], 0
+def programs(path: Path) -> tuple[list[Path], int, list[tuple[Path, str]]]:
+    """The GUI programs a folder holds, how many console ones it skipped, and
+    each .exe that could not be read as a PE image, with the reason."""
+    found, skipped, unreadable = [], 0, []
     for candidate in sorted(path.rglob("*.exe")):
         try:
             subsystem = PortableExecutable(candidate.read_bytes()).subsystem
-        except ManifestError:
-            subsystem = None
+        except (ManifestError, OSError) as error:
+            unreadable.append((candidate, str(error)))
+            continue
         if subsystem == SUBSYSTEM_WINDOWS_GUI:
             found.append(candidate)
         else:
             skipped += 1
-    return found, skipped
+    return found, skipped, unreadable
 
 
 def check_paths(paths: list[Path], report=print, complain=None) -> int:
@@ -161,7 +164,10 @@ def check_paths(paths: list[Path], report=print, complain=None) -> int:
     failed = False
     for path in paths:
         if path.is_dir():
-            found, skipped = programs(path)
+            found, skipped, unreadable = programs(path)
+            for program, reason in unreadable:
+                complain(f"{program}: cannot be read as a program: {reason}")
+                failed = True
             if not found:
                 complain(f"{path}: no Windows-subsystem program found to check")
                 failed = True

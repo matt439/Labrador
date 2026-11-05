@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
 import os
@@ -15,10 +14,10 @@ import tempfile
 import unittest
 from unittest import mock
 
+from tools.tests.tool_fixtures import isolate_repository, isolated_git_environment, load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("check_demo_lag", REPOSITORY / "tools/check_demo_lag.py")
-checker = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(checker)
+checker = load_tool("tools/check_demo_lag.py")
 
 
 class ContractTests(unittest.TestCase):
@@ -73,8 +72,8 @@ class ContractTests(unittest.TestCase):
                        "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.worktree",
                        "GIT_CONFIG_VALUE_0": "wrong", "GIT_NAMESPACE": "wrong", "GIT_GRAFT_FILE": "wrong"}
         reply = subprocess.CompletedProcess([], 0, b"blob", b"")
-        with mock.patch.object(checker.os, "environ", environment), \
-                mock.patch.object(checker.subprocess, "run", return_value=reply) as run:
+        with mock.patch.object(checker.git_local.os, "environ", environment), \
+                mock.patch.object(checker.git_local.subprocess, "run", return_value=reply) as run:
             checker.git(Path("path with spaces"), "cat-file", "blob", "a" * 40)
         self.assertEqual(run.call_args.args[0], ["git", "--no-pager", "--no-optional-locks",
                          "--no-lazy-fetch", "--no-replace-objects", "-C", "path with spaces",
@@ -92,7 +91,7 @@ class ContractTests(unittest.TestCase):
                         FileNotFoundError("git missing"), subprocess.TimeoutExpired("git", 30)):
             with self.subTest(outcome=outcome):
                 options = {"side_effect": outcome} if isinstance(outcome, Exception) else {"return_value": outcome}
-                with mock.patch.object(checker.subprocess, "run", **options), \
+                with mock.patch.object(checker.git_local.subprocess, "run", **options), \
                         self.assertRaises(checker.CheckError):
                     checker.git(Path("fixture"), "rev-parse", "HEAD")
 
@@ -143,21 +142,11 @@ class LocalHistoryTests(unittest.TestCase):
         self.folder = Path(temporary.name).resolve()
         self.engine = self.folder / "engine with spaces"
         self.host = self.folder / "host with spaces"
-        hooks = self.folder / "empty-hooks"
-        hooks.mkdir()
-        config = self.folder / "empty-config"
-        config.write_text("", encoding="utf-8")
-        self.environment = {name: value for name, value in os.environ.items()
-                            if not name.upper().startswith("GIT_")}
-        self.environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": str(config),
-                                 "GIT_AUTHOR_NAME": "Lag fixture", "GIT_AUTHOR_EMAIL": "fixture@example.invalid",
-                                 "GIT_COMMITTER_NAME": "Lag fixture", "GIT_COMMITTER_EMAIL": "fixture@example.invalid"})
+        self.environment, hooks = isolated_git_environment(self.folder, "Lag fixture")
         for repository in (self.engine, self.host):
             repository.mkdir()
             self.git(repository, "init", "-q", "-b", "master", "--object-format=sha1")
-            self.git(repository, "config", "core.hooksPath", str(hooks))
-            self.git(repository, "config", "commit.gpgsign", "false")
-            self.git(repository, "config", "gc.auto", "0")
+            isolate_repository(lambda *arguments, at=repository: self.git(at, *arguments), hooks)
         self.base = self.commit(self.engine, "source.txt", "first\n")
         self.tip = self.commit(self.engine, "source.txt", "second\n")
         self.host_tip = self.record(self.base)
@@ -309,7 +298,7 @@ class LocalHistoryTests(unittest.TestCase):
             commands.append(command)
             return original(command, **options)
 
-        with mock.patch.object(checker.subprocess, "run", side_effect=record):
+        with mock.patch.object(checker.git_local.subprocess, "run", side_effect=record):
             self.compare()
         operations = [command[7] for command in commands]
         self.assertEqual(set(operations), {"rev-parse", "cat-file", "merge-base", "rev-list"})

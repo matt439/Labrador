@@ -22,11 +22,17 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 NATIVE = ("x64-debug", "x64-debug-d3d12", "x64-debug-gl", "x64-debug-vulkan", "x64-debug-null")
 NATIVE_PRESETS = (*NATIVE, *(name.replace("-debug", "-release") for name in NATIVE))
 NATIVE_HOST_CONDITION = {"type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows"}
-CONFIGURATIONS = (*NATIVE, "wasm-debug", "wasm-release-null")
-BACKENDS = ("d3d11", "d3d12", "gl", "vulkan", "null", "gl", "null")
+# Each planned configuration and the render backend it selects, in sweep order.
+RENDER_BACKENDS = {"x64-debug": "d3d11", "x64-debug-d3d12": "d3d12", "x64-debug-gl": "gl",
+                   "x64-debug-vulkan": "vulkan", "x64-debug-null": "null",
+                   "wasm-debug": "gl", "wasm-release-null": "null"}
+CONFIGURATIONS = tuple(RENDER_BACKENDS)
+BACKENDS = tuple(RENDER_BACKENDS.values())
+D3D_PRESETS = tuple(name for name, render in RENDER_BACKENDS.items() if render in {"d3d11", "d3d12"})
+WASM_CONFIGURATIONS = tuple(name for name in CONFIGURATIONS if name.startswith("wasm-"))
 ENVIRONMENT_KEYS = ("PATH", "PATHEXT", "VCPKG_ROOT", "VULKAN_SDK", "EMSDK", "EMSDK_NODE")
 SOURCE_FILES = ("CMakePresets.json", "engine/CMakeLists.txt", "cmake/compile_shaders.cmake",
-                ".github/workflows/ci.yml", "CMakeLists.txt")
+                ".github/workflows/ci.yml", "CMakeLists.txt", "tests/ctest_inventory.json")
 NULL_CONFIGURE = ["cmake", "--preset", "wasm-release", "-B", "out/build/wasm-release-null",
                   "-DLABRADOR_RENDER_BACKEND=null", "-DLABRADOR_AUDIO_BACKEND=null"]
 VCPKG_TOOLCHAIN = "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
@@ -131,6 +137,7 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
     try:
         sources = {name: (root / name).read_text(encoding="utf-8") for name in SOURCE_FILES}
         document = json.loads(sources["CMakePresets.json"])
+        inventory = json.loads(sources["tests/ctest_inventory.json"])
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise PlanError(f"cannot read repository verification rules: {error}") from error
     if not isinstance(document, dict) or document.get("version") != 6 or "include" in document:
@@ -172,6 +179,15 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
     pages = list(dict.fromkeys(re.findall(r"\blabrador_sample_page_test\(\s*([A-Z]\w+)", sources["CMakeLists.txt"])))
     if not pages or "ComponentsPageTests" not in pages or "LineSweeperBundlePageTests" not in sources["CMakeLists.txt"]:
         raise PlanError("browser page source rules changed; review required registrations")
+    chromium = inventory.get("chromium_registered") if isinstance(inventory, dict) else None
+    release = inventory.get("some_configurations", {}) if isinstance(inventory, dict) else {}
+    if (not isinstance(chromium, list) or not chromium or not isinstance(release, dict)
+            or any(not isinstance(name, str) or "wasm-release" not in release.get(name, ()) for name in chromium)
+            or len(set(chromium)) != len(chromium)):
+        raise PlanError("tests/ctest_inventory.json's chromium_registered must list wasm-release entries once each")
+    if set(pages) - set(chromium) or "LineSweeperBundlePageTests" not in chromium:
+        raise PlanError("a CMake sample page is missing from chromium_registered; review required registrations")
+    null_chromium = [name for name in chromium if "wasm-release-null" in release[name]]
     guards = []
     guarded = set()
     for command in re.finditer(r"\b(if|elseif|else|endif|add_test|labrador_page_test)\s*\(([^)]*)\)",
@@ -189,7 +205,7 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
                 guarded.add(match[1])
     if guarded != {"LineSweeperBundlePageTests", "LineSweeperPacingPageTests"}:
         raise PlanError("null bundle/pacing exclusions changed; review forbidden registrations")
-    return document, index, pages
+    return document, index, chromium, null_chromium
 
 
 def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | None = None) -> dict:
@@ -198,9 +214,9 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
         browser = browser.replace("\\", "/")
         if not (PureWindowsPath(browser).is_absolute() or PurePosixPath(browser).is_absolute()):
             raise PlanError("--browser must be an explicit absolute path; it is not discovered or launched")
-    _, presets, pages = read_rules(root)
+    _, presets, chromium, null_chromium = read_rules(root)
     configurations = []
-    for name, render in zip(CONFIGURATIONS, BACKENDS):
+    for name, render in RENDER_BACKENDS.items():
         wasm = name.startswith("wasm-")
         preset_name = "wasm-release" if name == "wasm-release-null" else name
         preset = configure_preset(presets, preset_name)
@@ -248,15 +264,15 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
         steps = [{"phase": phase, "argv": argv, "cwd": str(root), "effects": effects, "result": "not-run"}
                  for phase, argv, effects in (
                      ("configure", configure, ["build-tree-writes", "possible-dependency-network"]),
-                     ("build", build, ["build-tree-writes", "automatic-reconfigure", "possible-dependency-network"] + (["SDK-cache-use"] if wasm else [])),
+                     ("build", build, ["build-tree-writes", "automatic-reconfigure",
+                                       "possible-dependency-network"] + (["SDK-cache-use"] if wasm else [])),
                      ("test", test, runtime))]
         required = ["RenderTests", "SceneTests", "AudioTests"]
         if not wasm and render != "null":
             required += ["RenderPixelTests", "MinimalSmokeTests"]
         if render == "d3d12":
             required.append("D3D12SynchronizationTests")
-        browser_tests = (["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests",
-                          "WebWindowTests", *pages, "LineSweeperBundlePageTests"] if wasm and render == "gl" else [])
+        browser_tests = list(chromium) if wasm and render == "gl" else []
         configurations.append({"id": name, "configure_preset": preset_name, "binary_dir": binary_dir,
                                "expected": expected, "toolchain": VCPKG_TOOLCHAIN,
                                "chainload": WASM_TOOLCHAIN if wasm else "",
@@ -264,26 +280,36 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
                                "browser_override": browser if wasm else None, "steps": steps,
                                "required_test_names": required,
                                "required_browser_test_names": browser_tests,
-                               "conditional_browser_test_names": ["WebWindowTests", *pages] if wasm and render == "null" else [],
-                               "forbidden_test_names": ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests",
-                                                        "LineSweeperBundlePageTests", "LineSweeperPacingPageTests"] if render == "null" else []})
-    sync = "required" if any(path == "engine/render/vulkan" or path.startswith("engine/render/vulkan/") for path in selected) else "conditional"
+                               "conditional_browser_test_names":
+                                   list(null_chromium) if wasm and render == "null" else [],
+                               "forbidden_test_names":
+                                   ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests",
+                                    "LineSweeperBundlePageTests", "LineSweeperPacingPageTests"]
+                                   if render == "null" else []})
+    vulkan = any(path == "engine/render/vulkan" or path.startswith("engine/render/vulkan/") for path in selected)
+    sync = "required" if vulkan else "conditional"
     manual = [
         {"id": "release-configurations", "condition": "supplemental per-change evidence", "status": "not-run",
-         "source": "docs/product/STORIES.md#sm-18", "detail": "x64-release, x64-release-d3d12, x64-release-gl, x64-release-vulkan, x64-release-null, wasm-release"},
+         "source": "docs/product/STORIES.md#sm-18",
+         "detail": "x64-release, x64-release-d3d12, x64-release-gl, x64-release-vulkan, x64-release-null, wasm-release"},
         {"id": "vulkan-synchronization", "condition": sync, "status": "not-run",
          "source": "docs/review/vulkan/README.md#2-what-was-run-and-what-the-layers-said",
          "detail": "For Vulkan source changes use validate_sync layer settings and stdout output; device execution is separate."},
         {"id": "registration-before-future-execution", "condition": "before any future test execution", "status": "not-run",
-         "source": "AGENTS.md", "detail": "Reject zero selected tests and missing required/browser registrations; --no-tests=error alone cannot detect omitted pages."},
+         "source": "AGENTS.md",
+         "detail": "Reject zero selected tests and missing required/browser registrations; "
+                   "--no-tests=error alone cannot detect omitted pages."},
         {"id": "other-verification", "condition": "affected contracts", "status": "not-run", "source": "AGENTS.md",
-         "detail": "Website/lints/consumer packaging, opt-in probe builds, captures, listening, Safari/pads/touch/phone and display pacing are separate; no hardware evidence is inferred."}]
+         "detail": "Website/lints/consumer packaging, opt-in probe builds, captures, listening, "
+                   "Safari/pads/touch/phone and display pacing are separate; no hardware evidence is inferred."}]
     return {"schema_version": 1, "mode": "plan", "scope": {"area": "render", "paths": selected},
             "source_rules": ["AGENTS.md", "docs/product/STORIES.md#sm-17", "docs/product/STORIES.md#sm-18", *SOURCE_FILES],
             "configurations": configurations, "manual_obligations": manual,
             "not_modeled": ["other areas", "Release sweep execution", "physical acceptance"],
-            "preflight": {"enabled": False, "checks": [{"id": "tooling-and-caches", "configurations": list(CONFIGURATIONS),
-                         "category": "tooling", "status": "not-checked", "detail": "Use --preflight for read-only inspection; no commands execute.", "blocking": False}]}}
+            "preflight": {"enabled": False, "checks": [
+                {"id": "tooling-and-caches", "configurations": list(CONFIGURATIONS), "category": "tooling",
+                 "status": "not-checked", "detail": "Use --preflight for read-only inspection; no commands execute.",
+                 "blocking": False}]}}
 
 
 def cache_values(text: str) -> dict[str, str]:
@@ -327,7 +353,7 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
     add("host", CONFIGURATIONS, "host", "detected" if windows else "unsupported-host",
         "Modeled whole sweep requires an existing Windows toolchain environment; other host setups are not qualified.")
     for tool, ids in (("cmake", CONFIGURATIONS), ("ctest", CONFIGURATIONS), ("ninja", CONFIGURATIONS),
-                      ("cl", NATIVE), ("fxc", NATIVE[:2])):
+                      ("cl", NATIVE), ("fxc", D3D_PRESETS)):
         path = find(tool)
         add(tool, ids, "tooling", "detected" if path else "missing",
             f"{path}; detected only, version/capability unverified" if path else f"missing PATH tool: {tool}")
@@ -335,8 +361,9 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
                     ("VULKAN_SDK", "Include/vulkan/vulkan.h", ("x64-debug-vulkan",)),
                     ("VULKAN_SDK", "Lib/vulkan-1.lib", ("x64-debug-vulkan",)),
                     ("VULKAN_SDK", "Bin/dxc.exe", ("x64-debug-vulkan",)),
-                    ("EMSDK", "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake", CONFIGURATIONS[-2:]),
-                    ("EMSDK", "upstream/emscripten/emcc.py", CONFIGURATIONS[-2:]))
+                    ("EMSDK", "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+                     WASM_CONFIGURATIONS),
+                    ("EMSDK", "upstream/emscripten/emcc.py", WASM_CONFIGURATIONS))
     for variable, relative, ids in requirements:
         base = environment.get(variable, "")
         file_check(variable + "/" + relative, ids, Path(base) / relative if base else None)
@@ -351,36 +378,43 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
                 values = cache_values(read_text(cache_path))
             except (OSError, UnicodeError, PlanError) as error:
                 add(name + ":cache", ids, "cache", "missing", f"cannot inspect existing cache: {error}")
-            expected = {"CMAKE_HOME_DIRECTORY": str(root), "CMAKE_CACHEFILE_DIR": str(cache_path.parent),
-                        "CMAKE_GENERATOR": "Ninja", "CMAKE_BUILD_TYPE": configuration["expected"]["build_type"],
-                        **{"LABRADOR_" + axis.upper() + "_BACKEND": configuration["expected"][axis] for axis in ("render", "audio", "input")}}
-            for variable, suffix in (("VCPKG_ROOT", "scripts/buildsystems/vcpkg.cmake"),):
-                if environment.get(variable):
-                    expected["CMAKE_TOOLCHAIN_FILE"] = str(Path(environment[variable]) / suffix)
-            if wasm:
-                expected["VCPKG_TARGET_TRIPLET"] = "wasm32-emscripten"
-                if configuration["browser_override"]:
-                    expected["LABRADOR_TEST_BROWSER"] = configuration["browser_override"]
-                if environment.get("EMSDK"):
-                    expected["VCPKG_CHAINLOAD_TOOLCHAIN_FILE"] = str(Path(environment["EMSDK"]) / "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
-            elif values.get("VCPKG_CHAINLOAD_TOOLCHAIN_FILE"):
-                expected["VCPKG_CHAINLOAD_TOOLCHAIN_FILE"] = ""
-            if name == "x64-debug-vulkan" and environment.get("VULKAN_SDK"):
-                sdk = Path(environment["VULKAN_SDK"])
-                expected.update({"DXC_SPIRV_EXECUTABLE": str(sdk / "Bin/dxc.exe"),
-                                 "Vulkan_INCLUDE_DIR": str(sdk / "Include"), "Vulkan_LIBRARY": str(sdk / "Lib/vulkan-1.lib")})
-            for key, wanted in expected.items():
-                actual = values.get(key)
-                path_axis = key.endswith(("DIRECTORY", "DIR", "FILE")) or key in {"DXC_SPIRV_EXECUTABLE", "Vulkan_INCLUDE_DIR", "Vulkan_LIBRARY", "LABRADOR_TEST_BROWSER"}
-                equal = actual is not None and (normalized_path(actual, windows) == normalized_path(wanted, windows) if path_axis else actual == wanted)
-                add(name + ":" + key, ids, "cache", "detected" if equal else "mismatch",
-                    f"{key} agrees with plan" if equal else f"{key} does not match plan: actual={actual!r}, expected={wanted!r}; cache left unchanged")
-            add(name + ":manifest-install", ids, "cache", "not-checked",
-                f"VCPKG_MANIFEST_INSTALL={values.get('VCPKG_MANIFEST_INSTALL', 'unspecified')}; configure/build may download or reconfigure regardless of current installed files", False)
-            if name in NATIVE[:2]:
-                selected_fxc = values.get("FXC_EXECUTABLE", "")
-                file_check(name + ":cached-FXC_EXECUTABLE", ids,
-                           selected_fxc if selected_fxc and not selected_fxc.endswith("-NOTFOUND") else None)
+            else:
+                expected = {"CMAKE_HOME_DIRECTORY": str(root), "CMAKE_CACHEFILE_DIR": str(cache_path.parent),
+                            "CMAKE_GENERATOR": "Ninja", "CMAKE_BUILD_TYPE": configuration["expected"]["build_type"],
+                            **{"LABRADOR_" + axis.upper() + "_BACKEND": configuration["expected"][axis]
+                               for axis in ("render", "audio", "input")}}
+                if environment.get("VCPKG_ROOT"):
+                    expected["CMAKE_TOOLCHAIN_FILE"] = str(Path(environment["VCPKG_ROOT"]) / "scripts/buildsystems/vcpkg.cmake")
+                if wasm:
+                    expected["VCPKG_TARGET_TRIPLET"] = "wasm32-emscripten"
+                    if configuration["browser_override"]:
+                        expected["LABRADOR_TEST_BROWSER"] = configuration["browser_override"]
+                    if environment.get("EMSDK"):
+                        expected["VCPKG_CHAINLOAD_TOOLCHAIN_FILE"] = str(
+                            Path(environment["EMSDK"]) / "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
+                elif values.get("VCPKG_CHAINLOAD_TOOLCHAIN_FILE"):
+                    expected["VCPKG_CHAINLOAD_TOOLCHAIN_FILE"] = ""
+                if name == "x64-debug-vulkan" and environment.get("VULKAN_SDK"):
+                    sdk = Path(environment["VULKAN_SDK"])
+                    expected.update({"DXC_SPIRV_EXECUTABLE": str(sdk / "Bin/dxc.exe"),
+                                     "Vulkan_INCLUDE_DIR": str(sdk / "Include"), "Vulkan_LIBRARY": str(sdk / "Lib/vulkan-1.lib")})
+                for key, wanted in expected.items():
+                    actual = values.get(key)
+                    path_axis = key.endswith(("DIRECTORY", "DIR", "FILE")) or key in {
+                        "DXC_SPIRV_EXECUTABLE", "Vulkan_INCLUDE_DIR", "Vulkan_LIBRARY", "LABRADOR_TEST_BROWSER"}
+                    equal = actual is not None and (
+                        normalized_path(actual, windows) == normalized_path(wanted, windows) if path_axis
+                        else actual == wanted)
+                    add(name + ":" + key, ids, "cache", "detected" if equal else "mismatch",
+                        f"{key} agrees with plan" if equal else
+                        f"{key} does not match plan: actual={actual!r}, expected={wanted!r}; cache left unchanged")
+                add(name + ":manifest-install", ids, "cache", "not-checked",
+                    f"VCPKG_MANIFEST_INSTALL={values.get('VCPKG_MANIFEST_INSTALL', 'unspecified')}; "
+                    "configure/build may download or reconfigure regardless of current installed files", False)
+                if name in D3D_PRESETS:
+                    selected_fxc = values.get("FXC_EXECUTABLE", "")
+                    file_check(name + ":cached-FXC_EXECUTABLE", ids,
+                               selected_fxc if selected_fxc and not selected_fxc.endswith("-NOTFOUND") else None)
         else:
             required = name in required_cache_ids
             add(name + ":cache", ids, "cache", "missing" if required else "not-checked",
@@ -398,8 +432,10 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
         if node and not (PureWindowsPath(node).is_absolute() or PurePosixPath(node).is_absolute()):
             node = find(node) or ""
         file_check(name + ":selected-Emscripten-Node", ids, node or None)
-        if cached_node and environment.get("EMSDK_NODE") and normalized_path(cached_node, windows) != normalized_path(environment["EMSDK_NODE"], windows):
-            add(name + ":Node-selection", ids, "cache", "mismatch", "Cached emulator and EMSDK_NODE disagree; neither is activated or changed.")
+        if (cached_node and environment.get("EMSDK_NODE")
+                and normalized_path(cached_node, windows) != normalized_path(environment["EMSDK_NODE"], windows)):
+            add(name + ":Node-selection", ids, "cache", "mismatch",
+                "Cached emulator and EMSDK_NODE disagree; neither is activated or changed.")
         browser = configuration["browser_override"] or values.get("LABRADOR_TEST_BROWSER", "")
         if browser.endswith("-NOTFOUND"):
             browser = ""

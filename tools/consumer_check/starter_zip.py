@@ -21,7 +21,6 @@ import argparse
 import hashlib
 import json
 import re
-import subprocess
 import sys
 import time
 import zipfile
@@ -29,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import assemble  # noqa: E402
+import git_local  # noqa: E402  (tools/, which assemble puts on the path)
 
 TOP = "mygame"
 SITE = "https://labradorengine.com"
@@ -45,9 +45,7 @@ def release_get_started(tag: str) -> str:
 
 
 def git(engine: Path, *arguments: str) -> str:
-    return subprocess.run(
-        ["git", "-C", str(engine), *arguments], check=True, capture_output=True, text=True
-    ).stdout.strip()
+    return git_local.git(engine, *arguments, text=True).stdout.strip()
 
 
 def commit_time(engine: Path) -> tuple[int, int, int, int, int, int]:
@@ -68,7 +66,7 @@ def check_release(engine: Path, tag: str) -> None:
         raise SystemExit(f"vcpkg.json's version-string is {version_string(engine)}, not {tag[1:]}.")
     try:
         tagged = git(engine, "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}^{{commit}}")
-    except subprocess.CalledProcessError:
+    except git_local.GitError:
         raise SystemExit(f"There is no tag {tag} in {engine}; fetch it with git fetch origin --tags.")
     if tagged != git(engine, "rev-parse", "HEAD"):
         raise SystemExit(f"HEAD is not {tag}; check it out with git checkout {tag}.")

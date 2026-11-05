@@ -2,10 +2,10 @@
 
 Windows runners sometimes fail a link edge with a bare "Access is denied." or
 "The process cannot access the file because it is being used by another
-process." beside a different executable each time (11 jobs from 2026-10-01
-to 2026-11-04). The cause was not found. A second build relinks only the
-failed edge, and any other failure, compile and link errors included, is
-returned at once without a retry, so this cannot hide a defect.
+process." beside a different executable each time, for no cause yet found.
+A second build relinks only the failed edge, and any other failure, compile
+and link errors included, is returned at once without a retry, so this
+cannot hide a defect.
 """
 
 from __future__ import annotations

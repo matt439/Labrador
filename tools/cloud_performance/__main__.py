@@ -15,7 +15,9 @@ from .common import (
     RUN_STARTUP_SLACK_SECONDS,
     canonical,
     deadline,
+    BUNDLED_WORKER,
     inside,
+    launch_key,
     load_config,
     object_keys,
     run_prefix,
@@ -25,6 +27,9 @@ from .common import (
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKER = Path(__file__).with_name("worker.ps1")
+# Every stack this tool creates, and the only ones it will inspect or stop.
+STACK_PREFIX = "labrador-performance-"
+DEFAULT_REGION = "ap-southeast-2"
 
 
 def _write_new(path: str | Path, data: bytes) -> None:
@@ -51,7 +56,7 @@ def _local_readout(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def _stack_name(run_id: str) -> str:
-    return "labrador-performance-" + run_id
+    return STACK_PREFIX + run_id
 
 
 def _outputs(stack: dict[str, Any]) -> dict[str, str]:
@@ -62,24 +67,10 @@ def _describe_stack(cloudformation: Any, name: str) -> dict[str, Any]:
     return cloudformation.describe_stacks(StackName=name)["Stacks"][0]
 
 
-def _stack_instance(cloudformation: Any, stack: dict[str, Any]) -> str:
-    outputs = _outputs(stack)
-    if outputs.get("RunnerInstanceId"):
-        return outputs["RunnerInstanceId"]
-    pages = cloudformation.get_paginator("list_stack_resources").paginate(StackName=stack["StackId"])
-    matches = [resource["PhysicalResourceId"] for page in pages
-               for resource in page["StackResourceSummaries"]
-               if resource["LogicalResourceId"] == "Runner" and resource.get("PhysicalResourceId")]
-    if len(matches) != 1:
-        raise RuntimeError("stack does not identify exactly one Runner instance")
-    return matches[0]
-
-
 def _validated_runner(cloudformation: Any, stack_name: str) -> tuple[dict[str, Any], str]:
-    prefix = "labrador-performance-"
-    if not stack_name.startswith(prefix) or len(stack_name) == len(prefix):
+    if not stack_name.startswith(STACK_PREFIX) or len(stack_name) == len(STACK_PREFIX):
         raise ValueError("refusing a stack outside the Labrador performance namespace")
-    run_id = stack_name.removeprefix(prefix)
+    run_id = stack_name.removeprefix(STACK_PREFIX)
     stack = _describe_stack(cloudformation, stack_name)
     if stack.get("StackName") != stack_name:
         raise ValueError("resolved stack name differs from the requested exact stack")
@@ -208,10 +199,8 @@ def worker_dispatch(config: dict[str, Any], instance_id: str, *, config_sha: str
     """The exact send_command call that starts the worker on the runner.
 
     Kept whole in one place so the offline suite can assert on what the agent
-    will parse. The first launch idled its runner for an hour because the
-    worker's location was written as an s3:// URI and nothing before the
-    agent looked at it; the second did the same because the corrected form
-    existed as a function nobody called.
+    will parse. The worker's location must be worker_source_info's HTTPS
+    object URL, which states why an s3:// URI fails only on the runner.
     """
     keys = object_keys(config)
     arguments = {
@@ -263,8 +252,7 @@ def _launch(config_path: str, execute: bool) -> dict[str, Any]:
     config_sha = hashlib.sha256(config_bytes).hexdigest()
     worker_bytes = WORKER.read_bytes()
     worker_sha = hashlib.sha256(worker_bytes).hexdigest()
-    bundled_worker = manifest.get("files", {}).get(
-        "source/tools/cloud_performance/worker.ps1", {}).get("sha256")
+    bundled_worker = manifest.get("files", {}).get(BUNDLED_WORKER, {}).get("sha256")
     if bundled_worker != worker_sha:
         raise ValueError("worker differs from the source snapshot in the release bundle")
     keys = object_keys(config)
@@ -333,8 +321,7 @@ def _launch(config_path: str, execute: bool) -> dict[str, Any]:
               {"Key": "RunId", "Value": config["run_id"]}],
     )["StackId"]
     cloudformation.get_waiter("stack_create_complete").wait(StackName=stack_id)
-    stack = _describe_stack(cloudformation, stack_id)
-    instance_id = _stack_instance(cloudformation, stack)
+    _, instance_id = _validated_runner(cloudformation, stack_name)
     try:
         startup_deadline = min(
             deadline(config),
@@ -385,7 +372,7 @@ def _status(stack_name: str, region: str) -> dict[str, Any]:
     try:
         launch = json.loads(s3.get_object(
             Bucket=outputs["ArtifactBucket"],
-            Key=outputs["RunPrefix"] + "/control/launch.json",
+            Key=launch_key(outputs["RunPrefix"]),
         )["Body"].read())
         command = session.client("ssm").get_command_invocation(
             CommandId=launch["command_id"], InstanceId=launch["instance_id"])
@@ -482,14 +469,14 @@ def main() -> int:
     launch.add_argument("--execute", action="store_true")
     status = commands.add_parser("status", help="show exact-stack state and evidence keys")
     status.add_argument("--stack", required=True)
-    status.add_argument("--region", default="ap-southeast-2")
+    status.add_argument("--region", default=DEFAULT_REGION)
     collect = commands.add_parser("collect", help="download exact-stack evidence")
     collect.add_argument("--stack", required=True)
-    collect.add_argument("--region", default="ap-southeast-2")
+    collect.add_argument("--region", default=DEFAULT_REGION)
     collect.add_argument("--out", required=True)
     stop = commands.add_parser("stop", help="plan or stop the exact stack")
     stop.add_argument("--stack", required=True)
-    stop.add_argument("--region", default="ap-southeast-2")
+    stop.add_argument("--region", default=DEFAULT_REGION)
     stop.add_argument("--execute", action="store_true")
     analyze = commands.add_parser("analyze", help="validate and summarize downloaded evidence")
     analyze.add_argument("--input", required=True)
@@ -506,6 +493,11 @@ def main() -> int:
         _write_new(args.out, json.dumps(result, indent=2).encode("utf-8") + b"\n")
         print(json.dumps(_local_readout(result), indent=2))
         return 0 if result["complete"] else 1
+    if args.command == "analyze":
+        result = analysis.analyze(args.input)
+        _write_new(args.out, json.dumps(result, indent=2).encode("utf-8") + b"\n")
+        print(json.dumps(result, indent=2, default=str))
+        return 0 if result["complete"] else 1
 
     if args.command == "bundle":
         result = release.bundle(args.payload, args.out, root=args.root)
@@ -520,11 +512,8 @@ def main() -> int:
         result = _status(args.stack, args.region)
     elif args.command == "collect":
         result = _collect(args.stack, args.region, args.out)
-    elif args.command == "stop":
-        result = _stop(args.stack, args.region, args.execute)
     else:
-        result = analysis.analyze(args.input)
-        _write_new(args.out, json.dumps(result, indent=2).encode("utf-8") + b"\n")
+        result = _stop(args.stack, args.region, args.execute)
     print(json.dumps(result, indent=2, default=str))
     return 0
 

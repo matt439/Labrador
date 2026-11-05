@@ -421,8 +421,10 @@ commit, a manual run or a scheduled run explicitly checks only the event head;
 those limited runs do not stand for a pull request range. Missing declarations
 return exit 1; incomplete history or unsupported scope returns exit 2.
 Git must support `--no-lazy-fetch`; an older Git fails before reading objects.
-The checker disables implicit promisor fetches and replacement refs so its
-results describe available local objects and their actual commit messages.
+The checker disables implicit promisor fetches and replacement refs, and
+ignores ambient `GIT_*` variables and global or system configuration
+(`tools/git_local.py`), so its results describe available local objects and
+their actual commit messages.
 
 ## Before opening a pull request
 

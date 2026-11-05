@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import os
 from pathlib import Path
@@ -14,11 +13,10 @@ import tempfile
 import unittest
 from unittest import mock
 
+from tools.tests.tool_fixtures import isolate_repository, isolated_git_environment, load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SCRIPT = REPOSITORY / "tools/check_changes_rule.py"
-SPEC = importlib.util.spec_from_file_location("check_changes_rule", SCRIPT)
-checker = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(checker)
+checker = load_tool("tools/check_changes_rule.py")
 HEADER = "engine/core/example.h"
 
 
@@ -64,22 +62,12 @@ class GitFixtureTests(unittest.TestCase):
         root = Path(temporary.name)
         self.repository = root / "repository"
         self.repository.mkdir()
-        hooks = root / "empty-hooks"
-        hooks.mkdir()
-        config = root / "empty-gitconfig"
-        config.write_text("", encoding="ascii")
-        environment = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")}
-        environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": str(config),
-                            "GIT_AUTHOR_NAME": "Rule fixture", "GIT_AUTHOR_EMAIL": "fixture@example.invalid",
-                            "GIT_COMMITTER_NAME": "Rule fixture", "GIT_COMMITTER_EMAIL": "fixture@example.invalid",
-                            "GIT_TERMINAL_PROMPT": "0", "GIT_TEMPLATE_DIR": str(hooks)})
+        environment, hooks = isolated_git_environment(root, "Rule fixture")
         isolation = mock.patch.dict(os.environ, environment, clear=True)
         isolation.start()
         self.addCleanup(isolation.stop)
         self.git("init", "-q", "--initial-branch=fixture")
-        self.git("config", "core.autocrlf", "false")
-        self.git("config", "core.hooksPath", str(hooks))
-        self.git("config", "commit.gpgsign", "false")
+        isolate_repository(self.git, hooks)
         self.base = self.commit("Initial fixture", {"README.md": b"fixture\n", "CHANGES.md": b"# Changes\n"})
 
     def git(self, *arguments, data=None):
