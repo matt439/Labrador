@@ -575,6 +575,8 @@ written.
 59. L59 Open the window at any size: OCA-81 (selected from `IDEA#10` on 2026-11-04 by the owner)
 60. L60 Draw a PNG without converting it: OCA-82 (selected from `GAP#4` on 2026-11-04 by the owner)
 61. L61 Click, tap and drag the components gallery: OCA-83 (selected from `IDEA#6` on 2026-11-04 by the owner)
+62. L62 Make backends keep their seam contracts and refuse content loudly: SM-73 (hygiene review H1, selected 2026-11-05 by the owner)
+63. L63 Bound untrusted content and keep exceptions out of C callbacks: SM-74 (hygiene review H2, selected 2026-11-05 by the owner)
 
 **Stories**
 
@@ -1100,6 +1102,10 @@ written.
 
 - [x] **[OCA-83](#oca-83)** Could - S - The Outside Adopter: Click, tap and drag the components gallery's rows
 
+- [ ] **[SM-73](#sm-73)** Should - L - The Outside Adopter, The Sole Owner-Maintainer: Backends keep their seam contracts, and content mistakes fail loudly
+
+- [ ] **[SM-74](#sm-74)** Should - M - The Outside Adopter, The Sole Owner-Maintainer: Hostile content and failing callbacks raise the documented exception
+
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work was `WEB#10`: add LineSweeper and the bundle
@@ -1110,6 +1116,47 @@ written.
   entry only, since the image's Firefox makes no WebGL2 context without a
   GPU; the record is
   [web-to-be-tested.md](../port/web-to-be-tested.md#firefox-sample-checks-web4).
+
+<a id="sm-73"></a>
+### SM-73. Keep backends to their seam contracts and refuse content loudly
+
+Selected 2026-11-05 by the owner from theme H1 of the
+[hygiene review](../review/2026-11-05-hygiene/README.md#h1-engine-behaviour-and-contract-fixes-outside-render).
+Its 27 findings are source readings at `5cbc6b3`: audio and input backends
+that disagree with each other and with their seam headers, calls before
+initialisation or after close that crash instead of doing nothing, content
+mistakes accepted silently, and `const` on members that write.
+
+**Acceptance**
+
+- Each finding is fixed, or rejected in the review's
+  [STATUS.md](../review/2026-11-05-hygiene/STATUS.md) with its reason.
+- Each behaviour change carries a test that fails without it, and every
+  consumer-visible change a CHANGES.md entry.
+- Where backends disagreed, the seam header states the one rule they now
+  share. A one-shot asked for while the audio device is suspended is dropped.
+- The affected native presets, native null and a wasm build pass.
+
+<a id="sm-74"></a>
+### SM-74. Bound untrusted content and keep exceptions out of C callbacks
+
+Selected 2026-11-05 by the owner from theme H2 of the
+[hygiene review](../review/2026-11-05-hygiene/README.md#h2-untrusted-input-and-exception-safety).
+Deeply nested JSON overflows the stack, an animation count or PNG header can
+ask for gigabytes before any check, duplicate JSON keys pass silently, and a
+Win32 window procedure lets exceptions unwind through user32 against
+`window.h`'s promise.
+
+**Acceptance**
+
+- JSON parses without recursion, and refuses duplicate keys in fixed-schema
+  files. Authored frame counts and PNG dimensions are bounded before
+  allocation. Each refusal throws the documented exception naming the file.
+- An exception thrown while Win32 dispatches a message comes out of
+  `pump_until_quit`, and a constructor that throws leaves no live window.
+- Each hostile input the review names has a test, including the untested
+  `.xwb`, `.dds` and `.spritefont` header refusals.
+- The affected native presets, native null and a wasm build pass.
 
 <a id="oca-83"></a>
 ### OCA-83. Click, tap and drag the components gallery's rows
