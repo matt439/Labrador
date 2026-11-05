@@ -1594,8 +1594,8 @@ namespace labrador
 		// timeline_value_ naming a value nothing will ever signal, and
 		// wait_for_gpu waits on it with UINT64_MAX. That is a hang where the
 		// throw below is a message. engine/render/d3d12/device_resources.cpp
-		// keeps the same order: its waits target frame_fences_, written only
-		// after a successful Signal.
+		// keeps the equivalent order: its waits target frame_fences_, written
+		// only after a successful Signal.
 		const uint64_t signalled = this->timeline_value_ + 1;
 
 		// THE TIMELINE ALWAYS, THE BINARY ONE ONLY WHEN A PRESENT IS COMING.

@@ -464,11 +464,11 @@ separate draw test above inspects requests without proving device output.
 ## Drive the game with injected keys
 
 To get past a title screen in a smoke run after moving your pin, inject keys into the running
-game. **The engine reads the keyboard once per frame**, before your state's update: each key
+game. **The engine reads the keyboard once per update**, before your state's update: each key
 event the window receives is held until that poll, which makes it visible to `held()` and,
-for one frame, `pressed()`. A key pressed and released between two polls is never seen, so a
-tap sent faster than a frame does nothing. Hold the key across at least one poll and release
-it in a later one; at 60 frames a second, a hold of 100 ms spans several polls.
+for one update, `pressed()`. A key pressed and released between two polls is never seen, so a
+tap sent faster than an update does nothing. Hold the key across at least one poll and release
+it in a later one; at 60 updates a second, a hold of 100 ms spans several polls.
 
 <SourceFile path="engine/input/keyboard.h" from="// For the shell or an input fixture." to="void on_key_up(Key key);" />
 

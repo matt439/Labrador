@@ -429,14 +429,14 @@ namespace labrador
 			this->timer_.GetFrameCount(), 0, this->timer_.GetTargetElapsedTicks());
 
 		// Before anything reads it, and on every update whatever is running.
-		// That is what makes "down now, up last frame" true - gamepads.h says
+		// That is what makes "down now, up last update" true - gamepads.h says
 		// why the engine polls and a game does not.
 		//
-		// Every device together, and in one place, so that a frame boundary means
-		// the same thing to every device. A keyboard polled somewhere else in
-		// the frame would put its edges half a frame away from the pads', and
-		// a game reading both would see a stick and a key pressed on the same
-		// physical frame report on different ones.
+		// Every device together, and in one place, so that a poll boundary
+		// means the same thing to every device. A keyboard polled somewhere
+		// else in the update would put its edges half an update away from the
+		// pads', and a game reading both would see a stick and a key pressed
+		// between the same two polls report on different updates.
 		this->gamepads_->poll();
 		this->keyboard_->poll();
 		this->mouse_->poll();
@@ -643,8 +643,8 @@ namespace labrador
 	{
 		// Only the resources the device holds. Audio is not one, and objects
 		// hold borrowed SoundBank pointers across a device loss. The sprite
-		// batches and the sampler states belong to the
-		// renderer, which has already released them by the time this is called.
+		// batches and the sampler states belong to the renderer, which has
+		// already released them by the time this is called.
 		//
 		// Which resources those are is the table's business, not the shell's.
 		// Naming textures and fonts here would have the shell know both what

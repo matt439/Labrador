@@ -11,10 +11,10 @@
 //
 // THE THIRD READER USES A DIFFERENT COMPILER AND INTERMEDIATE. The Vulkan backend
 // compiles this file with the Vulkan SDK's dxc into SPIR-V, where the two
-// Direct3D ones use fxc and get DXBC, from the same source. What it needs
-// instead is three register shifts on the command line, because HLSL has a
-// register space per resource kind and Vulkan has one binding number per
-// descriptor set - so b0, t0 and s0 would all arrive at the same slot.
+// Direct3D ones use fxc and get DXBC, from the same source. What it needs is
+// three register shifts on the command line, because HLSL has a register
+// space per resource kind and Vulkan has one binding number per descriptor
+// set - so b0, t0 and s0 would all arrive at the same slot.
 // cmake/compile_shaders.cmake makes that shift and says why it belongs to the
 // build rather than to this file, which is the same argument as the profile
 // below, one level further out.
@@ -27,9 +27,10 @@
 // not a build setting: D3D11 gives the vertex shader its b0 through a constant
 // buffer, D3D12 gives it the same b0 as four root constants, and Vulkan as a
 // uniform buffer in a descriptor set. One difference reaches this file and it
-// is worth knowing before that sentence is read as none: the declaration order of VertexIn's three members is an ABI term on the Vulkan
-// backend, because dxc assigns SPIR-V locations in declaration order and a
-// Vulkan pipeline binds attributes by number rather than by semantic. It is
+// is worth knowing before that sentence is read as none: the declaration
+// order of VertexIn's three members is an ABI term on the Vulkan backend,
+// because dxc assigns SPIR-V locations in declaration order and a Vulkan
+// pipeline binds attributes by number rather than by semantic. It is
 // stated again where those members are, which is where somebody would reorder
 // them. The OpenGL backend is not a counter-example either way: GLSL is a
 // different language, not a different profile, and render/gl/sprite_shader.h

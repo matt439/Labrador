@@ -118,7 +118,7 @@ Almost everything below falls out of one rule:
   different reader — may ride along. A header may instead hold no type at
   all, and then it is named for what it computes rather than for what it
   holds: `shape_type.h` is an enum, `scalar.h` is the scalar vocabulary
-  and the tolerance ordering, `intersects.h` is the pairwise predicates.
+  and its tolerance thresholds, `intersects.h` is the pairwise predicates.
   That is the exception, not a second pattern to reach for — a header
   with no type and no single answer to "what is this for" is a bag, and
   the rule exists to stop bags.
