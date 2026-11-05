@@ -631,10 +631,11 @@ The same one state also expresses opaque drawing, a darkening vignette and a
 full-screen colour grade.
 
 A `BlendMode` on the seam is therefore **declined**, and not only as
-unnecessary. `set_filter` closes and reopens the batch on every change, because
-a sprite batch cannot swap state mid-`Begin`; a blend selector would inherit
-exactly that, and a caller toggling it per particle would turn a handful of
-draw calls into thousands. That is the frame-loop tax T8 refuses.
+unnecessary. A change of `set_filter` flushes the view's batch, because each
+draw call binds one sampler (`renderer.h`: changing it mid-list "costs a
+flush"); a blend selector would inherit exactly that, one blend state per draw
+call, and a caller toggling it per particle would turn a handful of draw calls
+into thousands. That is the frame-loop tax T8 refuses.
 
 What is genuinely lost, rather than worked around: glowing **text**. `draw_text`
 puts its glyphs in the same batch as everything else, and the tool that builds a

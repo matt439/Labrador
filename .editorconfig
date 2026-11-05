@@ -7,7 +7,7 @@ charset = utf-8
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{h,cpp,hlsl,mjs,js,ts,astro,css}]
+[*.{h,cpp,hlsl,mjs,js,mts,ts,astro,css}]
 indent_style = tab
 indent_size = 4
 
@@ -25,6 +25,12 @@ trim_trailing_whitespace = false
 [{engine/core/step_timer.h,engine/render/throw_if_failed.h,engine/render/d3d11/device_resources.*}]
 indent_style = space
 indent_size = 4
+
+# Upstream licence texts are reproduced as their authors wrote them, trailing
+# blanks included; .gitattributes keeps the Microsoft one byte for byte too.
+[{**/OFL.txt,tools/web_bundle/Microsoft-LICENSE.txt}]
+insert_final_newline = unset
+trim_trailing_whitespace = false
 
 [external/**]
 indent_style = unset

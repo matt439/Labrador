@@ -153,7 +153,8 @@ paths are planning information; they do not establish a build or test result.
   The checker verifies declarations, not visual judgment.
   [The procedure](CONTRIBUTING.md#golden-image-review-records)
   defines the local command and range coverage.
-  `Harness::end_not_comparable` names the three backend/resize-specific frames;
+  `Harness::end_not_comparable` marks frames with no golden: three resize cases
+  and the analytic composition/viewport cases, which assert every pixel;
   `allowed_channel_drift` in `golden_image.cpp` states the measured allowance.
   Text cases decode their BC2 atlas on the CPU to avoid device rounding; a
   separate case checks device BC2 decoding. Null read-back throws; null tests

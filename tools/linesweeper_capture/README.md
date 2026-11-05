@@ -38,9 +38,10 @@ the sparks repeat as exactly as the match does.
 ## Building and running
 
 The tool needs a device, so it is not a ctest entry. It is built in every
-preset with a rasterising backend. The `-null` presets do not build it at all,
-because the null backend refuses `read_back_buffer`. Use the D3D11 Release
-build for the website's images:
+Windows preset with a rasterising backend. The `-null` presets do not build it
+at all, because the null backend refuses `read_back_buffer`, and neither do the
+`wasm-*` presets, because the root `CMakeLists.txt` adds it on Windows only.
+Use the D3D11 Release build for the website's images:
 
 ```
 cmake --preset x64-release
