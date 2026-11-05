@@ -1,7 +1,7 @@
+#include <doctest/doctest.h>
+
 #include "samples/components/animation_preview.h"
 #include "samples/components/animation_preview_test_content.h"
-
-#include <doctest/doctest.h>
 
 #include <limits>
 #include <stdexcept>

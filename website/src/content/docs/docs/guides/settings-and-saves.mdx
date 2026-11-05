@@ -32,8 +32,11 @@ seeds the row from `fullscreen()`:
 <SourceFile
 	path="samples/components/gallery_state.cpp"
 	from="const std::vector<std::wstring> window_modes = {"
-	to="this->app_->fullscreen() ? 1 : 0);"
+	to="full_screen_choice : windowed_choice);"
 />
+
+`windowed_choice` and `full_screen_choice` are the row's two positions, named once
+at the top of the file so the callback and both re-syncs agree on which is which.
 
 `fullscreen()` reports the requested mode until the platform says otherwise.
 A browser request can be deferred to an activating input event or refused,
@@ -43,7 +46,7 @@ describes a request. The gallery reads the current report every tick:
 <SourceFile
 	path="samples/components/gallery_state.cpp"
 	from="void GalleryState::update(float dt)"
-	to="this->app_->fullscreen() ? 1 : 0);"
+	to="full_screen_choice : windowed_choice);"
 />
 
 `OptionRow::set_index` changes the displayed choice without calling its

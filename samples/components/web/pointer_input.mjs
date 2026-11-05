@@ -8,8 +8,9 @@
 // What it shows is that the page's pointer rules survive a browser's actual
 // geometry and events: the drag, the tap on a value's left half, a release
 // off the row that pressed, and a tap on Quit. ComponentsTests holds each
-// rule headlessly. Touch here is Chromium's emulation, not a touchscreen:
-// what a phone's browser delivers is the open check in
+// rule with a hidden window under native null render and audio
+// (gallery_pointer_tests.cpp). Touch here is Chromium's emulation, not a
+// touchscreen: what a phone's browser delivers is the open check in
 // docs/port/web-to-be-tested.md.
 
 // Installed before the page's own scripts, as run_page.mjs installs its hook
@@ -48,12 +49,26 @@ export async function prepare(page) {
 }
 
 // The gallery's layout (gallery_state.cpp), in its 1280x720 world units.
+// Each upper-case name mirrors the lower-case constant of that name there,
+// except TRACK_MIDDLE, which is worked out from two of them.
 const LABEL_X = 160;
 const VALUE_X = 480;
+const FIRST_ROW_Y = 240;
+const ROW_SPACING = 50;
 const TRACK_WIDTH = 300;
-const row_middle = (row) => 240 + row * 50 + 10;
 
-const FRAMES = (count) => `new Promise((done) => {
+// A row's line of text is twenty units tall, so its middle is TEXT_MIDDLE
+// below the row's top. A slider's track starts track_inset (4) below that
+// top and is track_height (10) tall, so its middle is a unit higher.
+const TEXT_MIDDLE = 10;
+const TRACK_MIDDLE = 4 + 10 / 2;
+
+const row_y = (row) => FIRST_ROW_Y + row * ROW_SPACING;
+const row_middle = (row) => row_y(row) + TEXT_MIDDLE;
+const track_middle = (row) => row_y(row) + TRACK_MIDDLE;
+
+// A page expression that settles after `count` animation frames.
+const frames_script = (count) => `new Promise((done) => {
 	let left = ${count};
 	const step = () => { if (--left <= 0) { done(true); } else { requestAnimationFrame(step); } };
 	requestAnimationFrame(step);
@@ -70,7 +85,7 @@ export default async function drive(page) {
 	const assert = (condition, message) => {
 		if (!condition) { throw new Error(message); }
 	};
-	const frames = (count = 6) => evaluate(FRAMES(count));
+	const frames = (count = 6) => evaluate(frames_script(count));
 	const status_since = (from) => heard.slice(from).filter((text) => text.startsWith('Components: '));
 
 	await frames(10);
@@ -97,7 +112,7 @@ export default async function drive(page) {
 	// A drag on the music slider: pressed halfway along the track, then
 	// pulled past its right end, which clamps.
 	let from = heard.length;
-	const music = row_middle(2) - 1;
+	const music = track_middle(2);
 	await mouse('mousePressed', at(VALUE_X + TRACK_WIDTH / 2, music), 1);
 	await frames();
 	await mouse('mouseMoved', at(1270, music), 1);

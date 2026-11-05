@@ -24,11 +24,13 @@ The tests (`*_tests.cpp`, with their in-memory content helpers) come too if you
 want them. Widget and timing cases need no window, device or files. The
 animation reader case reads the delivered DDS/JSON pair; the build stages it
 beside the native test executable or embeds it in the Node module. Native-null
-cases also record drawings and load the actual manifest's sprite-sheet entry,
-without creating a window or graphics/audio API device.
-When both native render and audio backends are null, a gallery integration
-case uses a hidden window and synthetic keyboard snapshots to check the real
-overlay and R restart binding. It runs no Application loop or API device.
+cases also record what the nine-slice, the bar, the slider and the previews
+draw, and load the actual manifest's sprite-sheet entry, without creating a
+window or graphics/audio API device.
+When both native render and audio backends are null, two gallery integration
+cases use a hidden window and synthetic input: one checks the real overlay
+and R restart binding, the other the pointer rules. They run no Application
+loop or API device.
 
 ## Why these are copied and not linked
 
@@ -126,6 +128,11 @@ route and a texture release/reload. Those checks produce no pixels and do not
 establish real device-loss recovery or how the previews look.
 The hidden-window native-null case additionally drives GalleryState's clock,
 overlay, point filter and R press/hold behavior with the delivered manifest.
+A second hidden-window case feeds the gallery synthetic mouse, touch and key
+events and checks its pointer rules from the status lines: a click on a label
+only chooses, each half of a value steps its way, a release off the pressed
+row does nothing, a slider is grabbed on or just before its track and clamps
+past its end, a key drops a drag, and a tap on Quit closes the window.
 
 ## The gallery
 

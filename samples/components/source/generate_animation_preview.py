@@ -10,21 +10,26 @@ import json
 from pathlib import Path
 import struct
 
-WIDTH = 64
-HEIGHT = 16
+# One square frame per radius, side by side in a single row. A frame has an
+# even number of texels, so it has no middle texel; the diamond is centred on
+# CENTRE in both axes, half a texel up and left of the frame's true middle.
+FRAME = 16
+CENTRE = 7
 RADII = (2, 4, 6, 4)
+WIDTH = FRAME * len(RADII)
+HEIGHT = FRAME
 
 
 def atlas_bytes():
     pixels = bytearray(WIDTH * HEIGHT * 4)
     for frame, radius in enumerate(RADII):
         for y in range(HEIGHT):
-            for x in range(16):
-                distance = abs(x - 7) + abs(y - 7)
+            for x in range(FRAME):
+                distance = abs(x - CENTRE) + abs(y - CENTRE)
                 if distance > radius:
                     continue
                 rgba = (224, 247, 250, 255) if distance == radius else (38, 198, 218, 255)
-                offset = (y * WIDTH + frame * 16 + x) * 4
+                offset = (y * WIDTH + frame * FRAME + x) * 4
                 pixels[offset:offset + 4] = bytes(rgba)
     # Legacy DDS: one uncompressed RGBA8 level, no DX10 header or mip chain.
     header = [124, 0x100F, HEIGHT, WIDTH, WIDTH * 4, 0, 1]
@@ -38,8 +43,8 @@ def sheet_text():
     return json.dumps({
         "sprite_frames": [],
         "animation_strips": [
-            {"name": name, "first_frame": {"x": 0, "y": 0, "w": 16, "h": 16},
-             "frame_count": 4, "frame_time": 0.25, "looping": looping}
+            {"name": name, "first_frame": {"x": 0, "y": 0, "w": FRAME, "h": FRAME},
+             "frame_count": len(RADII), "frame_time": 0.25, "looping": looping}
             for name, looping in [("pulse_loop", True), ("pulse_once", False)]
         ]
     }, indent=4) + "\n"

@@ -68,7 +68,9 @@ namespace components
 		const std::wstring& choice() const;
 		size_t choice_count() const;
 
-		// Throws std::invalid_argument for an index outside the choices.
+		// Throws std::invalid_argument for an index outside the choices. The
+		// index the row already has changes nothing, so a page can call this
+		// every tick to follow state the game does not own.
 		void set_index(size_t index);
 
 		// The two parts, for a page that lines other things up against them.
