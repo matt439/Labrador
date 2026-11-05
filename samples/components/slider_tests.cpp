@@ -11,7 +11,9 @@
 #include "engine/ui/focus.h"
 
 #include <climits>
+#include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using components::Slider;
@@ -44,6 +46,8 @@ TEST_CASE("a slider starts on its value, with the fill that far along")
 	const Slider slider = volume(content, 70);
 
 	CHECK(slider.value() == 70);
+	CHECK(slider.minimum() == 0);
+	CHECK(slider.maximum() == 100);
 	CHECK(slider.number().text() == L"70");
 
 	const RectangleF fill = slider.fill().bounds();
@@ -176,6 +180,32 @@ TEST_CASE("a range that is not one, or a value outside it, throws")
 	CHECK_THROWS_AS(slider.set_value(-1), std::invalid_argument);
 	CHECK(slider.value() == 50);
 	CHECK(slider.number().text() == L"50");
+}
+
+TEST_CASE("a track a pointer cannot be placed along throws")
+{
+	TestContent content;
+	const auto make = [&content](const RectangleF& bar)
+	{
+		return Slider("bad", L"Bad", 0, 100, 10, 50, Vector2F::zero, bar,
+			"font", TextureHandle(), &content.resources);
+	};
+	const float nan = std::numeric_limits<float>::quiet_NaN();
+
+	CHECK_THROWS_AS(make(RectangleF(300.0f, 54.0f, 0.0f, 12.0f)),
+		std::invalid_argument);
+	CHECK_THROWS_AS(make(RectangleF(300.0f, 54.0f, -200.0f, 12.0f)),
+		std::invalid_argument);
+	CHECK_THROWS_AS(make(RectangleF(300.0f, 54.0f, nan, 12.0f)),
+		std::invalid_argument);
+	CHECK_THROWS_AS(make(RectangleF(300.0f, 54.0f, 200.0f, -1.0f)),
+		std::invalid_argument);
+	CHECK_THROWS_AS(make(RectangleF(300.0f, 54.0f, 200.0f, nan)),
+		std::invalid_argument);
+
+	// A flat track is still one a pointer moves along.
+	const Slider flat = make(RectangleF(300.0f, 54.0f, 200.0f, 0.0f));
+	CHECK(flat.value_at(500.0f) == 100);
 }
 
 TEST_CASE("the slider's box runs from the label past the number")

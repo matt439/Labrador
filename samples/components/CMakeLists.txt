@@ -60,8 +60,8 @@ elseif(WIN32)
 endif()
 
 # Widget/timing cases use in-memory content. Reader cases use the delivered
-# DDS/JSON. Null recorder cases use no window; the native-null gallery case
-# uses a hidden window, with neither an Application loop nor an API device.
+# DDS/JSON. Null recorder cases use no window; the native-null gallery cases
+# use a hidden window, with neither an Application loop nor an API device.
 find_package(doctest CONFIG REQUIRED)
 add_executable(ComponentsTests
     animation_preview_tests.cpp
@@ -75,12 +75,14 @@ add_executable(ComponentsTests
 target_link_libraries(ComponentsTests PRIVATE
     ComponentsExample doctest::doctest labrador_settings)
 if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null")
-    target_sources(ComponentsTests PRIVATE animation_preview_null_tests.cpp)
+    target_sources(ComponentsTests PRIVATE animation_preview_null_tests.cpp
+        widget_draw_null_tests.cpp)
 endif()
 if(NOT EMSCRIPTEN
     AND LABRADOR_RENDER_BACKEND STREQUAL "null"
     AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
-    target_sources(ComponentsTests PRIVATE gallery_animation_tests.cpp gallery_state.cpp)
+    target_sources(ComponentsTests PRIVATE gallery_animation_tests.cpp
+        gallery_pointer_tests.cpp gallery_state.cpp)
 endif()
 if(TARGET components_content)
     add_dependencies(ComponentsTests components_content)

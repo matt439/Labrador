@@ -38,6 +38,21 @@ namespace components
 
 			return minimum;
 		}
+
+		// The track, after checking a pointer can be placed along it: with
+		// no width there is no fraction of the way along, and a drag would
+		// quietly do nothing.
+		RectangleF checked_track(const std::string& name,
+			const RectangleF& track)
+		{
+			if (!(track.width > 0.0f) || !(track.height >= 0.0f))
+			{
+				throw std::invalid_argument("Slider '" + name +
+					"' needs a track wider than zero, with a height of zero or more");
+			}
+
+			return track;
+		}
 	}
 
 	Bar::Bar(const std::string& name,
@@ -107,7 +122,7 @@ namespace components
 		maximum_(maximum),
 		step_(step),
 		value_(value),
-		track_rectangle_(track),
+		track_rectangle_(checked_track(name, track)),
 		label_(name + "_label", label, font_name, label_position,
 			render_resources),
 		track_(name + "_track", block, track, track_colour),
@@ -139,31 +154,14 @@ namespace components
 			next = std::max<long long>(next - this->step_, this->minimum_);
 		}
 
-		if (next == this->value_)
-		{
-			return false;
-		}
-
-		this->value_ = static_cast<int>(next);
-		this->show_value();
-
-		if (this->on_change_)
-		{
-			this->on_change_(this->value_);
-		}
-
-		return true;
+		return this->change_to(static_cast<int>(next));
 	}
 
 	int Slider::value_at(float x) const
 	{
+		// The constructor refused a track with no width, so this divides by
+		// something. In double for the reason fill_rectangle gives.
 		const RectangleF& track = this->track_rectangle_;
-		if (!(track.width > 0.0f))
-		{
-			return this->value_;
-		}
-
-		// In double for the reason fill_rectangle gives.
 		const double fraction = std::clamp(
 			(static_cast<double>(x) - track.x) / track.width, 0.0, 1.0);
 		const double minimum = this->minimum_;
@@ -180,21 +178,7 @@ namespace components
 
 	bool Slider::drag_to(float x)
 	{
-		const int next = this->value_at(x);
-		if (next == this->value_)
-		{
-			return false;
-		}
-
-		this->value_ = next;
-		this->show_value();
-
-		if (this->on_change_)
-		{
-			this->on_change_(this->value_);
-		}
-
-		return true;
+		return this->change_to(this->value_at(x));
 	}
 
 	int Slider::value() const
@@ -260,6 +244,24 @@ namespace components
 		return RectangleF(this->track_rectangle_.x, this->track_rectangle_.y,
 			this->track_rectangle_.width * static_cast<float>(fraction),
 			this->track_rectangle_.height);
+	}
+
+	bool Slider::change_to(int next)
+	{
+		if (next == this->value_)
+		{
+			return false;
+		}
+
+		this->value_ = next;
+		this->show_value();
+
+		if (this->on_change_)
+		{
+			this->on_change_(this->value_);
+		}
+
+		return true;
 	}
 
 	void Slider::show_value()

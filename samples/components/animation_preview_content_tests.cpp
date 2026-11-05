@@ -1,3 +1,5 @@
+#include <doctest/doctest.h>
+
 #include "samples/components/animation_preview.h"
 
 #include "engine/app/content_root.h"
@@ -9,8 +11,6 @@
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
-
-#include <doctest/doctest.h>
 
 #include <memory>
 #include <string>

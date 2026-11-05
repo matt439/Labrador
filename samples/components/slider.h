@@ -16,9 +16,8 @@ namespace components
 	//
 	// UiTexture would draw the same thing, but it takes a sprite sheet and a
 	// frame name, and the engine's white texture (white_texture_name) is all a
-	// bar needs. A leaf
-	// of your own is the shape PHILOSOPHY (UI) expects a game to write when the
-	// engine's set does not fit, and this one is twenty lines.
+	// bar needs. A leaf of your own is the shape PHILOSOPHY (UI) expects a game
+	// to write when the engine's set does not fit, and this one is small.
 	class Bar final : public labrador::UiWidget
 	{
 	public:
@@ -65,9 +64,10 @@ namespace components
 		// set_value() does.
 		using Changed = std::function<void(int value)>;
 
-		// `minimum` must be below `maximum`, `step` above zero and `value`
-		// inside the range; anything else throws std::invalid_argument naming
-		// the slider (T6). The number is drawn just right of `track`, on the
+		// `minimum` must be below `maximum`, `step` above zero, `value`
+		// inside the range and `track` wider than zero and not of negative
+		// height; anything else throws std::invalid_argument naming the
+		// slider (T6). The number is drawn just right of `track`, on the
 		// label's line.
 		Slider(const std::string& name,
 			const std::wstring& label,
@@ -122,6 +122,11 @@ namespace components
 
 	private:
 		labrador::RectangleF fill_rectangle() const;
+
+		// The one way the player changes the value, for adjust() and
+		// drag_to() alike: shown and reported only when it differs. Returns
+		// whether it did.
+		bool change_to(int next);
 		void show_value();
 
 		int minimum_;

@@ -1,3 +1,5 @@
+#include <doctest/doctest.h>
+
 #include "samples/components/animation_preview.h"
 #include "samples/components/animation_preview_test_content.h"
 
@@ -12,8 +14,6 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/texture_data.h"
-
-#include <doctest/doctest.h>
 
 #include <string>
 #include <utility>

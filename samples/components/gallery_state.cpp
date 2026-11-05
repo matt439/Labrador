@@ -30,12 +30,34 @@ namespace components
 	{
 		const std::string font_name = "jetbrains_mono_bold_16";
 
+		// The screen is laid out in this rectangle and fitted into whatever
+		// the window is, so a resize scales it rather than moving the rows.
+		const RectangleF layout_bounds(0.0f, 0.0f, 1280.0f, 720.0f);
+
 		// Manual layout, as PHILOSOPHY (UI) asks: a column of labels at one
 		// x, the values at another, one row every fifty units.
 		constexpr float label_x = 160.0f;
 		constexpr float value_x = 480.0f;
 		constexpr float first_row_y = 240.0f;
 		constexpr float row_spacing = 50.0f;
+
+		// The heading and the two help lines above the rows, and the row the
+		// status line takes below them.
+		constexpr float heading_y = 120.0f;
+		constexpr float help_y = 150.0f;
+		constexpr float animation_help_y = 180.0f;
+		constexpr int status_row = 6;
+
+		// panel.dds is one 16-texel frame with 6-texel corners, drawn two
+		// units a texel behind everything else.
+		const RectangleI panel_source(0, 0, 16, 16);
+		constexpr SliceBorder panel_border{ 6, 6, 6, 6 };
+		constexpr float panel_scale = 2.0f;
+		const RectangleF panel_bounds(120.0f, 90.0f, 1040.0f, 490.0f);
+
+		// The window row's choices, in the order init() lists them.
+		constexpr size_t windowed_choice = 0;
+		constexpr size_t full_screen_choice = 1;
 
 		// The slider's track: as wide as the values' column allows, and a
 		// little shorter than a line of text, centred on it.
@@ -58,8 +80,31 @@ namespace components
 		// a finger need not land on a ten-unit line; the label only focuses.
 		constexpr float grab_margin = 20.0f;
 
+		// The two previews, each with its label in a column to the left of
+		// it and this far above it.
 		const RectangleF loop_preview_bounds(960.0f, 260.0f, 64.0f, 64.0f);
 		const RectangleF once_preview_bounds(960.0f, 410.0f, 64.0f, 64.0f);
+		constexpr float preview_label_x = 900.0f;
+		constexpr float preview_label_rise = 30.0f;
+
+		// The view the page draws through, and the one a pointer is read
+		// through: the layout fitted into a window of `resolution` pixels.
+		struct LayoutView
+		{
+			Viewport viewport;
+			Camera camera;
+		};
+
+		LayoutView layout_view(const Vector2F& resolution)
+		{
+			const Viewport viewport(RectangleF(Vector2F::zero, resolution));
+			return { viewport, Camera::frame(layout_bounds, viewport) };
+		}
+
+		Vector2F preview_label_position(const RectangleF& preview)
+		{
+			return Vector2F(preview_label_x, preview.y - preview_label_rise);
+		}
 
 		float row_y(int row)
 		{
@@ -102,33 +147,36 @@ namespace components
 		this->refresh_view();
 
 		// The panel behind the rows, added first because a scene draws in
-		// the order things were added. One 16-texel frame, its 6-texel
-		// corners drawn two units a texel and the rest stretched to fit.
+		// the order things were added: its corners kept, the rest stretched
+		// to fit.
 		this->scene_->add(std::make_unique<NineSlice>("panel",
-			resources->resolve_texture("panel"), RectangleI(0, 0, 16, 16),
-			SliceBorder{ 6, 6, 6, 6 }, RectangleF(120.0f, 90.0f, 1040.0f, 490.0f),
-			Colour::white, 2.0f));
+			resources->resolve_texture("panel"), panel_source, panel_border,
+			panel_bounds, Colour::white, panel_scale));
 
 		this->scene_->add(std::make_unique<UiText>("heading",
 			L"COMPONENTS / copy one into your game", font_name,
-			Vector2F(label_x, 120.0f), resources, heading_colour));
+			Vector2F(label_x, heading_y), resources, heading_colour));
 		this->scene_->add(std::make_unique<UiText>("help",
 			L"Arrows, click or tap: choose and change   Enter/A: select   Esc/B: quit",
-			font_name, Vector2F(label_x, 150.0f), resources, help_colour));
+			font_name, Vector2F(label_x, help_y), resources, help_colour));
 		this->scene_->add(std::make_unique<UiText>("animation_help",
 			L"R / gamepad X: restart both animations", font_name,
-			Vector2F(label_x, 180.0f), resources, help_colour));
+			Vector2F(label_x, animation_help_y), resources, help_colour));
 		this->scene_->add(std::make_unique<UiText>("loop_label",
-			L"Loop", font_name, Vector2F(900.0f, 230.0f), resources,
-			help_colour));
+			L"Loop", font_name, preview_label_position(loop_preview_bounds),
+			resources, help_colour));
 		this->scene_->add(std::make_unique<UiText>("once_label",
-			L"Once / holds last", font_name, Vector2F(900.0f, 380.0f), resources,
+			L"Once / holds last", font_name,
+			preview_label_position(once_preview_bounds), resources,
 			help_colour));
 
-		// Built before the rows, because every row's callback writes to it.
+		// Empty until set_status gives it its first line, so a page told of
+		// every line hears this one too.
 		this->status_ = this->scene_->add(std::make_unique<UiText>("status",
-			L"Window mode applies; difficulty and volume sliders are examples.", font_name,
-			Vector2F(label_x, row_y(6)), resources, help_colour));
+			L"", font_name, Vector2F(label_x, row_y(status_row)), resources,
+			help_colour));
+		this->set_status(
+			L"Window mode applies; difficulty and volume sliders are examples.");
 
 		// An ordered list does not wrap; an unordered one does
 		// (option_row.h).
@@ -147,16 +195,16 @@ namespace components
 		const std::vector<std::wstring> window_modes = {
 			L"Windowed", L"Full screen" };
 		this->window_mode_ = this->scene_->add(std::make_unique<OptionRow>(
-			"window", L"Window", window_modes, 0,
+			"window", L"Window", window_modes, windowed_choice,
 			Vector2F(label_x, row_y(1)), value_x, font_name, resources,
 			[this, window_modes](size_t index)
 			{
-				this->app_->set_fullscreen(index == 1);
+				this->app_->set_fullscreen(index == full_screen_choice);
 				this->set_status(L"Window mode requested: " +
 					window_modes[index]);
 			}));
-		this->window_mode_->set_index(
-			this->app_->fullscreen() ? 1 : 0);
+		this->window_mode_->set_index(this->app_->fullscreen() ?
+			full_screen_choice : windowed_choice);
 
 		this->music_ = this->scene_->add(std::make_unique<Slider>(
 			"music", L"Music volume", 0, 100, 10, 70,
@@ -178,7 +226,7 @@ namespace components
 					std::to_wstring(value) + L"% (no audio loaded)");
 			}));
 
-		UiText* quit = this->scene_->add(std::make_unique<UiText>("quit",
+		this->quit_ = this->scene_->add(std::make_unique<UiText>("quit",
 			L"Quit", font_name, Vector2F(label_x, row_y(4)), resources));
 
 		// The rows are focus targets with no action: A on one means nothing,
@@ -188,15 +236,17 @@ namespace components
 		this->focus_.add(this->window_mode_);
 		this->focus_.add(this->music_);
 		this->focus_.add(this->effects_);
-		this->focus_.add(quit, [this]() { this->app_->quit(); });
+		this->focus_.add(this->quit_, [this]() { this->app_->quit(); });
 
 		// The same rows, in the same order, as places a pointer can choose.
 		UiWidget* const rows[] = { this->difficulty_, this->window_mode_,
-			this->music_, this->effects_, quit };
-		for (int row = 0; row < 5; ++row)
+			this->music_, this->effects_, this->quit_ };
+		int row = 0;
+		for (UiWidget* widget : rows)
 		{
 			this->pointer_targets_.push_back({ band_for_row(row), true });
-			this->pointer_widgets_.push_back(rows[row]);
+			this->pointer_widgets_.push_back(widget);
+			++row;
 		}
 
 		// Adds are pending until a tick ends, and the frame drawn before the
@@ -264,8 +314,8 @@ namespace components
 	{
 		// A browser can refuse a request or leave full screen externally.
 		// set_index follows that report without calling the request callback.
-		this->window_mode_->set_index(
-			this->app_->fullscreen() ? 1 : 0);
+		this->window_mode_->set_index(this->app_->fullscreen() ?
+			full_screen_choice : windowed_choice);
 
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
@@ -404,7 +454,7 @@ namespace components
 		}
 
 		// Quit is the one row with an action, and activation runs it.
-		if (pressed == this->pointer_widgets_.back())
+		if (pressed == this->quit_)
 		{
 			this->focus_.activate(0);
 		}
@@ -412,13 +462,10 @@ namespace components
 
 	Vector2F GalleryState::world_point(const Vector2I& client) const
 	{
-		// The camera refresh_view() gave the scene: the 1280x720 layout
-		// fitted into the window.
-		const Vector2F resolution =
-			this->app_->resolution_manager()->resolution_vec();
-		const Viewport viewport(RectangleF(Vector2F::zero, resolution));
-		return Camera::frame(RectangleF(0.0f, 0.0f, 1280.0f, 720.0f), viewport)
-			.world_position(client, viewport);
+		// The view refresh_view() gave the scene.
+		const LayoutView view = layout_view(
+			this->app_->resolution_manager()->resolution_vec());
+		return view.camera.world_position(client, view.viewport);
 	}
 
 	void GalleryState::set_status(const std::wstring& text)
@@ -434,6 +481,8 @@ namespace components
 	{
 		this->scene_->draw(renderer, [this](int, DrawList& list)
 			{
+				// The previews are pixel art, so they are point-sampled
+				// whatever filter the view was left in before the overlay.
 				list.set_filter(TextureFilter::point);
 				this->loop_preview_->draw(list, loop_preview_bounds);
 				this->once_preview_->draw(list, once_preview_bounds);
@@ -442,14 +491,10 @@ namespace components
 
 	void GalleryState::refresh_view()
 	{
-		// The screen is laid out at 1280x720 and fitted into whatever the
-		// window is, so a resize scales it rather than moving the rows.
-		const Vector2F resolution =
-			this->app_->resolution_manager()->resolution_vec();
-		const Viewport viewport(RectangleF(Vector2F::zero, resolution));
+		const LayoutView view = layout_view(
+			this->app_->resolution_manager()->resolution_vec());
 
 		this->scene_->clear_views();
-		this->scene_->add_view(viewport,
-			Camera::frame(RectangleF(0.0f, 0.0f, 1280.0f, 720.0f), viewport));
+		this->scene_->add_view(view.viewport, view.camera);
 	}
 }

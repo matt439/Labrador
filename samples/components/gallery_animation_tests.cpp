@@ -1,3 +1,5 @@
+#include <doctest/doctest.h>
+
 #include "samples/components/gallery_state.h"
 
 #include "engine/app/application.h"
@@ -7,7 +9,6 @@
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 
-#include <doctest/doctest.h>
 #include <Windows.h>
 
 #include <cstddef>
@@ -19,23 +20,35 @@ using namespace labrador;
 
 namespace
 {
+	// The previews' sprites from one frame of the gallery. The frame's view
+	// starts out linear, so the panel and the text draw that way and only
+	// the overlay's own filter can make the previews point-sampled: a frame
+	// left at the renderer's point default could not tell them apart.
 	std::vector<RecordedSprite> draw_previews(const Application& app,
 		const GalleryState& gallery)
 	{
 		Renderer* renderer = app.renderer();
 		renderer->begin_frame();
+		renderer->set_view_count(1);
+		renderer->view(0).set_filter(TextureFilter::linear);
 		gallery.draw(*renderer);
 		renderer->submit();
 		const TextureHandle atlas =
 			app.render_resources()->resolve_texture("animation_preview");
 		std::vector<RecordedSprite> previews;
+		bool scene_linear = false;
 		for (const RecordedSprite& sprite : recorded_sprites(*renderer))
 		{
 			if (sprite.texture == atlas)
 			{
 				previews.push_back(sprite);
 			}
+			else if (sprite.filter == TextureFilter::linear)
+			{
+				scene_linear = true;
+			}
 		}
+		CHECK(scene_linear);
 		return previews;
 	}
 }

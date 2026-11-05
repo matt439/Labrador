@@ -33,8 +33,8 @@ namespace components
 	class GalleryState final : public labrador::State
 	{
 	public:
-		// Told every line the status shows, for a page that reports it;
-		// main_web.cpp writes each to the console.
+		// Told every line the status shows, the first during init(), for a
+		// page that reports it; main_web.cpp writes each to the console.
 		using StatusChanged = std::function<void(const std::wstring& text)>;
 
 		explicit GalleryState(labrador::Application* app,
@@ -88,6 +88,10 @@ namespace components
 		Slider* music_ = nullptr;
 		Slider* effects_ = nullptr;
 		labrador::UiText* status_ = nullptr;
+
+		// The one row with an action: a click or a tap that completes on it
+		// activates it.
+		labrador::UiText* quit_ = nullptr;
 
 		labrador::FocusGroup focus_;
 		labrador::DirectionRepeat repeat_;

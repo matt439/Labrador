@@ -2,8 +2,9 @@
 
 `../content/textures/animation_preview.dds` is original geometric pixel data
 created for Labrador's components sample from an integer-distance rule. The
-four 16x16 frames are a centred cyan diamond with an opaque pale outline; radii are
-2, 4, 6 and 4 texels. Other texels are transparent black. Every visible texel
+four 16x16 frames are a cyan diamond with an opaque pale outline, centred on
+texel (7, 7) of each frame, half a texel up and left of its true middle; radii
+are 2, 4, 6 and 4 texels. Other texels are transparent black. Every visible texel
 is opaque, so RGB/alpha satisfy the engine's premultiplied blending contract.
 
 The 64x16 atlas is a single-level legacy DDS with RGBA8 channel masks. The
@@ -23,7 +24,7 @@ python samples/components/source/generate_animation_preview.py
 The script writes only those two adjacent content files and prints their
 byte counts and SHA-256 hashes. It uses the standard library and does not
 need an image application, network, graphics device or build tool. All source
-and JSON text is ASCII; Unicode-source policy remains untouched.
+and JSON text is ASCII.
 
 The asset's arithmetic provenance does not prove that the gallery layout looks
 correct. A change to the asset or the layout is reviewed in the native and

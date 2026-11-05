@@ -106,6 +106,37 @@ TEST_CASE("a two-choice window row follows external fullscreen snapshots without
 	CHECK(requests == std::vector<bool>{ true });
 }
 
+TEST_CASE("setting the index a row already has changes nothing, and still checks it")
+{
+	TestContent content;
+	int calls = 0;
+	OptionRow row("difficulty", L"Difficulty", difficulties(), 1,
+		Vector2F(100.0f, 50.0f), 300.0f, "font", &content.resources,
+		[&calls](size_t) { ++calls; });
+	const RectangleF before = row.bounds();
+
+	// What a page that follows outside state does on every tick.
+	for (int tick = 0; tick < 3; ++tick)
+	{
+		row.set_index(1);
+		CHECK(row.index() == 1);
+		CHECK(row.choice() == L"Normal");
+		CHECK(row.value().text() == L"Normal");
+		CHECK(row.bounds() == before);
+	}
+	CHECK(calls == 0);
+
+	// The range is checked before the comparison, so an index outside it
+	// throws whatever the row is on.
+	CHECK_THROWS_AS(row.set_index(3), std::invalid_argument);
+	CHECK(row.index() == 1);
+
+	// And a different index still moves it.
+	row.set_index(2);
+	CHECK(row.value().text() == L"Hard");
+	CHECK(row.bounds().width == doctest::Approx(240.0f));
+}
+
 TEST_CASE("a row that does not wrap stops at its ends, says so and stays quiet")
 {
 	TestContent content;

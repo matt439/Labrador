@@ -121,6 +121,13 @@ namespace components
 				"': index out of range");
 		}
 
+		// A page that follows outside state calls this every tick, and the
+		// value's text is copied and measured again whenever it is set.
+		if (index == this->index_)
+		{
+			return;
+		}
+
 		this->index_ = index;
 		this->value_.set_text(this->choices_[index]);
 	}
