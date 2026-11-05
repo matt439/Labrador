@@ -12,11 +12,35 @@
 
 namespace labrador
 {
+	namespace
+	{
+		bool is_unit(const Vector2F& axis)
+		{
+			return are_equal(axis.length(), 1.0f, default_epsilon);
+		}
+
+		bool are_perpendicular(const Vector2F& a, const Vector2F& b)
+		{
+			return are_equal(Vector2F::dot(a, b), 0.0f, default_epsilon);
+		}
+
+		// Written as the rejection, so that a NaN extent, which fails every
+		// comparison, is not mistaken for a positive one.
+		bool not_positive(float half_width)
+		{
+			return half_width <= 0.0f;
+		}
+
+		bool any_not_positive(const Vector2F& half_extents)
+		{
+			return not_positive(half_extents.x) || not_positive(half_extents.y);
+		}
+	}
 
 	RectangleRotated::RectangleRotated(const Point2F& center,
 		const Vector2F& x_axis, const Vector2F& y_axis,
-		const Vector2F& hw_extents) :
-		center_(center), x_axis_(x_axis), y_axis_(y_axis), hw_extents_(hw_extents)
+		const Vector2F& half_extents) :
+		center_(center), x_axis_(x_axis), y_axis_(y_axis), half_extents_(half_extents)
 	{
 		this->x_axis_.normalize();
 		this->y_axis_.normalize();
@@ -44,7 +68,7 @@ namespace labrador
 		this->x_axis_ = center_line.direction();
 		this->x_axis_.normalize();
 		this->y_axis_ = Vector2F::normal(this->x_axis_);
-		this->hw_extents_ = Vector2F(center_line.length() / 2.0f + thickness, thickness);
+		this->half_extents_ = Vector2F(center_line.length() / 2.0f + thickness, thickness);
 
 		this->points_ = this->calculate_points();
 
@@ -86,25 +110,25 @@ namespace labrador
 	void RectangleRotated::inflate(float amount)
 	{
 		// Reject nonpositive extents before changing the defining values or cache.
-		const Vector2F inflated = this->hw_extents_ + Vector2F(amount, amount);
-		if (inflated.x <= 0.0f || inflated.y <= 0.0f)
+		const Vector2F inflated = this->half_extents_ + Vector2F(amount, amount);
+		if (any_not_positive(inflated))
 		{
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->hw_extents_ = inflated;
+		this->half_extents_ = inflated;
 		this->points_ = this->calculate_points();
 	}
 
-	Point2F RectangleRotated::x_axis() const
+	Vector2F RectangleRotated::x_axis() const
 	{
 		return this->x_axis_;
 	}
-	Point2F RectangleRotated::y_axis() const
+	Vector2F RectangleRotated::y_axis() const
 	{
 		return this->y_axis_;
 	}
-	Point2F RectangleRotated::axis(int axis) const
+	Vector2F RectangleRotated::axis(int axis) const
 	{
 		if (axis == 0)
 		{
@@ -117,27 +141,27 @@ namespace labrador
 
 		throw std::invalid_argument("Axis must be 0 or 1");
 	}
-	Point2F RectangleRotated::half_extents() const
+	Vector2F RectangleRotated::half_extents() const
 	{
-		return this->hw_extents_;
+		return this->half_extents_;
 	}
 	float RectangleRotated::half_x_width() const
 	{
-		return this->hw_extents_.x;
+		return this->half_extents_.x;
 	}
 	float RectangleRotated::half_y_width() const
 	{
-		return this->hw_extents_.y;
+		return this->half_extents_.y;
 	}
 	float RectangleRotated::half_width(int axis) const
 	{
 		if (axis == 0)
 		{
-			return this->hw_extents_.x;
+			return this->half_extents_.x;
 		}
 		else if (axis == 1)
 		{
-			return this->hw_extents_.y;
+			return this->half_extents_.y;
 		}
 
 		throw std::invalid_argument("Axis must be 0 or 1");
@@ -150,16 +174,15 @@ namespace labrador
 	}
 	// Validate candidates before committing them so rejection preserves both
 	// the defining members and the corner cache.
-	void RectangleRotated::set_axes(const Point2F& x_axis, const Point2F& y_axis)
+	void RectangleRotated::set_axes(const Vector2F& x_axis, const Vector2F& y_axis)
 	{
 		const Vector2F new_x = x_axis.normalized();
 		const Vector2F new_y = y_axis.normalized();
 
 		// Validate the candidate axes together. A single-axis setter requires
 		// perpendicularity to the unchanged partner and cannot turn the pair.
-		if (!are_equal(new_x.length(), 1.0f, default_epsilon) ||
-			!are_equal(new_y.length(), 1.0f, default_epsilon) ||
-			!are_equal(Vector2F::dot(new_x, new_y), 0.0f, default_epsilon))
+		if (!is_unit(new_x) || !is_unit(new_y) ||
+			!are_perpendicular(new_x, new_y))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
@@ -168,12 +191,12 @@ namespace labrador
 		this->y_axis_ = new_y;
 		this->points_ = this->calculate_points();
 	}
-	void RectangleRotated::set_x_axis(const Point2F& x_axis)
+	void RectangleRotated::set_x_axis(const Vector2F& x_axis)
 	{
 		const Vector2F candidate = x_axis.normalized();
 
-		if (!are_equal(candidate.length(), 1.0f, default_epsilon) ||
-			!are_equal(Vector2F::dot(candidate, this->y_axis_), 0.0f, default_epsilon))
+		if (!is_unit(candidate) ||
+			!are_perpendicular(candidate, this->y_axis_))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
@@ -181,12 +204,12 @@ namespace labrador
 		this->x_axis_ = candidate;
 		this->points_ = this->calculate_points();
 	}
-	void RectangleRotated::set_y_axis(const Point2F& y_axis)
+	void RectangleRotated::set_y_axis(const Vector2F& y_axis)
 	{
 		const Vector2F candidate = y_axis.normalized();
 
-		if (!are_equal(candidate.length(), 1.0f, default_epsilon) ||
-			!are_equal(Vector2F::dot(this->x_axis_, candidate), 0.0f, default_epsilon))
+		if (!is_unit(candidate) ||
+			!are_perpendicular(this->x_axis_, candidate))
 		{
 			throw std::invalid_argument("Axes are not valid");
 		}
@@ -194,34 +217,34 @@ namespace labrador
 		this->y_axis_ = candidate;
 		this->points_ = this->calculate_points();
 	}
-	void RectangleRotated::set_half_extents(const Point2F& hw_extents)
+	void RectangleRotated::set_half_extents(const Vector2F& half_extents)
 	{
-		if (hw_extents.x <= 0.0f || hw_extents.y <= 0.0f)
+		if (any_not_positive(half_extents))
 		{
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->hw_extents_ = hw_extents;
+		this->half_extents_ = half_extents;
 		this->points_ = this->calculate_points();
 	}
 	void RectangleRotated::set_half_x_width(float half_x_width)
 	{
-		if (half_x_width <= 0.0f)
+		if (not_positive(half_x_width))
 		{
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->hw_extents_.x = half_x_width;
+		this->half_extents_.x = half_x_width;
 		this->points_ = this->calculate_points();
 	}
 	void RectangleRotated::set_half_y_width(float half_y_width)
 	{
-		if (half_y_width <= 0.0f)
+		if (not_positive(half_y_width))
 		{
 			throw std::invalid_argument("Half widths are not valid");
 		}
 
-		this->hw_extents_.y = half_y_width;
+		this->half_extents_.y = half_y_width;
 		this->points_ = this->calculate_points();
 	}
 	Point2F RectangleRotated::point_0() const
@@ -268,7 +291,7 @@ namespace labrador
 	}
 	RectangleF RectangleRotated::rectangle_rotated_to_axis() const
 	{
-		return RectangleF(this->center_, this->hw_extents_.x, this->hw_extents_.y);
+		return RectangleF(this->center_, this->half_extents_.x, this->half_extents_.y);
 	}
 	float RectangleRotated::angle() const
 	{
@@ -301,7 +324,7 @@ namespace labrador
 		return this->center_ == other.center_ &&
 			this->x_axis_ == other.x_axis_ &&
 			this->y_axis_ == other.y_axis_ &&
-			this->hw_extents_ == other.hw_extents_;
+			this->half_extents_ == other.half_extents_;
 	}
 	bool RectangleRotated::operator!=(const RectangleRotated& other) const
 	{
@@ -310,45 +333,30 @@ namespace labrador
 
 	std::array<Point2F, 4> RectangleRotated::calculate_points() const
 	{
-		return calculate_points(this->center_, this->x_axis_, this->y_axis_, this->hw_extents_);
+		return calculate_points(this->center_, this->x_axis_, this->y_axis_, this->half_extents_);
 	}
 
 	std::array<Point2F, 4> RectangleRotated::calculate_points(const Point2F& center,
 		const Vector2F& x_axis, const Vector2F& y_axis,
-		const Vector2F& hw_extents) const
+		const Vector2F& half_extents) const
 	{
 		return
 		{
-			center - x_axis * hw_extents.x - y_axis * hw_extents.y,
-			center + x_axis * hw_extents.x - y_axis * hw_extents.y,
-			center + x_axis * hw_extents.x + y_axis * hw_extents.y,
-			center - x_axis * hw_extents.x + y_axis * hw_extents.y
+			center - x_axis * half_extents.x - y_axis * half_extents.y,
+			center + x_axis * half_extents.x - y_axis * half_extents.y,
+			center + x_axis * half_extents.x + y_axis * half_extents.y,
+			center - x_axis * half_extents.x + y_axis * half_extents.y
 		};
 	}
 
 	bool RectangleRotated::half_widths_valid() const
 	{
-		if (hw_extents_.x <= 0.0f || hw_extents_.y <= 0.0f)
-		{
-			return false;
-		}
-
-		return true;
+		return !any_not_positive(this->half_extents_);
 	}
 	bool RectangleRotated::axes_valid() const
 	{
-		if (!are_equal(x_axis_.length(), 1.0f, default_epsilon) ||
-			!are_equal(y_axis_.length(), 1.0f, default_epsilon))
-		{
-			return false;
-		}
-
-		if (!are_equal(Vector2F::dot(x_axis_, y_axis_), 0.0f, default_epsilon))
-		{
-			return false;
-		}
-
-		return true;
+		return is_unit(this->x_axis_) && is_unit(this->y_axis_) &&
+			are_perpendicular(this->x_axis_, this->y_axis_);
 	}
 	bool RectangleRotated::edges_valid() const
 	{

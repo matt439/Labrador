@@ -4,6 +4,8 @@
 #include "engine/math/ericson_math.h"
 
 #include <cmath>
+#include <cstddef>
+#include <span>
 
 namespace labrador
 {

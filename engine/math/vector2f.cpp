@@ -103,8 +103,8 @@ namespace labrador
 			// report. Zero is the same answer normalized() gives for the same
 			// reason, and it beats dividing by nothing and returning NaN,
 			// because NaN travels. Triangle::angle_0/1/2 feed
-			// TriangleRightAxisAligned::find_hypotenuse, where every
-			// are_equal(NaN, pi_over_2) is false, so find_hypotenuse answers
+			// TriangleRightAxisAligned::right_angle_vertex, where every
+			// are_equal(NaN, pi_over_2) is false, so right_angle_vertex answers
 			// -1 and hypotenuse() throws "Triangle is not a right triangle" -
 			// about a triangle that is one, two call levels from the actual
 			// fault.
@@ -191,37 +191,37 @@ namespace labrador
 	constinit const Vector2F Vector2F::direction_up_left = { -root_half, -root_half };
 
 
-	Vector2F operator- (const Vector2F& V)
+	Vector2F operator- (const Vector2F& a)
 	{
-		return Vector2F(-V.x, -V.y);
+		return Vector2F(-a.x, -a.y);
 	}
-	Vector2F operator+ (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator+ (const Vector2F& a, const Vector2F& b)
 	{
-		return Vector2F(V1.x + V2.x, V1.y + V2.y);
+		return Vector2F(a.x + b.x, a.y + b.y);
 	}
-	Vector2F operator- (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator- (const Vector2F& a, const Vector2F& b)
 	{
-		return Vector2F(V1.x - V2.x, V1.y - V2.y);
+		return Vector2F(a.x - b.x, a.y - b.y);
 	}
-	Vector2F operator* (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator* (const Vector2F& a, const Vector2F& b)
 	{
-		return Vector2F(V1.x * V2.x, V1.y * V2.y);
+		return Vector2F(a.x * b.x, a.y * b.y);
 	}
-	Vector2F operator* (const Vector2F& V, float S)
+	Vector2F operator* (const Vector2F& a, float scale)
 	{
-		return Vector2F(V.x * S, V.y * S);
+		return Vector2F(a.x * scale, a.y * scale);
 	}
-	Vector2F operator/ (const Vector2F& V1, const Vector2F& V2)
+	Vector2F operator/ (const Vector2F& a, const Vector2F& b)
 	{
-		return Vector2F(V1.x / V2.x, V1.y / V2.y);
+		return Vector2F(a.x / b.x, a.y / b.y);
 	}
-	Vector2F operator/ (const Vector2F& V, float S)
+	Vector2F operator/ (const Vector2F& a, float scale)
 	{
-		return Vector2F(V.x / S, V.y / S);
+		return Vector2F(a.x / scale, a.y / scale);
 	}
-	Vector2F operator* (float S, const Vector2F& V)
+	Vector2F operator* (float scale, const Vector2F& a)
 	{
-		return Vector2F(V.x * S, V.y * S);
+		return Vector2F(a.x * scale, a.y * scale);
 	}
 
 }

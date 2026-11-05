@@ -17,7 +17,7 @@ namespace labrador
 		RectangleRotated& operator=(const RectangleRotated&) = default;
 		RectangleRotated(const Point2F& center,
 			const Vector2F& x_axis, const Vector2F& y_axis,
-			const Vector2F& hw_extents);
+			const Vector2F& half_extents);
 		RectangleRotated(const Segment& center_line, float thickness);
 
 		RectangleF bounding_box() const override;
@@ -27,10 +27,10 @@ namespace labrador
 		std::array<Segment, 4> edges() const;
 		void inflate(float amount) override;
 
-		Point2F x_axis() const;
-		Point2F y_axis() const;
-		Point2F axis(int axis) const;
-		Point2F half_extents() const;
+		Vector2F x_axis() const;
+		Vector2F y_axis() const;
+		Vector2F axis(int axis) const;
+		Vector2F half_extents() const;
 		float half_x_width() const;
 		float half_y_width() const;
 		float half_width(int axis) const;
@@ -50,10 +50,10 @@ namespace labrador
 		//
 		// Throws std::invalid_argument unless the pair is orthonormal, and
 		// commits nothing when it does.
-		void set_axes(const Point2F& x_axis, const Point2F& y_axis);
-		void set_x_axis(const Point2F& x_axis);
-		void set_y_axis(const Point2F& y_axis);
-		void set_half_extents(const Point2F& hw_extents);
+		void set_axes(const Vector2F& x_axis, const Vector2F& y_axis);
+		void set_x_axis(const Vector2F& x_axis);
+		void set_y_axis(const Vector2F& y_axis);
+		void set_half_extents(const Vector2F& half_extents);
 		void set_half_x_width(float half_x_width);
 		void set_half_y_width(float half_y_width);
 
@@ -86,7 +86,7 @@ namespace labrador
 		Point2F center_ = Point2F::zero;
 		Vector2F x_axis_ = Vector2F::direction_right;
 		Vector2F y_axis_ = Vector2F::direction_up;
-		Vector2F hw_extents_ = Vector2F::zero;
+		Vector2F half_extents_ = Vector2F::zero;
 
 		// Four points of fixed size, in fixed storage, so constructing,
 		// copying or assigning an OBB never allocates and neither does
@@ -99,7 +99,7 @@ namespace labrador
 
 		std::array<Point2F, 4> calculate_points(const Point2F& center,
 			const Vector2F& x_axis, const Vector2F& y_axis,
-			const Vector2F& hw_extents) const;
+			const Vector2F& half_extents) const;
 
 		bool half_widths_valid() const;
 		bool axes_valid() const;

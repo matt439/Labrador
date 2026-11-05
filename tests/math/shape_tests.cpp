@@ -61,4 +61,23 @@ TEST_SUITE("Shape")
 		CHECK(rr_edges[2] == rr.edge_2());
 		CHECK(rr_edges[3] == rr.edge_3());
 	}
+
+	TEST_CASE("two shapes' bounding boxes intersect when they overlap or touch")
+	{
+		const RectangleF box(0.0f, 0.0f, 10.0f, 10.0f);
+		const Triangle beside(Point2F(10.0f, 0.0f), Point2F(20.0f, 0.0f),
+			Point2F(10.0f, 10.0f));
+		const Triangle away(Point2F(30.0f, 0.0f), Point2F(40.0f, 0.0f),
+			Point2F(30.0f, 10.0f));
+		const Quad over(Point2F(5.0f, 5.0f), Point2F(15.0f, 5.0f),
+			Point2F(15.0f, 15.0f), Point2F(5.0f, 15.0f));
+
+		const Shape& shape = box;
+		CHECK(shape.bounding_boxes_intersect(over));
+		CHECK(over.bounding_boxes_intersect(shape));
+		CHECK(shape.bounding_boxes_intersect(beside) ==
+			box.intersects(beside.bounding_box()));
+		CHECK_FALSE(shape.bounding_boxes_intersect(away));
+		CHECK_FALSE(away.bounding_boxes_intersect(shape));
+	}
 }

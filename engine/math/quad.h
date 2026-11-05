@@ -11,15 +11,17 @@ namespace labrador
 {
 	struct RectangleRotated;
 
-	// A quadrilateral with four points, ordered clockwise starting from the top
-	// left.
+	// A convex quadrilateral: four points in order around it, either winding
+	// and from any start, so long as the diagonals properly cross
+	// (is_valid). The RectangleF form lists the top left, top right, bottom
+	// right and bottom left corners.
 	struct Quad : public Shape
 	{
 		Quad() = default;
 		Quad(const Quad&) = default;
 		Quad& operator=(const Quad&) = default;
-		Quad(const Vector2F& point1, const Vector2F& point2,
-			const Vector2F& point3, const Vector2F& point4);
+		Quad(const Vector2F& point_0, const Vector2F& point_1,
+			const Vector2F& point_2, const Vector2F& point_3);
 		explicit Quad(const RectangleF& rectangle);
 		explicit Quad(const RectangleRotated& rectangle);
 
@@ -38,6 +40,8 @@ namespace labrador
 		void set_point_1(const Point2F& point);
 		void set_point_2(const Point2F& point);
 		void set_point_3(const Point2F& point);
+		// The four points, in the order point_0..point_3 name them.
+		const std::array<Point2F, 4>& points() const;
 
 		Segment edge_0() const;
 		Segment edge_1() const;
@@ -58,7 +62,7 @@ namespace labrador
 		Triangle triangle_0() const;
 		Triangle triangle_1() const;
 
-		Point2F points_[4] = { Vector2F::zero, Vector2F::zero,
+		std::array<Point2F, 4> points_ = { Vector2F::zero, Vector2F::zero,
 					Vector2F::zero, Vector2F::zero };
 	};
 }
