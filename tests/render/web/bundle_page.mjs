@@ -246,22 +246,35 @@ export function steps(page, state) {
 	// software rasteriser drawing a phone-sized buffer one frame can outlast
 	// the whole press, and the game never hears it (sample_key.mjs, the same
 	// rule for the development pages).
+	// Each level resolves with the frames it lasted and their span in ms.
 	const held = () => evaluate(`new Promise((done) => {
 		const started = performance.now();
 		let seen = 0;
 		const step = (timestamp) => {
-			if (++seen >= 2 && timestamp - started >= 100) { done(true); }
+			if (++seen >= 2 && timestamp - started >= 100) { done([seen, Math.round(timestamp - started)]); }
 			else { requestAnimationFrame(step); }
 		};
 		requestAnimationFrame(step);
 	})`);
+	// What each key's levels lasted, from the dispatch of one level to the
+	// dispatch of the next, for a quit that did not arrive. The page's own
+	// count is the least a level lasted; the driver's is the most, because
+	// a key event's dispatch returns once the page has handled it.
+	let key_log = [];
+	// Resolves with the longest the key can have been down, in ms.
 	const key = async (code, vk) => {
 		const event = { code, key: code === 'KeyA' ? 'a' : code,
 			windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk };
+		const pressed = Date.now();
 		await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...event });
-		await held();
+		const [down_frames, down_ms] = await held();
+		const released = Date.now();
 		await send('Input.dispatchKeyEvent', { type: 'keyUp', ...event });
-		await held();
+		const longest = Date.now() - pressed;
+		const [up_frames, up_ms] = await held();
+		key_log.push(`${code} down at most ${longest} ms (${down_frames} frames over ${down_ms} ms), ` +
+			`up ${Date.now() - released} ms (${up_frames} frames over ${up_ms} ms)`);
+		return longest;
 	};
 	const loaded = (index) => until(`window.labradorBundle.runs[${index}]?.initialized === true &&
 		(window.labradorBundle.runs[${index}].canvas.labradorFrames ?? 0) >= 5`,
@@ -284,16 +297,34 @@ export function steps(page, state) {
 		// before that goes to whatever had focus and the game never hears it.
 		await until("document.activeElement === document.querySelector('canvas')",
 			'the running canvas never took the keyboard');
-		if (!already_paused) { await key('Escape', 27); }
-		for (const [code, vk] of [['ArrowDown', 40], ['ArrowDown', 40],
-			['ArrowDown', 40], ['Enter', 13]]) {
-			await key(code, vk);
+		key_log = [];
+		// The pause menu repeats a direction held for 0.4 s of game time, and
+		// game time never runs ahead of the wall clock. A loaded runner can
+		// hold a level far longer than the steps ask - the dispatch that ends
+		// it arrives late - and the cursor walks on past QUIT by itself. So a
+		// walk in which an arrow may have lasted that long is abandoned:
+		// Escape closes the menu, which opens again on its first row.
+		let paused = already_paused;
+		for (let attempt = 1; ; attempt++) {
+			if (!paused) { await key('Escape', 27); }
+			let longest = 0;
+			for (let row = 0; row < 3; row++) {
+				longest = Math.max(longest, await key('ArrowDown', 40));
+			}
+			if (longest < 400) { break; }
+			if (attempt === 8) {
+				throw new Error(`${state.phase}: no walk to QUIT held each arrow under 400 ms in ` +
+					`${attempt} attempts; keys ${key_log.join('; ')}`);
+			}
+			await key('Escape', 27);
+			paused = false;
 		}
+		await key('Enter', 13);
 		try {
 			await until(`window.labradorBundle.runs[${index}].quit === true && ${button_visible}`,
 				'QUIT did not reach the host callback and replay button');
 		} catch (error) {
-			throw new Error(`${error.message}; page ${await quit_state(index)}`);
+			throw new Error(`${error.message}; page ${await quit_state(index)}; keys ${key_log.join('; ')}`);
 		}
 		assert(await evaluate("document.getElementById('status').textContent === 'Thanks for playing.'"),
 			'QUIT did not show its status');
