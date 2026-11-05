@@ -1,4 +1,5 @@
 #include "engine/render/text_encoding.h"
+#include "engine/core/utf8.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -66,32 +67,6 @@ namespace labrador
 			const char32_t offset = code_point - 0x10000;
 			wide += static_cast<wchar_t>(0xD800 + (offset >> 10));
 			wide += static_cast<wchar_t>(0xDC00 + (offset & 0x3FF));
-		}
-
-		void append_utf8(std::string& utf8, char32_t code_point)
-		{
-			if (code_point < 0x80)
-			{
-				utf8 += static_cast<char>(code_point);
-			}
-			else if (code_point < 0x800)
-			{
-				utf8 += static_cast<char>(0xC0 | (code_point >> 6));
-				utf8 += static_cast<char>(0x80 | (code_point & 0x3F));
-			}
-			else if (code_point < 0x10000)
-			{
-				utf8 += static_cast<char>(0xE0 | (code_point >> 12));
-				utf8 += static_cast<char>(0x80 | ((code_point >> 6) & 0x3F));
-				utf8 += static_cast<char>(0x80 | (code_point & 0x3F));
-			}
-			else
-			{
-				utf8 += static_cast<char>(0xF0 | (code_point >> 18));
-				utf8 += static_cast<char>(0x80 | ((code_point >> 12) & 0x3F));
-				utf8 += static_cast<char>(0x80 | ((code_point >> 6) & 0x3F));
-				utf8 += static_cast<char>(0x80 | (code_point & 0x3F));
-			}
 		}
 
 		bool high_surrogate(char32_t unit)

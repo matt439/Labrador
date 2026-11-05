@@ -1,8 +1,9 @@
 #pragma once
 
-#include "engine/core/registry.h"
 #include "engine/audio/sound_bank.h"
 #include "engine/audio/sound_group.h"
+#include "engine/core/registry.h"
+
 #include <map>
 #include <memory>
 #include <string>

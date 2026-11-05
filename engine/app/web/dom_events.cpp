@@ -172,29 +172,13 @@ namespace labrador
 
 	bool DomModifiers::update(std::string_view code, bool down)
 	{
-		unsigned int first = 0;
-		switch (key_from_code(code))
-		{
-		case Key::shift: break;
-		case Key::control: first = 2; break;
-		case Key::alt: first = 4; break;
-		default: return true;
-		}
-
-		const unsigned int bit = 1u <<
-			(first + (code.ends_with("Right") ? 1u : 0u));
-		if (down)
-		{
-			this->held_ |= bit;
-			return true;
-		}
-		this->held_ &= ~bit;
-		return (this->held_ & (3u << first)) == 0;
+		return this->sides_.update(key_from_code(code),
+			code.ends_with("Right"), down);
 	}
 
 	void DomModifiers::clear()
 	{
-		this->held_ = 0;
+		this->sides_.clear();
 	}
 
 	char32_t text_from_key(std::string_view key, bool control, bool alt,

@@ -1,4 +1,5 @@
 #include "engine/input/keyboard.h"
+#include "engine/core/utf8.h"
 
 namespace labrador
 {
@@ -21,56 +22,6 @@ namespace labrador
 		uint64_t bit_of(Key key)
 		{
 			return uint64_t(1) << (static_cast<unsigned int>(key) % 64u);
-		}
-
-		// U+FFFD REPLACEMENT CHARACTER, as three UTF-8 bytes.
-		//
-		// What an unpaired surrogate or an out-of-range code point becomes.
-		// render/text_encoding.h makes the same substitution going the other
-		// way, and for the same reason: a character that arrived broken should
-		// be visible as broken rather than silently missing from a name the
-		// player is trying to type.
-		constexpr char32_t replacement_character = 0xFFFDu;
-
-		void append_utf8(std::string& text, char32_t codepoint)
-		{
-			char32_t value = codepoint;
-
-			// The surrogate range is not a character in its own right - it
-			// only exists to encode astral planes in UTF-16 - so one arriving
-			// here means the pairing upstream did not happen.
-			if (value > 0x10FFFFu || (value >= 0xD800u && value <= 0xDFFFu))
-			{
-				value = replacement_character;
-			}
-
-			const auto byte = [](char32_t bits)
-			{
-				return static_cast<char>(static_cast<unsigned char>(bits));
-			};
-
-			if (value < 0x80u)
-			{
-				text.push_back(byte(value));
-			}
-			else if (value < 0x800u)
-			{
-				text.push_back(byte(0xC0u | (value >> 6)));
-				text.push_back(byte(0x80u | (value & 0x3Fu)));
-			}
-			else if (value < 0x10000u)
-			{
-				text.push_back(byte(0xE0u | (value >> 12)));
-				text.push_back(byte(0x80u | ((value >> 6) & 0x3Fu)));
-				text.push_back(byte(0x80u | (value & 0x3Fu)));
-			}
-			else
-			{
-				text.push_back(byte(0xF0u | (value >> 18)));
-				text.push_back(byte(0x80u | ((value >> 12) & 0x3Fu)));
-				text.push_back(byte(0x80u | ((value >> 6) & 0x3Fu)));
-				text.push_back(byte(0x80u | (value & 0x3Fu)));
-			}
 		}
 	}
 
@@ -169,8 +120,10 @@ namespace labrador
 			// key-up for anything held while the window loses the foreground is
 			// delivered to whatever gained it, so a bit left set here is set
 			// until the player happens to press and release that key again.
-			this->live_.keys[0] = 0;
-			this->live_.keys[1] = 0;
+			for (uint64_t& word : this->live_.keys)
+			{
+				word = 0;
+			}
 
 			// Half-typed text goes with it. It was typed into this window and
 			// the window is gone; delivering it on the frame focus returns

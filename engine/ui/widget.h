@@ -4,11 +4,11 @@
 #include "engine/render/text.h"
 #include "engine/render/texture_object.h"
 #include "engine/render/colour.h"
-#include "engine/render/camera.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace labrador

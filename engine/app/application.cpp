@@ -552,8 +552,7 @@ namespace labrador
 
 	void Application::on_resuming()
 	{
-		this->timer_.ResetElapsedTime();
-		this->frame_timer_.discontinuity();
+		this->reset_elapsed_time();
 		this->shown_ = true;
 		if (this->audio_device_)
 		{

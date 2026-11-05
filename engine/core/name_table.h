@@ -1,7 +1,9 @@
 #pragma once
 
 #include "engine/core/handle.h"
-#include <map>
+#include "engine/core/name_index.h"
+
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -35,27 +37,19 @@ namespace labrador
 		// If storing a new element throws, its name is not retained.
 		void add(const std::string& name, Element element)
 		{
-			const std::map<std::string, int>::const_iterator it =
-				this->indices_.find(name);
-			if (it != this->indices_.end())
+			const std::optional<int> found = this->names_.find(name);
+			if (found)
 			{
-				this->elements_[static_cast<size_t>(it->second)] =
+				this->elements_[static_cast<size_t>(*found)] =
 					std::move(element);
 				return;
 			}
 
-			const std::map<std::string, int>::iterator inserted =
-				this->indices_.emplace(name,
-					static_cast<int>(this->elements_.size())).first;
-			try
-			{
-				this->elements_.push_back(std::move(element));
-			}
-			catch (...)
-			{
-				this->indices_.erase(inserted);
-				throw;
-			}
+			this->names_.claim(name, static_cast<int>(this->elements_.size()),
+				[this, &element]()
+				{
+					this->elements_.push_back(std::move(element));
+				});
 		}
 
 		// Throws std::out_of_range naming the element and the kind if the table
@@ -63,14 +57,13 @@ namespace labrador
 		// content bug, and it should say so at load rather than draw nothing.
 		Handle<Element> resolve(const std::string& name) const
 		{
-			const std::map<std::string, int>::const_iterator it =
-				this->indices_.find(name);
-			if (it == this->indices_.end())
+			const std::optional<int> found = this->names_.find(name);
+			if (!found)
 			{
 				throw std::out_of_range(std::string("no ") + this->kind_ +
 					" named '" + name + "'");
 			}
-			return Handle<Element>(it->second);
+			return Handle<Element>(*found);
 		}
 
 		// The per-frame read: a bounds check and an index. Throws rather than
@@ -88,12 +81,12 @@ namespace labrador
 
 		bool contains(const std::string& name) const
 		{
-			return this->indices_.find(name) != this->indices_.end();
+			return this->names_.find(name).has_value();
 		}
 
 	private:
 		const char* kind_ = nullptr;
-		std::map<std::string, int> indices_;
+		detail::NameIndex names_;
 		std::vector<Element> elements_;
 	};
 }

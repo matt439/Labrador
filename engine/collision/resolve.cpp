@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-
 namespace labrador
 {
 	Vector2F separation(const Vector2F& normal, float penetration)

@@ -8,18 +8,14 @@
 #include <utility>
 #include <vector>
 
-using namespace labrador;
-
-namespace
-{
-	// UiContainer's child list, named once so that its loops can spell it.
-	using Children = std::vector<std::pair<std::string, UiObject*>>;
-}
-
-#pragma region UiObject
-
 namespace labrador
 {
+	namespace
+	{
+		// UiContainer's child list, named once so that its loops can spell it.
+		using Children = std::vector<std::pair<std::string, UiObject*>>;
+	}
+
 	UiObject::UiObject(const std::string& name, bool hidden) :
 		name_(name), hidden_(hidden)
 	{
@@ -44,19 +40,11 @@ namespace labrador
 		// no colour is an answer rather than a case to detect.
 	}
 
-#pragma endregion UiObject
-
-#pragma region UiWidget
-
 	UiWidget::UiWidget(const std::string& name, bool hidden) :
 		UiObject(name, hidden)
 	{
 
 	}
-
-#pragma endregion UiWidget
-
-#pragma region UiContainer
 
 	UiContainer::UiContainer(const std::string& name) :
 		UiWidget(name)
@@ -167,10 +155,6 @@ namespace labrador
 		}
 	}
 
-#pragma endregion UiContainer
-
-#pragma region UiTexture
-
 	UiTexture::UiTexture(const std::string& name,
 		const std::string& sheet_name,
 		const std::string& frame_name,
@@ -247,10 +231,6 @@ namespace labrador
 		this->rectangle_.set_size(size);
 	}
 
-#pragma endregion UiTexture
-
-#pragma region UiText
-
 	UiText::UiText(const std::string& name,
 		const std::wstring& text,
 		const std::string& font_name,
@@ -291,6 +271,4 @@ namespace labrador
 	{
 		this->Text::set_colour(colour);
 	}
-
-#pragma endregion UiText
 }

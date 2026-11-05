@@ -12,6 +12,11 @@ namespace labrador
 	// Unknown positions return Key::none. No window or device is accessed.
 	Key key_from_message(uint64_t w_param, intptr_t l_param);
 
+	// Whether a Shift, Control or Alt message comes from the right-hand key,
+	// for ModifierSides: right Shift has a scan code of its own, and right
+	// Control and Alt set the extended bit. Meaningless for any other key.
+	bool is_right_modifier(Key key, intptr_t l_param);
+
 	// Per-window assembly of WM_CHAR's UTF-16 units into the keyboard's
 	// UTF-32 input. A high surrogate emits nothing and replaces any pending
 	// high. A following low combines with it; any other non-high discards it.

@@ -13,7 +13,6 @@
 #include <limits>
 #include <stdexcept>
 
-
 namespace labrador
 {
 	namespace

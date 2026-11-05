@@ -112,9 +112,9 @@ namespace labrador
 		// Whether this bank has content behind it. False only for silent().
 		//
 		// IT IS NOT A QUESTION ABOUT THE BUILD, and the two are easily confused.
-		// Under the null audio backend every bank here is
-		// audible and none of them makes a noise: whether a device puts a wave
-		// through a speaker is chosen in CMake and is not a property of a bank.
+		// Under the null audio backend every bank here is audible and none of
+		// them makes a noise: whether a device puts a wave through a speaker is
+		// chosen in CMake and is not a property of a bank.
 		// What this answers is narrower and is the only thing a caller can
 		// usefully do with it - was there a wave bank to open, or is this the
 		// substitute a missing one produced.

@@ -7,12 +7,6 @@ namespace labrador
 {
 	namespace
 	{
-		uint16_t bit(GamepadButton button)
-		{
-			return static_cast<uint16_t>(
-				1u << static_cast<unsigned int>(button));
-		}
-
 		uint16_t buttons_of(const DirectX::GamePad::State& pad)
 		{
 			uint16_t buttons = 0;
@@ -20,7 +14,8 @@ namespace labrador
 			{
 				if (down)
 				{
-					buttons = static_cast<uint16_t>(buttons | bit(button));
+					buttons = static_cast<uint16_t>(buttons |
+						gamepad_button_bit(button));
 				}
 			};
 

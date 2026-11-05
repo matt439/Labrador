@@ -1,4 +1,5 @@
 #include "engine/app/window.h"
+#include "engine/app/modifier_sides.h"
 #include "engine/app/win32/keyboard_input.h"
 #include "engine/app/win32/pointer_input.h"
 #include "engine/app/win32/system_command.h"
@@ -215,7 +216,6 @@ namespace labrador
 		Impl& operator=(const Impl&) = delete;
 
 		void update_suspension();
-		bool update_modifier(Key key, LPARAM l_param, bool down);
 
 		// Clips the pointer to the client area when it should be confined
 		// now, and releases a clip this window made when it should not
@@ -290,7 +290,7 @@ namespace labrador
 		bool cursor_confined = false;
 		bool clipping = false;
 
-		unsigned int held_modifiers = 0;
+		ModifierSides held_modifiers;
 		int min_width = 0;
 		int min_height = 0;
 		int exit_code = 0;
@@ -772,37 +772,12 @@ namespace labrador
 		this->in_suspend = suspended;
 		if (suspended)
 		{
-			this->held_modifiers = 0;
+			this->held_modifiers.clear();
 			this->notify->on_suspending();
 		}
 		else { this->notify->on_resuming(); }
 	}
 
-	bool Window::Impl::update_modifier(Key key, LPARAM l_param, bool down)
-	{
-		unsigned int first = 0;
-		bool right = (l_param & (1LL << 24)) != 0;
-		switch (key)
-		{
-		case Key::shift:
-			right = ((static_cast<unsigned long long>(l_param) >> 16) & 0xffu) == 0x36u;
-			break;
-		case Key::control: first = 2; break;
-		case Key::alt: first = 4; break;
-		default: return true;
-		}
-
-		// Repeated downs set one side rather than adding a second hold. The
-		// public key goes up only after both physical sides have gone up.
-		const unsigned int bit = 1u << (first + (right ? 1u : 0u));
-		if (down)
-		{
-			this->held_modifiers |= bit;
-			return true;
-		}
-		this->held_modifiers &= ~bit;
-		return (this->held_modifiers & (3u << first)) == 0;
-	}
 
 	// THE OWNED WINDOW'S MESSAGES, GROUPED BY WHAT THEY ARE ABOUT. Each
 	// handler either answers its message or hands it on to DefWindowProc, so a
@@ -928,7 +903,7 @@ namespace labrador
 		switch (message)
 		{
 		case WM_KILLFOCUS:
-			this->held_modifiers = 0;
+			this->held_modifiers.clear();
 			break;
 
 		case WM_ACTIVATEAPP:
@@ -940,7 +915,7 @@ namespace labrador
 			}
 			else
 			{
-				this->held_modifiers = 0;
+				this->held_modifiers.clear();
 				this->notify->on_deactivated();
 			}
 			break;
@@ -987,7 +962,8 @@ namespace labrador
 	{
 		const bool down = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
 		const Key key = key_from_message(w_param, l_param);
-		if (this->update_modifier(key, l_param, down))
+		if (this->held_modifiers.update(key,
+			is_right_modifier(key, l_param), down))
 		{
 			if (down)
 			{

@@ -4,6 +4,19 @@
 
 namespace labrador
 {
+	namespace
+	{
+		unsigned int scan_code(intptr_t l_param)
+		{
+			return (static_cast<unsigned long long>(l_param) >> 16) & 0xffu;
+		}
+
+		bool is_extended(intptr_t l_param)
+		{
+			return (l_param & (1LL << 24)) != 0;
+		}
+	}
+
 	// Set-1 scan positions preserve physical bindings across keyboard layouts.
 	// The extended bit distinguishes the navigation cluster from the numpad;
 	// WM_CHAR remains the layout-aware text channel. Unknown positions drop.
@@ -13,9 +26,8 @@ namespace labrador
 		// sequence through its virtual key rather than the E0 extended bit.
 		if (w_param == VK_PAUSE) { return Key::pause; }
 		if (w_param == VK_NUMLOCK) { return Key::num_lock; }
-		const unsigned int scan = (static_cast<unsigned long long>(l_param) >> 16) & 0xffu;
-		const bool extended = (l_param & (1LL << 24)) != 0;
-		if (extended)
+		const unsigned int scan = scan_code(l_param);
+		if (is_extended(l_param))
 		{
 			switch (scan)
 			{
@@ -126,6 +138,15 @@ namespace labrador
 		case 0x58: return Key::f12;
 		default: return Key::none;
 		}
+	}
+
+	bool is_right_modifier(Key key, intptr_t l_param)
+	{
+		if (key == Key::shift)
+		{
+			return scan_code(l_param) == 0x36u;
+		}
+		return is_extended(l_param);
 	}
 
 	std::optional<char32_t> Utf16Input::append(char16_t unit)

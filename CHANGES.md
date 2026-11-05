@@ -80,6 +80,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Say what Partitioner is for, and spell out its counts
+
+**Changed: `Partitioner::partition`'s parameters are `element_count` and `partition_count`.** They were `num_elements` and `num_partitions`. Callers are unaffected because only parameter names changed. The three `std::invalid_argument` messages that name the parameters now use the new names, for example `Partitioner::partition: partition_count must be at least 1.` The class also has a comment saying what it is for.
+
+### 2026-11-05 - Name the gamepad button bit once, beside GamepadState
+
+**Added: `gamepad_button_bit(GamepadButton)` in `engine/input/gamepad.h`.** A `constexpr` function that returns the bit a button occupies in `GamepadState::buttons`. Both pad backends and `GamepadState::is_down` now use it, and a game that builds a `GamepadState` for its own edge tests can call it instead of writing the shift itself. No existing behaviour changes.
+
+### 2026-11-05 - Include only what three public headers use
+
+**Changed: `engine/assets/resource_loader.h` forward-declares the four services it borrows.** It names `AudioDevice`, `AudioResources`, `RenderResources` and `Renderer` only as pointers, so it now declares them instead of including `audio_device.h`, `audio_resources.h`, `render_resources.h` and `renderer.h`. A file that includes only `resource_loader.h` and uses those types, or the registry, font, sprite sheet, sound bank and sound group declarations they brought with them, now includes the header it uses. `application.h` still includes all four, so a game that includes `application.h` sees no difference. `application.h` no longer includes `<vector>` and `widget.h` no longer includes `camera.h`; both still arrive through other headers, and `widget.h` now includes `<utility>` for the `std::pair` it uses.
+
 ### 2026-11-05 - Return UiContainer::children by const reference and test the UI setters
 
 **Retyped public name.** `UiContainer::children()` was a non-const member returning a copy of the list; it is now `const std::vector<std::pair<std::string, UiObject*>>& children() const`. A range-for or an `auto` copy compiles unchanged and a const container can now be read. Code binding the result to a non-const `std::vector<...>&`, or modifying the returned list, must take a copy first (`std::vector<std::pair<std::string, UiObject*>> list = row.children();`). The reference is invalidated by `add_child` and `remove_child`. No sample used it.

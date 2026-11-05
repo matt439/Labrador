@@ -79,7 +79,7 @@ namespace labrador
 			if (pad.digitalButton[entry.index])
 			{
 				buttons = static_cast<uint16_t>(buttons |
-					(1u << static_cast<unsigned int>(entry.button)));
+					gamepad_button_bit(entry.button));
 			}
 		}
 		result.buttons = buttons;

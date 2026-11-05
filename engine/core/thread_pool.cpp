@@ -54,7 +54,7 @@ namespace labrador
 
 		// Owns the callable for the lifetime of one submission, plus the back
 		// pointer the callback needs to report a failure.
-		struct task_item
+		struct TaskItem
 		{
 			std::function<void()> task;
 			Impl* pool = nullptr;
@@ -115,8 +115,8 @@ namespace labrador
 
 	void ThreadPool::Impl::add_task(std::function<void()> task)
 	{
-		std::unique_ptr<task_item> item =
-			std::make_unique<task_item>(task_item{ std::move(task), this });
+		std::unique_ptr<TaskItem> item =
+			std::make_unique<TaskItem>(TaskItem{ std::move(task), this });
 
 		PTP_WORK work = CreateThreadpoolWork(work_callback, item.get(),
 			&callback_environment);
@@ -158,7 +158,7 @@ namespace labrador
 	{
 		// unique_ptr rather than a trailing delete: the task must be freed whether
 		// it returns or throws.
-		std::unique_ptr<task_item> item(static_cast<task_item*>(parameter));
+		std::unique_ptr<TaskItem> item(static_cast<TaskItem*>(parameter));
 		try
 		{
 			item->task();

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "engine/core/handle.h"
-#include <map>
+#include "engine/core/name_index.h"
+
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -54,6 +56,8 @@ namespace labrador
 	class Registry
 	{
 	public:
+		// Lowercase as the standard library's member types are (value_type):
+		// a member named Handle would redeclare the template it names.
 		using handle = Handle<Resource>;
 
 		// `kind` names the resource type in error messages: "Texture",
@@ -67,27 +71,19 @@ namespace labrador
 		// If storing a new entry throws, its name is not retained.
 		void add(const std::string& name, Storage resource)
 		{
-			const std::map<std::string, int>::const_iterator it =
-				this->indices_.find(name);
-			if (it != this->indices_.end())
+			const std::optional<int> found = this->names_.find(name);
+			if (found)
 			{
-				this->entries_[static_cast<size_t>(it->second)].resource =
+				this->entries_[static_cast<size_t>(*found)].resource =
 					std::move(resource);
 				return;
 			}
 
-			const int index = static_cast<int>(this->entries_.size());
-			const std::map<std::string, int>::iterator inserted =
-				this->indices_.emplace(name, index).first;
-			try
-			{
-				this->entries_.push_back(entry{ std::move(resource), name });
-			}
-			catch (...)
-			{
-				this->indices_.erase(inserted);
-				throw;
-			}
+			this->names_.claim(name, static_cast<int>(this->entries_.size()),
+				[this, &name, &resource]()
+				{
+					this->entries_.push_back(Entry{ std::move(resource), name });
+				});
 		}
 
 		// The load-time half. Throws std::out_of_range if nothing ever added the
@@ -98,14 +94,13 @@ namespace labrador
 		// into a handle once and the handle kept for the object's lifetime.
 		handle resolve(const std::string& name) const
 		{
-			const std::map<std::string, int>::const_iterator it =
-				this->indices_.find(name);
-			if (it == this->indices_.end())
+			const std::optional<int> found = this->names_.find(name);
+			if (!found)
 			{
 				throw std::out_of_range(
 					std::string(this->kind_) + " '" + name + "' was never loaded.");
 			}
-			return handle(it->second);
+			return handle(*found);
 		}
 
 		// The per-frame half: a bounds check and an indexed load. Never returns
@@ -120,7 +115,7 @@ namespace labrador
 					" was read through an unresolved handle.");
 			}
 
-			const entry& slot = this->entries_[index];
+			const Entry& slot = this->entries_[index];
 			Resource* resource = RegistryStorage<Storage>::pointer(slot.resource);
 			if (resource == nullptr)
 			{
@@ -140,11 +135,10 @@ namespace labrador
 		// and can still resolve to its handle; get() throws until it is refilled.
 		bool contains(const std::string& name) const
 		{
-			const std::map<std::string, int>::const_iterator it =
-				this->indices_.find(name);
-			return it != this->indices_.end() &&
+			const std::optional<int> found = this->names_.find(name);
+			return found &&
 				RegistryStorage<Storage>::pointer(
-					this->entries_[static_cast<size_t>(it->second)].resource) !=
+					this->entries_[static_cast<size_t>(*found)].resource) !=
 				nullptr;
 		}
 
@@ -154,7 +148,7 @@ namespace labrador
 		// answer and the one that names itself (T6).
 		void release_all()
 		{
-			for (entry& slot : this->entries_)
+			for (Entry& slot : this->entries_)
 			{
 				slot.resource = Storage{};
 			}
@@ -163,14 +157,14 @@ namespace labrador
 	private:
 		// The name is kept beside the resource purely so a throw can say which
 		// resource it was about. Nothing on the draw path reads it.
-		struct entry
+		struct Entry
 		{
 			Storage resource;
 			std::string name;
 		};
 
 		const char* kind_ = nullptr;
-		std::map<std::string, int> indices_;
-		std::vector<entry> entries_;
+		detail::NameIndex names_;
+		std::vector<Entry> entries_;
 	};
 }

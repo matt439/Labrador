@@ -63,6 +63,15 @@ namespace labrador
 {
 	namespace
 	{
+		// Every slot empty, however many Gamepads::max_count makes: zero is
+		// a browser pad's index, so an unfilled slot must not default to it.
+		GamepadSlots empty_slots()
+		{
+			GamepadSlots slots;
+			slots.fill(no_gamepad);
+			return slots;
+		}
+
 		// A slot's request goes to whichever browser pad is in it. The effect
 		// carries its own duration, and VibrationOutput resets the actuator
 		// at the same end, so a request ends at one time on both sides.
@@ -104,7 +113,7 @@ namespace labrador
 	{
 		bool suspended = false;
 
-		GamepadSlots slots = { no_gamepad, no_gamepad, no_gamepad, no_gamepad };
+		GamepadSlots slots = empty_slots();
 		GamepadState states[Gamepads::max_count];
 
 		// Kept rather than rebuilt, so a sample allocates nothing once it has

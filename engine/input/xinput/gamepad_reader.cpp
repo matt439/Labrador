@@ -4,6 +4,7 @@
 #include "engine/input/xinput/xinput_gamepad.h"
 
 #include <GamePad.h>
+
 #include <memory>
 
 namespace labrador

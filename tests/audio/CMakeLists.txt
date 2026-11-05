@@ -6,6 +6,7 @@ labrador_add_test_suite(AudioTests
     SOURCES
         audio_resources_tests.cpp
         sound_bank_tests.cpp
+        wave_tables_tests.cpp
         xwb_file_tests.cpp
     LINKS LabradorEngine
 )

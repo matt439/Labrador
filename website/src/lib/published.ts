@@ -255,12 +255,28 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 		'Fixed-schema validation private to the manifest, sprite-sheet and sound-bank loaders; game code uses JsonValue::keys() for its own dictionaries.',
 	],
 	[
+		'engine/core/utf8.h',
+		"The one UTF-8 encoder the keyboard's typed text and the render module's narrowing share, private to them; game code converts text through render/text_encoding.h.",
+	],
+	[
+		'engine/core/name_index.h',
+		'The name-to-slot map Registry and NameTable share, in labrador::detail; the reference documents what a game calls, in registry.h and name_table.h.',
+	],
+	[
 		'engine/core/step_timer.h',
 		"Microsoft's timer from the DirectX templates, carried as written (NOTICE) and private to Application.",
 	],
 	[
+		'engine/audio/wave_tables.h',
+		'The wave-name and voice tables the null and Web Audio backends share, private to them; the reference documents what a game calls, in audio_device.h and sound_bank.h.',
+	],
+	[
 		'engine/input/vibration_output.h',
 		'The lifetime rules both input backends share behind Gamepads::vibrate, private to them; the reference documents what a game calls, in gamepads.h and gamepad.h.',
+	],
+	[
+		'engine/app/modifier_sides.h',
+		'The physical modifier sides both platform windows track behind one public key, private to them; a game reads Key::shift, Key::control and Key::alt from keyboard.h.',
 	],
 	[
 		'engine/app/frame_timer.h',

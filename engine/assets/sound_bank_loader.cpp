@@ -40,7 +40,7 @@ namespace labrador
 	{
 		const JsonDocument document = read_json_file(json_path);
 		const JsonValue root = document.root();
-		asset_details::reject_unknown_keys(root, { "waves",
+		detail::reject_unknown_keys(root, { "waves",
 			"create_effect_instance_for_each_wave", "sound_effect_instances" });
 
 		SoundBankDefinition definition;
@@ -73,7 +73,7 @@ namespace labrador
 		for (size_t index = 0; index < effects.size(); ++index)
 		{
 			const JsonValue effect = effects.at(index);
-			asset_details::reject_unknown_keys(effect, { "name", "wave" });
+			detail::reject_unknown_keys(effect, { "name", "wave" });
 			const std::string name = effect.identifier("name");
 
 			// Two definitions claiming one name is a content bug rather than an
