@@ -212,6 +212,16 @@ export async function typeOnSimulatorKeyboard(text) {
 	], { timeout: 60_000 });
 }
 
+// Presses Return on the Simulator's hardware keyboard, which the page sees as
+// the Go key of the phone's own keyboard.
+export async function pressReturnOnSimulatorKeyboard() {
+	await execFileAsync('osascript', [
+		'-e', 'tell application "Simulator" to activate',
+		'-e', 'delay 0.5',
+		'-e', 'tell application "System Events" to key code 36',
+	], { timeout: 60_000 });
+}
+
 // Whether desktop Safari's Tab moves to links. LABRADOR_SAFARI_TAB_TO_LINKS
 // (1 or 0) overrides what Safari's preferences say; a preference that cannot
 // be read is taken as Safari's default, off.

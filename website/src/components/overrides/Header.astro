@@ -14,6 +14,15 @@
 // visible label, so the script after it names the button by what it shows and
 // puts a space between the pieces, which a flex box does not draw. It runs
 // after Starlight's own inline script, which picks the platform's key.
+//
+// Pagefind builds its search form with action="javascript:void(0);" and
+// cancels the form's submission in script. iOS Safari still offered a pill
+// naming the host above the keyboard, and that pill, or Go in an empty box,
+// left an empty page (SITE#4). The second script takes the action away once
+// Pagefind has built the form and makes it a dialog form, whose submission
+// can only close the search dialog it sits in; Pagefind's own cancelling is
+// unchanged, so Return and Go in the box do nothing. The box is also kept out
+// of the browser's autofill, since it holds queries, not a form's answers.
 import Search from '@astrojs/starlight/components/Search.astro';
 import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
 import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
@@ -37,6 +46,25 @@ import SiteNavigation from '../SiteNavigation.astro';
 				for (const key of keys.slice(1)) key.before(' ');
 				const name = [button.getAttribute('aria-label'), ...keys.map((key) => key.textContent)];
 				button.setAttribute('aria-label', name.join(' '));
+			})();
+		</script>
+		<script is:inline>
+			(() => {
+				const host = document.getElementById('starlight__search');
+				if (!host) return;
+				const repair = () => {
+					const form = host.querySelector('form.pagefind-ui__form');
+					if (!form) return false;
+					form.removeAttribute('action');
+					form.setAttribute('method', 'dialog');
+					form.querySelector('input.pagefind-ui__search-input')?.setAttribute('autocomplete', 'off');
+					return true;
+				};
+				if (repair()) return;
+				const watcher = new MutationObserver(() => {
+					if (repair()) watcher.disconnect();
+				});
+				watcher.observe(host, { childList: true, subtree: true });
 			})();
 		</script>
 	</div>
