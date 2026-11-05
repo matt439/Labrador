@@ -48,13 +48,16 @@ namespace labrador
 		// its set_wave_group and set_effect_group accept a group. The bank and
 		// the volumes are both owned here, and the banks are destroyed first,
 		// so no bank outlives the volumes it was lent.
-		void add_sound_bank(const std::string& sound_bank_name,
-			std::unique_ptr<SoundBank> sound_bank);
-
+		//
 		// Banks are not device resources, so a device loss leaves them alone.
 		// A bank holds only handles: the voices and the wave bank behind them
-		// belong to the AudioDevice, which releases them itself. This does not
-		// preserve a bank pointer across add_sound_bank replacing its name.
+		// belong to the AudioDevice, which frees them when it is destroyed.
+		// Replacing or emptying a name therefore neither stops nor frees the
+		// previous bank's voices, and a looping effect it was playing keeps
+		// sounding with no handle left to stop it. Stop a bank's effects
+		// before replacing it.
+		void add_sound_bank(const std::string& sound_bank_name,
+			std::unique_ptr<SoundBank> sound_bank);
 
 		// SOUND GROUPS. A group is a volume a game sets once for many sounds -
 		// the music slider and the effects slider of a settings screen. A bank

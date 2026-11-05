@@ -39,7 +39,7 @@ namespace labrador
 		if (!this->audible())
 		{
 			// Any name, and index 0 rather than an unresolved handle: every
-			// play below rejects an unresolved handle in every build now, and a
+			// play below rejects an unresolved handle in every build, and a
 			// bank with no content must not reject a name.
 			return WaveHandle(0);
 		}

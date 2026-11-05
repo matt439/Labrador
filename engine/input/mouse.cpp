@@ -119,9 +119,9 @@ namespace labrador
 
 		if (!focused)
 		{
-			// Buttons go up for the reason keyboard.h documents: the
-			// button-up after the cursor leaves is delivered elsewhere, so a
-			// bit left set here stays set.
+			// Buttons go up, as keys do on focus loss: the button-up after
+			// the cursor leaves is delivered elsewhere, so a bit left set here
+			// stays set.
 			this->live_.buttons = 0;
 
 			// And the wheel accumulated but not yet polled is dropped. It was

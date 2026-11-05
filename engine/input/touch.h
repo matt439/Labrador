@@ -7,7 +7,7 @@
 
 namespace labrador
 {
-	// Fed, not read, for the reason keyboard.h gives: a touch reaches a Win32
+	// Fed, not read, as the keyboard is: a touch reaches a Win32
 	// program as WM_POINTER messages in a window's queue and a page as pointer
 	// events on its canvas, so the flow is app -> input and nothing in this
 	// file knows a window exists.
@@ -70,10 +70,10 @@ namespace labrador
 
 		// Points that were down last frame and are gone this one WITHOUT
 		// having been lifted: the platform cancelled them, or the window lost
-		// capture of them. A cancelled point produces no released edge, for
-		// the reason Mouse::cancel_buttons gives - a gesture the system took
-		// away is not a finger the player lifted, and a button that fired on
-		// it would fire on something nobody let go of.
+		// capture of them. A cancelled point produces no released edge, as
+		// Mouse::cancel_buttons produces none: a gesture the system took away
+		// is not a finger the player lifted, and a button that fired on it
+		// would fire on something nobody let go of.
 		int cancelled_count = 0;
 		uint32_t cancelled[capacity] = {};
 
@@ -125,11 +125,14 @@ namespace labrador
 	// snapshots rather than advancing them.
 	//
 	// Application owns one, feeds it from the window's messages and polls it
-	// once per frame beside the other devices, before any state updates.
+	// once per fixed update beside the other devices, before that update's
+	// states run.
 	class Touch
 	{
 	public:
-		// THE FEEDING SIDE, public for the reasons keyboard.h gives. The ids
+		// THE FEEDING SIDE, public for the reasons Mouse's is: `input` may not
+		// name a class in `app` to friend it, and a test double or a replay
+		// source feeds it with no window. The ids
 		// these take are the PLATFORM'S - a Win32 pointer id or a DOM
 		// pointerId - and are mapped to the engine's ids here, which is where
 		// the reuse TouchPoint::id describes is absorbed.

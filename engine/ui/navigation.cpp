@@ -31,12 +31,7 @@ namespace labrador
 		// have to travel from `from`'s leading edge to reach `to`'s trailing
 		// one. Negative when `to` is not ahead at all.
 		//
-		// Edges, not centres. A left-aligned column of labels with different
-		// text lengths has different centre x values on every row, so a
-		// centre-based test makes "right" from "Standard" find "Team
-		// Deathmatch" one row down. By edges, every row in that column starts
-		// at the same x and none of them clears another's right edge, so left
-		// and right find nothing - which is what a vertical menu should do.
+		// Edges, not centres: rule 1 in navigation.h says why.
 		float gap(const RectangleF& from, const RectangleF& to,
 			Direction direction)
 		{

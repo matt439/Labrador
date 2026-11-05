@@ -162,7 +162,7 @@ namespace labrador
 		// A disabled row is NOT the other example, though it looks like one:
 		// what this offers it is a repaint fighting a repaint, and the group
 		// wins every time, because the next add() or move() paints all of them
-		// back to one of two colours.
+		// back to the style's focused, unfocused or disabled colour.
 		//
 		// Not const: it writes the colour of every widget the group holds.
 		void refresh_style();

@@ -143,8 +143,8 @@ namespace labrador
 
 	// Current and previous keyboard snapshots, their edges and accumulated text.
 	// A game borrows Application::keyboard(); the shell owns it, feeds events and
-	// polls once per frame before state updates. Games read those snapshots
-	// without advancing them.
+	// polls once per fixed update before that update's states run. Games read
+	// those snapshots without advancing them.
 	class Keyboard
 	{
 	public:
@@ -169,7 +169,7 @@ namespace labrador
 		// snapshots and typed() remain unchanged until poll().
 		void set_focused(bool focused);
 
-		// Called by the shell once per frame before readers. Current becomes
+		// Called by the shell once per fixed update before readers. Current becomes
 		// previous, fed key/focus state becomes current, and accumulated text
 		// replaces the prior frame's text.
 		void poll();

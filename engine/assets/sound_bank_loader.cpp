@@ -115,8 +115,8 @@ namespace labrador
 			if (wave < 0)
 			{
 				// Unreachable through a backend that checked the definition's
-				// wave list when it opened the bank, which both of this tree's
-				// do. It is here because "the seam answers -1" is the contract
+				// wave list when it opened the bank, which every backend in this
+				// tree does. It is here because "the seam answers -1" is the contract
 				// and a caller that ignores it is the defect this class exists
 				// to make loud (T6).
 				throw std::out_of_range("'" + definition.source_path +

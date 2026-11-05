@@ -22,6 +22,10 @@ namespace labrador
 		Quad& operator=(const Quad&) = default;
 		Quad(const Vector2F& point_0, const Vector2F& point_1,
 			const Vector2F& point_2, const Vector2F& point_3);
+		// Explicit, because a rectangle is not a Quad and both forms throw on
+		// a degenerate one: an implicit conversion would become a runtime
+		// exception from inside the callee with no conversion visible at the
+		// call site.
 		explicit Quad(const RectangleF& rectangle);
 		explicit Quad(const RectangleRotated& rectangle);
 

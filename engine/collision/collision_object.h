@@ -24,9 +24,9 @@ namespace labrador
 	public:
 		~CollisionObject() override = default;
 
-		// The fine half of the pair GameObject::bounds() opens. bounds() is
-		// the coarse extent a broad phase indexes; this is the geometry the
-		// narrow phase measures. Never null.
+		// The geometry collision measures. The broad phase and the bounding-box
+		// filter both index this shape's bounding_box(); collision never reads
+		// GameObject::bounds(). Never null.
 		virtual const Shape* shape() const = 0;
 
 		virtual CollisionLayer layer() const = 0;

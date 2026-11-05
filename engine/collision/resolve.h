@@ -47,7 +47,7 @@ namespace labrador
 	//     caller's world uses.
 	//   - `penetration` is finite and greater than zero, which is what a manifold
 	//     promises - a contact that does not overlap is not a contact.
-	//   - `axis` is no more than min_axis_alignment away from being useless.
+	//   - |dot(normal, axis)| is at least min_axis_alignment.
 	//
 	// It throws rather than returning zero, or an optional, or a very large
 	// vector. A guard that returns zero only below some small divisor still

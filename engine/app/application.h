@@ -354,9 +354,10 @@ namespace labrador
 		Gamepads* gamepads() const;
 
 		// The other three devices. All are polled beside the pads, once per
-		// frame before any state updates, so every edge in the engine is
-		// measured across the same frame boundary whichever device it came
-		// from.
+		// fixed update before that update's states run, so every edge in the
+		// engine is measured across the same poll boundary whichever device
+		// it came from. A rendered frame that runs no update polls nothing,
+		// and one that catches up polls once per update it runs.
 		//
 		// They differ from Gamepads only in where their data comes from: these
 		// are fed from the window's messages (engine/input/keyboard.h).
@@ -446,7 +447,8 @@ namespace labrador
 
 		// WindowNotify. The window forwards these; nothing else calls them,
 		// and they are private because a private override is still reachable
-		// through the base pointer the window holds (APPLICATION.md#5).
+		// through the base pointer the window holds. APPLICATION.md#5 says
+		// why they stay on Application rather than moving into Window.
 		void tick() override;
 
 		// The four that mean "the player is looking at us" or "the player is

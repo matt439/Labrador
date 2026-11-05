@@ -372,10 +372,8 @@ namespace labrador
 			options.fullscreen ? WS_EX_TOPMOST : 0);
 
 		// THE REQUESTED SIZE IS CLIENT AREA. CreateWindowExW takes an OUTER
-		// rect, so handing it the requested resolution straight spends the
-		// caption and the borders out of the game's own pixels: a windowed
-		// 1280x720 came out as roughly 1264x681 to draw into, at every preset,
-		// and nothing said so. AdjustWindowRectExForDpi is the only way to ask
+		// rect; outer_size_for_client says why the conversion is needed.
+		// AdjustWindowRectExForDpi is the only way to ask
 		// what frame this style costs, and it answers zero for the WS_POPUP branch,
 		// which is why one call covers both. There is no window to ask for a
 		// DPI yet, so this is the system's, and the window is corrected below
@@ -437,15 +435,15 @@ namespace labrador
 	{
 		// AND THE WM_SIZE THIS PRODUCES IS WORTH SOMETHING. It arrives before
 		// the device exists, so the renderer half of on_window_size_changed
-		// still does nothing - DeviceResources::WindowSizeChanged returns early
-		// with no window set. The resolution-manager half does not, so by the
+		// still does nothing - Renderer::window_size_changed rebuilds nothing
+		// before create_device and answers false (renderer.h). The
+		// resolution-manager half does not, so by the
 		// time the caller reads its resolution back for create_device, that is
 		// the client size the window really got. It matters most for the
 		// full-screen branch, where SW_SHOWMAXIMIZED decides the size and
-		// nothing here knows it. Without that read-back the swap chain is
-		// created at the saved preset and then stretched non-uniformly to the
-		// monitor (DXGI_SCALING_STRETCH), which is the form of this a shipped
-		// sample hits.
+		// nothing here knows it. Without that read-back the back buffer is
+		// created at the saved preset and then scaled non-uniformly to the
+		// monitor, which is the form of this a shipped sample hits.
 		//
 		// A window created hidden is the exception. Windowed, it gets no such
 		// report, because the system sends an overlapped window its first
@@ -803,11 +801,11 @@ namespace labrador
 			// moves the origin as well as the size, so Windows sends WM_MOVE
 			// per step of the drag - and this handler asks the renderer for a
 			// size, which is exactly the term the drag is allowed to be out of
-			// date about. Two of the backends answer it from a swap chain and
-			// so answer the size they were last told, making the call a
-			// self-comparison that changes nothing; the GL backend answers it
-			// from the window (renderer.h, back_buffer_size), so ungated, every
-			// step hands it the already-current client rect. That costs a
+			// date about. Every backend but GL answers the size it was last
+			// told, making the call a self-comparison that changes nothing; the
+			// GL backend answers it from the window (renderer.h,
+			// back_buffer_size; SEAM.md#6 has each backend's answer), so
+			// ungated, every step hands it the already-current client rect. That costs a
 			// viewport, a clear and a per-view reset per mouse-move step, and
 			// then has gl answer "nothing changed" to the WM_EXITSIZEMOVE
 			// below - the one message that ends a resize, which the other

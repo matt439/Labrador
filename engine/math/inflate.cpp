@@ -40,13 +40,13 @@ namespace labrador
 			// has no outward: the centroid lies on the line every vertex is
 			// on, so the orientation test below scores exactly zero for every
 			// edge and no normal is flipped. Left to run, a collinear triangle
-			// came out with two of its three original vertices OUTSIDE the
+			// would come out with two of its three original vertices OUTSIDE the
 			// result - the one direction the contract on Shape::inflate says
 			// this operation must never fail in.
 			//
-			// signed_area is the engine's existing answer to "does this
-			// enclose anything", and narrow_phase.cpp uses it for the same
-			// question. Leaving the shape alone matches the degenerate-edge
+			// signed_area is ericson_math's answer to "does this enclose
+			// anything", the same one point_in_convex_polygon and
+			// test_segment_convex_polygon give. Leaving the shape alone matches the degenerate-edge
 			// policy a few lines below: still contains the original, refuses
 			// to invent geometry it cannot derive.
 			const std::span<const Point2F> outline(points,

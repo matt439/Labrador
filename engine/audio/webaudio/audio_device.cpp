@@ -76,8 +76,9 @@
 // wave and then answers stopped. XAudio2, under DirectXTK, falls silent at
 // once and goes on answering playing until it is stopped immediately, because
 // the stop it asks for keeps the buffer queued; this backend gives the outcome
-// the seam's words describe instead, which is also the one engine/audio/null/
-// describes. A non-looping voice that reaches its end answers stopped from the
+// the seam's words describe instead. The null backend has no clock, so it
+// keeps answering playing as XAudio2 does (engine/audio/null/recording.h),
+// and only this backend reports the natural end. A non-looping voice that reaches its end answers stopped from the
 // next voice_state(), exactly as DirectXTK's GetState does.
 
 // Global rather than in labrador::, because EM_JS declares a C function, and
@@ -513,7 +514,8 @@ namespace labrador
 {
 	namespace
 	{
-		// The one place the container's spelling appears, as in xaudio2/.
+		// The one place this backend spells the container; xaudio2/ spells
+		// it the same way in its own copy.
 		std::string container_path(const std::string& directory,
 			const std::string& name)
 		{

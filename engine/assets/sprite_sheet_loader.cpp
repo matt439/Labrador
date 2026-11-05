@@ -69,9 +69,9 @@ namespace labrador
 				// stops sampling its four corners in corner order, which is
 				// engine/render/sprite_geometry.h - the pixel contract all four
 				// rasterising backends are held to, and the golden set with it.
-				// That is a real feature and deserves its own argument. What it
-				// does not deserve is to arrive through a member that already
-				// existed, so the member is gone too (render/sprite_frame.h).
+				// That is a real feature that deserves its own argument, and
+				// SpriteFrame has no member to carry it
+				// (engine/render/sprite_frame.h).
 				if (frame.has("rotated") && frame.boolean("rotated"))
 				{
 					throw std::runtime_error(frame.where() + " ('" + name +

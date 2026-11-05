@@ -59,9 +59,8 @@ namespace labrador
 			float x2, float y2);
 
 		Segment hypotenuse() const;
-		// The gradient helper the base class already provides is NOT
-		// redeclared here. A byte-for-byte copy would hide the inherited one,
-		// so a fix to the base would miss this type entirely.
+		// dy/dx of hypotenuse(). Both throw std::invalid_argument when no
+		// angle is a right angle.
 		float hypotenuse_gradient() const;
 
 	private:

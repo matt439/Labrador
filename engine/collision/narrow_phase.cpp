@@ -18,9 +18,9 @@ namespace labrador
 	namespace
 	{
 		// Every collidable shape other than a circle is a convex polygon of at
-		// most four vertices, so the narrow phase carries them in an array rather
-		// than asking Shape::edges(), which returns a std::vector - a heap
-		// allocation per shape per pair per frame, on the one path
+		// most four vertices. Shape has no virtual edge list, so the narrow phase
+		// copies each shape's corners into this one fixed-size form and treats
+		// every shape type the same way, with no allocation on the one path
 		// PHILOSOPHY's performance section names outright.
 		struct Polygon
 		{
@@ -39,8 +39,7 @@ namespace labrador
 			// smaller of the two is the same number and the normal comes back
 			// correctly signed either way. The duplicate can therefore never
 			// win the strict comparison in narrow_phase, and dropping it costs
-			// nothing and saves half the work on the pair type that is
-			// essentially all of this game's collision traffic.
+			// nothing and saves half the work on rectangle pairs.
 			Vector2F axes[max_points];
 			int axis_count = 0;
 		};
@@ -130,10 +129,8 @@ namespace labrador
 			case ShapeType::rectangle_rotated:
 			{
 				// Read straight off the shape, and NOT by building a
-				// Quad from it: that constructor allocates and
-				// validates twice over, inside the one function whose comment
-				// above is about avoiding a heap allocation per shape per pair
-				// per frame.
+				// Quad from it: that would re-prove the convexity of corners
+				// the rectangle already guarantees.
 				const RectangleRotated& rotated =
 					static_cast<const RectangleRotated&>(shape);
 				polygon.points[0] = rotated.point_0();
@@ -458,7 +455,7 @@ namespace labrador
 						// One separating axis is a proof of no contact, so this is
 						// also the early out that makes the common case - two
 						// things nowhere near each other - cost one projection
-						// pair rather than all seven.
+						// pair rather than every axis of both shapes.
 						return std::nullopt;
 					}
 
@@ -472,7 +469,10 @@ namespace labrador
 
 			if (least.normal == Vector2F::zero)
 			{
-				// Every edge was degenerate, so neither shape has an interior.
+				// Defensive: measurable() has ruled out shapes without axes or
+				// interior, and any overlapping axis sets a unit normal, so this
+				// is reached only if no axis produced a penetration below the
+				// starting sentinel.
 				return std::nullopt;
 			}
 
