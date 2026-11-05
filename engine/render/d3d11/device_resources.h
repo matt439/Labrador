@@ -45,10 +45,8 @@ namespace labrador
     //    display change and every no-op resize - computed a value read only
     //    inside the branch the flag turns on.
     //
-    // The back-buffer count and the feature-level floor were constructor
-    // parameters nobody passed. They are fixed in device_resources.cpp, and the
-    // level list starts at the floor rather than listing 9_x levels it never
-    // requests.
+    // The back-buffer count (2) and the feature-level floor (10_0) are fixed
+    // in device_resources.cpp, whose level list starts at the floor.
     //
     // What is left of the options word is one runtime fact, whether this OS has
     // flip-model swap effects, so it is a bool and not a flags word with a

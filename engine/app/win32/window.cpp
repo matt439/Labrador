@@ -778,7 +778,6 @@ namespace labrador
 		else { this->notify->on_resuming(); }
 	}
 
-
 	// THE OWNED WINDOW'S MESSAGES, GROUPED BY WHAT THEY ARE ABOUT. Each
 	// handler either answers its message or hands it on to DefWindowProc, so a
 	// message reaches Windows exactly when its handler does not consume it.

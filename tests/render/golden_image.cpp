@@ -377,9 +377,9 @@ namespace
 	// decode exactly on every decoder.
 	//
 	// AND IT COSTS ALMOST NOTHING IT WAS BUYING. The drift this file exists to
-	// catch is a hand-copied term going wrong in one backend and not the other
-	// - a pixels-to-clip constant, an index winding, a camera prologue, a blend
-	// factor. Every one of those moves a glyph edge from 0 to 200-odd or blacks
+	// catch is a term a backend keeps for itself going wrong there and not in
+	// the others - its binding of the pixels-to-clip transform, a camera
+	// prologue, a blend factor. Every one of those moves a glyph edge from 0 to 200-odd or blacks
 	// a destination out entirely. Nothing in that class hides under 1.
 	//
 	// IF A RASTERISER EVER NEEDS MORE THAN THIS, the answer is to look at the

@@ -59,13 +59,12 @@ namespace labrador
 			float x2, float y2);
 
 		Segment hypotenuse() const;
-		float hypotenuse_gradient() const;
-
-	private:
 		// The gradient helper the base class already provides is NOT
 		// redeclared here. A byte-for-byte copy would hide the inherited one,
 		// so a fix to the base would miss this type entirely.
+		float hypotenuse_gradient() const;
 
+	private:
 		// The vertex holding the right angle, 0 to 2, or -1 when no angle is
 		// a right angle.
 		int right_angle_vertex() const;

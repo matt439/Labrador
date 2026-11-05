@@ -12,12 +12,11 @@
 // coverage value at any one pixel is a fact about the compressor rather than
 // about the engine.
 // Relationships survive a different rasteriser, which is exactly what makes
-// them portable and exactly what makes them blind. Every term the four
-// rasterising backends hand-copied from each other - the pixels-to-clip
-// constant, the index loop, the HLSL at three profiles and its GLSL
-// transliteration, draw_text's camera prologue - is a term every copy can get
-// wrong in the same direction while every relationship in those cases still
-// holds.
+// them portable and exactly what makes them blind. Every term the rasterising
+// backends still keep apiece - the HLSL at three profiles and its GLSL
+// transliteration, each backend's binding of the shared pixels-to-clip
+// transform, draw_text's camera prologue - is a term every copy can get wrong
+// in the same direction while every relationship in those cases still holds.
 //
 // The only thing that sees a drift like that is the frame itself. So every
 // frame the harness reads back is compared, byte for byte, against a checked-in

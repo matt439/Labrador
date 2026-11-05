@@ -58,8 +58,7 @@ namespace labrador
 
 		const std::filesystem::path executable(buffer.data());
 		std::string directory = path_to_utf8(executable.parent_path());
-		if (directory.empty() || (directory.back() != '\\' &&
-			directory.back() != '/'))
+		if (directory.empty() || !ends_with_separator(directory))
 		{
 			directory += separator;
 		}
@@ -78,8 +77,7 @@ namespace labrador
 		}
 
 		std::string resolved = directory;
-		if (!resolved.empty() && resolved.back() != '\\' &&
-			resolved.back() != '/')
+		if (!resolved.empty() && !ends_with_separator(resolved))
 		{
 			resolved += separator;
 		}
