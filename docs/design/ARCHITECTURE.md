@@ -67,6 +67,7 @@ flowchart TD
     subgraph edge["the bought edge (T9)"]
         sdks["platform SDKs<br/>graphics · DirectXTK · XInput"]
         rapidjson["rapidjson"]
+        lodepng["lodepng"]
     end
     game --> engine
     sample --> engine
@@ -90,6 +91,7 @@ flowchart TD
     engine --> math
     engine --> sdks
     engine --> rapidjson
+    engine --> lodepng
 ```
 
 The sample game is a target from the day the split lands: it is the
@@ -111,8 +113,9 @@ platform (Targets and layout, PHILOSOPHY.md) cannot be reached from a
   place — so a game is compiled as strictly as the engine that hosts it
   (T5).
 - The bought edge (T9) is declared, not clicked: `vcpkg.json` (manifest
-  mode) names DirectXTK and the XAudio2 redistributable; header-only
-  rapidjson stays vendored in `external/`.
+  mode) names DirectXTK with the XAudio2 redistributable on Windows,
+  lodepng for the engine's PNG decoding and doctest for the tests;
+  header-only rapidjson stays vendored in `external/`.
 - Tests use a portable test framework and register with CTest: `ctest`
   runs everything, on a contributor's machine or in CI, with no IDE
   present. CI is `.github/workflows/ci.yml` - debug and release, configure,
@@ -278,7 +281,9 @@ being load-bearing.
     │                       and one per finding those runs settle between them
     ├── port/               what a second platform costs, and in what order
     ├── repo-split.md       the verified procedure for splitting engine from game
-    ├── review/             findings against the current code
+    ├── review/             dated reviews, kept as written and not updated as
+    │                       findings are fixed; INDEX.md and each review's
+    │                       STATUS.md or README.md give current disposition
     ├── survey/             a sweep of the whole tree asking what to build next.
     │                       One per sweep, dated, in pairs: <date>.md is the
     │                       survey as written and is not updated as items land,
@@ -376,10 +381,10 @@ already is (T5). That option is held, not spent.
 | `math` | nothing — and it links nothing, which is what makes this true |
 | `core` | math |
 | `collision` | core, math |
-| `render` | core, math — D3D11 inside `d3d11/`, D3D12 inside `d3d12/`, OpenGL inside `gl/`, Vulkan inside `vulkan/`, nothing inside `null/` |
+| `render` | core, math, lodepng — D3D11 inside `d3d11/`, D3D12 inside `d3d12/`, OpenGL inside `gl/`, Vulkan inside `vulkan/`, nothing inside `null/` |
 | `scene` | core, math, collision, render |
-| `input` | core, math — XInput inside `xinput/` only |
-| `audio` | core, math — XAudio2 inside `xaudio2/`, nothing inside `null/` |
+| `input` | core, math — XInput inside `xinput/`, the browser Gamepad API inside `web/` |
+| `audio` | core, math — XAudio2 inside `xaudio2/`, Web Audio inside `webaudio/`, nothing inside `null/` |
 | `ui` | core, math, render, input |
 | `assets` | core, math, render, audio, rapidjson |
 | `app` | everything |
@@ -521,8 +526,10 @@ A backend may publish a second header beside `backend.h` **as long as it names
 no backend type** — `render/null/recording.h` is one, `audio/null/recording.h`
 is the other, and both are meant to be included by tests. The rule
 `cmake/check_engine_includes.cmake` enforces is the *folder*, not one filename
-in it: a subfolder of `render/` or of `audio/` **is** a backend and its headers
-are its own, so a file outside one that names any header in it fails the build.
+in it: any subfolder of an engine module — those of `render/`, `audio/`,
+`input/` and `app/` are the ones there are — **is** a backend or platform folder
+and its headers are its own, so a file outside one that names any header in it
+fails the build.
 It was written as `backend.h` by name once and that left `device_resources.h`
 beside it as the way through. `assets/` declares which manifest entries become
 textures and fonts and calls `render/resource_factory.h`, whose declarations
@@ -566,9 +573,10 @@ choosing that. A header carries a backend further in one line than a
 translation unit can, so the check reads both — and being a check rather than
 a paragraph is the point (T5).
 
-**The shell asks the machine exactly one question, once, and what the
-answer sizes is one thing.** `ApplicationOptions::max_threads` defaults to
-the logical-processor count and sizes the thread pool. It does not size
+**The shell asks the machine two questions, once each, and each answer
+decides one thing.** Where the executable is decides where content is found
+(`content_root.h`). `ApplicationOptions::max_threads` defaults to the
+logical-processor count and sizes the thread pool. It does not size
 anything else, and it used to size two other things: the renderer's view
 capacity and — through `ThreadPool::max_num_threads` — the partition
 count. Those are three questions with three different right answers. A

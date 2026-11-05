@@ -293,9 +293,12 @@ of N`. N is 20 on the Direct3D 11, OpenGL and Vulkan presets: eighteen doctest
 targets, the minimal sample's start-up check and the benchmark. The Direct3D 12
 presets have 21, with a synchronization test of their own. The `-null` presets
 have 19, because the pixel tests need a device. A `wasm-*` build has 19 without
-a Chromium and, where one is found, 32 in Debug and 33 in Release, the extra
+a Chromium and, where one is found, 33 in Debug and 34 in Release, the extra
 ones being pages run in headless Chrome, one for each sample among them, and no
-start-up check, because a page has no command line.
+start-up check, because a page has no command line. Where configure also finds
+a Firefox, eight `Firefox*` entries run the same pages in it.
+[`tests/ctest_inventory.json`](tests/ctest_inventory.json) lists the entries
+each CI configuration registers, and CI fails when the two differ.
 
 The benchmark (`bench/`) asserts on **complexity class** rather than on
 wall-clock: a phase that is linear in the object count must stay linear when

@@ -361,22 +361,27 @@ relationship, and hand-copied implementations can get the same relationship
 wrong in the same direction without any run noticing. So every frame a case
 reads back is also compared byte for byte against a PNG of it in
 [`tests/render/golden/`](../../tests/render/golden/), and those images are what
-hold the backends to each other rather than each to a sentence. Sixty-three
-frames, four of which fill more than one view — the machinery the backends share
-least. On one machine's GPU, `d3d11`, `d3d12`, `gl` and `vulkan` reproduce all
-sixty-three exactly.
+hold the backends to each other rather than each to a sentence. Several of
+those frames fill more than one view — the machinery the backends share least.
+The set is made on one machine's GPU, and `d3d11`, `d3d12`, `gl` and `vulkan`
+are each held to every image in it.
 
 **The running of it is still separate processes.** `LABRADOR_RENDER_BACKEND`
 picks a backend at configure time (T5), so the checked-in set is what passes
-between them. Two of the four happen on the build machine as well, which is the
-reason the fourth backend is a Direct3D one: a runner has no GPU and Direct3D
-gets a device there anyway, where OpenGL falls back to GDI 1.1 and Vulkan has no
-in-box fallback at all.
+between them. All four run on the build machine as well, though only Direct3D
+gets a device there unaided, which is the reason the fourth backend is a
+Direct3D one: a runner has no GPU, OpenGL falls back to GDI 1.1 and Vulkan has
+no in-box fallback at all. CI supplies a software rasteriser for each of the
+other two — Mesa's llvmpipe for `gl`, Chrome's SwiftShader for `vulkan` — and
+fails the job if the pixel tests drew on anything else. Neither is a driver, so
+a real one still runs both before a release (`tools/ci_gap_report.py`).
 
 Two terms sit outside the images, both stated where they are decided:
-`Harness::end_not_comparable` holds the three frames that are not 64x64, and
-`allowed_channel_drift` in `golden_image.cpp` is the per-channel allowance that
-lets one set serve more than one adapter.
+`Harness::end_not_comparable` holds the frames with no image — three resize
+cases whose size is backend-dependent or deliberately not 64x64, and the
+analytic composition and viewport cases, which assert every pixel against known
+colours instead — and `allowed_channel_drift` in `golden_image.cpp` is the
+per-channel allowance that lets one set serve more than one adapter.
 
 [`tests/render/renderer_seam_tests.cpp`](../../tests/render/renderer_seam_tests.cpp)
 is the part that runs in all five configurations, being everything the seam

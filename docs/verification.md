@@ -271,8 +271,8 @@ so the record covers every selected preset. Results come from JUnit, because
 and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
 case, a nonzero ctest exit, or a required test that was never registered makes
 the preset fail. The required tests are the GL/Vulkan pixel and smoke tests and
-`wasm-debug`'s 14 browser tests, which configure registers only when it finds a
-Chromium: without one, its 19 headless tests would otherwise pass alone.
+`wasm-debug`'s browser tests, which configure registers only when it finds a
+Chromium: without one, its headless tests would otherwise pass alone.
 `chromium_registered` in `tests/ctest_inventory.json` lists them for this
 report and the planner alike. A
 tool missing from the shell fails its preset and the run moves on. With

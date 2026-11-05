@@ -200,8 +200,9 @@ C++ only, with no bindings for other languages.
 
 - **Five renderers behind one interface**, chosen when you configure the build: Direct3D 11,
   Direct3D 12, OpenGL 3.3, Vulkan, and a null renderer for tests. The four that draw pixels are
-  held to the same pixel tests and the same sixty-three reference images. CI runs those tests on
-  both Direct3D renderers; OpenGL and Vulkan are checked on a machine with a graphics driver.
+  held to the same pixel tests and the same set of reference images. CI runs those tests on all
+  four, OpenGL and Vulkan on software rasterisers; a machine with a real graphics driver checks
+  those two before each release.
 - **Warnings are errors**, with no exceptions, and your game is compiled with the same settings
   as the engine.
 - **The full CI sweep builds all five renderers.**
