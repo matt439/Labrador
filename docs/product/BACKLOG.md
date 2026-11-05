@@ -582,6 +582,7 @@ written.
 61. L61 Click, tap and drag the components gallery: OCA-83 (selected from `IDEA#6` on 2026-11-04 by the owner)
 62. L62 Make backends keep their seam contracts and refuse content loudly: SM-73 (hygiene review H1, selected 2026-11-05 by the owner)
 63. L63 Bound untrusted content and keep exceptions out of C callbacks: SM-74 (hygiene review H2, selected 2026-11-05 by the owner)
+64. L64 Close the rest of the 2026-11-05 hygiene review: SM-75 (themes H3 to H17 and H19 to H21, selected 2026-11-05 by the owner)
 
 **Stories**
 
@@ -1111,6 +1112,8 @@ written.
 
 - [x] **[SM-74](#sm-74)** Should - M - The Outside Adopter, The Sole Owner-Maintainer: Hostile content and failing callbacks raise the documented exception
 
+- [x] **[SM-75](#sm-75)** Should - L - The Sole Owner-Maintainer: The rest of the hygiene review is fixed, or set aside with its reason
+
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work was `WEB#10`: add LineSweeper and the bundle
@@ -1121,6 +1124,27 @@ written.
   entry only, since the image's Firefox makes no WebGL2 context without a
   GPU; the record is
   [web-to-be-tested.md](../port/web-to-be-tested.md#firefox-sample-checks-web4).
+
+<a id="sm-75"></a>
+### SM-75. Close the rest of the 2026-11-05 hygiene review
+
+Selected 2026-11-05 by the owner, who asked for every remaining theme of the
+[hygiene review](../review/2026-11-05-hygiene/README.md) to be fixed: H3 to
+H17 and H19 to H21, 574 findings from render error handling to comment truth.
+They were taken in three waves so that moves land before the comments that
+describe them: behaviour, tests, tools and documents; then engine and render
+mechanical cleanup; then the comment passes.
+
+**Acceptance**
+
+- Every finding is fixed, or set aside in the review's
+  [STATUS.md](../review/2026-11-05-hygiene/STATUS.md) with its reason. A
+  symbol ColourWars uses is not renamed for hygiene alone.
+- Behaviour changes carry tests and CHANGES.md entries; mechanical commits
+  change no behaviour and no golden image.
+- The five native Debug presets, `x64-release`, `wasm-debug` and
+  `wasm-release-null` pass, with the probes outside the default target built,
+  and the Vulkan review's `validate_sync` run reports no hazard.
 
 <a id="sm-73"></a>
 ### SM-73. Keep backends to their seam contracts and refuse content loudly
