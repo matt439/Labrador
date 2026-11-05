@@ -29,6 +29,9 @@ namespace labrador
 		Vector2F resolution_vec() const;
 		std::string resolution_string() const;
 		ScreenResolution resolution() const;
+
+		// Throws std::invalid_argument for a value that is not one of the
+		// four presets, before it changes anything.
 		void set_resolution(ScreenResolution resolution);
 
 		// The preset whose size this is exactly, and s_1280_720 for any size
@@ -74,6 +77,8 @@ namespace labrador
 		// than free.
 		void set_resolution_exactly(const Vector2I& size);
 
+		// The preset's size as "WIDTHxHEIGHT". Throws std::invalid_argument
+		// for a value that is not one of the four presets.
 		static std::string convert_resolution_to_string(
 			ScreenResolution resolution);
 
