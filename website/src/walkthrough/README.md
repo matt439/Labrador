@@ -86,7 +86,7 @@ about six minutes. How long Visual Studio and Git take to install was not
 measured. The template has had its tests since, so a project made from the
 page now restores 7 packages rather than 5, doctest being the sixth and
 lodepng, since the engine reads PNG textures, the seventh, and Labrador's
-ctest has 20 entries.
+ctest has 21 entries.
 
 **The browser build, by hand.** On 25 October 2026 *Build for the browser*
 was followed against the project assembled from the tree at `76e939e`

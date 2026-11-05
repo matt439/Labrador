@@ -53,7 +53,9 @@ required bank, plays both one-shots, starts the looping voice and asserts its
 playing, paused, resumed and stopped states. It exits in about a second. A
 missing bank or inactive audio endpoint fails the XAudio2 check rather than
 accepting silence. With null audio it checks the same lifecycle and explicitly
-reports no playback; it does not validate the XWB container.
+reports no playback; it does not validate the XWB container. The `-null`
+presets register that run as `AudioSmokeTests`; the XAudio2 run needs an
+active endpoint and stays a check made by hand.
 
 ## In a browser
 

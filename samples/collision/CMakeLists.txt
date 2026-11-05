@@ -2,7 +2,7 @@
 # and the capture, and main_web.cpp is a browser's main. The arena, its bodies
 # and the state are the same files, and CollisionSampleTests links the arena
 # in every build.
-add_library(CollisionExample STATIC body.cpp arena.cpp)
+add_library(CollisionExample STATIC body.cpp arena.cpp pads.cpp)
 target_link_libraries(CollisionExample PUBLIC LabradorEngine labrador_settings)
 
 if(EMSCRIPTEN)
@@ -30,7 +30,7 @@ elseif(WIN32)
     # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
     add_executable(CollisionSample WIN32 main.cpp collision_state.cpp
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest")
-    target_link_libraries(CollisionSample PRIVATE CollisionExample labrador_settings)
+    target_link_libraries(CollisionSample PRIVATE CollisionExample labrador_settings shell32)
     # The capture writes its PNG through WIC, which is Windows', and reads back
     # a device, which the null renderer does not have.
     if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
@@ -52,10 +52,18 @@ elseif(WIN32)
         VERBATIM
     )
     add_dependencies(CollisionSample collision_content)
+
+    # The smoke test: the scripted route, hidden, checked and out (main.cpp,
+    # CollisionState::verify_smoke_test). Like the template's
+    # MinimalSmokeTests it needs the selected renderer's device, none under
+    # null, and its content is what the target above copies. The timeout is
+    # for a loop that never draws.
+    add_test(NAME CollisionSmokeTests COMMAND CollisionSample --smoke-test)
+    set_tests_properties(CollisionSmokeTests PROPERTIES TIMEOUT 60)
 endif()
 
 find_package(doctest CONFIG REQUIRED)
-add_executable(CollisionSampleTests arena_tests.cpp)
+add_executable(CollisionSampleTests arena_tests.cpp pads_tests.cpp)
 target_link_libraries(CollisionSampleTests PRIVATE
     CollisionExample doctest::doctest labrador_settings)
 # Under Node, as every other browser-build test runs. The root's link options

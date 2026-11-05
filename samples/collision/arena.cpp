@@ -4,7 +4,7 @@
 
 using namespace labrador;
 
-namespace collisiondemo
+namespace collision
 {
 	Arena::Arena(TextureHandle texture)
 	{
@@ -24,7 +24,7 @@ namespace collisiondemo
 		this->scene_.add(std::make_unique<Body>(BodyKind::decoration,
 			RectangleF(340.0f, 300.0f, 100.0f, 180.0f), texture));
 		this->player_ = this->scene_.add(std::make_unique<Body>(BodyKind::player,
-			RectangleF(180.0f, 320.0f, 32.0f, 32.0f), texture));
+			RectangleF(player_start.x, player_start.y, player_size, player_size), texture));
 		this->scene_.end_tick();
 	}
 
@@ -51,7 +51,7 @@ namespace collisiondemo
 
 	void Arena::reset()
 	{
-		this->player_->set_position(Vector2F(180.0f, 320.0f));
+		this->player_->set_position(player_start);
 		this->player_->set_velocity(Vector2F::zero);
 		this->player_->update(0.0f);
 		this->contact_count_ = 0;

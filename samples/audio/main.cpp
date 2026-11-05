@@ -7,41 +7,60 @@
 #include <shellapi.h>
 
 #include <cstdio>
-#include <cwchar>
 #include <exception>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
+
+namespace
+{
+	// The arguments after the program's name, split and unquoted as Windows
+	// does it.
+	std::vector<std::wstring> command_arguments()
+	{
+		int count = 0;
+		const auto release = [](wchar_t** arguments) { LocalFree(arguments); };
+		const std::unique_ptr<wchar_t*, decltype(release)> arguments(
+			CommandLineToArgvW(GetCommandLineW(), &count), release);
+		if (arguments == nullptr)
+		{
+			throw std::runtime_error("Could not read command-line arguments");
+		}
+		std::vector<std::wstring> result;
+		for (int index = 1; index < count; ++index)
+		{
+			result.emplace_back(arguments.get()[index]);
+		}
+		return result;
+	}
+}
 
 int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
-	_In_ LPWSTR command_line, _In_ int)
+	_In_ LPWSTR, _In_ int)
 {
-	const bool interactive = command_line[0] == L'\0';
+	// A smoke test has nobody to close a message box, so its failure goes to
+	// the standard error stream alone; any other failure, a mistyped argument
+	// included, is shown as well.
+	bool smoke_test = false;
 	bool com_initialized = false;
 	try
 	{
-		int argument_count = 0;
-		LPWSTR* arguments = CommandLineToArgvW(GetCommandLineW(), &argument_count);
-		if (arguments == nullptr)
+		const std::vector<std::wstring> arguments = command_arguments();
+		smoke_test = !arguments.empty() && arguments[0] == L"--smoke-test";
+		if (!arguments.empty() && !(smoke_test && arguments.size() == 1))
 		{
-			throw std::runtime_error("AudioSample could not read its command line.");
+			throw std::invalid_argument("usage: AudioSample [--smoke-test]");
 		}
-		const bool smoke = argument_count == 2 &&
-			std::wcscmp(arguments[1], L"--smoke-test") == 0;
-		LocalFree(arguments);
-		if (!smoke && argument_count != 1)
-		{
-			std::fprintf(stderr, "AudioSample arguments: %ls\n", command_line);
-			throw std::invalid_argument("Usage: AudioSample.exe [--smoke-test]");
-		}
-		if (smoke)
+		if (smoke_test)
 		{
 			if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED)))
 			{
-				throw std::runtime_error("AudioSample could not initialize COM.");
+				throw std::runtime_error("Could not initialize COM");
 			}
 			com_initialized = true;
-			audio_sample::smoke_test();
+			audio::smoke_test();
 			CoUninitialize();
 			return 0;
 		}
@@ -53,13 +72,13 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		labrador::Application app(std::move(options));
 		app.initialize();
 		app.load_manifest("./manifest.json");
-		return app.run(std::make_unique<audio_sample::AudioState>(&app));
+		return app.run(std::make_unique<audio::AudioState>(&app));
 	}
 	catch (const std::exception& error)
 	{
 		if (com_initialized) { CoUninitialize(); }
 		std::fprintf(stderr, "AudioSample: %s\n", error.what());
-		if (interactive)
+		if (!smoke_test)
 		{
 			MessageBoxA(nullptr, error.what(), "AudioSample failure", MB_OK | MB_ICONERROR);
 		}

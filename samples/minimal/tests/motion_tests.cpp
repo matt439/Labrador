@@ -66,12 +66,17 @@ TEST_CASE("the only pad counts in whichever slot it is in")
 		CHECK(moved.centre.x == doctest::Approx(0.5f * move_speed));
 	}
 
-	// Two pads, then the one in slot 0 unplugged: that slot now reads as a
-	// stick at rest with nothing pressed, and the pad left in slot 2 still
-	// steers and still quits.
+	// Two pads, whose sticks add and either of whose B quits; then the one in
+	// slot 0 unplugged: that slot now reads as a stick at rest with nothing
+	// pressed, and the pad left in slot 2 still steers and still quits.
 	std::array<PadReading, 4> slots;
 	slots[0] = PadReading{ Vector2F(-1.0f, 0.0f), false };
 	slots[2] = PadReading{ Vector2F(0.0f, 1.0f), true };
+	const PadsInput both = combine_pads(slots);
+	CHECK(both.stick.x == doctest::Approx(-1.0f));
+	CHECK(both.stick.y == doctest::Approx(1.0f));
+	CHECK(both.quit_requested);
+
 	slots[0] = PadReading{};
 	const PadsInput input = combine_pads(slots);
 	CHECK(input.stick.x == doctest::Approx(0.0f));

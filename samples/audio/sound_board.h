@@ -1,9 +1,15 @@
 #pragma once
 
+#include "engine/assets/asset_manifest.h"
 #include "engine/audio/sound_bank.h"
 
-namespace audio_sample
+namespace audio
 {
+	// The manifest's sound-bank entries, in its order, under its source path:
+	// what a run with no graphics device loads - the Windows smoke test, and
+	// the browser build's test in its place - since the font needs a renderer.
+	labrador::AssetManifest audio_entries(const labrador::AssetManifest& manifest);
+
 	// Borrows a loaded bank. All names are resolved before the first input.
 	class SoundBoard
 	{

@@ -3,7 +3,7 @@
 #include "engine/collision/collision_object.h"
 #include "engine/render/renderer.h"
 
-namespace collisiondemo
+namespace collision
 {
 	enum class BodyKind : labrador::CollisionTag
 	{

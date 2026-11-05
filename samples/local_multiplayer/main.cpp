@@ -21,6 +21,12 @@ using namespace labrador;
 
 namespace
 {
+	// The smoke-test frame --capture writes: the fifteenth, which the README's
+	// Verification section names.
+	[[maybe_unused]] constexpr int capture_tick = 14;
+
+	// The arguments after the program's name, split and unquoted as Windows
+	// does it, so a capture path with a space in it arrives whole.
 	std::vector<std::wstring> command_arguments()
 	{
 		int count = 0;
@@ -41,13 +47,16 @@ namespace
 }
 
 int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
-	_In_ LPWSTR command_line, _In_ int)
+	_In_ LPWSTR, _In_ int)
 {
-	const bool interactive = *command_line == L'\0';
+	// A smoke test has nobody to close a message box, so its failure goes to
+	// the standard error stream alone; any other failure, a mistyped argument
+	// included, is shown as well.
+	bool smoke_test = false;
 	try
 	{
 		const std::vector<std::wstring> arguments = command_arguments();
-		const bool smoke_test = !arguments.empty() && arguments[0] == L"--smoke-test";
+		smoke_test = !arguments.empty() && arguments[0] == L"--smoke-test";
 		std::filesystem::path capture_path;
 		if (smoke_test && arguments.size() == 3 && arguments[1] == L"--capture")
 		{
@@ -59,7 +68,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		}
 		else if (!arguments.empty() && !(smoke_test && arguments.size() == 1))
 		{
-			throw std::invalid_argument("Usage: LocalMultiplayerSample.exe [--smoke-test [--capture path.png]]");
+			throw std::invalid_argument("usage: LocalMultiplayerSample [--smoke-test [--capture path.png]]");
 		}
 		ApplicationOptions options;
 		options.window_class_name = L"LocalMultiplayerSampleWindow";
@@ -74,16 +83,16 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 
 		if (smoke_test)
 		{
-			multiplayer::PlayState state(&app, true);
+			multiplayer::PlayState state(&app, multiplayer::SmokeTest{});
 			state.init();
-			for (int tick = 0; tick < 120; ++tick)
+			for (int tick = 0; tick < multiplayer::smoke_ticks; ++tick)
 			{
-				state.update(1.0f / 60.0f);
+				state.update(multiplayer::smoke_step_time);
 				app.renderer()->begin_frame();
 				state.draw(*app.renderer());
 				app.renderer()->submit();
 #ifdef LOCAL_MULTIPLAYER_CAPTURE
-				if (tick == 14 && !capture_path.empty())
+				if (tick == capture_tick && !capture_path.empty())
 				{
 					std::vector<unsigned char> pixels;
 					app.renderer()->read_back_buffer(pixels);
@@ -101,10 +110,10 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 	}
 	catch (const std::exception& error)
 	{
-		fprintf(stderr, "LocalMultiplayerSample: %s\n", error.what());
-		if (interactive)
+		std::fprintf(stderr, "LocalMultiplayerSample: %s\n", error.what());
+		if (!smoke_test)
 		{
-			MessageBoxA(nullptr, error.what(), "Local multiplayer - failure", MB_OK | MB_ICONERROR);
+			MessageBoxA(nullptr, error.what(), "LocalMultiplayerSample failure", MB_OK | MB_ICONERROR);
 		}
 		return 1;
 	}

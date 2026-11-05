@@ -1,21 +1,21 @@
 # One sample and two entry points: main.cpp is wWinMain, with the smoke test
 # and the capture, and main_web.cpp is a browser's main. Everything else is
-# the same files. LocalMultiplayerTests links the arena, controls and pure join
-# rules in every build; native null adds the real menu routing cases.
-set(local_multiplayer_sources
+# the same files, in a library so that the sample and LocalMultiplayerTests
+# (tests/local_multiplayer/) compile them once and cannot list them apart.
+# The tests reach the arena, controls and pure join rules in every build;
+# native null adds the real menu routing cases.
+add_library(LocalMultiplayerExample STATIC
     arena.cpp
     controls.cpp
     join_rules.cpp
     join_state.cpp
     play_state.cpp
 )
+target_link_libraries(LocalMultiplayerExample PUBLIC LabradorEngine labrador_settings)
 
 if(EMSCRIPTEN)
-    add_executable(LocalMultiplayerSample
-        main_web.cpp
-        ${local_multiplayer_sources}
-    )
-    target_link_libraries(LocalMultiplayerSample PRIVATE LabradorEngine labrador_settings)
+    add_executable(LocalMultiplayerSample main_web.cpp)
+    target_link_libraries(LocalMultiplayerSample PRIVATE LocalMultiplayerExample labrador_settings)
 
     # A page, its loader and the module, as LineSweeper's are. The content is
     # the two things the Windows build copies beside its executable,
@@ -38,10 +38,9 @@ elseif(WIN32)
     # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
     add_executable(LocalMultiplayerSample WIN32
         main.cpp
-        ${local_multiplayer_sources}
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest"
     )
-    target_link_libraries(LocalMultiplayerSample PRIVATE LabradorEngine labrador_settings shell32)
+    target_link_libraries(LocalMultiplayerSample PRIVATE LocalMultiplayerExample labrador_settings shell32)
     if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         target_sources(LocalMultiplayerSample PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/linesweeper_capture/png_file.cpp")
@@ -62,4 +61,13 @@ elseif(WIN32)
         VERBATIM
     )
     add_dependencies(LocalMultiplayerSample local_multiplayer_content)
+
+    # The smoke test under null render, which records the draws with no
+    # device: the scripted players and both views, checked and out (main.cpp,
+    # PlayState::verify_smoke_test). A rasterising preset's run, and its
+    # capture, are by hand (README.md, Verification).
+    if(LABRADOR_RENDER_BACKEND STREQUAL "null")
+        add_test(NAME LocalMultiplayerSmokeTests COMMAND LocalMultiplayerSample --smoke-test)
+        set_tests_properties(LocalMultiplayerSmokeTests PROPERTIES TIMEOUT 60)
+    endif()
 endif()

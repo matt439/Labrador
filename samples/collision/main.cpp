@@ -6,55 +6,63 @@
 #endif
 
 #include <Windows.h>
+#include <shellapi.h>
 
 #include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
-#include <string_view>
+#include <string>
 #include <vector>
 
-using namespace collisiondemo;
+using namespace collision;
 using namespace labrador;
 
 namespace
 {
-	std::wstring_view trim_arguments(std::wstring_view arguments)
+	// The arguments after the program's name, split and unquoted as Windows
+	// does it, so a capture path with a space in it arrives whole.
+	std::vector<std::wstring> command_arguments()
 	{
-		const std::size_t first = arguments.find_first_not_of(L" \t\r\n");
-		if (first == std::wstring_view::npos)
+		int count = 0;
+		const auto release = [](wchar_t** arguments) { LocalFree(arguments); };
+		const std::unique_ptr<wchar_t*, decltype(release)> arguments(
+			CommandLineToArgvW(GetCommandLineW(), &count), release);
+		if (arguments == nullptr)
 		{
-			return {};
+			throw std::runtime_error("Could not read command-line arguments");
 		}
-		const std::size_t last = arguments.find_last_not_of(L" \t\r\n");
-		return arguments.substr(first, last - first + 1);
+		std::vector<std::wstring> result;
+		for (int index = 1; index < count; ++index)
+		{
+			result.emplace_back(arguments.get()[index]);
+		}
+		return result;
 	}
 }
 
 int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
-	_In_ LPWSTR command_line, _In_ int)
+	_In_ LPWSTR, _In_ int)
 {
-	const std::wstring_view arguments = trim_arguments(command_line);
-	const bool smoke_test = arguments.starts_with(L"--smoke-test");
+	// A smoke test has nobody to close a message box, so its failure goes to
+	// the standard error stream alone; any other failure, a mistyped argument
+	// included, is shown as well.
+	bool smoke_test = false;
 	try
 	{
+		const std::vector<std::wstring> arguments = command_arguments();
+		smoke_test = !arguments.empty() && arguments[0] == L"--smoke-test";
 		std::filesystem::path capture_path;
-		constexpr std::wstring_view capture_prefix = L"--smoke-test --capture ";
-		if (arguments.starts_with(capture_prefix))
+		if (smoke_test && arguments.size() == 3 && arguments[1] == L"--capture")
 		{
-			std::wstring_view path = arguments.substr(capture_prefix.size());
-			if (path.size() >= 2 && path.front() == L'"' && path.back() == L'"')
-			{
-				path = path.substr(1, path.size() - 2);
-			}
-			if (path.empty()) throw std::invalid_argument("Capture path must not be empty");
-			capture_path = path;
+			if (arguments[2].empty()) throw std::invalid_argument("Capture path must not be empty");
+			capture_path = arguments[2];
 #ifndef COLLISION_SAMPLE_CAPTURE
 			throw std::invalid_argument("The null renderer cannot capture pixels");
 #endif
 		}
-		else if (!arguments.empty() && arguments != L"--smoke-test")
+		else if (!arguments.empty() && !(smoke_test && arguments.size() == 1))
 		{
 			throw std::invalid_argument("usage: CollisionSample [--smoke-test [--capture path.png]]");
 		}
@@ -71,14 +79,14 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		{
 			CollisionState state(&app, true);
 			state.init();
-			for (int tick = 0; tick < 315; ++tick)
+			for (int tick = 0; tick < smoke_route_ticks; ++tick)
 			{
-				state.update(1.0f / 60.0f);
+				state.update(smoke_step_time);
 				app.renderer()->begin_frame();
 				state.draw(*app.renderer());
 				app.renderer()->submit();
 #ifdef COLLISION_SAMPLE_CAPTURE
-				if (tick == 314 && !capture_path.empty())
+				if (tick == smoke_route_ticks - 1 && !capture_path.empty())
 				{
 					std::vector<unsigned char> pixels;
 					app.renderer()->read_back_buffer(pixels);
@@ -92,12 +100,12 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 			state.verify_smoke_test();
 			return 0;
 		}
-		return app.run(std::make_unique<CollisionState>(&app, smoke_test));
+		return app.run(std::make_unique<CollisionState>(&app, false));
 	}
 	catch (const std::exception& error)
 	{
 		std::fprintf(stderr, "CollisionSample: %s\n", error.what());
-		if (arguments.empty())
+		if (!smoke_test)
 		{
 			MessageBoxA(nullptr, error.what(), "CollisionSample failure", MB_OK | MB_ICONERROR);
 		}

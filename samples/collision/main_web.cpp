@@ -22,7 +22,7 @@
 #include <memory>
 #include <utility>
 
-using namespace collisiondemo;
+using namespace collision;
 using namespace labrador;
 
 EM_JS_DEPS(collision_main, "$UTF8ToString");

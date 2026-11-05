@@ -22,6 +22,13 @@ namespace multiplayer
 
 	inline constexpr std::size_t input_source_count = 6;
 
+	// A source's place in that order, which is its index in an array of
+	// per-source values such as update_lobby's inputs.
+	constexpr std::size_t source_index(InputSource source)
+	{
+		return static_cast<std::size_t>(source);
+	}
+
 	// One polled source. join_pressed is an edge, never a held button. A
 	// connection or disconnection edge suppresses joining on that poll.
 	struct JoinInput

@@ -7,6 +7,7 @@
 #include "engine/scene/scene.h"
 #include "samples/minimal/rules/motion.h"
 #include <array>
+#include <cstdint>
 #include <memory>
 
 // One screen: a line of text that circles a point the stick or the keyboard
@@ -64,6 +65,11 @@ private:
 	// that every finger arrives once, where it is, with an id of its own.
 	std::array<labrador::Label*, labrador::TouchState::capacity>
 		touch_markers_ = {};
+
+	// The id each marker shows, or zero while it is blank, so that update()
+	// sets a marker's text only when its finger changes.
+	std::array<uint32_t, labrador::TouchState::capacity>
+		touch_marker_ids_ = {};
 
 	// Where the greeting is, as the template's rules keep it: the point it
 	// circles and how far round it is. update() hands them what the devices

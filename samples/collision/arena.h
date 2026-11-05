@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-namespace collisiondemo
+namespace collision
 {
 	class Arena
 	{
@@ -14,6 +14,12 @@ namespace collisiondemo
 		// An unresolved texture is useful for headless simulation. Drawing
 		// requires a handle resolved against the renderer's resource table.
 		explicit Arena(labrador::TextureHandle texture = {});
+
+		// Where the player's top-left corner starts, and where reset() puts it
+		// back; the player is player_size units square.
+		static constexpr labrador::Vector2F player_start{ 180.0f, 320.0f };
+		static constexpr float player_size = 32.0f;
+
 		void step(labrador::Vector2F direction, float dt);
 		void reset();
 		Body& player();

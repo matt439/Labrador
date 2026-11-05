@@ -20,8 +20,8 @@ set(minimal_sources
 # The game's rules, in a library that links the engine's maths and nothing else
 # of it: LabradorMath and the settings carry no window, no device and no input, so
 # MinimalTests below runs them with none of those (rules/motion.h says what
-# moved there to make that true). samples/linesweeper's LineSweeperRules is
-# the same wall around a whole game.
+# the rules take and why they take plain values). samples/linesweeper's
+# LineSweeperRules is the same wall around a whole game.
 add_library(MinimalRules STATIC
     rules/motion.cpp
 )
@@ -96,10 +96,11 @@ set_tests_properties(MinimalSmokeTests PROPERTIES TIMEOUT 60)
 # relinks, so an edited asset would never arrive.
 # copy_directory_if_different adds and updates but never removes: a file
 # deleted from content/ stays in the build folder until it is cleaned, so a
-# required file goes on loading here and is missing only from a clean build,
-# and an optional bank is never replaced by the silent one. A game with
-# content it may delete lists its files instead (the assets guide, "Optional
-# content and stale copies").
+# required file goes on loading here and is missing only from a clean build -
+# and a game that adds an optional sound bank finds a deleted one still
+# loading rather than replaced by the silent one. A game with content it may
+# delete lists its files instead (the assets guide, "Optional content and
+# stale copies").
 add_custom_target(sample_content ALL)
 add_custom_command(TARGET sample_content POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different

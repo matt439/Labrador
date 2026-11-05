@@ -1,18 +1,46 @@
 #include "samples/collision/collision_state.h"
 
+#include "engine/input/gamepad.h"
+#include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
 #include "engine/render/resource_factory.h"
+#include "samples/collision/pads.h"
 
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
 
 using namespace labrador;
 
-namespace collisiondemo
+namespace collision
 {
 	namespace
 	{
+		// How far a stick has to move before it counts, applied once per slot
+		// by the code that knows what the stick is for (engine/input/gamepad.h).
+		constexpr float stick_deadzone = 0.2f;
+
+		// The smoke route, one leg per row: the direction held until the tick
+		// the leg ends on. Right into the wall's face, down past its foot,
+		// right into the trigger, then up inside it, ending at smoke_route_end.
+		struct RouteLeg
+		{
+			int end_tick;
+			float x;
+			float y;
+		};
+		constexpr RouteLeg smoke_route[] = {
+			{ 120, 1.0f, 0.0f },
+			{ 180, 0.0f, 1.0f },
+			{ 280, 1.0f, 0.0f },
+			{ smoke_route_ticks, 0.0f, -1.0f },
+		};
+
+		// Where the player's top-left corner is after smoke_route_ticks steps.
+		constexpr Vector2F smoke_route_end{ 968.0f, 420.0f };
+
 		Vector2F keyboard_direction(const Keyboard& keyboard)
 		{
 			Vector2F direction = Vector2F::zero;
@@ -41,23 +69,36 @@ namespace collisiondemo
 	{
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
-		if (keyboard.pressed(Key::escape) || pads.pressed(0, GamepadButton::b))
+		std::array<PadReading, Gamepads::max_count> readings;
+		for (int slot = 0; slot < Gamepads::max_count; ++slot)
+		{
+			PadReading& reading = readings[static_cast<std::size_t>(slot)];
+			reading.stick = apply_deadzone(pads.state(slot).left_stick, stick_deadzone);
+			reading.reset_pressed = pads.pressed(slot, GamepadButton::y);
+			reading.quit_pressed = pads.pressed(slot, GamepadButton::b);
+		}
+		const PadsInput pad_input = combine_pads(readings);
+		if (keyboard.pressed(Key::escape) || pad_input.quit_requested)
 		{
 			this->app_->quit();
 			return;
 		}
-		if (keyboard.pressed(Key::r) || pads.pressed(0, GamepadButton::y))
+		if (keyboard.pressed(Key::r) || pad_input.reset_requested)
 		{
 			this->arena_->reset();
 		}
-		Vector2F direction = keyboard_direction(keyboard) +
-			apply_deadzone(pads.state(0).left_stick, 0.2f);
+		Vector2F direction = keyboard_direction(keyboard) + pad_input.stick;
 		if (this->smoke_test_)
 		{
-			if (this->ticks_ < 120) { direction = Vector2F(1.0f, 0.0f); }
-			else if (this->ticks_ < 180) { direction = Vector2F(0.0f, 1.0f); }
-			else if (this->ticks_ < 280) { direction = Vector2F(1.0f, 0.0f); }
-			else { direction = Vector2F(0.0f, -1.0f); }
+			direction = Vector2F::zero;
+			for (const RouteLeg& leg : smoke_route)
+			{
+				if (this->ticks_ < leg.end_tick)
+				{
+					direction = Vector2F(leg.x, leg.y);
+					break;
+				}
+			}
 		}
 		this->arena_->step(direction, dt);
 		this->refresh_view();
@@ -75,9 +116,10 @@ namespace collisiondemo
 		const RectangleF player = this->arena_->player().bounds();
 		if (!this->arena_->hit_wall() || this->arena_->trigger_entries() != 1 ||
 			!this->arena_->player().touching_trigger() ||
-			std::abs(player.x - 968.0f) > 0.01f || std::abs(player.y - 420.0f) > 0.01f)
+			std::abs(player.x - smoke_route_end.x) > 0.01f ||
+			std::abs(player.y - smoke_route_end.y) > 0.01f)
 		{
-			throw std::runtime_error("Collision smoke: wall/trigger route failed");
+			throw std::runtime_error("Smoke test: wall/trigger route failed");
 		}
 	}
 

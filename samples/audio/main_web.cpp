@@ -56,7 +56,7 @@ int main()
 		// (engine/app/content_root.h).
 		app.load_manifest("./manifest.json");
 
-		return app.run(std::make_unique<audio_sample::AudioState>(&app));
+		return app.run(std::make_unique<audio::AudioState>(&app));
 	}
 	catch (const std::exception& e)
 	{

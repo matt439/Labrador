@@ -55,10 +55,19 @@ elseif(WIN32)
         VERBATIM
     )
     add_dependencies(AudioSample audio_sample_content)
+
+    # The finite playback check under null audio, which records the calls
+    # with no output device and needs no graphics device (smoke_test.cpp).
+    # XAudio2's needs an active audio endpoint, which a build machine need
+    # not have, so it is run by hand (README.md, Finite playback check).
+    if(LABRADOR_AUDIO_BACKEND STREQUAL "null")
+        add_test(NAME AudioSmokeTests COMMAND AudioSample --smoke-test)
+        set_tests_properties(AudioSmokeTests PROPERTIES TIMEOUT 60)
+    endif()
 endif()
 
 find_package(doctest CONFIG REQUIRED)
-add_executable(AudioSampleTests tests.cpp sound_board.cpp)
+add_executable(AudioSampleTests sound_board_tests.cpp sound_board.cpp)
 target_link_libraries(AudioSampleTests PRIVATE
     LabradorEngine doctest::doctest labrador_settings)
 target_compile_definitions(AudioSampleTests PRIVATE

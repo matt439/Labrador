@@ -6,7 +6,7 @@
 
 using namespace labrador;
 
-namespace collisiondemo
+namespace collision
 {
 	Body::Body(BodyKind kind, const RectangleF& rectangle, TextureHandle texture) :
 		kind_(kind), rectangle_(rectangle), texture_(texture)
