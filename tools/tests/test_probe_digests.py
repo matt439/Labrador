@@ -34,6 +34,9 @@ class ProbeDigestTests(unittest.TestCase):
             sources = [d3d12 / "renderer.cpp", d3d12 / "device_resources.cpp"]
             for path in sources:
                 path.write_bytes(b"version one")
+            # The block also checks that the probe preloads every header
+            # renderer.cpp includes; these stand-ins include none.
+            (bench / "d3d12_descriptor_count_renderer.cpp").write_bytes(b"")
             (bench / "CMakeLists.txt").write_text(
                 "cmake_minimum_required(VERSION 3.26)\n"
                 "project(ProbeDigestFixture LANGUAGES NONE)\n" + block +

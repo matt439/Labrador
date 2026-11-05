@@ -253,8 +253,8 @@ jobs:
     # implementation, which is version 1.1 and has no WGL_ARB_create_context,
     # so create_device throws saying so. opengl32 is not a known DLL, so Mesa's
     # copy beside an executable is the one that loads: the step below puts it
-    # beside RenderPixelTests and MinimalSample, the two tests that make a
-    # device. llvmpipe is not a driver, so a real one is still run per release
+    # beside RenderPixelTests, MinimalSample and CollisionSample, the tests
+    # that make a device. llvmpipe is not a driver, so a real one is still run per release
     # (tools/ci_gap_report.py).
     #
     # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK.
@@ -512,6 +512,7 @@ jobs:
           }
           Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\tests\render"
           Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\samples\minimal"
+          Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\samples\collision"
           echo "GALLIUM_DRIVER=llvmpipe" >> $env:GITHUB_ENV
 
       # The benchmark is one of these targets. It asserts on complexity class
