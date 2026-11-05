@@ -12,11 +12,13 @@ namespace labrador
 	//
 	// Throws std::runtime_error naming the path if the file cannot be read or
 	// parsed, and naming the path and the offending frame or strip if the
-	// document is the wrong shape or has an unknown key (T6). This includes
-	// nested position, size, origin and first-frame objects; unsupported fields
-	// must be removed or corrected instead of being silently ignored.
-	// A negative animation-strip `frame_count` throws std::runtime_error naming
-	// the path, strip and field. Zero frames define an empty strip.
+	// document is the wrong shape, has an unknown key or repeats one (T6). This
+	// includes nested position, size, origin and first-frame objects;
+	// unsupported fields must be removed or corrected instead of being silently
+	// ignored. A negative animation-strip `frame_count`, one above
+	// max_texture_dimension (texture_data.h), or a positive one whose first
+	// frame has zero width or height throws std::runtime_error naming the
+	// path, strip and field. Zero frames define an empty strip.
 	// An unrepresentable cached strip x coordinate throws std::runtime_error
 	// naming the path, strip and frame coordinate.
 	//

@@ -165,6 +165,72 @@ TEST_CASE("a file that is not a PNG is refused naming the file and the reason")
 	CHECK(message_of(cut, "cut.png").find("cut.png") != std::string::npos);
 }
 
+namespace
+{
+	// A one-pixel PNG whose header claims `width` by `height`, with the
+	// header's checksum recomputed so only the size is wrong: what a hostile
+	// or corrupt file looks like to the reader.
+	std::vector<unsigned char> claiming(unsigned width, unsigned height)
+	{
+		std::vector<unsigned char> png = encode(
+			std::vector<unsigned char>{ 1, 2, 3, 255 }, 1, 1, LCT_RGBA, 8);
+		REQUIRE(png.size() > 33);
+
+		// The signature is eight bytes; IHDR's length and type follow, then
+		// its width and height, big-endian.
+		const auto put = [&png](size_t at, unsigned value)
+		{
+			png[at] = static_cast<unsigned char>(value >> 24);
+			png[at + 1] = static_cast<unsigned char>(value >> 16);
+			png[at + 2] = static_cast<unsigned char>(value >> 8);
+			png[at + 3] = static_cast<unsigned char>(value);
+		};
+		put(16, width);
+		put(20, height);
+		lodepng_chunk_generate_crc(png.data() + 8);
+		return png;
+	}
+}
+
+TEST_CASE("a PNG header beyond max_texture_dimension is refused before decoding")
+{
+	const unsigned limit = static_cast<unsigned>(max_texture_dimension);
+	const std::vector<std::tuple<unsigned, unsigned>> sizes = {
+		{ 40000u, 40000u }, { limit + 1u, 1u }, { 1u, limit + 1u },
+		{ 0xffffffffu, 0xffffffffu },
+	};
+	for (const std::tuple<unsigned, unsigned>& size : sizes)
+	{
+		CAPTURE(std::get<0>(size));
+		CAPTURE(std::get<1>(size));
+		const std::string message = message_of(
+			claiming(std::get<0>(size), std::get<1>(size)), "art/bomb.png");
+		CHECK(message.find("art/bomb.png") != std::string::npos);
+		const bool named_limit =
+			message.find(std::to_string(max_texture_dimension)) != std::string::npos;
+		const bool refused_header = message.find("not a PNG") != std::string::npos;
+		CHECK((named_limit || refused_header));
+	}
+
+	// The limit names both sides exactly when the header itself is valid.
+	const std::string message = message_of(claiming(40000u, 40000u), "art/bomb.png");
+	CHECK(message.find("40000 by 40000") != std::string::npos);
+	CHECK(message.find(std::to_string(max_texture_dimension)) != std::string::npos);
+}
+
+TEST_CASE("a PNG exactly max_texture_dimension wide is read")
+{
+	const std::vector<unsigned char> pixels(
+		4 * static_cast<size_t>(max_texture_dimension), 255);
+	const TextureData texture = decode_png(
+		encode(pixels, static_cast<unsigned>(max_texture_dimension), 1,
+			LCT_RGBA, 8), "wide.png");
+
+	CHECK(texture.width == max_texture_dimension);
+	CHECK(texture.height == 1);
+	CHECK(texture.pixels == pixels);
+}
+
 TEST_CASE("a PNG that is not there is out_of_range, as a missing .dds is")
 {
 	CHECK_THROWS_AS(std::ignore =

@@ -4,7 +4,9 @@
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 
+#include <cmath>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -53,7 +55,11 @@ namespace labrador
 					std::to_string(nul_offset) + ")");
 			}
 
-			document.Parse(text, length);
+			// Iterative, so the parser's stack is on the heap: the recursive
+			// default spends a native frame per nesting level, and a small file
+			// of brackets overflows the stack instead of throwing.
+			document.Parse<rapidjson::kParseDefaultFlags |
+				rapidjson::kParseIterativeFlag>(text, length);
 			if (document.HasParseError())
 			{
 				throw std::runtime_error(
@@ -223,7 +229,9 @@ namespace labrador
 
 	// Any JSON number, not only one written with a decimal point: `0` and `0.0`
 	// mean the same thing to a person editing a level file, and IsFloat() is
-	// false for the first of them.
+	// false for the first of them. Read as a double and checked before the
+	// narrowing, because converting a double beyond float's range is undefined
+	// and in practice an infinity that reaches positions and timings.
 	float JsonValue::number(const char* key) const
 	{
 		const JsonValue value = this->child(key);
@@ -232,7 +240,13 @@ namespace labrador
 		{
 			value.fail("is not a number");
 		}
-		return raw.GetFloat();
+		const double wide = raw.GetDouble();
+		if (!std::isfinite(wide) ||
+			std::fabs(wide) > static_cast<double>((std::numeric_limits<float>::max)()))
+		{
+			value.fail("is out of range for a float");
+		}
+		return static_cast<float>(wide);
 	}
 
 	bool JsonValue::boolean(const char* key) const

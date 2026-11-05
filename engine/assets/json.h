@@ -13,9 +13,12 @@ namespace labrador
 	// Reads the UTF-8 file path in full and parses it as JSON. Raw NUL bytes
 	// are rejected at their byte offset; JSON `\u0000` string escapes are valid.
 	//
-	// Throws std::runtime_error naming the path if the file cannot be opened,
-	// cannot be read, or does not parse. The returned document is therefore
-	// always valid - callers never have to test for a parse error.
+	// Throws std::invalid_argument for a null path, and std::runtime_error
+	// naming the path if the file cannot be opened, cannot be read, or does
+	// not parse. The returned document is therefore always valid - callers
+	// never have to test for a parse error.
+	// Nesting depth is bounded by memory, not by the stack: a deeply nested
+	// file parses or throws like any other.
 	JsonDocument read_json_file(const char* path);
 
 	// Parses the bytes in `text` as JSON; the view need not end at a NUL.
@@ -52,6 +55,8 @@ namespace labrador
 		// Identifier/path strings cannot contain NULs; errors name the field.
 		std::string identifier(const char* key) const;
 		int integer(const char* key) const;
+		// Any JSON number, whole or not. One beyond float's range - `1e40` -
+		// throws naming the source and key rather than becoming infinity.
 		float number(const char* key) const;
 		bool boolean(const char* key) const;
 

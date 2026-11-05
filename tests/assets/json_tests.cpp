@@ -660,6 +660,55 @@ namespace JsonTests
 
 			CHECK(from_file == from_text);
 		}
+
+		TEST_CASE("deep nesting is a parse error through both doors, not a stack overflow")
+		{
+			// A recursive parser spends a native frame per level; a hundred
+			// thousand brackets is a small file and more than a 1 MB stack.
+			const std::string text(100000, '[');
+			const ScratchFile file("nested.json", text);
+
+			CHECK_THROWS_WITH_AS(read_json_file(file.path().c_str()),
+				doctest::Contains("is not valid JSON"), std::runtime_error);
+			CHECK_THROWS_WITH_AS(parse_json(text, "nested.json"),
+				doctest::Contains("'nested.json' is not valid JSON"),
+				std::runtime_error);
+		}
+
+		TEST_CASE("deep nesting that closes is a document like any other")
+		{
+			const size_t depth = 100000;
+			const std::string text = "{\"a\":" + std::string(depth, '[') +
+				std::string(depth, ']') + "}";
+			const JsonDocument document = parse_json(text, "closed.json");
+
+			CHECK(document.root().array("a").size() == 1);
+		}
+
+		TEST_CASE("a number beyond float's range names the source and key")
+		{
+			const JsonDocument document = parse_json(
+				R"({"big": 1e39, "small": -1e40, "huge": 1e300, "edge": 3.4028234e38,
+					"tiny": 1e-50})",
+				"range.json");
+			const JsonValue root = document.root();
+
+			CHECK_THROWS_WITH_AS(root.number("big"),
+				"'range.json': big is out of range for a float", std::runtime_error);
+			CHECK_THROWS_WITH_AS(root.number("small"),
+				"'range.json': small is out of range for a float", std::runtime_error);
+			CHECK_THROWS_WITH_AS(root.number("huge"),
+				"'range.json': huge is out of range for a float", std::runtime_error);
+			CHECK(root.number("edge") == doctest::Approx(3.4028234e38f));
+			CHECK(root.number("tiny") == 0.0f);
+		}
+
+		TEST_CASE("an out-of-range number read from a file names the file")
+		{
+			CHECK(message_from(R"({ "frame_time": 1e40 })",
+				[](const JsonValue& root) { root.number("frame_time"); }) ==
+				"'<file>': frame_time is out of range for a float");
+		}
 	}
 }
 

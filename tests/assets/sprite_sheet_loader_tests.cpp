@@ -6,6 +6,7 @@
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
+#include "engine/render/texture_data.h"
 #include "tests/scratch_file.h"
 #include <array>
 #include <limits>
@@ -428,4 +429,107 @@ TEST_CASE("zero-count authored strips ignore unused extreme horizontal geometry"
 		CHECK_THROWS_AS(strip.frame_rect(0), std::out_of_range);
 		CHECK_THROWS_AS(strip.frame_rect(-1), std::out_of_range);
 	}
+}
+
+TEST_CASE("sprite sheet repeated keys name the file, the object and the key")
+{
+	struct Refusal
+	{
+		std::string contents;
+		const char* context;
+		const char* key;
+	};
+	const std::array<Refusal, 4> cases = { {
+		{ R"({"sprite_frames":[{"name":"box","position":{"x":1,"x":2,"y":0},"size":{"w":16,"h":32}}],"animation_strips":[]})",
+			"sprite_frames[0].position", "x" },
+		{ sheet_of(frame_of("box", R"(,"origin":{"x":1,"y":2},"origin":{"x":3,"y":4})")),
+			"sprite_frames[0]", "origin" },
+		{ sheet_with_strip(strip_of(R"(,"looping":false)", "")),
+			"animation_strips[0]", "looping" },
+		{ sheet_with_strip(strip_of("", R"(,"w":8)")),
+			"animation_strips[0].first_frame", "w" },
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.contents);
+		const ScratchFile file("sheet.json", test.contents);
+		try
+		{
+			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			FAIL("a repeated sprite-sheet member was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message(error.what());
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find(test.context) != std::string::npos);
+			CHECK(message.find(std::string("repeats key '") + test.key + "'") !=
+				std::string::npos);
+		}
+	}
+}
+
+TEST_CASE("an authored strip count beyond the widest texture is refused before allocating")
+{
+	// With a zero-width frame every coordinate stays in range, so before the
+	// bound this asked for 2^31 cached rectangles - 32 GB - and failed with
+	// bad_alloc naming nothing.
+	struct Refusal
+	{
+		int width;
+		int height;
+		int count;
+		const char* reason;
+	};
+	const int maximum = (std::numeric_limits<int>::max)();
+	const std::array<Refusal, 5> cases = { {
+		{ 0, 18, maximum, "widest texture" },
+		{ 1, 18, maximum, "widest texture" },
+		{ 1, 18, max_texture_dimension + 1, "widest texture" },
+		{ 0, 18, 3, "no area" },
+		{ 12, 0, 1, "no area" },
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.width);
+		CAPTURE(test.height);
+		CAPTURE(test.count);
+		const std::string broken =
+			R"({"name":"broken","first_frame":{"x":0,"y":0,"w":)" +
+			std::to_string(test.width) + R"(,"h":)" + std::to_string(test.height) +
+			R"(},"frame_count":)" + std::to_string(test.count) +
+			R"(,"frame_time":0.1,"looping":false})";
+		const ScratchFile file("strip-count.json",
+			sheet_with_strip(strip_of("", "") + "," + broken));
+		bool rejected = false;
+		try
+		{
+			read_sprite_sheet(file.path().c_str(), TextureHandle());
+		}
+		catch (const std::runtime_error& error)
+		{
+			rejected = true;
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find("animation_strips[1]") != std::string::npos);
+			CHECK(message.find("'broken'") != std::string::npos);
+			CHECK(message.find("frame_count") != std::string::npos);
+			CHECK(message.find(std::to_string(test.count)) != std::string::npos);
+			CHECK(message.find(test.reason) != std::string::npos);
+			CHECK(message.find("'walk'") == std::string::npos);
+		}
+		CHECK(rejected);
+	}
+}
+
+TEST_CASE("an authored strip as wide as the widest texture is read")
+{
+	const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
+		horizontal_strip_definition("full", 0, 1, max_texture_dimension, true)));
+	const AnimationStrip& strip =
+		sheet->animation_strip(sheet->resolve_animation_strip("full"));
+
+	CHECK(strip.frame_count() == max_texture_dimension);
+	CHECK(strip.frame_rect(max_texture_dimension - 1) ==
+		RectangleI(max_texture_dimension - 1, 7, 1, 18));
 }

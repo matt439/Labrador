@@ -3,6 +3,7 @@
 #include "engine/assets/json_object_keys.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/texture_data.h"
 
 #include <memory>
 #include <stdexcept>
@@ -109,6 +110,30 @@ namespace labrador
 					throw std::runtime_error(strip.where() + " ('" + name +
 						"') has negative 'frame_count' " +
 						std::to_string(frame_count) + ".");
+				}
+
+				// The strip caches a rectangle per frame, so the count is an
+				// allocation the file chooses. Its frames sit side by side in
+				// one row of an atlas, each at least one texel wide, and no
+				// atlas is wider than max_texture_dimension - which bounds the
+				// count without knowing this sheet's texture.
+				if (frame_count > max_texture_dimension)
+				{
+					throw std::runtime_error(strip.where() + " ('" + name +
+						"') has 'frame_count' " + std::to_string(frame_count) +
+						", more frames than fit side by side in the widest "
+						"texture (" + std::to_string(max_texture_dimension) +
+						" texels).");
+				}
+				if (frame_count > 0 &&
+					(first_frame.width == 0 || first_frame.height == 0))
+				{
+					throw std::runtime_error(strip.where() + " ('" + name +
+						"') has 'frame_count' " + std::to_string(frame_count) +
+						" and a 'first_frame' of " +
+						std::to_string(first_frame.width) + " by " +
+						std::to_string(first_frame.height) +
+						" texels: a frame with no area draws nothing.");
 				}
 
 				try

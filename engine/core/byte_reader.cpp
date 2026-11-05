@@ -1,9 +1,13 @@
 #include "engine/core/byte_reader.h"
 #include "engine/core/file_path.h"
 
+#include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <limits>
 #include <stdexcept>
+#include <system_error>
 
 namespace labrador
 {
@@ -72,9 +76,28 @@ namespace labrador
 
 	std::vector<unsigned char> read_file_bytes(const std::string& path)
 	{
-		std::ifstream file(path_from_utf8(path), std::ios::binary | std::ios::ate);
+		const std::filesystem::path native = path_from_utf8(path);
+
+		// Before opening, because some C libraries open a directory for
+		// reading and only fail at the first read.
+		std::error_code status_error;
+		if (std::filesystem::is_directory(native, status_error))
+		{
+			throw std::runtime_error("Could not read " + path +
+				": it is a directory.");
+		}
+
+		std::ifstream file(native, std::ios::binary | std::ios::ate);
 		if (!file)
 		{
+			// The open says only that it failed. Asking afterwards keeps the
+			// common case one call, and separates a missing name from a file
+			// that is there and refused - locked, or not ours to read.
+			std::error_code exists_error;
+			if (std::filesystem::exists(native, exists_error))
+			{
+				throw std::runtime_error("Could not open " + path + ".");
+			}
 			throw std::out_of_range("No file at " + path + ".");
 		}
 
@@ -83,12 +106,19 @@ namespace labrador
 		{
 			throw std::runtime_error("Could not measure " + path + ".");
 		}
+		if (static_cast<std::uintmax_t>(size) >
+			static_cast<std::uintmax_t>((std::numeric_limits<size_t>::max)()))
+		{
+			throw std::runtime_error(path + " holds " + std::to_string(size) +
+				" bytes, more than this build can address.");
+		}
 
 		std::vector<unsigned char> bytes(static_cast<size_t>(size));
 		file.seekg(0, std::ios::beg);
 		if (!bytes.empty())
 		{
-			file.read(reinterpret_cast<char*>(bytes.data()), size);
+			file.read(reinterpret_cast<char*>(bytes.data()),
+				static_cast<std::streamsize>(bytes.size()));
 			if (!file)
 			{
 				throw std::runtime_error("Could not read " + path + ".");
