@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <exception>
 #include <memory>
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -128,7 +129,13 @@ EM_JS(void, labrador_audio_install, (), {
 		source.onended = null;
 		try {
 			source.stop();
-		} catch (ignored) {
+		} catch (refused) {
+			// A source whose start() never ran, and a second stop() in older
+			// engines, answer InvalidStateError: there is nothing to stop.
+			// Anything else is not that, and is not swallowed.
+			if (refused.name !== "InvalidStateError") {
+				throw refused;
+			}
 		}
 		source.disconnect();
 		voice.gain.disconnect();
@@ -607,11 +614,18 @@ namespace labrador
 		{
 			data = read_xwb_file(path);
 		}
+		catch (const std::bad_alloc&)
+		{
+			// Out of memory is not a missing container, and turned into the
+			// runtime_error below it would be handled as an absent optional
+			// bank: silence and a warning instead of a stop (audio_device.h).
+			throw;
+		}
 		catch (const std::exception& unread)
 		{
 			// The seam's two failures are told apart by type, and the reader's
 			// "no file" is an out_of_range - which here would read as a content
-			// bug and defeat the optional-bank substitution. Anything the
+			// bug and defeat the optional-bank substitution. Anything else the
 			// reader could not do is the container not being there or not
 			// being readable, and the reader's own words say which.
 			throw std::runtime_error("Failed to open wave bank: " +

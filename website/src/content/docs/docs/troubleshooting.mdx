@@ -898,10 +898,11 @@ The manifest's `kind` is misspelt. The engine knows `texture`, `font`, `sprite_s
 
 ### `... has unknown key ...`
 
-A sprite sheet's `.json` has a field the engine does not read, usually a misspelling, such as
-`animation_strips[0] has unknown key 'frame_cont'`. The message names the list and the entry,
-counting from 0. [Sprites from a sheet](/docs/guides/sprites-and-text/#sprites-from-a-sheet)
-lists the fields.
+A sprite sheet's or a sound bank's `.json` has a field the engine does not read, usually a
+misspelling, such as `animation_strips[0] has unknown key 'frame_cont'`. The message names the
+list and the entry, counting from 0. [Sprites from a sheet](/docs/guides/sprites-and-text/#sprites-from-a-sheet)
+lists a sheet's fields; a sound bank's are `waves`, `create_effect_instance_for_each_wave` and
+`sound_effect_instances`, and each effect instance's `name` and `wave`.
 
 ### `no animation strip named ...`, or `no sprite frame named ...`
 
@@ -950,8 +951,10 @@ are the opposite mistake: a source that was already premultiplied, premultiplied
 
 The sound bank's `.json` file is beside the game and its `.xwb` file is not, or the `.xwb` is
 not a wave bank. Copy or pack the bank again
-([Play a sound in your game](/docs/guides/your-sound/)) and build. In the browser build the
-same words begin the reader's own messages, such as the compact-entries one below.
+([Play a sound in your game](/docs/guides/your-sound/)) and build. On Windows the reader's own
+word, `(WaveBank)`, follows the file name. In the browser build the same words begin the
+reader's own messages, such as the compact-entries one below. On Windows, `... is a streaming
+bank` means xwbtool was run with `-s`; pack the bank again without it.
 
 ### `Wave bank '...' has no wave named '...'.`
 

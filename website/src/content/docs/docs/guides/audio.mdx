@@ -191,8 +191,9 @@ bank, which is how Labrador checks and resolves waves. **So is `-nc`**: without
 it XWBTool writes compact entries whenever the waves fit them. Windows plays a
 compact bank, but the browser build reads banks with the engine's own reader,
 which refuses one by name (`uses compact entries, which this engine
-does not read`). Use an in-memory bank for this API; streaming banks are
-outside this example. The command was checked with XWBTool from the `may2026`
+does not read`). Use an in-memory bank for this API: Windows refuses a
+streaming bank, made with xwbtool's `-s`, when it loads (`is a streaming
+bank`). The command was checked with XWBTool from the `may2026`
 DirectX Tool Kit release, packing the sample's three WAVs into a bank the
 engine's reader loads.
 

@@ -57,7 +57,9 @@ if(LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_compile_definitions(AudioTests PRIVATE LABRADOR_TEST_NULL_AUDIO)
 endif()
 
-# Deterministic retry policy; no endpoint or DirectXTK graph is created.
+# Deterministic retry and wave-bank policy (device_recovery.h,
+# wave_bank_policy.h) against stand-ins; no endpoint, DirectXTK graph or
+# WaveBank is created.
 if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2")
     target_sources(AudioTests PRIVATE xaudio2_recovery_tests.cpp)
 endif()

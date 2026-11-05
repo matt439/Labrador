@@ -1,5 +1,6 @@
 #include "engine/audio/audio_device.h"
 #include "engine/audio/xaudio2/device_recovery.h"
+#include "engine/audio/xaudio2/wave_bank_policy.h"
 #include "engine/core/file_path.h"
 
 #include <Audio.h>
@@ -37,6 +38,10 @@
 //    preserves banks and instance objects but drops playback, so games decide
 //    which persistent sounds to start again. A suspended engine is not reset:
 //    DirectXTK's new graph would not remember the old graph's StopEngine().
+//
+// wave_bank_policy.h holds the rest of what this backend decides around a
+// WaveBank - which index it holds, how a failed open is reported, and the
+// one-shot dropped while suspended - as templates a test can reach.
 
 using namespace DirectX;
 
@@ -114,20 +119,18 @@ namespace labrador
 	{
 		const std::string path = container_path(directory, name);
 
-		std::unique_ptr<WaveBank> bank;
-		try
-		{
-			bank = std::make_unique<WaveBank>(this->impl_->engine.get(),
-				path_from_utf8(path).c_str());
-		}
-		catch (const std::exception&)
-		{
-			// DirectXTK's what() is "WaveBank" and nothing else - T6 wants the
-			// file. The type matters as much as the text: a caller telling a
-			// missing optional bank from a broken one catches this and not the
-			// throw below, and std::out_of_range is not a std::runtime_error.
-			throw std::runtime_error("Failed to open wave bank: " + path);
-		}
+		// The open's failures become the runtime_error naming the file, and a
+		// streaming bank is refused, in wave_bank_policy.h. The type matters as
+		// much as the text: a caller telling a missing optional bank from a
+		// broken one catches that and not the throw below, and
+		// std::out_of_range is not a std::runtime_error.
+		AudioEngine* const engine = this->impl_->engine.get();
+		std::unique_ptr<WaveBank> bank = detail::open_wave_bank<WaveBank>(
+			path, [engine, &path]()
+			{
+				return std::make_unique<WaveBank>(engine,
+					path_from_utf8(path).c_str());
+			});
 
 		// EVERY NAME THE DEFINITION LISTS, CHECKED HERE, WHICH IS THE EARLIEST
 		// AND STRICTEST PLACE FOR IT. Left to the play path, a wave the
@@ -162,17 +165,21 @@ namespace labrador
 	AudioDevice::VoiceHandle AudioDevice::create_voice(WaveBankHandle bank,
 		int wave_index)
 	{
-		std::unique_ptr<SoundEffectInstance> voice =
-			this->impl_->bank(bank).CreateInstance(
-				static_cast<unsigned int>(wave_index));
-		if (!voice)
+		// The same check and throw as the other two backends, before the
+		// unsigned cast would turn a negative index into a large one.
+		// CreateInstance answers null only for an index past the end, which
+		// this has refused. open_wave_bank checked every name the definition
+		// listed, so failing here means an index that came from somewhere
+		// else, such as another bank.
+		WaveBank& wave_bank = this->impl_->bank(bank);
+		if (!detail::holds_wave<WAVEFORMATEX>(wave_bank, wave_index))
 		{
-			// CreateInstance answers null rather than throwing. open_wave_bank
-			// checked every name the definition listed, so reaching this means
-			// an index that came from somewhere else.
 			throw std::out_of_range(
 				"A voice was asked for a wave the bank does not hold.");
 		}
+
+		std::unique_ptr<SoundEffectInstance> voice =
+			wave_bank.CreateInstance(static_cast<unsigned int>(wave_index));
 
 		this->impl_->voices.push_back(std::move(voice));
 		return VoiceHandle(static_cast<int>(this->impl_->voices.size()) - 1);
@@ -181,8 +188,8 @@ namespace labrador
 	void AudioDevice::play_wave(WaveBankHandle bank, int wave_index,
 		float volume, float pitch, float pan) const
 	{
-		this->impl_->bank(bank).Play(static_cast<unsigned int>(wave_index),
-			volume, pitch, pan);
+		detail::play_one_shot<WAVEFORMATEX>(this->impl_->bank(bank),
+			this->impl_->recovery, wave_index, volume, pitch, pan);
 	}
 
 	void AudioDevice::play_voice(VoiceHandle voice, bool loop, float volume,

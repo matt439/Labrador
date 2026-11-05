@@ -8,7 +8,8 @@
 #include <string>
 #include <string_view>
 
-// Fixed-schema checks private to the manifest and sprite-sheet loaders.
+// Fixed-schema checks private to the manifest, sprite-sheet and sound-bank
+// loaders.
 // JsonValue itself permits caller-owned dictionaries and arbitrary metadata.
 namespace labrador::asset_details
 {

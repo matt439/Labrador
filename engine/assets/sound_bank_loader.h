@@ -45,6 +45,10 @@ namespace labrador
 	//
 	// Throws std::runtime_error naming the path if the file cannot be read or
 	// parsed, is the wrong shape, or names two effect instances the same (T6).
+	// The same throw names the path and the object for an unknown key: the
+	// document accepts only `waves`, `create_effect_instance_for_each_wave`
+	// and `sound_effect_instances`, and each effect instance only `name` and
+	// `wave`, so a misspelt field fails here instead of being ignored.
 	SoundBankDefinition read_sound_bank_definition(const char* json_path);
 
 	// Builds the SoundBank that plays `wave_bank` out of `device`, creating one

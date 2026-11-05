@@ -50,6 +50,7 @@ namespace labrador
 		std::vector<std::vector<std::string>> banks;
 		std::vector<NullVoice> voices;
 		std::vector<RecordedSound> recording;
+		bool suspended = false;
 
 		const std::vector<std::string>& bank(WaveBankHandle handle)
 		{
@@ -143,15 +144,23 @@ namespace labrador
 	void AudioDevice::play_wave(WaveBankHandle bank, int wave_index,
 		float volume, float pitch, float pan) const
 	{
-		// The bounds check a real backend's Play would have done, so a wave
-		// index that came from nowhere fails here too rather than being
-		// recorded as if it were fine.
+		// The seam's bounds check, which every backend makes with this throw
+		// rather than leaving it to its API: DirectXTK's Play drops an index
+		// past the end without a word. A wave index that came from nowhere, or
+		// from another bank, fails here rather than being recorded as fine.
 		const std::vector<std::string>& names = this->impl_->bank(bank);
 		if (wave_index < 0 ||
 			static_cast<size_t>(wave_index) >= names.size())
 		{
 			throw std::out_of_range(
 				"A wave was played that the bank does not hold.");
+		}
+
+		// A one-shot asked for while suspended is dropped on every backend
+		// (audio_device.h), so it is not recorded as played.
+		if (this->impl_->suspended)
+		{
+			return;
 		}
 
 		RecordedSound call;
@@ -168,8 +177,20 @@ namespace labrador
 		float pitch, float pan) const
 	{
 		NullVoice& state = this->impl_->voice(voice);
-		state.state = SoundState::playing;
-		state.looping = loop;
+
+		// DirectXTK's Play, which webaudio/ transcribes too: a paused voice
+		// resumes and keeps its loop, a playing one is left alone, and only a
+		// stopped one starts with the loop it was asked for. The call is
+		// recorded whichever branch it took, with the loop it asked for.
+		if (state.state == SoundState::paused)
+		{
+			state.state = SoundState::playing;
+		}
+		else if (state.state == SoundState::stopped)
+		{
+			state.state = SoundState::playing;
+			state.looping = loop;
+		}
 
 		RecordedSound call;
 		call.call = SoundCall::play_voice;
@@ -299,12 +320,12 @@ namespace labrador
 
 	void AudioDevice::suspend()
 	{
-
+		this->impl_->suspended = true;
 	}
 
 	void AudioDevice::resume()
 	{
-
+		this->impl_->suspended = false;
 	}
 
 	// --- recording.h ---------------------------------------------------------

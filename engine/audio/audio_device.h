@@ -103,7 +103,10 @@ namespace labrador
 		// naming the wave: an encoding the backend's reader refuses, or, in a
 		// browser, a sample rate that browser's Web Audio will not hold - the
 		// standard promises only 8000 to 96000 Hz, and each browser takes its
-		// own wider range.
+		// own wider range. Under XAudio2 a streaming bank is the same throw
+		// again, naming the file, because DirectXTK plays only an in-memory
+		// one. Running out of memory is not a missing container and
+		// propagates as std::bad_alloc.
 		//
 		// Throws std::out_of_range naming the wave if the container is there
 		// and does not hold a name `wave_names` lists. That is a content bug
@@ -123,7 +126,9 @@ namespace labrador
 		VoiceHandle create_voice(WaveBankHandle bank, int wave_index);
 
 		// Fire-and-forget: a new voice each time, with nothing to hold
-		// afterwards. Levels arrive clamped.
+		// afterwards. Levels arrive clamped. Throws std::out_of_range if
+		// `wave_index` is not a wave of `bank`, on every backend. Between
+		// suspend() and resume() the one-shot is dropped and never replayed.
 		void play_wave(WaveBankHandle bank, int wave_index, float volume,
 			float pitch, float pan) const;
 
@@ -155,6 +160,12 @@ namespace labrador
 		// GamepadReader's pair and for the same reason: a game in the
 		// background makes no noise, and what suspension costs the platform is
 		// the platform's affair.
+		//
+		// A one-shot asked for while suspended is dropped on every backend,
+		// for the reason the gesture paragraph below gives: a sound effect
+		// that plays late plays wrong, and the game's updates go on while it
+		// is minimised. Persistent voices keep their states and calls; what
+		// is playing is heard again after resume().
 		void suspend();
 		void resume();
 

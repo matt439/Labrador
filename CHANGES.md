@@ -80,6 +80,35 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Make the three audio backends agree on one-shots, bad indices and bank opens
+
+**Behaviour change.** The three audio backends now agree:
+
+- A one-shot (`SoundBank::play_wave`) asked for while the game is suspended
+  is dropped on every backend; XAudio2 queued it on the stopped engine. The
+  null backend does not record it.
+- XAudio2 `play_wave` and `create_voice` with a wave index the bank does not
+  hold, such as a `WaveHandle` resolved from another bank, throw
+  `std::out_of_range` as null and Web Audio do, instead of playing nothing.
+- XAudio2 refuses a streaming wave bank (xwbtool `-s`) at load with
+  `std::runtime_error` naming the file, instead of failing during play.
+  Re-pack it in-memory. Web Audio still plays one.
+- Opening a wave bank lets `std::bad_alloc` propagate instead of turning it
+  into the error that substitutes a silent optional bank. XAudio2's `Failed to
+  open wave bank` message now ends with the reader's own words.
+- Null `play_voice` follows DirectXTK's Play: a paused voice resumes keeping
+  its loop flag, a playing voice is unchanged, and only a stopped voice takes
+  the requested loop, so `is_effect_looping` matches the other backends.
+
+### 2026-11-05 - Refuse unknown keys in a sound bank definition
+
+**Behaviour change.** A sound bank definition (`.json`) refuses a key other
+than `waves`, `create_effect_instance_for_each_wave` and
+`sound_effect_instances`, and an effect instance refuses a key other than
+`name` and `wave`, with `std::runtime_error` naming the file, the object and
+the key, as manifests and sprite sheets already did. A misspelled field used
+to be ignored. Remove or correct the field.
+
 ### 2026-11-04 - Load textures from PNG files
 
 **Addition, and a dependency every game now names.** A `texture` or

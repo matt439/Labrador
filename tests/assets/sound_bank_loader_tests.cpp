@@ -3,6 +3,7 @@
 #include "engine/assets/sound_bank_loader.h"
 #include "tests/scratch_file.h"
 
+#include <array>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -156,4 +157,43 @@ TEST_CASE("a definition that is not there names itself")
 {
 	CHECK_THROWS_AS(std::ignore = read_sound_bank_definition(
 		"no_such_sound_bank.json"), std::runtime_error);
+}
+
+TEST_CASE("sound bank unknown keys name the file the object and the key")
+{
+	struct Refusal
+	{
+		const char* contents;
+		const char* context;
+		const char* key;
+	};
+	const std::array<Refusal, 3> cases = { {
+		{ R"({"waves":[],"create_effect_instance_for_each_wave":false,"sound_effect_instances":[],"volume":1})",
+			"the document", "volume" },
+		{ R"({"waves":["drone"],"create_effect_instance_for_each_wave":false,"sound_effect_instances":[{"name":"drone_loop","wave":"drone","loping":true}]})",
+			"sound_effect_instances[0]", "loping" },
+		{ R"({"waves":["a"],"create_effect_instance_for_each_wave":false,"sound_effect_instances":[{"name":"x","wave":"a"},{"name":"y","wave":"a","volume":0.5}]})",
+			"sound_effect_instances[1]", "volume" },
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.contents);
+		const ScratchFile file("bank.json", test.contents);
+		try
+		{
+			std::ignore = read_sound_bank_definition(file.path().c_str());
+			FAIL("unknown sound bank member was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			// A misspelt field a person expects to work is the quiet
+			// disagreement T6 forbids, so a bank definition is held to the
+			// same fixed schema as the manifest and the sprite sheet.
+			const std::string message(error.what());
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find(test.context) != std::string::npos);
+			CHECK(message.find("has unknown key '") != std::string::npos);
+			CHECK(message.find(test.key) != std::string::npos);
+		}
+	}
 }
