@@ -1,9 +1,16 @@
 #include <doctest/doctest.h>
 
 #include "engine/audio/xaudio2/device_recovery.h"
+#include "engine/audio/xaudio2/wave_bank_policy.h"
 
 #include <chrono>
+#include <cstddef>
+#include <memory>
+#include <new>
 #include <stdexcept>
+#include <string>
+#include <tuple>
+#include <vector>
 
 using namespace labrador;
 
@@ -128,6 +135,193 @@ TEST_CASE("XAudio2 resume can recover output that became silent without a critic
 	recovery.update(engine, start + std::chrono::milliseconds(1));
 	CHECK(engine.resets == 1);
 	CHECK(engine.output);
+}
+
+namespace
+{
+	// Stands in for WAVEFORMATEX, which this file does not include.
+	struct PolicyFormat
+	{
+		unsigned short tag = 0;
+	};
+
+	// Models the members of DirectXTK's WaveBank that wave_bank_policy.h
+	// calls, answering as the pinned source does: nothing past the end.
+	struct PolicyBank
+	{
+		// Each entry's size in bytes; an empty entry is held and has none.
+		std::vector<std::size_t> sizes;
+		bool streaming = false;
+
+		struct Played
+		{
+			unsigned int index = 0;
+			float volume = 0.0f;
+		};
+		std::vector<Played> played;
+
+		std::size_t GetSampleSizeInBytes(unsigned int index) const noexcept
+		{
+			return index < this->sizes.size() ? this->sizes[index] : 0;
+		}
+
+		const PolicyFormat* GetFormat(unsigned int index, PolicyFormat* format,
+			std::size_t maxsize) const noexcept
+		{
+			if (index >= this->sizes.size() || maxsize < sizeof(PolicyFormat))
+			{
+				return nullptr;
+			}
+			return format;
+		}
+
+		bool IsStreamingBank() const noexcept
+		{
+			return this->streaming;
+		}
+
+		void Play(unsigned int index, float volume, float, float)
+		{
+			this->played.push_back(Played{ index, volume });
+		}
+	};
+
+	// Constructs a PolicyBank or fails as a reader would. The failure is
+	// read through volatile so no build sees an opener that always throws
+	// and folds away the policy code after the call.
+	struct PolicyOpener
+	{
+		enum class Failure
+		{
+			none,
+			reader,
+			missing,
+			memory
+		};
+
+		volatile Failure failure = Failure::none;
+		bool streaming = false;
+
+		std::unique_ptr<PolicyBank> operator()() const
+		{
+			const Failure failure_now = this->failure;
+			if (failure_now == Failure::reader)
+			{
+				throw std::runtime_error("WaveBank");
+			}
+			if (failure_now == Failure::missing)
+			{
+				throw std::out_of_range("no file");
+			}
+			if (failure_now == Failure::memory)
+			{
+				throw std::bad_alloc();
+			}
+
+			std::unique_ptr<PolicyBank> bank = std::make_unique<PolicyBank>();
+			bank->streaming = this->streaming;
+			return bank;
+		}
+	};
+}
+
+TEST_CASE("XAudio2 holds a wave index only inside the bank")
+{
+	PolicyBank bank;
+	bank.sizes = { 64, 0, 128 };
+
+	CHECK(detail::holds_wave<PolicyFormat>(bank, 0));
+	CHECK(detail::holds_wave<PolicyFormat>(bank, 1));      // empty, still held
+	CHECK(detail::holds_wave<PolicyFormat>(bank, 2));
+	CHECK_FALSE(detail::holds_wave<PolicyFormat>(bank, 3));
+	CHECK_FALSE(detail::holds_wave<PolicyFormat>(bank, -1));
+}
+
+TEST_CASE("XAudio2 plays a held one-shot, refuses another bank's index, and drops while suspended")
+{
+	PolicyBank bank;
+	bank.sizes = { 64, 64 };
+	detail::DeviceRecovery recovery;
+
+	detail::play_one_shot<PolicyFormat>(bank, recovery, 1, 0.5f, 0.0f, 0.0f);
+	REQUIRE(bank.played.size() == 1);
+	CHECK(bank.played[0].index == 1);
+	CHECK(bank.played[0].volume == doctest::Approx(0.5f));
+
+	// The throw null and Web Audio make, where DirectXTK's Play is silent.
+	CHECK_THROWS_WITH_AS(detail::play_one_shot<PolicyFormat>(bank, recovery,
+		2, 1.0f, 0.0f, 0.0f), "A wave was played that the bank does not hold.",
+		std::out_of_range);
+	CHECK_THROWS_AS(detail::play_one_shot<PolicyFormat>(bank, recovery,
+		-1, 1.0f, 0.0f, 0.0f), std::out_of_range);
+
+	recovery.suspend();
+	CHECK(recovery.suspended());
+	detail::play_one_shot<PolicyFormat>(bank, recovery, 0, 1.0f, 0.0f, 0.0f);
+	CHECK(bank.played.size() == 1);
+
+	// Suspended or not, the index is checked first.
+	CHECK_THROWS_AS(detail::play_one_shot<PolicyFormat>(bank, recovery,
+		2, 1.0f, 0.0f, 0.0f), std::out_of_range);
+
+	recovery.resume();
+	CHECK_FALSE(recovery.suspended());
+	detail::play_one_shot<PolicyFormat>(bank, recovery, 0, 1.0f, 0.0f, 0.0f);
+	CHECK(bank.played.size() == 2);
+}
+
+TEST_CASE("XAudio2 reports a failed bank open naming the file and the reader's words")
+{
+	const std::string path = "./sounds/effects.xwb";
+	PolicyOpener opener;
+
+	SUBCASE("a reader failure is the runtime_error an optional bank is substituted for")
+	{
+		opener.failure = PolicyOpener::Failure::reader;
+		try
+		{
+			std::ignore = detail::open_wave_bank<PolicyBank>(path, opener);
+			FAIL("the failed open was not reported");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message(error.what());
+			CHECK(message.find("Failed to open wave bank: " + path) !=
+				std::string::npos);
+			CHECK(message.find("(WaveBank)") != std::string::npos);
+		}
+	}
+
+	SUBCASE("the reader's out_of_range is converted too")
+	{
+		opener.failure = PolicyOpener::Failure::missing;
+		CHECK_THROWS_WITH_AS(std::ignore =
+			detail::open_wave_bank<PolicyBank>(path, opener),
+			doctest::Contains("(no file)"), std::runtime_error);
+	}
+
+	SUBCASE("running out of memory is not a missing bank")
+	{
+		opener.failure = PolicyOpener::Failure::memory;
+		CHECK_THROWS_AS(std::ignore =
+			detail::open_wave_bank<PolicyBank>(path, opener), std::bad_alloc);
+	}
+
+	SUBCASE("a streaming bank is refused at load, naming the file")
+	{
+		opener.streaming = true;
+		CHECK_THROWS_WITH_AS(std::ignore =
+			detail::open_wave_bank<PolicyBank>(path, opener),
+			doctest::Contains("./sounds/effects.xwb is a streaming bank"),
+			std::runtime_error);
+	}
+
+	SUBCASE("an in-memory bank is handed back")
+	{
+		const std::unique_ptr<PolicyBank> bank =
+			detail::open_wave_bank<PolicyBank>(path, opener);
+		CHECK(bank != nullptr);
+	}
 }
 
 TEST_CASE("XAudio2 reset exceptions propagate and retain the retry interval")

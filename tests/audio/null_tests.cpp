@@ -243,6 +243,107 @@ TEST_CASE("an effect is a voice that persists, and the state says so")
 	CHECK(fixture.bank->effect_state(effect) == SoundState::stopped);
 }
 
+TEST_CASE("playing a paused or playing effect keeps its loop, as DirectXTK's Play does")
+{
+	const Fixture fixture;
+	const SoundBank::EffectHandle effect =
+		fixture.bank->resolve_effect("engine_loop");
+
+	// Only a stopped voice takes the loop it is asked for. A paused one
+	// resumes as it was and a playing one is left alone, which is what
+	// XAudio2 and Web Audio answer, so a test here cannot pass on a loop
+	// flag a real backend would not report.
+	SUBCASE("paused without a loop, asked to loop")
+	{
+		fixture.bank->play_effect(effect, false);
+		fixture.bank->pause_effect(effect);
+		fixture.bank->play_effect(effect, true);
+		CHECK(fixture.bank->effect_state(effect) == SoundState::playing);
+		CHECK_FALSE(fixture.bank->is_effect_looping(effect));
+	}
+
+	SUBCASE("paused while looping, asked not to")
+	{
+		fixture.bank->play_effect(effect, true);
+		fixture.bank->pause_effect(effect);
+		fixture.bank->play_effect(effect, false);
+		CHECK(fixture.bank->effect_state(effect) == SoundState::playing);
+		CHECK(fixture.bank->is_effect_looping(effect));
+	}
+
+	SUBCASE("playing without a loop, asked to loop")
+	{
+		fixture.bank->play_effect(effect, false);
+		fixture.bank->play_effect(effect, true);
+		CHECK(fixture.bank->effect_state(effect) == SoundState::playing);
+		CHECK_FALSE(fixture.bank->is_effect_looping(effect));
+	}
+
+	SUBCASE("stopped, asked to loop")
+	{
+		fixture.bank->play_effect(effect, false);
+		fixture.bank->stop_effect(effect, true);
+		fixture.bank->play_effect(effect, true);
+		CHECK(fixture.bank->effect_state(effect) == SoundState::playing);
+		CHECK(fixture.bank->is_effect_looping(effect));
+	}
+
+	// Every call is recorded with the loop it asked for, whichever branch
+	// it took: the recording is what the seam was told.
+	const std::vector<RecordedSound>& played =
+		recorded_sounds(fixture.device);
+	REQUIRE_FALSE(played.empty());
+	CHECK(played.back().call == SoundCall::play_voice);
+}
+
+TEST_CASE("a one-shot asked for while suspended is dropped, and checked first")
+{
+	Fixture fixture;
+	const SoundBank::WaveHandle wave = fixture.bank->resolve_wave("hit");
+	const SoundBank::EffectHandle effect =
+		fixture.bank->resolve_effect("engine_loop");
+
+	fixture.device.suspend();
+	fixture.bank->play_wave(wave);
+	fixture.bank->play_effect(effect, true);
+
+	// A wave the bank does not hold still throws while suspended: the drop
+	// is of a sound, not of the check.
+	CHECK_THROWS_AS(fixture.device.play_wave(fixture.wave_bank, 3, 1.0f,
+		0.0f, 0.0f), std::out_of_range);
+
+	fixture.device.resume();
+	fixture.bank->play_wave(wave);
+
+	// The suspended one-shot is gone, not queued; the voice call was made
+	// as at any other time, and the one-shot after resume() is heard.
+	const std::vector<RecordedSound>& played =
+		recorded_sounds(fixture.device);
+	REQUIRE(played.size() == 2);
+	CHECK(played[0].call == SoundCall::play_voice);
+	CHECK(played[1].call == SoundCall::play_wave);
+	CHECK(played[1].wave == 1);
+	CHECK(fixture.bank->effect_state(effect) == SoundState::playing);
+}
+
+TEST_CASE("a wave index from a larger bank throws on a smaller one")
+{
+	Fixture fixture;
+	AudioDevice& device = fixture.device;
+	const AudioDevice::WaveBankHandle small =
+		device.open_wave_bank("content/", "small", { "only" });
+
+	// The same std::out_of_range on every backend: a handle resolved against
+	// one bank and passed to another is a program bug, never silence.
+	CHECK_THROWS_AS(device.play_wave(small, 2, 1.0f, 0.0f, 0.0f),
+		std::out_of_range);
+	CHECK_THROWS_AS(device.play_wave(small, -1, 1.0f, 0.0f, 0.0f),
+		std::out_of_range);
+	CHECK_THROWS_AS(std::ignore = device.create_voice(small, 1),
+		std::out_of_range);
+	CHECK(recorded_sounds(device).empty());
+}
+
 TEST_CASE("two effects over one bank are two voices")
 {
 	const Fixture fixture;

@@ -46,6 +46,13 @@ namespace labrador::detail
 			this->next_retry_ = Clock::time_point::min();
 		}
 
+		// Between suspend() and resume(), which is also when a one-shot is
+		// dropped rather than started on a stopped engine (audio_device.h).
+		bool suspended() const noexcept
+		{
+			return this->suspended_;
+		}
+
 	private:
 		Clock::time_point next_retry_ = Clock::time_point::min();
 		bool suspended_ = false;

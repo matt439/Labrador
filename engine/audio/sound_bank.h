@@ -154,7 +154,8 @@ namespace labrador
 		// while it plays: a group volume change reaches the next one.
 		// In a browser, a call before the page's first activating key press,
 		// click or touch is dropped and never replayed. Escape alone does not
-		// count as that gesture.
+		// count as that gesture. On every platform, a call while the game is
+		// suspended (minimised) is dropped the same way.
 		void play_wave(WaveHandle wave, float volume = 1.0f,
 			float pitch = 0.0f, float pan = 0.0f) const;
 

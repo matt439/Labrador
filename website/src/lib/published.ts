@@ -246,7 +246,7 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 	],
 	[
 		'engine/assets/json_object_keys.h',
-		'Fixed-schema validation private to the manifest and sprite-sheet loaders; game code uses JsonValue::keys() for its own dictionaries.',
+		'Fixed-schema validation private to the manifest, sprite-sheet and sound-bank loaders; game code uses JsonValue::keys() for its own dictionaries.',
 	],
 	[
 		'engine/core/step_timer.h',

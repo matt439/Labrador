@@ -14,7 +14,9 @@
 //
 // Records expose call order, bank and wave identity, voice handles and levels
 // passed through the seam. SoundBank's level clamping can be checked here;
-// SoundBank::silent() declines playback instead of recording it.
+// SoundBank::silent() declines playback instead of recording it. Between
+// suspend() and resume(), play_wave is dropped and not recorded, as every
+// backend drops it; voice calls are recorded as at any other time.
 //
 // There is no mixer or clock, so this backend cannot establish audible output,
 // overlap, relative loudness or natural completion. voice_state() follows calls:

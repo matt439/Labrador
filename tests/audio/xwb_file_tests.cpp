@@ -483,6 +483,68 @@ TEST_CASE("a bank this engine cannot play says which way")
 		CHECK(contains(refusal(bytes), "1000000 entries"));
 	}
 
+	SUBCASE("bank data shorter than the bank data record")
+	{
+		std::vector<unsigned char> bytes = build_bank({ pcm });
+		put_u32(bytes, 16, 95);                      // bank data length
+		CHECK(contains(refusal(bytes), "its bank data is 95 bytes; it is 96."));
+	}
+
+	SUBCASE("entries smaller than a standard entry")
+	{
+		std::vector<unsigned char> bytes = build_bank({ pcm });
+		put_u32(bytes, 52 + 72, 20);                 // entry size
+		CHECK(contains(refusal(bytes), "declares 20-byte entries"));
+	}
+
+	SUBCASE("a name table smaller than its names")
+	{
+		std::vector<unsigned char> bytes = build_bank({ pcm });
+		put_u32(bytes, 52 + 76, 128);                // name size
+		const std::string message = refusal(bytes);
+		CHECK(contains(message, "names its 1 entries in 128 bytes each"));
+		CHECK(contains(message, "name table is 64 bytes"));
+	}
+
+	SUBCASE("names of no bytes")
+	{
+		std::vector<unsigned char> bytes = build_bank({ pcm });
+		put_u32(bytes, 52 + 76, 0);                  // name size
+		CHECK(contains(refusal(bytes), "names its 1 entries in 0 bytes each"));
+	}
+
+	SUBCASE("no channels")
+	{
+		const Entry silent = { "tone", mini_format(tag_pcm, 0, 8000, 2, true),
+			{ 1, 0, 2, 0 } };
+		CHECK(contains(refusal(build_bank({ silent })),
+			"describes 0 channels at 8000 Hz"));
+	}
+
+	SUBCASE("no sample rate")
+	{
+		const Entry still = { "tone", mini_format(tag_pcm, 1, 0, 2, true),
+			{ 1, 0, 2, 0 } };
+		CHECK(contains(refusal(build_bank({ still })),
+			"describes 1 channels at 0 Hz"));
+	}
+
+	SUBCASE("16-bit PCM that is not whole frames")
+	{
+		const Entry part = { "tone", mini_format(tag_pcm, 1, 8000, 2, true),
+			{ 1, 0, 2 } };
+		CHECK(contains(refusal(build_bank({ part })),
+			"holds 3 bytes of PCM, which is not a whole number of 2-byte frames"));
+	}
+
+	SUBCASE("8-bit PCM that is not whole frames")
+	{
+		const Entry part = { "tone", mini_format(tag_pcm, 2, 8000, 2, false),
+			{ 1, 2, 3 } };
+		CHECK(contains(refusal(build_bank({ part })),
+			"holds 3 bytes of PCM, which is not a whole number of 2-byte frames"));
+	}
+
 	SUBCASE("compact entries")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
