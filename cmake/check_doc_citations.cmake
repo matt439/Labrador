@@ -35,6 +35,16 @@ foreach(doc IN LISTS all_docs)
     endif()
 endforeach()
 
+# The trade-off numbers PHILOSOPHY defines, read once: each "### T<n>. "
+# heading's number.
+file(STRINGS "${REPO_DIR}/docs/design/PHILOSOPHY.md" tradeoff_headings
+    REGEX "^### T[0-9]+\\. ")
+set(defined_tradeoffs "")
+foreach(heading IN LISTS tradeoff_headings)
+    string(REGEX REPLACE "^### T([0-9]+)\\. .*$" "\\1" number "${heading}")
+    list(APPEND defined_tradeoffs "${number}")
+endforeach()
+
 set(missing_docs "")
 set(missing_sections "")
 set(missing_tradeoffs "")
@@ -116,10 +126,8 @@ foreach(source IN LISTS sources)
         string(REGEX REPLACE "[^A-Za-z0-9_]+" ";" words "${line}")
         foreach(word IN LISTS words)
             if(word MATCHES "^T([0-9]+)$")
-                set(number "${CMAKE_MATCH_1}")
-                file(STRINGS "${REPO_DIR}/docs/design/PHILOSOPHY.md" heading
-                    REGEX "^### T${number}\\. ")
-                if(NOT heading)
+                list(FIND defined_tradeoffs "${CMAKE_MATCH_1}" tradeoff_index)
+                if(tradeoff_index EQUAL -1)
                     list(APPEND missing_tradeoffs "${source}\n      ${word}")
                 endif()
             endif()

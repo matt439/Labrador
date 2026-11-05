@@ -216,20 +216,25 @@ let dirty = null;
 try {
 	const repository = realpathSync(options.repository);
 	if (existsSync(join(repository, '.git'))) {
-		const gitRoot = realpathSync(git('rev-parse', '--show-toplevel'));
-		const sameRoot = process.platform === 'win32'
-			? repository.toLowerCase() === gitRoot.toLowerCase()
-			: repository === gitRoot;
-		if (sameRoot) {
-			const sourceCommit = git('rev-parse', '--verify', 'HEAD');
-			const sourceDirty = git('status', '--porcelain', '--untracked-files=no').length > 0;
-			commit = sourceCommit;
-			dirty = sourceDirty;
+		const git_root = realpathSync(git('rev-parse', '--show-toplevel'));
+		const same_root = process.platform === 'win32'
+			? repository.toLowerCase() === git_root.toLowerCase()
+			: repository === git_root;
+		if (same_root) {
+			// Both read before either is kept, so a failure between them
+			// leaves neither rather than a commit with no dirty flag.
+			const source_commit = git('rev-parse', '--verify', 'HEAD');
+			const source_dirty = git('status', '--porcelain', '--untracked-files=no').length > 0;
+			commit = source_commit;
+			dirty = source_dirty;
 		}
 	}
-} catch {
-	// A source tree that is not a checkout still bundles; BUILD.json says it
-	// could not tell rather than inventing an answer.
+} catch (error) {
+	// A checkout whose commit cannot be read - git missing, a corrupt
+	// repository, an unborn HEAD - still bundles; BUILD.json says it could
+	// not tell rather than inventing an answer, and the reason is printed
+	// here, where it is known, rather than lost until a verify refuses it.
+	process.stderr.write(`bundle: commit unknown: ${error.message}\n`);
 }
 
 const files = {};

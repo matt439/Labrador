@@ -27,12 +27,10 @@ add_custom_target(check_engine_includes ALL
     VERBATIM
 )
 
-# AND EVERY REAL TARGET DEPENDS ON IT, which ALL alone did not give. ALL puts
-# a target in the default build and nowhere else: `ninja LabradorEngine`, an
-# IDE building the one target it has open, a client building its game target
-# - none of those is the default build, and every one of them skipped the
-# check while this file said "runs on every build"
-# (docs/review/gpt6/README.md, G6-10). labrador_settings is the interface
+# AND EVERY REAL TARGET DEPENDS ON IT, because ALL alone covers only the
+# default build: `ninja LabradorEngine`, an IDE building the one target it has
+# open and a client building its game target are none of them the default
+# build. labrador_settings is the interface
 # target every real target links (cmake/settings.cmake), and a dependency
 # on an interface library is followed to whatever links it, so this one line
 # is the dependency for the engine, the samples, the tests, the benchmark
@@ -55,10 +53,10 @@ if(PROJECT_IS_TOP_LEVEL)
     # Top-level only, unlike the wall above it. That one guards a hazard a
     # consumer really has - their tree may well have a game/ beside this one -
     # where this guards the engine's own prose against the engine's own edits.
-    # A client that renames nothing and cites nothing should not be handed a
-    # build failure for a section number this repository moved, and the files
-    # it reads are tests/, samples/, bench/ and tools/, none of which a
-    # consumer builds.
+    # It reads engine/, tests/, samples/, bench/ and tools/, and a consumer
+    # compiles engine/ too, but a client that renames nothing and cites
+    # nothing should not be handed a build failure for a document or section
+    # this repository moved.
     add_custom_target(check_doc_citations ALL
         COMMAND "${CMAKE_COMMAND}"
             "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
@@ -183,17 +181,31 @@ if(PROJECT_IS_TOP_LEVEL)
     # sample's folder because minimal's is the template a new project
     # copies, and the runner is this repository's, not the project's.
     if(EMSCRIPTEN AND LABRADOR_TEST_BROWSER)
-        # Arguments after quit_keys are passed to the runner as they are.
-        function(labrador_sample_page_test name target quit_keys)
+        # Every Chromium page entry: run_page.mjs serving PAGE, with the
+        # runner's TIMEOUT in seconds (60 unless given), and every argument
+        # after ARGS passed to the runner as it is.
+        function(labrador_page_test name)
+            cmake_parse_arguments(PARSE_ARGV 1 page "" "PAGE;TIMEOUT" "ARGS")
+            if(NOT page_PAGE)
+                message(FATAL_ERROR "labrador_page_test(${name}) names no PAGE.")
+            endif()
+            if(NOT page_TIMEOUT)
+                set(page_TIMEOUT 60)
+            endif()
             add_test(NAME ${name}
                 COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
                     "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
                     --browser "${LABRADOR_TEST_BROWSER}"
-                    --page "$<TARGET_FILE:${target}>"
-                    --quit-keys "${quit_keys}"
-                    --timeout 60
-                    ${ARGN}
+                    --page "${page_PAGE}"
+                    --timeout ${page_TIMEOUT}
+                    ${page_ARGS}
             )
+        endfunction()
+        # A sample's development page, quit by its own keys. Arguments after
+        # quit_keys are passed to the runner as they are.
+        function(labrador_sample_page_test name target quit_keys)
+            labrador_page_test(${name} PAGE "$<TARGET_FILE:${target}>"
+                ARGS --quit-keys "${quit_keys}" ${ARGN})
         endfunction()
         # The pause menu: RESUME, RESTART, COLOURS, QUIT. The page reports
         # which particle field it made from prefers-reduced-motion, once for
@@ -239,28 +251,19 @@ if(PROJECT_IS_TOP_LEVEL)
         # The same gallery by mouse and emulated touch: a slider dragged and
         # clamped, a release off the pressed row, a tap on a value, and Quit
         # tapped (samples/components/web/pointer_input.mjs).
-        add_test(NAME ComponentsPointerPageTests
-            COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
-                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
-                --browser "${LABRADOR_TEST_BROWSER}"
-                --page "$<TARGET_FILE:ComponentsGallery>"
-                --input "${CMAKE_CURRENT_SOURCE_DIR}/samples/components/web/pointer_input.mjs"
-                --timeout 60
-        )
+        labrador_page_test(ComponentsPointerPageTests
+            PAGE "$<TARGET_FILE:ComponentsGallery>"
+            ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/samples/components/web/pointer_input.mjs")
 
         # The packaged host page mounts an ES-module factory on a click,
         # rather than exposing the development shell's Module. Its driver
         # exercises real instances, quit/replay, the touch gate and recovery
         # UI. Context-loss coverage needs the rasterizing browser build.
         if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
-            add_test(NAME LineSweeperBundlePageTests
-                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
-                    "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
-                    --browser "${LABRADOR_TEST_BROWSER}"
-                    --page "${CMAKE_BINARY_DIR}/web-dist/linesweeper/index.html"
-                    --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_input.mjs"
-                    --timeout 120
-            )
+            labrador_page_test(LineSweeperBundlePageTests
+                PAGE "${CMAKE_BINARY_DIR}/web-dist/linesweeper/index.html"
+                TIMEOUT 120
+                ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_input.mjs")
             # The longest page test, so ctest starts it first rather than in
             # registration order; and never beside the pacing page, which
             # times frames on the same software rasteriser. Run together on a
@@ -275,27 +278,18 @@ if(PROJECT_IS_TOP_LEVEL)
             set(LABRADOR_HOST_SITE "" CACHE PATH
                 "A host site checkout's public/ folder, holding demo/linesweeper/index.html; registers LineSweeperHostPageTests")
             if(LABRADOR_HOST_SITE)
-                add_test(NAME LineSweeperHostPageTests
-                    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
-                        "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
-                        --browser "${LABRADOR_TEST_BROWSER}"
-                        --root "${LABRADOR_HOST_SITE}"
-                        --page "${LABRADOR_HOST_SITE}/demo/linesweeper/index.html"
-                        --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/host_input.mjs"
-                        --timeout 120
-                )
+                labrador_page_test(LineSweeperHostPageTests
+                    PAGE "${LABRADOR_HOST_SITE}/demo/linesweeper/index.html"
+                    TIMEOUT 120
+                    ARGS --root "${LABRADOR_HOST_SITE}"
+                        --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/host_input.mjs")
             endif()
             # Release-only instrument acceptance: completed CPU-frame rows
             # and exact fixture counts, without a physical pacing verdict.
             if(CMAKE_BUILD_TYPE STREQUAL "Release")
-                add_test(NAME LineSweeperPacingPageTests
-                    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
-                        "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.mjs"
-                        --browser "${LABRADOR_TEST_BROWSER}"
-                        --page "$<TARGET_FILE:LineSweeperSample>"
-                        --input "${CMAKE_CURRENT_SOURCE_DIR}/tools/web_pacing/page_input.mjs"
-                        --timeout 60
-                )
+                labrador_page_test(LineSweeperPacingPageTests
+                    PAGE "$<TARGET_FILE:LineSweeperSample>"
+                    ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/tools/web_pacing/page_input.mjs")
                 set_tests_properties(LineSweeperPacingPageTests PROPERTIES
                     RESOURCE_LOCK linesweeper_frame_timing)
             endif()

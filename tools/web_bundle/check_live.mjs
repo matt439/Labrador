@@ -201,6 +201,13 @@ export async function check_live({ url, expect_commit }) {
 		const plain = await attempt(`${name}: identity`, () => get(at(path), 'identity'));
 		const brotli = await attempt(`${name}: Brotli`, () => get(at(path), 'br'));
 		if (!plain || !brotli) { continue; }
+		// An identity request answered in a coding get() cannot decode has no
+		// bytes to compare, so that is this file's failure and its other
+		// checks are not run.
+		if (plain.body === null) {
+			check(`${name}: identity`, false, `${plain.status}, answered in ${plain.coding}`);
+			continue;
+		}
 		served[name] = plain.body;
 		const type = plain.headers['content-type'] ?? '';
 		const cache = plain.headers['cache-control'] ?? 'none';

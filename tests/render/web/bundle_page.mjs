@@ -13,6 +13,8 @@
 // setting `state.phase`; `expected_complaint` recognizes the diagnostics those
 // two injected failures and the injected onError log.
 
+import { is_navigation_race } from './devtools.mjs';
+
 export const READY = "document.readyState === 'complete' && typeof window.labradorBundle === 'object'";
 
 export const PRELUDE = `(() => {
@@ -186,7 +188,7 @@ export function steps(page, state) {
 			try {
 				if (await evaluate(expression) === true) { return; }
 			} catch (error) {
-				if (!navigating || !/Execution context was destroyed|Cannot find (?:default execution context|context with specified id)/.test(error.message)) {
+				if (!navigating || !is_navigation_race(error)) {
 					throw error;
 				}
 			}

@@ -15,8 +15,13 @@
 	const canvas = Module['canvas'];
 	if (!canvas) throw new Error('The pacing development page requires its canvas.');
 	const capacity = fixture ? 8192 : 65536;
-	const width = 15;
-	const rows = new Float64Array(capacity * width);
+	// The number of fields per engine row: the offsets labradorPacingFrame
+	// writes and materialize reads.
+	const rowFields = 15;
+	// The fixture's particle count: pacing_particle_count in
+	// samples/linesweeper/web/pacing_fixture.h.
+	const fixtureParticles = 9600;
+	const rows = new Float64Array(capacity * rowFields);
 	const observations = new Float64Array(capacity * 4);
 	const events = [];
 	const gaps = [];
@@ -59,16 +64,18 @@
 		events.push({ event: event.type, timestamp_ms: performance.now(),
 			visibility: document.visibilityState });
 	}
-	function updateGeometry(timestamp, frame) {
-		if (!geometryDirty && geometry && canvas.width === geometry.drawing_buffer[0] &&
+	// Whether the drawing buffer, device pixel ratio and viewport are the last
+	// geometry record's; the canvas box is compared only when it is read.
+	function sameBuffer() {
+		return geometry !== null && canvas.width === geometry.drawing_buffer[0] &&
 			canvas.height === geometry.drawing_buffer[1] && devicePixelRatio === geometry.dpr &&
-			innerWidth === geometry.viewport_css[0] && innerHeight === geometry.viewport_css[1]) return;
+			innerWidth === geometry.viewport_css[0] && innerHeight === geometry.viewport_css[1];
+	}
+	function updateGeometry(timestamp, frame) {
+		if (!geometryDirty && sameBuffer()) return;
 		const box = canvas.getBoundingClientRect();
 		geometryDirty = false;
-		if (geometry && canvas.width === geometry.drawing_buffer[0] &&
-			canvas.height === geometry.drawing_buffer[1] && devicePixelRatio === geometry.dpr &&
-			innerWidth === geometry.viewport_css[0] && innerHeight === geometry.viewport_css[1] &&
-			box.width === geometry.canvas_css[0] && box.height === geometry.canvas_css[1]) return;
+		if (sameBuffer() && box.width === geometry.canvas_css[0] && box.height === geometry.canvas_css[1]) return;
 		if (geometry) ++segment;
 		geometry = { event: 'geometry', timestamp_ms: timestamp, frame, segment,
 			viewport_css: [innerWidth, innerHeight], dpr: devicePixelRatio,
@@ -79,7 +86,7 @@
 		events.push(geometry);
 	}
 	function materialize(index) {
-		const base = index * width;
+		const base = index * rowFields;
 		return {
 			observer_timestamp_ms: rows[base], frame: rows[base + 1], updates: rows[base + 2],
 			interval_ns: rows[base + 3], update_ns: rows[base + 4], begin_frame_ns: rows[base + 5],
@@ -103,7 +110,7 @@
 			topOut = {
 				...marked,
 				geometry: events.filter((event) => event.event === 'geometry' && event.frame <= marked.frame).at(-1) ?? null,
-				counts_match: marked.live_particles === 9600 && marked.dropped_particles === 0,
+				counts_match: marked.live_particles === fixtureParticles && marked.dropped_particles === 0,
 				draw_submit_ns: marked.draw_ns + marked.submit_ns,
 				cpu_total_ns: marked.update_ns + marked.begin_frame_ns + marked.draw_ns +
 					marked.submit_ns + marked.end_frame_ns,
@@ -166,7 +173,7 @@
 			if (frame !== lastFrame + 1) {
 				gaps.push({ after_frame: lastFrame, before_frame: frame, observer_timestamp_ms: timestamp });
 			}
-			const base = count++ * width;
+			const base = count++ * rowFields;
 			rows[base] = timestamp;
 			rows[base + 1] = frame;
 			rows[base + 2] = updates;

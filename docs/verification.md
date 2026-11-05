@@ -65,7 +65,8 @@ launches the browser. It does not copy CI's GL/Vulkan pixel/smoke exclusions
 into a full local sweep.
 
 The restricted rule reader validates the current version-6 local preset shapes,
-matching build/test links, single-parent inheritance, backend defaults,
+matching build/test links, single-parent inheritance (for a test preset,
+only from hidden presets that hold nothing but its output), backend defaults,
 SDK-only dxc lookup and CI override. It models only the exact native-base
 condition `${hostSystemName}` equals `Windows`: all ten native Debug/Release
 presets inherit it, and both wasm presets have no host condition. Booleans,

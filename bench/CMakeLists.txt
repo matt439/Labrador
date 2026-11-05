@@ -66,24 +66,10 @@ if(WIN32)
         "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
     )
 
-    # The benchmark resolves the same real font and white texel as PlayState. Keep
-    # a private copy beside this executable so it runs from any working directory.
-    # Run even when no C++ needs relinking: content-only changes and deleted
-    # deployed files must reach the next benchmark invocation.
-    add_custom_target(linesweeper_frame_bench_content ALL)
-    add_custom_command(TARGET linesweeper_frame_bench_content POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/manifest.json"
-            "$<TARGET_FILE_DIR:LineSweeperFrameBench>/manifest.json"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/fonts"
-            "$<TARGET_FILE_DIR:LineSweeperFrameBench>/fonts"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/content/textures"
-            "$<TARGET_FILE_DIR:LineSweeperFrameBench>/textures"
-        VERBATIM
-    )
-    add_dependencies(LineSweeperFrameBench linesweeper_frame_bench_content)
+    # The benchmark resolves the same real font and white texel as PlayState,
+    # from a private copy beside this executable.
+    linesweeper_add_content_copy(linesweeper_frame_bench_content
+        LineSweeperFrameBench)
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         # Optional investigation tools, outside ALL and ctest. Timing links the
@@ -111,7 +97,7 @@ if(WIN32)
             LineSweeperRules LabradorEngine labrador_settings
         )
         target_include_directories(D3D12DescriptorCountProbe PRIVATE
-            "${CMAKE_BINARY_DIR}/generated"
+            "${LABRADOR_GENERATED_ROOT}"
         )
         target_include_directories(D3D12DescriptorCountProbe SYSTEM PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
@@ -119,10 +105,18 @@ if(WIN32)
         add_dependencies(D3D12DescriptorCountProbe
             LabradorEngine linesweeper_frame_bench_content
         )
-        file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/renderer.cpp"
-            descriptor_renderer_sha256)
-        file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/device_resources.cpp"
-            descriptor_device_sha256)
+        # The probes print these digests as the provenance of the source they
+        # measured. file(SHA256) runs at configure time, so each file is a
+        # configure dependency: an edit reconfigures before the probe rebuilds,
+        # rather than compiling new code beside an old digest.
+        set(descriptor_renderer_source
+            "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/renderer.cpp")
+        set(descriptor_device_source
+            "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/device_resources.cpp")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+            "${descriptor_renderer_source}" "${descriptor_device_source}")
+        file(SHA256 "${descriptor_renderer_source}" descriptor_renderer_sha256)
+        file(SHA256 "${descriptor_device_source}" descriptor_device_sha256)
         foreach(descriptor_probe IN ITEMS
                 D3D12DescriptorQueryProbe D3D12DescriptorCountProbe)
             target_compile_definitions(${descriptor_probe} PRIVATE

@@ -69,7 +69,7 @@ test('a fast flash on more than a quarter of a field fails', () => {
 	assert.equal(result.passes, false);
 });
 
-test('flashes that are not concurrent fail the pixel bound and not the count', () => {
+test('flashes that are not concurrent fail the pixel bound, the verdict, and not the count', () => {
 	// Five sets of columns, each a fifth of every field, lit three frames in
 	// turn: every pixel flashes four times a second, but never more than one
 	// set rises or falls within any three frames.
@@ -87,7 +87,8 @@ test('flashes that are not concurrent fail the pixel bound and not the count', (
 	assert.equal(result.general.bound.transitions, 8);
 	assert.equal(result.general.transitions, 0);
 	assert.equal(result.general.widestRise.fraction, 0.2);
-	assert.equal(result.passes, true);
+	assert.equal(result.general.passes, false);
+	assert.equal(result.passes, false);
 });
 
 test('light moving across a field is not the field flashing', () => {
@@ -181,32 +182,58 @@ test('the PNG reader undoes every filter', () => {
 			raw.push((row[x] - predictor) & 0xff);
 		}
 	}
-	const chunk = (type, body) => {
-		const header = Buffer.alloc(8);
-		header.writeUInt32BE(body.length, 0);
-		header.write(type, 4, 'latin1');
-		return Buffer.concat([header, body, Buffer.alloc(4)]);
-	};
-	const ihdr = Buffer.alloc(13);
-	ihdr.writeUInt32BE(width, 0);
-	ihdr.writeUInt32BE(pixels.length, 4);
-	ihdr[8] = 8;
-	ihdr[9] = 2;
-	const png = Buffer.concat([
+	const decoded = readPngBytes(png([ihdr(width, pixels.length), chunk('IDAT', deflateSync(Buffer.from(raw)))]));
+	assert.equal(decoded.width, width);
+	assert.equal(decoded.height, pixels.length);
+	assert.deepEqual([...decoded.rgb], pixels.flat());
+});
+
+test('a PNG without an image header is refused, not read as an empty frame', () => {
+	const data = png([chunk('IDAT', deflateSync(Buffer.alloc(0)))]);
+	assert.throws(() => readPngBytes(data), /no IHDR image header/);
+});
+
+test('a PNG whose image data is short is refused, not read as black rows', () => {
+	// A 2x5 RGB image needs 5 rows of 1 + 6 bytes; this holds four.
+	const data = png([ihdr(2, 5), chunk('IDAT', deflateSync(Buffer.alloc(4 * 7)))]);
+	assert.throws(() => readPngBytes(data), /holds 28 bytes of image data where a 2x5 image holds 35/);
+});
+
+// A PNG chunk; the reader does not check its CRC, so it is left zero.
+function chunk(type, body) {
+	const header = Buffer.alloc(8);
+	header.writeUInt32BE(body.length, 0);
+	header.write(type, 4, 'latin1');
+	return Buffer.concat([header, body, Buffer.alloc(4)]);
+}
+
+// An 8-bit RGB, non-interlaced image header.
+function ihdr(width, height) {
+	const body = Buffer.alloc(13);
+	body.writeUInt32BE(width, 0);
+	body.writeUInt32BE(height, 4);
+	body[8] = 8;
+	body[9] = 2;
+	return chunk('IHDR', body);
+}
+
+// The signature, the given chunks and IEND.
+function png(chunks) {
+	return Buffer.concat([
 		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-		chunk('IHDR', ihdr),
-		chunk('IDAT', deflateSync(Buffer.from(raw))),
+		...chunks,
 		chunk('IEND', Buffer.alloc(0)),
 	]);
+}
+
+// readPng reads a file, so the bytes are written to one first.
+function readPngBytes(data) {
 	const directory = mkdtempSync(path.join(tmpdir(), 'flash-check-'));
 	try {
-		const file = path.join(directory, 'filters.png');
-		writeFileSync(file, png);
-		const decoded = readPng(file);
-		assert.equal(decoded.width, width);
-		assert.equal(decoded.height, pixels.length);
-		assert.deepEqual([...decoded.rgb], pixels.flat());
+		const file = path.join(directory, 'frame.png');
+		writeFileSync(file, data);
+		return readPng(file);
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
-});
+}

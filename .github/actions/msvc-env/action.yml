@@ -1,0 +1,35 @@
+# The Windows build environment every Windows job in ci.yml starts from.
+#
+# VCPKG_ROOT IS THE RUNNER'S vcpkg. CMakePresets.json reads $env{VCPKG_ROOT}
+# for the toolchain file and configuring fails without it: the same one-time
+# step the README asks a person to do. IMAGE_VERSION is the runner image's,
+# which the vcpkg binary caches are keyed on, because a new image's compiler
+# changes every package's ABI hash.
+#
+# VCVARS IS vcvars64.bat, FOUND THROUGH vswhere. The presets use the Ninja
+# generator, so every cmake step needs the MSVC environment, and Ninja and
+# cmake come with Visual Studio even where nothing compiles with MSVC. It is
+# found through vswhere rather than a hardcoded path, because the runner
+# image's Visual Studio edition is not this repository's business, and
+# rather than through a third-party action, because a build that can be done
+# with the tools already on the machine should not add a supply chain to do
+# it. Each step that needs it runs `call "%VCVARS%"` first.
+#
+# This is a local composite action, so it adds no job and changes no
+# required check.
+name: MSVC environment
+description: Export VCPKG_ROOT, IMAGE_VERSION and VCVARS for the Windows jobs.
+
+runs:
+  using: composite
+  steps:
+    - name: Point at the runner's vcpkg
+      shell: pwsh
+      run: |
+        echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
+
+    - name: Find vcvars64
+      shell: cmd
+      run: |
+        for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%

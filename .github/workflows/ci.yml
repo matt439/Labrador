@@ -1,7 +1,5 @@
-# Configure, build and test on a clean checkout.
-#
-# ARCHITECTURE said ctest runs "on a contributor's machine or in CI" while
-# there was no .github/ at all. This is the CI half made true.
+# Configure, build and test on a clean checkout: the CI half of
+# ARCHITECTURE's "on a contributor's machine or in CI".
 #
 # Project sources come from this checkout and package dependencies from
 # vcpkg.json. Jobs also use runner-provided build tools and install declared
@@ -35,13 +33,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# The three browser jobs share one compiler, so they share its pins. ccache is
-# what holds a pull request's browser build to a few minutes: a cold
-# wasm-release build is six minutes on this runner and a warm one about three,
-# of which the compiles are under a minute and the rest is linking, which no
-# cache shortens. Emscripten compiles every file through a Python driver and
-# clang. .github/actions/emscripten installs
-# both.
+# The pinned tool versions and SHA-256 digests the jobs install.
 env:
   # Windows SDK installer and SHA-256 published at vulkan.lunarg.com/sdk/home.
   VULKAN_SDK_VERSION: 1.4.357.0
@@ -50,9 +42,17 @@ env:
   # this version carries no opengl32.dll. SHA-256 from the release's asset list.
   MESA_VERSION: 26.2.6
   MESA_SHA256: da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388
+  # The three browser jobs share one compiler, so they share its pins.
+  # Emscripten compiles every file through a Python driver and clang, and
+  # .github/actions/emscripten installs both. ccache is what holds a pull
+  # request's browser build to a few minutes: a cold wasm-release build is six
+  # minutes on this runner and a warm one about three, of which the compiles
+  # are under a minute and the rest is linking, which no cache shortens.
   EMSDK_VERSION: 6.0.12
   CCACHE_VERSION: 4.14.1
   CCACHE_SHA256: 6219f3865ca59aec41ee4b678df171d5d35855ecb2b6dbbbd20690b3a68af7b4
+  CCACHE_DIR: C:\ccache
+  CCACHE_MAXSIZE: 500M
   # Chrome's GPU watchdog is off in CI. With it on, the first page a runner's
   # Chrome loaded lost its WebGL context in 128 runs of 130, and
   # RenderContextLossTests lost a context it had not asked for in 6 of 125.
@@ -61,8 +61,6 @@ env:
   # first load away. The flag is appended by tests/render/web/run_page.mjs;
   # a desktop run leaves it on.
   LABRADOR_TEST_BROWSER_ARGS: --disable-gpu-watchdog
-  CCACHE_DIR: C:\ccache
-  CCACHE_MAXSIZE: 500M
 
 jobs:
   # WHETHER THIS CHANGE IS DOCUMENTATION ONLY: every path it touches is a .md
@@ -259,19 +257,19 @@ jobs:
     # device. llvmpipe is not a driver, so a real one is still run per release
     # (tools/ci_gap_report.py).
     #
-    # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK, WHICH
-    # THIS FILE SAID UNTIL ONE JOB LOG WAS READ. x64-release runs
-    # RenderPixelTests here and passes - run 33144174541, 14 of 14, that entry
-    # in 0.36s - and a release build has no WARP fallback at all:
-    # engine/render/d3d11/device_resources.cpp puts it in the #else of
+    # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK.
+    # x64-release runs RenderPixelTests here and passes - run 33144174541, 14
+    # of 14, that entry in 0.36s - and a release build has no WARP fallback at
+    # all: engine/render/d3d11/device_resources.cpp puts it in the #else of
     # #if defined(NDEBUG) and throws "No Direct3D hardware device found"
     # instead. So this runner offers a DXGI adapter that GetHardwareAdapter
     # accepts - one without DXGI_ADAPTER_FLAG_SOFTWARE - and D3D11CreateDevice
     # succeeds on it. WHICH RASTERISER THAT IS, A LOG CANNOT SAY: the two lines
     # that would name it are OutputDebugString calls compiled only into _DEBUG
     # builds, and nothing in ctest's output carries an adapter description. The
-    # checkable shape is what the matrix rests on and it is unchanged: Direct3D
-    # gets a device on this machine, GL and Vulkan do not.
+    # checkable shape is what the matrix rests on: Direct3D gets an adapter
+    # from the runner image, and GL and Vulkan get one only from the Mesa and
+    # SwiftShader drivers the steps below provide.
     #
     # THE D3D12 PRESET IS THE SAME RASTERISER AS D3D11. Whatever adapter this
     # runner offers, both Direct3D backends take it, so this runner rasterises
@@ -300,15 +298,14 @@ jobs:
     # linking the static LabradorEngine target alone does not establish that.
     #
     # THE NULL PRESET IS THE ONE THIS MACHINE CAN RUN COMPLETELY, and it is here
-    # for that rather than for coverage. It has no platform API at all - no
-    # graphics API and, since the audio seam landed, no audio API either - so
-    # nothing in it can fail for a reason outside the repository, and its own
-    # tests assert which sprites a frame submitted, in what order, from which
-    # texture, and which wave an object played, out of which bank, at which
-    # levels. That second half is what a runner could never check before: a
-    # GPU-less runner has no sound card either, and the module had only
-    # DirectXTK behind it. RenderPixelTests is not built in that configuration,
-    # which is why nothing is excluded by name.
+    # for that rather than for coverage. It has no graphics or audio API - the
+    # Win32 window and the XInput pad reader remain - so no device or sound
+    # card can fail it, and its own tests assert which sprites a frame
+    # submitted, in what order, from which texture, and which wave an object
+    # played, out of which bank, at which levels. The audio half is checkable
+    # nowhere else on a runner: a GPU-less runner has no sound card either.
+    # RenderPixelTests is not built in that configuration, which is why nothing
+    # is excluded by name.
     strategy:
       fail-fast: false
       matrix:
@@ -338,12 +335,9 @@ jobs:
             vulkan_sdk: false
             probes: ''
 
-    # The presets use the Ninja generator, so every cmake step needs the MSVC
-    # environment. vcvars64 is found through vswhere rather than a hardcoded
-    # path, because the runner image's Visual Studio edition is not this
-    # repository's business - and through vswhere rather than a third-party
-    # action, because a build that can be done with the tools already on the
-    # machine should not add a supply chain to do it.
+    # The presets use the Ninja generator, so every cmake step calls the MSVC
+    # environment that .github/actions/msvc-env finds, and says why it finds
+    # it the way it does.
     defaults:
       run:
         shell: cmd
@@ -352,15 +346,10 @@ jobs:
       - uses: actions/checkout@v4
         if: needs.changes.outputs.build == 'true'
 
-      # CMakePresets.json reads $env{VCPKG_ROOT} for the toolchain file and
-      # configuring fails without it. This is the same one-time step the README
-      # asks a person to do.
-      - name: Point at the runner's vcpkg
+      # VCPKG_ROOT, IMAGE_VERSION and VCVARS, as every Windows job sets them.
+      - name: Set up the MSVC environment
         if: needs.changes.outputs.build == 'true'
-        shell: pwsh
-        run: |
-          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
+        uses: ./.github/actions/msvc-env
 
       # The manifest's dependencies are built at configure time, which is most
       # of this job's wall clock. Keyed on vcpkg.json, so a run that changes no
@@ -383,13 +372,12 @@ jobs:
       # VULKAN_SDK, which is what the
       # installer sets and what this hands on to the configure step.
       #
-      # -PassThru IS WHAT MAKES THIS STEP ABLE TO FAIL. Without it Start-Process
-      # returns nothing and the exit code goes nowhere, so a failed install was
-      # a green step that exported VULKAN_SDK anyway - and the two things that
-      # then failed, find_package(Vulkan) and compile_hlsl_to_spirv's
-      # deliberately-named VULKAN_SDK error, both blamed a cause that was not
-      # the cause. That is the opposite of what T6 asks those messages to do,
-      # and it is worth the lines here to keep the first failure the true one.
+      # -PassThru IS WHAT MAKES THIS STEP ABLE TO FAIL. It makes the
+      # installer's exit code observable, so a failed install fails here rather
+      # than exporting VULKAN_SDK anyway and failing later in
+      # find_package(Vulkan) or compile_hlsl_to_spirv's VULKAN_SDK error, both
+      # of which would name a cause that is not the cause (T6). It is worth the
+      # lines here to keep the first failure the true one.
       # The second check is the same argument one step further: the loader can
       # land without the dxc, and that failure surfaces at configure time in
       # cmake/compile_shaders.cmake with VULKAN_SDK named and nothing wrong
@@ -437,11 +425,6 @@ jobs:
             throw "The Vulkan SDK installed without the dxc that cmake/compile_shaders.cmake looks for in `$VULKAN_SDK/Bin. There is no other one on this runner with a SPIR-V backend."
           }
           echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
-
-      - name: Find vcvars64
-        if: needs.changes.outputs.build == 'true'
-        run: |
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       - name: Configure
         if: needs.changes.outputs.build == 'true'
@@ -609,11 +592,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Point at the runner's vcpkg
-        shell: pwsh
-        run: |
-          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
+      # Ninja and cmake come with Visual Studio, so the MSVC environment is
+      # still what puts them on the path, though nothing here compiles with
+      # MSVC. emsdk_env sets EMSDK, which the preset reads for the toolchain
+      # file exactly as the x64 presets read VCPKG_ROOT.
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
 
       - name: Cache vcpkg binaries
         uses: actions/cache@v4
@@ -628,14 +612,6 @@ jobs:
         with:
           save-sdk: 'true'
           objects: wasm-gl
-
-      # Ninja and cmake come with Visual Studio, so the MSVC environment is
-      # still what puts them on the path, though nothing here compiles with
-      # MSVC. emsdk_env sets EMSDK, which the preset reads for the toolchain
-      # file exactly as the x64 presets read VCPKG_ROOT.
-      - name: Find vcvars64
-        run: |
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       - name: Configure
         run: |
@@ -843,11 +819,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Point at the runner's vcpkg
-        shell: pwsh
-        run: |
-          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
 
       - name: Restore the wasm job's vcpkg binaries
         uses: actions/cache/restore@v4
@@ -860,10 +833,6 @@ jobs:
         uses: ./.github/actions/emscripten
         with:
           objects: wasm-null
-
-      - name: Find vcvars64
-        run: |
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       - name: Configure
         run: |
@@ -912,11 +881,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Point at the runner's vcpkg
-        shell: pwsh
-        run: |
-          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
 
       # The consumer job's argument, for the wasm job's cache: a consumer's
       # packages are a subset of the engine's, so saving here could leave the
@@ -944,10 +910,6 @@ jobs:
           ) | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $chrome) { throw "No Chrome on this runner, so the Get Started page cannot be loaded." }
           echo "CHROME=$chrome" >> $env:GITHUB_ENV
-
-      - name: Find vcvars64
-        run: |
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       # The consumer job's ZIP, made again here from the same checkout rather
       # than passed between the jobs, which run side by side.
@@ -1050,11 +1012,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Point at the runner's vcpkg
-        shell: pwsh
-        run: |
-          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-          echo "IMAGE_VERSION=$env:ImageVersion" >> $env:GITHUB_ENV
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
 
       # THE WINDOWS JOBS' CACHE, RESTORED AND NEVER SAVED. The consumer's
       # packages are the engine's, built for the same triplet at the same
@@ -1067,10 +1026,6 @@ jobs:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
           restore-keys: vcpkg-${{ runner.os }}-
-
-      - name: Find vcvars64
-        run: |
-          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do echo VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat>> %GITHUB_ENV%
 
       - name: Make the starter ZIP and extract it
         run: |

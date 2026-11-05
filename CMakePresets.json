@@ -5,15 +5,12 @@
     {
       "name": "base",
       "hidden": true,
+      "inherits": "common",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "installDir": "${sourceDir}/out/install/${presetName}",
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "architecture": { "value": "x64", "strategy": "external" }
     },
     {
@@ -84,7 +81,7 @@
     },
     {
       "name": "x64-debug-null",
-      "displayName": "x64 Debug (no platform API)",
+      "displayName": "x64 Debug (null render and audio)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -94,7 +91,7 @@
     },
     {
       "name": "x64-release-null",
-      "displayName": "x64 Release (no platform API)",
+      "displayName": "x64 Release (null render and audio)",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -103,12 +100,17 @@
       }
     },
     {
-      "name": "wasm-base",
+      "name": "common",
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "installDir": "${sourceDir}/out/install/${presetName}",
-      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    },
+    {
+      "name": "wasm-base",
+      "hidden": true,
+      "inherits": "common",
       "cacheVariables": {
         "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
@@ -145,64 +147,21 @@
     { "name": "wasm-release", "configurePreset": "wasm-release" }
   ],
   "testPresets": [
+    { "name": "x64-debug", "configurePreset": "x64-debug", "inherits": "test-base" },
+    { "name": "x64-release", "configurePreset": "x64-release", "inherits": "test-base" },
+    { "name": "x64-debug-d3d12", "configurePreset": "x64-debug-d3d12", "inherits": "test-base" },
+    { "name": "x64-release-d3d12", "configurePreset": "x64-release-d3d12", "inherits": "test-base" },
+    { "name": "x64-debug-gl", "configurePreset": "x64-debug-gl", "inherits": "test-base" },
+    { "name": "x64-release-gl", "configurePreset": "x64-release-gl", "inherits": "test-base" },
+    { "name": "x64-debug-vulkan", "configurePreset": "x64-debug-vulkan", "inherits": "test-base" },
+    { "name": "x64-release-vulkan", "configurePreset": "x64-release-vulkan", "inherits": "test-base" },
+    { "name": "x64-debug-null", "configurePreset": "x64-debug-null", "inherits": "test-base" },
+    { "name": "x64-release-null", "configurePreset": "x64-release-null", "inherits": "test-base" },
+    { "name": "wasm-debug", "configurePreset": "wasm-debug", "inherits": "test-base" },
+    { "name": "wasm-release", "configurePreset": "wasm-release", "inherits": "test-base" },
     {
-      "name": "x64-debug",
-      "configurePreset": "x64-debug",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-release",
-      "configurePreset": "x64-release",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-debug-d3d12",
-      "configurePreset": "x64-debug-d3d12",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-release-d3d12",
-      "configurePreset": "x64-release-d3d12",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-debug-gl",
-      "configurePreset": "x64-debug-gl",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-release-gl",
-      "configurePreset": "x64-release-gl",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-debug-vulkan",
-      "configurePreset": "x64-debug-vulkan",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-release-vulkan",
-      "configurePreset": "x64-release-vulkan",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-debug-null",
-      "configurePreset": "x64-debug-null",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "x64-release-null",
-      "configurePreset": "x64-release-null",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "wasm-debug",
-      "configurePreset": "wasm-debug",
-      "output": { "outputOnFailure": true }
-    },
-    {
-      "name": "wasm-release",
-      "configurePreset": "wasm-release",
+      "name": "test-base",
+      "hidden": true,
       "output": { "outputOnFailure": true }
     }
   ]

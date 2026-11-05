@@ -354,7 +354,9 @@ endif()
 # it: the keyboard and the mouse are fed by the window rather than read from a
 # pad API, so they are engine code on every platform and need no backend
 # (ARCHITECTURE.md, the fed devices). xinput is DirectXTK's GamePad, and web is
-# the browser Gamepad API, which is polled exactly as sample() asks.
+# the browser Gamepad API, which is polled exactly as sample() asks. Each pad
+# API is refused where it does not exist, as the audio APIs are, so asking for
+# one fails here by name rather than as a missing package or header later.
 if(EMSCRIPTEN)
     set(labrador_default_input_backend "web")
 else()
@@ -363,6 +365,17 @@ endif()
 set(LABRADOR_INPUT_BACKEND "${labrador_default_input_backend}" CACHE STRING
     "The input backend to build: xinput or web")
 set_property(CACHE LABRADOR_INPUT_BACKEND PROPERTY STRINGS xinput web)
+
+if(LABRADOR_INPUT_BACKEND STREQUAL "xinput" AND EMSCRIPTEN)
+    message(FATAL_ERROR
+        "LABRADOR_INPUT_BACKEND is xinput in a browser build, which has no "
+        "XInput. It must be web here, the browser's Gamepad API and the "
+        "default.")
+elseif(LABRADOR_INPUT_BACKEND STREQUAL "web" AND NOT EMSCRIPTEN)
+    message(FATAL_ERROR
+        "LABRADOR_INPUT_BACKEND is web, which only a browser build "
+        "(Emscripten) has. It must be xinput here.")
+endif()
 
 if(LABRADOR_INPUT_BACKEND STREQUAL "xinput")
     target_sources(LabradorEngine PRIVATE
@@ -393,15 +406,7 @@ endif()
 target_include_directories(LabradorEngine SYSTEM PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
 )
-# DirectXTK IS PRIVATE. Linked PUBLIC, it would put <Audio.h> and <GamePad.h>
-# on the command line of every sample, every test and every downstream game.
-# No public engine header names a DirectX:: type: the audio seam
-# (engine/audio/audio_device.h) and the input seam
-# (engine/input/gamepad_reader.h) keep them behind backend folders, so nothing
-# above one needs its headers - which is the same claim the Vulkan block above
-# makes, checked the same way, and the reason cmake/check_engine_includes.cmake
-# guards the audio, input and app backend folders as well as
-# engine/render/<backend>/.
+
 # The PNG decoder behind render/png_file.cpp, on every platform and backend,
 # from the same vcpkg port the golden-image tests read their set with.
 find_package(lodepng CONFIG REQUIRED)
@@ -411,6 +416,16 @@ target_link_libraries(LabradorEngine
     PRIVATE labrador_settings lodepng
 )
 
+# DirectXTK IS PRIVATE. Linked PUBLIC, it would put <Audio.h> and <GamePad.h>
+# on the command line of every sample, every test and every downstream game.
+# No public engine header names a DirectX:: type: the audio seam
+# (engine/audio/audio_device.h) and the input seam
+# (engine/input/gamepad_reader.h) keep them behind backend folders, so nothing
+# above one needs its headers - which is the same claim the Vulkan block above
+# makes, checked the same way, and the reason cmake/check_engine_includes.cmake
+# guards the audio, input and app backend folders as well as
+# engine/render/<backend>/.
+#
 # And only the two backends that call it link it at all: audio/xaudio2/ and
 # input/xinput/. A build with neither - the browser's - has no DirectXTK to
 # find, and vcpkg.json does not install it there.

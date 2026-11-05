@@ -43,21 +43,6 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     )
 
     # The sample's own manifest and content, beside the executable, because
-    # Application::load_manifest resolves a relative path against the
-    # executable and the captures must load exactly what the sample loads. Run
-    # even when nothing relinks, so a content change reaches the next capture.
-    add_custom_target(linesweeper_capture_content ALL)
-    add_custom_command(TARGET linesweeper_capture_content POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/content/manifest.json"
-            "$<TARGET_FILE_DIR:LineSweeperCapture>/manifest.json"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/content/fonts"
-            "$<TARGET_FILE_DIR:LineSweeperCapture>/fonts"
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/content/textures"
-            "$<TARGET_FILE_DIR:LineSweeperCapture>/textures"
-        VERBATIM
-    )
-    add_dependencies(LineSweeperCapture linesweeper_capture_content)
+    # the captures must load exactly what the sample loads.
+    linesweeper_add_content_copy(linesweeper_capture_content LineSweeperCapture)
 endif()

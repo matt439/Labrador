@@ -1,10 +1,12 @@
 # .editorconfig states the tree's whitespace, and an editor that honours it
 # keeps a file right. Not every editor does, and a file indented with spaces
 # or carrying trailing blanks compiles exactly as well as one that is not, so
-# nothing else would notice (T5). This reads every first-party source and
-# names each line that breaks the two rules a reader trips over: indentation
-# with spaces where the file type indents with tabs, and whitespace at the end
-# of a line.
+# nothing else would notice (T5). This reads the tab-indented C++, HLSL and
+# JavaScript sources (.h, .cpp, .hlsl, .js, .mjs) under engine/, samples/,
+# tests/, bench/ and tools/, and names each line that breaks the two rules a
+# reader trips over: indentation with spaces, and whitespace at the end of a
+# line. website/, and the CMake, Python and YAML files .editorconfig also
+# covers, are not read.
 #
 # The vendored files .editorconfig exempts keep their upstream spaces; NOTICE
 # lists them. external/ is not read.

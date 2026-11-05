@@ -45,6 +45,10 @@ function site(change = {}) {
 		const headers = { 'Content-Type': type, 'Cache-Control': cache, ...change.headers };
 		const brotli = /\bbr\b/.test(request.headers['accept-encoding'] ?? '') && type !== 'image/png';
 		if (brotli) { headers['Content-Encoding'] = 'br'; }
+		// A server that answers an identity request for one file in a coding
+		// it was not offered.
+		const odd = change.identity_coding;
+		if (!brotli && odd && request.url.endsWith(`/${odd.name}`)) { headers['Content-Encoding'] = odd.coding; }
 		response.writeHead(200, headers);
 		response.end(brotli ? brotliCompressSync(bytes) : bytes);
 	});
@@ -104,6 +108,13 @@ test('a missing module folder fails without stopping the other checks', async (t
 	const { failed, outcome } = await run(t, { served: {}, folder: 'nothexnothex' });
 	assert.ok(failed.includes('page: names its module folder m/<hash>/'));
 	assert.ok(outcome.results.some((result) => result.name.startsWith('NOTICE.txt') && result.passed));
+});
+
+test('an identity answer in an unknown coding fails that file and every other check still runs', async (t) => {
+	const { failed, outcome } = await run(t, { identity_coding: { name: 'NOTICE.txt', coding: 'zstd' } });
+	assert.deepEqual(failed, ['NOTICE.txt: identity']);
+	assert.match(outcome.results.find((result) => result.name === 'NOTICE.txt: identity').found, /answered in zstd/);
+	assert.ok(outcome.results.some((result) => result.name === 'm/<hash>/ is named by the loader and the module' && result.passed));
 });
 
 test('Content-Security-Policy directives are read as a browser reads them', () => {

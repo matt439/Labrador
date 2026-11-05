@@ -6,6 +6,26 @@
 # drift from it. Backends include the generated C headers; no separate shader
 # file needs deployment beside the executable.
 
+# The one generated include root both functions write under. A target that
+# includes a backend's headers without compiling a shader itself names it too.
+set(LABRADOR_GENERATED_ROOT "${CMAKE_BINARY_DIR}/generated")
+
+# Sets `result` to the generated header's path for `output`, its directory
+# made, for the two functions below.
+function(labrador_generated_shader_file output result)
+    set(generated_file "${LABRADOR_GENERATED_ROOT}/${output}")
+    get_filename_component(generated_directory "${generated_file}" DIRECTORY)
+    file(MAKE_DIRECTORY "${generated_directory}")
+    set(${result} "${generated_file}" PARENT_SCOPE)
+endfunction()
+
+# Compiles the generated header into `target` and puts the generated root on
+# its include path.
+function(labrador_add_generated_shader target generated_file)
+    target_sources(${target} PRIVATE "${generated_file}")
+    target_include_directories(${target} PRIVATE "${LABRADOR_GENERATED_ROOT}")
+endfunction()
+
 # compile_hlsl(<target> <source> <profile> <entry> <symbol> <output>)
 #
 # `symbol` is the name of the byte array in the generated header, and `output`
@@ -35,11 +55,7 @@ function(compile_hlsl target source profile entry symbol output)
             "C++. Then configure again.")
     endif()
 
-    set(generated_root "${CMAKE_BINARY_DIR}/generated")
-    set(generated_file "${generated_root}/${output}")
-
-    get_filename_component(generated_directory "${generated_file}" DIRECTORY)
-    file(MAKE_DIRECTORY "${generated_directory}")
+    labrador_generated_shader_file("${output}" generated_file)
 
     add_custom_command(
         OUTPUT "${generated_file}"
@@ -55,8 +71,7 @@ function(compile_hlsl target source profile entry symbol output)
         VERBATIM
     )
 
-    target_sources(${target} PRIVATE "${generated_file}")
-    target_include_directories(${target} PRIVATE "${generated_root}")
+    labrador_add_generated_shader(${target} "${generated_file}")
 endfunction()
 
 # compile_hlsl_to_spirv(<target> <source> <profile> <entry> <symbol> <output>)
@@ -92,11 +107,7 @@ function(compile_hlsl_to_spirv target source profile entry symbol output)
             "(https://vulkan.lunarg.com/) so that VULKAN_SDK is set.")
     endif()
 
-    set(generated_root "${CMAKE_BINARY_DIR}/generated")
-    set(generated_file "${generated_root}/${output}")
-
-    get_filename_component(generated_directory "${generated_file}" DIRECTORY)
-    file(MAKE_DIRECTORY "${generated_directory}")
+    labrador_generated_shader_file("${output}" generated_file)
 
     add_custom_command(
         OUTPUT "${generated_file}"
@@ -116,6 +127,5 @@ function(compile_hlsl_to_spirv target source profile entry symbol output)
         VERBATIM
     )
 
-    target_sources(${target} PRIVATE "${generated_file}")
-    target_include_directories(${target} PRIVATE "${generated_root}")
+    labrador_add_generated_shader(${target} "${generated_file}")
 endfunction()

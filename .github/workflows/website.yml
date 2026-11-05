@@ -66,6 +66,14 @@ jobs:
   website:
     name: website
     runs-on: ubuntu-latest
+    # A stalled step fails the check rather than holding every pull request
+    # for GitHub's six-hour default.
+    timeout-minutes: 30
+    # The comparison base for both versions:verify steps, as the header
+    # describes it. It reaches the script through the environment, not the
+    # command line text, so no event value is ever parsed as shell.
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
     outputs:
       tested: ${{ steps.tested.outputs.tested }}
     permissions:
@@ -105,13 +113,10 @@ jobs:
       - run: npm ci
         if: steps.tested.outputs.tested != 'true'
 
-      # The base reaches the script through the environment, not the command
-      # line text, so no event value is ever parsed as shell.
       - name: Verify published versions
         if: steps.tested.outputs.tested != 'true'
         run: npm run versions:verify -- --base "$BASE"
         env:
-          BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # The same script is Cloudflare's production build command, so a check
@@ -131,8 +136,6 @@ jobs:
       - name: Verify appended errata links
         if: steps.tested.outputs.tested != 'true'
         run: npm run versions:verify -- --base "$BASE" --dist dist
-        env:
-          BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
 
       - uses: actions/upload-artifact@v4
         if: steps.tested.outputs.tested != 'true'
@@ -255,12 +258,19 @@ jobs:
         with:
           name: acceptance-fixture
           path: ${{ runner.temp }}/dist
+      # Exact versions, so the job does not change behaviour with no change
+      # here. pwsh returns only the last native command's exit code, so each
+      # command's is checked before the next runs.
       - name: Install Guidepup and NVDA
         run: |
           npm ci
-          npm install --no-save @guidepup/guidepup @guidepup/setup
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm install --no-save @guidepup/guidepup@0.40.0 @guidepup/setup@0.29.3
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npx guidepup setup --ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npx guidepup install nvda
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Does NVDA speak the notice?
         run: |
           New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/report" | Out-Null

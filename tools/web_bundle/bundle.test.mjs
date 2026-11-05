@@ -154,6 +154,31 @@ test('rejects missing, malformed and non-object BUILD.json', (t) => {
 	}
 });
 
+test('a checkout whose commit cannot be read bundles as unknown and says why', (t) => {
+	const folder = mkdtempSync(join(tmpdir(), 'labrador-bundle-source-'));
+	t.after(() => rmSync(folder, { recursive: true, force: true }));
+	// The tree's own .git marker, pointing at no repository, so it is a
+	// checkout whose Git cannot answer.
+	const repository = join(folder, 'source');
+	mkdirSync(repository);
+	writeFileSync(join(repository, '.git'), 'gitdir: no-such-repository\n');
+	const emscripten = join(folder, 'emscripten');
+	mkdirSync(emscripten);
+	writeFileSync(join(emscripten, 'emscripten-version.txt'), '"6.0.12"\n');
+	writeFileSync(join(folder, 'notice.txt'), 'Notices.\n');
+	writeFileSync(join(folder, 'page.html'), 'page\n');
+	const out = join(folder, 'out');
+	const result = spawnSync(process.execPath, [runner, '--out', out, '--repository', repository,
+		'--emscripten', emscripten, '--build-type', 'Release', '--file', `index.html=${join(folder, 'page.html')}`,
+		'--notice', join(folder, 'notice.txt')], { encoding: 'utf8', timeout: 20_000 });
+	assert.ifError(result.error);
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stderr, /bundle: commit unknown: /);
+	const build = JSON.parse(readFileSync(join(out, 'BUILD.json'), 'utf8'));
+	assert.equal(build.commit, 'unknown');
+	assert.equal(build.dirty, null);
+});
+
 test('verify mode refuses packaging options and never empties its input', (t) => {
 	const { folder, build } = fixture(t);
 	write_manifest(folder, build);

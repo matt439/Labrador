@@ -52,6 +52,31 @@ set(linesweeper_game_sources
     states/play_state.cpp
 )
 
+# The sample's content beside a desktop executable: the manifest, fonts/ and
+# textures/ that the sample, bench/'s frame benchmark and the capture tool each
+# load, copied by one rule so the three load the same content.
+# Application::load_manifest resolves a relative path against the executable,
+# so the copy runs from any working directory. custom_target is in ALL and runs
+# even when nothing relinks, so a content change or a deleted copy reaches the
+# next run.
+function(linesweeper_add_content_copy custom_target executable)
+    set(content "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/content")
+    add_custom_target(${custom_target} ALL)
+    add_custom_command(TARGET ${custom_target} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${content}/manifest.json"
+            "$<TARGET_FILE_DIR:${executable}>/manifest.json"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+            "${content}/fonts"
+            "$<TARGET_FILE_DIR:${executable}>/fonts"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+            "${content}/textures"
+            "$<TARGET_FILE_DIR:${executable}>/textures"
+        VERBATIM
+    )
+    add_dependencies(${executable} ${custom_target})
+endfunction()
+
 if(EMSCRIPTEN)
     # Presentation is compiled once. States and the entry file are compiled
     # per executable: only the development page contains the opt-in test-input
@@ -201,28 +226,10 @@ elseif(WIN32)
     # Its own content, not a share of the other sample's. Two samples is few enough
     # that independence is cheaper than the coupling - an engine with forty would
     # put the media in one place and pay the coupling instead.
-    add_custom_target(linesweeper_content ALL)
-    add_custom_command(TARGET linesweeper_content POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
-            "$<TARGET_FILE_DIR:LineSweeperSample>/manifest.json"
-        VERBATIM
-    )
-    add_custom_command(TARGET linesweeper_content POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/content/fonts"
-            "$<TARGET_FILE_DIR:LineSweeperSample>/fonts"
-        VERBATIM
-    )
+    #
     # One texture, and it is one white texel. Every block, panel and rule on the
     # screen is that texel with a tint on it - a solid rectangle is a sprite, and
     # the renderer seam draws sprites (presentation/board_view.cpp says why there
     # is no draw_rect and should not be one).
-    add_custom_command(TARGET linesweeper_content POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/content/textures"
-            "$<TARGET_FILE_DIR:LineSweeperSample>/textures"
-        VERBATIM
-    )
-    add_dependencies(LineSweeperSample linesweeper_content)
+    linesweeper_add_content_copy(linesweeper_content LineSweeperSample)
 endif()
