@@ -95,38 +95,64 @@ def registration_inventory(text: str, configuration: dict, *, selected_browser: 
     return inventory
 
 
-def junit_results(text: str, names: set[str]) -> list[dict]:
+JUNIT_OUTPUT = {"system-out", "system-err", "properties"}
+JUNIT_PROBLEMS = {"failure", "error", "skipped"}
+
+
+def junit_cases(text: str, *, error: type[Exception] = VerificationError) -> tuple[list[dict], list]:
+    """Read ctest's --output-junit document without judging its outcomes.
+
+    The shape is one testsuite, optionally inside a single testsuites
+    container, holding testcase elements with nonempty unique names. Each case
+    is {"name", "status", "problem"}, where problem is the (tag, reason) of its
+    first failure, error or skipped child, or None. The aggregates are the
+    elements whose count attributes describe the suite. Anything else raises
+    `error`, so both readers here refuse the same unknown shapes."""
     try:
         document = ElementTree.fromstring(text)
-    except ElementTree.ParseError as error:
-        raise VerificationError(f"invalid JUnit XML: {error}") from error
+    except ElementTree.ParseError as failure:
+        raise error(f"invalid JUnit XML: {failure}") from failure
     if document.tag == "testsuite":
         suite, aggregates = document, [document]
     elif (document.tag == "testsuites" and len(document) == 1
           and document[0].tag == "testsuite"):
         suite, aggregates = document[0], [document, document[0]]
     else:
-        raise VerificationError("unsupported JUnit shape; require one testsuite")
-    results = []
+        raise error("unsupported JUnit shape; require one testsuite")
+    cases = []
     seen = set()
     for case in suite:
-        if case.tag in {"system-out", "system-err", "properties"}:
+        if case.tag in JUNIT_OUTPUT:
             continue
         if case.tag != "testcase":
-            raise VerificationError(f"unsupported JUnit suite child: {case.tag}")
+            raise error(f"unsupported JUnit suite child: {case.tag}")
         name = case.get("name")
         if not name or not name.strip() or name in seen:
-            raise VerificationError(f"empty or duplicate JUnit testcase: {name!r}")
+            raise error(f"empty or duplicate JUnit testcase: {name!r}")
         seen.add(name)
-        status = case.get("status")
+        problem = None
+        for child in case:
+            if child.tag in JUNIT_PROBLEMS:
+                if problem is None:
+                    problem = (child.tag, child.get("message") or (child.text or "").strip())
+            elif child.tag not in JUNIT_OUTPUT:
+                raise error(f"unsupported JUnit testcase child: {child.tag}")
+        cases.append({"name": name, "status": case.get("status"), "problem": problem})
+    return cases, aggregates
+
+
+def junit_results(text: str, names: set[str]) -> list[dict]:
+    cases, aggregates = junit_cases(text)
+    results = []
+    seen = set()
+    for case in cases:
+        name, status = case["name"], case["status"]
+        seen.add(name)
         if status is not None and status not in {"run", "passed"}:
             raise VerificationError(f"JUnit testcase did not run successfully: {name} status={status!r}")
-        for child in case:
-            if child.tag in {"failure", "error", "skipped"}:
-                reason = child.get("message") or (child.text or "").strip()
-                raise VerificationError(f"JUnit {child.tag}: {name}: {reason}")
-            if child.tag not in {"system-out", "system-err", "properties"}:
-                raise VerificationError(f"unsupported JUnit testcase child: {child.tag}")
+        if case["problem"]:
+            tag, reason = case["problem"]
+            raise VerificationError(f"JUnit {tag}: {name}: {reason}")
         results.append({"name": name, "result": "passed"})
     if not seen or seen != names:
         raise VerificationError(f"JUnit inventory differs: missing={sorted(names - seen)}, extra={sorted(seen - names)}")

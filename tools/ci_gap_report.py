@@ -13,12 +13,16 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 import re
 import subprocess
 import sys
 import uuid
-import xml.etree.ElementTree as ElementTree
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import git_local  # noqa: E402
+import verification_runner  # noqa: E402
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 
@@ -37,12 +41,10 @@ class Gap:
 
 
 DEVICE_TESTS = ("RenderPixelTests", "MinimalSmokeTests")
-BROWSER_TESTS = (
-    "RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests", "WebWindowTests",
-    "MinimalPageTests", "CollisionPageTests", "AudioPageTests", "LocalMultiplayerPageTests",
-    "ComponentsPageTests", "ComponentsPointerPageTests", "LineSweeperPageTests",
-    "LineSweeperReducedMotionPageTests", "LineSweeperPalettePageTests", "LineSweeperBundlePageTests",
-)
+# The entries a wasm build that rasterizes registers only when configure finds
+# a Chromium; tests/ctest_inventory.json owns the list.
+BROWSER_TESTS = tuple(json.loads((REPOSITORY / "tests/ctest_inventory.json").read_text(
+    encoding="utf-8"))["chromium_registered"])
 
 # What .github/workflows/ci.yml leaves out. tools/tests/test_ci_gap_report.py
 # derives the same list from ci.yml and CMakePresets.json and fails on drift.
@@ -77,37 +79,26 @@ def commands(preset: str, junit: Path) -> list[list[str]]:
 
 
 def junit_summary(text: str) -> dict[str, list[str]]:
-    """Group ctest's JUnit cases by outcome without rejecting failures."""
-    try:
-        document = ElementTree.fromstring(text)
-    except ElementTree.ParseError as error:
-        raise ReportError(f"invalid JUnit XML: {error}") from error
-    if document.tag == "testsuites" and len(document) == 1:
-        document = document[0]
-    if document.tag != "testsuite":
-        raise ReportError("unsupported JUnit shape; require one testsuite")
+    """Group ctest's JUnit cases by outcome without rejecting failures.
+
+    verification_runner.junit_cases reads the document, so this report and
+    the render sweep accept the same shapes."""
+    cases, _ = verification_runner.junit_cases(text, error=ReportError)
     groups: dict[str, list[str]] = {"passed": [], "failed": [], "skipped": [], "disabled": []}
-    seen: set[str] = set()
-    for case in document:
-        if case.tag != "testcase":
-            continue
-        name = case.get("name") or ""
-        if not name.strip() or name in seen:
-            raise ReportError(f"empty or duplicate JUnit testcase: {name!r}")
-        seen.add(name)
-        status = case.get("status")
-        children = {child.tag for child in case}
-        if "failure" in children or "error" in children or status == "fail":
+    for case in cases:
+        name, status = case["name"], case["status"]
+        problem = case["problem"][0] if case["problem"] else None
+        if problem in ("failure", "error") or status == "fail":
             groups["failed"].append(name)
         elif status == "disabled":
             groups["disabled"].append(name)
-        elif "skipped" in children or status == "notrun":
+        elif problem == "skipped" or status == "notrun":
             groups["skipped"].append(name)
         elif status in (None, "run", "passed"):
             groups["passed"].append(name)
         else:
             raise ReportError(f"unsupported JUnit status for {name}: {status!r}")
-    if not seen:
+    if not cases:
         raise ReportError("JUnit names no test cases")
     return groups
 
@@ -133,8 +124,7 @@ def judge(gap: Gap, groups: dict[str, list[str]]) -> tuple[str, str]:
 
 
 def git_state(root: Path, runner=None) -> tuple[str, int]:
-    run = runner or (lambda argv: subprocess.run(argv, cwd=root, capture_output=True,
-                                                 text=True, check=False, shell=False))
+    run = runner or (lambda argv: git_local.git(root, *argv[1:], text=True, error=ReportError))
     head = run(["git", "rev-parse", "HEAD"])
     status = run(["git", "status", "--porcelain", "--untracked-files=normal"])
     if head.returncode != 0 or status.returncode != 0:
@@ -148,8 +138,7 @@ def git_state(root: Path, runner=None) -> tuple[str, int]:
 
 def run_command(argv: list[str], *, cwd: Path, log) -> int:
     try:
-        return subprocess.run(argv, cwd=cwd, stdout=log, stderr=subprocess.STDOUT,
-                              shell=False, check=False).returncode
+        return verification_runner.run_command(argv, cwd=str(cwd), stdout=log, stderr=subprocess.STDOUT)
     except OSError as error:
         # A tool missing from this shell fails the preset, not the whole record.
         log.write(f"cannot start {argv[0]}: {error}\n")

@@ -3,24 +3,17 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+from tools.tests import pe_fixtures as images
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location(
-    "check_release", REPOSITORY / "tools/consumer_check/check_release.py"
-)
-check_release = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(check_release)
-IMAGES_SPEC = importlib.util.spec_from_file_location(
-    "test_check_dpi_manifest", REPOSITORY / "tools/tests/test_check_dpi_manifest.py"
-)
-images = importlib.util.module_from_spec(IMAGES_SPEC)
-IMAGES_SPEC.loader.exec_module(images)
+check_release = load_tool("tools/consumer_check/check_release.py")
 
 
 class CheckReleaseTests(unittest.TestCase):

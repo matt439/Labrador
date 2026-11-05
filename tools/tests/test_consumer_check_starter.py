@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
 import os
@@ -15,18 +14,13 @@ import unittest
 import zipfile
 from pathlib import Path
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
 
 
-def load(name: str):
-    spec = importlib.util.spec_from_file_location(name, REPOSITORY / f"tools/consumer_check/{name}.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-assemble = load("assemble")
-starter_zip = load("starter_zip")
+assemble = load_tool("tools/consumer_check/assemble.py")
+starter_zip = load_tool("tools/consumer_check/starter_zip.py")
 
 # A commit made at a fixed time, so the ZIP's entry times are known.
 COMMIT_SECONDS = 1767225600  # 2026-01-01 00:00:00 UTC

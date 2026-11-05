@@ -3,33 +3,25 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
-import os
 from pathlib import Path
-import tempfile
 import unittest
 from unittest import mock
 
+from tools.tests.tool_fixtures import PlannerCheckout, load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("verify_changes", REPOSITORY / "tools/verify_changes.py")
-planner = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(planner)
+planner = load_tool("tools/verify_changes.py")
 
 
 class PlanTests(unittest.TestCase):
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix="labrador-verification-plan-")
-        self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
-        for name in planner.SOURCE_FILES:
-            target = self.root / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes((REPOSITORY / name).read_bytes())
+        self.checkout = PlannerCheckout(self, planner)
+        self.root = self.checkout.root
 
     def plan(self, **options):
-        return planner.build_plan(self.root, **options)
+        return self.checkout.plan(**options)
 
     def change_presets(self, change):
         path = self.root / "CMakePresets.json"
@@ -44,55 +36,13 @@ class PlanTests(unittest.TestCase):
         return code, output.getvalue(), errors.getvalue()
 
     def fake_tooling(self):
-        environment = {"VCPKG_ROOT": str(self.root / "vcpkg"), "VULKAN_SDK": str(self.root / "vulkan"),
-                       "EMSDK": str(self.root / "emsdk"), "EMSDK_NODE": str(self.root / "emsdk/node/node.exe"),
-                       "PATH": "synthetic-only", "PATHEXT": ".EXE"}
-        required = [Path(environment["VCPKG_ROOT"]) / "scripts/buildsystems/vcpkg.cmake",
-                    Path(environment["VULKAN_SDK"]) / "Include/vulkan/vulkan.h",
-                    Path(environment["VULKAN_SDK"]) / "Lib/vulkan-1.lib",
-                    Path(environment["VULKAN_SDK"]) / "Bin/dxc.exe",
-                    Path(environment["EMSDK"]) / "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
-                    Path(environment["EMSDK"]) / "upstream/emscripten/emcc.py",
-                    Path(environment["EMSDK_NODE"]), self.root / "browser/chrome.exe"]
-        for path in required:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b"fixture: never executed")
-        tools = {name: str(self.root / "tools" / (name + ".exe"))
-                 for name in ("cmake", "ctest", "ninja", "cl", "fxc", "node", "dxc")}
-        for value in tools.values():
-            path = Path(value)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b"fixture: never executed")
-        return environment, tools, str(self.root / "browser/chrome.exe")
+        return self.checkout.fake_tooling()
 
     def inspect(self, plan, environment, tools, **options):
-        return planner.inspect_environment(plan, environment=environment, host=options.pop("host", "win32"),
-                                           find=tools.get, is_file=Path.is_file,
-                                           read_text=lambda path: path.read_text(encoding="utf-8"), **options)
+        return self.checkout.inspect(plan, environment, tools, **options)
 
     def write_caches(self, plan, environment, browser):
-        for configuration in plan["configurations"]:
-            path = self.root / configuration["binary_dir"] / "CMakeCache.txt"
-            values = {"CMAKE_HOME_DIRECTORY": str(self.root), "CMAKE_CACHEFILE_DIR": str(path.parent),
-                      "CMAKE_GENERATOR": "Ninja", "CMAKE_BUILD_TYPE": configuration["expected"]["build_type"],
-                      "CMAKE_TOOLCHAIN_FILE": str(Path(environment["VCPKG_ROOT"]) / "scripts/buildsystems/vcpkg.cmake"),
-                      "VCPKG_MANIFEST_INSTALL": "ON",
-                      **{"LABRADOR_" + axis.upper() + "_BACKEND": configuration["expected"][axis]
-                         for axis in ("render", "audio", "input")}}
-            if configuration["id"].startswith("wasm-"):
-                values.update({"VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
-                               "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": str(Path(environment["EMSDK"]) / "upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"),
-                               "CMAKE_CROSSCOMPILING_EMULATOR": environment["EMSDK_NODE"] + ";--fixture-flag",
-                               "LABRADOR_TEST_BROWSER": browser})
-            if configuration["id"] == "x64-debug-vulkan":
-                values.update({"DXC_SPIRV_EXECUTABLE": str(Path(environment["VULKAN_SDK"]) / "Bin/dxc.exe"),
-                               "Vulkan_INCLUDE_DIR": str(Path(environment["VULKAN_SDK"]) / "Include"),
-                               "Vulkan_LIBRARY": str(Path(environment["VULKAN_SDK"]) / "Lib/vulkan-1.lib")})
-            if configuration["id"] in planner.NATIVE[:2]:
-                values["FXC_EXECUTABLE"] = str(self.root / "tools/fxc.exe")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("\n".join(key + ":STRING=" + value for key, value in values.items()) + "\n",
-                            encoding="utf-8")
+        self.checkout.write_caches(plan, environment, browser)
 
     def test_exact_seven_tracks_have_distinct_expected_axes_and_unrun_phases(self):
         plan = self.plan()
@@ -186,6 +136,9 @@ class PlanTests(unittest.TestCase):
         for name in ("RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests", "WebWindowTests",
                      "ComponentsPageTests", "LineSweeperBundlePageTests"):
             self.assertIn(name, gl["required_browser_test_names"])
+        self.assertIn("ComponentsPointerPageTests", gl["required_browser_test_names"])
+        self.assertIn("ComponentsPointerPageTests", plan["configurations"][-1]["conditional_browser_test_names"])
+        self.assertNotIn("LineSweeperBundlePageTests", plan["configurations"][-1]["conditional_browser_test_names"])
         self.assertIn("D3D12SynchronizationTests", plan["configurations"][1]["required_test_names"])
         self.assertIn("RenderPixelTests", plan["configurations"][4]["forbidden_test_names"])
         self.assertIn("WebWindowTests", plan["configurations"][-1]["conditional_browser_test_names"])
@@ -395,6 +348,19 @@ class PlanTests(unittest.TestCase):
         for axis in ("LABRADOR_RENDER_BACKEND", "CMAKE_BUILD_TYPE", "CMAKE_HOME_DIRECTORY", "CMAKE_TOOLCHAIN_FILE"):
             self.assertIn("x64-debug:" + axis, mismatches)
         self.assertEqual(path.read_text(encoding="utf-8"), changed)
+
+    def test_an_unreadable_cache_is_reported_once_rather_than_as_every_mismatch(self):
+        environment, tools, browser = self.fake_tooling()
+        plan = self.plan()
+        self.write_caches(plan, environment, browser)
+        path = self.root / "out/build/x64-debug/CMakeCache.txt"
+        path.write_text(path.read_text(encoding="utf-8") + "LABRADOR_RENDER_BACKEND:STRING=gl\n",
+                        encoding="utf-8")
+        checks = self.inspect(plan, environment, tools)
+        own = [item for item in checks if item["configurations"] == ["x64-debug"]]
+        self.assertEqual([(item["id"], item["status"]) for item in own], [("x64-debug:cache", "missing")])
+        self.assertIn("duplicate whitelisted cache key", own[0]["detail"])
+        self.assertTrue(own[0]["blocking"])
 
     def test_a_cached_path_dxc_override_is_detected_even_with_a_valid_sdk(self):
         environment, tools, browser = self.fake_tooling()

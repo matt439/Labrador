@@ -10,7 +10,9 @@ import tempfile
 import unittest
 import unittest.mock
 
-from tools import ci_tested_tree as checker
+from tools.tests.tool_fixtures import isolate_repository, isolated_git_environment, load_tool
+
+checker = load_tool("tools/ci_tested_tree.py")
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
@@ -24,18 +26,18 @@ class History:
     def __init__(self, root: Path):
         self.origin = root / "origin.git"
         self.work = root / "work"
+        self.environment, hooks = isolated_git_environment(root, "History fixture")
         subprocess.run(["git", "init", "--quiet", "--bare", "--initial-branch=master",
-                        str(self.origin)], check=True)
+                        str(self.origin)], check=True, env=self.environment)
         subprocess.run(["git", "init", "--quiet", "--initial-branch=master", str(self.work)],
-                       check=True)
+                       check=True, env=self.environment)
+        isolate_repository(self.git, hooks)
         self.git("remote", "add", "origin", str(self.origin))
         self.before = self.commit("engine.cpp", "one\n")
 
     def git(self, *arguments: str) -> str:
-        environment = {**os.environ, "GIT_AUTHOR_NAME": "a", "GIT_AUTHOR_EMAIL": "a@a",
-                       "GIT_COMMITTER_NAME": "a", "GIT_COMMITTER_EMAIL": "a@a"}
         return subprocess.run(["git", "-C", str(self.work), *arguments], check=True,
-                              capture_output=True, text=True, env=environment).stdout
+                              capture_output=True, text=True, env=self.environment).stdout
 
     def commit(self, path: str, text: str) -> str:
         (self.work / path).parent.mkdir(parents=True, exist_ok=True)
@@ -107,7 +109,7 @@ class TestedTreeTests(unittest.TestCase):
             repository=OWNER, workflow_path=WORKFLOW,
             before=self.history.before if before is None else before,
             head=self.head if head is None else head, forced=forced, refresh=refresh,
-            git=self.history.git, api=api, sleep=self.sleeps.append)
+            git=checker.local_git(self.history.work), api=api, sleep=self.sleeps.append)
 
     def passing(self, **overrides):
         return FakeApi(overrides.get("pulls", [merged(7)]),
@@ -233,6 +235,14 @@ class TestedTreeTests(unittest.TestCase):
                         ["--workflow-path", WORKFLOW, "--before", "a" * 40,
                          "--head", "b" * 40, "--output", str(output)]), 0)
             self.assertEqual(output.read_text(encoding="utf-8"), "tested=false\n")
+
+    def test_main_refuses_a_forced_flag_it_cannot_read(self):
+        for spelling in ("True", "1", "yes", ""):
+            with self.subTest(forced=spelling):
+                with unittest.mock.patch("sys.stderr"), self.assertRaises(SystemExit) as raised:
+                    checker.main(["--workflow-path", WORKFLOW, "--before", "a" * 40,
+                                  "--head", "b" * 40, "--forced", spelling])
+                self.assertEqual(raised.exception.code, 2)
 
 
 class WorkflowTests(unittest.TestCase):

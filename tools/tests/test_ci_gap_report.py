@@ -3,22 +3,18 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 import json
 from pathlib import Path
 import re
 import subprocess
-import sys
 import tempfile
 import unittest
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("ci_gap_report", REPOSITORY / "tools/ci_gap_report.py")
-report = importlib.util.module_from_spec(SPEC)
-# Dataclass creation looks its module up while the module is executing.
-sys.modules[SPEC.name] = report
-SPEC.loader.exec_module(report)
+report = load_tool("tools/ci_gap_report.py")
 
 # Shaped as CTest 4 writes it for one passing, failing, timed-out, missing,
 # skipped and disabled test each. LastTest.log records "Test Passed." for the
@@ -92,6 +88,12 @@ class JunitTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(report.ReportError):
                 report.junit_summary(text)
 
+    def test_unknown_children_fail_as_the_render_sweep_refuses_them(self):
+        for text in ('<testsuite><testcase name="A"/><unknown/></testsuite>',
+                     '<testsuite><testcase name="A"><unknown/></testcase></testsuite>'):
+            with self.subTest(text=text), self.assertRaisesRegex(report.ReportError, "unsupported JUnit"):
+                report.junit_summary(text)
+
     def test_required_tests_must_have_run_and_passed(self):
         gl = report.GAPS[0]
         result, detail = report.judge(gl, report.junit_summary(junit(["CoreTests", "RenderPixelTests"])))
@@ -101,7 +103,7 @@ class JunitTests(unittest.TestCase):
             junit(["CoreTests", "RenderPixelTests", "MinimalSmokeTests"])))
         self.assertEqual((result, detail),
                          ("passed", "3/3 passed; RenderPixelTests and MinimalSmokeTests passed"))
-        # Without a Chromium, configure registers 19 of wasm-debug's 32 tests.
+        # Without a Chromium, configure registers 19 of wasm-debug's 33 tests.
         wasm = report.GAPS[-1]
         unregistered = [f"Headless{index}" for index in range(19)]
         result, detail = report.judge(wasm, report.junit_summary(junit(unregistered)))
@@ -115,24 +117,26 @@ class JunitTests(unittest.TestCase):
         self.assertEqual(detail, "1/6 passed; failed: Bad, Slow; skipped: Missing, Skipper; disabled: Off")
 
 
+def fake_commands(*, configure_fails=(), ctest_code=0, documents=None):
+    """A command runner that writes each preset's JUnit, and the argv it saw."""
+    calls = []
+
+    def run(argv, *, cwd, log):
+        calls.append(argv)
+        preset = argv[argv.index("--preset") + 1]
+        if argv[0] == "cmake" and argv[1] == "--preset" and preset in configure_fails:
+            return 3
+        if argv[0] == "ctest":
+            Path(argv[-1]).write_text((documents or {}).get(preset, junit(["CoreTests"])),
+                                      encoding="utf-8")
+            return ctest_code
+        return 0
+    return run, calls
+
+
 class ExecuteTests(unittest.TestCase):
-    def fake(self, *, configure_fails=(), ctest_code=0, documents=None):
-        calls = []
-
-        def run(argv, *, cwd, log):
-            calls.append(argv)
-            preset = argv[argv.index("--preset") + 1]
-            if argv[0] == "cmake" and argv[1] == "--preset" and preset in configure_fails:
-                return 3
-            if argv[0] == "ctest":
-                Path(argv[-1]).write_text((documents or {}).get(preset, junit(["CoreTests"])),
-                                          encoding="utf-8")
-                return ctest_code
-            return 0
-        return run, calls
-
     def test_a_failed_preset_does_not_stop_the_next(self):
-        run, calls = self.fake(configure_fails={"x64-release-gl"})
+        run, calls = fake_commands(configure_fails={"x64-release-gl"})
         gaps = [report.Gap("x64-release-gl"), report.Gap("x64-release-null")]
         with tempfile.TemporaryDirectory() as directory:
             outcomes = report.execute(gaps, Path(directory), Path(directory) / "out", runner=run)
@@ -142,7 +146,7 @@ class ExecuteTests(unittest.TestCase):
         self.assertEqual(len(calls), 4)
 
     def test_nonzero_ctest_with_clean_junit_is_a_failure(self):
-        run, _ = self.fake(ctest_code=8)
+        run, _ = fake_commands(ctest_code=8)
         with tempfile.TemporaryDirectory() as directory:
             outcomes = report.execute([report.Gap("x64-release-null")], Path(directory),
                                       Path(directory) / "out", runner=run)
@@ -158,7 +162,7 @@ class ExecuteTests(unittest.TestCase):
             self.assertIn("cannot start labrador-no-such-tool", log_path.read_text(encoding="utf-8"))
 
     def test_existing_output_directory_is_refused(self):
-        run, calls = self.fake()
+        run, calls = fake_commands()
         with tempfile.TemporaryDirectory() as directory, self.assertRaises(FileExistsError):
             report.execute([report.Gap("wasm-debug")], Path(directory), Path(directory), runner=run)
         self.assertEqual(calls, [])
@@ -183,8 +187,8 @@ class MainTests(unittest.TestCase):
         self.assertEqual(text.count("\n| `"), len(report.GAPS))
 
     def test_execute_records_commit_dirty_tree_and_exit_code(self):
-        run, _ = ExecuteTests().fake(documents={"x64-release-null": CTEST_JUNIT,
-                                                "wasm-debug": junit(list(report.BROWSER_TESTS))})
+        run, _ = fake_commands(documents={"x64-release-null": CTEST_JUNIT,
+                                          "wasm-debug": junit(list(report.BROWSER_TESTS))})
         with tempfile.TemporaryDirectory() as directory:
             code, text, stderr = self.main(
                 ["--execute", "--preset", "wasm-debug", "--preset", "x64-release-null",
@@ -198,7 +202,7 @@ class MainTests(unittest.TestCase):
         self.assertIn("Logs and JUnit:", stderr)
 
     def test_head_moving_during_the_run_fails(self):
-        run, _ = ExecuteTests().fake()
+        run, _ = fake_commands()
         with tempfile.TemporaryDirectory() as directory:
             code, text, stderr = self.main(["--execute", "--preset", "wasm-debug"], root=Path(directory),
                                            runner=run, git_runner=git_runner(["c" * 40, "d" * 40]))

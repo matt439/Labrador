@@ -191,6 +191,27 @@ class AnalysisTests(unittest.TestCase):
             write_json(path, result)
         refresh_terminal_manifest(root / "output")
 
+    def analyze_command(self, root: Path) -> tuple[int, dict]:
+        stdout = io.StringIO()
+        argv = ["tools.cloud_performance", "analyze", "--input", str(root),
+                "--out", str(root / "analysis.json")]
+        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(stdout):
+            status = cli.main()
+        return status, json.loads(stdout.getvalue())
+
+    def test_command_exits_zero_only_for_complete_evidence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            status, printed = self.analyze_command(root)
+            self.assertEqual(status, 0)
+            self.assertTrue(printed["complete"])
+        with tempfile.TemporaryDirectory() as temporary:
+            status, printed = self.analyze_command(Path(temporary))
+            self.assertEqual(status, 1)
+            self.assertEqual(printed["analysis_withheld"],
+                             "terminal_success_marker_missing_or_ambiguous")
+
     def test_complete_evidence_reports_pooled_percentiles(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

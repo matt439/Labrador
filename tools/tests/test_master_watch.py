@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
-import sys
 import unittest
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("master_watch", REPOSITORY / "tools/master_watch.py")
-watch = importlib.util.module_from_spec(SPEC)
-sys.modules[SPEC.name] = watch
-SPEC.loader.exec_module(watch)
+watch = load_tool("tools/master_watch.py")
 
 
 def run(conclusion="failure", attempt=1, branch="master"):
@@ -70,6 +67,15 @@ class Act(unittest.TestCase):
         action, _ = act(run(), gh)
         self.assertEqual(action.kind, "report")
         self.assertEqual(gh.calls[-1][:4], ["issue", "create", "--title", TITLE])
+
+    def test_a_rerun_that_never_completes_a_new_attempt_stops_polling(self):
+        stuck = {"status": "completed", "conclusion": "failure", "attempt": 1}
+        gh = FakeGh(views=[stuck] * watch.RERUN_POLLS)
+        action, sleeps = act(run(), gh)
+        self.assertEqual(action.kind, "none")
+        self.assertIn("no rerun attempt completed", action.reason)
+        self.assertEqual(len(sleeps), watch.RERUN_POLLS)
+        self.assertFalse([call for call in gh.calls if call[0] == "issue"])
 
     def test_a_second_failure_opens_one_issue_then_comments_on_it(self):
         gh = FakeGh()

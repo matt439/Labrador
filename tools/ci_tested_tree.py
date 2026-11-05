@@ -32,11 +32,13 @@ import json
 import os
 from pathlib import Path
 import re
-import subprocess
 import sys
 import time
 from typing import Any
 from urllib.request import Request, urlopen
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import git_local  # noqa: E402
 
 
 API = "https://api.github.com"
@@ -123,7 +125,7 @@ def decide(*, repository: str, workflow_path: str, before: str, head: str, force
             continue
         try:
             git("merge-base", "--is-ancestor", before, pull_head)
-        except subprocess.CalledProcessError:
+        except git_local.GitError:
             continue
         if not tested_against_master(api, repository, number, pull_head):
             continue
@@ -138,9 +140,9 @@ def decide(*, repository: str, workflow_path: str, before: str, head: str, force
                     + ", #".join(str(number) for number in pulls))
 
 
-def run_git(*arguments: str) -> str:
-    return subprocess.run(["git", *arguments], check=True, capture_output=True,
-                          text=True, timeout=120).stdout
+def local_git(repository: Path) -> Git:
+    """Git reads of repository, raising git_local.GitError on a nonzero exit."""
+    return lambda *arguments: git_local.git(repository, *arguments, text=True, timeout=120).stdout
 
 
 def github_api(token: str) -> Api:
@@ -162,7 +164,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="the workflow file, as a run reports it: .github/workflows/ci.yml")
     parser.add_argument("--before", required=True)
     parser.add_argument("--head", required=True)
-    parser.add_argument("--forced", default="false")
+    parser.add_argument("--forced", choices=["true", "false"], default="false",
+                        help="github.event.forced as the workflow spells it")
     parser.add_argument("--refresh", action="append", default=[],
                         help="a path whose change still builds; a trailing / names a directory")
     parser.add_argument("--output", type=Path, help="GITHUB_OUTPUT, given tested=true|false")
@@ -173,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
             repository=os.environ["GITHUB_REPOSITORY"],
             workflow_path=arguments.workflow_path, before=arguments.before,
             head=arguments.head, forced=arguments.forced == "true",
-            refresh=arguments.refresh, git=run_git,
+            refresh=arguments.refresh, git=local_git(Path.cwd()),
             api=github_api(os.environ["GITHUB_TOKEN"]))
     except Exception as error:  # Unproven is untested: the workflow builds.
         decision = Decision(False, f"the check failed, so this run builds: {error!r}")

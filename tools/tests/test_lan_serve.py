@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import io
 from pathlib import Path
 import shutil
@@ -14,10 +13,10 @@ import threading
 import unittest
 import urllib.request
 
+from tools.tests.tool_fixtures import load_tool
+
 REPOSITORY = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("lan_serve", REPOSITORY / "tools/lan_serve.py")
-lan_serve = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(lan_serve)
+lan_serve = load_tool("tools/lan_serve.py")
 
 
 class ServeTests(unittest.TestCase):

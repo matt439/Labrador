@@ -8,11 +8,12 @@ or runs a renderer. Invoke from the repository with --commit REV, or with
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 import re
-import subprocess
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import git_local  # noqa: E402
 
 MARKER = "Golden-Reviewed: "
 GOLDEN_DIRECTORY = "tests/render/golden/"
@@ -23,22 +24,9 @@ class CheckError(RuntimeError):
 
 
 def git(repository: Path, *arguments: str) -> bytes:
-    environment = os.environ.copy()
-    environment["GIT_OPTIONAL_LOCKS"] = "0"
-    environment["GIT_TERMINAL_PROMPT"] = "0"
-    try:
-        result = subprocess.run(
-            # Require local objects and the actual identities, even in a
-            # partial clone or a checkout with replacement refs installed.
-            ["git", "--no-pager", "--no-lazy-fetch", "--no-replace-objects",
-             "-C", str(repository), *arguments],
-            capture_output=True, env=environment, timeout=30, check=False)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise CheckError(f"cannot read local Git history: {error}") from error
-    if result.returncode:
-        detail = result.stderr.decode("utf-8", errors="replace").strip()
-        raise CheckError(f"git {arguments[0]} failed: {detail or 'no diagnostic'}")
-    return result.stdout
+    # Local objects and actual identities only, even in a partial clone or a
+    # checkout with replacement refs installed (git_local.py).
+    return git_local.git(repository, *arguments, error=CheckError).stdout
 
 
 def resolve_commit(repository: Path, revision: str) -> str:
@@ -71,15 +59,32 @@ def review_declarations(message: str) -> set[str]:
             for line in message.split("\n") if line.startswith(MARKER)}
 
 
-def changed_goldens(repository: Path, commit: str, parents: list[str]) -> set[str]:
+def commit_parts(repository: Path, commit: str) -> tuple[list[str], bytes]:
+    """A commit's parents and raw message, read from its own headers."""
+    # Read the actual headers, even at a history boundary. Never mistake a
+    # missing parent for a root by relying on a truncated revision walk.
+    contents = git(repository, "cat-file", "commit", commit)
+    headers, separator, message = contents.partition(b"\n\n")
+    if not separator:
+        raise CheckError(f"{commit} has no commit-message separator")
+    parents = [line[len(b"parent "):].decode("ascii")
+               for line in headers.split(b"\n") if line.startswith(b"parent ")]
+    return parents, message
+
+
+def changed_paths(repository: Path, commit: str, parents: list[str], *pathspec: str) -> set[str]:
+    """The paths a non-merge commit changes, limited to pathspec when given."""
     if len(parents) > 1:
         raise CheckError(f"{commit} is a merge commit; merge diffs are unsupported, not treated as empty")
     revisions = [parents[0], commit] if parents else ["--root", commit]
     raw = git(repository, "diff-tree", "--no-commit-id", "--name-only", "-r",
               "--no-renames", "--no-ext-diff", "--no-textconv", "-z",
-              *revisions, "--", GOLDEN_DIRECTORY)
-    paths = {path.decode("utf-8", errors="surrogateescape")
-             for path in raw.split(b"\0") if path}
+              *revisions, "--", *pathspec)
+    return {path.decode("utf-8", errors="surrogateescape") for path in raw.split(b"\0") if path}
+
+
+def changed_goldens(repository: Path, commit: str, parents: list[str]) -> set[str]:
+    paths = changed_paths(repository, commit, parents, GOLDEN_DIRECTORY)
     paths = {path for path in paths if path.startswith(GOLDEN_DIRECTORY) and path.endswith(".png")}
     for path in paths:
         if "\n" in path or "\r" in path:
@@ -91,14 +96,7 @@ def missing_reviews(repository: Path, commits: list[str]) -> tuple[list[tuple[st
     missing = []
     changed_count = 0
     for commit in commits:
-        # Read the actual headers, even at a history boundary. Never mistake a
-        # missing parent for a root by relying on a truncated revision walk.
-        contents = git(repository, "cat-file", "commit", commit)
-        headers, separator, message = contents.partition(b"\n\n")
-        if not separator:
-            raise CheckError(f"{commit} has no commit-message separator")
-        parents = [line[len(b"parent "):].decode("ascii")
-                   for line in headers.split(b"\n") if line.startswith(b"parent ")]
+        parents, message = commit_parts(repository, commit)
         changed = changed_goldens(repository, commit, parents)
         changed_count += len(changed)
         declared = review_declarations(message.decode("utf-8", errors="surrogateescape"))

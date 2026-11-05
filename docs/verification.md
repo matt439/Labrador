@@ -139,7 +139,8 @@ Node AudioTests and audio listening remain separate evidence.
 Even wasm-null can register WebWindowTests and development sample pages when a
 browser is found. It is not a Node-only or browser-free command. The plan names
 required GL browser registrations, conditional null pages and forbidden null
-pixel/context/bundle/pacing entries. The executor inspects actual registrations,
+pixel/context/bundle/pacing entries; the first two come from the inventory's
+`chromium_registered` list. The executor inspects actual registrations,
 rejects zero selected tests and absent required pages, then reports the selection.
 `--no-tests=error` cannot detect a missing page while unrelated tests still exist.
 
@@ -209,6 +210,9 @@ test list, command argv and property lists without duplicate names. JUnit must
 have one `testsuite`, optionally inside a single `testsuites` container. Case
 status can be `run`, `passed` or absent; failure/error/skipped children and
 contradictory aggregate counts fail. Unknown report shapes fail explicitly.
+`ci_gap_report.py` reads JUnit through the same parser, so it refuses the
+same shapes, but it groups failed, skipped and disabled cases for its report
+rather than stopping at the first.
 The synthetic
 fixtures exercise failure and success paths without invoking a configured tool.
 Release configurations and all manual acceptance remain outside the sweep.
@@ -267,8 +271,10 @@ so the record covers every selected preset. Results come from JUnit, because
 and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
 case, a nonzero ctest exit, or a required test that was never registered makes
 the preset fail. The required tests are the GL/Vulkan pixel and smoke tests and
-`wasm-debug`'s 13 browser tests, which configure registers only when it finds a
-Chromium: without one, its 19 headless tests would otherwise pass alone. A
+`wasm-debug`'s 14 browser tests, which configure registers only when it finds a
+Chromium: without one, its 19 headless tests would otherwise pass alone.
+`chromium_registered` in `tests/ctest_inventory.json` lists them for this
+report and the planner alike. A
 tool missing from the shell fails its preset and the run moves on. With
 `--execute` the exit code is 0 when every selected preset passed and 1 when any
 failed. It is 2, with no section printed, when the checkout state cannot be
