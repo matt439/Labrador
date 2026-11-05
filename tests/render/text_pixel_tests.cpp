@@ -1,12 +1,11 @@
-#include "tests/render/pixel_test_harness.h"
+#include <doctest/doctest.h>
 
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
 #include "engine/render/renderer.h"
-
-#include <doctest/doctest.h>
+#include "tests/render/pixel_test_harness.h"
 
 #include <cmath>
 #include <vector>
@@ -15,6 +14,34 @@ using namespace labrador;
 using namespace render_tests::pixel;
 
 // --- text ------------------------------------------------------------------
+//
+// TEXT IS PINNED AS RELATIONSHIPS RATHER THAN AS COLOURS. A sprite case can
+// assert that one pixel is exactly red because the test texture has four flat
+// texels in it. A glyph has neither property: its edges are anti-aliased, and
+// the atlas a .spritefont carries is block-compressed, so the coverage value at
+// any one pixel is a fact about the compressor. What a caller actually depends
+// on is where the ink landed, how far the next character is from it, and that
+// the box measure_text promised is the box that was filled - and every one of
+// those is a statement about two rectangles, which survives a different
+// rasteriser exactly as the sprite assertions do.
+//
+// THE TEXT TERMS MATTER MORE THAN THE SPRITE ONES: the pen arithmetic is a
+// pile of quirks - a per-glyph left bearing, an XAdvance that is an adjustment
+// to the advance rather than the advance, a whitespace glyph that steps the pen
+// without drawing, a line height that is the larger of the glyph and the line
+// spacing - and a rewrite that dropped any one of them would still draw legible
+// text. Each case in this file names the term it fixes.
+//
+// AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
+// Because these cases are relationships, a term added EQUALLY TO EVERY GLYPH
+// cancels out of every one of them and this file cannot see it at all. The
+// glyph's vertical bearing is exactly such a term: deleting it leaves this
+// file green on every backend that rasterises, the null backend's record test
+// green, and the samples merely a few pixels wrong.
+// It is pinned in tests/render/sprite_geometry_tests.cpp instead, as a
+// difference between two glyphs whose bearings differ - which is the shape an
+// absolute term has to be asked about, and which needs no device. Anything
+// else uniform across a line belongs there for the same reason.
 
 TEST_CASE("CONTRACT: the position is the top left of the text, and y runs down")
 {
@@ -35,14 +62,14 @@ TEST_CASE("CONTRACT: the position is the top left of the text, and y runs down")
 		const RectangleI ink = harness.ink_bounds();
 		CHECK(ink.width > 0);
 
-		// THIS IS THE TERM EVERY LAYOUT IN BOTH CLIENTS RESTS ON. A widget that
-		// centres a label, a menu that sizes a row to its longest entry and the
-		// drop shadow that offsets a copy of a string all ask measure_text for
-		// a size and then trust draw_text to stay inside it. Nothing checked
-		// that they agree, and they are computed by two different functions -
-		// so a backend could measure with the line spacing and draw with the
-		// glyph height and every label would be right until one of them
-		// clipped.
+		// THIS IS THE TERM EVERY LAYOUT IN EVERY SAMPLE AND CLIENT RESTS ON. A
+		// widget that centres a label, a menu that sizes a row to its longest
+		// entry and the drop shadow that offsets a copy of a string all ask
+		// measure_text for a size and then trust draw_text to stay inside it.
+		// Nothing else checks that they agree, and they are computed by two
+		// different functions - so a backend could measure with the line
+		// spacing and draw with the glyph height and every label would be
+		// right until one of them clipped.
 		const RectangleI promised(12, 8,
 			static_cast<int>(std::ceil(size.x)),
 			static_cast<int>(std::ceil(size.y)));
@@ -74,8 +101,8 @@ TEST_CASE("CONTRACT: the position is the top left of the text, and y runs down")
 		const RectangleI second = harness.ink_bounds();
 
 		// Twenty pixels down, not twenty up. If y ran the other way for text -
-		// which is the axis a second backend is most likely to get wrong,
-		// because its own clip space runs up - this is negative.
+		// which is the axis a backend is most likely to get wrong where its
+		// own clip space runs up - this is negative.
 		CHECK(second.top() - first.top() == 20);
 		CHECK(second.left() == first.left());
 	}

@@ -17,6 +17,6 @@
 // This executable supplies the entire object, leaving the original static
 // archive member unextracted. Never link it with /WHOLEARCHIVE or suppress
 // duplicate definitions. The class layout and all other code stay identical.
-#define WaitForSingleObjectEx ::labrador::d3d12_wait_test::bounded_wait
+#define WaitForSingleObjectEx ::render_tests::d3d12_wait::bounded_wait
 #include "engine/render/d3d12/device_resources.cpp"
 #undef WaitForSingleObjectEx

@@ -23,7 +23,7 @@
 // What draws over what, which is the order a scene submits in (scene.h,
 // draw()). The seam draws a list in call order and reads no depth
 // (renderer.h, draw_sprite), so this order is the only depth a scene has, and
-// both clients build their layers out of it.
+// every sample and client builds its layers out of it.
 //
 // COMPILED ONLY IN THE null CONFIGURATION, for fanout_tests.cpp's reason:
 // Scene::draw takes a Renderer, and only the null backend has one that needs

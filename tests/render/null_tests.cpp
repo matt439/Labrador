@@ -1,17 +1,17 @@
 #include <doctest/doctest.h>
 
-#include "engine/render/null/recording.h"
 #include "engine/core/name_table.h"
+#include "engine/math/rectanglef.h"
+#include "engine/math/vector2f.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
+#include "engine/render/null/recording.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/viewport.h"
-#include "engine/math/rectanglef.h"
-#include "engine/math/vector2f.h"
 #include "tests/render/null_test_harness.h"
 
 #include <stdexcept>
@@ -280,9 +280,9 @@ TEST_CASE("reading pixels back says plainly that there are none")
 // --- the state a draw was recorded under ------------------------------------
 //
 // THESE TWO ARE NOT THE ONLY COVERAGE OF FILTER AND VIEWPORT, and reading
-// them as such is the mistake worth heading off. pixel_tests.cpp has an entire
-// viewport section and a case that changes the filter mid-list on a
-// rasteriser, so both terms reach a device there.
+// them as such is the mistake worth heading off. view_pixel_tests.cpp has an
+// entire viewport section and sprite_pixel_tests.cpp a case that changes the
+// filter mid-list on a rasteriser, so both terms reach a device there.
 //
 // What these two hold that it cannot is the stamp itself: what a run was
 // recorded UNDER, rather than what came out of it.
@@ -293,8 +293,8 @@ TEST_CASE("the filter in force is stamped on each draw, and changes mid-list")
 
 	DrawList list = harness.begin();
 
-	// Default first, asserted rather than assumed - point is what both clients
-	// want everywhere and a backend that defaulted to linear would look
+	// Default first, asserted rather than assumed - point is what every sample
+	// and ColourWars want everywhere and a backend that defaulted to linear would look
 	// slightly soft in every frame and fail nothing.
 	list.draw_sprite(harness.quad, Harness::whole(),
 		RectangleF(0.0f, 0.0f, 8.0f, 8.0f), Colour::white, 0.0f,

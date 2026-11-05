@@ -1,8 +1,10 @@
-#include "tests/render/test_window.h"
-
-#include "engine/render/vulkan/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
+#include "engine/render/vulkan/backend.h"
+#include "tests/render/probe_watchdog.h"
+#include "tests/render/test_textures.h"
+#include "tests/render/test_window.h"
+#include "tests/render/vulkan/loader_function.h"
 
 #include <algorithm>
 #include <array>
@@ -26,6 +28,7 @@
 namespace
 {
 	using namespace labrador;
+	using render_tests::loader_function;
 
 	constexpr std::size_t message_capacity = 2048;
 	constexpr std::size_t description_capacity = 512;
@@ -118,19 +121,6 @@ namespace
 	}
 
 	template<typename Function>
-	Function loader_function(const char* name)
-	{
-		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
-		const FARPROC address = module == nullptr ? nullptr : GetProcAddress(module, name);
-		if (address == nullptr)
-		{
-			throw std::runtime_error(std::string("Vulkan loader export unavailable: ") + name);
-		}
-		static_assert(sizeof(Function) == sizeof(FARPROC));
-		return std::bit_cast<Function>(address);
-	}
-
-	template<typename Function>
 	Function instance_function(VkInstance instance, const char* name)
 	{
 		const PFN_vkVoidFunction address = vkGetInstanceProcAddr(instance, name);
@@ -209,47 +199,6 @@ namespace
 		}
 		return VK_FALSE;
 	}
-
-	class Watchdog
-	{
-	public:
-		Watchdog() : deadline_(std::chrono::steady_clock::now() + std::chrono::seconds(10)),
-			worker_([this]()
-			{
-				std::unique_lock<std::mutex> lock(this->mutex_);
-				if (!this->condition_.wait_until(lock, this->deadline_,
-					[this]() { return this->finished_; }))
-				{
-					fail_fast("ten-second process deadline expired");
-				}
-			}) {}
-		~Watchdog()
-		{
-			{
-				std::lock_guard<std::mutex> lock(this->mutex_);
-				this->check_deadline();
-				this->finished_ = true;
-			}
-			this->condition_.notify_one();
-			this->worker_.join();
-			this->check_deadline();
-		}
-		Watchdog(const Watchdog&) = delete;
-		Watchdog& operator=(const Watchdog&) = delete;
-	private:
-		void check_deadline() const noexcept
-		{
-			if (std::chrono::steady_clock::now() >= this->deadline_)
-			{
-				fail_fast("ten-second completion deadline expired");
-			}
-		}
-		std::mutex mutex_;
-		std::condition_variable condition_;
-		bool finished_ = false;
-		const std::chrono::steady_clock::time_point deadline_;
-		std::thread worker_;
-	};
 
 	void require(bool condition, const char* message)
 	{
@@ -351,11 +300,7 @@ namespace
 
 		TextureHandle texture;
 		{
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(*renderer, resources, "vulkan_destruction_probe", white);
 			texture = resources.resolve_texture("vulkan_destruction_probe");
 		}
@@ -525,7 +470,7 @@ int main()
 		"and refused.\n", stderr);
 	return EXIT_FAILURE;
 #else
-	Watchdog watchdog;
+	render_tests::ProbeWatchdog watchdog(std::chrono::seconds(10), fail_fast);
 	CallbackState* capture = nullptr;
 	bool workload_completed = false;
 	try

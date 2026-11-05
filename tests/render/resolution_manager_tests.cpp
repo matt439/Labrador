@@ -89,10 +89,11 @@ TEST_CASE("an exact size one pixel off a preset does not adopt its label")
 
 TEST_CASE("the coercing overload still coerces, and that is why there are two")
 {
-	// Unchanged behaviour, pinned so nobody unifies the two setters by accident.
-	// This overload has always meant "pick the preset nearest this" and answers
-	// 720p for anything it does not recognise; pushing a window size through it
-	// is what would have made the fix a no-op.
+	// Pinned so nobody unifies the two setters by accident. This overload
+	// coerces: it matches one of the presets exactly and answers 720p for
+	// anything else, so 1600x900 becomes 1280x720 rather than the nearer
+	// 1920x1080. A window size pushed through it would lose its extent, which
+	// is why set_resolution_exactly exists beside it.
 	ResolutionManager manager;
 
 	manager.set_resolution(Vector2I(1600, 900));

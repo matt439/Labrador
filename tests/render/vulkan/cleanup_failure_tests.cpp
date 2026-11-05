@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 #include "tests/render/allocation_scope.h"
 #include "tests/render/device_fixture.h"
+#include "tests/render/test_textures.h"
+#include "tests/render/vulkan/loader_function.h"
 #include "tests/render/vulkan/submit_loss.h"
 
 #include "engine/render/resource_factory.h"
@@ -21,18 +23,7 @@
 
 namespace
 {
-	template<typename Function>
-	Function loader_function(const char* name)
-	{
-		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
-		const FARPROC address = module == nullptr ? nullptr : GetProcAddress(module, name);
-		if (address == nullptr)
-		{
-			throw std::runtime_error(std::string("Vulkan test export missing: ") + name);
-		}
-		static_assert(sizeof(Function) == sizeof(FARPROC));
-		return std::bit_cast<Function>(address);
-	}
+	using render_tests::loader_function;
 
 	struct CleanupCalls
 	{
@@ -190,16 +181,6 @@ namespace
 		SubmitLossScope(const SubmitLossScope&) = delete;
 		SubmitLossScope& operator=(const SubmitLossScope&) = delete;
 	};
-
-	labrador::TextureData white_texture()
-	{
-		labrador::TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.levels.push_back(labrador::texture_level(texture.format, 2, 2, 0));
-		texture.pixels.resize(texture.levels[0].size, 255);
-		return texture;
-	}
 
 	template<typename Handle>
 	void check_destroyed_once(const Tracked<Handle>& tracked)
@@ -412,7 +393,7 @@ TEST_CASE("Vulkan texture wrapper allocation failure destroys its image, memory 
 		render_tests::DeviceFixture fixture;
 		RenderResources::Impl& table = *fixture.resources.impl();
 		add_texture_asset(fixture.renderer, fixture.resources, "vulkan_wrapper_a",
-			white_texture());
+			render_tests::flat_texture(255, 255, 255));
 
 		// Locate the wrapper in an identical successful load of a new name.
 		AllocationSample located;
@@ -420,7 +401,7 @@ TEST_CASE("Vulkan texture wrapper allocation failure destroys its image, memory 
 		{
 			AllocationScope allocations(located);
 			add_texture_asset(fixture.renderer, fixture.resources, "vulkan_wrapper_b",
-				white_texture());
+				render_tests::flat_texture(255, 255, 255));
 		}
 		REQUIRE_FALSE(located.hook_conflict);
 		REQUIRE(located.watched_attempts == 1);
@@ -431,7 +412,7 @@ TEST_CASE("Vulkan texture wrapper allocation failure destroys its image, memory 
 		{
 			AllocationScope allocations(refused);
 			CHECK_THROWS_AS(add_texture_asset(fixture.renderer, fixture.resources,
-				"vulkan_wrapper_c", white_texture()), std::bad_alloc);
+				"vulkan_wrapper_c", render_tests::flat_texture(255, 255, 255)), std::bad_alloc);
 		}
 		probe.track_texture = false;
 		REQUIRE_FALSE(refused.hook_conflict);
@@ -452,7 +433,7 @@ TEST_CASE("Vulkan texture wrapper allocation failure destroys its image, memory 
 
 		// The loader still works for that name afterwards.
 		add_texture_asset(fixture.renderer, fixture.resources, "vulkan_wrapper_c",
-			white_texture());
+			render_tests::flat_texture(255, 255, 255));
 		CHECK(table.textures.contains("vulkan_wrapper_c"));
 	}
 

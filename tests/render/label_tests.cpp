@@ -3,6 +3,7 @@
 #include "engine/core/game_object.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
+#include "engine/math/scalar.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/font.h"
 #include "engine/render/label.h"
@@ -142,7 +143,7 @@ TEST_CASE("glyph envelopes keep the layout origin through scaling and rotation")
 		content.resources.resolve_sprite_font("font"));
 	const Vector2F position(100.0f, 200.0f);
 	const Vector2F other_position(-20.0f, 15.0f);
-	for (float rotation : { 0.0f, 1.57079633f, -0.7f })
+	for (float rotation : { 0.0f, labrador::pi_over_2, -0.7f })
 	for (float scale : { 1.0f, 2.0f })
 	for (const Vector2F& origin : { Vector2F::zero, Vector2F(3.0f, 5.0f) })
 	{
@@ -284,7 +285,7 @@ TEST_CASE("a turned label reports the box around the turned string")
 	// sprite_geometry.h's and is held to the glyph quads there; this pins
 	// that a Label hands it on through the base a scene holds.
 	Content content;
-	const float half_turn = 3.14159265f;
+	const float half_turn = labrador::pi;
 	const Label label(L"AB", "font", Vector2F(100.0f, 20.0f),
 		&content.resources, labrador::Colour::white, 1.0f, half_turn);
 

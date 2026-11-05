@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "tests/render/allocation_scope.h"
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
 #include "engine/math/rectanglef.h"
@@ -33,11 +34,7 @@ namespace
 		{
 			renderer.create_device(window.handle(), buffer_size, buffer_size, 3);
 			renderer.set_resources(&resources);
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(renderer, resources, "submit_allocation_white", white);
 			texture = resources.resolve_texture("submit_allocation_white");
 		}

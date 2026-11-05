@@ -80,9 +80,9 @@ namespace labrador
 				source_size.y / texture_size.y);
 
 			// A 2x2 rotation, and the branch is worth having: the overwhelming
-			// majority of sprites in both clients are unrotated, and a sine and
-			// a cosine per sprite for an angle of zero is a real cost in a
-			// frame that draws thousands. What that comes to is measured now
+			// majority of sprites in every sample and client are unrotated, and
+			// a sine and a cosine per sprite for an angle of zero is a real
+			// cost in a frame that draws thousands. What that comes to is measured now
 			// rather than asserted - bench/render_bench.cpp runs the same
 			// sprites at both angles and bench/main.cpp prints the ratio.
 			float cosine = 1.0f;

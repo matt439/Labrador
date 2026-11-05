@@ -7,6 +7,7 @@
 #include "engine/render/sprite_vertex.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
+#include "engine/math/scalar.h"
 #include "engine/math/vector2f.h"
 
 #include <cmath>
@@ -175,7 +176,7 @@ TEST_CASE("CONTRACT: the origin is in unscaled source texels")
 TEST_CASE("CONTRACT: rotation turns about the position, clockwise on screen")
 {
 	SpriteVertex corners[4];
-	const float quarter_turn = 1.57079633f;
+	const float quarter_turn = labrador::pi_over_2;
 
 	build_sprite_quad(RectangleF(0.0f, 0.0f, 10.0f, 4.0f), whole(), TEXTURE,
 		Colour::white, quarter_turn, Vector2F::zero, SpriteFlip::none,
@@ -343,7 +344,7 @@ TEST_CASE("CONTRACT: the caller's origin is the string's, in unscaled texels")
 TEST_CASE("CONTRACT: a rotated line turns about the string, not each glyph")
 {
 	SpriteVertex corners[4];
-	const float quarter_turn = 1.57079633f;
+	const float quarter_turn = labrador::pi_over_2;
 
 	build_glyph_quad(Vector2F(100.0f, 200.0f), 2.0f, bearing(0.0f),
 		Vector2F(10.0f, 0.0f), TEXTURE, Colour::white, quarter_turn,
@@ -406,7 +407,7 @@ TEST_CASE("BOUNDS: an origin of the source's own width lands the sprite left of 
 
 TEST_CASE("BOUNDS: a half turn about the top left lands the sprite up and left of it")
 {
-	const float half_turn = 3.14159265f;
+	const float half_turn = labrador::pi;
 	const RectangleF box = sprite_quad_bounds(
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), RectangleI(0, 0, 8, 8),
 		half_turn, Vector2F::zero);
@@ -431,7 +432,7 @@ TEST_CASE("BOUNDS: the box is the box around the corners, for every combination"
 	// a cull can be held to.
 	const Vector2F origins[] = { Vector2F::zero, Vector2F(8.0f, 8.0f),
 		Vector2F(4.0f, 2.0f), Vector2F(-3.0f, 12.0f) };
-	const float turns[] = { 0.0f, 0.3f, 1.57079633f, 2.5f, 3.14159265f,
+	const float turns[] = { 0.0f, 0.3f, labrador::pi_over_2, 2.5f, labrador::pi,
 		4.0f, -0.7f };
 	const RectangleF destinations[] = {
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f),
@@ -466,7 +467,7 @@ TEST_CASE("BOUNDS: a string's box turns about its position, scaled")
 	// The third row of the review's table: a label at (100, 20) measuring
 	// 20x20, turned a half turn, drawn across x=80..100 while its unrotated
 	// box said x=100..120.
-	const float half_turn = 3.14159265f;
+	const float half_turn = labrador::pi;
 	const RectangleF turned = text_quad_bounds(Vector2F(100.0f, 20.0f), 1.0f,
 		Vector2F(20.0f, 20.0f), half_turn, Vector2F::zero);
 	CHECK(close(turned, RectangleF(80.0f, 0.0f, 20.0f, 20.0f)));
@@ -480,7 +481,7 @@ TEST_CASE("BOUNDS: a string's box turns about its position, scaled")
 	// And a quarter turn of a scaled, origin-shifted string is the box
 	// around where build_glyph_quad puts its glyphs - checked against one
 	// glyph at the far end of the pen, whose corners must all fall inside.
-	const float quarter_turn = 1.57079633f;
+	const float quarter_turn = labrador::pi_over_2;
 	const RectangleF box = text_quad_bounds(Vector2F(100.0f, 200.0f), 2.0f,
 		Vector2F(14.0f, 8.0f), quarter_turn, Vector2F(2.0f, 1.0f));
 	SpriteVertex corners[4];
@@ -500,7 +501,7 @@ TEST_CASE("world cull bounds contain camera-snapped corners with distant pivots"
 {
 	const RectangleI source(0, 0, 8, 6);
 	for (float scale : { 0.1f, 1.0f, 10.0f })
-	for (float rotation : { 0.0f, 0.7f, 1.57079633f, 3.14159265f })
+	for (float rotation : { 0.0f, 0.7f, labrador::pi_over_2, labrador::pi })
 	for (const Vector2F origin : { Vector2F::zero, Vector2F(4, 3), Vector2F(-40, 90) })
 	for (const Vector2F translation : { Vector2F(0.2f, 0.2f), Vector2F(-2.3f, 5.7f) })
 	{

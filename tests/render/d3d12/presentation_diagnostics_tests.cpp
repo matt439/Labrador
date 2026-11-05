@@ -3,6 +3,8 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/throw_if_failed.h"
+#include "tests/render/page_crossing_frame.h"
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
 #include <d3d12sdklayers.h>
@@ -23,6 +25,8 @@ namespace
 	constexpr int resized_size = 32;
 	constexpr int presented_frames = DeviceResources::frame_count * 2 + 2;
 	using SlotVisits = std::array<int, DeviceResources::frame_count>;
+	static_assert(DrawList::View::max_page_sprites == render_tests::vertex_page_sprites,
+		"page_crossing_sprites must cross this backend's vertex pages");
 
 	struct Fixture
 	{
@@ -130,16 +134,6 @@ namespace
 		}
 	}
 
-	TextureData white_texture()
-	{
-		TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
-		texture.pixels.resize(texture.levels[0].size, 255);
-		return texture;
-	}
-
 	SlotVisits present_frames(Renderer& renderer, TextureHandle texture, int first_frame)
 	{
 		SlotVisits visits{};
@@ -151,20 +145,8 @@ namespace
 			REQUIRE(slot >= 0);
 			REQUIRE(slot < DeviceResources::frame_count);
 			++visits[static_cast<size_t>(slot)];
-			renderer.set_view_count(2);
-			for (int view = 0; view < 2; ++view)
-			{
-				DrawList list = renderer.view(view);
-				// Two full vertex pages and a partial third in each view.
-				for (int sprite = 0; sprite < 4097; ++sprite)
-				{
-					list.draw_sprite(texture, RectangleI(0, 0, 2, 2),
-						RectangleF(static_cast<float>((sprite + frame) % 8) * 2.0f,
-							static_cast<float>((sprite / 8 + view) % 8) * 2.0f, 2.0f, 2.0f),
-						frame % 2 == 0 ? Colour::red : Colour::blue,
-						0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
-				}
-			}
+			// Two full vertex pages and a partial third in each view.
+			render_tests::record_page_crossing_views(renderer, texture, frame);
 			renderer.submit();
 			renderer.end_frame();
 		}
@@ -190,7 +172,7 @@ TEST_CASE("D3D12 presentation diagnostics cover reuse resize and engine resource
 	QueueFilters filters(*messages.Get());
 	const QueueCounts baseline = calibrate(*messages.Get());
 	add_texture_asset(*fixture.renderer, fixture.resources,
-		"presentation_diagnostics", white_texture());
+		"presentation_diagnostics", render_tests::flat_texture(255, 255, 255));
 	const TextureHandle texture = fixture.resources.resolve_texture("presentation_diagnostics");
 	const SlotVisits before = present_frames(*fixture.renderer, texture, 0);
 	REQUIRE(fixture.window.resize(resized_size, resized_size));

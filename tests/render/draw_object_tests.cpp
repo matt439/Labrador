@@ -3,6 +3,7 @@
 #include "engine/render/draw_object.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/segment.h"
+#include "engine/math/scalar.h"
 #include "engine/math/vector2f.h"
 
 #include <cmath>
@@ -96,9 +97,9 @@ TEST_CASE("CONTRACT: a rotated rectangle sets the draw rotation to its own angle
 	// A quarter turn clockwise on screen, which with y running down is a
 	// positive angle - the same sign the pixel contract pins for a sprite.
 	object.set_draw_rotation_by_rectangle_rotated(
-		turned(3.14159265f / 2.0f));
+		turned(labrador::pi_over_2));
 	CHECK(object.draw_rotation() ==
-		doctest::Approx(3.14159265f / 2.0f).epsilon(0.0001));
+		doctest::Approx(labrador::pi_over_2).epsilon(0.0001));
 
 	// And back, which is the assertion that catches a setter that stores
 	// nothing: a second call has to move the value it left.

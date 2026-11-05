@@ -4,6 +4,7 @@
 #include "engine/core/name_table.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
+#include "engine/math/scalar.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/colour.h"
@@ -21,12 +22,13 @@
 // TextureObject: a GameObject base with a bounds() a scene culls against.
 //
 // WHAT IS PINNED. bounds() is the whole of this file, because it is the whole
-// of what a cull sees. It reported the destination rectangle, which is where
-// a sprite lands only when its frame has no authored origin, the caller gave
-// none, and nothing is turned - and a sprite meeting none of those was culled
-// from a view it was drawn inside (docs/review/gpt6/README.md, G6-04). The
-// arithmetic is sprite_geometry.h's and is held to the quad there; what these
-// say is that Visual reaches it with the frame's origin and its own.
+// of what a cull sees. It is the box around where the sprite lands, not the
+// destination rectangle: the two agree only when the frame has no authored
+// origin, the caller gave none, and nothing is turned, and a box that ignored
+// any of those would cull a sprite from a view it is drawn inside
+// (docs/review/gpt6/README.md, G6-04). The arithmetic is sprite_geometry.h's
+// and is held to the quad there; what these say is that Visual reaches it
+// with the frame's origin and its own.
 
 namespace
 {
@@ -110,7 +112,7 @@ TEST_CASE("a turned sprite's box is the box around the turned rectangle")
 	// The review's second row: a half turn about the top left puts the whole
 	// sprite up and left of it.
 	Content content;
-	const float half_turn = 3.14159265f;
+	const float half_turn = labrador::pi;
 	const Visual visual("sheet", "plain",
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), &content.resources,
 		labrador::Colour::white, half_turn);
@@ -132,7 +134,7 @@ TEST_CASE("a visual has nothing to step")
 TEST_CASE("rotated shape visuals preserve their center and orientation")
 {
 	Content content;
-	for (float angle : { 0.0f, 1.57079633f, 0.7f, -0.7f })
+	for (float angle : { 0.0f, labrador::pi_over_2, 0.7f, -0.7f })
 	{
 		const labrador::RectangleRotated shape(Vector2F(50, 50),
 			Vector2F(std::cos(angle), std::sin(angle)),

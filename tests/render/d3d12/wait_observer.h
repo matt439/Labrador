@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace labrador::d3d12_wait_test
+namespace render_tests::d3d12_wait
 {
 	// The isolated synchronization executable redirects only the production
 	// DeviceResources TU's wait call here. No engine header or class is changed.

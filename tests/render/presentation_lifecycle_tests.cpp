@@ -9,6 +9,8 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
+#include "tests/render/page_crossing_frame.h"
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
 #include <cstddef>
@@ -29,37 +31,12 @@ namespace
 	constexpr int resized_size = 32;
 	constexpr int presented_frames = 6;
 
-	TextureData white_texture()
-	{
-		TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.format = TextureFormat::r8g8b8a8_unorm;
-		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
-		texture.pixels.resize(texture.levels[0].size, 255);
-		return texture;
-	}
-
+	// Each view crosses two full vertex pages into a third
+	// (render_tests::page_crossing_sprites).
 	void present_frame(Renderer& renderer, TextureHandle texture, int frame)
 	{
 		renderer.begin_frame();
-		renderer.set_view_count(2);
-		for (int view = 0; view < 2; view++)
-		{
-			DrawList list = renderer.view(view);
-			// Cross two full 2048-sprite vertex pages and a partial third in
-			// each view. Reusing only an empty or single-page frame would leave
-			// allocator/vertex-page lifetime paths unexercised.
-			for (int sprite = 0; sprite < 4097; sprite++)
-			{
-				const float x = static_cast<float>((sprite + frame) % 8) * 2.0f;
-				const float y = static_cast<float>((sprite / 8 + view) % 8) * 2.0f;
-				list.draw_sprite(texture, RectangleI(0, 0, 2, 2),
-					RectangleF(x, y, 2.0f, 2.0f),
-					frame % 2 == 0 ? Colour::red : Colour::blue, 0.0f,
-					Vector2F::zero, SpriteFlip::none, 0.0f);
-			}
-		}
+		render_tests::record_page_crossing_views(renderer, texture, frame);
 		renderer.submit();
 		renderer.end_frame();
 	}
@@ -72,7 +49,8 @@ TEST_CASE("CONTRACT: consecutive presented frames survive resize without per-fra
 	Renderer renderer;
 	renderer.create_device(window.handle(), initial_size, initial_size, 2);
 	renderer.set_resources(&resources);
-	add_texture_asset(renderer, resources, "presentation_lifecycle", white_texture());
+	add_texture_asset(renderer, resources, "presentation_lifecycle",
+		render_tests::flat_texture(255, 255, 255));
 	const TextureHandle texture = resources.resolve_texture("presentation_lifecycle");
 
 	for (int frame = 0; frame < presented_frames; frame++)
@@ -131,7 +109,8 @@ TEST_CASE("CONTRACT: renderer teardown accepts presented work without an explici
 	std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
 	renderer->create_device(window.handle(), initial_size, initial_size, 2);
 	renderer->set_resources(&resources);
-	add_texture_asset(*renderer, resources, "presentation_lifecycle", white_texture());
+	add_texture_asset(*renderer, resources, "presentation_lifecycle",
+		render_tests::flat_texture(255, 255, 255));
 	const TextureHandle texture = resources.resolve_texture("presentation_lifecycle");
 	for (int frame = 0; frame < presented_frames; frame++)
 	{

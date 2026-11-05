@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "tests/render/allocation_scope.h"
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
 #include "engine/math/rectanglef.h"
@@ -36,12 +37,7 @@ namespace
 			renderer.create_device(window.handle(), buffer_size, buffer_size,
 				view_capacity);
 			renderer.set_resources(&resources);
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.format = TextureFormat::r8g8b8a8_unorm;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(renderer, resources, "d3d12_submit_white", white);
 			texture = resources.resolve_texture("d3d12_submit_white");
 		}

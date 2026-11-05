@@ -60,8 +60,9 @@ add_dependencies(RenderTests render_test_content)
 #
 # A backend is chosen at build time, so a test that names one only compiles
 # when that one is built - which is the same rule a client lives under and is
-# why this is a source list and not an #ifdef. RenderTests is otherwise
-# identical in every configuration.
+# why this is a source list and not an #ifdef. Apart from this and the
+# Windows-only HRESULT test below, RenderTests is identical in every
+# configuration.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(RenderTests PRIVATE null_tests.cpp null_resource_tests.cpp)
 endif()
@@ -75,8 +76,10 @@ endif()
 # RenderPixelTests — the drawing half, on a real device.
 #
 # A separate executable from RenderTests, which is pure arithmetic and wants no
-# device. This one creates a device and a hidden window, so it is the one entry
-# in ctest that can fail for a reason outside the repository: a Direct3D debug
+# device. This one creates a device and a hidden window, so it is one of the
+# ctest entries that need a device (with MinimalSmokeTests and, under D3D12,
+# D3D12SynchronizationTests) and can fail for a reason outside the
+# repository: a Direct3D debug
 # build falls back to WARP and needs no GPU, but a release build has no such
 # fallback (device_resources.cpp), and neither the OpenGL backend nor the
 # Vulkan one has any fallback at all - Vulkan's software implementations are

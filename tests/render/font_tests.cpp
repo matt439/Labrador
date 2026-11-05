@@ -23,11 +23,10 @@
 // arithmetic over a font invented for the question being asked, where a glyph
 // can be exactly one texel wide and a line spacing can be a round number.
 //
-// A SECOND BACKEND INHERITS ALL OF THIS AND RE-RUNS NONE OF IT, which is the
-// point of the walk having moved out of DirectXTK: font.cpp is compiled once
-// per build, not once per backend, so these hold for every backend there will
-// ever be. What a backend still owes is one Draw per glyph at the position
-// this file pins.
+// EVERY BACKEND INHERITS ALL OF THIS AND RE-RUNS NONE OF IT, which is the
+// point of the walk living outside any backend: font.cpp is compiled once per
+// build, not once per backend, so these hold for all five. What a backend
+// still owes is one Draw per glyph at the position this file pins.
 
 namespace
 {

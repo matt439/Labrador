@@ -5,6 +5,7 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
+#include "tests/render/test_textures.h"
 
 #include <stdexcept>
 #include <string>
@@ -17,13 +18,11 @@
 // is the only way this repository can say "all five answer this the same way"
 // at all. RenderPixelTests needs an adapter and is not built against null;
 // null_tests.cpp compiles only against null. Between them they never hold two
-// backends to one statement - but something else does now, and this file was
-// the only mechanism that could when this was written: tests/render/golden/ is
-// one set of images that all four rasterising backends are held to, byte for
-// byte, which is a comparison across processes where this is a comparison
-// across configurations. The two answer different halves. This file says the
-// five agree about a refusal; the golden set says the four agree about a
-// pixel.
+// backends to one statement. tests/render/golden/ does, as one set of images
+// that all four rasterising backends are held to, byte for byte - a comparison
+// across processes where this is a comparison across configurations. The two
+// answer different halves. This file says the five agree about a refusal; the
+// golden set says the four agree about a pixel.
 //
 // WHAT BELONGS HERE is anything a Renderer answers before create_device, and
 // anything that is a throw rather than a pixel. What does not is anything that
@@ -44,13 +43,7 @@ namespace
 	// something rejected it for the wrong reason.
 	TextureData two_by_two()
 	{
-		TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.format = TextureFormat::r8g8b8a8_unorm;
-		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
-		texture.pixels.assign(texture.levels[0].size, 0xFFu);
-		return texture;
+		return render_tests::flat_texture(255, 255, 255);
 	}
 }
 
@@ -69,13 +62,11 @@ TEST_CASE("CONTRACT: a texture loaded before there is a device is refused, by na
 
 	const TextureData texture = two_by_two();
 
-	// THE ORDERING IS A RULE OF THE SEAM, AND UNSTATED IT GETS THREE ANSWERS.
-	// Left to the backends: gl throws, d3d11 dereferences a null device inside
-	// the D3D runtime and takes the process with it, and null - the
-	// configuration CI runs end to end - succeeds and hands back a handle that
-	// resolves and draws. The permissive one being the one that always runs is
-	// the part that matters: a client could keep the rule wrong through every
-	// test it has and find out on the machine it ships to.
+	// THE ORDERING IS A RULE OF THE SEAM, AND EVERY BACKEND REFUSES. The null
+	// backend matters most here: it is the configuration CI runs end to end,
+	// and if it accepted the load and handed back a handle that resolves and
+	// draws, a client could keep the rule wrong through every test it has and
+	// find out on the machine it ships to.
 	CHECK_THROWS_AS(
 		add_texture_asset(renderer, resources, "quad", texture),
 		std::runtime_error);
@@ -171,9 +162,9 @@ TEST_CASE("CONTRACT: window_size_changed before there is a device rebuilds nothi
 {
 	// TEST-GAP.md's A4. A shell can be sent a WM_SIZE between making its window
 	// and making its device - Win32 allows it and nothing in engine/app/
-	// forbids it - and four of the five backends answered that by walking a
-	// path with a null device in it. The seam says the answer is false, and
-	// this is where the five are held to it.
+	// forbids it - and a backend must not walk a path with a null device in
+	// it. The seam says the answer is false, and this is where the five are
+	// held to it.
 	Renderer renderer;
 
 	CHECK_FALSE(renderer.window_size_changed(640, 480));
@@ -189,11 +180,11 @@ TEST_CASE("CONTRACT: a marker is legal before there is a device")
 {
 	// TEST-GAP.md's A2, and it is the executable half of the decision
 	// docs/review/backend-equivalence-2/ asked for: markers stay on the seam
-	// and renderer.h now calls them advisory. An advisory call that
-	// access-violates on one backend is not advisory, and that is exactly what
-	// begin_marker did on d3d11 - ID3DUserDefinedAnnotation is made with the
-	// device, so the ComPtr holding it was null and the forward dereferenced
-	// it. The other four discarded the call.
+	// and renderer.h calls them advisory. An advisory call that
+	// access-violates on one backend is not advisory. On d3d11 the
+	// ID3DUserDefinedAnnotation is made with the device, so before one exists
+	// the forward has nothing to call and must discard the marker, as every
+	// other backend does.
 	//
 	// THERE IS NOTHING TO OBSERVE AND THAT IS THE ASSERTION. A marker leaves
 	// no trace a test can read on any of the five - the one backend that

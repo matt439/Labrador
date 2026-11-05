@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include <string>
 
-TEST_CASE("GL texture refusal leaves no allocated object and permits retry")
+TEST_CASE("GL texture refusal leaves the caller's binding untouched and permits retry")
 {
 	using namespace labrador;
 	render_tests::DeviceFixture fixture;

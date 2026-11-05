@@ -439,9 +439,9 @@ namespace labrador
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong,
-		// because both answers look plausible and every opaque sprite in both
-		// samples renders identically either way. It is the same two words in
-		// five files now.
+		// because both answers look plausible and every opaque sprite renders
+		// identically either way. Every backend's blend state carries the same
+		// two words.
 		VkPipelineColorBlendAttachmentState blend = {};
 		blend.blendEnable = VK_TRUE;
 		blend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;

@@ -1,8 +1,10 @@
-#include "tests/render/test_window.h"
-
-#include "engine/render/vulkan/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
+#include "engine/render/vulkan/backend.h"
+#include "tests/render/probe_watchdog.h"
+#include "tests/render/test_textures.h"
+#include "tests/render/test_window.h"
+#include "tests/render/vulkan/loader_function.h"
 
 #include <algorithm>
 #include <array>
@@ -23,6 +25,7 @@
 namespace
 {
 	using namespace labrador;
+	using render_tests::loader_function;
 
 	constexpr int width = 1280;
 	constexpr int height = 720;
@@ -41,59 +44,9 @@ namespace
 		std::_Exit(EXIT_FAILURE);
 	}
 
-	class Watchdog
+	[[noreturn]] void expire(const char* reason) noexcept
 	{
-	public:
-		Watchdog() : deadline_(std::chrono::steady_clock::now() + std::chrono::seconds(10))
-		{
-			this->worker_ = std::thread([this]()
-				{
-					std::unique_lock<std::mutex> lock(this->mutex_);
-					if (!this->condition_.wait_until(lock, this->deadline_,
-						[this]() { return this->finished_; }))
-					{
-						fail_fast("ten-second process deadline expired", VK_TIMEOUT);
-					}
-				});
-		}
-		~Watchdog()
-		{
-			{
-				std::lock_guard<std::mutex> lock(this->mutex_);
-				if (std::chrono::steady_clock::now() >= this->deadline_)
-				{
-					fail_fast("process deadline expired before cancellation", VK_TIMEOUT);
-				}
-				this->finished_ = true;
-			}
-			this->condition_.notify_one();
-			this->worker_.join();
-			if (std::chrono::steady_clock::now() >= this->deadline_)
-			{
-				fail_fast("process deadline expired during watchdog join", VK_TIMEOUT);
-			}
-		}
-		Watchdog(const Watchdog&) = delete;
-		Watchdog& operator=(const Watchdog&) = delete;
-	private:
-		const std::chrono::steady_clock::time_point deadline_;
-		std::mutex mutex_;
-		std::condition_variable condition_;
-		bool finished_ = false;
-		std::thread worker_;
-	};
-
-	template<typename Function>
-	Function loader_function(const char* name)
-	{
-		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
-		const FARPROC address = module == nullptr ? nullptr : GetProcAddress(module, name);
-		if (address == nullptr)
-		{
-			throw std::runtime_error(std::string("Vulkan loader export unavailable: ") + name);
-		}
-		static_assert(sizeof(Function) == sizeof(FARPROC));
-		return std::bit_cast<Function>(address);
+		fail_fast(reason, VK_TIMEOUT);
 	}
 
 	struct VulkanCalls
@@ -229,11 +182,7 @@ namespace
 		}
 		TextureHandle texture;
 		{
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(*renderer, resources, "presented_slots_probe", white);
 			texture = resources.resolve_texture("presented_slots_probe");
 		}
@@ -442,7 +391,7 @@ int main()
 {
 	// Arm the absolute deadline before its worker starts; it outlives every
 	// renderer/resource owner, including exception cleanup.
-	Watchdog watchdog;
+	render_tests::ProbeWatchdog watchdog(std::chrono::seconds(10), expire);
 	try
 	{
 		static_cast<void>(real_calls()); // Resolve actual exports before any engine Vulkan call.
