@@ -251,6 +251,10 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 		'Backend-internal inspector for null-only tests and benchmarks at an engine pin; the testing guide shows consumer use without publishing a portable render contract.',
 	],
 	[
+		'engine/render/renderer_checks.h',
+		"The argument checks every backend's Renderer shares, private to the backends; the reference documents the throws a caller sees in renderer.h.",
+	],
+	[
 		'engine/assets/json_object_keys.h',
 		'Fixed-schema validation private to the manifest, sprite-sheet and sound-bank loaders; game code uses JsonValue::keys() for its own dictionaries.',
 	],

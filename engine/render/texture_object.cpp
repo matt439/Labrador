@@ -26,13 +26,13 @@ namespace labrador
 	TextureObject::TextureObject(const std::string& sheet_name,
 		const std::string& frame_name,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
 		SpriteSheetObject(sheet_name, render_resources,
-			color, rotation, origin, flip, layer_depth),
+			colour, rotation, origin, flip, layer_depth),
 		// The base is complete by now, so its sheet is there to resolve against.
 		frame_(SpriteSheetObject::sprite_sheet()->
 			resolve_sprite_frame(frame_name))
@@ -42,13 +42,13 @@ namespace labrador
 
 	TextureObject::TextureObject(RenderResources::SheetFrame frame,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
 		SpriteSheetObject(resolved(frame).sheet(), render_resources,
-			color, rotation, origin, flip, layer_depth),
+			colour, rotation, origin, flip, layer_depth),
 		frame_(frame.frame())
 	{
 		// Both halves are read through the table here, once, so a pair that

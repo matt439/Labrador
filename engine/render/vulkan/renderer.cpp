@@ -3,6 +3,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
@@ -29,11 +30,6 @@ namespace labrador
 {
 	namespace
 	{
-		// Four corners, two triangles, and the winding the corner order in
-		// sprite_geometry.h fixes.
-		const int vertices_per_sprite = 4;
-		const int indices_per_sprite = 6;
-
 		bool names_software(std::string name)
 		{
 			std::transform(name.begin(), name.end(), name.begin(),
@@ -48,14 +44,17 @@ namespace labrador
 				name.find("software rasterizer") != std::string::npos;
 		}
 
-		RenderDeviceInfo selected_device(const VulkanDevice& device)
+		// The device DeviceResources selected, and the present mode it
+		// configured on its swapchain.
+		RenderDeviceInfo selected_device(const DeviceResources& resources)
 		{
 			VkPhysicalDeviceProperties properties = {};
-			vkGetPhysicalDeviceProperties(device.physical_device, &properties);
+			vkGetPhysicalDeviceProperties(resources.owner().physical_device,
+				&properties);
 
 			RenderDeviceInfo info;
 			info.backend = "vulkan";
-			info.present_mode = "fifo";
+			info.present_mode = resources.present_mode_name();
 			info.api = "Vulkan " +
 				std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." +
 				std::to_string(VK_VERSION_MINOR(properties.apiVersion)) + "." +
@@ -84,13 +83,13 @@ namespace labrador
 		// backend.
 		void fill_transform(float* transform, const RectangleI& pixels)
 		{
-			const float width = static_cast<float>(pixels.width);
-			const float height = static_cast<float>(pixels.height);
-
-			transform[0] = width > 0.0f ? 2.0f / width : 0.0f;
-			transform[1] = height > 0.0f ? -2.0f / height : 0.0f;
-			transform[2] = -1.0f;
-			transform[3] = 1.0f;
+			const PixelsToClip values = pixels_to_clip(
+				static_cast<float>(pixels.width),
+				static_cast<float>(pixels.height));
+			transform[0] = values.x_scale;
+			transform[1] = values.y_scale;
+			transform[2] = values.x_offset;
+			transform[3] = values.y_offset;
 		}
 
 		// A shader module from a byte array this build produced.
@@ -541,21 +540,8 @@ namespace labrador
 		// "upload it once at creation" is a staging buffer, a copy on a command
 		// buffer and a wait - the same three steps every texture takes
 		// (texture_factory.cpp).
-		std::vector<unsigned short> index_data;
-		index_data.reserve(static_cast<size_t>(DrawList::View::max_run_sprites)
-			* indices_per_sprite);
-		for (int sprite = 0; sprite < DrawList::View::max_run_sprites;
-			sprite++)
-		{
-			const unsigned short first =
-				static_cast<unsigned short>(sprite * vertices_per_sprite);
-			index_data.push_back(static_cast<unsigned short>(first + 0));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 3));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-		}
+		const std::vector<unsigned short> index_data =
+			quad_indices(DrawList::View::max_run_sprites);
 
 		const VkDeviceSize index_bytes =
 			static_cast<VkDeviceSize>(index_data.size()) *
@@ -728,9 +714,7 @@ namespace labrador
 	void Renderer::Impl::on_device_restored()
 	{
 		this->create_device_dependent_resources();
-		this->device_info = selected_device(this->device_resources.owner());
-		this->device_info.present_mode =
-			this->device_resources.present_mode_name();
+		this->device_info = selected_device(this->device_resources);
 
 		if (this->notify != nullptr)
 		{
@@ -752,11 +736,7 @@ namespace labrador
 	void Renderer::create_device(void* native_window, int width, int height,
 		int view_capacity)
 	{
-		if (view_capacity < 1)
-		{
-			throw std::invalid_argument(
-				"Renderer::create_device needs a view capacity of at least 1.");
-		}
+		check_view_capacity(view_capacity);
 
 		Impl& impl = *this->impl_;
 
@@ -781,17 +761,12 @@ namespace labrador
 		impl.device_resources.create_window_size_dependent_resources();
 
 		impl.reset_views();
-		impl.device_info = selected_device(impl.device_resources.owner());
-		impl.device_info.present_mode = impl.device_resources.present_mode_name();
+		impl.device_info = selected_device(impl.device_resources);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
-		if (this->impl_->device_info.backend.empty())
-		{
-			throw std::logic_error(
-				"Renderer::device_info requires create_device.");
-		}
+		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
 	}
 
@@ -928,28 +903,8 @@ namespace labrador
 
 	void Renderer::set_view_count(int count)
 	{
-		const int capacity = static_cast<int>(this->impl_->views.size());
-		if (count < 0 || count > capacity)
-		{
-			throw std::out_of_range("Renderer::set_view_count(" +
-				std::to_string(count) + ") is outside the capacity of " +
-				std::to_string(capacity) + " create_device was given.");
-		}
-
-		// Lowering it past a view something has already drawn into strands that
-		// recording: submit() would not replay it. The two backends that record
-		// into a command list have a harder version of this problem, but the
-		// answer the seam gives is the same, so it is the same throw.
-		for (int i = count; i < this->impl_->view_count; i++)
-		{
-			if (this->impl_->views[static_cast<size_t>(i)]->touched)
-			{
-				throw std::logic_error("Renderer::set_view_count(" +
-					std::to_string(count) + ") would drop view " +
-					std::to_string(i) + ", which has already been drawn into "
-					"this frame.");
-			}
-		}
+		check_view_count(count, this->impl_->view_count,
+			this->impl_->views);
 
 		this->impl_->view_count = count;
 	}
@@ -961,14 +916,7 @@ namespace labrador
 
 	DrawList Renderer::view(int index) const
 	{
-		if (index < 0 || index >= this->impl_->view_count)
-		{
-			throw std::out_of_range("Renderer::view(" + std::to_string(index) +
-				") - this frame has " +
-				std::to_string(this->impl_->view_count) + " views. Asking for "
-				"one nobody set up used to answer with a fullscreen pane and "
-				"draw a whole extra pass.");
-		}
+		check_view_index(index, this->impl_->view_count);
 		return DrawList(this->impl_->views[static_cast<size_t>(index)].get());
 	}
 

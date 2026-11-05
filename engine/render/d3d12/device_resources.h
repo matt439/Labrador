@@ -34,8 +34,13 @@ namespace labrador
 		// latency; docs/performance/2026-09-19-g6f-ratchet.md#5 owns that evidence.
 		static const int frame_count = 2;
 
-		explicit DeviceResources(
-			DXGI_FORMAT back_buffer_format = DXGI_FORMAT_B8G8R8A8_UNORM);
+		// The swap chain's format, which the render target views and the
+		// pipeline state use too. Renderer::read_back_buffer swaps B and R
+		// to answer RGBA, so it static_asserts this rather than trusting it.
+		static constexpr DXGI_FORMAT back_buffer_format =
+			DXGI_FORMAT_B8G8R8A8_UNORM;
+
+		DeviceResources();
 		~DeviceResources();
 
 		DeviceResources(const DeviceResources&) = delete;
@@ -56,8 +61,6 @@ namespace labrador
 		// window_size_changed asks before rebuilding. False after a rebuild
 		// that threw, whatever the size, so that the next call rebuilds.
 		bool has_size(int width, int height) const;
-
-		void handle_device_lost();
 
 		// Borrowed callback target; it must outlive its registration here.
 		void register_device_notify(D3DDeviceNotify* notify)
@@ -94,12 +97,17 @@ namespace labrador
 		// queue, fence or event resources are absent.
 		bool try_wait_for_gpu() noexcept;
 
-		// After a present: the swap chain decides which buffer is next.
-		void move_to_next_frame();
-
 		// --- What the renderer needs to know about the device ----------------
 
 		ID3D12Device* device() const { return this->device_.Get(); }
+
+		// The description of the adapter create_device_resources made the
+		// device on: the hardware adapter it chose, or WARP.
+		const DXGI_ADAPTER_DESC1& adapter_description() const
+		{
+			return this->adapter_description_;
+		}
+
 		ID3D12CommandQueue* command_queue() const
 		{
 			return this->command_queue_.Get();
@@ -124,14 +132,20 @@ namespace labrador
 
 		RECT output_size() const { return this->output_size_; }
 		D3D12_VIEWPORT screen_viewport() const { return this->screen_viewport_; }
-		DXGI_FORMAT back_buffer_format() const
-		{
-			return this->back_buffer_format_;
-		}
 
 	private:
+		// Rebuilds everything after a removal or reset that present or a
+		// resize found, between the notify's two callbacks.
+		void handle_device_lost();
+
+		// After a present: the swap chain decides which buffer is next.
+		void move_to_next_frame();
+
 		void create_factory();
-		void hardware_adapter(IDXGIAdapter1** adapter);
+
+		// The first adapter that is not software and can make a Direct3D 12
+		// device at this backend's floor, or null when there is none.
+		Microsoft::WRL::ComPtr<IDXGIAdapter1> hardware_adapter();
 
 		// Shared signaling and completion operations for the throwing and
 		// non-throwing wait entry points.
@@ -149,6 +163,8 @@ namespace labrador
 		Microsoft::WRL::ComPtr<ID3D12Device> device_;
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> command_queue_;
 		Microsoft::WRL::ComPtr<IDXGISwapChain3> swap_chain_;
+
+		DXGI_ADAPTER_DESC1 adapter_description_ = {};
 
 		Microsoft::WRL::ComPtr<ID3D12Resource> back_buffers_[frame_count];
 		D3D12_RESOURCE_STATES back_buffer_states_[frame_count];
@@ -168,7 +184,6 @@ namespace labrador
 
 		int frame_index_ = 0;
 
-		DXGI_FORMAT back_buffer_format_;
 		D3D12_VIEWPORT screen_viewport_;
 		RECT output_size_;
 

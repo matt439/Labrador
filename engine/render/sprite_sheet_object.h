@@ -30,7 +30,7 @@ namespace labrador
 		// sheet handle is resolved and subsequently read in that same table.
 		SpriteSheetObject(const std::string& sheet_name,
 			RenderResources* render_resources,
-			const Colour& color = Colour::white,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
@@ -42,7 +42,7 @@ namespace labrador
 		// whose borrowed-table lifetime is the same as above.
 		SpriteSheetObject(RenderResources::SpriteSheetHandle sheet,
 			RenderResources* render_resources,
-			const Colour& color = Colour::white,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,

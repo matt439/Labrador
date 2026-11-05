@@ -45,20 +45,18 @@ namespace labrador
     //    display change and every no-op resize - computed a value read only
     //    inside the branch the flag turns on.
     //
+    // The back-buffer count and the feature-level floor were constructor
+    // parameters nobody passed. They are fixed in device_resources.cpp, and the
+    // level list starts at the floor rather than listing 9_x levels it never
+    // requests.
+    //
     // What is left of the options word is one runtime fact, whether this OS has
     // flip-model swap effects, so it is a bool and not a flags word with a
     // single permanently-set flag.
     class DeviceResources
     {
     public:
-        // minFeatureLevel is a floor, and CreateDeviceResources truncates the
-        // level array at it - so this default is the engine's real floor, and
-        // the 9_3, 9_2 and 9_1 entries in that array are never requested while
-        // nothing passes anything lower. Worth knowing before treating the
-        // array as a statement of reach.
-        DeviceResources(DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM,
-                        UINT backBufferCount = 2,
-                        D3D_FEATURE_LEVEL minFeatureLevel = D3D_FEATURE_LEVEL_10_0) noexcept;
+        explicit DeviceResources(DXGI_FORMAT backBufferFormat) noexcept;
         ~DeviceResources() = default;
 
         DeviceResources(DeviceResources&&) = default;
@@ -71,10 +69,8 @@ namespace labrador
         void CreateWindowSizeDependentResources();
         void SetWindow(HWND window, int width, int height) noexcept;
         bool WindowSizeChanged(int width, int height);
-        void HandleDeviceLost();
         void RegisterDeviceNotify(D3DDeviceNotify* deviceNotify) noexcept { m_deviceNotify = deviceNotify; }
         void Present(UINT syncInterval);
-        void UpdateColorSpace();
 
         // The accessors, and this is all of them.
         //
@@ -107,6 +103,12 @@ namespace labrador
         }
 
     private:
+        // Called from inside this class only, where the order around them is
+        // kept: a device loss found by Present or ResizeBuffers, and a stale
+        // factory found after a present or a resize.
+        void HandleDeviceLost();
+        void UpdateColorSpace();
+
         void CreateFactory();
         void GetHardwareAdapter(IDXGIAdapter1** ppAdapter);
 
@@ -124,12 +126,9 @@ namespace labrador
 
         // Direct3D properties.
         DXGI_FORMAT                                     m_backBufferFormat;
-        UINT                                            m_backBufferCount;
-        D3D_FEATURE_LEVEL                               m_d3dMinFeatureLevel;
 
         // Cached device properties.
         HWND                                            m_window;
-        D3D_FEATURE_LEVEL                               m_d3dFeatureLevel;
         RECT                                            m_outputSize;
 
         // Whether this OS has flip-model swap effects. Assumed until the

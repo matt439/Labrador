@@ -18,6 +18,17 @@ namespace labrador
 	class SpritePipeline
 	{
 	public:
+		// The root signature's parameters, in order: the pixels-to-clip
+		// transform as root constants, then the texture's and the sampler's
+		// descriptor tables. A draw binds them by these indices.
+		static constexpr UINT transform_parameter = 0;
+		static constexpr UINT texture_parameter = 1;
+		static constexpr UINT sampler_parameter = 2;
+		static constexpr UINT parameter_count = 3;
+
+		// How many 32-bit values the transform is.
+		static constexpr UINT transform_constants = 4;
+
 		// Builds the root signature, then the pipeline state against it,
 		// assigning each member in place. A root signature that will not
 		// serialise throws with the API's reason and leaves both members as

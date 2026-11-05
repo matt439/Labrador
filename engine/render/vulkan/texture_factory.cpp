@@ -28,21 +28,6 @@ namespace labrador
 			return renderer.impl()->device_resources.device();
 		}
 
-		// For the throw, because a VkResult is not an answer (T6).
-		const char* format_name(TextureFormat format)
-		{
-			switch (format)
-			{
-			case TextureFormat::b8g8r8a8_unorm: return "b8g8r8a8_unorm";
-			case TextureFormat::b4g4r4a4_unorm: return "b4g4r4a4_unorm";
-			case TextureFormat::bc1_unorm:      return "bc1_unorm";
-			case TextureFormat::bc2_unorm:      return "bc2_unorm";
-			case TextureFormat::bc3_unorm:      return "bc3_unorm";
-			case TextureFormat::r8g8b8a8_unorm:
-			default:                            return "r8g8b8a8_unorm";
-			}
-		}
-
 		// The engine's format vocabulary, into this API's.
 		//
 		// TWO REASONS TO REFUSE A FORMAT, BOTH NAMED HERE: the block-compressed

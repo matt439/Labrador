@@ -500,7 +500,7 @@ are unchanged.
 
 **Closed 2026-10-29.** `tests/render/d3d12/texture_replacement_tests.cpp`
 adds "D3D12 failed same-name replacement wrapper keeps the old texture and
-descriptor" to D3D12 `RenderPixelTests`. It locates the `D3d12Texture`
+descriptor" to D3D12 `RenderPixelTests`. It locates the `D3D12Texture`
 allocation in an identical successful same-name reload through the Debug CRT
 hook in `tests/render/allocation_scope.h` (one attempt of that size), then
 refuses exactly that attempt in a differently coloured reload. The load throws

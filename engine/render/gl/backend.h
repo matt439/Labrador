@@ -295,6 +295,12 @@ namespace labrador
 		// sequence the class comment describes.
 		void restore_device();
 
+		// The start of a frame, for begin_frame and for a resize that
+		// restarts one: clears the drawable to opaque black unless the
+		// context is lost, and resets every view to hold nothing, with the
+		// default camera and the whole drawable as its viewport.
+		void clear_and_reset_views();
+
 		// The program, the buffers and the samplers.
 		void create_gl_resources();
 

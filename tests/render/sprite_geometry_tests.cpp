@@ -11,6 +11,10 @@
 #include "engine/math/vector2f.h"
 
 #include <cmath>
+#include <cstddef>
+#include <stdexcept>
+#include <tuple>
+#include <vector>
 
 // Where a sprite's corners go, with no device.
 //
@@ -555,4 +559,48 @@ TEST_CASE("unrotated world cull bounds are the destination, shifted and padded e
 	CHECK(negative_zero.y == box.y);
 	CHECK(negative_zero.width == box.width);
 	CHECK(negative_zero.height == box.height);
+}
+
+TEST_CASE("quad_indices builds two triangles per sprite in the corner order")
+{
+	// The winding is (0,1,2) and (1,3,2) from each sprite's first corner,
+	// which is what the corner order this file pins means to a backend.
+	const std::vector<unsigned short> indices = quad_indices(2);
+	const std::vector<unsigned short> expected = {
+		0, 1, 2, 1, 3, 2,
+		4, 5, 6, 5, 7, 6,
+	};
+	CHECK(indices == expected);
+	CHECK(quad_indices(0).empty());
+
+	// The most sprites a 16-bit index reaches ends on corner 65535.
+	const std::vector<unsigned short> largest = quad_indices(16384);
+	REQUIRE(largest.size() == static_cast<std::size_t>(16384 * indices_per_sprite));
+	CHECK(largest[largest.size() - 2] == 65535);
+
+	CHECK_THROWS_AS(std::ignore = quad_indices(16385), std::invalid_argument);
+	CHECK_THROWS_AS(std::ignore = quad_indices(-1), std::invalid_argument);
+}
+
+TEST_CASE("pixels_to_clip maps a pane's corners to clip space with y running up")
+{
+	// 64 and 32 make every value exact: 2/64 and 2/32 are powers of two.
+	const PixelsToClip transform = pixels_to_clip(64.0f, 32.0f);
+	CHECK(transform.x_scale == 2.0f / 64.0f);
+	CHECK(transform.y_scale == -2.0f / 32.0f);
+	CHECK(transform.x_offset == -1.0f);
+	CHECK(transform.y_offset == 1.0f);
+
+	// The pane's top left is clip (-1, 1) and its bottom right is (1, -1).
+	CHECK(0.0f * transform.x_scale + transform.x_offset == -1.0f);
+	CHECK(0.0f * transform.y_scale + transform.y_offset == 1.0f);
+	CHECK(64.0f * transform.x_scale + transform.x_offset == 1.0f);
+	CHECK(32.0f * transform.y_scale + transform.y_offset == -1.0f);
+
+	// A pane with no area scales nothing rather than dividing by zero.
+	const PixelsToClip empty = pixels_to_clip(0.0f, -4.0f);
+	CHECK(empty.x_scale == 0.0f);
+	CHECK(empty.y_scale == 0.0f);
+	CHECK(empty.x_offset == -1.0f);
+	CHECK(empty.y_offset == 1.0f);
 }

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "engine/core/registry.h"
+#include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
-#include "engine/render/font.h"
 #include "engine/render/null/recording.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
@@ -129,5 +129,10 @@ namespace labrador
 
 		const RenderResources* resources = nullptr;
 		labrador::DeviceNotify* notify = nullptr;
+
+		// What begin_frame and a resize that restarts a frame both leave
+		// every view as: holding nothing, with the default camera and the
+		// whole width by height as its viewport.
+		void reset_views();
 	};
 }

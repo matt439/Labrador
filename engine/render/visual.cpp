@@ -10,13 +10,13 @@ namespace labrador
 		const std::string& frame_name,
 		const RectangleF& rectangle,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
 		TextureObject(sheet_name, frame_name, render_resources,
-			color, rotation, origin, flip, layer_depth),
+			colour, rotation, origin, flip, layer_depth),
 		rectangle_(rectangle)
 	{
 		this->initialize_bounds();
@@ -26,13 +26,13 @@ namespace labrador
 		const std::string& frame_name,
 		const RectangleRotated& rect_rotated,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
 		TextureObject(sheet_name, frame_name, render_resources,
-			color, rotation, origin, flip, layer_depth)
+			colour, rotation, origin, flip, layer_depth)
 	{
 		this->rectangle_ = rect_rotated.rectangle_rotated_to_axis();
 		// The shape is centered; sprite destinations rotate about their top

@@ -84,14 +84,5 @@ namespace labrador
 		// The live size, and the authority. Every accessor above that returns a
 		// size returns this one.
 		Vector2I size_;
-
-		Vector2I convert_resolution_to_ivec(
-			ScreenResolution resolution) const;
-		Vector2F convert_resolution_to_vec(
-			ScreenResolution resolution) const;
-		ScreenResolution convert_vec_to_resolution(
-			const Vector2F& vec) const;
-		ScreenResolution convert_ivec_to_resolution(
-			const Vector2I& vec) const;
 	};
 }

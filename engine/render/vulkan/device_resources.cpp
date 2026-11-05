@@ -14,7 +14,7 @@ namespace labrador
 	{
 		// THE FLOOR, AND IT IS THE HIGHEST OF THE FIVE.
 		//
-		// engine/render/d3d11/device_resources.h puts this engine's floor at
+		// engine/render/d3d11/device_resources.cpp puts this engine's floor at
 		// feature level 10.0, the D3D12 one at 11_0 and Windows 10, and the GL
 		// one at 3.3 core - 2010 hardware. This is Vulkan 1.2, which is 2020,
 		// and the reason is one feature rather than a wish: a timeline
@@ -47,6 +47,10 @@ namespace labrador
 		// allocation on the first frame that needs it, too large costs a few
 		// kilobytes that are never touched.
 		const uint32_t sets_per_pool = 64;
+
+		// A surface's currentExtent width when the surface leaves the size to
+		// the swapchain rather than following the window.
+		const uint32_t extent_chosen_by_swapchain = UINT32_MAX;
 
 		// What the swapchain must be able to be the destination of, because the
 		// frame is blitted into it rather than drawn into it.
@@ -419,8 +423,10 @@ namespace labrador
 		// noexcept, so a throw out of the wait would be std::terminate on an
 		// ordinary exit and the wait it was raised from would not have happened
 		// either way. T6: teardown stays silent.
-		std::ignore = this->try_wait_for_gpu();
-
+		//
+		// ONE WAIT, FOR THE WHOLE DEVICE. vkDeviceWaitIdle covers everything
+		// the timeline wait would, and work outside the timeline too, so a
+		// timeline wait before it would add nothing.
 		if (this->owner_ && this->owner_->device != VK_NULL_HANDLE)
 		{
 			std::ignore = vkDeviceWaitIdle(this->owner_->device);
@@ -1135,7 +1141,7 @@ namespace labrador
 		// is answered by the colour target above, which is why the two are
 		// separate objects at all.
 		VkExtent2D extent = capabilities.currentExtent;
-		if (extent.width == 0xFFFFFFFFu)
+		if (extent.width == extent_chosen_by_swapchain)
 		{
 			extent.width = std::clamp(this->colour_extent_.width,
 				capabilities.minImageExtent.width,
@@ -1370,11 +1376,11 @@ namespace labrador
 			return false;
 		}
 
-		// 0xFFFFFFFF is "the swapchain decides", which create_swapchain answers
-		// with the colour target's size - never zero, because that is clamped
-		// to at least one in each direction. So a surface that says it is
-		// asking has area by construction.
-		if (capabilities.currentExtent.width == 0xFFFFFFFFu)
+		// The swapchain deciding is answered in create_swapchain with the
+		// colour target's size - never zero, because that is clamped to at
+		// least one in each direction. So a surface that says it is asking
+		// has area by construction.
+		if (capabilities.currentExtent.width == extent_chosen_by_swapchain)
 		{
 			return true;
 		}
@@ -1993,13 +1999,7 @@ namespace labrador
 			return;
 		}
 
-		VkSemaphoreWaitInfo wait = {};
-		wait.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-		wait.semaphoreCount = 1;
-		wait.pSemaphores = &this->timeline_;
-		wait.pValues = &target;
-
-		check_vk(vkWaitSemaphores(this->owner_->device, &wait, UINT64_MAX),
+		check_vk(this->wait_for_value(target),
 			"The wait for this frame's previous pass did not finish");
 	}
 
@@ -2010,13 +2010,7 @@ namespace labrador
 			return;
 		}
 
-		VkSemaphoreWaitInfo wait = {};
-		wait.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-		wait.semaphoreCount = 1;
-		wait.pSemaphores = &this->timeline_;
-		wait.pValues = &this->timeline_value_;
-
-		check_vk(vkWaitSemaphores(this->owner_->device, &wait, UINT64_MAX),
+		check_vk(this->wait_for_value(this->timeline_value_),
 			"The wait for the GPU did not finish");
 	}
 
@@ -2028,14 +2022,18 @@ namespace labrador
 			return true;
 		}
 
+		return this->wait_for_value(this->timeline_value_) == VK_SUCCESS;
+	}
+
+	VkResult DeviceResources::wait_for_value(uint64_t value) noexcept
+	{
 		VkSemaphoreWaitInfo wait = {};
 		wait.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
 		wait.semaphoreCount = 1;
 		wait.pSemaphores = &this->timeline_;
-		wait.pValues = &this->timeline_value_;
+		wait.pValues = &value;
 
-		return vkWaitSemaphores(this->owner_->device, &wait, UINT64_MAX) ==
-			VK_SUCCESS;
+		return vkWaitSemaphores(this->owner_->device, &wait, UINT64_MAX);
 	}
 
 	// --- The colour target ----------------------------------------------------

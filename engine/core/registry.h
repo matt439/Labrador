@@ -14,9 +14,9 @@ namespace labrador
 {
 	// How a resource is reached through the smart pointer that owns it. The
 	// primary template covers everything spelling it get() - unique_ptr,
-	// shared_ptr - and COM's ComPtr spells it Get(), so the D3D-facing code
-	// specialises this where COM is already in scope rather than dragging
-	// <wrl/client.h> in here.
+	// shared_ptr. A storage type that spells it otherwise specialises this
+	// where its own header is already in scope, rather than this header
+	// including it.
 	template <typename Storage>
 	struct RegistryStorage
 	{

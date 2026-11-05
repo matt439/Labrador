@@ -21,6 +21,7 @@ labrador_add_test_suite(RenderTests
         sprite_sheet_object_tests.cpp
         text_encoding_tests.cpp
         text_tests.cpp
+        texture_format_tests.cpp
         viewport_manager_tests.cpp
         viewport_tests.cpp
         visual_tests.cpp

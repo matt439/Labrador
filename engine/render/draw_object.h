@@ -19,7 +19,7 @@ namespace labrador
 		// using it. A null pointer still permits this base's appearance state
 		// to be read and changed; it does not supply resources to a subclass.
 		DrawObject(RenderResources* render_resources,
-			const Colour& color = Colour::white,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace labrador
 {
 	// The pixel layouts this engine's content actually arrives in, named in the
@@ -49,4 +51,9 @@ namespace labrador
 		bc2_unorm,
 		bc3_unorm,
 	};
+
+	// The enumerator's name as it is spelt above, for a message that names a
+	// format. A value outside the enum answers "TextureFormat " and its
+	// number rather than a name it does not have.
+	std::string format_name(TextureFormat format);
 }

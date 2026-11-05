@@ -96,9 +96,9 @@ TEST_CASE("CONTRACT: a texture loaded before there is a device is refused, by na
 TEST_CASE("CONTRACT: a view capacity below one is refused, and it is invalid_argument")
 {
 	// TEST-GAP.md's A1, and what it is for is the ratchet rather than the
-	// behaviour: the check exists five times by hand-copy, one line at the top
-	// of each create_device. A backend written next year that gets it wrong
-	// does so silently - a capacity of zero
+	// behaviour: every backend's create_device has to make the shared check
+	// (engine/render/renderer_checks.h) before anything else. A backend written
+	// next year that skips it does so silently - a capacity of zero
 	// then means a renderer with no views at all, and every view() call after
 	// it is an out_of_range a client reads as its own mistake.
 	//
@@ -128,6 +128,18 @@ TEST_CASE("CONTRACT: a renderer with no device has no views")
 
 	CHECK(renderer.view_count() == 0);
 	CHECK_THROWS_AS(std::ignore = renderer.view(0), std::out_of_range);
+}
+
+TEST_CASE("CONTRACT: a refused view index names the index and the frame's view count")
+{
+	// The message says what was asked for and what there is, in every
+	// configuration, because every backend makes the same shared check.
+	Renderer renderer;
+
+	CHECK_THROWS_WITH_AS(std::ignore = renderer.view(2),
+		"Renderer::view(2) - this frame has 0 views.", std::out_of_range);
+	CHECK_THROWS_WITH_AS(std::ignore = renderer.view(-1),
+		"Renderer::view(-1) - this frame has 0 views.", std::out_of_range);
 }
 
 TEST_CASE("CONTRACT: device information names a device that was actually created")

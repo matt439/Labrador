@@ -38,21 +38,31 @@
 
 namespace labrador
 {
+	// The heap and buffer descriptions renderer.cpp and texture_factory.cpp
+	// both create resources from, defined once in renderer.cpp. create_buffer
+	// makes a committed buffer of `bytes` in `heap`, starting in `state`, and
+	// throws com_exception with `failure` when the device refuses it.
+	D3D12_HEAP_PROPERTIES heap_properties(D3D12_HEAP_TYPE type);
+	D3D12_RESOURCE_DESC buffer_description(UINT64 bytes);
+	Microsoft::WRL::ComPtr<ID3D12Resource> create_buffer(ID3D12Device* device,
+		D3D12_HEAP_TYPE heap, UINT64 bytes, D3D12_RESOURCE_STATES state,
+		const char* failure);
+
 	// Owns a texture resource, its dimensions and an index into the renderer's
 	// texture descriptor heap. Draws resolve that index against the current
 	// heap. Device loss releases textures and recreates the heap; the resource
 	// loader repopulates both. Geometry reads cached dimensions without querying
 	// the API resource on each draw (engine/render/sprite_geometry.h).
-	class D3d12Texture
+	class D3D12Texture
 	{
 	public:
-		D3d12Texture(Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+		D3D12Texture(Microsoft::WRL::ComPtr<ID3D12Resource> resource,
 			int slot, int width, int height)
 			: resource_(std::move(resource)), slot_(slot), width_(width),
 			  height_(height) {}
 
-		D3d12Texture(const D3d12Texture&) = delete;
-		D3d12Texture& operator=(const D3d12Texture&) = delete;
+		D3D12Texture(const D3D12Texture&) = delete;
+		D3D12Texture& operator=(const D3D12Texture&) = delete;
 
 		int slot() const { return this->slot_; }
 		Vector2F size() const;
@@ -74,7 +84,7 @@ namespace labrador
 	{
 	public:
 		void add_texture(const std::string& name,
-			std::unique_ptr<D3d12Texture> texture);
+			std::unique_ptr<D3D12Texture> texture);
 
 		void release_all_textures();
 
@@ -84,9 +94,9 @@ namespace labrador
 		// has gone with it.
 		int descriptor_slot(const std::string& name) const;
 
-		const D3d12Texture* texture(TextureHandle texture) const;
+		const D3D12Texture* texture(TextureHandle texture) const;
 
-		Registry<D3d12Texture> textures{ "Texture" };
+		Registry<D3D12Texture> textures{ "Texture" };
 	};
 
 	// One view's recording: a command list, an allocator per frame in flight,
@@ -140,12 +150,12 @@ namespace labrador
 
 		// What `batch` is drawn with. A change is what a flush is for: one
 		// texture and one sampler per draw call.
-		const D3d12Texture* batch_texture = nullptr;
+		const D3D12Texture* batch_texture = nullptr;
 
 		// Pixels to clip space for the current viewport, set as root constants
 		// on every flush. Held rather than recomputed because set_viewport is
 		// what changes it and draws are what read it.
-		float transform[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		float transform[SpritePipeline::transform_constants] = {};
 
 		// Reset at the top of every frame, not carried across one.
 		Camera camera = Camera::default_camera;
@@ -170,7 +180,7 @@ namespace labrador
 
 		// Appends one sprite's four corners, flushing first if it cannot join
 		// what is already there - a different texture, or a full page.
-		void draw(const D3d12Texture& texture, const SpriteVertex* corners);
+		void draw(const D3D12Texture& texture, const SpriteVertex* corners);
 
 		// Records one draw call for everything appended since the last flush,
 		// and nothing at all when nothing has been.
@@ -210,7 +220,7 @@ namespace labrador
 		// through allocate_texture_slot instead of overrunning (T6).
 		static const int texture_capacity = 256;
 
-		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
+		DeviceResources device_resources;
 		RenderDeviceInfo device_info;
 
 		// What set_vsync last asked, which outlives the device: it is the
@@ -245,6 +255,9 @@ namespace labrador
 		// TextureFilter can ask for.
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> texture_heap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> sampler_heap;
+		static constexpr UINT point_sampler_slot = 0;
+		static constexpr UINT linear_sampler_slot = 1;
+		static constexpr UINT sampler_count = 2;
 		UINT texture_descriptor_size = 0;
 		UINT sampler_descriptor_size = 0;
 		int next_texture_slot = 0;

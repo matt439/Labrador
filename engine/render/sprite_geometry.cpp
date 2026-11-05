@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <stdexcept>
+#include <string>
 
 namespace labrador
 {
@@ -144,6 +147,43 @@ namespace labrador
 			}
 			return RectangleF::bounding_box_of(points);
 		}
+	}
+
+	std::vector<unsigned short> quad_indices(int sprites)
+	{
+		// The last corner's index is sprites * 4 - 1, and it has to be a
+		// 16-bit index.
+		const int max_sprites = 65536 / vertices_per_sprite;
+		if (sprites < 0 || sprites > max_sprites)
+		{
+			throw std::invalid_argument("quad_indices(" +
+				std::to_string(sprites) + ") needs between 0 and " +
+				std::to_string(max_sprites) + " sprites for 16-bit indices.");
+		}
+
+		std::vector<unsigned short> indices;
+		indices.reserve(static_cast<std::size_t>(sprites) * indices_per_sprite);
+		for (int sprite = 0; sprite < sprites; sprite++)
+		{
+			const int first = sprite * vertices_per_sprite;
+			indices.push_back(static_cast<unsigned short>(first + 0));
+			indices.push_back(static_cast<unsigned short>(first + 1));
+			indices.push_back(static_cast<unsigned short>(first + 2));
+			indices.push_back(static_cast<unsigned short>(first + 1));
+			indices.push_back(static_cast<unsigned short>(first + 3));
+			indices.push_back(static_cast<unsigned short>(first + 2));
+		}
+		return indices;
+	}
+
+	PixelsToClip pixels_to_clip(float width, float height)
+	{
+		PixelsToClip transform;
+		transform.x_scale = width > 0.0f ? 2.0f / width : 0.0f;
+		transform.y_scale = height > 0.0f ? -2.0f / height : 0.0f;
+		transform.x_offset = -1.0f;
+		transform.y_offset = 1.0f;
+		return transform;
 	}
 
 	void build_sprite_quad(const RectangleF& destination,

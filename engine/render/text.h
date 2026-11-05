@@ -28,7 +28,7 @@ namespace labrador
 			const std::string& font_name,
 			const Vector2F& position,
 			RenderResources* render_resources,
-			const Colour& color = Colour::white,
+			const Colour& colour = Colour::white,
 			float scale = 1.0f,
 			float rotation = 0.0f,
 			const Vector2F& origin = Vector2F::zero,

@@ -7,12 +7,12 @@ namespace labrador
 {
 	SpriteSheetObject::SpriteSheetObject(const std::string& sheet_name,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
-		DrawObject(render_resources, color, rotation, origin,
+		DrawObject(render_resources, colour, rotation, origin,
 			flip, layer_depth),
 		sheet_(render_resources->resolve_sprite_sheet(sheet_name))
 	{
@@ -22,12 +22,12 @@ namespace labrador
 	SpriteSheetObject::SpriteSheetObject(
 		RenderResources::SpriteSheetHandle sheet,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
-		DrawObject(render_resources, color, rotation, origin,
+		DrawObject(render_resources, colour, rotation, origin,
 			flip, layer_depth),
 		sheet_(sheet)
 	{
