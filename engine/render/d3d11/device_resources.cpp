@@ -505,16 +505,14 @@ namespace labrador
 
     // Tells the swap chain what its contents mean.
     //
-    // sRGB, unconditionally, because that is the only answer this backend can
-    // give: the HDR path that chose between three colour spaces was reachable
-    // only with c_EnableHDR set, and nothing ever set it. What is left is
+    // sRGB, unconditionally, because this backend renders no HDR. The work is
     // refreshing a stale factory - output information is cached on it, so a
     // display change invalidates it - and telling a swap chain that supports
     // being told.
     //
     // Called after swap-chain creation or resize, and by Present when the
-    // factory is stale. WindowSizeChanged also has a same-size refresh, but Renderer's
-    // size guard returns before that path reaches this method.
+    // factory is stale. WindowSizeChanged also has a same-size refresh, but
+    // Renderer's size guard returns before that path reaches this method.
     void DeviceResources::UpdateColorSpace()
     {
         if (!m_dxgiFactory)

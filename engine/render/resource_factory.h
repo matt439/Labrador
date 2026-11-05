@@ -8,13 +8,13 @@ namespace labrador
 	class RenderResources;
 	struct TextureData;
 
-	// Builds the two resources that only exist on a device, and puts them in the
+	// Builds the resources that only exist on a device, and puts them in the
 	// table.
 	//
-	// TWO OF THESE ARE THE ENGINE'S AND ONE IS THE BACKEND'S, and the line
-	// between them is the point of the file. Loading a texture is: work out the
-	// path, read the file, put the result in the table. Only the third step
-	// names a graphics type. So the first two are written once, in
+	// THE LOADERS ARE THE ENGINE'S AND add_texture_asset IS THE BACKEND'S, and
+	// the line between them is the point of the file. Loading a texture is:
+	// work out the path, read the file, put the result in the table. Only the
+	// third step names a graphics type. So the first two are written once, in
 	// resource_factory.cpp, and a backend supplies add_texture_asset and
 	// nothing else - which is the whole of what a port owes for content, and
 	// costs what the API charges. engine/render/SEAM.md#4 orders the backends
@@ -84,8 +84,8 @@ namespace labrador
 	// renderer's device from bytes the engine has already decoded
 	// (engine/render/texture_data.h), and puts it in the table under `name`.
 	//
-	// Every caller is one of the two above, and both of them are engine code -
-	// so a client never sees this and a backend never sees a file. Throws
+	// The loaders above call it, so a backend never sees a file; a test or a
+	// tool may call it directly to install TextureData it built itself. Throws
 	// std::runtime_error naming `name` and the format if the device will not
 	// take it, which is the answer a backend that cannot upload block
 	// compression owes rather than a blank texture.

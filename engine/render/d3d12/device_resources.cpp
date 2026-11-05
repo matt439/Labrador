@@ -25,21 +25,18 @@ namespace labrador
 		// strictly less hardware than the one beside it, which is worth stating
 		// plainly rather than leaving to be discovered - it is here to hold the
 		// seam to an API where the engine owns synchronisation, and to give the
-		// pixel contract a second rasteriser CI can actually run.
+		// pixel contract another rasteriser CI can run.
 		//
-		// AND "NOT A TARGET ON THE LOW TIER" IS NO LONGER THE RIGHT SENTENCE,
-		// which is what naming the low tier cost this comment. PHILOSOPHY.md,
-		// Performance names it - the Radeon iGPU in a Ryzen 9000 desktop
-		// package, at 1280x720, held to four cores - and that part is feature
-		// level 12_2 with a current driver, so this backend runs there as
-		// happily as the one next door. What the floor above actually excludes
-		// is hardware OLDER than the named configuration: a feature-level-10
-		// part, or a Haswell-era one whose vendor never shipped a D3D12 driver
-		// (docs/survey/2026-08-26-status.md's 2013 MacBook Air is exactly that
+		// THE LOW TIER IS ABOVE THIS FLOOR. PHILOSOPHY.md, Performance names
+		// it - the Radeon iGPU in a Ryzen 9000 desktop package, at 1280x720,
+		// held to four cores - and that part is feature level 12_2 with a
+		// current driver, so this backend runs there as the D3D11 one does.
+		// What the floor excludes is hardware OLDER than the named
+		// configuration: a feature-level-10 part, or a Haswell-era one whose
+		// vendor never shipped a D3D12 driver
+		// (docs/survey/2026-08-26-status.md's 2013 MacBook Air is such a
 		// machine, and it runs the D3D11 and GL backends and neither of the
-		// other two). That is a claim about the successor machine rather than
-		// about the reference one, and it is the only NEGATIVE low-tier
-		// sentence in the tree - which is why it is worth being exact in.
+		// other two).
 		const D3D_FEATURE_LEVEL min_feature_level = D3D_FEATURE_LEVEL_11_0;
 
 		// Whether hardware_adapter may take this adapter: not the Basic
@@ -86,18 +83,15 @@ namespace labrador
 
 	DeviceResources::~DeviceResources()
 	{
-		// ONE OF THE FOUR DESTRUCTORS IN engine/render/ THAT HAVE TO
-		// SYNCHRONISE WITH A GPU, and it is the same fact this whole file
-		// exists for. Releasing a D3D11 device is enough because the runtime
-		// tracks what is still in flight; here, dropping a command list the GPU
-		// is still reading is exactly the bug the fence exists to prevent, and
-		// a destructor is no exception. The second is ~Renderer::Impl in
-		// renderer.cpp, from the same commit and for the same reason, and it
-		// covers the lists, the allocators and the vertex pages this class does
-		// not own. The other two are the Vulkan backend's pair of the same
-		// shape, which arrived with the fifth backend - a timeline semaphore
-		// being an ID3D12Fence spelt differently, its two destructors are this
-		// pair spelt differently too.
+		// A DESTRUCTOR THAT HAS TO SYNCHRONISE WITH A GPU, which is the same
+		// fact this whole file exists for. Releasing a D3D11 device is enough
+		// because the runtime tracks what is still in flight; here, dropping a
+		// command list the GPU is still reading is exactly the bug the fence
+		// exists to prevent, and a destructor is no exception. ~Renderer::Impl
+		// in renderer.cpp waits for the same reason, for the lists, the
+		// allocators and the vertex pages this class does not own. The Vulkan
+		// backend's pair of destructors has the same shape, a timeline
+		// semaphore being an ID3D12Fence spelt differently.
 		//
 		// AND IT ANSWERS RATHER THAN THROWS. This destructor is implicitly
 		// noexcept - every member has a non-throwing one - so a com_exception
@@ -221,15 +215,11 @@ namespace labrador
 #else
 		if (FAILED(hr))
 		{
-			// WARP, AND THIS LINE IS WHY THIS BACKEND IS THE FOURTH ONE.
-			//
-			// A GitHub runner has no GPU. The OpenGL backend's answer to that
-			// is that .github/workflows/ci.yml skips RenderPixelTests for it
-			// entirely, because Windows' fallback for OpenGL is GDI 1.1 and
-			// create_device throws. Direct3D has an in-box, fully conformant
-			// software rasteriser instead, and Direct3D 12 has it too - so this
-			// is the second backend whose pixel contract CI can actually check,
-			// against the same golden images as the first.
+			// WARP. A machine without a Direct3D 12 GPU, such as a GitHub
+			// runner, still runs this backend's pixel contract in a debug
+			// build: Direct3D 12 has an in-box, fully conformant software
+			// rasteriser, which draws against the same golden images as every
+			// other backend. Release has no fallback.
 			ComPtr<IDXGIAdapter1> warp;
 			if (SUCCEEDED(this->factory_->EnumWarpAdapter(
 				IID_PPV_ARGS(warp.GetAddressOf()))))
@@ -326,30 +316,26 @@ namespace labrador
 		// Nothing may be released while the GPU is still reading it, and a back
 		// buffer is the thing most likely to be.
 		//
-		// AND IT ANSWERS RATHER THAN THROWS, because the branch that recovers
-		// from a device removal is fifteen lines below this one. A TDR or a
-		// driver update lands while a window is being dragged, WM_EXITSIZEMOVE
-		// arrives with the removal still clearing, and this wait is the first
-		// thing to touch D3D afterwards - so a throw here skipped
-		// handle_device_lost in exactly the ordering it was written for and
-		// unwound out of the window message instead, which the shell can only
-		// answer by closing the window. Same recovery, reached from the wait
-		// as well as from ResizeBuffers.
+		// AND A REMOVAL ANSWERS RATHER THAN THROWS, through the same
+		// handle_device_lost that ResizeBuffers' removal reaches below. A TDR
+		// or a driver update can land while a window is being dragged, so
+		// WM_EXITSIZEMOVE arrives with the removal still clearing and this
+		// wait is the first thing to touch D3D afterwards; a throw here would
+		// skip that recovery and unwind out of the window message, which the
+		// shell can only answer by closing the window.
 		//
 		// AND WHAT MAKES IT A LOSS IS THE DEVICE SAYING SO, NOT THE WAIT
-		// ANSWERING FALSE. The wait fails for any failed Signal or
+		// FAILING. The wait fails for any failed Signal or
 		// SetEventOnCompletion, or the wait itself failing, and an
 		// E_OUTOFMEMORY out of either call is not a removal - it is a live
-		// device with work still executing on it. Recovering there ran
-		// handle_device_lost against exactly that: its first statement tells
-		// the client the device is gone and its next six release the queue,
-		// the fence and the device itself while the GPU is reading them. This
-		// is the ordinary WM_EXITSIZEMOVE path, not a rare one. So the device
-		// is asked, which is the same question wait_for_gpu asks below, with
-		// the failing call's own HRESULT for the answer when the device is
-		// still there - and a throw is right here where it is wrong above,
-		// because there is no recovery being skipped: nothing has been lost,
-		// and continuing would release a back buffer the GPU still has.
+		// device with work still executing on it. handle_device_lost tells the
+		// client the device is gone and releases the queue, the fence and the
+		// device itself, which on a live device would be while the GPU is
+		// reading them. So the device is asked, which is the same question
+		// wait_for_gpu asks, and a failed wait on a device that is still
+		// there throws the failing call's own HRESULT: there is no recovery
+		// to skip, and continuing would release a back buffer the GPU still
+		// has.
 		const HRESULT waited = this->signal_and_wait();
 		if (FAILED(waited))
 		{
@@ -400,10 +386,8 @@ namespace labrador
 			// flip-model question the D3D11 file carries a runtime probe for
 			// does not exist in this one. Everything that follows from flip is
 			// therefore unconditional: no sRGB back buffer format, and a
-			// present that discards what it presented, which is why
-			// tests/render/pixel_tests.cpp calls end_frame exactly once - in
-			// the one case that exists to walk the far end of
-			// read_back_buffer's interval, after it has already read.
+			// present that discards what it presented, so a read-back has to
+			// come before end_frame.
 			DXGI_SWAP_CHAIN_DESC1 description = {};
 			description.Width = width;
 			description.Height = height;

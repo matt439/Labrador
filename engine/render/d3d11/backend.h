@@ -24,12 +24,11 @@
 // EVERY CLIENT OF IT IS IN THIS FOLDER, and that is the rule rather than a
 // count. cmake/check_engine_includes.cmake fails the build for any engine file
 // outside engine/render/<backend>/ that includes any header inside it - the
-// folder, not one filename in it, because device_resources.h was how the wall
-// was climbed last time. The three .cpp beside this file include it; nothing
-// else in the engine may, and nothing else in the tree does - the two
+// folder, not one filename in it, so device_resources.h is behind the same
+// wall as this header. Only the .cpp beside this file include it; the
 // generated shader headers are fxc /Fh output, which is a comment and a byte
 // array with no #include in it.
-// Stated as the rule and not as a list of names, because a list goes stale.
+//
 // Everything that draws goes through DrawList, and the whole point of the seam
 // is that draw code never learns which backend it is talking to.
 
@@ -67,23 +66,19 @@ namespace labrador
 		int height_ = 0;
 	};
 
-	// What a Texture is, once this backend has decided, and where every named
-	// resource lives. The phantom type in renderer.h never gains a definition;
-	// the handles that name it index the table below, and this is where the
-	// index becomes a resource.
+	// What a Texture is, once this backend has decided. The phantom type in
+	// renderer.h never gains a definition; the handles that name it index the
+	// table below, and this is where the index becomes a resource.
 	//
-	// ONE OF THE THREE TABLES IS THIS BACKEND'S AND TWO ARE NOT. Fonts and
-	// sheets are engine data (font.h, sprite_sheet.h) and are here only because
-	// the storage of a pimpl is the pimpl's; the textures are the sole reason
-	// this class cannot be written once for everybody. It is the shape every
-	// backend has.
+	// It holds one table, the textures, keyed to D3D11 views: the one resource
+	// type this folder owns, and the sole reason this class cannot be written
+	// once for everybody. The font and sheet tables are RenderResources' own
+	// members; engine/render/render_resources.h says why.
 	class RenderResources::Impl
 	{
 	public:
 		// Load-time, and the reason this header exists: this is spelt in a D3D11
 		// type, which is exactly what the public RenderResources may not say.
-		// The adds for the two engine kinds are on RenderResources itself, and
-		// so are their tables now - this holds one table, not three.
 		void add_texture(const std::string& name,
 			std::unique_ptr<D3D11Texture> texture);
 
@@ -177,10 +172,7 @@ namespace labrador
 		// A deferred context holds every command recorded into it until
 		// FinishCommandList takes them away, and binding is itself two recorded
 		// commands. So a context that is bound and never finished accumulates
-		// them for the life of the process - which is exactly what happened
-		// while begin_frame bound all sixteen and submit() finished the one the
-		// frame declared: 1,800 stranded commands a second, on the default
-		// configuration, growing without bound.
+		// them for the life of the process.
 		//
 		// Binding is therefore deferred to set_view_count, which is the first
 		// moment anyone knows which views this frame has, and submit() finishes
@@ -223,13 +215,14 @@ namespace labrador
 		// state where this backend could differ from the other four about what a
 		// frame is. On three of those four - gl, null and vulkan - a view's
 		// recording is a std::vector that reset() empties; on the fourth it is
-		// a command list that d3d12 closes without executing; here it is a deferred context, which holds what has been
-		// recorded into it until something takes it away - so clearing `bound`
-		// without draining first left an abandoned frame's already-flushed
-		// geometry to arrive prepended to the next frame's command list, over
-		// the top of the next frame's clear. Does nothing on a view that is not
-		// bound, so the normal path - where submit() has just drained
-		// everything - costs one branch per view per frame.
+		// a command list that d3d12 closes without executing; here it is a
+		// deferred context, which holds what has been recorded into it until
+		// something takes it away. Clearing `bound` without draining first
+		// would leave an abandoned frame's already-flushed geometry to arrive
+		// prepended to the next frame's command list, over the top of the next
+		// frame's clear. Does nothing on a view that is not bound, so the
+		// normal path - where submit() has just drained everything - costs one
+		// branch per view per frame.
 		void discard();
 	};
 
@@ -263,7 +256,7 @@ namespace labrador
 		// set_view_count, because binding is set_view_count's job and it has
 		// not been called yet. A resize arriving in that window still has a
 		// frame to restart, and asking the views whether there is one answers
-		// no - which cost that frame its clear. See
+		// no - which would cost that frame its clear. See
 		// Renderer::window_size_changed; the D3D12 backend tracks the same
 		// term for the same reason and a worse consequence.
 		bool frame_begun = false;
@@ -283,9 +276,7 @@ namespace labrador
 
 		// The five state objects a sprite pass needs, and there are only five
 		// because it needs no more: premultiplied alpha, no depth at all, no
-		// culling, and one sampler for each filter the seam names. This
-		// replaced DirectX::CommonStates, which offered twenty-odd and was
-		// asked for four.
+		// culling, and one sampler for each filter the seam names.
 		Microsoft::WRL::ComPtr<ID3D11BlendState> blend;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depth;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizer;

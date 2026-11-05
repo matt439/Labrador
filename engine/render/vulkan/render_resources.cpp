@@ -96,16 +96,11 @@ namespace labrador
 	// a descriptor set is allocated per run out of a pool the frame resets
 	// (renderer.cpp, submit), so a texture holds no descriptor at all and
 	// re-loading one costs exactly the image it makes and the image it
-	// destroys. The pixel test that found the D3D12 leak - three hundred loads
-	// under one name - passes here without this backend having to know it
-	// exists.
+	// destroys.
 	//
-	// The other differences are this API not owning anything: a fourteen-line
-	// descriptor_slot is missing, and in its place stand a ~VulkanTexture that
-	// frees three handles against a device it holds a reference to, a size()
-	// the quad arithmetic asks for, and the include and using-declaration that
-	// come with returning one. Counting them as one line was a claim
-	// texture_factory.cpp then cited as authority.
+	// The other differences are this API not owning anything: a
+	// ~VulkanTexture that frees three handles against a device it holds a
+	// reference to, and a size() the quad arithmetic asks for.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{

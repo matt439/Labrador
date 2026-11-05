@@ -110,12 +110,9 @@ namespace labrador
 
 	void ResolutionManager::set_resolution(const Vector2I& resolution)
 	{
-		// Still coercing, deliberately unchanged: this overload has always meant
-		// "pick the preset nearest this", it answers 1280x720 for anything it
-		// does not recognise, and a client may be relying on exactly that. The
-		// non-coercing path is set_resolution_exactly, and the reason it is a
-		// separate function rather than a change of heart here is that these two
-		// are different questions with the same arguments.
+		// Coerces to a preset, 1280x720 for an unknown size. The non-coercing
+		// path is set_resolution_exactly: a separate function, because these
+		// two are different questions with the same arguments.
 		this->set_resolution(convert_ivec_to_resolution(resolution));
 	}
 

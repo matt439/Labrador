@@ -47,10 +47,10 @@ namespace labrador
 		// it can. DXGI_FORMAT_B4G4R4A4_UNORM puts blue in the low nibble,
 		// which is Vulkan's VK_FORMAT_A4R4G4B4_UNORM_PACK16 read the other way
 		// up - a format that arrived in 1.3, is optional there, and is not what
-		// VK_FORMAT_B4G4R4A4_UNORM_PACK16 means. No file in either client uses
-		// it (texture_format.h counts them), so the honest thing is to say so
-		// rather than to write a swizzle nothing exercises. The GL backend's
-		// copy of this refusal makes the same argument in the same words.
+		// VK_FORMAT_B4G4R4A4_UNORM_PACK16 means. texture_format.h has the
+		// format only because MakeSpriteFont offers it, so the honest thing is
+		// to say so rather than to write a swizzle nothing exercises. The GL
+		// backend's copy of this refusal makes the same argument.
 		VkFormat to_vk_format(TextureFormat format, bool block_compression,
 			const std::string& name)
 		{
@@ -96,11 +96,10 @@ namespace labrador
 		}
 	}
 
-	// The whole of this backend's share of loading content, and it is the
-	// LONGEST of the five for the reason the second longest gives and one more:
-	// this API has no initial-data parameter either, and nothing here owns
-	// anything - the image, its memory and the staging buffer are three
-	// handles this file has to put back on every path that can throw.
+	// The whole of this backend's share of loading content. As on D3D12, this
+	// API has no initial-data parameter, and nothing here owns anything - the
+	// image, its memory and the staging buffer are three handles this file
+	// has to put back on every path that can throw.
 	//
 	// WHAT A TEXTURE COSTS HERE. An image in device-local memory, an allocation
 	// to bind to it because this API never pairs the two, a staging buffer in

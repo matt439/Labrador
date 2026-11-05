@@ -47,10 +47,10 @@ namespace labrador
 
 		// NO BATCHING, AND NOTHING TO BATCH FOR. The other four backends group
 		// a run of sprites sharing a texture into one draw call because a draw
-		// call costs something - one texture per call and a change is a flush,
-		// which is the same sentence in all four folders. Nothing here costs anything, and a test asking
-		// "what was drawn" wants the sprites it asked for rather than the runs
-		// a driver would have preferred.
+		// call costs something - one texture per call and a change is a flush.
+		// Nothing here costs anything, and a test asking "what was drawn" wants
+		// the sprites it asked for rather than the runs a driver would have
+		// preferred.
 		this->sprites.push_back(sprite);
 		this->touched = true;
 	}
@@ -232,11 +232,10 @@ namespace labrador
 		// driver. The most permissive backend teaching a rule that does not
 		// hold anywhere else is worse than a divergence a device would catch.
 		//
-		// view->reset() is also what clears `touched`, which is not a
-		// bookkeeping detail here: without it a shell doing exactly what the
-		// return value told it to - re-running its layout mid-frame, from two
-		// views to one - got std::logic_error out of set_view_count under this
-		// backend and silence under the other four.
+		// view->reset() is also what clears `touched`, so a shell doing
+		// exactly what the return value tells it to - re-running its layout
+		// mid-frame, from two views to one - may lower the view count here as
+		// it may under the other four.
 		//
 		// WHAT IS NOT TOUCHED: view_count, because renderer.h says the layout
 		// is the shell's to decide and this call is what tells it to decide

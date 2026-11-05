@@ -281,9 +281,9 @@ namespace labrador
 	// --- Renderer::Impl ------------------------------------------------------
 	//
 	// The members a context has nothing to do with. The ones it does - the
-	// constructor and destructor, create_context, drawable_size, present, the
-	// two questions about a lost context, and the Context they share - are in
-	// wgl_context.cpp or web_context.cpp.
+	// constructor and destructor, every member backend.h marks "Defined by
+	// the context", and the Context they share - are in wgl_context.cpp or
+	// web_context.cpp.
 
 	GLuint Renderer::Impl::sampler(TextureFilter filter) const
 	{
@@ -359,9 +359,9 @@ namespace labrador
 		// The index buffer, which is the same two triangles per sprite for
 		// every sprite there will ever be, counted from a run's first vertex
 		// (point_attributes says how that origin moves). A run is capped at
-		// this many when it is recorded (DrawList::View::draw) rather than
-		// grown here; replay() neither splits nor clamps, and would draw
-		// whatever it was handed.
+		// this many when it is recorded (RunRecorder::record, in
+		// engine/render/sprite_geometry.h) rather than grown here; replay()
+		// neither splits nor clamps, and would draw whatever it was handed.
 		const std::vector<unsigned short> index_data =
 			quad_indices(DrawList::View::max_run_sprites);
 
@@ -394,10 +394,7 @@ namespace labrador
 		// this backend's whole share of the seam's level-zero term and is worth
 		// saying because it reads as an omission. The mipmap spellings are
 		// GL_NEAREST_MIPMAP_NEAREST and friends; these are deliberately not
-		// them. This backend has always answered level zero and the other one
-		// sampled the chain until its MaxLOD was set to 0 - they agreed only
-		// because nothing in either client ships a chain. d3d11/renderer.cpp
-		// carries the argument for which way the seam settled it.
+		// them. d3d11/renderer.cpp carries the argument for level zero.
 		glGenSamplers(1, &this->point_sampler);
 		glSamplerParameteri(this->point_sampler, GL_TEXTURE_MIN_FILTER,
 			GL_NEAREST);
@@ -439,7 +436,7 @@ namespace labrador
 		// decided by the shader sampling something, not by a capability bit.
 		// The call is not merely useless: it raises GL_INVALID_ENUM, and GL
 		// keeps errors queued, so the next thing to check glGetError blames
-		// itself for it. That is exactly how this backend first failed.
+		// itself for it.
 		glActiveTexture(GL_TEXTURE0_);
 	}
 

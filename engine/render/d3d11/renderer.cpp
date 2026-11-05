@@ -64,8 +64,8 @@ namespace labrador
 		// Where the engine's values become the backend's. It belongs here and
 		// not on the math type: a Viewport::d3d_viewport() would put
 		// <d3d11.h> in a library documented as depending on nothing, and this
-		// file is its only caller. A second backend writes its own; it does not
-		// inherit this.
+		// file is its only caller. Every other backend writes its own; none
+		// inherits this.
 		//
 		// D3D11_VIEWPORT's four extent members are FLOAT and a fractional
 		// viewport is legal, so this backend could keep the fraction - as could
@@ -73,8 +73,8 @@ namespace labrador
 		// vulkan, whose VkViewport is float too. GL is the one that cannot:
 		// glViewport takes GLint and GLsizei. None of the three keeps it,
 		// because then they would disagree about a pane and the seam's whole
-		// claim is that they cannot (viewport.h). A no-op on every viewport this tree produces, all of
-		// which are whole pixels already.
+		// claim is that they cannot (viewport.h). A no-op on every viewport
+		// whose edges are whole pixels already.
 		D3D11_VIEWPORT to_d3d_viewport(const Viewport& viewport)
 		{
 			const RectangleI pixels = viewport.pixel_rect();
@@ -256,9 +256,7 @@ namespace labrador
 		// FALSE: the deferred context's state is not restored afterwards, and
 		// `bound` is cleared below to say so - set_view_count binds again on
 		// the next frame, which is the only thing that puts a render target
-		// back on this context. The two hand-written copies of this protocol
-		// disagreed about this flag - TRUE in Level, FALSE in MenuPage - and
-		// neither had a reason written down.
+		// back on this context.
 		ThrowIfFailed(this->context->FinishCommandList(FALSE, &commands),
 			"A view's command list could not be finished");
 		this->bound = false;
@@ -392,11 +390,10 @@ namespace labrador
 
 	ID3D11SamplerState* Renderer::Impl::sampler(TextureFilter filter) const
 	{
-		// Held rather than demanded from a state cache, because there are two
-		// of them and they are made with the device. Caching one as a raw
-		// pointer and holding it across a device loss frees the state object
-		// that owns it; these are remade in create_device_dependent_resources
-		// like everything else, and nothing outside this class ever holds one.
+		// Two samplers, made with the device and remade with it in
+		// create_device_dependent_resources like everything else. Nothing
+		// outside this class holds one, so no raw pointer outlives a device
+		// loss.
 		return filter == TextureFilter::linear
 			? this->linear_sampler.Get()
 			: this->point_sampler.Get();
@@ -438,9 +435,9 @@ namespace labrador
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong,
-		// because both answers look plausible and every opaque sprite in both
-		// samples renders identically either way. It is four lines here and it
-		// is the whole difference.
+		// because both answers look plausible and every opaque sprite renders
+		// identically either way. It is four lines here and it is the whole
+		// difference.
 		D3D11_BLEND_DESC blend_description = {};
 		blend_description.RenderTarget[0].BlendEnable = TRUE;
 		blend_description.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
@@ -467,11 +464,11 @@ namespace labrador
 			this->depth.ReleaseAndGetAddressOf()),
 			"The sprite depth state could not be created");
 
-		// NO CULLING, WHERE SpriteBatch CULLED BACK FACES. A sprite is a quad
-		// whose winding never changes: a flip mirrors the texture coordinates
-		// and leaves the corners where they were (sprite_geometry.cpp), so
-		// there is no back face to find. Culling nothing is one fewer thing for
-		// a second backend to match, and one fewer way for a quad to vanish.
+		// NO CULLING. A sprite is a quad whose winding never changes: a flip
+		// mirrors the texture coordinates and leaves the corners where they
+		// were (sprite_geometry.cpp), so there is no back face to find. Culling
+		// nothing is one fewer thing for the other backends to match, and one
+		// fewer way for a quad to vanish.
 		D3D11_RASTERIZER_DESC rasterizer_description = {};
 		rasterizer_description.FillMode = D3D11_FILL_SOLID;
 		rasterizer_description.CullMode = D3D11_CULL_NONE;
@@ -799,15 +796,12 @@ namespace labrador
 		// again every frame, because submit() finishes each command list without
 		// restoring the context state.
 		//
-		// THE BINDING IS NOT DONE HERE, and that is the fix rather than an
-		// optimisation. Binding is two commands recorded into a deferred
-		// context, and a deferred context holds what is recorded into it until
-		// FinishCommandList takes it away - so binding every view in the
-		// capacity while submit() finishes only the views the frame declared
-		// stranded two commands per idle view per frame, permanently. Nothing
-		// below this line binds anything; set_view_count binds the views the
-		// frame actually has, which is the first moment anybody knows what they
-		// are.
+		// THE BINDING IS NOT DONE HERE. Binding is two commands recorded into a
+		// deferred context, which holds them until FinishCommandList takes them
+		// away, so a view bound and never finished accumulates them (see
+		// DrawList::View::bound). Nothing below this line binds anything;
+		// set_view_count binds the views the frame actually has, which is the
+		// first moment anybody knows what they are.
 		//
 		// IT DOES DRAIN, THOUGH, AND ONLY THIS BACKEND HAS ANYTHING TO DRAIN.
 		// "begin_frame resets every view's recording" (renderer.h) has to mean
@@ -893,10 +887,8 @@ namespace labrador
 		ID3D11DeviceContext1* immediate =
 			this->impl_->device_resources.GetD3DDeviceContext();
 
-		// Record, finish, execute, release - the protocol that was hand-written
-		// in four places, each of which had to pre-size a vector, pre-fill it
-		// with null and Release every non-null entry. The lists are executed in
-		// view order, which is the only ordering guarantee the seam makes.
+		// Record, finish, execute, release, in view order - the only ordering
+		// guarantee the seam makes.
 		//
 		// EVERY BOUND VIEW IS FINISHED; ONLY THE DECLARED ONES ARE EXECUTED,
 		// and the two sets are not always the same one. Lowering the view count
@@ -936,7 +928,7 @@ namespace labrador
 
 		// Through the view rather than a GetRenderTarget() accessor, because
 		// the view is what the seam already needs and one reader does not
-		// justify widening the wrapper's surface again.
+		// justify widening the wrapper's surface.
 		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
 		device.GetRenderTargetView()->GetResource(resource.GetAddressOf());
 
@@ -996,10 +988,9 @@ namespace labrador
 
 	// THE ONE BACKEND THAT FORWARDS THEM, and therefore the one that has
 	// anything to be null. ID3DUserDefinedAnnotation is made with the device,
-	// so a marker before create_device dereferenced a null ComPtr here while
-	// the other four discarded the call harmlessly - a divergence a caller
-	// could only find by crashing. renderer.h makes markers advisory and legal
-	// before there is a device; this is the line that makes that true, and
+	// so before create_device there is no object to forward to. renderer.h
+	// makes markers advisory and legal before there is a device, so these
+	// return early without one, as the other four discard the call; and
 	// tests/render/renderer_seam_tests.cpp is what holds all five to it.
 	void Renderer::begin_marker(const wchar_t* name)
 	{

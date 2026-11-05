@@ -126,11 +126,10 @@ namespace labrador
 #if defined(_DEBUG)
 		// The validation layers' own words, forwarded to the debugger.
 		//
-		// THIS IS WHY THE FIFTH BACKEND IS CHEAPER TO GET RIGHT THAN THE
-		// FOURTH WAS. Direct3D's debug layer says what is wrong through a
-		// message queue the D3D12 file asks to break on; Vulkan's says it
-		// through a callback, and it checks strictly more - every barrier,
-		// every layout, every descriptor a draw names - because the API has no
+		// Direct3D's debug layer says what is wrong through a message queue
+		// the D3D12 file asks to break on; Vulkan's says it through a
+		// callback, and it checks strictly more - every barrier, every
+		// layout, every descriptor a draw names - because the API has no
 		// runtime to check them for you. A backend written against a silent
 		// validation layer is a backend nobody has checked.
 		VKAPI_ATTR VkBool32 VKAPI_CALL report(
@@ -866,7 +865,7 @@ namespace labrador
 		// ONE ATTACHMENT, ONE SUBPASS, AND loadOp IS LOAD RATHER THAN CLEAR.
 		//
 		// The obvious shape is a render pass that clears, which is what every
-		// tutorial writes and what this had first. It does not fit the seam:
+		// tutorial writes. It does not fit the seam:
 		// begin_frame clears and submit() draws, and a client may call the
 		// first without ever reaching the second - a frame begun and never
 		// submitted (renderer.h) still cleared. A render pass that clears would
@@ -1253,16 +1252,13 @@ namespace labrador
 		this->destroy_swapchain();
 
 		// AND A REMOVAL THAT SURFACES HERE IS ANSWERED RATHER THAN THROWN,
-		// which is the other half of what
-		// create_window_size_dependent_resources' comment claims and the half
-		// that did not come across from
-		// engine/render/d3d12/device_resources.cpp. That file answers
+		// which is the second half of the recovery
+		// create_window_size_dependent_resources' comment describes: a device
+		// loss can land between the wait and this call, and this path runs
+		// inside a window procedure, where a throw closes the window.
+		// engine/render/d3d12/device_resources.cpp answers
 		// DXGI_ERROR_DEVICE_REMOVED out of ResizeBuffers as well as out of the
-		// wait, and says so - "Same recovery, reached from the wait as well as
-		// from ResizeBuffers". Here the wait was answered and this was not, so
-		// a TDR landing between the two threw out of a window procedure and
-		// closed the window: the exact outcome that paragraph exists to
-		// prevent.
+		// wait, for the same reason.
 		//
 		// ONLY WHEN THERE WAS ONE TO REPLACE, for the reason the D3D12 file's
 		// `if (this->swap_chain_)` gives without stating it: the recovery
@@ -1470,8 +1466,8 @@ namespace labrador
 		this->destroy_colour_target();
 		this->create_colour_target();
 
-		// The second end of the recovery the paragraph above promises, and the
-		// one this file did not have. create_swapchain says why it answers.
+		// The second end of the recovery the paragraph above promises.
+		// create_swapchain says why it answers.
 		if (!this->create_swapchain())
 		{
 			this->handle_device_lost();
@@ -1592,16 +1588,14 @@ namespace labrador
 		this->recording_ = false;
 
 		// THE VALUE THIS SUBMIT WOULD SIGNAL, NOT YET THE COUNTER. The member
-		// moves on below, after the submit that makes it true - which is the
-		// one line the transliteration from
-		// engine/render/d3d12/device_resources.cpp lost. That file bumps its
-		// fence value, calls Signal, and returns the failure BEFORE writing
-		// frame_fences_[frame_index_], and its waits target that array rather
-		// than the raw counter. Advancing first means that a submit failure
-		// which is not a device loss - an out-of-memory answer, most plausibly
-		// - leaves timeline_value_ naming a value nothing will ever signal,
-		// and wait_for_gpu waits on it with UINT64_MAX. That is a hang where
-		// the throw below is a message.
+		// moves on below, only after the submit that makes it true.
+		// Advancing first would mean that a submit failure which is not a
+		// device loss - an out-of-memory answer, most plausibly - leaves
+		// timeline_value_ naming a value nothing will ever signal, and
+		// wait_for_gpu waits on it with UINT64_MAX. That is a hang where the
+		// throw below is a message. engine/render/d3d12/device_resources.cpp
+		// keeps the same order: its waits target frame_fences_, written only
+		// after a successful Signal.
 		const uint64_t signalled = this->timeline_value_ + 1;
 
 		// THE TIMELINE ALWAYS, THE BINARY ONE ONLY WHEN A PRESENT IS COMING.
@@ -1857,18 +1851,17 @@ namespace labrador
 
 		// THE SOURCE STAGE IS THE STAGE THE ACQUIRE SEMAPHORE IS WAITED AT, AND
 		// THE TWO HAVE TO BE THE SAME ONE - see the execute() below, which
-		// passes VK_PIPELINE_STAGE_TRANSFER_BIT as the wait stage. This was
-		// TOP_OF_PIPE, which exactly one of the five other hand-written
-		// barriers in this folder still says - the upload barrier in
-		// texture_factory.cpp, where it is right because nothing has touched
-		// that image at all - and which is wrong on this one, because this is
-		// the only image the presentation engine touched last. A semaphore wait's
+		// passes VK_PIPELINE_STAGE_TRANSFER_BIT as the wait stage. This is
+		// the image the presentation engine touched last. A semaphore wait's
 		// second scope is the batch's commands at the waited stages AND LATER;
-		// TOP_OF_PIPE is earlier than all of them, so the transition - which
-		// out of UNDEFINED may discard the contents and re-initialise the
-		// compression metadata - was not ordered after the presentation engine
-		// finished with the image at all. Synchronization validation reports it
-		// as SYNC-HAZARD-WRITE-AFTER-READ against vkAcquireNextImageKHR.
+		// a TOP_OF_PIPE source is earlier than all of them, so the transition
+		// - which out of UNDEFINED may discard the contents and re-initialise
+		// the compression metadata - would not be ordered after the
+		// presentation engine finished with the image at all. Synchronization
+		// validation reports that as SYNC-HAZARD-WRITE-AFTER-READ against
+		// vkAcquireNextImageKHR. TOP_OF_PIPE is right only for an image
+		// nothing has touched, such as the upload barrier in
+		// texture_factory.cpp.
 		VkImageMemoryBarrier to_destination = image_barrier(target,
 			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -2268,11 +2261,8 @@ namespace labrador
 		// can: a throwing call sits between a handle being taken and being
 		// released, and a device that answered a wait with an error is one
 		// whose next upload should not also have leaked a buffer from the pool.
-		// THREE OTHER SITES IN THIS FOLDER HAVE THAT SHAPE and say so in the
-		// same words - the read-back buffer in renderer.cpp, the staging buffer
-		// in texture_factory.cpp, and the image-and-memory pair beside it -
-		// because this API has no ComPtr and every one of them has to put the
-		// handle back by hand.
+		// Raw Vulkan handles and VulkanBuffer have no destructor, so every
+		// throwing path in this folder puts its handles back by hand.
 		try
 		{
 			this->wait_for_gpu();

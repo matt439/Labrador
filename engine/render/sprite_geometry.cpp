@@ -196,15 +196,11 @@ namespace labrador
 		SpriteVertex* corners)
 	{
 		// EACH EDGE, THEN THE DIFFERENCE - not the position and the size. A
-		// destination of x=10.4 width=8 has a right edge of 18.4, and the two
-		// orders disagree about it: truncating each edge gives 18 - 10 = 8,
-		// where truncating the position and keeping the width gives 10 + 8 = 18
-		// as well, but at x=10.9 the first gives 18 - 10 = 8 and rounding the
-		// size first would give 7. The edges-first order is the one this engine
-		// has always drawn, because the rectangle went through a RECT of four
-		// truncated longs before anything measured it. (Pick the worked example
-		// with care: x=10.9 is answered 8 by both orders and demonstrates
-		// nothing.)
+		// destination of x=10.6 width=7.6 has a right edge of 18.2, and the two
+		// orders disagree about it: truncating each edge gives 18 - 10 = 8
+		// pixels wide, where truncating the position and the width separately
+		// gives 10 and 7, a right edge of 17. The pixel contract is the
+		// edges-first answer.
 		const float left = std::trunc(destination.left());
 		const float top = std::trunc(destination.top());
 		const float right = std::trunc(destination.right());

@@ -40,17 +40,9 @@ namespace labrador
 
 	// --- RenderResources -----------------------------------------------------
 	//
-	// The front half, and it is a short list on purpose. Carrying the whole
-	// public surface here means a page of forwarding calls written out once per
-	// backend, because Impl is a complete type only inside a backend folder.
-	// Two of the three resource tables hold engine data, so they are the
-	// class's own members and their methods are compiled once in
+	// The front half, and a short list: these need Impl complete or touch the
+	// texture table (render_resources.h). Everything else is compiled once in
 	// engine/render/render_resources.cpp.
-	//
-	// What stayed did so because each one either touches the texture table or
-	// needs Impl complete to make or destroy one. That is the rule
-	// render_resources.h states, and it now decides a file list rather than
-	// being restated in three comments.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())
 	{

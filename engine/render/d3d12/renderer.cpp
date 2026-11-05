@@ -285,10 +285,12 @@ namespace labrador
 		// Renderer::begin_frame waits on the fence for this frame index before
 		// anything else it does. Renderer::window_size_changed reaches this
 		// through open_frame(), where the wait is the one inside
-		// DeviceResources::create_window_size_dependent_resources - a full
-		// wait_for_gpu, which is stronger, and which has to be: frame_index_ is
-		// re-read from the swap chain after ResizeBuffers and may not be the
-		// index begin_frame waited on.
+		// DeviceResources::create_window_size_dependent_resources - a signal
+		// and a wait for all queued work, which is stronger, and which has to
+		// be: frame_index_ is re-read from the swap chain after ResizeBuffers
+		// and may not be the index begin_frame waited on. A failed wait there
+		// never reaches open_frame: it recovers through handle_device_lost or
+		// throws.
 		ThrowIfFailed(this->allocators[static_cast<size_t>(frame)]->Reset(),
 			"A view's command allocator could not be reset");
 		ThrowIfFailed(this->list->Reset(
@@ -758,10 +760,7 @@ namespace labrador
 		// AND COPIED THERE, where D3D11 says IMMUTABLE and hands over the bytes:
 		// this API has no initial-data parameter, so "upload it once at
 		// creation" is a staging buffer, a copy on a command list and a wait -
-		// the same three steps every texture takes (texture_factory.cpp), which
-		// is why the third file of this backend is the second longest of the
-		// five. The longest is Vulkan's, for the same reason and one more: it
-		// owns the allocation as well as the copy.
+		// the same three steps every texture takes (texture_factory.cpp).
 		const std::vector<unsigned short> index_data =
 			quad_indices(DrawList::View::max_page_sprites);
 
@@ -946,8 +945,7 @@ namespace labrador
 		// that as a term of the seam rather than leaving it to a backend. What
 		// every view has recorded names the render target of a back buffer
 		// that the resize below destroys, and executing any of it afterwards is
-		// a dead process rather than an error - which is what this did before
-		// the rule was written down.
+		// a dead process rather than an error.
 		//
 		// IT HAS TO HAPPEN BEFORE THE RESIZE AND NOT AFTER IT. A closed list
 		// is not the problem; an OPEN one is, because the resize waits for the
@@ -955,11 +953,11 @@ namespace labrador
 		// holding.
 		//
 		// AND WHETHER THERE IS A FRAME IS A THING THE FRAME SAYS, not a thing
-		// the command lists are asked. frame_open() - is anything recording
-		// right now - is false for the whole interval between begin_frame and
-		// the first set_view_count, so a resize arriving there rebuilds the
-		// buffer and then leaves it to be drawn into with no barrier and no
-		// clear. Impl::frame_begun is the interval renderer.h actually names.
+		// the command lists are asked. "Is any list recording" is false for
+		// the whole interval between begin_frame and the first set_view_count,
+		// and a resize arriving there still owes the rebuilt buffer its
+		// barrier and its clear. Impl::frame_begun is the begin_frame ..
+		// end_frame interval renderer.h names.
 		const bool restart = impl.frame_begun;
 		impl.abandon_recording();
 

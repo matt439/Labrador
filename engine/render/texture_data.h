@@ -34,9 +34,9 @@ namespace labrador
 	// THE HANDOVER POINT BETWEEN THE ENGINE AND A BACKEND, and it is deliberately
 	// low: the engine says what the bytes are and where each level starts, and
 	// the backend does nothing but pass that to whatever its API calls a texture.
-	// Both of the two things this engine loads - a .dds and the atlas inside a
-	// .spritefont - come out as one of these, so a backend has one texture
-	// creation function rather than one per file kind.
+	// Every texture source this engine reads - a .dds, a .png and the atlas
+	// inside a .spritefont - comes out as one of these, so a backend has one
+	// texture creation function rather than one per file kind.
 	//
 	// NOT DECODED FURTHER THAN THIS, on purpose. A BC3 blob stays a BC3 blob:
 	// unpacking it here would throw away the whole reason the content is

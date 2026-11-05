@@ -31,8 +31,9 @@
 // through MoltenVK - the Apple platforms, so an engine that has it does not
 // need a backend per platform. It costs two things: SPIR-V at build time, a
 // toolchain of its own (cmake/compile_shaders.cmake), and no in-box software
-// rasteriser the way Direct3D has WARP, so this preset skips RenderPixelTests
-// in CI exactly as the OpenGL one does.
+// rasteriser the way Direct3D has WARP. CI runs RenderPixelTests on the
+// SwiftShader ICD Chrome carries, which is a software device and not a real
+// driver; tools/ci_gap_report.py covers the real-driver run.
 //
 // WHAT THIS BACKEND ANSWERS THAT NONE OF THE OTHER FOUR COULD. Every one of
 // them learns about a resize from the window and from nowhere else;
