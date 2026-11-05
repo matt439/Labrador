@@ -14,7 +14,8 @@ output of
 
 run on the PR's head from a shell with vcvars (and emsdk_env for wasm-debug).
 It configures, builds and tests x64-debug-gl and x64-debug-vulkan (whose
-RenderPixelTests and MinimalSmokeTests CI runs only on software rasterisers),
+RenderPixelTests, MinimalSmokeTests and CollisionSmokeTests CI runs only on
+software rasterisers),
 the four release presets CI does not build, and wasm-debug. A preset left out
 with --preset stays in the
 table as "not run"; say why. Name the device below; the tool records none.

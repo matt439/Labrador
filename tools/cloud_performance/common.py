@@ -286,7 +286,7 @@ def validate_config(document: dict[str, Any], *, now: datetime | None = None,
         if not isinstance(backend["expected_device"], str) or not backend["expected_device"]:
             raise ValueError(f"{scope}.expected_device must be non-empty")
         integer(backend["expected_vendor_id"], f"{scope}.expected_vendor_id",
-                 minimum=0, maximum=0xFFFFFFFF)
+                minimum=0, maximum=0xFFFFFFFF)
         if backend["name"] == "gl" and backend["expected_vendor_id"] != 0:
             raise ValueError("OpenGL expected_vendor_id must be 0; that API exposes no PCI ID")
         try:

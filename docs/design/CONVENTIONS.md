@@ -145,7 +145,15 @@ Almost everything below falls out of one rule:
   for it inside its module's tests, as that code sits in the engine:
   `tests/render/d3d12/`, `tests/audio/null/`, `tests/input/web/`,
   `tests/app/web/`. Tests of what every backend shares stay at the
-  module's top, so where a test lives says which builds compile it.
+  module's top, so where a test lives says which backend's or platform's
+  code it exercises, not which builds compile it:
+  `tests/app/web/dom_events_tests.cpp` tests the browser's event
+  translator and compiles on every platform. Until they move, the null
+  render tests (`tests/render/null_tests.cpp`, `null_resource_tests.cpp`
+  and `null_test_harness.h`) and the Win32 shell tests at the top of
+  `tests/app/` (`keyboard_input_tests.cpp`, `pointer_input_tests.cpp`,
+  `startup_info_tests.cpp`, `system_command_tests.cpp` and
+  `window_tests.cpp`) are stated exceptions.
 
 ## Comments
 

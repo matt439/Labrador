@@ -337,19 +337,21 @@ namespace labrador
 		// as well as from ResizeBuffers.
 		//
 		// AND WHAT MAKES IT A LOSS IS THE DEVICE SAYING SO, NOT THE WAIT
-		// ANSWERING FALSE. try_wait_for_gpu answers false for any failed
-		// Signal or SetEventOnCompletion, and an E_OUTOFMEMORY out of either
-		// is not a removal - it is a live device with work still executing on
-		// it. Recovering there ran handle_device_lost against exactly that:
-		// its first statement tells the client the device is gone and its next
-		// six release the queue, the fence and the device itself while the GPU
-		// is reading them. This is the ordinary WM_EXITSIZEMOVE path, not a
-		// rare one. So the device is asked, which is the same question
-		// wait_for_gpu asks below and the same E_FAIL for the answer that
-		// cannot be explained - and a throw is right here where it is wrong
-		// above, because there is no recovery being skipped: nothing has been
-		// lost, and continuing would release a back buffer the GPU still has.
-		if (!this->try_wait_for_gpu())
+		// ANSWERING FALSE. The wait fails for any failed Signal or
+		// SetEventOnCompletion, or the wait itself failing, and an
+		// E_OUTOFMEMORY out of either call is not a removal - it is a live
+		// device with work still executing on it. Recovering there ran
+		// handle_device_lost against exactly that: its first statement tells
+		// the client the device is gone and its next six release the queue,
+		// the fence and the device itself while the GPU is reading them. This
+		// is the ordinary WM_EXITSIZEMOVE path, not a rare one. So the device
+		// is asked, which is the same question wait_for_gpu asks below, with
+		// the failing call's own HRESULT for the answer when the device is
+		// still there - and a throw is right here where it is wrong above,
+		// because there is no recovery being skipped: nothing has been lost,
+		// and continuing would release a back buffer the GPU still has.
+		const HRESULT waited = this->signal_and_wait();
+		if (FAILED(waited))
 		{
 			const HRESULT reason = this->device_->GetDeviceRemovedReason();
 			if (FAILED(reason))
@@ -358,7 +360,7 @@ namespace labrador
 				return;
 			}
 
-			ThrowIfFailed(E_FAIL,
+			ThrowIfFailed(waited,
 				"The GPU could not be waited for before the resize, and the device was not removed");
 		}
 
@@ -622,35 +624,41 @@ namespace labrador
 
 	void DeviceResources::wait_for_gpu()
 	{
-		if (this->try_wait_for_gpu())
+		const HRESULT waited = this->signal_and_wait();
+		if (SUCCEEDED(waited))
 		{
 			return;
 		}
 
-		// The only way the wait above fails is a device that has gone, so what
-		// this reports is the removal rather than the call that noticed it.
-		// E_FAIL stands in for the case that cannot be explained that way,
-		// because ThrowIfFailed(S_OK) would be a silent return.
+		// A device that has gone is reported as the removal rather than as the
+		// call that noticed it. Otherwise the signal or the wait failed on a
+		// live device, and its own HRESULT is the answer.
 		const HRESULT reason = this->device_->GetDeviceRemovedReason();
-		ThrowIfFailed(FAILED(reason) ? reason : E_FAIL,
+		ThrowIfFailed(FAILED(reason) ? reason : waited,
 			"The wait for the GPU to finish failed");
 	}
 
 	bool DeviceResources::try_wait_for_gpu() noexcept
 	{
+		return SUCCEEDED(this->signal_and_wait());
+	}
+
+	HRESULT DeviceResources::signal_and_wait() noexcept
+	{
 		if (!this->command_queue_ || !this->fence_ ||
 			!this->fence_event_.IsValid())
 		{
-			return true;
+			return S_OK;
 		}
 
-		if (FAILED(this->record_signal()))
+		const HRESULT signalled = this->record_signal();
+		if (FAILED(signalled))
 		{
-			return false;
+			return signalled;
 		}
 
-		return SUCCEEDED(this->block_until(
-			this->frame_fences_[static_cast<size_t>(this->frame_index_)]));
+		return this->block_until(
+			this->frame_fences_[static_cast<size_t>(this->frame_index_)]);
 	}
 
 	void DeviceResources::move_to_next_frame()

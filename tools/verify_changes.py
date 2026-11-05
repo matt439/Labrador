@@ -269,7 +269,7 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
                      ("test", test, runtime))]
         required = ["RenderTests", "SceneTests", "AudioTests"]
         if not wasm and render != "null":
-            required += ["RenderPixelTests", "MinimalSmokeTests"]
+            required += ["RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"]
         if render == "d3d12":
             required.append("D3D12SynchronizationTests")
         browser_tests = list(chromium) if wasm and render == "gl" else []

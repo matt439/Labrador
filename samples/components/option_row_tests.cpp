@@ -115,7 +115,9 @@ TEST_CASE("setting the index a row already has changes nothing, and still checks
 		[&calls](size_t) { ++calls; });
 	const RectangleF before = row.bounds();
 
-	// What a page that follows outside state does on every tick.
+	// What a page that follows outside state does on every tick. This pins
+	// the contract - same index, same row, no callback; the early return
+	// that keeps it is not itself observable.
 	for (int tick = 0; tick < 3; ++tick)
 	{
 		row.set_index(1);

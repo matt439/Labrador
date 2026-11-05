@@ -232,8 +232,8 @@ namespace linesweeper
 		// the sample's own version of the rule that a seam ships with a
 		// headless implementation (PHILOSOPHY, Tests and toolchain).
 		//
-		// The state spells the asset name and resolves it, the same way it
-		// spells the font name for the labels beside this (play_state.cpp).
+		// The state resolves `block_texture_name` from presentation/assets.h,
+		// as it does the font name for the labels.
 		//
 		// `last_tick` is what tick() returned for the World as it stands now,
 		// kept by the same owner that keeps the World, and read only on a

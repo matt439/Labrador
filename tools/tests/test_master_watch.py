@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import os
 from pathlib import Path
+import tempfile
 import unittest
+from unittest import mock
 
 from tools.tests.tool_fixtures import load_tool
 
@@ -72,10 +77,21 @@ class Act(unittest.TestCase):
         stuck = {"status": "completed", "conclusion": "failure", "attempt": 1}
         gh = FakeGh(views=[stuck] * watch.RERUN_POLLS)
         action, sleeps = act(run(), gh)
-        self.assertEqual(action.kind, "none")
+        self.assertEqual(action.kind, "expired")
         self.assertIn("no rerun attempt completed", action.reason)
         self.assertEqual(len(sleeps), watch.RERUN_POLLS)
         self.assertFalse([call for call in gh.calls if call[0] == "issue"])
+
+        # And the job does not end green on it.
+        with tempfile.TemporaryDirectory() as folder:
+            event = Path(folder) / "event.json"
+            event.write_text(json.dumps({"workflow_run": run()}), encoding="utf-8")
+            gh = FakeGh(views=[stuck] * watch.RERUN_POLLS)
+            output = io.StringIO()
+            with mock.patch.dict(os.environ, {"GITHUB_EVENT_PATH": str(event)}),                     contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                status = watch.main(gh, sleep=lambda _: None)
+        self.assertNotEqual(status, 0)
+        self.assertIn("expired", output.getvalue())
 
     def test_a_second_failure_opens_one_issue_then_comments_on_it(self):
         gh = FakeGh()

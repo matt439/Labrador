@@ -11,8 +11,9 @@ namespace render_tests
 {
 	// Sprites per vertex page: the run length GL and Vulkan split a view's
 	// sprites into. D3D11's max_batch_sprites and D3D12's max_page_sprites are
-	// the same number; a test that can see a Direct3D backend's constant
-	// asserts that it still is.
+	// the same number today. Only the D3D12 Debug diagnostics test
+	// (d3d12/presentation_diagnostics_tests.cpp) asserts its match; D3D11's
+	// max_batch_sprites (engine/render/d3d11/backend.h) is not checked.
 	inline constexpr int vertex_page_sprites =
 		labrador::RunRecorder<const void*>::max_run_sprites;
 

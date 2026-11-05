@@ -91,7 +91,7 @@ test('flashes that are not concurrent fail the pixel bound, the verdict, and not
 	assert.equal(result.passes, false);
 });
 
-test('light moving across a field is not the field flashing', () => {
+test('light moving across a field makes no concurrent transition, and the pixel bound still fails it', () => {
 	// A one-pixel checkerboard that swaps every frame: every field has half
 	// its pixels rising and half falling on each frame, and within any three
 	// frames every pixel has done both, so no field changes.
@@ -111,6 +111,7 @@ test('light moving across a field is not the field flashing', () => {
 	assert.equal(result.general.bound.transitions, 60);
 	assert.equal(result.general.widestRise.fraction, 1);
 	assert.equal(result.general.widestFall.fraction, 1);
+	assert.equal(result.passes, false);
 });
 
 test('a change between two levels above 0.80 is not a transition', () => {

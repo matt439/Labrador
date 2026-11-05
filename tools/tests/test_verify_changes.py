@@ -140,6 +140,9 @@ class PlanTests(unittest.TestCase):
         self.assertIn("ComponentsPointerPageTests", plan["configurations"][-1]["conditional_browser_test_names"])
         self.assertNotIn("LineSweeperBundlePageTests", plan["configurations"][-1]["conditional_browser_test_names"])
         self.assertIn("D3D12SynchronizationTests", plan["configurations"][1]["required_test_names"])
+        for configuration in plan["configurations"][:4]:
+            for name in ("RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"):
+                self.assertIn(name, configuration["required_test_names"], configuration["id"])
         self.assertIn("RenderPixelTests", plan["configurations"][4]["forbidden_test_names"])
         self.assertIn("WebWindowTests", plan["configurations"][-1]["conditional_browser_test_names"])
         self.assertEqual(next(item for item in plan["manual_obligations"] if item["id"] == "vulkan-synchronization")["condition"], "required")

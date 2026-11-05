@@ -121,7 +121,7 @@ TEST_CASE("CONTRACT: a sprite whose origin puts it in view is drawn")
 
 TEST_CASE("CONTRACT: a sprite turned into view is drawn")
 {
-	// The second row: no origin, a half turn about the top left.
+	// No origin, and a half turn about the top left.
 	Harness harness;
 	const float half_turn = pi;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
@@ -135,8 +135,8 @@ TEST_CASE("CONTRACT: a sprite turned into view is drawn")
 
 TEST_CASE("CONTRACT: a label turned into view is drawn")
 {
-	// The third row: two glyphs, so two sprites, both of them on the far
-	// side of the position once turned.
+	// Two glyphs, so two sprites, both of them on the far side of the
+	// position once turned.
 	Harness harness;
 	const float half_turn = pi;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();

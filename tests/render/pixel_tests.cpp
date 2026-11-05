@@ -387,8 +387,9 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 
 	// begin_frame WITHOUT harness.begin(), which is the whole point of the
 	// case: begin() calls set_view_count immediately after begin_frame, so
-	// every other case is past this interval before it can be resized. It is not a contrived sequence - a shell that lays its views
-	// out from the frame's own state does its arithmetic here.
+	// every other case is past this interval before it can be resized. It is
+	// not a contrived sequence - a shell that lays its views out from the
+	// frame's own state does its arithmetic here.
 	renderer.begin_frame();
 
 	// The window first and then the renderer, in that order and for the reason

@@ -10,8 +10,8 @@ import unittest
 from tools.tests.pe_fixtures import TEMPLATE, image
 from tools.tests.tool_fixtures import load_tool
 
-REPOSITORY = Path(__file__).resolve().parents[2]
 checker = load_tool("tools/check_dpi_manifest.py")
+
 
 def manifest(awareness: str | None) -> bytes:
     settings = "" if awareness is None else (

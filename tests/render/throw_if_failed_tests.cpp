@@ -1,8 +1,11 @@
 #include <doctest/doctest.h>
+
 #include "engine/render/throw_if_failed.h"
+
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+
 using namespace labrador;
 
 // What a Direct3D failure is, as a type.
@@ -10,39 +13,32 @@ using namespace labrador;
 // THIS IS A CONTRACT TEST, NOT A BEHAVIOUR TEST, and the contract is one file
 // over. engine/render/resource_factory.h says add_texture_asset throws
 // std::runtime_error naming the texture and the format when the device will not
-// take it. The GL backend does exactly that at four sites. Both Direct3D
-// backends route every failure through ThrowIfFailed, so com_exception's base
-// is what decides whether that sentence describes them. Deriving from
-// std::exception rather than std::runtime_error breaks it on two backends out
-// of five while leaving every one of them compiling.
+// take it. The promise has two halves, as throw_if_failed.h says:
+// com_exception's base keeps the type half at every ThrowIfFailed site, and
+// each backend's add_texture_asset writes the message naming the texture and
+// the format, because it is the code that knows them. A com_exception derived from
+// std::exception rather than std::runtime_error would break the type half on
+// both Direct3D backends while leaving every one of them compiling.
 //
-// "ONE FILE OVER" IS THE POINT. throw_if_failed.h belongs in render/, beside
-// the resource_factory.h whose promise it keeps, and not in core/ - the module
-// everything may lean on and the last place a COM error type belongs. This
-// test sits in RenderTests for the same reason, and RenderTests is built in
-// every configuration, so the assertions below run in all five.
+// throw_if_failed.h belongs in render/, beside the resource_factory.h whose
+// promise it helps keep, and not in core/. This test sits in RenderTests for
+// the same reason. It is compiled in every Windows configuration, so the
+// assertions below run in all five native ones.
 //
-// A CATCH SITE COULD NOT TELL, WHICH IS WHY NOTHING NOTICED. Every catch in
-// this repository is catch (const std::exception&), so both types were caught
-// identically and the divergence was invisible from the outside. It would have
-// become visible the first time a client wrote the catch the header invites -
-// and by then it would have been a client's bug to diagnose, in a backend it
-// cannot see.
-//
-// So the assertion is the one a compiler can make and a reader cannot forget.
+// A catch site cannot tell the two bases apart when it catches
+// std::exception, so the assertion is the one a compiler can make.
 
 TEST_SUITE("ThrowIfFailedTests")
 {
 	TEST_CASE("CONTRACT: a device failure is a std::runtime_error")
 	{
-		// The static form, so this is settled at compile time in every
-		// configuration - including the two where no D3D11 file is built
-		// at all and no runtime assertion below could ever run.
+		// The static form, so this is settled at compile time, including in
+		// the configurations that build no Direct3D file.
 		static_assert(
 			std::is_base_of<std::runtime_error, com_exception>::value,
 			"render/resource_factory.h declares std::runtime_error. "
-			"ThrowIfFailed is how the D3D11 backend keeps that promise, "
-			"so com_exception has to be one.");
+			"com_exception's base keeps the type half of that promise "
+			"at every ThrowIfFailed site, so it has to be one.");
 
 		CHECK(std::is_base_of<std::runtime_error, com_exception>::value);
 	}
@@ -56,8 +52,7 @@ TEST_SUITE("ThrowIfFailedTests")
 		CHECK_THROWS_AS(ThrowIfFailed(E_FAIL), std::runtime_error);
 
 		// And catching it as the declared type is what the header invites
-		// a client to write. This is the line that would not have compiled
-		// as a catch of the old type.
+		// a client to write.
 		bool caught = false;
 		try
 		{
@@ -79,13 +74,10 @@ TEST_SUITE("ThrowIfFailedTests")
 
 	TEST_CASE("two live exceptions do not share one buffer")
 	{
-		// A what() formatting into a function-local static char[64] has
+		// A what() formatting into a function-local static buffer would have
 		// every com_exception in a process return the same pointer, so the
-		// last one asked overwrites the answer for all of them. That it
-		// cannot race in this tree today - Scene::draw is the only add_task
-		// site and the pool catches per task - is true and is not a fix.
-		// Holding the message in the base costs nothing and removes the
-		// question.
+		// last one asked would overwrite the answer for all of them. Each
+		// exception holds its own message in the base.
 		const com_exception first(E_FAIL);
 		const com_exception second(E_INVALIDARG);
 

@@ -65,9 +65,9 @@ namespace components
 		using Changed = std::function<void(int value)>;
 
 		// `minimum` must be below `maximum`, `step` above zero, `value`
-		// inside the range and `track` wider than zero and not of negative
-		// height; anything else throws std::invalid_argument naming the
-		// slider (T6). The number is drawn just right of `track`, on the
+		// inside the range and `track` wider than zero, with a height of zero
+		// or more (so neither may be NaN); anything else throws
+		// std::invalid_argument naming the slider (T6). The number is drawn just right of `track`, on the
 		// label's line.
 		Slider(const std::string& name,
 			const std::wstring& label,

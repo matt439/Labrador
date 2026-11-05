@@ -84,7 +84,7 @@ class Drift(unittest.TestCase):
         release = inventory_check.expected_tests(INVENTORY, "wasm-release")
         self.assertLessEqual(set(chromium), release)
         cmake = (REPOSITORY / "CMakeLists.txt").read_text(encoding="utf-8")
-        pages = set(re.findall(r"\blabrador_sample_page_test\(\s*([A-Z]\w+)", cmake))
+        pages = set(re.findall(r"\blabrador_(?:sample_)?page_test\(\s*([A-Z]\w+)", cmake))
         pages |= set(re.findall(r"\badd_test\(NAME\s+(\w+PageTests)\b", cmake))
         # Firefox has its own runner, the host page needs a host checkout and
         # pacing is registered only in Release.

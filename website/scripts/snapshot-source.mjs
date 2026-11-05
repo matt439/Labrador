@@ -136,7 +136,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 		const root = fileURLToPath(new URL('../../', import.meta.url));
 		process.stdout.write(`${JSON.stringify(verifySnapshotSource(root, process.argv[2]), null, 2)}\n`);
 	} catch (error) {
-		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+		process.stderr.write(`${describeError(error)}\n`);
 		process.exitCode = 1;
 	}
 }

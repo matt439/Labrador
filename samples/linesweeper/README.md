@@ -1111,8 +1111,9 @@ real display or phone.
 - **Whether the input map belongs in the sample or the engine — now priced,
   and still open.** `states/` has three tables, `{Key, button}` and
   `{GamepadButton, button}` with nine entries each and the touch controls'
-  seven-row `{Control, button}`, and that is the whole input layer. The engine deliberately has no action-mapping layer: PHILOSOPHY's
-  boundary table gives bindings and any rebinding to the game, and
+  seven-row `{Control, button}`, and that is the whole input layer. The
+  engine deliberately has no action-mapping layer: PHILOSOPHY's boundary
+  table gives bindings and any rebinding to the game, and
   ARCHITECTURE's `input/` entry keeps the table on the game's side (T1). This
   sample reads only `held()` and rebuilds its edges from the combined level,
   which is one of the two rules for combining sources that a shared layer

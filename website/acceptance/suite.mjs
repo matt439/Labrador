@@ -49,6 +49,7 @@ import {
 	DEFAULT_WINDOW, TARGETS, pressReturnOnSimulatorKeyboard, restartSimulatorSafari, startBrowser, typeOnSimulatorKeyboard,
 } from './browsers.mjs';
 import { compareTags } from '../scripts/published-versions.mjs';
+import { describeError } from '../scripts/snapshot-source.mjs';
 import { FIXTURE_ONLY_HEADING, FIXTURE_ONLY_PATH, FIXTURE_TAGS } from './fixture.mjs';
 import { startServer } from './server.mjs';
 import { Keys, WebDriverError, pressKeys, tap, waitUntil } from './webdriver.mjs';
@@ -1640,7 +1641,7 @@ async function runCheck(check, context, result) {
 			result.reason = error.message;
 		} else {
 			result.status = 'fail';
-			context.failures.push(error instanceof Error ? error.message : String(error));
+			context.failures.push(describeError(error));
 		}
 	}
 }

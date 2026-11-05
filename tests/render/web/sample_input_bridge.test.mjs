@@ -12,13 +12,16 @@ function body(name) {
 	assert.ok(match, `missing handwritten EM_JS body: ${name}`);
 	return match[1];
 }
+// What the C++ passes as begin's key_count: the length of its sampled_keys.
+const KEY_COUNT = Number(source.match(/std::array<labrador::Key, (\d+)> sampled_keys/)?.[1]);
+assert.ok(Number.isInteger(KEY_COUNT), 'missing sampled_keys in test_input.cpp');
 
 function fixture(input = runInNewContext(SAMPLE_INPUT_HOOK)) {
 	const context = { Module: { labradorTestInput: input }, UTF8ToString: (text) => text };
 	return {
 		input,
 		module: context.Module,
-		begin: runInNewContext(`(function(held, pressed, completed) {${body('linesweeper_test_input_begin')} })`, context),
+		begin: runInNewContext(`(function(held, pressed, completed, key_count = ${KEY_COUNT}) {${body('linesweeper_test_input_begin')} })`, context),
 		ack: runInNewContext(`(function(id, completed, state, row, palette, result) {${body('linesweeper_test_input_ack')} })`, context),
 		error: runInNewContext(`(function(message) {${body('linesweeper_test_input_error')} })`, context),
 	};

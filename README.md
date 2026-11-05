@@ -50,7 +50,7 @@ says why they are copied, and when one would move into the engine.
 ```
 engine/    ~42k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
-tests/     ~38k lines   doctest, run by ctest with five more that sit beside their samples
+tests/     ~38k lines   doctest, run by ctest with the entries that sit beside their samples
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
@@ -289,10 +289,12 @@ ctest --preset x64-debug
 ```
 
 What to check is `ctest`'s last line, `100% tests passed, 0 tests failed out
-of N`. N is 20 on the Direct3D 11, OpenGL and Vulkan presets: eighteen doctest
-targets, the minimal sample's start-up check and the benchmark. The Direct3D 12
-presets have 21, with a synchronization test of their own. The `-null` presets
-have 19, because the pixel tests need a device. A `wasm-*` build has 19 without
+of N`. N is 21 on the Direct3D 11, OpenGL and Vulkan presets: eighteen doctest
+targets, the minimal and collision samples' start-up checks and the benchmark.
+The Direct3D 12 presets have 22, with a synchronization test of their own. The
+`-null` presets also have 22: the pixel tests need a device and are left out,
+and the local multiplayer and audio samples' start-up checks, which record
+calls instead of drawing or playing, are added. A `wasm-*` build has 19 without
 a Chromium and, where one is found, 33 in Debug and 34 in Release, the extra
 ones being pages run in headless Chrome, one for each sample among them, and no
 start-up check, because a page has no command line. Where configure also finds

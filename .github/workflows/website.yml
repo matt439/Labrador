@@ -67,8 +67,9 @@ jobs:
     name: website
     runs-on: ubuntu-latest
     # A stalled step fails the check rather than holding every pull request
-    # for GitHub's six-hour default.
-    timeout-minutes: 30
+    # for GitHub's six-hour default. 45 minutes, like acceptance-fixture,
+    # which builds the same site.
+    timeout-minutes: 45
     # The comparison base for both versions:verify steps, as the header
     # describes it. It reaches the script through the environment, not the
     # command line text, so no event value is ever parsed as shell.

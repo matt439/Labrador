@@ -136,9 +136,9 @@ paths are planning information; they do not establish a build or test result.
 - Desktop `RenderPixelTests` creates a hidden window and device;
   `MinimalSmokeTests` starts a hidden sample, draws 30 frames and quits, and
   `CollisionSmokeTests` drives the collision sample's scripted route the same
-  way. All three need a device; under null render they and
-  `LocalMultiplayerSmokeTests` record draws instead, and null audio adds
-  `AudioSmokeTests`. CI's GL job draws on Mesa's llvmpipe and its Vulkan job on
+  way. All three need a device. Under null render `RenderPixelTests` is not
+  registered; the two smoke tests and `LocalMultiplayerSmokeTests` record
+  draws instead, and null audio adds `AudioSmokeTests`. CI's GL job draws on Mesa's llvmpipe and its Vulkan job on
   Chrome's SwiftShader, and fails if `RenderPixelTests` names another device;
   neither is a real driver, which `ci_gap_report.py` still covers. A passing
   release Direct3D test does not imply WARP: release has no WARP fallback.

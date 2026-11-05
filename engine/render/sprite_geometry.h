@@ -121,9 +121,9 @@ namespace labrador
 		const Vector2F& origin,
 		SpriteVertex* corners);
 
-	// The axis-aligned box around the quad build_sprite_quad would build from
-	// the same destination, source, rotation and origin, measured in world
-	// units before the camera maps and truncates it.
+	// The axis-aligned box around the quad build_sprite_quad would build before
+	// truncation from the same destination, source, rotation and origin,
+	// measured in world units before the camera maps and truncates it.
 	//
 	// The destination rectangle is where a sprite lands only when its origin
 	// is zero and its rotation is zero. An authored frame origin shifts the

@@ -386,7 +386,7 @@ TEST_SUITE("EricsonMath")
 		// THE CASE THIS EXISTS FOR: corner to opposite corner, through the
 		// whole interior, with both endpoints outside and every crossing
 		// exactly at a vertex. Containment plus a proper crossing per edge
-		// answers false here, because no crossing is proper.
+		// would answer false here, because no crossing is proper.
 		CHECK(test_segment_convex_polygon(square,
 			Point2F(-5.0f, -5.0f), Point2F(15.0f, 15.0f)));
 		CHECK(test_segment_convex_polygon(square,

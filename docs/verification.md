@@ -274,10 +274,9 @@ the preset fail. The required tests are the GL/Vulkan pixel and smoke tests and
 `wasm-debug`'s browser tests, which configure registers only when it finds a
 Chromium: without one, its headless tests would otherwise pass alone.
 `chromium_registered` in `tests/ctest_inventory.json` lists them for this
-report and the planner alike. A
-tool missing from the shell fails its preset and the run moves on. With
-`--execute` the exit code is 0 when every selected preset passed and 1 when any
-failed. It is 2, with no section printed, when the checkout state cannot be
+report and the planner alike. A tool missing from the shell fails its preset
+and the run moves on. With `--execute` the exit code is 0 when every selected
+preset passed and 1 when any failed. It is 2, with no section printed, when the checkout state cannot be
 read, HEAD moved during the run, or the output directory exists or cannot be
 made; argument errors also exit 2. The plan exits 0.
 

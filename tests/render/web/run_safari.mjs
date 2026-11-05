@@ -32,7 +32,8 @@
 //
 // The WebDriver client, the driver's start and its end are the website
 // acceptance suite's (website/acceptance/webdriver.mjs and browsers.mjs), so
-// hardening either gets for Safari's iOS and site runs reaches this one too.
+// hardening made there for the acceptance suite's Safari and iOS runs reaches
+// this runner too.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -461,7 +462,7 @@ export async function main(options) {
 		}
 		if (driver) {
 			await driver.stop();
-			if (failure) console.error(`last driver output (16 KiB maximum):\n${driver.output() || '(empty)'}`);
+			if (failure) console.error(`last driver output (8,192 characters maximum):\n${driver.output() || '(empty)'}`);
 		}
 		if (service) await close_server(service.server);
 	}
