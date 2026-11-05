@@ -49,6 +49,42 @@
 
 namespace labrador
 {
+	// A sprite's corners, and the indices of the two triangles over them.
+	constexpr int vertices_per_sprite = 4;
+	constexpr int indices_per_sprite = 6;
+
+	// The 16-bit index list for `sprites` consecutive quads: for each, the
+	// triangles (0,1,2) and (1,3,2) counted from its first corner. A backend
+	// builds its index buffer from this once, for the most sprites one draw
+	// call takes. Throws std::invalid_argument for a negative count, or for
+	// one whose last corner has no 16-bit index (more than 16384 sprites).
+	std::vector<unsigned short> quad_indices(int sprites);
+
+	// What a backend's vertex shader multiplies a vertex position by to take
+	// it from view pixels to clip space: a scale, then an offset, per axis.
+	// Sixteen bytes, in the order sprite.hlsl reads them.
+	struct PixelsToClip
+	{
+		float x_scale = 0.0f;
+		float y_scale = 0.0f;
+		float x_offset = 0.0f;
+		float y_offset = 0.0f;
+	};
+
+	// The transform for a pane `width` by `height` pixels:
+	// (2 / width, -2 / height, -1, 1), and a zero scale for a size that is
+	// not positive.
+	//
+	// THIS IS WHERE Y RUNNING DOWN IS DECIDED. The seam's y increases down
+	// the screen and clip space's increases up, so the y scale is negative
+	// and its offset is +1 rather than -1. Every backend writes these four
+	// numbers. Where a pane sits in its buffer is the backend's own term:
+	// GL measures a viewport from the bottom, and Vulkan, whose clip space
+	// runs the other way, hands the rasteriser a negative viewport height.
+	// The pane's position is not in the transform, because the rasteriser
+	// maps clip space onto the viewport wherever it is.
+	PixelsToClip pixels_to_clip(float width, float height);
+
 	// Fills `corners[4]` for a sprite drawn into `destination`.
 	//
 	// `destination` is in view pixels and `source` in texels of a texture
@@ -187,7 +223,7 @@ namespace labrador
 		const Vector2F& origin,
 		SpriteFlip flip)
 	{
-		SpriteVertex corners[4];
+		SpriteVertex corners[vertices_per_sprite];
 		build_sprite_quad(view.camera.calculate_view_rectangle(destination),
 			source, texture.size, tint, rotation, origin, flip, corners);
 		view.draw(texture.texture, corners);
@@ -214,7 +250,7 @@ namespace labrador
 		font.for_each_glyph(text,
 			[&](const Glyph& glyph, const Vector2F& pen)
 			{
-				SpriteVertex corners[4];
+				SpriteVertex corners[vertices_per_sprite];
 				build_glyph_quad(screen_position, screen_scale, glyph, pen,
 					atlas.size, tint, rotation, origin, corners);
 				view.draw(atlas.texture, corners);
@@ -276,7 +312,8 @@ namespace labrador
 		// predicate, not one that relies on its callers.
 		void record(TextureKey texture, const SpriteVertex* corners)
 		{
-			const int first = static_cast<int>(this->vertices.size()) / 4;
+			const int first = static_cast<int>(this->vertices.size()) /
+				vertices_per_sprite;
 
 			const bool joins = this->open_valid &&
 				this->open.texture == texture &&
@@ -295,7 +332,8 @@ namespace labrador
 				this->open_valid = true;
 			}
 
-			this->vertices.insert(this->vertices.end(), corners, corners + 4);
+			this->vertices.insert(this->vertices.end(), corners,
+				corners + vertices_per_sprite);
 			this->open.sprites++;
 			this->touched = true;
 		}

@@ -1,8 +1,8 @@
 #include "engine/render/d3d11/backend.h"
-#include "engine/math/vector2f.h"
 
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace labrador
 {
@@ -11,20 +11,20 @@ namespace labrador
 		// A handle is an index and nothing else (handle.h), so crossing the seam
 		// is a reinterpretation of which table the index is into - not a lookup.
 		// The public type says Texture, the registry's says
-		// ID3D11ShaderResourceView, and only this folder is allowed to know they
-		// are the same slot.
-		Handle<ID3D11ShaderResourceView> texture_slot(TextureHandle texture)
+		// D3D11Texture, and only this folder is allowed to know they are the
+		// same slot.
+		Handle<D3D11Texture> texture_slot(TextureHandle texture)
 		{
-			return Handle<ID3D11ShaderResourceView>(texture.index());
+			return Handle<D3D11Texture>(texture.index());
 		}
 	}
 
 	// --- RenderResources::Impl -----------------------------------------------
 
 	void RenderResources::Impl::add_texture(const std::string& name,
-		ID3D11ShaderResourceView* texture)
+		std::unique_ptr<D3D11Texture> texture)
 	{
-		this->textures.add(name, texture);
+		this->textures.add(name, std::move(texture));
 	}
 
 	void RenderResources::Impl::release_all_textures()
@@ -32,7 +32,7 @@ namespace labrador
 		this->textures.release_all();
 	}
 
-	ID3D11ShaderResourceView* RenderResources::Impl::texture(
+	const D3D11Texture* RenderResources::Impl::texture(
 		TextureHandle texture) const
 	{
 		return this->textures.get(texture_slot(texture));

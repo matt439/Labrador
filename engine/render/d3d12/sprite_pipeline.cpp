@@ -47,25 +47,25 @@ namespace labrador
 		sampler_range.OffsetInDescriptorsFromTableStart =
 			D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-		D3D12_ROOT_PARAMETER parameters[3] = {};
-		parameters[0].ParameterType =
-			D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-		parameters[0].Constants.ShaderRegister = 0;
-		parameters[0].Constants.RegisterSpace = 0;
-		parameters[0].Constants.Num32BitValues = 4;
-		parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		D3D12_ROOT_PARAMETER parameters[parameter_count] = {};
+		D3D12_ROOT_PARAMETER& transform = parameters[transform_parameter];
+		transform.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		transform.Constants.ShaderRegister = 0;
+		transform.Constants.RegisterSpace = 0;
+		transform.Constants.Num32BitValues = transform_constants;
+		transform.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-		parameters[1].ParameterType =
-			D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		parameters[1].DescriptorTable.NumDescriptorRanges = 1;
-		parameters[1].DescriptorTable.pDescriptorRanges = &texture_range;
-		parameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		D3D12_ROOT_PARAMETER& texture = parameters[texture_parameter];
+		texture.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		texture.DescriptorTable.NumDescriptorRanges = 1;
+		texture.DescriptorTable.pDescriptorRanges = &texture_range;
+		texture.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-		parameters[2].ParameterType =
-			D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		parameters[2].DescriptorTable.NumDescriptorRanges = 1;
-		parameters[2].DescriptorTable.pDescriptorRanges = &sampler_range;
-		parameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		D3D12_ROOT_PARAMETER& sampler = parameters[sampler_parameter];
+		sampler.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		sampler.DescriptorTable.NumDescriptorRanges = 1;
+		sampler.DescriptorTable.pDescriptorRanges = &sampler_range;
+		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		D3D12_ROOT_SIGNATURE_DESC root_description = {};
 		root_description.NumParameters =

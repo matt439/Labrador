@@ -149,6 +149,18 @@ that backend adds is the choice, made per context; how each interpolated texel
 rounds is the engine's, so every device that falls back draws the same pixels.
 The other backends take the blocks or refuse them by name.
 
+Four smaller pieces with no API in them are shared the same way. The argument
+checks `renderer.h` states for `create_device`, `device_info`,
+`set_view_count` and `view` are in [`renderer_checks.h`](renderer_checks.h), so
+a caller's mistake gets one exception and one message in every configuration.
+The index list a backend's index buffer is built from is `quad_indices` in
+[`sprite_geometry.h`](sprite_geometry.h), beside the corner order it encodes,
+and the four numbers each backend's vertex shader multiplies by are
+`pixels_to_clip` there too; what a backend owns is where it puts them.
+A format's name in a refusal is `format_name` in
+[`texture_format.h`](texture_format.h). Each is a plain function a backend
+calls, not a base class it overrides.
+
 **The second file is where they diverge least.** `render_resources.cpp` is a
 constructor, a destructor, two moves and two lookups. The rest is
 `engine/render/render_resources.cpp` — a shared file with a backend sibling's

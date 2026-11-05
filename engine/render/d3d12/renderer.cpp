@@ -3,6 +3,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 #include "engine/render/text_encoding.h"
@@ -23,47 +24,11 @@ namespace labrador
 {
 	namespace
 	{
-		RenderDeviceInfo selected_device(ID3D12Device* device, bool vsync)
+		// The adapter DeviceResources made the device on, which it recorded
+		// when it chose it - the hardware adapter or WARP.
+		RenderDeviceInfo selected_device(const DXGI_ADAPTER_DESC1& description,
+			bool vsync)
 		{
-			ComPtr<IDXGIFactory4> factory;
-			ThrowIfFailed(CreateDXGIFactory1(
-				IID_PPV_ARGS(factory.GetAddressOf())),
-				"The DXGI factory could not be created");
-
-			ComPtr<IDXGIAdapter1> adapter;
-			const LUID selected = device->GetAdapterLuid();
-			const HRESULT enumeration = factory->EnumAdapterByLuid(selected,
-				IID_PPV_ARGS(adapter.GetAddressOf()));
-			if (FAILED(enumeration))
-			{
-				// WARP is obtained through EnumWarpAdapter rather than the
-				// ordinary adapter walk. Some DXGI versions therefore do not
-				// return it from EnumAdapterByLuid even though the device exposes
-				// its LUID. Ask for that one explicitly, then prove it is the
-				// device's rather than silently reporting a fallback that was not
-				// selected.
-				ComPtr<IDXGIAdapter> warp;
-				ThrowIfFailed(factory->EnumWarpAdapter(
-					IID_PPV_ARGS(warp.GetAddressOf())),
-					"The WARP adapter could not be enumerated");
-				ThrowIfFailed(warp.As(&adapter),
-					"The WARP adapter has no IDXGIAdapter1 interface");
-
-				DXGI_ADAPTER_DESC1 warp_description = {};
-				ThrowIfFailed(adapter->GetDesc1(&warp_description),
-					"The WARP adapter's description could not be read");
-				if (warp_description.AdapterLuid.HighPart != selected.HighPart ||
-					warp_description.AdapterLuid.LowPart != selected.LowPart)
-				{
-					ThrowIfFailed(enumeration,
-						"The device's adapter could not be found by its LUID");
-				}
-			}
-
-			DXGI_ADAPTER_DESC1 description = {};
-			ThrowIfFailed(adapter->GetDesc1(&description),
-				"The adapter's description could not be read");
-
 			RenderDeviceInfo info;
 			info.backend = "d3d12";
 			info.present_mode = "dxgi_sync_interval";
@@ -76,11 +41,6 @@ namespace labrador
 				? RenderDeviceKind::software : RenderDeviceKind::hardware;
 			return info;
 		}
-
-		// Four corners, two triangles, and the winding the corner order in
-		// sprite_geometry.h fixes.
-		const int vertices_per_sprite = 4;
-		const int indices_per_sprite = 6;
 
 		// Where the engine's values become this API's.
 		//
@@ -115,70 +75,66 @@ namespace labrador
 				static_cast<LONG>(viewport.TopLeftY + viewport.Height) };
 		}
 
-		D3D12_HEAP_PROPERTIES heap_properties(D3D12_HEAP_TYPE type)
-		{
-			D3D12_HEAP_PROPERTIES properties = {};
-			properties.Type = type;
-			properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-			properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-			properties.CreationNodeMask = 1;
-			properties.VisibleNodeMask = 1;
-			return properties;
-		}
-
-		D3D12_RESOURCE_DESC buffer_description(UINT64 bytes)
-		{
-			D3D12_RESOURCE_DESC description = {};
-			description.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-			description.Alignment = 0;
-			description.Width = bytes;
-			description.Height = 1;
-			description.DepthOrArraySize = 1;
-			description.MipLevels = 1;
-			description.Format = DXGI_FORMAT_UNKNOWN;
-			description.SampleDesc.Count = 1;
-			description.SampleDesc.Quality = 0;
-			description.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-			description.Flags = D3D12_RESOURCE_FLAG_NONE;
-			return description;
-		}
-
-		ComPtr<ID3D12Resource> create_buffer(ID3D12Device* device,
-			D3D12_HEAP_TYPE heap, UINT64 bytes, D3D12_RESOURCE_STATES state)
-		{
-			const D3D12_HEAP_PROPERTIES properties = heap_properties(heap);
-			const D3D12_RESOURCE_DESC description = buffer_description(bytes);
-
-			ComPtr<ID3D12Resource> buffer;
-			ThrowIfFailed(device->CreateCommittedResource(&properties,
-				D3D12_HEAP_FLAG_NONE, &description, state, nullptr,
-				IID_PPV_ARGS(buffer.GetAddressOf())),
-				"A buffer could not be created");
-			return buffer;
-		}
-
-		// Pixels to clip space.
-		//
-		// THE ONE LINE WHERE Y RUNNING DOWN IS DECIDED, for this backend, and
-		// it is the same four numbers the D3D11 one writes because the two
-		// share a clip space: y increases up, x and y run -1 to 1, and the seam
-		// (sprite_vertex.h) hands over pixels with y increasing down. The GL
-		// backend writes them differently and says so. The viewport's position
-		// is not in them: the rasteriser already maps clip space onto the
-		// viewport rectangle.
+		// Pixels to clip space (sprite_geometry.h), as the four root
+		// constants a draw sets.
 		void fill_transform(float* transform, const D3D12_VIEWPORT& viewport)
 		{
-			transform[0] = viewport.Width > 0.0f ? 2.0f / viewport.Width : 0.0f;
-			transform[1] =
-				viewport.Height > 0.0f ? -2.0f / viewport.Height : 0.0f;
-			transform[2] = -1.0f;
-			transform[3] = 1.0f;
+			const PixelsToClip values =
+				pixels_to_clip(viewport.Width, viewport.Height);
+			transform[0] = values.x_scale;
+			transform[1] = values.y_scale;
+			transform[2] = values.x_offset;
+			transform[3] = values.y_offset;
 		}
 	}
 
-	// --- D3d12Texture --------------------------------------------------------
+	// --- Buffers both translation units create -----------------------------
 
-	Vector2F D3d12Texture::size() const
+	D3D12_HEAP_PROPERTIES heap_properties(D3D12_HEAP_TYPE type)
+	{
+		D3D12_HEAP_PROPERTIES properties = {};
+		properties.Type = type;
+		properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		properties.CreationNodeMask = 1;
+		properties.VisibleNodeMask = 1;
+		return properties;
+	}
+
+	D3D12_RESOURCE_DESC buffer_description(UINT64 bytes)
+	{
+		D3D12_RESOURCE_DESC description = {};
+		description.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		description.Alignment = 0;
+		description.Width = bytes;
+		description.Height = 1;
+		description.DepthOrArraySize = 1;
+		description.MipLevels = 1;
+		description.Format = DXGI_FORMAT_UNKNOWN;
+		description.SampleDesc.Count = 1;
+		description.SampleDesc.Quality = 0;
+		description.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		description.Flags = D3D12_RESOURCE_FLAG_NONE;
+		return description;
+	}
+
+	ComPtr<ID3D12Resource> create_buffer(ID3D12Device* device,
+		D3D12_HEAP_TYPE heap, UINT64 bytes, D3D12_RESOURCE_STATES state,
+		const char* failure)
+	{
+		const D3D12_HEAP_PROPERTIES properties = heap_properties(heap);
+		const D3D12_RESOURCE_DESC description = buffer_description(bytes);
+
+		ComPtr<ID3D12Resource> buffer;
+		ThrowIfFailed(device->CreateCommittedResource(&properties,
+			D3D12_HEAP_FLAG_NONE, &description, state, nullptr,
+			IID_PPV_ARGS(buffer.GetAddressOf())), failure);
+		return buffer;
+	}
+
+	// --- D3D12Texture --------------------------------------------------------
+
+	Vector2F D3D12Texture::size() const
 	{
 		return Vector2F(static_cast<float>(this->width_),
 			static_cast<float>(this->height_));
@@ -188,7 +144,7 @@ namespace labrador
 
 	// Nothing is recorded until a flush, so a view the scene declared and then
 	// drew nothing into records nothing at all.
-	void DrawList::View::draw(const D3d12Texture& texture,
+	void DrawList::View::draw(const D3D12Texture& texture,
 		const SpriteVertex* corners)
 	{
 		// ONE TEXTURE PER DRAW CALL, so a run of sprites sharing one is one
@@ -240,7 +196,7 @@ namespace labrador
 				D3D12_HEAP_TYPE_UPLOAD,
 				static_cast<UINT64>(max_page_sprites) * vertices_per_sprite *
 					sizeof(SpriteVertex),
-				D3D12_RESOURCE_STATE_GENERIC_READ);
+				D3D12_RESOURCE_STATE_GENERIC_READ, "A buffer could not be created");
 
 			// Mapped once and never unmapped, which is what this heap type is
 			// for. The read range is empty because nothing here ever reads it.
@@ -281,10 +237,14 @@ namespace labrador
 		vertices.StrideInBytes = static_cast<UINT>(sizeof(SpriteVertex));
 
 		this->list->IASetVertexBuffers(0, 1, &vertices);
-		this->list->SetGraphicsRoot32BitConstants(0, 4, this->transform, 0);
-		this->list->SetGraphicsRootDescriptorTable(1,
+		this->list->SetGraphicsRoot32BitConstants(
+			SpritePipeline::transform_parameter,
+			SpritePipeline::transform_constants, this->transform, 0);
+		this->list->SetGraphicsRootDescriptorTable(
+			SpritePipeline::texture_parameter,
 			owner_impl.texture_slot_gpu(this->batch_texture->slot()));
-		this->list->SetGraphicsRootDescriptorTable(2,
+		this->list->SetGraphicsRootDescriptorTable(
+			SpritePipeline::sampler_parameter,
 			owner_impl.sampler(this->filter));
 
 		this->list->DrawIndexedInstanced(
@@ -444,10 +404,10 @@ namespace labrador
 		// Orders nothing; engine/render/SEAM.md#6 says why it is a parameter.
 		std::ignore = layer_depth;
 
-		const D3d12Texture& device_texture =
+		const D3D12Texture& device_texture =
 			*this->view_->owner->resources->impl()->texture(texture);
 
-		const ResolvedTexture<const D3d12Texture&> resolved{
+		const ResolvedTexture<const D3D12Texture&> resolved{
 			device_texture, device_texture.size() };
 		record_sprite(*this->view_, resolved, source, destination, tint,
 			rotation, origin, flip);
@@ -468,10 +428,10 @@ namespace labrador
 		// (engine/render/render_resources.h).
 		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
-		const D3d12Texture& atlas =
+		const D3D12Texture& atlas =
 			*resources.impl()->texture(the_font.atlas());
 
-		const ResolvedTexture<const D3d12Texture&> resolved{
+		const ResolvedTexture<const D3D12Texture&> resolved{
 			atlas, atlas.size() };
 		record_text(*this->view_, the_font, resolved, text, position, tint,
 			scale, rotation, origin);
@@ -508,13 +468,12 @@ namespace labrador
 	D3D12_GPU_DESCRIPTOR_HANDLE Renderer::Impl::sampler(
 		TextureFilter filter) const
 	{
+		const UINT slot = filter == TextureFilter::linear
+			? linear_sampler_slot : point_sampler_slot;
+
 		D3D12_GPU_DESCRIPTOR_HANDLE handle =
 			this->sampler_heap->GetGPUDescriptorHandleForHeapStart();
-
-		if (filter == TextureFilter::linear)
-		{
-			handle.ptr += this->sampler_descriptor_size;
-		}
+		handle.ptr += static_cast<UINT64>(slot) * this->sampler_descriptor_size;
 		return handle;
 	}
 
@@ -665,7 +624,7 @@ namespace labrador
 		ID3D12Device* device = this->device_resources.device();
 
 		this->sprite_pipeline.create(device,
-			this->device_resources.back_buffer_format());
+			DeviceResources::back_buffer_format);
 
 		// --- The descriptor heaps -------------------------------------------
 
@@ -681,7 +640,7 @@ namespace labrador
 
 		D3D12_DESCRIPTOR_HEAP_DESC sampler_heap_description = {};
 		sampler_heap_description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-		sampler_heap_description.NumDescriptors = 2;
+		sampler_heap_description.NumDescriptors = sampler_count;
 		sampler_heap_description.Flags =
 			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		ThrowIfFailed(device->CreateDescriptorHeap(&sampler_heap_description,
@@ -719,13 +678,18 @@ namespace labrador
 		sampler_description.MinLOD = 0.0f;
 		sampler_description.MaxLOD = 0.0f;
 
-		D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle =
+		const D3D12_CPU_DESCRIPTOR_HANDLE sampler_start =
 			this->sampler_heap->GetCPUDescriptorHandleForHeapStart();
 
+		D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle = sampler_start;
+		sampler_handle.ptr += static_cast<SIZE_T>(point_sampler_slot) *
+			this->sampler_descriptor_size;
 		sampler_description.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 		device->CreateSampler(&sampler_description, sampler_handle);
 
-		sampler_handle.ptr += this->sampler_descriptor_size;
+		sampler_handle = sampler_start;
+		sampler_handle.ptr += static_cast<SIZE_T>(linear_sampler_slot) *
+			this->sampler_descriptor_size;
 		sampler_description.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 		device->CreateSampler(&sampler_description, sampler_handle);
 
@@ -798,31 +762,18 @@ namespace labrador
 		// is why the third file of this backend is the second longest of the
 		// five. The longest is Vulkan's, for the same reason and one more: it
 		// owns the allocation as well as the copy.
-		std::vector<unsigned short> index_data;
-		index_data.reserve(static_cast<size_t>(DrawList::View::
-			max_page_sprites) * indices_per_sprite);
-		for (int sprite = 0; sprite < DrawList::View::max_page_sprites;
-			sprite++)
-		{
-			const unsigned short first =
-				static_cast<unsigned short>(sprite * vertices_per_sprite);
-			index_data.push_back(static_cast<unsigned short>(first + 0));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 3));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-		}
+		const std::vector<unsigned short> index_data =
+			quad_indices(DrawList::View::max_page_sprites);
 
 		const UINT64 index_bytes = static_cast<UINT64>(index_data.size()) *
 			sizeof(unsigned short);
 
 		this->indices = create_buffer(device, D3D12_HEAP_TYPE_DEFAULT,
-			index_bytes, D3D12_RESOURCE_STATE_COMMON);
+			index_bytes, D3D12_RESOURCE_STATE_COMMON, "A buffer could not be created");
 
 		ComPtr<ID3D12Resource> index_upload = create_buffer(device,
 			D3D12_HEAP_TYPE_UPLOAD, index_bytes,
-			D3D12_RESOURCE_STATE_GENERIC_READ);
+			D3D12_RESOURCE_STATE_GENERIC_READ, "A buffer could not be created");
 
 		void* index_mapped = nullptr;
 		const D3D12_RANGE nothing_read = { 0, 0 };
@@ -871,10 +822,7 @@ namespace labrador
 				view->pages[i].clear();
 			}
 			view->recording = false;
-			view->batch.clear();
-			view->batch_texture = nullptr;
-			view->page = 0;
-			view->page_position = 0;
+			view->reset();
 		}
 
 		this->frame_list.Reset();
@@ -900,8 +848,8 @@ namespace labrador
 	void Renderer::Impl::on_device_restored()
 	{
 		this->create_device_dependent_resources();
-		this->device_info = selected_device(this->device_resources.device(),
-			this->vsync);
+		this->device_info = selected_device(
+			this->device_resources.adapter_description(), this->vsync);
 
 		if (this->notify != nullptr)
 		{
@@ -923,11 +871,7 @@ namespace labrador
 	void Renderer::create_device(void* native_window, int width, int height,
 		int view_capacity)
 	{
-		if (view_capacity < 1)
-		{
-			throw std::invalid_argument(
-				"Renderer::create_device needs a view capacity of at least 1.");
-		}
+		check_view_capacity(view_capacity);
 
 		this->impl_->device_resources.set_window(
 			static_cast<HWND>(native_window), width, height);
@@ -945,16 +889,13 @@ namespace labrador
 		this->impl_->create_device_dependent_resources();
 		this->impl_->device_resources.create_window_size_dependent_resources();
 		this->impl_->device_info = selected_device(
-			this->impl_->device_resources.device(), this->impl_->vsync);
+			this->impl_->device_resources.adapter_description(),
+			this->impl_->vsync);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
-		if (this->impl_->device_info.backend.empty())
-		{
-			throw std::logic_error(
-				"Renderer::device_info requires create_device.");
-		}
+		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
 	}
 
@@ -1099,27 +1040,8 @@ namespace labrador
 
 	void Renderer::set_view_count(int count)
 	{
-		const int capacity = static_cast<int>(this->impl_->views.size());
-		if (count < 0 || count > capacity)
-		{
-			throw std::out_of_range("Renderer::set_view_count(" +
-				std::to_string(count) + ") is outside the capacity of " +
-				std::to_string(capacity) + " create_device was given.");
-		}
-
-		// Lowering it past a view something has already drawn into strands that
-		// recording: submit() would not execute it. Say so here rather than let
-		// it turn up as one pane's worth of nothing.
-		for (int i = count; i < this->impl_->view_count; i++)
-		{
-			if (this->impl_->views[static_cast<size_t>(i)]->touched)
-			{
-				throw std::logic_error("Renderer::set_view_count(" +
-					std::to_string(count) + ") would drop view " +
-					std::to_string(i) + ", which has already been drawn into "
-					"this frame.");
-			}
-		}
+		check_view_count(count, this->impl_->view_count,
+			this->impl_->views);
 
 		this->impl_->view_count = count;
 
@@ -1145,13 +1067,7 @@ namespace labrador
 
 	DrawList Renderer::view(int index) const
 	{
-		if (index < 0 || index >= this->impl_->view_count)
-		{
-			throw std::out_of_range("Renderer::view(" + std::to_string(index) +
-				") - this frame has " + std::to_string(this->impl_->view_count) +
-				" views. Asking for one nobody set up used to answer with a "
-				"fullscreen pane and draw a whole extra pass.");
-		}
+		check_view_index(index, this->impl_->view_count);
 		return DrawList(this->impl_->views[static_cast<size_t>(index)].get());
 	}
 
@@ -1238,7 +1154,7 @@ namespace labrador
 		// device loss.
 		ComPtr<ID3D12Resource> readback = create_buffer(device,
 			D3D12_HEAP_TYPE_READBACK, total_bytes,
-			D3D12_RESOURCE_STATE_COPY_DEST);
+			D3D12_RESOURCE_STATE_COPY_DEST, "A buffer could not be created");
 
 		const D3D12_RESOURCE_STATES previous =
 			device_resources.back_buffer_state();
@@ -1279,6 +1195,9 @@ namespace labrador
 
 		// B and R swap on the way out: the back buffer is B8G8R8A8 and the seam
 		// promises RGBA.
+		static_assert(
+			DeviceResources::back_buffer_format == DXGI_FORMAT_B8G8R8A8_UNORM,
+			"read_back_buffer swaps B and R for a B8G8R8A8 back buffer");
 		const unsigned char* bytes = static_cast<const unsigned char*>(mapped);
 		for (size_t y = 0; y < height; y++)
 		{

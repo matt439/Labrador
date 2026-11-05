@@ -1,9 +1,9 @@
 #pragma once
 
 #include "engine/core/registry.h"
+#include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/d3d11/device_resources.h"
-#include "engine/render/font.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/sprite_vertex.h"
@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 // The D3D11 backend, for the files that have to name a device.
@@ -34,15 +35,36 @@
 
 namespace labrador
 {
-	// COM spells the accessor Get(), so teach the registry to unwrap a ComPtr
-	// here, where COM is already in scope.
-	template <typename Resource>
-	struct RegistryStorage<Microsoft::WRL::ComPtr<Resource>>
+	// The swap chain's format. read_back_buffer swaps B and R to answer RGBA,
+	// so it static_asserts this rather than trusting it.
+	constexpr DXGI_FORMAT back_buffer_format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+	// A texture's shader-resource view and its size in texels. The size is
+	// read once, from the description the texture was made with, so a draw
+	// does not ask the runtime for it. Device loss releases the whole entry,
+	// so the size cannot outlive the view it describes.
+	class D3D11Texture
 	{
-		static Resource* pointer(const Microsoft::WRL::ComPtr<Resource>& storage)
+	public:
+		D3D11Texture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> view,
+			int width, int height)
+			: view_(std::move(view)), width_(width), height_(height) {}
+
+		D3D11Texture(const D3D11Texture&) = delete;
+		D3D11Texture& operator=(const D3D11Texture&) = delete;
+
+		ID3D11ShaderResourceView* view() const { return this->view_.Get(); }
+
+		Vector2F size() const
 		{
-			return storage.Get();
+			return Vector2F(static_cast<float>(this->width_),
+				static_cast<float>(this->height_));
 		}
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> view_;
+		int width_ = 0;
+		int height_ = 0;
 	};
 
 	// What a Texture is, once this backend has decided, and where every named
@@ -63,7 +85,7 @@ namespace labrador
 		// The adds for the two engine kinds are on RenderResources itself, and
 		// so are their tables now - this holds one table, not three.
 		void add_texture(const std::string& name,
-			ID3D11ShaderResourceView* texture);
+			std::unique_ptr<D3D11Texture> texture);
 
 		// Device loss. The textures go; the names, and therefore every handle
 		// resolved from them, stay. Nothing else in here is the device's, and
@@ -74,11 +96,9 @@ namespace labrador
 		// unresolved or its slot has been released. The font lookup is
 		// RenderResources::font, not here: a Font is engine data, so its table
 		// hides nothing from anybody.
-		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
+		const D3D11Texture* texture(TextureHandle texture) const;
 
-		Registry<ID3D11ShaderResourceView,
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>
-			textures{ "Texture" };
+		Registry<D3D11Texture> textures{ "Texture" };
 	};
 
 	// One view's recording state: a deferred context, the buffers that feed it,
@@ -227,7 +247,7 @@ namespace labrador
 
 		// Renders only 2D, so there is no depth buffer to ask for - see the
 		// class comment on DeviceResources, which has none to offer.
-		DeviceResources device_resources{ DXGI_FORMAT_B8G8R8A8_UNORM };
+		DeviceResources device_resources{ back_buffer_format };
 		RenderDeviceInfo device_info;
 
 		// What set_vsync last asked, which outlives the device: it is the
@@ -277,11 +297,13 @@ namespace labrador
 
 		ID3D11SamplerState* sampler(TextureFilter filter) const;
 
-		// The size of a texture, in texels, for the geometry that turns a
-		// source rectangle into texture coordinates. Read off the view rather
-		// than remembered beside it, because the table stores views.
-		static Vector2F texture_size(
-			ID3D11ShaderResourceView* texture);
+		// Whether create_device has made a device and no device loss has
+		// left this without one. Every "is there a device" question in this
+		// backend asks it; device_info() asks whether the device is described.
+		bool has_device() const
+		{
+			return this->device_resources.GetD3DDevice() != nullptr;
+		}
 
 		// Everything above that belongs to the device, remade with it.
 		void create_device_dependent_resources();

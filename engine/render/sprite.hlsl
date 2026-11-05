@@ -54,14 +54,12 @@
 // rendered output, with the per-channel allowance in tests/render/golden_image.cpp.
 // They do not prove identical compiler arithmetic or lower-profile rendering.
 //
-// IT IS NOT WHAT LETS THE ENGINE RUN ON A 9.1 MACHINE, AND THIS LINE USED TO
-// SAY IT WAS. The D3D11 backend's DeviceResources defaults minFeatureLevel to
-// D3D_FEATURE_LEVEL_10_0 and its backend.h takes the default, so the 9_3, 9_2
-// and 9_1 entries are truncated out of the level array before it is ever
-// requested - engine/render/d3d11/device_resources.h states that outright. The
-// floor is 10.0 and the shader profile is below it, which is the safe direction
-// to be wrong in and still worth not claiming the reverse. The D3D12 backend's
-// floor is 11_0, because that API has no level below it.
+// IT IS NOT WHAT LETS THE ENGINE RUN ON A 9.1 MACHINE. The D3D11 backend's
+// DeviceResources requests no level below D3D_FEATURE_LEVEL_10_0
+// (engine/render/d3d11/device_resources.cpp). The floor is 10.0 and the shader
+// profile is below it, which is the safe direction to be wrong in and still
+// worth not claiming the reverse. The D3D12 backend's floor is 11_0, because
+// that API has no level below it.
 
 // Pixels to clip space, as two multiply-adds rather than a 4x4 matrix.
 //

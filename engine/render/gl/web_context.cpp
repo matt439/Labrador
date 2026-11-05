@@ -129,10 +129,7 @@ namespace labrador
 		const GLenum UNMASKED_VENDOR_WEBGL = 0x9245;
 		const GLenum UNMASKED_RENDERER_WEBGL = 0x9246;
 		const char* const masked_renderer = "WebKit WebGL";
-	}
 
-	namespace
-	{
 		bool on_context_lost(int event_type, const void* reserved,
 			void* user_data)
 		{

@@ -3,9 +3,13 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/font.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
+#include <cstddef>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -14,6 +18,19 @@
 
 namespace labrador
 {
+	// --- Renderer::Impl ------------------------------------------------------
+
+	void Renderer::Impl::reset_views()
+	{
+		for (std::unique_ptr<DrawList::View>& view : this->views)
+		{
+			view->reset();
+			view->viewport = Viewport(0.0f, 0.0f,
+				static_cast<float>(this->width),
+				static_cast<float>(this->height));
+		}
+	}
+
 	// --- DrawList::View ------------------------------------------------------
 
 	void DrawList::View::draw(TextureHandle texture,
@@ -23,7 +40,7 @@ namespace labrador
 		sprite.texture = texture;
 		sprite.filter = this->filter;
 		sprite.viewport = this->viewport;
-		for (int i = 0; i < 4; i++)
+		for (std::size_t i = 0; i < std::size(sprite.corners); i++)
 		{
 			sprite.corners[i] = corners[i];
 		}
@@ -138,11 +155,7 @@ namespace labrador
 		// second would mean a client could not run against it at all.
 		std::ignore = native_window;
 
-		if (view_capacity < 1)
-		{
-			throw std::invalid_argument(
-				"Renderer::create_device needs a view capacity of at least 1.");
-		}
+		check_view_capacity(view_capacity);
 
 		this->impl_->device_created = true;
 		this->impl_->width = width;
@@ -166,11 +179,7 @@ namespace labrador
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
-		if (!this->impl_->device_created)
-		{
-			throw std::logic_error(
-				"Renderer::device_info requires create_device.");
-		}
+		check_device_created(this->impl_->device_created);
 		return this->impl_->device_info;
 	}
 
@@ -234,13 +243,7 @@ namespace labrador
 		// again; and impl_->recorded, because submit() rebuilds it wholesale
 		// and end_frame promises the last recording stays readable until the
 		// next begin_frame.
-		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
-		{
-			view->reset();
-			view->viewport = Viewport(0.0f, 0.0f,
-				static_cast<float>(this->impl_->width),
-				static_cast<float>(this->impl_->height));
-		}
+		this->impl_->reset_views();
 
 		return true;
 	}
@@ -262,13 +265,7 @@ namespace labrador
 
 		this->impl_->recorded.clear();
 
-		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
-		{
-			view->reset();
-			view->viewport = Viewport(0.0f, 0.0f,
-				static_cast<float>(this->impl_->width),
-				static_cast<float>(this->impl_->height));
-		}
+		this->impl_->reset_views();
 
 		this->impl_->view_count = 0;
 	}
@@ -283,28 +280,8 @@ namespace labrador
 
 	void Renderer::set_view_count(int count)
 	{
-		const int capacity = static_cast<int>(this->impl_->views.size());
-		if (count < 0 || count > capacity)
-		{
-			throw std::out_of_range("Renderer::set_view_count(" +
-				std::to_string(count) + ") is outside the capacity of " +
-				std::to_string(capacity) + " create_device was given.");
-		}
-
-		// The same throw the other four make, and it costs this backend nothing
-		// to be strict about - which is the point of testing a client here. A
-		// caller that drops a drawn-into view fails in every configuration or
-		// in none.
-		for (int i = count; i < this->impl_->view_count; i++)
-		{
-			if (this->impl_->views[static_cast<size_t>(i)]->touched)
-			{
-				throw std::logic_error("Renderer::set_view_count(" +
-					std::to_string(count) + ") would drop view " +
-					std::to_string(i) + ", which has already been drawn into "
-					"this frame.");
-			}
-		}
+		check_view_count(count, this->impl_->view_count,
+			this->impl_->views);
 
 		this->impl_->view_count = count;
 	}
@@ -316,13 +293,7 @@ namespace labrador
 
 	DrawList Renderer::view(int index) const
 	{
-		if (index < 0 || index >= this->impl_->view_count)
-		{
-			throw std::out_of_range("Renderer::view(" + std::to_string(index) +
-				") - this frame has " + std::to_string(this->impl_->view_count) +
-				" views. Asking for one nobody set up used to answer with a "
-				"fullscreen pane and draw a whole extra pass.");
-		}
+		check_view_index(index, this->impl_->view_count);
 		return DrawList(this->impl_->views[static_cast<size_t>(index)].get());
 	}
 

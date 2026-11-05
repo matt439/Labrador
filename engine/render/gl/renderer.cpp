@@ -5,6 +5,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 #include "engine/render/gl/sprite_shader.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
@@ -23,8 +24,12 @@ namespace labrador
 {
 	namespace
 	{
-		const int vertices_per_sprite = 4;
-		const int indices_per_sprite = 6;
+		// The shader's three inputs. create_gl_resources binds each name to
+		// its index before linking, and the vertex array enables and points
+		// the same three, so these are the one place the numbers are chosen.
+		const GLuint position_attribute = 0;
+		const GLuint colour_attribute = 1;
+		const GLuint texcoord_attribute = 2;
 
 		std::string driver_string(const Renderer::Impl& impl, GLenum name,
 			const char* what)
@@ -104,42 +109,34 @@ namespace labrador
 		void point_attributes(std::size_t first_vertex)
 		{
 			const std::uintptr_t base = first_vertex * sizeof(SpriteVertex);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
-				reinterpret_cast<const void*>(
+			glVertexAttribPointer(position_attribute, 2, GL_FLOAT, GL_FALSE,
+				sizeof(SpriteVertex), reinterpret_cast<const void*>(
 					base + offsetof(SpriteVertex, position)));
-			glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
-				reinterpret_cast<const void*>(
+			glVertexAttribPointer(colour_attribute, 4, GL_FLOAT, GL_FALSE,
+				sizeof(SpriteVertex), reinterpret_cast<const void*>(
 					base + offsetof(SpriteVertex, colour)));
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(SpriteVertex),
-				reinterpret_cast<const void*>(
+			glVertexAttribPointer(texcoord_attribute, 2, GL_FLOAT, GL_FALSE,
+				sizeof(SpriteVertex), reinterpret_cast<const void*>(
 					base + offsetof(SpriteVertex, texcoord)));
 		}
 
-		std::string shader_log(GLuint shader)
+		// A shader's or a program's info log: glGetShaderiv with
+		// glGetShaderInfoLog, or glGetProgramiv with glGetProgramInfoLog. A
+		// template because those are loaded pointers on Windows and plain
+		// functions in a browser.
+		template <typename GetParameter, typename GetLog>
+		std::string info_log(GLuint object, GetParameter get_parameter,
+			GetLog get_log)
 		{
 			GLint length = 0;
-			glGetShaderiv(shader, GL_INFO_LOG_LENGTH_, &length);
+			get_parameter(object, GL_INFO_LOG_LENGTH_, &length);
 			if (length <= 0)
 			{
 				return "(the driver offered no message)";
 			}
 
-			std::string log(static_cast<size_t>(length), '\0');
-			glGetShaderInfoLog(shader, length, nullptr, log.data());
-			return log;
-		}
-
-		std::string program_log(GLuint program)
-		{
-			GLint length = 0;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH_, &length);
-			if (length <= 0)
-			{
-				return "(the driver offered no message)";
-			}
-
-			std::string log(static_cast<size_t>(length), '\0');
-			glGetProgramInfoLog(program, length, nullptr, log.data());
+			std::string log(static_cast<std::size_t>(length), '\0');
+			get_log(object, length, nullptr, log.data());
 			return log;
 		}
 
@@ -166,7 +163,8 @@ namespace labrador
 			glGetShaderiv(shader, GL_COMPILE_STATUS_, &compiled);
 			if (compiled == GL_FALSE)
 			{
-				const std::string log = shader_log(shader);
+				const std::string log =
+					info_log(shader, glGetShaderiv, glGetShaderInfoLog);
 				glDeleteShader(shader);
 				throw std::runtime_error(std::string("The ") + what +
 					" shader did not compile on this driver:\n" + log);
@@ -294,6 +292,30 @@ namespace labrador
 			: this->point_sampler;
 	}
 
+	void Renderer::Impl::clear_and_reset_views()
+	{
+		const Vector2I drawable = this->drawable_size();
+
+		// A lost context is cleared by nobody: every call would do nothing,
+		// and a browser warns about each one. The views below are still reset,
+		// because the frame is recorded exactly as any other.
+		if (!this->context_lost())
+		{
+			glViewport(0, 0, static_cast<GLsizei>(drawable.x),
+				static_cast<GLsizei>(drawable.y));
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+
+		for (std::unique_ptr<DrawList::View>& view : this->views)
+		{
+			view->reset();
+			view->viewport = Viewport(0.0f, 0.0f,
+				static_cast<float>(drawable.x),
+				static_cast<float>(drawable.y));
+		}
+	}
+
 	void Renderer::Impl::create_gl_resources()
 	{
 		const ShaderOwner vertex_shader(compile_shader(GL_VERTEX_SHADER_,
@@ -310,9 +332,9 @@ namespace labrador
 		// attribute ended up, and build the vertex array from the answers -
 		// which works and is three more round trips to say what these three
 		// lines say.
-		glBindAttribLocation(this->program, 0, "position");
-		glBindAttribLocation(this->program, 1, "colour");
-		glBindAttribLocation(this->program, 2, "texcoord");
+		glBindAttribLocation(this->program, position_attribute, "position");
+		glBindAttribLocation(this->program, colour_attribute, "colour");
+		glBindAttribLocation(this->program, texcoord_attribute, "texcoord");
 
 		glLinkProgram(this->program);
 
@@ -320,7 +342,8 @@ namespace labrador
 		glGetProgramiv(this->program, GL_LINK_STATUS_, &linked);
 		if (linked == GL_FALSE)
 		{
-			const std::string log = program_log(this->program);
+			const std::string log = info_log(this->program, glGetProgramiv,
+				glGetProgramInfoLog);
 			glDeleteProgram(this->program);
 			this->program = 0;
 			throw std::runtime_error(
@@ -339,21 +362,8 @@ namespace labrador
 		// this many when it is recorded (DrawList::View::draw) rather than
 		// grown here; replay() neither splits nor clamps, and would draw
 		// whatever it was handed.
-		std::vector<unsigned short> index_data;
-		index_data.reserve(static_cast<size_t>(DrawList::View::max_run_sprites)
-			* indices_per_sprite);
-		for (int sprite = 0; sprite < DrawList::View::max_run_sprites;
-			sprite++)
-		{
-			const unsigned short first =
-				static_cast<unsigned short>(sprite * vertices_per_sprite);
-			index_data.push_back(static_cast<unsigned short>(first + 0));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 3));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-		}
+		const std::vector<unsigned short> index_data =
+			quad_indices(DrawList::View::max_run_sprites);
 
 		// A VERTEX ARRAY OBJECT IS NOT OPTIONAL IN A CORE PROFILE. There is no
 		// default one, so a core context with none bound draws nothing and
@@ -372,9 +382,9 @@ namespace labrador
 				sizeof(unsigned short)),
 			index_data.data(), GL_STATIC_DRAW_);
 
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(position_attribute);
+		glEnableVertexAttribArray(colour_attribute);
+		glEnableVertexAttribArray(texcoord_attribute);
 		point_attributes(0);
 
 		// Clamped, so a source rectangle at the edge of an atlas cannot bleed
@@ -537,12 +547,11 @@ namespace labrador
 				static_cast<GLsizei>(pixels.width),
 				static_cast<GLsizei>(pixels.height));
 
-			const float pane_width = static_cast<float>(pixels.width);
-			const float pane_height = static_cast<float>(pixels.height);
-			glUniform4f(this->transform_uniform,
-				pane_width > 0.0f ? 2.0f / pane_width : 0.0f,
-				pane_height > 0.0f ? -2.0f / pane_height : 0.0f,
-				-1.0f, 1.0f);
+			const PixelsToClip transform = pixels_to_clip(
+				static_cast<float>(pixels.width),
+				static_cast<float>(pixels.height));
+			glUniform4f(this->transform_uniform, transform.x_scale,
+				transform.y_scale, transform.x_offset, transform.y_offset);
 
 			glBindTexture(GL_TEXTURE_2D, run.texture);
 			glBindSampler(0, this->sampler(run.filter));
@@ -569,18 +578,14 @@ namespace labrador
 	void Renderer::create_device(void* native_window, int width, int height,
 		int view_capacity)
 	{
-		if (view_capacity < 1)
-		{
-			throw std::invalid_argument(
-				"Renderer::create_device needs a view capacity of at least 1.");
-		}
+		check_view_capacity(view_capacity);
 
 		this->impl_->reported_width = width;
 		this->impl_->reported_height = height;
 		this->impl_->create_context(native_window);
 
 		this->impl_->views.clear();
-		this->impl_->views.reserve(static_cast<size_t>(view_capacity));
+		this->impl_->views.reserve(static_cast<std::size_t>(view_capacity));
 		for (int i = 0; i < view_capacity; i++)
 		{
 			this->impl_->views.push_back(std::make_unique<DrawList::View>());
@@ -594,11 +599,7 @@ namespace labrador
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
-		if (this->impl_->device_info.backend.empty())
-		{
-			throw std::logic_error(
-				"Renderer::device_info requires create_device.");
-		}
+		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
 	}
 
@@ -677,23 +678,7 @@ namespace labrador
 		// The clear is here for the same reason: the other four hand back a
 		// cleared buffer, and the region a widened window just exposed would
 		// otherwise hold whatever was in it.
-		const Vector2I drawable = this->impl_->drawable_size();
-
-		if (!this->impl_->context_lost())
-		{
-			glViewport(0, 0, static_cast<GLsizei>(drawable.x),
-				static_cast<GLsizei>(drawable.y));
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-		}
-
-		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
-		{
-			view->reset();
-			view->viewport = Viewport(0.0f, 0.0f,
-				static_cast<float>(drawable.x),
-				static_cast<float>(drawable.y));
-		}
+		this->impl_->clear_and_reset_views();
 
 		return true;
 	}
@@ -725,26 +710,7 @@ namespace labrador
 
 		this->impl_->frame_submitted = false;
 
-		const Vector2I drawable = this->impl_->drawable_size();
-
-		// A lost context is cleared by nobody: every call would do nothing,
-		// and a browser warns about each one. The views below are still reset,
-		// because the frame is recorded exactly as any other.
-		if (!this->impl_->context_lost())
-		{
-			glViewport(0, 0, static_cast<GLsizei>(drawable.x),
-				static_cast<GLsizei>(drawable.y));
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-		}
-
-		for (std::unique_ptr<DrawList::View>& view : this->impl_->views)
-		{
-			view->reset();
-			view->viewport = Viewport(0.0f, 0.0f,
-				static_cast<float>(drawable.x),
-				static_cast<float>(drawable.y));
-		}
+		this->impl_->clear_and_reset_views();
 
 		this->impl_->view_count = 0;
 	}
@@ -756,29 +722,8 @@ namespace labrador
 
 	void Renderer::set_view_count(int count)
 	{
-		const int capacity = static_cast<int>(this->impl_->views.size());
-		if (count < 0 || count > capacity)
-		{
-			throw std::out_of_range("Renderer::set_view_count(" +
-				std::to_string(count) + ") is outside the capacity of " +
-				std::to_string(capacity) + " create_device was given.");
-		}
-
-		// Lowering it past a view something has already drawn into strands that
-		// recording. The two backends that record into a command list have a
-		// harder version of this problem - the commands are inside a deferred
-		// context on d3d11 and an ID3D12GraphicsCommandList on d3d12 - but the
-		// answer the seam gives is the same, so it is the same throw on all five.
-		for (int i = count; i < this->impl_->view_count; i++)
-		{
-			if (this->impl_->views[static_cast<size_t>(i)]->touched)
-			{
-				throw std::logic_error("Renderer::set_view_count(" +
-					std::to_string(count) + ") would drop view " +
-					std::to_string(i) + ", which has already been drawn into "
-					"this frame.");
-			}
-		}
+		check_view_count(count, this->impl_->view_count,
+			this->impl_->views);
 
 		this->impl_->view_count = count;
 	}
@@ -790,14 +735,8 @@ namespace labrador
 
 	DrawList Renderer::view(int index) const
 	{
-		if (index < 0 || index >= this->impl_->view_count)
-		{
-			throw std::out_of_range("Renderer::view(" + std::to_string(index) +
-				") - this frame has " + std::to_string(this->impl_->view_count) +
-				" views. Asking for one nobody set up used to answer with a "
-				"fullscreen pane and draw a whole extra pass.");
-		}
-		return DrawList(this->impl_->views[static_cast<size_t>(index)].get());
+		check_view_index(index, this->impl_->view_count);
+		return DrawList(this->impl_->views[static_cast<std::size_t>(index)].get());
 	}
 
 	void Renderer::submit()
@@ -833,7 +772,7 @@ namespace labrador
 		// is a vector rather than a command list.
 		for (int i = 0; i < this->impl_->view_count; i++)
 		{
-			DrawList::View& view = *this->impl_->views[static_cast<size_t>(i)];
+			DrawList::View& view = *this->impl_->views[static_cast<std::size_t>(i)];
 			view.close_run();
 			this->impl_->replay(view, drawable_height);
 		}
@@ -869,8 +808,8 @@ namespace labrador
 		// a window that had shrunk would have glReadPixels reading rows that
 		// are not in the framebuffer, which GL leaves undefined.
 		const Vector2I drawable = this->impl_->drawable_size();
-		const size_t width = static_cast<size_t>(drawable.x);
-		const size_t height = static_cast<size_t>(drawable.y);
+		const std::size_t width = static_cast<std::size_t>(drawable.x);
+		const std::size_t height = static_cast<std::size_t>(drawable.y);
 		pixels.resize(width * height * 4);
 
 		glReadBuffer(GL_BACK);
@@ -887,7 +826,7 @@ namespace labrador
 		// that is what was asked for, where the other three rasterisers' buffers
 		// are all B8G8R8A8 and all three swap on the way out. This backend is the
 		// only one that turns its rows over and the only one that does not swap.
-		for (size_t y = 0; y < height; y++)
+		for (std::size_t y = 0; y < height; y++)
 		{
 			const unsigned char* source =
 				upside_down.data() + (height - 1 - y) * width * 4;

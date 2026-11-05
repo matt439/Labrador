@@ -19,7 +19,7 @@ namespace labrador
 	{
 		// THE FLOOR, AND IT IS HIGHER THAN THE ENGINE'S.
 		//
-		// engine/render/d3d11/device_resources.h puts this engine's floor at
+		// engine/render/d3d11/device_resources.cpp puts this engine's floor at
 		// feature level 10.0. Direct3D 12 has no such level: 11_0 is the lowest
 		// there is, and the OS floor is Windows 10. So this backend reaches
 		// strictly less hardware than the one beside it, which is worth stating
@@ -41,19 +41,46 @@ namespace labrador
 		// about the reference one, and it is the only NEGATIVE low-tier
 		// sentence in the tree - which is why it is worth being exact in.
 		const D3D_FEATURE_LEVEL min_feature_level = D3D_FEATURE_LEVEL_11_0;
+
+		// Whether hardware_adapter may take this adapter: not the Basic
+		// Render Driver, which is software and is not what the fallback in
+		// create_device_resources means by WARP, and able to make a Direct3D
+		// 12 device at the floor.
+		//
+		// THE SECOND TEST IS ONE THE D3D11 FILE DOES NOT NEED. There, every
+		// adapter DXGI enumerates supports D3D11 at some level; here an
+		// adapter can be present and not support Direct3D 12 at all. What it
+		// buys is the second adapter, not the fallback: without it the walk
+		// takes the first non-software adapter and stops, so a machine whose
+		// first adapter cannot do D3D12 and whose second can would drop to
+		// WARP. With it the walk keeps looking, and the capable GPU is used.
+		bool acceptable_adapter(IDXGIAdapter1* adapter)
+		{
+			DXGI_ADAPTER_DESC1 description;
+			ThrowIfFailed(adapter->GetDesc1(&description),
+				"An adapter's description could not be read");
+
+			if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				return false;
+			}
+
+			return SUCCEEDED(D3D12CreateDevice(adapter, min_feature_level,
+				__uuidof(ID3D12Device), nullptr));
+		}
 	}
 
-	DeviceResources::DeviceResources(DXGI_FORMAT back_buffer_format)
+	// The fence values start at zero here and again for every device, in
+	// create_device_resources, which is the reset the invariant rests on.
+	DeviceResources::DeviceResources()
 		: back_buffer_states_{},
 		  frame_fences_{},
-		  back_buffer_format_(back_buffer_format),
 		  screen_viewport_{},
 		  output_size_{ 0, 0, 1, 1 }
 	{
 		for (int i = 0; i < frame_count; i++)
 		{
 			this->back_buffer_states_[i] = D3D12_RESOURCE_STATE_PRESENT;
-			this->frame_fences_[i] = 0;
 		}
 	}
 
@@ -96,7 +123,7 @@ namespace labrador
 	{
 		UINT flags = 0;
 
-#if defined(_DEBUG)
+#ifdef _DEBUG
 		// The debug layer is an optional Windows feature ("Graphics Tools"),
 		// so this asks and carries on. A build machine without it is the
 		// normal case and is not a reason to refuse to run - which is the
@@ -133,12 +160,15 @@ namespace labrador
 			"The DXGI factory could not be created");
 	}
 
-	void DeviceResources::hardware_adapter(IDXGIAdapter1** adapter)
+	ComPtr<IDXGIAdapter1> DeviceResources::hardware_adapter()
 	{
-		*adapter = nullptr;
-
 		ComPtr<IDXGIAdapter1> candidate;
 
+		// By GPU preference where the factory offers it, and in DXGI's own
+		// order where it does not. Both walks see the same adapters, so the
+		// second runs only when the first is unavailable. A walk that ends
+		// without a match leaves `candidate` null, because its last
+		// enumeration failed into it.
 		ComPtr<IDXGIFactory6> factory6;
 		if (SUCCEEDED(this->factory_.As(&factory6)))
 		{
@@ -148,70 +178,34 @@ namespace labrador
 					IID_PPV_ARGS(candidate.ReleaseAndGetAddressOf())));
 				index++)
 			{
-				DXGI_ADAPTER_DESC1 description;
-				ThrowIfFailed(candidate->GetDesc1(&description),
-					"An adapter's description could not be read");
-
-				if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+				if (acceptable_adapter(candidate.Get()))
 				{
-					// The Basic Render Driver, which is not what the fallback
-					// below means by WARP and is not wanted here either.
-					continue;
-				}
-
-				// ASKED WHETHER IT CAN MAKE A DEVICE, WHICH THE D3D11 FILE DOES
-				// NOT HAVE TO. There, every adapter DXGI enumerates supports
-				// D3D11 at some level; here an adapter can be present and not
-				// support Direct3D 12 at all.
-				//
-				// WHAT IT BUYS IS THE SECOND ADAPTER, NOT THE FALLBACK. Without
-				// the probe this loop takes the first non-software adapter and
-				// stops, so a machine whose first adapter cannot do D3D12 and
-				// whose second can would drop to WARP - the fallback below is a
-				// plain if rather than the else of `if (candidate)`, so it
-				// catches that case either way and nothing throws. With the
-				// probe the loop keeps looking, and the capable GPU is used.
-				if (SUCCEEDED(D3D12CreateDevice(candidate.Get(),
-					min_feature_level, __uuidof(ID3D12Device), nullptr)))
-				{
-					break;
+					return candidate;
 				}
 			}
 		}
-
-		if (!candidate)
+		else
 		{
 			for (UINT index = 0;
 				SUCCEEDED(this->factory_->EnumAdapters1(index,
 					candidate.ReleaseAndGetAddressOf()));
 				index++)
 			{
-				DXGI_ADAPTER_DESC1 description;
-				ThrowIfFailed(candidate->GetDesc1(&description),
-					"An adapter's description could not be read");
-
-				if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+				if (acceptable_adapter(candidate.Get()))
 				{
-					continue;
-				}
-
-				if (SUCCEEDED(D3D12CreateDevice(candidate.Get(),
-					min_feature_level, __uuidof(ID3D12Device), nullptr)))
-				{
-					break;
+					return candidate;
 				}
 			}
 		}
 
-		*adapter = candidate.Detach();
+		return nullptr;
 	}
 
 	void DeviceResources::create_device_resources()
 	{
 		this->create_factory();
 
-		ComPtr<IDXGIAdapter1> adapter;
-		this->hardware_adapter(adapter.GetAddressOf());
+		ComPtr<IDXGIAdapter1> adapter = this->hardware_adapter();
 
 		HRESULT hr = E_FAIL;
 		if (adapter)
@@ -219,7 +213,7 @@ namespace labrador
 			hr = D3D12CreateDevice(adapter.Get(), min_feature_level,
 				IID_PPV_ARGS(this->device_.ReleaseAndGetAddressOf()));
 		}
-#if defined(NDEBUG)
+#ifndef _DEBUG
 		else
 		{
 			throw std::runtime_error("No Direct3D 12 hardware device found");
@@ -236,7 +230,7 @@ namespace labrador
 			// software rasteriser instead, and Direct3D 12 has it too - so this
 			// is the second backend whose pixel contract CI can actually check,
 			// against the same golden images as the first.
-			ComPtr<IDXGIAdapter> warp;
+			ComPtr<IDXGIAdapter1> warp;
 			if (SUCCEEDED(this->factory_->EnumWarpAdapter(
 				IID_PPV_ARGS(warp.GetAddressOf()))))
 			{
@@ -245,6 +239,7 @@ namespace labrador
 
 				if (SUCCEEDED(hr))
 				{
+					adapter = warp;
 					OutputDebugStringA("Direct3D 12 Adapter - WARP\n");
 				}
 			}
@@ -254,7 +249,12 @@ namespace labrador
 		ThrowIfFailed(hr,
 			"The Direct3D 12 device could not be created");
 
-#ifndef NDEBUG
+		// Kept for device_info, which names the adapter the device is on
+		// rather than finding it again.
+		ThrowIfFailed(adapter->GetDesc1(&this->adapter_description_),
+			"The adapter's description could not be read");
+
+#ifdef _DEBUG
 		{
 			ComPtr<ID3D12InfoQueue> info_queue;
 			if (SUCCEEDED(this->device_.As(&info_queue)))
@@ -378,7 +378,7 @@ namespace labrador
 		if (this->swap_chain_)
 		{
 			const HRESULT hr = this->swap_chain_->ResizeBuffers(frame_count,
-				width, height, this->back_buffer_format_, 0u);
+				width, height, back_buffer_format, 0u);
 
 			if (hr == DXGI_ERROR_DEVICE_REMOVED ||
 				hr == DXGI_ERROR_DEVICE_RESET)
@@ -407,7 +407,7 @@ namespace labrador
 			DXGI_SWAP_CHAIN_DESC1 description = {};
 			description.Width = width;
 			description.Height = height;
-			description.Format = this->back_buffer_format_;
+			description.Format = back_buffer_format;
 			description.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			description.BufferCount = frame_count;
 			description.SampleDesc.Count = 1;
@@ -444,7 +444,7 @@ namespace labrador
 			this->render_target_heap_->GetCPUDescriptorHandleForHeapStart();
 
 		D3D12_RENDER_TARGET_VIEW_DESC view_description = {};
-		view_description.Format = this->back_buffer_format_;
+		view_description.Format = back_buffer_format;
 		view_description.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
 		for (int i = 0; i < frame_count; i++)

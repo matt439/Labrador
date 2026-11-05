@@ -82,7 +82,7 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	// reload. Registry replacement of an existing name allocates nothing, so
 	// this one attempt is the whole of the throwing preparation/publication.
 	AllocationSample located;
-	located.watched_bytes = sizeof(D3d12Texture);
+	located.watched_bytes = sizeof(D3D12Texture);
 	{
 		AllocationScope scope(located);
 		add_texture_asset(fixture.renderer, fixture.resources, name,
@@ -92,7 +92,7 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	REQUIRE(located.watched_attempts == 1);
 	REQUIRE(table.descriptor_slot(name) == slot);
 
-	const D3d12Texture* original = table.textures.get(name);
+	const D3D12Texture* original = table.textures.get(name);
 	ID3D12Resource* const original_resource = original->resource();
 	CHECK(draw_texture(fixture, handle) == solid_frame(255, 0, 0));
 
@@ -107,7 +107,7 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	}
 	REQUIRE_FALSE(refused.hook_conflict);
 	CHECK(refused.refused == 1);
-	CHECK(refused.refused_bytes == sizeof(D3d12Texture));
+	CHECK(refused.refused_bytes == sizeof(D3D12Texture));
 
 	// The old object, its resource and its slot are still published, and the
 	// shader-visible descriptor still names that resource: drawing reads red,

@@ -104,7 +104,7 @@ namespace labrador
 	// three hundred times over. What is not supported is doing it while a
 	// frame is open. A recorded draw holds whatever its backend calls a
 	// texture, taken at draw time and not owned: an ID3D11ShaderResourceView*,
-	// a const D3d12Texture*, a GL texture name, a const VulkanTexture* - and a
+	// a const D3D12Texture*, a GL texture name, a const VulkanTexture* - and a
 	// rasterising backend does not look at it again until submit(), by which
 	// time the re-load has released it. The null backend reads the texture at
 	// draw time and records a size, so it answers differently, which is what

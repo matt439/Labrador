@@ -9,18 +9,18 @@ namespace labrador
 	{
 		// A handle is an index and nothing else (handle.h), so crossing the seam
 		// is a reinterpretation of which table the index is into - not a lookup.
-		// The public type says Texture, the registry's says D3d12Texture, and
+		// The public type says Texture, the registry's says D3D12Texture, and
 		// only this folder is allowed to know they are the same slot.
-		Handle<D3d12Texture> texture_slot(TextureHandle texture)
+		Handle<D3D12Texture> texture_slot(TextureHandle texture)
 		{
-			return Handle<D3d12Texture>(texture.index());
+			return Handle<D3D12Texture>(texture.index());
 		}
 	}
 
 	// --- RenderResources::Impl -----------------------------------------------
 
 	void RenderResources::Impl::add_texture(const std::string& name,
-		std::unique_ptr<D3d12Texture> texture)
+		std::unique_ptr<D3D12Texture> texture)
 	{
 		this->textures.add(name, std::move(texture));
 	}
@@ -35,7 +35,7 @@ namespace labrador
 		// contains() rather than a find, because a released slot has to read as
 		// absent here: after a device loss the heap is remade and
 		// create_device_dependent_resources resets the allocator to zero, so
-		// the number a released D3d12Texture is still holding names a slot in a
+		// the number a released D3D12Texture is still holding names a slot in a
 		// heap that no longer exists.
 		if (!this->textures.contains(name))
 		{
@@ -45,7 +45,7 @@ namespace labrador
 		return this->textures.get(name)->slot();
 	}
 
-	const D3d12Texture* RenderResources::Impl::texture(
+	const D3D12Texture* RenderResources::Impl::texture(
 		TextureHandle texture) const
 	{
 		return this->textures.get(texture_slot(texture));
@@ -81,7 +81,7 @@ namespace labrador
 	// descriptor_slot below exists: the load path asks the table what slot the
 	// name holds and writes its new view into that one. Without it a re-load
 	// took a fresh slot and abandoned the old, and nothing here would ever have
-	// noticed, because a D3d12Texture's slot number is a plain int with no
+	// noticed, because a D3D12Texture's slot number is a plain int with no
 	// destructor.
 
 	RenderResources::RenderResources() : impl_(std::make_unique<Impl>())

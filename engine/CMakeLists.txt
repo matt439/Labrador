@@ -46,6 +46,7 @@ add_library(LabradorEngine STATIC
     render/label.cpp
     render/png_file.cpp
     render/render_resources.cpp
+    render/renderer_checks.cpp
     render/resolution_manager.cpp
     render/resource_factory.cpp
     render/sprite_font_file.cpp
@@ -57,6 +58,7 @@ add_library(LabradorEngine STATIC
     render/text_encoding.cpp
     render/text_object.cpp
     render/texture_data.cpp
+    render/texture_format.cpp
     render/texture_object.cpp
     render/viewport.cpp
     render/viewport_manager.cpp

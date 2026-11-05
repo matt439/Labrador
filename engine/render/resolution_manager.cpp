@@ -5,6 +5,70 @@
 
 namespace labrador
 {
+	namespace
+	{
+		// The four presets, each once. Every conversion below searches this.
+		struct Preset
+		{
+			ScreenResolution resolution;
+			Vector2I size;
+			const char* name;
+		};
+
+		const Preset presets[] =
+		{
+			{ ScreenResolution::s_1280_720, Vector2I(1280, 720), "1280x720" },
+			{ ScreenResolution::s_1920_1080, Vector2I(1920, 1080), "1920x1080" },
+			{ ScreenResolution::s_2560_1440, Vector2I(2560, 1440), "2560x1440" },
+			{ ScreenResolution::s_3840_2160, Vector2I(3840, 2160), "3840x2160" },
+		};
+
+		// The preset with this label, or null for a value outside the enum.
+		const Preset* find_preset(ScreenResolution resolution)
+		{
+			for (const Preset& preset : presets)
+			{
+				if (preset.resolution == resolution)
+				{
+					return &preset;
+				}
+			}
+			return nullptr;
+		}
+
+		Vector2I convert_resolution_to_ivec(ScreenResolution resolution)
+		{
+			const Preset* preset = find_preset(resolution);
+			return preset != nullptr ? preset->size : Vector2I(-1, -1);
+		}
+
+		// The preset this size is exactly, and s_1280_720 for any other.
+		ScreenResolution convert_ivec_to_resolution(const Vector2I& size)
+		{
+			for (const Preset& preset : presets)
+			{
+				if (preset.size == size)
+				{
+					return preset.resolution;
+				}
+			}
+			return ScreenResolution::s_1280_720;
+		}
+
+		// The same, for a size in floats, which matches only a whole one.
+		ScreenResolution convert_vec_to_resolution(const Vector2F& size)
+		{
+			for (const Preset& preset : presets)
+			{
+				if (Vector2F(preset.size) == size)
+				{
+					return preset.resolution;
+				}
+			}
+			return ScreenResolution::s_1280_720;
+		}
+	}
+
 	ResolutionManager::ResolutionManager()
 	{
 		// Through the setter, so the size cannot disagree with the preset it is
@@ -24,7 +88,7 @@ namespace labrador
 
 	std::string ResolutionManager::resolution_string() const
 	{
-		return this->convert_resolution_to_string(this->resolution_);
+		return convert_resolution_to_string(this->resolution_);
 	}
 
 	ScreenResolution ResolutionManager::resolution() const
@@ -37,12 +101,12 @@ namespace labrador
 		// Both members, from the one argument. Every other overload lands here,
 		// so there is one place that decides what a preset means.
 		this->resolution_ = resolution;
-		this->size_ = this->convert_resolution_to_ivec(resolution);
+		this->size_ = convert_resolution_to_ivec(resolution);
 	}
 
 	void ResolutionManager::set_resolution(const Vector2F& resolution)
 	{
-		this->set_resolution(this->convert_vec_to_resolution(resolution));
+		this->set_resolution(convert_vec_to_resolution(resolution));
 	}
 
 	void ResolutionManager::set_resolution(const Vector2I& resolution)
@@ -53,7 +117,7 @@ namespace labrador
 		// non-coercing path is set_resolution_exactly, and the reason it is a
 		// separate function rather than a change of heart here is that these two
 		// are different questions with the same arguments.
-		this->set_resolution(this->convert_ivec_to_resolution(resolution));
+		this->set_resolution(convert_ivec_to_resolution(resolution));
 	}
 
 	void ResolutionManager::set_resolution_exactly(const Vector2I& size)
@@ -75,112 +139,17 @@ namespace labrador
 		// not recognise, so converting the answer back and comparing is the
 		// difference between "this size IS 720p" and "this size has just been
 		// replaced by 720p". A size with no name keeps the last named one.
-		const ScreenResolution candidate =
-			this->convert_ivec_to_resolution(size);
-		if (this->convert_resolution_to_ivec(candidate) == size)
+		const ScreenResolution candidate = convert_ivec_to_resolution(size);
+		if (convert_resolution_to_ivec(candidate) == size)
 		{
 			this->resolution_ = candidate;
 		}
 	}
 
-	Vector2I ResolutionManager::convert_resolution_to_ivec(
-		ScreenResolution resolution) const
-	{
-		switch (resolution)
-		{
-		case ScreenResolution::s_1280_720:
-			return {1280, 720};
-		case ScreenResolution::s_1920_1080:
-			return {1920, 1080};
-		case ScreenResolution::s_2560_1440:
-			return {2560, 1440};
-		case ScreenResolution::s_3840_2160:
-			return {3840, 2160};
-		default:
-			return {-1, -1};
-		}
-	}
-
-	Vector2F ResolutionManager::convert_resolution_to_vec(
-		ScreenResolution resolution) const
-	{
-		Vector2I res =
-			this->convert_resolution_to_ivec(resolution);
-		return {
-		    static_cast<float>(res.x),
-			static_cast<float>(res.y)
-		};
-	}
-
 	std::string ResolutionManager::convert_resolution_to_string(
 		ScreenResolution resolution)
 	{
-		switch (resolution)
-		{
-		case ScreenResolution::s_1280_720:
-			return std::string("1280x720");
-		case ScreenResolution::s_1920_1080:
-			return std::string("1920x1080");
-		case ScreenResolution::s_2560_1440:
-			return std::string("2560x1440");
-		case ScreenResolution::s_3840_2160:
-			return std::string("3840x2160");
-		default:
-			return std::string("-1x-1");
-		}
-	}
-
-	ScreenResolution ResolutionManager::convert_vec_to_resolution(
-		const Vector2F& vec) const
-	{
-		if (vec == this->convert_resolution_to_vec(
-			ScreenResolution::s_1280_720))
-		{
-			return ScreenResolution::s_1280_720;
-		}
-		else if (vec == this->convert_resolution_to_vec(
-			ScreenResolution::s_1920_1080))
-		{
-			return ScreenResolution::s_1920_1080;
-		}
-		else if (vec == this->convert_resolution_to_vec(
-			ScreenResolution::s_2560_1440))
-		{
-			return ScreenResolution::s_2560_1440;
-		}
-		else if (vec == this->convert_resolution_to_vec(
-			ScreenResolution::s_3840_2160))
-		{
-			return ScreenResolution::s_3840_2160;
-		}
-		else
-		{
-			return ScreenResolution::s_1280_720;
-		}
-	}
-
-	ScreenResolution ResolutionManager::convert_ivec_to_resolution(
-		const Vector2I& vec) const
-	{
-		if (vec.x == 1280 && vec.y == 720)
-		{
-			return ScreenResolution::s_1280_720;
-		}
-		else if (vec.x == 1920 && vec.y == 1080)
-		{
-			return ScreenResolution::s_1920_1080;
-		}
-		else if (vec.x == 2560 && vec.y == 1440)
-		{
-			return ScreenResolution::s_2560_1440;
-		}
-		else if (vec.x == 3840 && vec.y == 2160)
-		{
-			return ScreenResolution::s_3840_2160;
-		}
-		else
-		{
-			return ScreenResolution::s_1280_720;
-		}
+		const Preset* preset = find_preset(resolution);
+		return std::string(preset != nullptr ? preset->name : "-1x-1");
 	}
 }

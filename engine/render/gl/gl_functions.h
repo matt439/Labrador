@@ -42,11 +42,10 @@
 namespace labrador
 {
 #if !defined(__EMSCRIPTEN__)
-	// The types the post-1.1 signatures need. <GL/gl.h> has none of them,
-	// because none of them existed in 1.1. <GLES3/gl3.h> has all three.
+	// The types the post-1.1 signatures need. <GL/gl.h> has neither of them,
+	// because neither existed in 1.1. <GLES3/gl3.h> has both.
 	using GLchar = char;
 	using GLsizeiptr = ptrdiff_t;
-	using GLintptr = intptr_t;
 #endif
 
 	// The constants likewise. Each is the value the registry assigns it; a
@@ -68,8 +67,6 @@ namespace labrador
 	const GLenum GL_INFO_LOG_LENGTH_ = 0x8B84;
 	const GLenum GL_TEXTURE0_ = 0x84C0;
 	const GLenum GL_NUM_EXTENSIONS_ = 0x821D;
-	const GLenum GL_MAJOR_VERSION_ = 0x821B;
-	const GLenum GL_MINOR_VERSION_ = 0x821C;
 	const GLenum GL_FUNC_ADD_ = 0x8006;
 	const GLenum GL_ONE_MINUS_SRC_ALPHA_ = 0x0303;
 
@@ -88,12 +85,10 @@ namespace labrador
 	// macro.
 #define LABRADOR_GL_FUNCTIONS(X)                                              \
 	X(void, glGenBuffers, (GLsizei n, GLuint* buffers))                        \
-	X(void, glDeleteBuffers, (GLsizei n, const GLuint* buffers))               \
 	X(void, glBindBuffer, (GLenum target, GLuint buffer))                      \
 	X(void, glBufferData, (GLenum target, GLsizeiptr size, const void* data,   \
 		GLenum usage))                                                         \
 	X(void, glGenVertexArrays, (GLsizei n, GLuint* arrays))                    \
-	X(void, glDeleteVertexArrays, (GLsizei n, const GLuint* arrays))           \
 	X(void, glBindVertexArray, (GLuint array))                                 \
 	X(void, glEnableVertexAttribArray, (GLuint index))                         \
 	X(void, glVertexAttribPointer, (GLuint index, GLint size, GLenum type,     \
@@ -125,7 +120,6 @@ namespace labrador
 		GLenum internal_format, GLsizei width, GLsizei height, GLint border,   \
 		GLsizei size, const void* data))                                       \
 	X(void, glGenSamplers, (GLsizei n, GLuint* samplers))                      \
-	X(void, glDeleteSamplers, (GLsizei n, const GLuint* samplers))             \
 	X(void, glBindSampler, (GLuint unit, GLuint sampler))                      \
 	X(void, glSamplerParameteri, (GLuint sampler, GLenum name, GLint value))   \
 	X(void, glBlendFuncSeparate, (GLenum source_rgb, GLenum destination_rgb,   \

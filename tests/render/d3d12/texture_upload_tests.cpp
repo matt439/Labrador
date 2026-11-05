@@ -202,7 +202,7 @@ TEST_CASE("D3D12 uploads every patterned RGBA and BC mip including block tails")
 		const std::string name = "mip_readback_" + std::to_string(static_cast<int>(format));
 		add_texture_asset(fixture.renderer, fixture.resources, name, texture);
 		const TextureHandle handle = fixture.resources.resolve_texture(name);
-		const D3d12Texture* uploaded = fixture.resources.impl()->texture(handle);
+		const D3D12Texture* uploaded = fixture.resources.impl()->texture(handle);
 		REQUIRE(uploaded != nullptr);
 		REQUIRE(uploaded->resource() != nullptr);
 		compare_uploaded_chain(fixture.renderer, uploaded->resource(), texture);

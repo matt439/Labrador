@@ -478,6 +478,11 @@ namespace labrador
 		void end_upload(VkCommandBuffer commands);
 
 	private:
+		// Blocks until the timeline reaches `value`, answering the wait's
+		// VkResult. wait_for_frame, wait_for_gpu and try_wait_for_gpu each
+		// decide what to wait for and what a failure means.
+		VkResult wait_for_value(uint64_t value) noexcept;
+
 		void create_instance();
 		void select_physical_device();
 		void create_logical_device();

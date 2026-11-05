@@ -2,7 +2,6 @@
 
 #include "engine/render/sprite_sheet_object.h"
 #include "engine/render/colour.h"
-#include "engine/render/camera.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
 
@@ -38,7 +37,7 @@ namespace labrador
 		TextureObject(const std::string& sheet_name,
 			const std::string& frame_name,
 			RenderResources* render_resources,
-			const Colour& color = Colour::white,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,
@@ -48,7 +47,7 @@ namespace labrador
 		// the pair is unresolved. The same borrowed-table lifetime applies.
 		TextureObject(RenderResources::SheetFrame frame,
 			RenderResources* render_resources,
-			const Colour& color = Colour::white,
+			const Colour& colour = Colour::white,
 			float rotation = 0.0f,
 			const Vector2F& origin = Vector2F::zero,
 			SpriteFlip flip = SpriteFlip::none,

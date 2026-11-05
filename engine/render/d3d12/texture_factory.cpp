@@ -68,21 +68,6 @@ namespace labrador
 				"this backend has no Direct3D 12 format for (TextureFormat " +
 				std::to_string(static_cast<int>(format)) + ").");
 		}
-
-		// For the throw, because an eight-digit HRESULT is not an answer (T6).
-		std::string format_name(TextureFormat format)
-		{
-			switch (format)
-			{
-			case TextureFormat::b8g8r8a8_unorm: return "b8g8r8a8_unorm";
-			case TextureFormat::b4g4r4a4_unorm: return "b4g4r4a4_unorm";
-			case TextureFormat::bc1_unorm:      return "bc1_unorm";
-			case TextureFormat::bc2_unorm:      return "bc2_unorm";
-			case TextureFormat::bc3_unorm:      return "bc3_unorm";
-			case TextureFormat::r8g8b8a8_unorm: return "r8g8b8a8_unorm";
-			}
-			return "TextureFormat " + std::to_string(static_cast<int>(format));
-		}
 	}
 
 	// The whole of this backend's share of loading content, and it is the
@@ -165,8 +150,8 @@ namespace labrador
 		description.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		description.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		const D3D12_HEAP_PROPERTIES default_heap = { D3D12_HEAP_TYPE_DEFAULT,
-			D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+		const D3D12_HEAP_PROPERTIES default_heap =
+			heap_properties(D3D12_HEAP_TYPE_DEFAULT);
 
 		ComPtr<ID3D12Resource> resource;
 		const HRESULT created = device->CreateCommittedResource(&default_heap,
@@ -215,25 +200,9 @@ namespace labrador
 			footprints.data(), row_counts.data(), row_bytes.data(),
 			&total_bytes);
 
-		const D3D12_HEAP_PROPERTIES upload_heap = { D3D12_HEAP_TYPE_UPLOAD,
-			D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
-
-		D3D12_RESOURCE_DESC staging_description = {};
-		staging_description.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		staging_description.Width = total_bytes;
-		staging_description.Height = 1;
-		staging_description.DepthOrArraySize = 1;
-		staging_description.MipLevels = 1;
-		staging_description.Format = DXGI_FORMAT_UNKNOWN;
-		staging_description.SampleDesc.Count = 1;
-		staging_description.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		staging_description.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-		ComPtr<ID3D12Resource> staging;
-		ThrowIfFailed(device->CreateCommittedResource(&upload_heap,
-			D3D12_HEAP_FLAG_NONE, &staging_description,
-			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-			IID_PPV_ARGS(staging.GetAddressOf())),
+		ComPtr<ID3D12Resource> staging = create_buffer(device,
+			D3D12_HEAP_TYPE_UPLOAD, total_bytes,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
 			"A texture's staging buffer could not be created");
 
 		void* mapped = nullptr;
@@ -306,7 +275,7 @@ namespace labrador
 		// what re-loading a texture costs this backend. registry.h and
 		// render_resources.h both make re-adding a name a first-class operation
 		// - "Re-adding a name reuses its slot" - and Registry::add duly replaces
-		// the entry and destroys the old D3d12Texture. Its slot number is a
+		// the entry and destroys the old D3D12Texture. Its slot number is a
 		// plain int with no destructor, so allocating a second one per re-load
 		// spends the heap on textures that are no longer live: a client
 		// re-walking a manifest per level runs out of a 256-entry heap with a few
@@ -327,7 +296,7 @@ namespace labrador
 		// existing descriptor until both succeed; the local ComPtr keeps the
 		// replacement resource alive through the following descriptor write.
 		resources.impl()->add_texture(name,
-			std::make_unique<D3d12Texture>(resource, slot, texture.width,
+			std::make_unique<D3D12Texture>(resource, slot, texture.width,
 				texture.height));
 
 		// A null description means "the whole resource as it was created",

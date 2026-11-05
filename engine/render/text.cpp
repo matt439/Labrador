@@ -9,13 +9,13 @@ namespace labrador
 		const std::string& font_name,
 		const Vector2F& position,
 		RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float scale,
 		float rotation,
 		const Vector2F& origin,
 		float layer_depth) :
 		TextObject(text, font_name, position, render_resources,
-			color, scale, rotation, origin, layer_depth)
+			colour, scale, rotation, origin, layer_depth)
 	{
 
 	}

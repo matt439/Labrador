@@ -19,9 +19,7 @@ namespace labrador
     // compiles in every configuration).
     //
     // NOT core/. This file carries <Windows.h> and an HRESULT, which is
-    // exactly what the one module everything may lean on must not - and
-    // core/registry.h keeps COM out for the same reason, specialising for a
-    // ComPtr in render/d3d11/backend.h, where COM is already in scope.
+    // exactly what the one module everything may lean on must not.
     //
     // THE NAMES ARE MICROSOFT'S AND STAY THAT WAY. NOTICE lists this file
     // among those adopted from the DirectX samples. ThrowIfFailed is

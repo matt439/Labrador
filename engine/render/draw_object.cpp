@@ -7,13 +7,13 @@
 namespace labrador
 {
 	DrawObject::DrawObject(RenderResources* render_resources,
-		const Colour& color,
+		const Colour& colour,
 		float rotation,
 		const Vector2F& origin,
 		SpriteFlip flip,
 		float layer_depth) :
 		render_resources_(render_resources),
-		colour_(color),
+		colour_(colour),
 		draw_rotation_(rotation),
 		origin_(origin),
 		flip_(flip),

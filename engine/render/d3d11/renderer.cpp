@@ -3,6 +3,8 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/font.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 #include "engine/render/text_encoding.h"
@@ -84,47 +86,17 @@ namespace labrador
 				viewport.minDepth, viewport.maxDepth };
 		}
 
-		// Four corners, two triangles, and the winding the corner order in
-		// sprite_geometry.h fixes.
-		const int vertices_per_sprite = 4;
-		const int indices_per_sprite = 6;
+		// Opaque black, spelt out: the clear colour is a term RenderPixelTests
+		// pins, so it is worth being able to read it here rather than in a
+		// table of a hundred and forty names. begin_frame clears to it, and so
+		// does a resize that restarts a frame.
+		const float clear_colour[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-		// What the vertex shader's one constant buffer holds. Sixteen bytes,
-		// which is the smallest a constant buffer is allowed to be.
-		struct ViewportTransform
-		{
-			float x_scale = 0.0f;
-			float y_scale = 0.0f;
-			float x_offset = 0.0f;
-			float y_offset = 0.0f;
-		};
-
-		// Pixels to clip space.
-		//
-		// THE ONE LINE WHERE Y RUNNING DOWN IS DECIDED. The seam's y increases
-		// down the screen and clip space's increases up, so the y scale is
-		// negative and the offset is +1 rather than -1. Every other backend
-		// writes the same four numbers, the OpenGL one included: a framebuffer
-		// origin at the bottom is a fact about where a PANE sits, which
-		// gl/renderer.cpp answers when it calls glViewport, and not about how a
-		// pixel maps into clip space. Vulkan reaches the same place from the
-		// other side, by handing the rasteriser a negative viewport height. The
-		// four numbers here are the seam's arithmetic and they do not vary.
-		//
-		// The viewport's position is not in it: the rasteriser already maps
-		// clip space onto the viewport rectangle, so a sprite at pixel (0,0)
-		// lands at the viewport's top left wherever that is on the back buffer.
-		ViewportTransform to_transform(const D3D11_VIEWPORT& viewport)
-		{
-			ViewportTransform transform;
-			transform.x_scale =
-				viewport.Width > 0.0f ? 2.0f / viewport.Width : 0.0f;
-			transform.y_scale =
-				viewport.Height > 0.0f ? -2.0f / viewport.Height : 0.0f;
-			transform.x_offset = -1.0f;
-			transform.y_offset = 1.0f;
-			return transform;
-		}
+		// The vertex shader's one constant buffer holds a PixelsToClip.
+		// Sixteen bytes, which is the smallest a constant buffer is allowed
+		// to be.
+		static_assert(sizeof(PixelsToClip) == 4 * sizeof(float),
+			"The transform constant buffer is four floats");
 	}
 
 	// --- DrawList::View ------------------------------------------------------
@@ -239,7 +211,7 @@ namespace labrador
 
 	void DrawList::View::set_transform(const D3D11_VIEWPORT& pane)
 	{
-		const ViewportTransform values = to_transform(pane);
+		const PixelsToClip values = pixels_to_clip(pane.Width, pane.Height);
 
 		D3D11_MAPPED_SUBRESOURCE mapped = {};
 		ThrowIfFailed(this->context->Map(this->transform.Get(), 0,
@@ -378,11 +350,11 @@ namespace labrador
 		// Orders nothing; engine/render/SEAM.md#6 says why it is a parameter.
 		std::ignore = layer_depth;
 
-		ID3D11ShaderResourceView* view =
+		const D3D11Texture* resolved_texture =
 			this->view_->owner->resources->impl()->texture(texture);
 
 		const ResolvedTexture<ID3D11ShaderResourceView*> resolved{
-			view, Renderer::Impl::texture_size(view) };
+			resolved_texture->view(), resolved_texture->size() };
 		record_sprite(*this->view_, resolved, source, destination, tint,
 			rotation, origin, flip);
 	}
@@ -402,11 +374,11 @@ namespace labrador
 		// (engine/render/render_resources.h).
 		const RenderResources& resources = *this->view_->owner->resources;
 		const Font& the_font = *resources.font(font);
-		ID3D11ShaderResourceView* atlas =
+		const D3D11Texture* atlas =
 			resources.impl()->texture(the_font.atlas());
 
 		const ResolvedTexture<ID3D11ShaderResourceView*> resolved{
-			atlas, Renderer::Impl::texture_size(atlas) };
+			atlas->view(), atlas->size() };
 		record_text(*this->view_, the_font, resolved, text, position, tint,
 			scale, rotation, origin);
 	}
@@ -428,26 +400,6 @@ namespace labrador
 		return filter == TextureFilter::linear
 			? this->linear_sampler.Get()
 			: this->point_sampler.Get();
-	}
-
-	Vector2F Renderer::Impl::texture_size(ID3D11ShaderResourceView* texture)
-	{
-		// ASKED OF THE VIEW, EVERY DRAW. The alternative is a size cached
-		// beside each texture in the table, which is a second thing to keep
-		// right across a device loss for a value the runtime already holds -
-		// and this is three virtual calls into the runtime's own bookkeeping,
-		// counting the QueryInterface the As() below is, not a GPU round trip. DirectXTK did exactly this, in the same place.
-		Microsoft::WRL::ComPtr<ID3D11Resource> resource;
-		texture->GetResource(resource.GetAddressOf());
-
-		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture_2d;
-		ThrowIfFailed(resource.As(&texture_2d),
-			"A texture view's resource is not a 2D texture");
-
-		D3D11_TEXTURE2D_DESC description = {};
-		texture_2d->GetDesc(&description);
-		return Vector2F(static_cast<float>(description.Width),
-			static_cast<float>(description.Height));
 	}
 
 	void Renderer::Impl::create_device_dependent_resources()
@@ -569,21 +521,8 @@ namespace labrador
 
 		// The index buffer, which is the same for every sprite there will ever
 		// be: two triangles over four corners, immutable, filled once.
-		std::vector<unsigned short> index_data;
-		index_data.reserve(static_cast<size_t>(DrawList::View::
-			max_batch_sprites) * indices_per_sprite);
-		for (int sprite = 0; sprite < DrawList::View::max_batch_sprites;
-			sprite++)
-		{
-			const unsigned short first =
-				static_cast<unsigned short>(sprite * vertices_per_sprite);
-			index_data.push_back(static_cast<unsigned short>(first + 0));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-			index_data.push_back(static_cast<unsigned short>(first + 1));
-			index_data.push_back(static_cast<unsigned short>(first + 3));
-			index_data.push_back(static_cast<unsigned short>(first + 2));
-		}
+		const std::vector<unsigned short> index_data =
+			quad_indices(DrawList::View::max_batch_sprites);
 
 		D3D11_BUFFER_DESC index_description = {};
 		index_description.ByteWidth = static_cast<UINT>(index_data.size() *
@@ -622,7 +561,7 @@ namespace labrador
 		vertex_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 		D3D11_BUFFER_DESC transform_description = {};
-		transform_description.ByteWidth = sizeof(ViewportTransform);
+		transform_description.ByteWidth = sizeof(PixelsToClip);
 		transform_description.Usage = D3D11_USAGE_DYNAMIC;
 		transform_description.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		transform_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -704,11 +643,7 @@ namespace labrador
 	void Renderer::create_device(void* native_window, int width, int height,
 		int view_capacity)
 	{
-		if (view_capacity < 1)
-		{
-			throw std::invalid_argument(
-				"Renderer::create_device needs a view capacity of at least 1.");
-		}
+		check_view_capacity(view_capacity);
 
 		this->impl_->device_resources.SetWindow(
 			static_cast<HWND>(native_window), width, height);
@@ -729,11 +664,7 @@ namespace labrador
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
-		if (this->impl_->device_info.backend.empty())
-		{
-			throw std::logic_error(
-				"Renderer::device_info requires create_device.");
-		}
+		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
 	}
 
@@ -760,7 +691,7 @@ namespace labrador
 		// WM_SIZE between creating its window and creating its device, which is
 		// an ordering Win32 allows and nothing here forbids -
 		// tests/render/renderer_seam_tests.cpp holds all five backends to it.
-		if (impl.device_resources.GetD3DDevice() == nullptr)
+		if (!impl.has_device())
 		{
 			return false;
 		}
@@ -824,8 +755,7 @@ namespace labrador
 				device.GetRenderTargetView();
 			const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
-			const float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			context->ClearRenderTargetView(render_target, black);
+			context->ClearRenderTargetView(render_target, clear_colour);
 			context->OMSetRenderTargets(1, &render_target, nullptr);
 			context->RSSetViewports(1, &viewport);
 
@@ -860,11 +790,7 @@ namespace labrador
 		ID3D11RenderTargetView* render_target = device.GetRenderTargetView();
 		const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
-		// Opaque black, spelt out: the clear colour is a term RenderPixelTests
-		// pins, so it is worth being able to read it here rather than in a
-		// table of a hundred and forty names.
-		const float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		context->ClearRenderTargetView(render_target, black);
+		context->ClearRenderTargetView(render_target, clear_colour);
 		context->OMSetRenderTargets(1, &render_target, nullptr);
 		context->RSSetViewports(1, &viewport);
 
@@ -923,28 +849,8 @@ namespace labrador
 
 	void Renderer::set_view_count(int count)
 	{
-		const int capacity = static_cast<int>(this->impl_->views.size());
-		if (count < 0 || count > capacity)
-		{
-			throw std::out_of_range("Renderer::set_view_count(" +
-				std::to_string(count) + ") is outside the capacity of " +
-				std::to_string(capacity) + " create_device was given.");
-		}
-
-		// Lowering it past a view something has already drawn into strands
-		// that recording: submit() would not execute it, and the commands
-		// would surface at the top of the next frame's list instead. Say so
-		// here rather than let it turn up as one pane's worth of last frame.
-		for (int i = count; i < this->impl_->view_count; i++)
-		{
-			if (this->impl_->views[static_cast<size_t>(i)]->touched)
-			{
-				throw std::logic_error("Renderer::set_view_count(" +
-					std::to_string(count) + ") would drop view " +
-					std::to_string(i) + ", which has already been drawn into "
-					"this frame.");
-			}
-		}
+		check_view_count(count, this->impl_->view_count,
+			this->impl_->views);
 
 		this->impl_->view_count = count;
 
@@ -970,13 +876,7 @@ namespace labrador
 
 	DrawList Renderer::view(int index) const
 	{
-		if (index < 0 || index >= this->impl_->view_count)
-		{
-			throw std::out_of_range("Renderer::view(" + std::to_string(index) +
-				") - this frame has " + std::to_string(this->impl_->view_count) +
-				" views. Asking for one nobody set up used to answer with a "
-				"fullscreen pane and draw a whole extra pass.");
-		}
+		check_view_index(index, this->impl_->view_count);
 		return DrawList(this->impl_->views[static_cast<size_t>(index)].get());
 	}
 
@@ -1074,6 +974,8 @@ namespace labrador
 		// Row pitch is the driver's, not width * 4, so the rows are walked
 		// rather than the buffer memcpy'd. B and R swap on the way out: the
 		// back buffer is B8G8R8A8 and the seam promises RGBA.
+		static_assert(back_buffer_format == DXGI_FORMAT_B8G8R8A8_UNORM,
+			"read_back_buffer swaps B and R for a B8G8R8A8 back buffer");
 		const unsigned char* source =
 			static_cast<const unsigned char*>(mapped.pData);
 		for (size_t y = 0; y < height; y++)
@@ -1101,7 +1003,7 @@ namespace labrador
 	// tests/render/renderer_seam_tests.cpp is what holds all five to it.
 	void Renderer::begin_marker(const wchar_t* name)
 	{
-		if (this->impl_->device_resources.GetD3DDevice() == nullptr)
+		if (!this->impl_->has_device())
 		{
 			return;
 		}
@@ -1110,7 +1012,7 @@ namespace labrador
 
 	void Renderer::end_marker()
 	{
-		if (this->impl_->device_resources.GetD3DDevice() == nullptr)
+		if (!this->impl_->has_device())
 		{
 			return;
 		}
@@ -1119,7 +1021,7 @@ namespace labrador
 
 	void Renderer::set_marker(const wchar_t* name)
 	{
-		if (this->impl_->device_resources.GetD3DDevice() == nullptr)
+		if (!this->impl_->has_device())
 		{
 			return;
 		}

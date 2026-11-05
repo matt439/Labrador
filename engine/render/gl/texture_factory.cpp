@@ -20,10 +20,12 @@ namespace labrador
 	{
 		// The S3TC internal formats, which are an extension rather than core GL
 		// on both contexts (Renderer::Impl::block_compression says which
-		// context asks under which name).
-		const GLenum COMPRESSED_RGBA_S3TC_DXT1 = 0x83F1;
-		const GLenum COMPRESSED_RGBA_S3TC_DXT3 = 0x83F2;
-		const GLenum COMPRESSED_RGBA_S3TC_DXT5 = 0x83F3;
+		// context asks under which name). Spelt as the extension's names plus
+		// gl_functions.h's suffix, so they compile beside any header that
+		// defines them.
+		const GLenum GL_COMPRESSED_RGBA_S3TC_DXT1_EXT_ = 0x83F1;
+		const GLenum GL_COMPRESSED_RGBA_S3TC_DXT3_EXT_ = 0x83F2;
+		const GLenum GL_COMPRESSED_RGBA_S3TC_DXT5_EXT_ = 0x83F3;
 
 		// Which S3TC format a block-compressed texture is uploaded as, on a
 		// context that has S3TC. Every enumerator is listed and none falls
@@ -33,9 +35,9 @@ namespace labrador
 		{
 			switch (format)
 			{
-			case TextureFormat::bc1_unorm: return COMPRESSED_RGBA_S3TC_DXT1;
-			case TextureFormat::bc2_unorm: return COMPRESSED_RGBA_S3TC_DXT3;
-			case TextureFormat::bc3_unorm: return COMPRESSED_RGBA_S3TC_DXT5;
+			case TextureFormat::bc1_unorm: return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT_;
+			case TextureFormat::bc2_unorm: return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT_;
+			case TextureFormat::bc3_unorm: return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT_;
 			case TextureFormat::r8g8b8a8_unorm:
 			case TextureFormat::b8g8r8a8_unorm:
 			case TextureFormat::b4g4r4a4_unorm:
@@ -208,7 +210,7 @@ namespace labrador
 		// default of four-byte alignment.
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-		for (size_t i = 0; i < source.levels.size(); i++)
+		for (std::size_t i = 0; i < source.levels.size(); i++)
 		{
 			const TextureLevel& level = source.levels[i];
 			const void* bytes = pixels.data() + level.offset;

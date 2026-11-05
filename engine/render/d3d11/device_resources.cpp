@@ -6,7 +6,6 @@
 #include "engine/render/d3d11/device_resources.h"
 #include "engine/render/throw_if_failed.h"
 
-#include <DirectXMath.h>
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
@@ -14,8 +13,6 @@
 #ifdef _DEBUG
 #include <dxgidebug.h>
 #endif
-
-using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
@@ -60,19 +57,48 @@ namespace labrador
             if (fmt == DXGI_FORMAT_B8G8R8X8_UNORM_SRGB) return DXGI_FORMAT_B8G8R8X8_UNORM;
             return fmt;
         }
+
+        // Two buffers, flipped between.
+        constexpr UINT c_backBufferCount = 2;
+
+        // The feature levels this backend asks for, best first. 10_0 is the
+        // floor: nothing below it is requested.
+        constexpr D3D_FEATURE_LEVEL c_featureLevels[] =
+        {
+            D3D_FEATURE_LEVEL_11_1,
+            D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+        };
+
+        // Whether an adapter GetHardwareAdapter may take: any but the Basic
+        // Render Driver, which is software. Traced in a debug build.
+        bool IsUsableAdapter(IDXGIAdapter1* adapter, [[maybe_unused]] UINT adapterIndex)
+        {
+            DXGI_ADAPTER_DESC1 desc;
+            ThrowIfFailed(adapter->GetDesc1(&desc));
+
+            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+            {
+                // Don't select the Basic Render Driver adapter.
+                return false;
+            }
+
+#ifdef _DEBUG
+            wchar_t buff[256] = {};
+            swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description);
+            OutputDebugStringW(buff);
+#endif
+
+            return true;
+        }
     }
 
     // Constructor for DeviceResources.
-    DeviceResources::DeviceResources(
-        DXGI_FORMAT backBufferFormat,
-        UINT backBufferCount,
-        D3D_FEATURE_LEVEL minFeatureLevel) noexcept :
+    DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat) noexcept :
             m_screenViewport{},
             m_backBufferFormat(backBufferFormat),
-            m_backBufferCount(backBufferCount),
-            m_d3dMinFeatureLevel(minFeatureLevel),
             m_window(nullptr),
-            m_d3dFeatureLevel(D3D_FEATURE_LEVEL_9_1),
             m_outputSize{0, 0, 1, 1},
             m_flipPresent(true),
             m_deviceNotify(nullptr)
@@ -111,29 +137,7 @@ namespace labrador
             }
         }
 
-        // Determine DirectX hardware feature levels this app will support.
-        static const D3D_FEATURE_LEVEL s_featureLevels[] =
-        {
-            D3D_FEATURE_LEVEL_11_1,
-            D3D_FEATURE_LEVEL_11_0,
-            D3D_FEATURE_LEVEL_10_1,
-            D3D_FEATURE_LEVEL_10_0,
-            D3D_FEATURE_LEVEL_9_3,
-            D3D_FEATURE_LEVEL_9_2,
-            D3D_FEATURE_LEVEL_9_1,
-        };
-
-        UINT featLevelCount = 0;
-        for (; featLevelCount < static_cast<UINT>(std::size(s_featureLevels)); ++featLevelCount)
-        {
-            if (s_featureLevels[featLevelCount] < m_d3dMinFeatureLevel)
-                break;
-        }
-
-        if (!featLevelCount)
-        {
-            throw std::out_of_range("minFeatureLevel too high");
-        }
+        const UINT featLevelCount = static_cast<UINT>(std::size(c_featureLevels));
 
         ComPtr<IDXGIAdapter1> adapter;
         GetHardwareAdapter(adapter.GetAddressOf());
@@ -150,11 +154,11 @@ namespace labrador
                 D3D_DRIVER_TYPE_UNKNOWN,
                 nullptr,
                 creationFlags,
-                s_featureLevels,
+                c_featureLevels,
                 featLevelCount,
                 D3D11_SDK_VERSION,
                 device.GetAddressOf(),  // Returns the Direct3D device created.
-                &m_d3dFeatureLevel,     // Returns feature level of device created.
+                nullptr,                // The level chosen is not kept.
                 context.GetAddressOf()  // Returns the device immediate context.
                 );
         }
@@ -174,11 +178,11 @@ namespace labrador
                 D3D_DRIVER_TYPE_WARP, // Create a WARP device instead of a hardware device.
                 nullptr,
                 creationFlags,
-                s_featureLevels,
+                c_featureLevels,
                 featLevelCount,
                 D3D11_SDK_VERSION,
                 device.GetAddressOf(),
-                &m_d3dFeatureLevel,
+                nullptr,
                 context.GetAddressOf()
                 );
 
@@ -242,7 +246,7 @@ namespace labrador
         {
             // If the swap chain already exists, resize it.
             HRESULT hr = m_swapChain->ResizeBuffers(
-                m_backBufferCount,
+                c_backBufferCount,
                 backBufferWidth,
                 backBufferHeight,
                 backBufferFormat,
@@ -277,7 +281,7 @@ namespace labrador
             swapChainDesc.Height = backBufferHeight;
             swapChainDesc.Format = backBufferFormat;
             swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            swapChainDesc.BufferCount = m_backBufferCount;
+            swapChainDesc.BufferCount = c_backBufferCount;
             swapChainDesc.SampleDesc.Count = 1;
             swapChainDesc.SampleDesc.Quality = 0;
             swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
@@ -474,22 +478,10 @@ namespace labrador
                     IID_PPV_ARGS(adapter.ReleaseAndGetAddressOf())));
                 adapterIndex++)
             {
-                DXGI_ADAPTER_DESC1 desc;
-                ThrowIfFailed(adapter->GetDesc1(&desc));
-
-                if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+                if (IsUsableAdapter(adapter.Get(), adapterIndex))
                 {
-                    // Don't select the Basic Render Driver adapter.
-                    continue;
+                    break;
                 }
-
-        #ifdef _DEBUG
-                wchar_t buff[256] = {};
-                swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description);
-                OutputDebugStringW(buff);
-        #endif
-
-                break;
             }
         }
 
@@ -501,22 +493,10 @@ namespace labrador
                     adapter.ReleaseAndGetAddressOf()));
                 adapterIndex++)
             {
-                DXGI_ADAPTER_DESC1 desc;
-                ThrowIfFailed(adapter->GetDesc1(&desc));
-
-                if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+                if (IsUsableAdapter(adapter.Get(), adapterIndex))
                 {
-                    // Don't select the Basic Render Driver adapter.
-                    continue;
+                    break;
                 }
-
-#ifdef _DEBUG
-                wchar_t buff[256] = {};
-                swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description);
-                OutputDebugStringW(buff);
-#endif
-
-                break;
             }
         }
 

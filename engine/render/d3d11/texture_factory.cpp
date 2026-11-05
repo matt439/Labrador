@@ -9,8 +9,10 @@
 
 #include <wrl/client.h>
 
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using Microsoft::WRL::ComPtr;
@@ -64,21 +66,6 @@ namespace labrador
 				std::to_string(static_cast<int>(format)) + ").");
 		}
 
-		// For the throw, because an eight-digit HRESULT is not an answer (T6).
-		std::string format_name(TextureFormat format)
-		{
-			switch (format)
-			{
-			case TextureFormat::b8g8r8a8_unorm: return "b8g8r8a8_unorm";
-			case TextureFormat::b4g4r4a4_unorm: return "b4g4r4a4_unorm";
-			case TextureFormat::bc1_unorm:      return "bc1_unorm";
-			case TextureFormat::bc2_unorm:      return "bc2_unorm";
-			case TextureFormat::bc3_unorm:      return "bc3_unorm";
-			case TextureFormat::r8g8b8a8_unorm: return "r8g8b8a8_unorm";
-			}
-			return "TextureFormat " + std::to_string(static_cast<int>(format));
-		}
-
 		// THE ANSWER resource_factory.h PROMISES WHEN THE DEVICE WILL NOT TAKE
 		// A TEXTURE: its name, its format and size, and the code. The likeliest
 		// format to arrive here is b4g4r4a4_unorm, which Direct3D 11 makes
@@ -115,7 +102,7 @@ namespace labrador
 		// nothing catchable and no name in it. The seam states the ordering
 		// (resource_factory.h); this is one of the FIVE places it is kept, one
 		// per backend, each throwing a runtime_error that names the texture.
-		if (device_of(renderer) == nullptr)
+		if (!renderer.impl()->has_device())
 		{
 			throw std::runtime_error("Texture '" + name + "' was loaded before "
 				"create_device made a device.");
@@ -156,6 +143,7 @@ namespace labrador
 			refuse(name, texture, "shader resource view", viewed);
 		}
 
-		resources.impl()->add_texture(name, view.Get());
+		resources.impl()->add_texture(name, std::make_unique<D3D11Texture>(
+			std::move(view), texture.width, texture.height));
 	}
 }
