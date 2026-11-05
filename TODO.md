@@ -91,7 +91,7 @@ One agent row is open, `REV#13`, the hygiene review's themes; other ready work i
 |---|---|---|---|---|
 | `REV#8` | DECISION | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#3` | DECISION | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
-| `REV#13` | OPEN | could | L | The [hygiene review of 2026-11-05](docs/review/2026-11-05-hygiene/README.md): 625 verified findings in 21 themes. H1 and H2 are SM-73 and SM-74, in progress; H18 is closed; the rest wait. [STATUS](docs/review/2026-11-05-hygiene/STATUS.md) records each theme. |
+| `REV#13` | OPEN | could | L | The [hygiene review of 2026-11-05](docs/review/2026-11-05-hygiene/README.md): 625 verified findings in 21 themes. H1, H2 (SM-73, SM-74) and H18 are closed; H3 to H21 wait. [STATUS](docs/review/2026-11-05-hygiene/STATUS.md) records each theme. |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
 | `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it. |

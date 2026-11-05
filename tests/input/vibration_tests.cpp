@@ -313,7 +313,9 @@ TEST_CASE("a suspended reader answers every slot disconnected until it resumes")
 {
 	// The build's own reader. With a pad plugged in on the machine running
 	// the tests, this is what keeps a held button from reaching the game
-	// while it is in the background; with none, it still pins the answer.
+	// while it is in the background. With none, as on CI, XInput answers
+	// disconnected anyway, so this pins the answer but cannot catch a
+	// regression of the native reader's suspended flag.
 	GamepadReader reader;
 	reader.sample();
 	reader.suspend();

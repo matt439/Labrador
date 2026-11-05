@@ -267,8 +267,9 @@ namespace labrador
 		// caught where its message arrived, however it arrived - from this
 		// loop, sent by a call below such as resize_client, or dispatched by
 		// the system's own loop while the player drags the window - and the
-		// window is closed there, with no tick and no notify call after it.
-		// The loop then ends and the exception is rethrown here.
+		// window is closed there, with no further tick and no notify call
+		// after it. The loop then ends and that exception is rethrown here,
+		// even if the tick it interrupted throws again on the way out.
 		//
 		// IN A BROWSER THIS CALL DOES NOT RETURN, and the stack below it does
 		// not survive it. The loop is the browser's: tick() runs once per

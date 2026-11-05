@@ -8,8 +8,8 @@ the last column. A finding is a question until its fix proves it.
 
 | Theme | Name | Findings | State | Story and evidence |
 |---|---|---:|---|---|
-| [H1](README.md#h1-engine-behaviour-and-contract-fixes-outside-render) | Engine behaviour and contract fixes outside render | 27 | In progress | [SM-73](../../product/BACKLOG.md#sm-73) |
-| [H2](README.md#h2-untrusted-input-and-exception-safety) | Untrusted input and exception safety | 11 | In progress | [SM-74](../../product/BACKLOG.md#sm-74) |
+| [H1](README.md#h1-engine-behaviour-and-contract-fixes-outside-render) | Engine behaviour and contract fixes outside render | 27 | Closed | [SM-73](../../product/BACKLOG.md#sm-73). Closed 2026-11-05 by SM-73: all 27 fixed, each with a test except COM teardown order, which no test observes. Five native Debug presets, `wasm-debug` and `wasm-release-null` pass; see the commit series. |
+| [H2](README.md#h2-untrusted-input-and-exception-safety) | Untrusted input and exception safety | 11 | Closed | [SM-74](../../product/BACKLOG.md#sm-74). Closed 2026-11-05 by SM-74: all 11 fixed with tests, the Win32 handler barrier included. Same preset evidence as H1. |
 | [H3](README.md#h3-render-backend-error-handling-and-resource-ownership) | Render backend error handling and resource ownership | 17 | Open | |
 | [H4](README.md#h4-build-ci-and-remaining-tools) | Build, CI and remaining tools | 40 | Open | |
 | [H5](README.md#h5-python-tooling-hygiene) | Python tooling hygiene | 25 | Open | |

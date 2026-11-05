@@ -501,6 +501,35 @@ namespace JsonTests
 			CHECK_THROWS_AS(parse_json("", "empty.json"), std::runtime_error);
 		}
 
+		TEST_CASE("the two commonest list mistakes keep the messages the guide quotes")
+		{
+			// The troubleshooting guide tells a reader what these two mean, so
+			// a change of parser must not change their wording.
+			struct Mistake
+			{
+				const char* text;
+				const char* message;
+			};
+			const Mistake mistakes[] = {
+				{ "[1,]", "Invalid value." },
+				{ "[1 2]", "Missing a comma or ']' after an array element." },
+			};
+			for (const Mistake& mistake : mistakes)
+			{
+				CAPTURE(mistake.text);
+				try
+				{
+					parse_json(mistake.text, "list.json");
+					FAIL("expected a throw");
+				}
+				catch (const std::runtime_error& error)
+				{
+					const std::string what = error.what();
+					CHECK(what.find(mistake.message) != std::string::npos);
+				}
+			}
+		}
+
 		TEST_CASE("an empty source name is a programming error")
 		{
 			CHECK_THROWS_AS(parse_json("{}", ""), std::invalid_argument);

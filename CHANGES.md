@@ -129,8 +129,8 @@ as before.
 
 **Behaviour change.** Hand-edited JSON is bounded:
 
-- The asset manifest and sprite-sheet loaders refuse a repeated key in any
-  fixed-schema object with `std::runtime_error` naming the file, the object
+- The asset manifest, sprite-sheet and sound-bank loaders refuse a repeated
+  key in any fixed-schema object with `std::runtime_error` naming the file, the object
   and the key. The first value used to win.
 - `JsonValue::number` throws `std::runtime_error` for a number outside
   `float`'s range instead of returning infinity.

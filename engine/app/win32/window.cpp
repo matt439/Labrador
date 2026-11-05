@@ -574,7 +574,23 @@ namespace labrador
 			}
 			else
 			{
-				this->impl_->notify->tick();
+				// A handler can fail inside a message the tick itself sends,
+				// such as resize_client's WM_SIZE. The rest of that tick then
+				// runs against a window fail() destroyed, and what it throws
+				// next is a consequence; the handler's exception is the one
+				// that comes out.
+				try
+				{
+					this->impl_->notify->tick();
+				}
+				catch (...)
+				{
+					if (this->impl_->failure)
+					{
+						std::rethrow_exception(this->impl_->failure);
+					}
+					throw;
+				}
 			}
 		}
 		if (this->impl_->failure)
