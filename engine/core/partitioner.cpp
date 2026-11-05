@@ -1,4 +1,4 @@
-#include "engine/collision/partitioner.h"
+#include "engine/core/partitioner.h"
 
 #include <limits>
 #include <stdexcept>

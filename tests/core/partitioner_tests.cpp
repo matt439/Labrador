@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 
-#include "engine/collision/partitioner.h"
+#include "engine/core/partitioner.h"
 
 #include <algorithm>
 #include <cstddef>
