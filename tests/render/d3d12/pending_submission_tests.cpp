@@ -13,7 +13,10 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
+#include <string>
 #include <thread>
+#include <tuple>
 
 namespace
 {
@@ -30,9 +33,10 @@ namespace
 		std::fprintf(stderr, "D3D12 synchronization test fatal: %s "
 			"(result 0x%llx, Win32 error 0x%lx)\n", operation, result, win32_error);
 		std::fflush(stderr);
-		// A failed bounded wait must not return into block_until: production
-		// ignores the DWORD result and would continue reset or resource release.
-		// This is only this isolated test process, never another process/device.
+		// A failed bounded wait must not return into block_until unarmed: the
+		// timeout means the observed ordering is already broken, and a reported
+		// failure would hide that behind an ordinary throw. This is only this
+		// isolated test process, never another process/device.
 		std::_Exit(EXIT_FAILURE);
 	}
 
@@ -177,6 +181,38 @@ namespace
 
 	thread_local WaitRecord* active_record = nullptr;
 
+	// Arms the next production fence wait on this thread to fail as a wait on
+	// an invalid handle does, without waiting. Disarms on every way out.
+	class FailNextWait
+	{
+	public:
+		FailNextWait() : previous_(active_failure) { active_failure = this; }
+		~FailNextWait() { active_failure = this->previous_; }
+		FailNextWait(const FailNextWait&) = delete;
+		FailNextWait& operator=(const FailNextWait&) = delete;
+
+		bool consumed() const { return this->consumed_; }
+
+		// Called by bounded_wait; true if this wait is the one to fail.
+		static bool take()
+		{
+			FailNextWait* failure = active_failure;
+			if (failure == nullptr || failure->consumed_)
+			{
+				return false;
+			}
+			failure->consumed_ = true;
+			return true;
+		}
+
+	private:
+		static thread_local FailNextWait* active_failure;
+		FailNextWait* previous_;
+		bool consumed_ = false;
+	};
+
+	thread_local FailNextWait* FailNextWait::active_failure = nullptr;
+
 	class ObserveWait
 	{
 	public:
@@ -234,6 +270,11 @@ namespace labrador::d3d12_wait_test
 {
 	DWORD WINAPI bounded_wait(HANDLE event, DWORD milliseconds, BOOL alertable) noexcept
 	{
+		if (FailNextWait::take())
+		{
+			SetLastError(ERROR_INVALID_HANDLE);
+			return WAIT_FAILED;
+		}
 		WaitRecord* record = active_record;
 		const bool first = record != nullptr && !record->observed;
 		if (first)
@@ -336,4 +377,69 @@ TEST_CASE("D3D12 renderer teardown observes a pending submission wait")
 	}
 	gate.finish();
 	check_observation(record, gate);
+}
+
+TEST_CASE("D3D12 a failed fence wait is reported rather than taken as completion")
+{
+	Fixture fixture;
+	QueueGate gate(fixture.renderer->impl()->device_resources);
+	gate.block_queue();
+	fixture.renderer->submit();
+	std::string message;
+	bool consumed = false;
+	{
+		FailNextWait failure;
+		REQUIRE(gate.witness() == 0);
+		try
+		{
+			fixture.renderer->begin_frame();
+		}
+		catch (const std::runtime_error& error)
+		{
+			message = error.what();
+		}
+		consumed = failure.consumed();
+	}
+	gate.finish();
+	CHECK(consumed);
+	// The wait's own error, HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE).
+	CHECK(message.find("80070006") != std::string::npos);
+}
+
+TEST_CASE("D3D12 a resize that threw rebuilds when the same size is asked again")
+{
+	Fixture fixture;
+	REQUIRE(fixture.window.resize(resized_size, resized_size));
+	QueueGate gate(fixture.renderer->impl()->device_resources);
+	gate.block_queue();
+	fixture.renderer->submit();
+	bool threw = false;
+	bool consumed = false;
+	{
+		FailNextWait failure;
+		REQUIRE(gate.witness() == 0);
+		try
+		{
+			std::ignore = fixture.renderer->window_size_changed(resized_size,
+				resized_size);
+		}
+		catch (const std::runtime_error&)
+		{
+			threw = true;
+		}
+		consumed = failure.consumed();
+	}
+	gate.finish();
+	CHECK(consumed);
+	REQUIRE(threw);
+
+	// The size was committed before the throw. Asking again is not "nothing
+	// changed": it rebuilds, and the buffers are the size asked for.
+	DeviceResources& device = fixture.renderer->impl()->device_resources;
+	CHECK_FALSE(device.has_size(resized_size, resized_size));
+	CHECK(fixture.renderer->window_size_changed(resized_size, resized_size));
+	CHECK(device.has_size(resized_size, resized_size));
+	CHECK(device.back_buffer() != nullptr);
+	CHECK(fixture.renderer->back_buffer_size() == Vector2F(
+		static_cast<float>(resized_size), static_cast<float>(resized_size)));
 }

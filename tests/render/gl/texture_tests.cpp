@@ -14,6 +14,9 @@
 #include <gl/GL.h>
 #endif
 
+#include <stdexcept>
+#include <string>
+
 TEST_CASE("GL texture refusal leaves no allocated object and permits retry")
 {
 	using namespace labrador;
@@ -43,4 +46,45 @@ TEST_CASE("GL texture refusal leaves no allocated object and permits retry")
 	texture.pixels.assign(4, 255);
 	CHECK_NOTHROW(add_texture_asset(fixture.renderer, fixture.resources, "unsupported", texture));
 	CHECK_NOTHROW(fixture.resources.resolve_texture("unsupported"));
+}
+
+TEST_CASE("GL refuses a format outside TextureFormat by name, before allocating")
+{
+	using namespace labrador;
+	render_tests::DeviceFixture fixture;
+
+	// Laid out by hand, because texture_level refuses this value itself.
+	TextureData texture;
+	texture.width = 1;
+	texture.height = 1;
+	texture.format = static_cast<TextureFormat>(99);
+	TextureLevel level;
+	level.width = 1;
+	level.height = 1;
+	level.stride = 4;
+	level.rows = 1;
+	level.size = 4;
+	texture.levels.push_back(level);
+	texture.pixels.assign(4, 255);
+
+	GLuint sentinel = 0;
+	glGenTextures(1, &sentinel);
+	glBindTexture(GL_TEXTURE_2D, sentinel);
+	std::string message;
+	try
+	{
+		add_texture_asset(fixture.renderer, fixture.resources, "unknown_format",
+			texture);
+	}
+	catch (const std::runtime_error& error)
+	{
+		message = error.what();
+	}
+	CHECK(message.find("unknown_format") != std::string::npos);
+	GLint bound = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+	CHECK(static_cast<GLuint>(bound) == sentinel);
+	glDeleteTextures(1, &sentinel);
+	CHECK_THROWS_AS(fixture.resources.resolve_texture("unknown_format"),
+		std::out_of_range);
 }

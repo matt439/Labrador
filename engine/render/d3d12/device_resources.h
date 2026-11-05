@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <wrl/client.h>
+#include <wrl/event.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
@@ -50,6 +51,11 @@ namespace labrador
 
 		// Whether anything was rebuilt, which is what the seam asks for.
 		bool window_size_changed(int width, int height);
+
+		// Whether the swap chain is built at this size, which is the question
+		// window_size_changed asks before rebuilding. False after a rebuild
+		// that threw, whatever the size, so that the next call rebuilds.
+		bool has_size(int width, int height) const;
 
 		void handle_device_lost();
 
@@ -145,7 +151,7 @@ namespace labrador
 		UINT render_target_size_ = 0;
 
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
-		HANDLE fence_event_ = nullptr;
+		Microsoft::WRL::Wrappers::Event fence_event_;
 
 		// Monotonic. `frame_fences_[i]` is the value that, once reached, means
 		// everything ever submitted against frame index i has finished.
@@ -157,6 +163,9 @@ namespace labrador
 		DXGI_FORMAT back_buffer_format_;
 		D3D12_VIEWPORT screen_viewport_;
 		RECT output_size_;
+
+		// Set while a rebuild at output_size_ has not completed.
+		bool size_stale_ = false;
 		HWND window_ = nullptr;
 
 		D3DDeviceNotify* notify_ = nullptr;

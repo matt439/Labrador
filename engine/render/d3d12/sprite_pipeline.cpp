@@ -101,7 +101,8 @@ namespace labrador
 
 		ThrowIfFailed(device->CreateRootSignature(0,
 			serialized->GetBufferPointer(), serialized->GetBufferSize(),
-			IID_PPV_ARGS(this->root_signature_.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->root_signature_.ReleaseAndGetAddressOf())),
+			"The sprite root signature could not be created");
 
 		// --- The pipeline state ---------------------------------------------
 		//
@@ -186,7 +187,8 @@ namespace labrador
 		pipeline.SampleDesc.Quality = 0;
 
 		ThrowIfFailed(device->CreateGraphicsPipelineState(&pipeline,
-			IID_PPV_ARGS(this->pipeline_state_.ReleaseAndGetAddressOf())));
+			IID_PPV_ARGS(this->pipeline_state_.ReleaseAndGetAddressOf())),
+			"The sprite pipeline state could not be created");
 	}
 
 	void SpritePipeline::reset()

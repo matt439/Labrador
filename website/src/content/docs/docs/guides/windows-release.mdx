@@ -237,7 +237,7 @@ program's name, `MyGame.exe`, and every other place the name is. What the messag
 | Vulkan | An instance, but no Vulkan device at all | `This machine has a Vulkan loader but no Vulkan device.` |
 | Vulkan | Devices, but none at Vulkan 1.2 with timeline semaphores | `No Vulkan device on this machine can run this backend:` and a line for each device saying why |
 
-The OpenGL renderer has a few rarer refusals the table leaves out: a window that cannot be given a 32-bit pixel format, a 3.3 core context missing one of the functions the engine loads (each names the function), and `wglSwapIntervalEXT` failing with a Windows error. Each says what it is in the same message box.
+The OpenGL renderer has a few rarer refusals the table leaves out: a window that cannot be given a 32-bit pixel format or that refuses the one chosen for it, a 3.3 core context missing one of the functions the engine loads (each names the function), and `wglSwapIntervalEXT` failing with a Windows error. Each says what it is in the same message box.
 
 A release build has no software fallback. A debug build's Direct3D renderers fall back to WARP,
 Windows' software rasteriser, when there is no hardware adapter, which is why a debug build can

@@ -80,6 +80,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Release GL bootstrap, shader and program objects on every failure
+
+**Behaviour change: one OpenGL start-up message.** When `SetPixelFormat` refuses the pixel format chosen for the window, the OpenGL renderer now throws `SetPixelFormat refused the OpenGL pixel format chosen for this window, with Windows error <n>. ...` instead of repeating the message for a window with no suitable format. Nothing else a game sees changes.
+
+### 2026-11-05 - Name the failed operation at every Direct3D 12 ThrowIfFailed
+
+**Behaviour change: Direct3D 12 failure messages.** Every Direct3D 12 failure the engine reports through `com_exception` now names the operation before the code, such as `The swap chain could not be resized (HRESULT 887A0001).`, where it read `Failure with HRESULT of 887A0001`. The exception type and the HRESULT are unchanged. A game that matched the old text should match the HRESULT digits instead.
+
+### 2026-11-05 - Name the texture, format and operation in Direct3D 11 failures
+
+**Behaviour change: Direct3D 11 failure messages.** When a Direct3D 11 device refuses a texture, for example an optional b4g4r4a4_unorm, `add_texture_asset` (and so `load_texture_asset`) now throws `std::runtime_error` reading `Texture '<name>' is <format> at <w>x<h>, and this device would not create its texture (HRESULT 80070057).` instead of `Failure with HRESULT of 80070057`, as the other backends already did. Every other engine-written Direct3D 11 failure now starts with the operation that failed, such as `The sprite index buffer could not be created (HRESULT 887A0005).`; the type is still `labrador::com_exception`, a `std::runtime_error`. Device creation failures from the upstream device_resources.cpp keep the old wording. A game that matched the old text should match the HRESULT digits instead.
+
 ### 2026-11-05 - Drop const from ResourceLoader's reload and load helpers
 
 **Source break.** `ResourceLoader::reload_device_resources()` is no longer

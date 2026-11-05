@@ -11,6 +11,7 @@
 #include <windows.h>
 
 #include <bit>
+#include <cstdint>
 #include <new>
 #include <optional>
 #include <stdexcept>
@@ -59,6 +60,8 @@ namespace
 			loader_function<PFN_vkCreateSemaphore>("vkCreateSemaphore");
 		PFN_vkDestroyDevice destroy_device =
 			loader_function<PFN_vkDestroyDevice>("vkDestroyDevice");
+		PFN_vkResetCommandPool reset_command_pool =
+			loader_function<PFN_vkResetCommandPool>("vkResetCommandPool");
 	};
 
 	const CleanupCalls& real_calls()
@@ -140,6 +143,17 @@ namespace
 		VkDevice refuse_semaphore_off = VK_NULL_HANDLE;
 		int semaphore_refusals = 0;
 		VkDevice refused_on = VK_NULL_HANDLE;
+
+		// When set, refuse the next memory allocation and leave this value in
+		// its output, as the spec allows a failed command to; a release of the
+		// value is counted and never forwarded to the driver.
+		VkDeviceMemory refuse_allocation_with = VK_NULL_HANDLE;
+		int allocation_refusals = 0;
+		int refused_memory_released = 0;
+
+		// When set, refuse every command pool reset.
+		bool refuse_pool_reset = false;
+		int pool_reset_refusals = 0;
 
 		Tracked<VkDevice> device;
 		int clock = 0;
@@ -270,6 +284,14 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkAllocateMemory(VkDevice device,
 	const VkMemoryAllocateInfo* allocation, const VkAllocationCallbacks* allocator,
 	VkDeviceMemory* memory)
 {
+	CleanupProbe* probe = active_probe;
+	if (probe != nullptr && probe->refuse_allocation_with != VK_NULL_HANDLE &&
+		probe->allocation_refusals == 0)
+	{
+		++probe->allocation_refusals;
+		*memory = probe->refuse_allocation_with;
+		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+	}
 	const VkResult result = real_calls().allocate(device, allocation, allocator, memory);
 	if (active_probe != nullptr && result == VK_SUCCESS)
 	{
@@ -282,6 +304,12 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkAllocateMemory(VkDevice device,
 extern "C" VKAPI_ATTR void VKAPI_CALL vkFreeMemory(VkDevice device,
 	VkDeviceMemory memory, const VkAllocationCallbacks* allocator)
 {
+	if (active_probe != nullptr && memory != VK_NULL_HANDLE &&
+		memory == active_probe->refuse_allocation_with)
+	{
+		++active_probe->refused_memory_released;
+		return;
+	}
 	if (active_probe != nullptr)
 	{
 		active_probe->image_memory.observe_destruction(memory, device, active_probe->clock);
@@ -343,6 +371,18 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkCreateSemaphore(VkDevice device,
 		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 	}
 	return real_calls().create_semaphore(device, description, allocator, semaphore);
+}
+
+extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkResetCommandPool(VkDevice device,
+	VkCommandPool pool, VkCommandPoolResetFlags flags)
+{
+	CleanupProbe* probe = active_probe;
+	if (probe != nullptr && probe->refuse_pool_reset)
+	{
+		++probe->pool_reset_refusals;
+		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+	}
+	return real_calls().reset_command_pool(device, pool, flags);
 }
 
 extern "C" VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(VkDevice device,
@@ -518,4 +558,74 @@ TEST_CASE("Vulkan read-back releases its buffer through the original device afte
 	CHECK(probe.device.destroys == 1);
 	CHECK(probe.buffer.destroyed_at < probe.device.destroyed_at);
 	CHECK(probe.buffer_memory.destroyed_at < probe.device.destroyed_at);
+}
+
+TEST_CASE("Vulkan never releases what a refused texture allocation left in its output")
+{
+	using namespace labrador;
+	CleanupProbe probe;
+	{
+		ProbeScope scope(probe);
+		render_tests::DeviceFixture fixture;
+
+		// A value a driver may leave behind; the spec leaves a failed
+		// command's outputs undefined.
+		probe.refuse_allocation_with =
+			std::bit_cast<VkDeviceMemory>(std::uint64_t{ 0xBAD0BAD0BAD0BAD0u });
+		std::string message;
+		try
+		{
+			add_texture_asset(fixture.renderer, fixture.resources,
+				"refused_memory", white_texture());
+		}
+		catch (const std::runtime_error& error)
+		{
+			message = error.what();
+		}
+		CHECK(probe.allocation_refusals == 1);
+		CHECK(message == "A texture image's memory could not be allocated "
+			"(VK_ERROR_OUT_OF_DEVICE_MEMORY).");
+		CHECK(probe.refused_memory_released == 0);
+		CHECK_THROWS_AS(std::ignore =
+			fixture.resources.resolve_texture("refused_memory"),
+			std::out_of_range);
+
+		// The next allocation is not refused, and the name loads.
+		add_texture_asset(fixture.renderer, fixture.resources,
+			"refused_memory", white_texture());
+		CHECK_NOTHROW(std::ignore =
+			fixture.resources.resolve_texture("refused_memory"));
+	}
+
+	// Teardown did not release it either.
+	CHECK(probe.refused_memory_released == 0);
+}
+
+TEST_CASE("Vulkan names a refused command pool reset rather than beginning on it")
+{
+	using namespace labrador;
+	CleanupProbe probe;
+	ProbeScope scope(probe);
+	render_tests::DeviceFixture fixture;
+	fixture.renderer.begin_frame();
+
+	probe.refuse_pool_reset = true;
+	std::string message;
+	try
+	{
+		fixture.renderer.begin_frame();
+	}
+	catch (const std::runtime_error& error)
+	{
+		message = error.what();
+	}
+	probe.refuse_pool_reset = false;
+
+	CHECK(probe.pool_reset_refusals == 1);
+	CHECK(message == "The frame's command pool could not be reset "
+		"(VK_ERROR_OUT_OF_DEVICE_MEMORY).");
+
+	// A reset that succeeds puts the frame back, and it records and submits.
+	CHECK_NOTHROW(fixture.renderer.begin_frame());
+	CHECK_NOTHROW(fixture.renderer.submit());
 }

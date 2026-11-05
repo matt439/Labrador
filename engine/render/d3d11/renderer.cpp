@@ -31,16 +31,20 @@ namespace labrador
 		{
 			Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
 			ThrowIfFailed(device->QueryInterface(
-				IID_PPV_ARGS(dxgi_device.GetAddressOf())));
+				IID_PPV_ARGS(dxgi_device.GetAddressOf())),
+				"The device's DXGI interface could not be read");
 
 			Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
-			ThrowIfFailed(dxgi_device->GetAdapter(adapter.GetAddressOf()));
+			ThrowIfFailed(dxgi_device->GetAdapter(adapter.GetAddressOf()),
+				"The device's adapter could not be read");
 
 			Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter1;
-			ThrowIfFailed(adapter.As(&adapter1));
+			ThrowIfFailed(adapter.As(&adapter1),
+				"The adapter's DXGI 1.1 interface could not be read");
 
 			DXGI_ADAPTER_DESC1 description = {};
-			ThrowIfFailed(adapter1->GetDesc1(&description));
+			ThrowIfFailed(adapter1->GetDesc1(&description),
+				"The adapter's description could not be read");
 
 			RenderDeviceInfo info;
 			info.backend = "d3d11";
@@ -182,7 +186,8 @@ namespace labrador
 
 		D3D11_MAPPED_SUBRESOURCE mapped = {};
 		ThrowIfFailed(this->context->Map(this->vertices.Get(), 0, how, 0,
-			&mapped));
+			&mapped),
+			"A view's vertex buffer could not be mapped");
 		SpriteVertex* destination =
 			static_cast<SpriteVertex*>(mapped.pData) +
 			static_cast<size_t>(this->buffer_position) * vertices_per_sprite;
@@ -238,7 +243,8 @@ namespace labrador
 
 		D3D11_MAPPED_SUBRESOURCE mapped = {};
 		ThrowIfFailed(this->context->Map(this->transform.Get(), 0,
-			D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+			D3D11_MAP_WRITE_DISCARD, 0, &mapped),
+			"A view's transform buffer could not be mapped");
 		std::memcpy(mapped.pData, &values, sizeof(values));
 		this->context->Unmap(this->transform.Get(), 0);
 	}
@@ -281,7 +287,8 @@ namespace labrador
 		// back on this context. The two hand-written copies of this protocol
 		// disagreed about this flag - TRUE in Level, FALSE in MenuPage - and
 		// neither had a reason written down.
-		ThrowIfFailed(this->context->FinishCommandList(FALSE, &commands));
+		ThrowIfFailed(this->context->FinishCommandList(FALSE, &commands),
+			"A view's command list could not be finished");
 		this->bound = false;
 		return commands;
 	}
@@ -434,7 +441,8 @@ namespace labrador
 		texture->GetResource(resource.GetAddressOf());
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture_2d;
-		ThrowIfFailed(resource.As(&texture_2d));
+		ThrowIfFailed(resource.As(&texture_2d),
+			"A texture view's resource is not a 2D texture");
 
 		D3D11_TEXTURE2D_DESC description = {};
 		texture_2d->GetDesc(&description);
@@ -448,10 +456,12 @@ namespace labrador
 
 		ThrowIfFailed(device->CreateVertexShader(sprite_vertex_shader,
 			sizeof(sprite_vertex_shader), nullptr,
-			this->vertex_shader.ReleaseAndGetAddressOf()));
+			this->vertex_shader.ReleaseAndGetAddressOf()),
+			"The sprite vertex shader could not be created");
 		ThrowIfFailed(device->CreatePixelShader(sprite_pixel_shader,
 			sizeof(sprite_pixel_shader), nullptr,
-			this->pixel_shader.ReleaseAndGetAddressOf()));
+			this->pixel_shader.ReleaseAndGetAddressOf()),
+			"The sprite pixel shader could not be created");
 
 		// The three fields of SpriteVertex, located by offsetof rather than by
 		// position, which is why sprite_vertex.h is free to declare them in any
@@ -471,7 +481,8 @@ namespace labrador
 		ThrowIfFailed(device->CreateInputLayout(elements,
 			static_cast<UINT>(std::size(elements)), sprite_vertex_shader,
 			sizeof(sprite_vertex_shader),
-			this->input_layout.ReleaseAndGetAddressOf()));
+			this->input_layout.ReleaseAndGetAddressOf()),
+			"The sprite input layout could not be created");
 
 		// PREMULTIPLIED ALPHA: the source factor is ONE and not SRC_ALPHA.
 		// RenderPixelTests calls this the term most likely to be got wrong,
@@ -491,7 +502,8 @@ namespace labrador
 		blend_description.RenderTarget[0].RenderTargetWriteMask =
 			D3D11_COLOR_WRITE_ENABLE_ALL;
 		ThrowIfFailed(device->CreateBlendState(&blend_description,
-			this->blend.ReleaseAndGetAddressOf()));
+			this->blend.ReleaseAndGetAddressOf()),
+			"The sprite blend state could not be created");
 
 		// No depth, because there is no depth buffer to test against.
 		D3D11_DEPTH_STENCIL_DESC depth_description = {};
@@ -500,7 +512,8 @@ namespace labrador
 		depth_description.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 		depth_description.StencilEnable = FALSE;
 		ThrowIfFailed(device->CreateDepthStencilState(&depth_description,
-			this->depth.ReleaseAndGetAddressOf()));
+			this->depth.ReleaseAndGetAddressOf()),
+			"The sprite depth state could not be created");
 
 		// NO CULLING, WHERE SpriteBatch CULLED BACK FACES. A sprite is a quad
 		// whose winding never changes: a flip mirrors the texture coordinates
@@ -513,7 +526,8 @@ namespace labrador
 		rasterizer_description.DepthClipEnable = TRUE;
 		rasterizer_description.MultisampleEnable = TRUE;
 		ThrowIfFailed(device->CreateRasterizerState(&rasterizer_description,
-			this->rasterizer.ReleaseAndGetAddressOf()));
+			this->rasterizer.ReleaseAndGetAddressOf()),
+			"The sprite rasterizer state could not be created");
 
 		// Clamped, so a source rectangle at the edge of an atlas cannot bleed
 		// the far side of it into a sprite - which is what a sheet is full of.
@@ -545,11 +559,13 @@ namespace labrador
 
 		sampler_description.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		ThrowIfFailed(device->CreateSamplerState(&sampler_description,
-			this->point_sampler.ReleaseAndGetAddressOf()));
+			this->point_sampler.ReleaseAndGetAddressOf()),
+			"The point sampler could not be created");
 
 		sampler_description.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		ThrowIfFailed(device->CreateSamplerState(&sampler_description,
-			this->linear_sampler.ReleaseAndGetAddressOf()));
+			this->linear_sampler.ReleaseAndGetAddressOf()),
+			"The linear sampler could not be created");
 
 		// The index buffer, which is the same for every sprite there will ever
 		// be: two triangles over four corners, immutable, filled once.
@@ -578,7 +594,8 @@ namespace labrador
 		D3D11_SUBRESOURCE_DATA index_initial = {};
 		index_initial.pSysMem = index_data.data();
 		ThrowIfFailed(device->CreateBuffer(&index_description, &index_initial,
-			this->indices.ReleaseAndGetAddressOf()));
+			this->indices.ReleaseAndGetAddressOf()),
+			"The sprite index buffer could not be created");
 
 		// A context belongs to the device that made it, so both are remade
 		// here together - and the View objects themselves are not, because a
@@ -615,11 +632,14 @@ namespace labrador
 			DrawList::View& view = *view_ptr;
 			view.owner = this;
 			ThrowIfFailed(device->CreateDeferredContext(0,
-				view.context.ReleaseAndGetAddressOf()));
+				view.context.ReleaseAndGetAddressOf()),
+				"A view's deferred context could not be created");
 			ThrowIfFailed(device->CreateBuffer(&vertex_description, nullptr,
-				view.vertices.ReleaseAndGetAddressOf()));
+				view.vertices.ReleaseAndGetAddressOf()),
+				"A view's vertex buffer could not be created");
 			ThrowIfFailed(device->CreateBuffer(&transform_description, nullptr,
-				view.transform.ReleaseAndGetAddressOf()));
+				view.transform.ReleaseAndGetAddressOf()),
+				"A view's transform buffer could not be created");
 			view.reset();
 		}
 	}
@@ -1021,7 +1041,8 @@ namespace labrador
 		device.GetRenderTargetView()->GetResource(resource.GetAddressOf());
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> back_buffer;
-		ThrowIfFailed(resource.As(&back_buffer));
+		ThrowIfFailed(resource.As(&back_buffer),
+			"The back buffer is not a 2D texture");
 
 		// A staging copy, because the back buffer is not CPU-readable. Made per
 		// call and thrown away: this is not a frame-path function and a cached
@@ -1035,14 +1056,16 @@ namespace labrador
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> staging;
 		ThrowIfFailed(device.GetD3DDevice()->CreateTexture2D(&description,
-			nullptr, staging.ReleaseAndGetAddressOf()));
+			nullptr, staging.ReleaseAndGetAddressOf()),
+			"The read-back staging texture could not be created");
 
 		ID3D11DeviceContext1* context = device.GetD3DDeviceContext();
 		context->CopyResource(staging.Get(), back_buffer.Get());
 
 		D3D11_MAPPED_SUBRESOURCE mapped = {};
 		ThrowIfFailed(context->Map(staging.Get(), 0, D3D11_MAP_READ, 0,
-			&mapped));
+			&mapped),
+			"The read-back staging texture could not be mapped");
 
 		const size_t width = static_cast<size_t>(description.Width);
 		const size_t height = static_cast<size_t>(description.Height);
