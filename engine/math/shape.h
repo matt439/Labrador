@@ -12,8 +12,9 @@ namespace labrador
 		virtual ~Shape() = default;
 		virtual RectangleF bounding_box() const = 0;
 		virtual ShapeType shape_type() const = 0;
-		bool AABB_intersects(const Shape* other) const;
-		bool AABB_intersects(const Shape& other) const;
+		// Whether this shape's bounding box and `other`'s overlap: the cheap
+		// test a pair passes before a narrow phase measures it.
+		bool bounding_boxes_intersect(const Shape& other) const;
 		virtual void offset(const Vector2F& amount) = 0;
 		virtual Point2F center() const = 0;
 		// Grows the shape by moving every part of its boundary `amount`

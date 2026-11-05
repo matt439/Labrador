@@ -80,6 +80,14 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Rename Shape::AABB_intersects to bounding_boxes_intersect
+
+**Source break: `Shape::AABB_intersects` is now `Shape::bounding_boxes_intersect(const Shape&)`, and the pointer overload is removed.** To migrate, replace `a.AABB_intersects(b)` with `a.bounding_boxes_intersect(b)`, and replace `a->AABB_intersects(b_pointer)` with `a->bounding_boxes_intersect(*b_pointer)`. The answer is unchanged. No sample called it, and the engine's one caller, the contact pass, is updated.
+
+### 2026-11-05 - Test a point against a Quad as one convex polygon, and pre-check by boxes
+
+**Added: `Quad::points()`, returning the four points as `const std::array<Point2F, 4>&`, the same type `RectangleRotated::points()` returns.** `quad_point_intersect` now tests the quad as one convex polygon with `point_in_convex_polygon`, with the boundary counted as inside, as the other quad and rotated-rectangle routines already did. Before, it tested the two triangles either side of a diagonal. The outer edges are evaluated exactly as before. The only possible difference is a rounding-level change for points within floating-point error of the internal diagonal, which the old split could misplace. `rectangles_rotated_intersect` and `triangle_rectangle_rotated_intersect` now pre-check with a bounding-box test where they ran a full shape-against-box intersection. Their answers are unchanged.
+
 ### 2026-11-05 - Move Partitioner from collision to core, beside ThreadPool
 
 **Source break: `Partitioner` moved from `engine/collision/partitioner.h` to `engine/core/partitioner.h`.** The class is unchanged. It splits work for the thread pool and is not part of collision, so it now sits beside `ThreadPool`, and its reference page moved from the collision module to core. Change `#include "engine/collision/partitioner.h"` to `#include "engine/core/partitioner.h"`. Code that reaches it only through `application.h` or `app.partitioner()` needs no change, and no sample includes the header directly. ColourWars includes the old path in five files, among them `game/objects/level_builder.h`, `scripts/acceptance/debug_console/cpu_level.h` and `scripts/acceptance/paint/jump_through_checks.h`; each changes its include when it takes this pin.

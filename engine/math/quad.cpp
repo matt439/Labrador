@@ -11,15 +11,15 @@
 namespace labrador
 {
 
-	Quad::Quad(const Vector2F& point0,
-		const Vector2F& point1,
-		const Vector2F& point2,
-		const Vector2F& point3)
+	Quad::Quad(const Vector2F& point_0,
+		const Vector2F& point_1,
+		const Vector2F& point_2,
+		const Vector2F& point_3)
 	{
-		this->points_[0] = point0;
-		this->points_[1] = point1;
-		this->points_[2] = point2;
-		this->points_[3] = point3;
+		this->points_[0] = point_0;
+		this->points_[1] = point_1;
+		this->points_[2] = point_2;
+		this->points_[3] = point_3;
 
 		if (!this->is_valid())
 		{
@@ -40,19 +40,11 @@ namespace labrador
 		}
 	}
 
-	Quad::Quad(const RectangleRotated& rectangle)
+	// RectangleRotated::quad() builds through the validating constructor,
+	// so the copy needs no second check.
+	Quad::Quad(const RectangleRotated& rectangle) :
+		Quad(rectangle.quad())
 	{
-		Quad q = rectangle.quad();
-
-		this->points_[0] = q.point_0();
-		this->points_[1] = q.point_1();
-		this->points_[2] = q.point_2();
-		this->points_[3] = q.point_3();
-
-		if (!this->is_valid())
-		{
-			throw std::invalid_argument("Quad is not valid");
-		}
 	}
 
 	RectangleF Quad::bounding_box() const
@@ -75,7 +67,7 @@ namespace labrador
 
 	void Quad::inflate(float amount)
 	{
-		detail::inflate_convex_polygon(this->points_, 4, amount);
+		detail::inflate_convex_polygon(this->points_.data(), 4, amount);
 	}
 
 	bool Quad::is_valid() const
@@ -191,6 +183,11 @@ namespace labrador
 			this->points_[3] = previous;
 			throw std::invalid_argument("Quad is not valid");
 		}
+	}
+
+	const std::array<Point2F, 4>& Quad::points() const
+	{
+		return this->points_;
 	}
 
 	Segment Quad::edge_0() const

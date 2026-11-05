@@ -25,8 +25,8 @@ namespace labrador
 			x(x), y(y), width(width), height(height) {}
 		RectangleF(const Vector2F& position,
 							const Vector2F& size);
-		RectangleF(const Vector2F& center, float horiz_half_width,
-			float vert_half_height);
+		RectangleF(const Vector2F& center, float half_width,
+			float half_height);
 
 		RectangleF bounding_box() const override;
 		ShapeType shape_type() const override;

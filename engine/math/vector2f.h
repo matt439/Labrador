@@ -135,13 +135,13 @@ namespace labrador
 	// Reversing a direction. The collision module does this constantly - a
 	// contact normal points from the first shape to the second, so the second
 	// needs the other one.
-	Vector2F operator- (const Vector2F& V);
+	Vector2F operator- (const Vector2F& a);
 
-	Vector2F operator+ (const Vector2F& V1, const Vector2F& V2);
-	Vector2F operator- (const Vector2F& V1, const Vector2F& V2);
-	Vector2F operator* (const Vector2F& V1, const Vector2F& V2);
-	Vector2F operator* (const Vector2F& V, float S);
-	Vector2F operator/ (const Vector2F& V1, const Vector2F& V2);
-	Vector2F operator/ (const Vector2F& V, float S);
-	Vector2F operator* (float S, const Vector2F& V);
+	Vector2F operator+ (const Vector2F& a, const Vector2F& b);
+	Vector2F operator- (const Vector2F& a, const Vector2F& b);
+	Vector2F operator* (const Vector2F& a, const Vector2F& b);
+	Vector2F operator* (const Vector2F& a, float scale);
+	Vector2F operator/ (const Vector2F& a, const Vector2F& b);
+	Vector2F operator/ (const Vector2F& a, float scale);
+	Vector2F operator* (float scale, const Vector2F& a);
 }

@@ -20,7 +20,7 @@ namespace labrador
 				return;
 			}
 
-			if (!a->shape()->AABB_intersects(b->shape()))
+			if (!a->shape()->bounding_boxes_intersect(*b->shape()))
 			{
 				return;
 			}

@@ -35,11 +35,11 @@ namespace labrador
 		static const Vector2I zero;
 	};
 
-	Vector2I operator+ (const Vector2I& V1, const Vector2I& V2);
-	Vector2I operator- (const Vector2I& V1, const Vector2I& V2);
-	Vector2I operator* (const Vector2I& V1, const Vector2I& V2);
-	Vector2I operator* (const Vector2I& V, int S);
-	Vector2I operator/ (const Vector2I& V1, const Vector2I& V2);
-	Vector2I operator/ (const Vector2I& V, int S);
-	Vector2I operator* (int S, const Vector2I& V);
+	Vector2I operator+ (const Vector2I& a, const Vector2I& b);
+	Vector2I operator- (const Vector2I& a, const Vector2I& b);
+	Vector2I operator* (const Vector2I& a, const Vector2I& b);
+	Vector2I operator* (const Vector2I& a, int scale);
+	Vector2I operator/ (const Vector2I& a, const Vector2I& b);
+	Vector2I operator/ (const Vector2I& a, int scale);
+	Vector2I operator* (int scale, const Vector2I& a);
 }

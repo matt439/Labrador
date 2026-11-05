@@ -4,6 +4,7 @@
 #include "engine/math/quad.h"
 #include "engine/math/vector2f.h"
 
+#include <initializer_list>
 #include <stdexcept>
 
 using namespace labrador;
@@ -84,5 +85,37 @@ TEST_SUITE("Quad")
 			Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f)));
 		CHECK_NOTHROW(Quad(Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
 			Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f)));
+	}
+	TEST_CASE("a Quad's points are its four corners in point order")
+	{
+		const Quad q(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+			Point2F(12.0f, 8.0f), Point2F(-2.0f, 8.0f));
+		REQUIRE(q.points().size() == 4u);
+		CHECK(q.points()[0] == q.point_0());
+		CHECK(q.points()[1] == q.point_1());
+		CHECK(q.points()[2] == q.point_2());
+		CHECK(q.points()[3] == q.point_3());
+
+		Quad moved = q;
+		moved.offset(Vector2F(1.0f, 2.0f));
+		CHECK(moved.points()[2] == Point2F(13.0f, 10.0f));
+	}
+	TEST_CASE("a point is in a Quad up to and including its boundary")
+	{
+		// Either winding, and the diagonal the triangles would split on is
+		// inside like any other interior line.
+		const Quad clockwise(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+			Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
+		const Quad anticlockwise(Point2F(0.0f, 10.0f), Point2F(10.0f, 10.0f),
+			Point2F(10.0f, 0.0f), Point2F(0.0f, 0.0f));
+		for (const Quad& q : { clockwise, anticlockwise })
+		{
+			CHECK(quad_point_intersect(q, Point2F(5.0f, 5.0f)));
+			CHECK(quad_point_intersect(q, Point2F(2.0f, 2.0f)));
+			CHECK(quad_point_intersect(q, Point2F(10.0f, 4.0f)));
+			CHECK(quad_point_intersect(q, Point2F(0.0f, 0.0f)));
+			CHECK_FALSE(quad_point_intersect(q, Point2F(10.5f, 4.0f)));
+			CHECK_FALSE(quad_point_intersect(q, Point2F(-1.0f, -1.0f)));
+		}
 	}
 }

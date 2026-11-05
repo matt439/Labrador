@@ -65,6 +65,9 @@ namespace labrador
 		// The gradient helper the base class already provides is NOT
 		// redeclared here. A byte-for-byte copy would hide the inherited one,
 		// so a fix to the base would miss this type entirely.
-		int find_hypotenuse(const Triangle& tri) const;
+
+		// The vertex holding the right angle, 0 to 2, or -1 when no angle is
+		// a right angle.
+		int right_angle_vertex() const;
 	};
 }

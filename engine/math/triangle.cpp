@@ -3,7 +3,6 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/scalar.h"
 #include "engine/math/inflate.h"
-#include "engine/math/ericson_math.h"
 
 #include <array>
 #include <cmath>
@@ -86,7 +85,7 @@ namespace labrador
 	// which is a different quantity: edge_2 runs p2 -> p0 while the interior
 	// angle at p0 is measured from p0 outwards, so that gives pi minus the
 	// interior angle and makes angles() sum to 2*pi. A right angle is its own
-	// supplement, so find_hypotenuse cannot detect the difference.
+	// supplement, so right_angle_vertex cannot detect the difference.
 	float Triangle::angle_0() const
 	{
 		return Vector2F::angle_between(this->points[1] - this->points[0],
@@ -147,7 +146,7 @@ namespace labrador
 
 	namespace
 	{
-		// find_hypotenuse answers with a VERTEX index - the corner holding the
+		// right_angle_vertex answers with a VERTEX index - the corner holding the
 		// right angle - and the hypotenuse is the side that does not touch it.
 		// Since edge n runs from vertex n to vertex n + 1, the side opposite
 		// vertex v is edge v + 1.
@@ -165,38 +164,36 @@ namespace labrador
 
 	Segment TriangleRightAxisAligned::hypotenuse() const
 	{
-		int right_angle_vertex = this->find_hypotenuse(*this);
-		if (right_angle_vertex == -1)
+		const int vertex = this->right_angle_vertex();
+		if (vertex == -1)
 		{
 			throw std::invalid_argument("Triangle is not a right triangle");
 		}
 
-		return this->edges()[edge_opposite_vertex(right_angle_vertex)];
+		return this->edges()[edge_opposite_vertex(vertex)];
 	}
 	float TriangleRightAxisAligned::hypotenuse_gradient() const
 	{
-		int right_angle_vertex = this->find_hypotenuse(*this);
-		if (right_angle_vertex == -1)
+		const int vertex = this->right_angle_vertex();
+		if (vertex == -1)
 		{
 			throw std::invalid_argument("Triangle is not a right triangle");
 		}
 
-		return this->calculate_gradient(
-			edge_opposite_vertex(right_angle_vertex));
+		return this->calculate_gradient(edge_opposite_vertex(vertex));
 	}
 
-	int TriangleRightAxisAligned::find_hypotenuse(const Triangle& tri) const
+	int TriangleRightAxisAligned::right_angle_vertex() const
 	{
-		// find the hypotenuse
-		if (are_equal(tri.angle_0(), pi_over_2))
+		if (are_equal(this->angle_0(), pi_over_2))
 		{
 			return 0;
 		}
-		else if (are_equal(tri.angle_1(), pi_over_2))
+		else if (are_equal(this->angle_1(), pi_over_2))
 		{
 			return 1;
 		}
-		else if (are_equal(tri.angle_2(), pi_over_2))
+		else if (are_equal(this->angle_2(), pi_over_2))
 		{
 			return 2;
 		}

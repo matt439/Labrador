@@ -17,13 +17,13 @@ namespace labrador
 		this->width = size.x;
 		this->height = size.y;
 	}
-	RectangleF::RectangleF(const Vector2F& center, float horiz_half_width,
-		float vert_half_height)
+	RectangleF::RectangleF(const Vector2F& center, float half_width,
+		float half_height)
 	{
-		this->x = center.x - horiz_half_width;
-		this->y = center.y - vert_half_height;
-		this->width = horiz_half_width * 2.0f;
-		this->height = vert_half_height * 2.0f;
+		this->x = center.x - half_width;
+		this->y = center.y - half_height;
+		this->width = half_width * 2.0f;
+		this->height = half_height * 2.0f;
 	}
 	RectangleF RectangleF::bounding_box() const
 	{

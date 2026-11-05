@@ -40,7 +40,7 @@ TEST_SUITE("Triangle")
 	}
 	TEST_CASE("the hypotenuse is the side opposite the right angle, not the one beside it")
 	{
-		// find_hypotenuse answers with the VERTEX holding the right angle.
+		// right_angle_vertex answers with the VERTEX holding the right angle.
 		// Edge n runs from vertex n, so the side opposite vertex v is edge
 		// v + 1, and indexing edges() with v directly returns a leg.
 		const TriangleRightAxisAligned tri(Point2F(0.0f, 0.0f),

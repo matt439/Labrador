@@ -45,10 +45,10 @@ namespace labrador
 	{
 		// Calculate squared distance between centers
 		Vector2F d = a.center() - b.center();
-		float dist2 = Vector2F::dot(d, d);
+		float distance_squared = Vector2F::dot(d, d);
 		// Spheres intersect if squared distance is less than squared sum of radii
-		float radiusSum = a.radius() + b.radius();
-		return dist2 <= radiusSum * radiusSum;
+		float radius_sum = a.radius() + b.radius();
+		return distance_squared <= radius_sum * radius_sum;
 	}
 
 	Point2F closest_pt_point_triangle(const Point2F& p,
@@ -445,7 +445,6 @@ namespace labrador
 			// Compute signs for a and b with respect to segment cd
 			float a3 = signed_2D_tri_area(c, d, a); // Compute winding of cda (+ or -)
 			// Since area is constant a1 - a2 = a3 - a4, or a4 = a3 + a2 - a1
-			// float a4 = Signed2DTriArea(c, d, b); // Must have opposite sign of a3
 			float a4 = a3 + a2 - a1;
 			// Points a and b on different sides of cd if areas have different signs
 			if (strictly_opposite_sides(a3, a4)) {
@@ -456,11 +455,11 @@ namespace labrador
 				// of cd) cancels out.
 				t = a3 / (a3 - a4);
 				p = a + t * (b - a);
-				return 1;
+				return true;
 			}
 		}
 		// Segments not intersecting (or collinear)
-		return 0;
+		return false;
 	}
 
 	// Compute barycentric coordinates (u, v, w) for

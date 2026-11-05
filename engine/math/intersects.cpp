@@ -6,7 +6,6 @@
 #include "engine/math/quad.h"
 #include "engine/math/segment.h"
 #include "engine/math/rectangle_rotated.h"
-#include "engine/math/shape.h"
 #include "engine/math/ericson_math.h"
 
 #include <array>
@@ -92,38 +91,38 @@ namespace labrador
 			point.y <= rectangle.y + rectangle.height;
 	}
 
-	bool rectangle_rotated_rectangle_intersect(const RectangleF& rect,
-		const RectangleRotated& rotated_rect)
+	bool rectangle_rotated_rectangle_intersect(const RectangleF& rectangle,
+		const RectangleRotated& rectangle_rotated)
 	{
 		// check if the rectangles' bounding boxes intersect
-		if (!rect.intersects(rotated_rect.bounding_box()))
+		if (!rectangle.intersects(rectangle_rotated.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if the rotated rectangle contains any of the rectangle's points
-		if (point_rectangle_rotated_intersect(rect.top_left(), rotated_rect) ||
-			point_rectangle_rotated_intersect(rect.top_right(), rotated_rect) ||
-			point_rectangle_rotated_intersect(rect.bottom_left(), rotated_rect) ||
-			point_rectangle_rotated_intersect(rect.bottom_right(), rotated_rect))
+		if (point_rectangle_rotated_intersect(rectangle.top_left(), rectangle_rotated) ||
+			point_rectangle_rotated_intersect(rectangle.top_right(), rectangle_rotated) ||
+			point_rectangle_rotated_intersect(rectangle.bottom_left(), rectangle_rotated) ||
+			point_rectangle_rotated_intersect(rectangle.bottom_right(), rectangle_rotated))
 		{
 			return true;
 		}
 
 		// check if the rectangle contains any of the rotated rectangle's points
-		if (rectangle_point_intersect(rect, rotated_rect.point_0()) ||
-			rectangle_point_intersect(rect, rotated_rect.point_1()) ||
-			rectangle_point_intersect(rect, rotated_rect.point_2()) ||
-			rectangle_point_intersect(rect, rotated_rect.point_3()))
+		if (rectangle_point_intersect(rectangle, rectangle_rotated.point_0()) ||
+			rectangle_point_intersect(rectangle, rectangle_rotated.point_1()) ||
+			rectangle_point_intersect(rectangle, rectangle_rotated.point_2()) ||
+			rectangle_point_intersect(rectangle, rectangle_rotated.point_3()))
 		{
 			return true;
 		}
 
 		// check if any of the rotated rectangle's edges intersect the rectangle
-		const std::array<Segment, 4> edges = rotated_rect.edges();
+		const std::array<Segment, 4> edges = rectangle_rotated.edges();
 		for (const Segment& edge : edges)
 		{
-			if (rectangle_segment_intersect(rect, edge))
+			if (rectangle_segment_intersect(rectangle, edge))
 			{
 				return true;
 			}
@@ -199,22 +198,22 @@ namespace labrador
 	}
 
 	bool circle_rectangle_rotated_intersect(const Circle& circle,
-		const RectangleRotated& rect_rotated)
+		const RectangleRotated& rectangle_rotated)
 	{
 		// check if the circle intersects the rectangle's bounding box
-		if (!rectangle_circle_intersect(rect_rotated.bounding_box(), circle))
+		if (!rectangle_circle_intersect(rectangle_rotated.bounding_box(), circle))
 		{
 			return false;
 		}
 
 		// check if circle's center is contained within the rectangle
-		if (point_rectangle_rotated_intersect(circle.center(), rect_rotated))
+		if (point_rectangle_rotated_intersect(circle.center(), rectangle_rotated))
 		{
 			return true;
 		}
 
 		// check if the circle intersects any of the rectangle's edges
-		const std::array<Segment, 4> edges = rect_rotated.edges();
+		const std::array<Segment, 4> edges = rectangle_rotated.edges();
 		for (const Segment& edge : edges)
 		{
 			if (circle_segment_intersect(circle, edge))
@@ -316,27 +315,27 @@ namespace labrador
 	}
 
 	bool triangle_rectangle_rotated_intersect(const Triangle& triangle,
-		const RectangleRotated& rect_rotated)
+		const RectangleRotated& rectangle_rotated)
 	{
-		// check if the triangle intersects the rectangle's bounding box
-		if (!rectangle_triangle_intersect(rect_rotated.bounding_box(), triangle))
+		// check if the triangle's and the rectangle's bounding boxes intersect
+		if (!rectangle_rotated.bounding_box().intersects(triangle.bounding_box()))
 		{
 			return false;
 		}
 
 		// check if the triangle contains any of the rectangle's points
-		if (triangle_point_intersect(triangle, rect_rotated.point_0()) ||
-			triangle_point_intersect(triangle, rect_rotated.point_1()) ||
-			triangle_point_intersect(triangle, rect_rotated.point_2()) ||
-			triangle_point_intersect(triangle, rect_rotated.point_3()))
+		if (triangle_point_intersect(triangle, rectangle_rotated.point_0()) ||
+			triangle_point_intersect(triangle, rectangle_rotated.point_1()) ||
+			triangle_point_intersect(triangle, rectangle_rotated.point_2()) ||
+			triangle_point_intersect(triangle, rectangle_rotated.point_3()))
 		{
 			return true;
 		}
 
 		// check if the rectangle contains any of the triangle's points
-		if (point_rectangle_rotated_intersect(triangle.points[0], rect_rotated) ||
-			point_rectangle_rotated_intersect(triangle.points[1], rect_rotated) ||
-			point_rectangle_rotated_intersect(triangle.points[2], rect_rotated))
+		if (point_rectangle_rotated_intersect(triangle.points[0], rectangle_rotated) ||
+			point_rectangle_rotated_intersect(triangle.points[1], rectangle_rotated) ||
+			point_rectangle_rotated_intersect(triangle.points[2], rectangle_rotated))
 		{
 			return true;
 		}
@@ -345,7 +344,7 @@ namespace labrador
 		const std::array<Segment, 3> edges = triangle.edges();
 		for (const Segment& edge : edges)
 		{
-			if (segment_rectangle_rotated_intersect(edge, rect_rotated))
+			if (segment_rectangle_rotated_intersect(edge, rectangle_rotated))
 			{
 				return true;
 			}
@@ -382,29 +381,20 @@ namespace labrador
 		// and applying it to the halves instead would put the diagonal back
 		// as an edge, which is exactly the line a corner-to-corner segment
 		// runs along.
-		const Point2F points[4] = { quad.point_0(), quad.point_1(),
-			quad.point_2(), quad.point_3() };
-		return test_segment_convex_polygon(points,
+		return test_segment_convex_polygon(quad.points(),
 			segment.point_0, segment.point_1);
 	}
 
 	bool quad_point_intersect(const Quad& quad, const Point2F& point)
 	{
-		// check if the point is contained within any of the quad's triangles
-		const std::array<Triangle, 2> triangles = quad.triangles();
-		for (const Triangle& triangle : triangles)
-		{
-			if (triangle_point_intersect(triangle, point))
-			{
-				return true;
-			}
-		}
-
-		return false;
+		// The quad itself, as quad_segment_intersect clips against it: one
+		// convex polygon, boundary inside, rather than its two triangles,
+		// which test the same edges twice and the diagonal both ways.
+		return point_in_convex_polygon(quad.points(), point);
 	}
 
 	bool quad_rectangle_rotated_intersect(const Quad& quad,
-		const RectangleRotated& rect_rotated)
+		const RectangleRotated& rectangle_rotated)
 	{
 		// get the triangles of the quad
 		const std::array<Triangle, 2> triangles = quad.triangles();
@@ -412,7 +402,7 @@ namespace labrador
 		// check each triangle against the rotated rectangle
 		for (const Triangle& triangle : triangles)
 		{
-			if (triangle_rectangle_rotated_intersect(triangle, rect_rotated))
+			if (triangle_rectangle_rotated_intersect(triangle, rectangle_rotated))
 			{
 				return true;
 			}
@@ -452,22 +442,22 @@ namespace labrador
 	}
 
 	bool segment_rectangle_rotated_intersect(const Segment& segment,
-		const RectangleRotated& rect_rotated)
+		const RectangleRotated& rectangle_rotated)
 	{
 		// check if the segment intersects the rectangle's bounding box
-		if (!rectangle_segment_intersect(rect_rotated.bounding_box(), segment))
+		if (!rectangle_segment_intersect(rectangle_rotated.bounding_box(), segment))
 		{
 			return false;
 		}
 
 		// Then the closed clip against the four corners, for the reason
 		// triangle_segment_intersect gives.
-		return test_segment_convex_polygon(rect_rotated.points(),
+		return test_segment_convex_polygon(rectangle_rotated.points(),
 			segment.point_0, segment.point_1);
 	}
 
 	bool point_rectangle_rotated_intersect(const Point2F& point,
-		const RectangleRotated& rect_rotated)
+		const RectangleRotated& rectangle_rotated)
 	{
 		// Straight onto the corner cache the rectangle already holds.
 		//
@@ -485,14 +475,14 @@ namespace labrador
 		// about winding - in four cross products and no allocation. A
 		// degenerate rectangle now answers false rather than throwing, which
 		// is the same thing every other degenerate shape in the library says.
-		return point_in_convex_polygon(rect_rotated.points(), point);
+		return point_in_convex_polygon(rectangle_rotated.points(), point);
 	}
 
 	bool rectangles_rotated_intersect(const RectangleRotated& a,
 		const RectangleRotated& b)
 	{
 		// check if the rectangles' bounding boxes intersect
-		if (!rectangle_rotated_rectangle_intersect(b.bounding_box(), a))
+		if (!b.bounding_box().intersects(a.bounding_box()))
 		{
 			return false;
 		}

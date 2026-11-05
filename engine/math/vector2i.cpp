@@ -70,33 +70,33 @@ namespace labrador
 		this->y = new_y;
 	}
 	constinit const Vector2I Vector2I::zero = { 0, 0 };
-	Vector2I operator+ (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator+ (const Vector2I& a, const Vector2I& b)
 	{
-		return Vector2I(V1.x + V2.x, V1.y + V2.y);
+		return Vector2I(a.x + b.x, a.y + b.y);
 	}
-	Vector2I operator- (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator- (const Vector2I& a, const Vector2I& b)
 	{
-		return Vector2I(V1.x - V2.x, V1.y - V2.y);
+		return Vector2I(a.x - b.x, a.y - b.y);
 	}
-	Vector2I operator* (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator* (const Vector2I& a, const Vector2I& b)
 	{
-		return Vector2I(V1.x * V2.x, V1.y * V2.y);
+		return Vector2I(a.x * b.x, a.y * b.y);
 	}
-	Vector2I operator* (const Vector2I& V, int S)
+	Vector2I operator* (const Vector2I& a, int scale)
 	{
-		return Vector2I(V.x * S, V.y * S);
+		return Vector2I(a.x * scale, a.y * scale);
 	}
-	Vector2I operator/ (const Vector2I& V1, const Vector2I& V2)
+	Vector2I operator/ (const Vector2I& a, const Vector2I& b)
 	{
-		return Vector2I(V1.x / V2.x, V1.y / V2.y);
+		return Vector2I(a.x / b.x, a.y / b.y);
 	}
-	Vector2I operator/ (const Vector2I& V, int S)
+	Vector2I operator/ (const Vector2I& a, int scale)
 	{
-		return Vector2I(V.x / S, V.y / S);
+		return Vector2I(a.x / scale, a.y / scale);
 	}
-	Vector2I operator* (int S, const Vector2I& V)
+	Vector2I operator* (int scale, const Vector2I& a)
 	{
-		return Vector2I(V.x * S, V.y * S);
+		return Vector2I(a.x * scale, a.y * scale);
 	}
 
 }

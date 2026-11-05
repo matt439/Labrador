@@ -48,8 +48,8 @@ namespace labrador
 	bool rectangle_point_intersect(const RectangleF& rectangle,
 		const Point2F& point);
 
-	bool rectangle_rotated_rectangle_intersect(const RectangleF& rect,
-		const RectangleRotated& rotated_rect);
+	bool rectangle_rotated_rectangle_intersect(const RectangleF& rectangle,
+		const RectangleRotated& rectangle_rotated);
 
 	bool circles_intersect(const Circle& a,
 		const Circle& b);
@@ -73,7 +73,7 @@ namespace labrador
 		const Point2F& point);
 
 	bool circle_rectangle_rotated_intersect(const Circle& circle,
-		const RectangleRotated& rect_rotated);
+		const RectangleRotated& rectangle_rotated);
 
 	bool triangles_intersect(const Triangle& a,
 		const Triangle& b);
@@ -88,7 +88,7 @@ namespace labrador
 		const Point2F& point);
 
 	bool triangle_rectangle_rotated_intersect(const Triangle& triangle,
-		const RectangleRotated& rect_rotated);
+		const RectangleRotated& rectangle_rotated);
 
 	bool quads_intersect(const Quad& a, const Quad& b);
 
@@ -99,7 +99,7 @@ namespace labrador
 		const Point2F& point);
 
 	bool quad_rectangle_rotated_intersect(const Quad& quad,
-		const RectangleRotated& rect_rotated);
+		const RectangleRotated& rectangle_rotated);
 
 	bool segments_intersect(const Segment& a, const Segment& b,
 		float& t, Point2F& p);
@@ -107,10 +107,10 @@ namespace labrador
 	bool segments_intersect(const Segment& a, const Segment& b);
 
 	bool segment_rectangle_rotated_intersect(const Segment& segment,
-		const RectangleRotated& rect_rotated);
+		const RectangleRotated& rectangle_rotated);
 
 	bool point_rectangle_rotated_intersect(const Point2F& point,
-		const RectangleRotated& rect_rotated);
+		const RectangleRotated& rectangle_rotated);
 
 	bool rectangles_rotated_intersect(const RectangleRotated& a,
 		const RectangleRotated& b);
