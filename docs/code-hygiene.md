@@ -634,6 +634,9 @@ H1 to H21, recommended in that order: behaviour and test-strength fixes first,
 the unused-API trim next, mechanical deduplication and renames after, and the
 comment batches last. The rules above apply to each. Its
 [STATUS.md](review/2026-11-05-hygiene/STATUS.md) is the ledger; a theme the
-owner places in BACKLOG.md becomes an SM story owned here. H1 and H2
-closed as SM-73 and SM-74 on 2026-11-05, and H18 by deleting the orphaned
-exploration.
+owner places in BACKLOG.md becomes an SM story owned here. The owner took
+every theme on 2026-11-05: H1 and H2 closed as SM-73 and SM-74, H18 by
+deleting the orphaned exploration, and the other eighteen as SM-75. Five
+findings were not taken, each with its reason in the ledger: three would break
+ColourWars' source for a naming fix, one would add public API, and one was a
+disclosure the Vulkan review requires.
