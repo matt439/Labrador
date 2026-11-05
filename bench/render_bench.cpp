@@ -10,15 +10,12 @@
 
 #include <vector>
 
-// The draw path's arithmetic, which nothing measured until this file.
+// The draw path's arithmetic.
 //
 // PHILOSOPHY's Performance section names throughput on the render path as the
-// measure, and the phases asserted on beside it were Scene::update,
-// Scene::end_tick, a hand-copied cull and Scene::resolve - four phases of the
-// simulation and none of the drawing. What a frame actually spends its
-// per-sprite time on is engine/render/sprite_geometry.cpp: four corners, a
-// rotation, a flip and a texel-to-uv divide, once per sprite, for every
-// backend.
+// measure. What a frame spends its per-sprite time on in the engine is
+// engine/render/sprite_geometry.cpp: four corners, a rotation, a flip and a
+// texel-to-uv divide, once per sprite, for every backend.
 //
 // IT IS THE ENGINE'S HALF ONLY, AND THAT IS WHY IT BUILDS EVERYWHERE. No
 // Renderer is constructed and no device is created, so this compiles and runs
@@ -26,9 +23,9 @@
 // measure here rather than through Renderer::draw_sprite. The number it
 // produces is a floor and not a frame time: what a backend adds - the buffer
 // map, the upload, the draw call - is not in it and must not be read out of
-// it. Half of what PHILOSOPHY asks for is still unmeasured after this file,
-// and saying so here is cheaper than someone quoting the figure later as
-// though it were the cost of drawing.
+// it. That half is LineSweeperFrameBench's record_submit_ns and present_ns
+// (bench/linesweeper_frame_bench.cpp), and Scene::draw's own cost is
+// fanout_bench_null.cpp's.
 //
 // WHAT THE FIGURE PRICES BESIDES THE ARITHMETIC. Both entry points are called
 // across a translation unit boundary, so are the Vector2F operators the corner

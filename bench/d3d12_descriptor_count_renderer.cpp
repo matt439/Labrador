@@ -1,5 +1,7 @@
-// Preload renderer.cpp's declaration headers. The macros below instrument
-// only its current standalone call statements, never declarations or SDK code.
+// Preload every header renderer.cpp includes, so that each is first included
+// before the macros below exist and none of its declarations is rewritten.
+// bench/CMakeLists.txt refuses to configure this probe when renderer.cpp
+// includes a header this list lacks.
 #include "bench/d3d12_descriptor_count_state.h"
 #include "engine/render/d3d12/backend.h"
 #include "engine/math/rectanglef.h"
@@ -7,6 +9,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
+#include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 #include <cstddef>
 #include <cstring>
@@ -17,11 +20,11 @@
 #include <tuple>
 #include <vector>
 
-// There are two GPU heap-start assignments (sampler/texture), two RTV getter
-// assignments, one frame wait and one present in this included source. These
-// append statements after successful calls; expression nesting is unsupported.
-// FXC's unguarded byte-array headers are included only once, by renderer.cpp;
-// they contain no declarations using these method names.
+// The macros instrument only renderer.cpp's standalone call statements, never
+// declarations or SDK code. There are two GPU heap-start assignments
+// (sampler/texture), two RTV getter assignments, one frame wait and one
+// present in the included source. These append statements after successful
+// calls; expression nesting is unsupported.
 #define GetGPUDescriptorHandleForHeapStart() GetGPUDescriptorHandleForHeapStart(); descriptor_query_counts::gpu_query(__func__)
 #define back_buffer_view() back_buffer_view(); descriptor_query_counts::back_buffer_query()
 #define wait_for_frame() wait_for_frame(); descriptor_query_counts::begin_frame()

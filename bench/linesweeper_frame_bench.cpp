@@ -1,6 +1,7 @@
-#include "bench/linesweeper_frame_result.h"
+#include "bench/linesweeper_frame_bench.h"
 
 #include "bench/frame_pacer.h"
+#include "bench/linesweeper_frame_result.h"
 #include "engine/app/content_root.h"
 #include "engine/app/window.h"
 #include "engine/math/rectanglef.h"
@@ -48,6 +49,7 @@ namespace
 	using linesweeper_frame_bench::FrameSample;
 	using linesweeper_frame_bench::Options;
 	using linesweeper_frame_bench::Result;
+	using linesweeper_frame_bench::WindowVisibility;
 
 	const char* const font_name = "jetbrains_mono_bold_16";
 	const char* const block_texture_name = "white";
@@ -87,7 +89,7 @@ namespace
 	class FrameBenchmark final : public WindowNotify, public DeviceNotify
 	{
 	public:
-		explicit FrameBenchmark(const Options& options) :
+		FrameBenchmark(const Options& options, WindowVisibility visibility) :
 			options_(options),
 			scene_(nullptr, nullptr)
 		{
@@ -101,8 +103,13 @@ namespace
 			window_options.window_class_name = L"LineSweeperFrameBenchWindowClass";
 			window_options.window_title = L"LineSweeper frame benchmark";
 			window_options.client_size = Vector2I(frame_width, frame_height);
+			window_options.visible = visibility == WindowVisibility::shown;
 
 			this->window_ = std::make_unique<Window>(window_options, this);
+			if (visibility == WindowVisibility::hidden)
+			{
+				this->adopt_hidden_client_size();
+			}
 			if (this->width_ != frame_width || this->height_ != frame_height)
 			{
 				throw std::runtime_error(
@@ -151,6 +158,21 @@ namespace
 		}
 
 	private:
+		// A shown window reports its client size through WM_SIZE as it
+		// appears. A hidden one is never shown, so its actual client area is
+		// queried and forwarded the same way.
+		void adopt_hidden_client_size()
+		{
+			RECT client = {};
+			if (!GetClientRect(static_cast<HWND>(this->window_->handle()), &client))
+			{
+				throw std::runtime_error(
+					"The benchmark could not query its hidden window's client area.");
+			}
+			this->on_window_size_changed(static_cast<int>(client.right - client.left),
+				static_cast<int>(client.bottom - client.top));
+		}
+
 		void validate_device()
 		{
 			const RenderDeviceInfo& info = this->renderer_.device_info();
@@ -481,27 +503,14 @@ namespace
 	};
 }
 
-// A command line it cannot run exits 2 with the usage, before anything
-// starts; a run that fails exits 1 with the reason.
-int wmain(int argc, wchar_t* argv[])
+namespace linesweeper_frame_bench
 {
-	Options options;
-	try
-	{
-		options = linesweeper_frame_bench::parse_options(argc, argv);
-	}
-	catch (const std::exception& error)
-	{
-		linesweeper_frame_bench::print_usage();
-		std::fprintf(stderr, "LineSweeperFrameBench refused: %s\n", error.what());
-		return 2;
-	}
-	try
+	Result measure_frames(const Options& options, WindowVisibility visibility)
 	{
 		if (!release_build())
 		{
 			throw std::runtime_error(
-				"LineSweeperFrameBench requires a Release build.");
+				"The LineSweeper frame benchmark requires a Release build.");
 		}
 		if (!DirectX::XMVerifyCPUSupport())
 		{
@@ -510,20 +519,8 @@ int wmain(int argc, wchar_t* argv[])
 		}
 
 		ComApartment com;
-		FrameBenchmark benchmark(options);
+		FrameBenchmark benchmark(options, visibility);
 		benchmark.pump();
-		const Result result = benchmark.take_result();
-		linesweeper_frame_bench::atomic_write(options.output,
-			linesweeper_frame_bench::result_json(options, result));
-
-		std::printf("Wrote %d retained frames to %ls (%s, %s).\n",
-			options.sample, options.output.c_str(),
-			result.device.backend.c_str(), result.measurement_class.c_str());
-		return 0;
-	}
-	catch (const std::exception& error)
-	{
-		std::fprintf(stderr, "LineSweeperFrameBench failed: %s\n", error.what());
-		return 1;
+		return benchmark.take_result();
 	}
 }

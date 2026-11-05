@@ -85,6 +85,33 @@ TEST_SUITE("LineSweeper frame result")
 		CHECK(options.pacing == PacingMode::software);
 	}
 
+	TEST_CASE("a refused run identifier names the rule it broke")
+	{
+		std::vector<std::wstring> values = {
+			L"LineSweeperFrameBench", L"--output", temporary_result().wstring(),
+			L"--run", std::wstring(96, L'r'), L"--release-hash", std::wstring(64, L'a'),
+		};
+		std::vector<wchar_t*> argv = arguments(values);
+		CHECK(parse_options(static_cast<int>(argv.size()), argv.data()).run ==
+			std::string(96, 'r'));
+
+		values[4] = std::wstring(97, L'r');
+		argv = arguments(values);
+		CHECK_THROWS_WITH_AS(parse_options(static_cast<int>(argv.size()), argv.data()),
+			"--run must be at most 96 characters.", std::invalid_argument);
+
+		values[4] = L"";
+		argv = arguments(values);
+		CHECK_THROWS_WITH_AS(parse_options(static_cast<int>(argv.size()), argv.data()),
+			"--run must not be empty.", std::invalid_argument);
+
+		values[4] = L"two words";
+		argv = arguments(values);
+		CHECK_THROWS_WITH_AS(parse_options(static_cast<int>(argv.size()), argv.data()),
+			"Run identifiers must contain only ASCII letters, digits, '.', '_' or '-'.",
+			std::invalid_argument);
+	}
+
 	TEST_CASE("presentation pacing is explicit and rejects misspelled or repeated modes")
 	{
 		std::vector<std::wstring> values = {

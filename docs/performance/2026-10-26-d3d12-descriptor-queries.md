@@ -74,19 +74,21 @@ uses a separate
 preloading declaration headers, it appends counters at the actual getter
 call sites, resets after the frame wait and snapshots after present. Relaxed
 atomic counters permit view fan-out; rows are allocated before the workload.
-The wrapper reuses
-[LineSweeperFrameBench's entry point](../../bench/linesweeper_frame_bench.cpp)
-and normal content dependencies. Its hidden-window adapter queries the
-actual client size and forwards that size to the benchmark's window notify.
-It does not copy or replace the game workload.
+The probe runs
+[LineSweeperFrameBench's workload](../../bench/linesweeper_frame_bench.h)
+through its `measure_frames` seam with normal content dependencies. Asked
+for a hidden window, the workload queries the actual client size and
+forwards that size to its own window notify. The probe does not copy or
+replace the game workload.
 
 The census is intrusive. Besides counters and hidden startup, this run
 emitted eight progress messages at completed-frame counts
 `1, 2, 4, 8, 16, 32, 64, 128`; it performs no per-frame CSV writing.
 The JSON explicitly records
 `measurement_class=instrumented_descriptor_counts_not_performance_acceptance`.
-The reused entry point's stdout still prints `hardware_raster`; use the
-JSON classification when interpreting the artifact. Neither its frame
+In this run the reused entry point's stdout printed `hardware_raster`; use
+the JSON classification when interpreting the artifact. The probe now
+prints the same classification as the JSON. Neither its frame
 timings nor its hidden presentation supply pacing or low-tier acceptance.
 
 Both targets are D3D12-only, `EXCLUDE_FROM_ALL` and outside CTest. They have

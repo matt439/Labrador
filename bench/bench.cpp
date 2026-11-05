@@ -103,9 +103,19 @@ namespace bench
 		const double small_cost = small.ns_per_n();
 		const double large_cost = large.ns_per_n();
 
+		char message[512];
+
+		// A zero below has nothing to grow from: the clock did not resolve the
+		// small case, or its body was optimised away. Either way no comparison
+		// was made, and passing would claim one.
 		if (small_cost <= 0.0)
 		{
-			return {};
+			std::snprintf(message, sizeof(message),
+				"%s: the case measured %.1f ns at n=%lld, so there is no "
+				"per-object cost to judge its scaling against.",
+				small.name.c_str(), small.median_ns,
+				static_cast<long long>(small.n));
+			return message;
 		}
 
 		const double growth = large_cost / small_cost;
@@ -114,7 +124,6 @@ namespace bench
 			return {};
 		}
 
-		char message[512];
 		std::snprintf(message, sizeof(message),
 			"%s: per-object cost grew %.2fx between n=%lld (%.1f ns/object) "
 			"and n=%lld (%.1f ns/object), allowed %.2fx. That is a change of "
