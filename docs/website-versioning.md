@@ -350,25 +350,32 @@ states each check.
 
 CI builds the fixture once (`acceptance fixture`) and runs the suite as
 `acceptance (chrome)` and `acceptance (firefox)` on Linux and
-`acceptance (safari)` on macOS, all required checks. `acceptance (nvda)` runs
+`acceptance (safari)` and `acceptance (ios)` on macOS, all required checks. `acceptance (nvda)` runs
 [screen-reader.mjs](../website/acceptance/screen-reader.mjs) on Windows: WebDriver's
 Tab and Enter reach the selector's `v0.3.0` link, and the Enter that follows it
 is pressed through NVDA once NVDA reports the browser as the foreground window.
 Guidepup keeps only what NVDA says during its own commands, so that Enter's
 capture is what must contain the notice.
 
-One target does not yet pass on hosted runners, so it runs only on request, in
-[the acceptance trial workflow](../.github/workflows/acceptance-trial.yml),
-and no pull request shows its failure (`SITE#5`). `acceptance (ios)` is
-Safari in the newest iOS Simulator. Its safaridriver places a touch at the
-requested point less the page's scroll offset yet refuses points outside the
-viewport, so the suite taps with the page at its top and nothing below the
-first screen can be tapped: the release index's link to `v0.3.0`'s
-documentation is such a target, so on iOS that check verifies the link's
-address and target but does not follow it, and says so in its report, until
-the driver is fixed. Taps are still sometimes taken as a long press, and
-sessions and navigations sometimes time out, so the target is not yet
-reliable. Its Element Send
+`acceptance (ios)` is Safari in the newest iOS Simulator. Its safaridriver
+places a touch at the requested point less the page's scroll offset yet
+refuses points outside the viewport, so the suite taps with the page at its
+top and nothing below the first screen can be tapped: the release index's
+link to `v0.3.0`'s documentation is such a target, so on iOS that check
+verifies the link's address and target but does not follow it, and says so
+in its report, until the driver is fixed. The Simulator also sometimes loses
+a tap, takes one as a long press, leaves a navigation unanswered or fails to
+start a session. On that target alone the suite taps again when a tap changed
+nothing, asks again for a navigation that timed out, shuts down and boots
+again a Simulator whose boot hangs, restarts the Simulator's Safari between
+session attempts, waits for the search box to
+take focus before typing, and runs a failed check once more in a new session
+of a restarted Safari; the report and the job's log name every repetition, and a check that
+fails twice fails. On 2026-11-05 ten consecutive trial runs passed with the
+taps, navigations and session restarts repeated, and the job became
+required; one pull-request run then failed a check twice in the same
+session, after which second runs start a new session, and the next four runs
+passed, three of them through a second run. Its Element Send
 Keys fires key events but inserts no text, so the suite types search queries
 on the Simulator's hardware keyboard through System Events instead. The scan includes Starlight's search button, which the
 site's header names by what it shows ("Search Ctrl K"), except on

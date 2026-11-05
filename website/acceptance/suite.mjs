@@ -43,7 +43,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_WINDOW, TARGETS, pressReturnOnSimulatorKeyboard, startBrowser, typeOnSimulatorKeyboard } from './browsers.mjs';
+import {
+	DEFAULT_WINDOW, TARGETS, pressReturnOnSimulatorKeyboard, restartSimulatorSafari, startBrowser, typeOnSimulatorKeyboard,
+} from './browsers.mjs';
 import { FIXTURE_ONLY_HEADING, FIXTURE_ONLY_PATH } from './fixture.mjs';
 import { startServer } from './server.mjs';
 import { Keys, WebDriverError, pressKeys, tap, waitUntil } from './webdriver.mjs';
@@ -67,6 +69,10 @@ const THEMES = ['light', 'dark'];
 const MIN_TARGET_PX = 44;
 const MIN_OUTLINE_PX = 2;
 const MAX_TAB_PRESSES = 250;
+// Where taps can be lost (retryLostInput in browsers.mjs): how many times a
+// reader taps, and how long each tap but the last is given to take effect.
+const LOST_TAP_ATTEMPTS = 3;
+const LOST_TAP_WAIT_MS = 6_000;
 
 // The arrival notice, written out rather than taken from the site's own
 // version-switch.mjs, which is the code under test.
@@ -390,10 +396,19 @@ class Context {
 		await this.session.send('POST', '/frame', { id: element });
 	}
 
+	// On the iOS Simulator a navigation is sometimes never answered; the
+	// driver's command times out with the page still where it was, and asking
+	// once more loads it.
 	async go(urlPath, { base } = {}) {
 		await this.takePageErrors();
 		const href = this.abs(urlPath, base);
-		await this.session.navigate(href);
+		try {
+			await this.session.navigate(href);
+		} catch (error) {
+			if (!(this.flags.retryLostInput && error instanceof WebDriverError && error.code === 'client timeout')) throw error;
+			this.note(`the navigation to ${href} was not answered; it was asked for again`);
+			await this.session.navigate(href);
+		}
 		return this.settle();
 	}
 
@@ -431,6 +446,20 @@ class Context {
 			await tap(this.session, element);
 		} else {
 			await this.session.click(element);
+		}
+	}
+
+	// Taps `element` and waits until `done` returns something truthy, which is
+	// returned, or false after the wait, which after the last tap is
+	// lastWaitMs or waitUntil's default. Where taps can be lost, a tap after
+	// which `done` is still false is repeated.
+	async tapUntil(element, done, message, lastWaitMs = undefined) {
+		const taps = this.flags.retryLostInput ? LOST_TAP_ATTEMPTS : 1;
+		for (let tapAt = 1; ; tapAt += 1) {
+			await this.activate(element);
+			const result = await waitUntil(done, { timeoutMs: tapAt < taps ? LOST_TAP_WAIT_MS : lastWaitMs, message }).catch(() => false);
+			if (result || tapAt >= taps) return result;
+			this.note(`tap ${tapAt} did not bring ${message}; it was tapped again`);
 		}
 	}
 
@@ -475,23 +504,35 @@ class Context {
 
 	// Opens the selector by clicking or tapping its summary and waits until
 	// the version list is shown, or with { staticOnly } until loading ends.
+	// On the iOS Simulator a tap is sometimes lost; a reader whose tap did not
+	// open the selector taps it again, but never taps an open one, which
+	// would close it.
 	async openSelector({ staticOnly = false } = {}) {
 		const before = await this.countOpenings();
 		await this.revealSidebar();
 		const summary = await this.session.findElement('[data-version-select] summary');
-		await this.activate(summary);
-		return this.waitForList({ staticOnly, after: before });
+		const taps = this.flags.retryLostInput ? LOST_TAP_ATTEMPTS : 1;
+		for (let tapAt = 1; ; tapAt += 1) {
+			await this.activate(summary);
+			try {
+				return await this.waitForList({ staticOnly, after: before, timeoutMs: tapAt < taps ? LOST_TAP_WAIT_MS : undefined });
+			} catch (error) {
+				const state = await this.selector().catch(() => null);
+				if (tapAt >= taps || !state || state.open) throw error;
+				this.note(`tap ${tapAt} on the selector's summary did not open it; it was tapped again`);
+			}
+		}
 	}
 
 	// Waits for the list that the opening after `after` built: the page builds
 	// it again in the toggle event, which replaces any link found before it.
-	async waitForList({ staticOnly = false, after }) {
+	async waitForList({ staticOnly = false, after, timeoutMs }) {
 		const state = await waitUntil(async () => {
 			const current = await this.selector();
 			if (!current?.open || current.openings <= after || current.busy || current.checking) return null;
 			if (!staticOnly && !current.current) return null;
 			return current;
-		}, { message: staticOnly ? 'the selector to finish loading' : 'the selector to list the versions' });
+		}, { timeoutMs, message: staticOnly ? 'the selector to finish loading' : 'the selector to list the versions' });
 		this.expect(state.count === 1, `the page has ${state.count} version selectors, not one.`);
 		return state;
 	}
@@ -503,10 +544,25 @@ class Context {
 	}
 
 	// Follows a link the way a reader does and waits for the page it opens.
+	// Where taps can be lost, a tap after which the page is still where it
+	// was is repeated, as a reader would.
 	async follow(element, expectedHref, { leaving } = {}) {
 		await this.takePageErrors();
-		await this.activate(element);
-		return this.settle(expectedHref, { leaving });
+		if (!this.flags.retryLostInput) {
+			await this.activate(element);
+			return this.settle(expectedHref, { leaving });
+		}
+		const from = (await this.script(LOCATION))?.href;
+		for (let tapAt = 1; ; tapAt += 1) {
+			await this.activate(element);
+			try {
+				return await this.settle(expectedHref, { leaving, timeoutMs: tapAt < LOST_TAP_ATTEMPTS ? LOST_TAP_WAIT_MS : undefined });
+			} catch (error) {
+				const now = await this.script(LOCATION).catch(() => null);
+				if (tapAt >= LOST_TAP_ATTEMPTS || !now || now.href !== from) throw error;
+				this.note(`tap ${tapAt} on a link left the page at ${from}; it was tapped again`);
+			}
+		}
 	}
 
 	async switchTo(label, expectedHref) {
@@ -921,8 +977,7 @@ async function phoneLayout(context) {
 					checkTheme(context, overflow, theme, where);
 					checkOverflow(context, overflow, where);
 					const menu = await context.session.findElement('button.sl-menu-button');
-					await context.activate(menu);
-					const opened = await waitUntil(() => context.script(MENU_OPEN), { message: 'the phone menu to open' }).catch(() => false);
+					const opened = await context.tapUntil(menu, () => context.script(MENU_OPEN), 'the phone menu to open');
 					if (!context.expect(opened, `${where}: the menu button did not open the menu.`)) continue;
 					checkSelectorPlacement(context, await context.script(SIDEBAR_ORDER), where, 'phone menu');
 					const state = await context.openSelector();
@@ -1065,13 +1120,13 @@ async function releaseIndex(context) {
 	await context.hideSidebar();
 	// Where the driver cannot touch below the first screen (touchAtPagePoint
 	// in browsers.mjs, a WebKit bug), a link down there is not followed: its
-	// address and target were checked above, and the tap waits for the fix
-	// (SITE#5). Remove this when the driver touches where it is asked to.
+	// address and target were checked above, and the tap waits for WebKit's
+	// fix. Remove this when the driver touches where it is asked to.
 	if (context.flags.touchAtPagePoint) {
 		const place = await context.script(INTO_VIEW_FROM_TOP, [docsLink]);
 		if (place.scrollY > 0) {
 			context.note(`SKIPPED following ${OLDEST}'s documentation link: it is ${place.y} px down the page, below the first screen of `
-				+ `${place.height} px, where ${context.target}'s driver places no touch where it is asked to (WebKit bug, SITE#5)`);
+				+ `${place.height} px, where ${context.target}'s driver places no touch where it is asked to (WebKit bug)`);
 			return;
 		}
 	}
@@ -1084,13 +1139,18 @@ async function releaseIndex(context) {
 async function openSearch(context) {
 	const button = await context.session.findElement('site-search button[data-open-modal]');
 	await waitUntil(async () => !(await context.session.elementProperty(button, 'disabled')), { message: 'search to be enabled' });
-	await context.activate(button);
-	const input = await waitUntil(async () => {
+	const input = await context.tapUntil(button, async () => {
 		const found = await context.session.findElements('site-search dialog[open] .pagefind-ui__search-input');
 		return found[0] ?? null;
-	}, { timeoutMs: 15_000, message: 'the search box' });
-	// On a phone a reader taps the box before typing into it.
-	if (context.flags.phone) await context.activate(input);
+	}, 'the search box', 15_000);
+	if (!input) throw new Error('The search button did not open the search box.');
+	// On a phone a reader taps the box before typing into it, and taps again
+	// if the box did not take focus: text typed then would go elsewhere.
+	if (context.flags.phone) {
+		const focused = await context.tapUntil(input, () => context.script('return document.activeElement === arguments[0];', [input]),
+			'the search box to take focus', 5_000);
+		if (!focused) throw new Error('Tapping the search box did not give it focus.');
+	}
 	return input;
 }
 
@@ -1161,7 +1221,10 @@ async function searchPerVersion(context) {
 		const shared = await search(context, label, SHARED_TITLE);
 		context.expect(shared.count > 0, `${label}: search for "${SHARED_TITLE}" found nothing.`);
 		context.expect(shared.all.length === shared.count, `${label}: the index gave ${shared.all.length} results, the box said ${shared.count}.`);
-		context.expect(shared.links.some((link) => link.href.split('#')[0] === `${prefix}${SHARED_PAGE}`),
+		// Every result, not only those the box shows: it fills its rows as
+		// each page's data arrives, so the first rows shown need not be the
+		// best matches yet.
+		context.expect(shared.all.some((href) => href.split('#')[0] === `${prefix}${SHARED_PAGE}`),
 			`${label}: search for "${SHARED_TITLE}" did not find ${prefix}${SHARED_PAGE}.`);
 		const outside = [...shared.links, ...shared.all.map((href) => ({ href }))].filter((link) => !inVersion(link));
 		context.expect(outside.length === 0, `${label}: results outside the version: ${outside.map((link) => link.href).join(', ')}.`);
@@ -1551,6 +1614,28 @@ function seconds(ms) {
 	return `${(ms / 1000).toFixed(1)} s`;
 }
 
+// Runs one check once, setting result.status (and result.reason for a skip)
+// and leaving its failures in context.failures.
+async function runCheck(check, context, result) {
+	try {
+		await restoreWindow(context);
+		await context.drainConsole();
+		await check.run(context);
+		await context.takePageErrors();
+		const errors = [...context.pageErrors, ...(await context.consoleErrors())];
+		for (const error of errors) context.failures.push(`page error: ${error}`);
+		result.status = context.failures.length ? 'fail' : 'pass';
+	} catch (error) {
+		if (error instanceof Skip) {
+			result.status = 'skip';
+			result.reason = error.message;
+		} else {
+			result.status = 'fail';
+			context.failures.push(error instanceof Error ? error.message : String(error));
+		}
+	}
+}
+
 // The cleanups of runs in progress, for a signal to call.
 const running = new Set();
 
@@ -1599,23 +1684,28 @@ export async function runSuite(options, { write = (line) => process.stdout.write
 			if (cleaned) break;
 			const started = Date.now();
 			const result = { id: check.id, name: check.name };
-			context.reset();
-			try {
-				await restoreWindow(context);
-				await context.drainConsole();
-				await check.run(context);
-				await context.takePageErrors();
-				const errors = [...context.pageErrors, ...(await context.consoleErrors())];
-				for (const error of errors) context.failures.push(`page error: ${error}`);
-				result.status = context.failures.length ? 'fail' : 'pass';
-			} catch (error) {
-				if (error instanceof Skip) {
-					result.status = 'skip';
-					result.reason = error.message;
-				} else {
-					result.status = 'fail';
-					context.failures.push(error instanceof Error ? error.message : String(error));
+			const runs = context.flags.retryLostInput ? 2 : 1;
+			for (let run = 1; run <= runs; run += 1) {
+				const earlier = run > 1 ? { failures: context.failures, details: context.details } : null;
+				context.reset();
+				if (earlier) {
+					context.note(`run 1 failed and the check was run again: ${earlier.failures.join(' | ')}`);
+					for (const detail of earlier.details) context.note(`run 1: ${detail}`);
+					// A failed run can leave the Simulator's Safari taking no
+					// taps, so the second runs in a new session of a restarted
+					// Safari.
+					if (browser.device) {
+						await browser.stop();
+						await restartSimulatorSafari(browser.device.udid, log);
+						browser = await startBrowser(options.target, { driver: options.driver, binary: options.browser, udid: browser.device.udid, log });
+						context.session = browser.session;
+						context.frame = null;
+						context.note('the second run used a new session of a restarted Safari');
+					}
 				}
+				await runCheck(check, context, result);
+				result.runs = run;
+				if (result.status !== 'fail' || cleaned) break;
 			}
 			// What the browser showed when a check failed, beside the report.
 			if (result.status === 'fail' && options.report) {
@@ -1630,7 +1720,8 @@ export async function runSuite(options, { write = (line) => process.stdout.write
 			result.details = context.details;
 			result.durationMs = Date.now() - started;
 			results.push(result);
-			const head = `${result.status.toUpperCase()} ${check.id} ${check.name} (${seconds(result.durationMs)})`;
+			const again = result.runs > 1 ? ', on its second run' : '';
+			const head = `${result.status.toUpperCase()} ${check.id} ${check.name} (${seconds(result.durationMs)}${again})`;
 			if (result.status === 'skip') write(`${head}: ${result.reason}`);
 			else if (result.status === 'fail') write(`${head}:\n${result.failures.map((failure) => `    - ${failure}`).join('\n')}`);
 			else write(head);
