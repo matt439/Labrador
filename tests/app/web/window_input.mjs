@@ -163,6 +163,14 @@ export async function drive_window(page, input) {
 		}
 		console.log(`ok ${step} - ${what}`);
 	};
+	// A step whose checks are `run`'s own: it is handed `what`, to name in a
+	// failure as `step ${step}, ${what}`, and the ok line names it the same.
+	const pass = async (what, run) => {
+		step++;
+		const result = await run(what);
+		console.log(`ok ${step} - ${what}`);
+		return result;
+	};
 
 	const { move, press, release, wheel, key, touch } = input;
 
@@ -336,35 +344,29 @@ export async function drive_window(page, input) {
 
 	await input.touch_begin();
 	await touch('touchStart', [[120, 70, 0]]);
-	step++;
-	const [one] = touches('a touch goes down and focuses the canvas', await take(),
-		[['touch_down', null, 100, 50], 'keyboard_gained']);
-	console.log(`ok ${step} - a touch goes down and focuses the canvas`);
+	const [one] = await pass('a touch goes down and focuses the canvas', async (what) =>
+		touches(what, await take(), [['touch_down', null, 100, 50], 'keyboard_gained']));
 
 	await touch('touchStart', [[120, 70, 0], [220, 120, 1]]);
-	step++;
-	const [two] = touches('a second finger is a second point', await take(),
-		[['touch_down', null, 200, 100]]);
-	if (two === one) {
-		throw new Error(`step ${step}: the second finger has the first's point, ${one}`);
-	}
-	console.log(`ok ${step} - a second finger is a second point`);
+	const [two] = await pass('a second finger is a second point', async (what) => {
+		const points = touches(what, await take(), [['touch_down', null, 200, 100]]);
+		if (points[0] === one) {
+			throw new Error(`step ${step}: the second finger has the first's point, ${one}`);
+		}
+		return points;
+	});
 
 	// A browser delivers pointer moves with the next frame rather than as
 	// they come, as it does a mouse's.
 	await touch('touchMove', [[130, 70, 0], [220, 130, 1]]);
 	await frames(2);
-	step++;
-	touches('both move, in whichever order the browser sends them',
-		(await take()).sort(by_point((entry) => entry.split(' ')[1])),
-		[['touch_move', one, 110, 50], ['touch_move', two, 200, 110]]
-			.sort(by_point((want) => want[1])));
-	console.log(`ok ${step} - both move`);
+	await pass('both move, in whichever order the browser sends them', async (what) =>
+		touches(what, (await take()).sort(by_point((entry) => entry.split(' ')[1])),
+			[['touch_move', one, 110, 50], ['touch_move', two, 200, 110]]
+				.sort(by_point((want) => want[1]))));
 	await touch('touchEnd', [[130, 70, 0]]);
-	step++;
-	touches('the first lifts, keeping its point', await take(),
-		[['touch_up', one, 110, 50], ['touch_cancel', one]]);
-	console.log(`ok ${step} - the first lifts, keeping its point`);
+	await pass('the first lifts, keeping its point', async (what) =>
+		touches(what, await take(), [['touch_up', one, 110, 50], ['touch_cancel', one]]));
 	if (input.cancels_touch) {
 		await touch('touchCancel', []);
 		// Twice: pointercancel, then the capture it lost, which Touch ignores
@@ -375,19 +377,16 @@ export async function drive_window(page, input) {
 		// No cancel to send: the second lifts as the first did, so that the
 		// tap below starts with no finger down.
 		await touch('touchEnd', [[220, 130, 1]]);
-		step++;
-		touches('the second lifts, keeping its point (no browser cancel to send)', await take(),
-			[['touch_up', two, 200, 110], ['touch_cancel', two]]);
-		console.log(`ok ${step} - the second lifts, keeping its point (no browser cancel to send)`);
+		await pass('the second lifts, keeping its point (no browser cancel to send)', async (what) =>
+			touches(what, await take(), [['touch_up', two, 200, 110], ['touch_cancel', two]]));
 	}
 
 	await touch('touchStart', [[120, 70, 2]]);
 	await touch('touchEnd', []);
 	await frames(3);
-	step++;
-	touches('a tap is a touch and nothing the mouse hears', await take(),
-		[['touch_down', null, 100, 50], ['touch_up', null, 100, 50], ['touch_cancel', null]]);
-	console.log(`ok ${step} - a tap is a touch and nothing the mouse hears`);
+	await pass('a tap is a touch and nothing the mouse hears', async (what) =>
+		touches(what, await take(),
+			[['touch_down', null, 100, 50], ['touch_up', null, 100, 50], ['touch_cancel', null]]));
 	await input.touch_end();
 
 	// FULL SCREEN, as the browser decides it.
@@ -395,18 +394,16 @@ export async function drive_window(page, input) {
 	await evaluate('document.getElementById("canvas").requestFullscreen().then(() => true)',
 		{ user_gesture: true });
 	await frames(3);
-	step++;
-	expect(`step ${step}, a granted request is reported`, without_sizes(await take()),
-		['fullscreen 1']);
-	console.log(`ok ${step} - a granted request is reported`);
+	await pass('a granted request is reported', async (what) =>
+		expect(`step ${step}, ${what}`, without_sizes(await take()), ['fullscreen 1']));
 	await evaluate('document.exitFullscreen().then(() => true)');
 	await frames(3);
-	step++;
-	const left = await take();
-	expect(`step ${step}, leaving is reported`, without_sizes(left), ['fullscreen 0']);
-	expect(`step ${step}, and the box is the page's again`,
-		left.filter((entry) => entry.startsWith('size ')).slice(-1), ['size 480 250']);
-	console.log(`ok ${step} - leaving is reported, and the box is the page's again`);
+	await pass('leaving is reported, and the box is the page\'s again', async (what) => {
+		const left = await take();
+		expect(`step ${step}, ${what}: leaving`, without_sizes(left), ['fullscreen 0']);
+		expect(`step ${step}, ${what}: the box`,
+			left.filter((entry) => entry.startsWith('size ')).slice(-1), ['size 480 250']);
+	});
 	await evaluate('document.getElementById("canvas").requestFullscreen().then(() => false, () => true)');
 	await frames(3);
 	await check('a refused request is reported on the next frame', ['fullscreen 0']);
@@ -414,24 +411,20 @@ export async function drive_window(page, input) {
 	// CLOSED: the page is told once, synchronously; the owner hears on_closed
 	// once, on a later task; and nothing else reaches the owner after it -
 	// no input, and no frame.
-	step++;
-	expect(`step ${step}, closing tells the page before the owner`,
-		await evaluate('Module._web_window_test_close(), JSON.stringify(Module.labradorWindowLog.splice(0))')
-			.then(JSON.parse), ['page quit']);
-	console.log(`ok ${step} - closing tells the page before the owner`);
+	await pass('closing tells the page before the owner', async (what) =>
+		expect(`step ${step}, ${what}`,
+			await evaluate('Module._web_window_test_close(), JSON.stringify(Module.labradorWindowLog.splice(0))')
+				.then(JSON.parse), ['page quit']));
 	await frames(2);
-	step++;
-	expect(`step ${step}, the owner hears on_closed once, after the page`, await raw(), ['closed']);
-	console.log(`ok ${step} - the owner hears on_closed once, after the page`);
+	await pass('the owner hears on_closed once, after the page', async (what) =>
+		expect(`step ${step}, ${what}`, await raw(), ['closed']));
 	await press(CANVAS);
 	await release(CANVAS);
 	await key('ArrowLeft');
 	await wheel(CANVAS, 0, 100);
 	await frames(3);
-	step++;
-	expect(`step ${step}, a closed window says nothing more, and ticks no more`,
-		await raw(), []);
-	console.log(`ok ${step} - a closed window says nothing more, and ticks no more`);
+	await pass('a closed window says nothing more, and ticks no more', async (what) =>
+		expect(`step ${step}, ${what}`, await raw(), []));
 
 	// FAILED: a second window on the canvas whose owner throws on a key. The
 	// page hears the error, then the owner hears on_closed once; nothing more.
@@ -442,9 +435,7 @@ export async function drive_window(page, input) {
 	await raw();
 	await key('ArrowLeft');
 	await frames(3);
-	step++;
-	expect(`step ${step}, a failure tells the page, then the owner hears on_closed`,
-		(await raw()).filter((entry) => entry !== 'tick'),
-		['page error web window test failure', 'closed']);
-	console.log(`ok ${step} - a failure tells the page, then the owner hears on_closed`);
+	await pass('a failure tells the page, then the owner hears on_closed', async (what) =>
+		expect(`step ${step}, ${what}`, (await raw()).filter((entry) => entry !== 'tick'),
+			['page error web window test failure', 'closed']));
 }

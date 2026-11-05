@@ -9,9 +9,15 @@ class FixtureSocket extends EventTarget {
 		this.sent = [];
 	}
 
-	send(text) { this.sent.push(JSON.parse(text)); }
+	send(text) {
+		if (this.refusing) { throw new Error(this.refusing); }
+		this.sent.push(JSON.parse(text));
+	}
 	reply(message) {
 		this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(message) }));
+	}
+	reply_text(text) {
+		this.dispatchEvent(new MessageEvent('message', { data: text }));
 	}
 }
 
@@ -94,4 +100,43 @@ test('missing browser identity fails by the command that returned it', async () 
 	const rejected = assert.rejects(browser_version(devtools), /Browser.getVersion.*product\/version/);
 	devtools.socket.reply({ id: 1, result: {} });
 	await rejected;
+});
+
+test('a command after the socket has closed refuses at once, naming its method', async () => {
+	const devtools = new DevTools('ws://fixture', FixtureSocket);
+	devtools.socket.dispatchEvent(new Event('close'));
+	await assert.rejects(devtools.send('Browser.close'), /^Error: Browser.close: the browser went away$/);
+	assert.deepEqual(devtools.socket.sent, []);
+	assert.equal(devtools.pending.size, 0);
+});
+
+test('a send the socket refuses names its method and leaves no waiter', async () => {
+	const devtools = new DevTools('ws://fixture', FixtureSocket);
+	devtools.socket.refusing = 'InvalidStateError: still connecting';
+	await assert.rejects(devtools.send('Target.getTargets'), /Target.getTargets: InvalidStateError: still connecting/);
+	assert.equal(devtools.pending.size, 0);
+});
+
+test('a command given a timeout refuses when no answer comes, and a late answer is dropped', async () => {
+	const devtools = new DevTools('ws://fixture', FixtureSocket);
+	await assert.rejects(devtools.send('Page.navigate', { url: 'http://page/' }, 'page-1', { timeout_ms: 5 }),
+		/Page.navigate: no answer within 5 ms/);
+	assert.equal(devtools.pending.size, 0);
+	devtools.socket.reply({ id: 1, result: {} });
+	const answered = devtools.send('Page.enable', {}, 'page-1', { timeout_ms: 60000 });
+	devtools.socket.reply({ id: 2, result: { enabled: true } });
+	assert.deepEqual(await answered, { enabled: true });
+});
+
+test('a malformed message or a throwing listener refuses waiting commands without escaping dispatch', async () => {
+	const devtools = new DevTools('ws://fixture', FixtureSocket);
+	const first = devtools.send('Runtime.enable', {}, 'page-1');
+	const malformed = assert.rejects(first, /Runtime.enable: malformed DevTools message/);
+	devtools.socket.reply_text('{ not json');
+	await malformed;
+	devtools.on(() => { throw new Error('listener broke'); });
+	const second = devtools.send('Log.enable', {}, 'page-1');
+	const thrown = assert.rejects(second, /Log.enable: DevTools event listener failed: listener broke/);
+	devtools.socket.reply({ method: 'Runtime.consoleAPICalled', sessionId: 'page-1', params: {} });
+	await thrown;
 });

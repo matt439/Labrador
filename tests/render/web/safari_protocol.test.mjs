@@ -1,7 +1,9 @@
 // run_safari.mjs's options, page hooks, classic WebDriver transport and run
 // control, against fixtures: no Safari, driver or network.
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { PRELUDE } from './bundle_page.mjs';
 import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
@@ -56,7 +58,7 @@ test('the hooks go at the top of the head, before the page\'s own scripts', () =
 
 test('the driver and session are Safari\'s unless Firefox is named', () => {
 	assert.deepEqual(driver_arguments('safari', 4444), ['-p', '4444']);
-	assert.deepEqual(driver_arguments('firefox', 4444), ['--port', '4444', '--host', '127.0.0.1']);
+	assert.deepEqual(driver_arguments('firefox', 4444), ['--port', '4444', '--host', '127.0.0.1', '--websocket-port', '0']);
 	assert.deepEqual(capabilities('safari'), { browserName: 'safari' });
 	assert.equal(capabilities('firefox')['moz:firefoxOptions'].args[0], '-headless');
 });
@@ -65,7 +67,7 @@ test('key actions hold each key, and an unknown key refuses', () => {
 	const [source] = key_actions(['Escape', 'KeyS'], { hold_ms: 7 });
 	assert.equal(source.type, 'key');
 	assert.deepEqual(source.actions, [
-		{ type: 'keyDown', value: '' }, { type: 'pause', duration: 7 }, { type: 'keyUp', value: '' },
+		{ type: 'keyDown', value: '\uE00C' }, { type: 'pause', duration: 7 }, { type: 'keyUp', value: '\uE00C' },
 		{ type: 'pause', duration: 7 }, { type: 'keyDown', value: 's' }, { type: 'pause', duration: 7 },
 		{ type: 'keyUp', value: 's' }, { type: 'pause', duration: 7 }]);
 	for (const sample of Object.values(SAMPLES)) key_actions(sample.keys);
@@ -83,35 +85,42 @@ test('Safari\'s Tab preference is read from the override, then its preferences, 
 	assert.equal(await safari_tabs_to_links({ env: {}, read: async () => null }), false);
 });
 
-function fake_fetch(replies) {
+// Stands in for the global fetch the acceptance suite's client calls.
+async function with_fetch(replies, body) {
 	const calls = [];
-	const fetch_ = async (url, init) => {
+	const real_fetch = globalThis.fetch;
+	globalThis.fetch = async (url, init) => {
 		calls.push({ url, method: init.method, body: init.body === undefined ? undefined : JSON.parse(init.body) });
 		const reply = replies.shift();
 		if (reply instanceof Error) throw reply;
 		return { ok: reply.status < 400, status: reply.status, text: async () => reply.text };
 	};
-	return { calls, fetch_ };
+	try {
+		await body(calls);
+	} finally {
+		globalThis.fetch = real_fetch;
+	}
 }
 
 test('a WebDriver command returns its value and names each kind of failure', async () => {
-	const { calls, fetch_ } = fake_fetch([
+	await with_fetch([
 		{ status: 200, text: '{"value":{"ready":true}}' },
 		{ status: 404, text: '{"value":{"error":"no such window","message":"gone"}}' },
 		{ status: 200, text: 'not json' },
 		Object.assign(new Error('slow'), { name: 'TimeoutError' }),
 		new Error('refused'),
 		{ status: 500, text: '{"value":null}' },
-	]);
-	assert.deepEqual(await webdriver_command('http://d', 'GET', '/status', undefined, { fetch_ }), { ready: true });
-	assert.deepEqual(calls[0], { url: 'http://d/status', method: 'GET', body: undefined });
-	await assert.rejects(webdriver_command('http://d', 'POST', '/x', { a: 1 }, { fetch_ }),
-		(error) => error instanceof WebDriverError && error.code === 'no such window' && /gone/.test(error.message));
-	assert.deepEqual(calls[1].body, { a: 1 });
-	await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined, { fetch_ }), /invalid response/);
-	await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined, { fetch_ }), /client timeout/);
-	await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined, { fetch_ }), /connection failed/);
-	await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined, { fetch_ }), /HTTP 500/);
+	], async (calls) => {
+		assert.deepEqual(await webdriver_command('http://d', 'GET', '/status', undefined), { ready: true });
+		assert.deepEqual(calls[0], { url: 'http://d/status', method: 'GET', body: undefined });
+		await assert.rejects(webdriver_command('http://d', 'POST', '/x', { a: 1 }),
+			(error) => error instanceof WebDriverError && error.code === 'no such window' && /gone/.test(error.message));
+		assert.deepEqual(calls[1].body, { a: 1 });
+		await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined), /not JSON/);
+		await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined), /client timeout/);
+		await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined), /connection failed/);
+		await assert.rejects(webdriver_command('http://d', 'GET', '/x', undefined), /HTTP 500/);
+	});
 });
 
 test('session commands are the W3C endpoints this runner needs', async () => {
@@ -319,9 +328,9 @@ test('the bundle steps\' DevTools calls become WebDriver actions, with Option he
 	assert.deepEqual(performed[0][0].actions, [{ type: 'pointerMove', x: 11, y: 20, origin: 'viewport' },
 		{ type: 'pointerDown', button: 0 }]);
 	assert.equal(performed[1][0].actions[1].type, 'pointerUp');
-	assert.deepEqual(performed[2][0].actions, [{ type: 'keyDown', value: '' }, { type: 'keyDown', value: '' }]);
-	assert.deepEqual(performed[3][0].actions, [{ type: 'keyUp', value: '' }, { type: 'keyUp', value: '' }]);
-	assert.deepEqual(performed[4][0].actions, [{ type: 'keyDown', value: '' }]);
+	assert.deepEqual(performed[2][0].actions, [{ type: 'keyDown', value: '\uE00A' }, { type: 'keyDown', value: '\uE004' }]);
+	assert.deepEqual(performed[3][0].actions, [{ type: 'keyUp', value: '\uE004' }, { type: 'keyUp', value: '\uE00A' }]);
+	assert.deepEqual(performed[4][0].actions, [{ type: 'keyDown', value: '\uE015' }]);
 	assert.deepEqual(navigated, ['http://page/?bundle-case=desktop']);
 	assert.equal(await page.evaluate('x'), 'value');
 	await assert.rejects(page.send('Browser.crashGpuProcess', {}), /no WebDriver translation/);
@@ -329,5 +338,12 @@ test('the bundle steps\' DevTools calls become WebDriver actions, with Option he
 	const plain = [];
 	await bundle_input({ perform: async (actions) => plain.push(actions) }, null)
 		.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Tab' });
-	assert.deepEqual(plain[0][0].actions, [{ type: 'keyDown', value: '' }]);
+	assert.deepEqual(plain[0][0].actions, [{ type: 'keyDown', value: '\uE004' }]);
+});
+
+test('a command line run_safari cannot run exits 2 with the reason and no stack', () => {
+	const run = spawnSync(process.execPath, [fileURLToPath(new URL('./run_safari.mjs', import.meta.url)), '--other', 'x'],
+		{ encoding: 'utf8', timeout: 30000 });
+	assert.equal(run.status, 2);
+	assert.match(run.stderr, /^run_safari: Invalid or duplicate argument --other\.\s*$/);
 });

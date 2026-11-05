@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import contextlib
 import io
+import subprocess
+import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ElementTree
@@ -55,6 +57,17 @@ class SandboxTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaises(SystemExit):
                 sandbox.write(Path(temporary), Path(temporary) / "results", "MyGame.exe", "Default")
+
+    def test_a_refusal_exits_2_with_its_reason_as_a_bad_command_line_does(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            result = subprocess.run(
+                [sys.executable, str(REPOSITORY / "tools/consumer_check/sandbox.py"), temporary,
+                 str(Path(temporary) / "results")],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn("has no MyGame.exe; stage the release with cmake --install first.", result.stderr)
+            self.assertFalse((Path(temporary) / "results").exists())
 
 
 if __name__ == "__main__":

@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
 import { FACTORY_WRAPPER, PRELUDE } from './bundle_page.mjs';
 import { SAMPLES, SAMPLE_HOOK, WINDOW_HOOK, bidi_endpoint, bundle_input, bundle_substitute, drive_bundle,
 	drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox, parse_options,
-	window_input } from './run_firefox.mjs';
+	remove_stale_profiles, window_input } from './run_firefox.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -275,11 +280,11 @@ test('preload preserves callbacks and observes real-method submission calls only
 	const context = vm.createContext({ WebGL2RenderingContext: SyntheticContext });
 	context.window = context;
 	vm.runInContext(`(${SAMPLE_HOOK})()`, context);
-	const callbackCalls = [];
+	const callback_calls = [];
 	const canvas = {};
 	const module = { canvas };
 	for (const name of ['onRuntimeInitialized', 'onQuit', 'onError']) {
-		module[name] = function (...args) { callbackCalls.push({ name, receiver: this, args }); return 42; };
+		module[name] = function (...args) { callback_calls.push({ name, receiver: this, args }); return 42; };
 	}
 	context.Module = module;
 	context.Module = module;
@@ -303,9 +308,9 @@ test('preload preserves callbacks and observes real-method submission calls only
 	assert.equal(heard.elements, 12);
 	assert.equal(heard.raw_api, 'synthetic version');
 	assert.equal(heard.raw_renderer, 'synthetic renderer');
-	assert.equal(callbackCalls.length, 3);
-	assert.equal(callbackCalls[0].receiver, module);
-	assert.deepEqual(callbackCalls[2].args, ['fixture error']);
+	assert.equal(callback_calls.length, 3);
+	assert.equal(callback_calls[0].receiver, module);
+	assert.deepEqual(callback_calls[2].args, ['fixture error']);
 	assert.equal(calls[1].receiver, gl);
 	assert.deepEqual(calls[1].args, [4, 12, 5123, 0]);
 	const missing = {};
@@ -646,4 +651,42 @@ test('bundle control installs the prelude, loads the page and fails on a complai
 	context.window = context;
 	vm.runInContext(`(${calls[1].params.functionDeclaration})()`, context);
 	assert.deepEqual(JSON.parse(JSON.stringify(context.labradorBundle)), { runs: [], contexts: [], memories: [] });
+});
+
+test('a command line run_firefox cannot run exits 2 with the reason and no stack', () => {
+	const run = spawnSync(process.execPath, [fileURLToPath(new URL('./run_firefox.mjs', import.meta.url)), '--page', 'x'],
+		{ encoding: 'utf8', timeout: 30000 });
+	assert.equal(run.status, 2);
+	assert.match(run.stderr, /^run_firefox: Invalid or duplicate argument --page\.\s*$/);
+});
+
+test('a retained profile older than a day is removed when a later run starts, and nothing else is', () => {
+	const directory = mkdtempSync(join(tmpdir(), 'labrador-profile-fixture-'));
+	try {
+		const day = 24 * 60 * 60 * 1000;
+		const now = Date.now();
+		const make = (name, age_ms, folder = true) => {
+			const path = join(directory, name);
+			if (folder) {
+				mkdirSync(path);
+				writeFileSync(join(path, 'prefs.js'), 'user_pref("fixture", true);');
+			} else {
+				writeFileSync(path, 'not a profile');
+			}
+			const when = new Date(now - age_ms);
+			utimesSync(path, when, when);
+			return path;
+		};
+		const stale = make('labrador-firefox-old', 2 * day);
+		const young = make('labrador-firefox-running', 60 * 1000);
+		const other = make('labrador-browser-old', 2 * day);
+		const file = make('labrador-firefox-file', 2 * day, false);
+		const lines = [];
+		assert.deepEqual(remove_stale_profiles(directory, { now, log: (line) => lines.push(line) }), [stale]);
+		assert.equal(existsSync(stale), false);
+		for (const kept of [young, other, file]) assert.equal(existsSync(kept), true);
+		assert.match(lines[0], /Removed a retained Firefox profile from an earlier run/);
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
 });

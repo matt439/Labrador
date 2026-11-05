@@ -68,29 +68,34 @@ namespace
 	}
 }
 
+// A command line it cannot run exits 2 with the reason, before anything
+// starts; a run that fails exits 1 with the reason.
 int main(int argc, char* argv[])
 {
+	std::uint64_t iterations = 1000000;
+	if (argc > 2)
+	{
+		std::fprintf(stderr, "Usage: D3D12DescriptorQueryProbe [iterations]\n");
+		return 2;
+	}
+	if (argc == 2)
+	{
+		char* end = nullptr;
+		errno = 0;
+		iterations = std::strtoull(argv[1], &end, 10);
+		if (errno != 0 || end == argv[1] || *end != '\0' ||
+			iterations == 0 || iterations > 100000000)
+		{
+			std::fprintf(stderr,
+				"D3D12DescriptorQueryProbe refused: iterations must be between 1 and 100000000\n");
+			return 2;
+		}
+	}
 	try
 	{
 		if (!release_build())
 		{
 			throw std::runtime_error("D3D12DescriptorQueryProbe requires Release");
-		}
-		std::uint64_t iterations = 1000000;
-		if (argc > 2)
-		{
-			throw std::invalid_argument("Usage: D3D12DescriptorQueryProbe [iterations]");
-		}
-		if (argc == 2)
-		{
-			char* end = nullptr;
-			errno = 0;
-			iterations = std::strtoull(argv[1], &end, 10);
-			if (errno != 0 || end == argv[1] || *end != '\0' ||
-				iterations == 0 || iterations > 100000000)
-			{
-				throw std::invalid_argument("iterations must be between 1 and 100000000");
-			}
 		}
 		render_tests::TestWindow window(320, 200);
 		labrador::Renderer renderer;

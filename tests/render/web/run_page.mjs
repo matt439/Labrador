@@ -1,5 +1,6 @@
 // Runs one page of a browser build in headless Chromium, and exits with its
-// exit code.
+// exit code. A command line it cannot run exits 2, with the usage below,
+// before anything is started.
 //
 //   node run_page.mjs --browser <chrome> --page <dir/Name.html>
 //                     [--collect <folder in the page's file system>]
@@ -118,39 +119,52 @@ import { mkdtempSync, rmSync, readFileSync, statSync, mkdirSync, writeFileSync }
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { CONTENT_TYPES } from '../../../website/acceptance/server.mjs';
 import { DevTools, browser_version } from './devtools.mjs';
+import { exited, module_hook } from './page_harness.mjs';
 import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 
-const options = parse_arguments(process.argv.slice(2));
-const page_path = resolve(options.page);
-const root = options.root === undefined ? dirname(page_path) : resolve(options.root);
-if (!page_path.startsWith(root + sep)) {
-	fail_usage(`--page ${page_path} is not inside --root ${root}`);
+// The run's options, and the paths and deadline that follow from them: set
+// from the command line at the bottom of this file, before run() starts.
+let options;
+let root;
+let page_name;
+let timeout_ms;
+
+// Every option either form takes. Any other name is refused rather than
+// ignored, so a misspelt option reaches the usage message.
+const OPTION_NAMES = new Set(['browser', 'page', 'collect', 'timeout', 'browser-warnings',
+	'hide-extension', 'input', 'quit-keys', 'frames', 'sample-input', 'emulate-media',
+	'expect-console', 'root']);
+
+export const USAGE =
+	'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
+	'[--collect <folder>] [--timeout <seconds>] ' +
+	'[--browser-warnings fail] [--hide-extension <name>] ' +
+	'[--input <script.mjs>]\n' +
+	'       node run_page.mjs --browser <chrome> --page <file.html> ' +
+	'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>] ' +
+	'[--sample-input fixed-step]\n' +
+	'  either form: [--emulate-media <feature>=<value>] [--expect-console <text>] ' +
+	'[--root <folder>]\n';
+
+// A command line the runner cannot run: it exits 2 with USAGE, before
+// anything is started.
+export class UsageError extends Error {}
+
+function fail_usage(why) {
+	throw new UsageError(why);
 }
-// The page's path under the served root, as a URL path.
-const page_name = relative(root, page_path).split(sep).map(encodeURIComponent).join('/');
-const timeout_ms = Number(options.timeout ?? 300) * 1000;
 
-const MEDIA_TYPES = {
-	'.html': 'text/html; charset=utf-8',
-	'.js': 'text/javascript; charset=utf-8',
-	'.mjs': 'text/javascript; charset=utf-8',
-	'.wasm': 'application/wasm',
-	'.data': 'application/octet-stream',
-	'.json': 'application/json',
-	'.png': 'image/png',
-	'.svg': 'image/svg+xml',
-	'.woff2': 'font/woff2',
-	'.mp4': 'video/mp4',
-	'.txt': 'text/plain; charset=utf-8',
-};
-
-function parse_arguments(argv) {
+export function parse_arguments(argv) {
 	const parsed = {};
 	for (let i = 0; i < argv.length; i += 2) {
 		if (!argv[i].startsWith('--') || i + 1 >= argv.length) {
 			fail_usage(`unexpected argument "${argv[i]}"`);
+		}
+		if (!OPTION_NAMES.has(argv[i].slice(2))) {
+			fail_usage(`unknown option ${argv[i]}`);
 		}
 		parsed[argv[i].slice(2)] = argv[i + 1];
 	}
@@ -187,26 +201,27 @@ function parse_arguments(argv) {
 		fail_usage('--sample-input fixed-step requires --quit-keys and a development-page input hook');
 	}
 	parsed.sampled_input = parsed['sample-input'] === 'fixed-step';
+	if (parsed['emulate-media'] !== undefined) {
+		const [name, value] = parsed['emulate-media'].split('=');
+		if (!name || value === undefined) {
+			fail_usage(`--emulate-media takes <feature>=<value>, not "${parsed['emulate-media']}"`);
+		}
+		parsed.media = { name, value };
+	}
+	parsed.page_path = resolve(parsed.page);
+	parsed.root_path = parsed.root === undefined ? dirname(parsed.page_path) : resolve(parsed.root);
+	if (!parsed.page_path.startsWith(parsed.root_path + sep)) {
+		fail_usage(`--page ${parsed.page_path} is not inside --root ${parsed.root_path}`);
+	}
+	// The page's path under the served root, as a URL path.
+	parsed.page_name = relative(parsed.root_path, parsed.page_path).split(sep).map(encodeURIComponent).join('/');
+	parsed.timeout_ms = Number(parsed.timeout ?? 300) * 1000;
 	return parsed;
-}
-
-function fail_usage(why) {
-	process.stderr.write(`run_page: ${why}\n` +
-		'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
-		'[--collect <folder>] [--timeout <seconds>] ' +
-		'[--browser-warnings fail] [--hide-extension <name>] ' +
-		'[--input <script.mjs>] [--root <folder>]\n' +
-		'       node run_page.mjs --browser <chrome> --page <file.html> ' +
-		'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>] ' +
-		'[--sample-input fixed-step]\n');
-	process.exit(2);
 }
 
 // What Input.dispatchKeyEvent needs for a KeyboardEvent.code: the key it
 // types and the Windows virtual-key code, which is how Chromium tells the
-// keys apart. The keys a sample's way out uses, and the letters. The table is
-// inside the function because the arguments are parsed, and this asked,
-// before the module's own top-level constants exist.
+// keys apart. The keys a sample's way out uses, and the letters.
 function key_event(code) {
 	const named = {
 		Escape: { key: 'Escape', vk: 27 },
@@ -247,7 +262,7 @@ function serve(directory) {
 				throw new Error('not a file');
 			}
 			response.writeHead(200, {
-				'Content-Type': MEDIA_TYPES[extname(file)] ?? 'application/octet-stream',
+				'Content-Type': CONTENT_TYPES[extname(file)] ?? 'application/octet-stream',
 				'Cache-Control': 'no-store',
 			});
 			response.end(readFileSync(file));
@@ -277,25 +292,23 @@ function launch(browser, profile) {
 		'about:blank',
 	], { stdio: ['ignore', 'ignore', 'pipe'] });
 
+	// The last 16 KiB the browser wrote to stderr: where its endpoint is
+	// found, and what a failure reports.
 	let stderr_tail = '';
-	child.stderr.on('data', (chunk) => {
-		stderr_tail = (stderr_tail + chunk.toString()).slice(-16384);
-	});
 	const diagnostics = () => `pid=${child.pid ?? 'unavailable'}, ` +
 		`exit=${child.exitCode ?? 'not reported'}, signal=${child.signalCode ?? 'none'}\n` +
 		`last browser stderr (at most 16 KiB):\n${stderr_tail || '(empty)'}\n`;
 	const endpoint = new Promise((found, refused) => {
-		let seen = '';
 		child.stderr.on('data', (chunk) => {
-			seen = (seen + chunk.toString()).slice(-16384);
-			const match = seen.match(/DevTools listening on (ws:\/\/\S+)/);
+			stderr_tail = (stderr_tail + chunk.toString()).slice(-16384);
+			const match = stderr_tail.match(/DevTools listening on (ws:\/\/\S+)/);
 			if (match) {
 				found(match[1]);
 			}
 		});
 		child.on('error', refused);
 		child.on('exit', (code) => refused(new Error(
-			`the browser exited (${code}) before it was listening:\n${seen}`)));
+			`the browser exited (${code}) before it was listening:\n${stderr_tail}`)));
 	});
 	return { child, endpoint, diagnostics };
 }
@@ -397,52 +410,17 @@ const RENDERER_EXPRESSION = `(() => {
 		: gl.getParameter(gl.RENDERER);
 })()`;
 
-// Evaluated in a sample's page before any of its own scripts. The page
-// declares `var Module = {...}` and the loader re-reads it, so an accessor on
-// window sees the object the moment it is assigned, with its callbacks
-// already in it, and wraps each before the loader can read it. What the
-// wrappers hear is in window.labradorRun.
-const SAMPLE_HOOK = `(() => {
+// Evaluated in a sample's page before any of its own scripts: module_hook
+// (page_harness.mjs) says how it hears the page's Module. What it hears is in
+// window.labradorRun, with the input protocol's state for --sample-input.
+function sample_hook(sampled_input) {
+	return `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false };
-	heard.input = ${options.sampled_input ? SAMPLE_INPUT_HOOK : 'undefined'};
+	heard.input = ${sampled_input ? SAMPLE_INPUT_HOOK : 'undefined'};
 	window.labradorRun = heard;
-	let module;
-	const hook = (value) => {
-		if (value === null || typeof value !== 'object' || value.labradorRunHooked) {
-			return;
-		}
-		Object.defineProperty(value, 'labradorRunHooked', { value: true });
-		if (heard.input) { value.labradorTestInput = heard.input; }
-		const initialized = value.onRuntimeInitialized;
-		value.onRuntimeInitialized = function () {
-			heard.initialized = true;
-			if (typeof initialized === 'function') {
-				return initialized.apply(this, arguments);
-			}
-		};
-		const quit = value.onQuit;
-		heard.has_quit = typeof quit === 'function';
-		if (heard.has_quit) {
-			value.onQuit = function () {
-				heard.quit = true;
-				return quit.apply(this, arguments);
-			};
-		}
-		const error = value.onError;
-		value.onError = function (message) {
-			heard.errors.push(String(message));
-			if (typeof error === 'function') {
-				return error.apply(this, arguments);
-			}
-		};
-	};
-	Object.defineProperty(window, 'Module', {
-		configurable: true,
-		enumerable: true,
-		get() { return module; },
-		set(value) { module = value; hook(value); },
-	});
+	${module_hook('labradorRunHooked', 'if (heard.input) { value.labradorTestInput = heard.input; }')}
 })()`;
+}
 
 function frames_expression(count) {
 	return `new Promise((done) => {
@@ -565,12 +543,21 @@ async function run() {
 			wait(10000).then(() => { throw new Error('Browser.getVersion did not answer within 10 s'); }),
 		]);
 
-		const { targetInfos } = await devtools.send('Target.getTargets');
+		// ONE DEADLINE FROM HERE, the setup included: a browser that stops
+		// answering while its page is attached, enabled, prepared or
+		// navigated fails the run in the time a page that never finishes
+		// does, rather than holding it until ctest's own timeout.
+		const deadline = Date.now() + timeout_ms;
+		const left = () => Math.max(1, deadline - Date.now());
+		const setup = (method, params = {}, session_id = undefined) =>
+			devtools.send(method, params, session_id, { timeout_ms: left() });
+
+		const { targetInfos } = await setup('Target.getTargets');
 		const page = targetInfos.find((target) => target.type === 'page');
 		if (!page) {
 			throw new Error('the browser opened no page');
 		}
-		const { sessionId: session } = await devtools.send('Target.attachToTarget',
+		const { sessionId: session } = await setup('Target.attachToTarget',
 			{ targetId: page.targetId, flatten: true });
 		const page_api = {
 			evaluate: (expression, { user_gesture = false } = {}) =>
@@ -623,35 +610,36 @@ async function run() {
 				}
 			}
 		});
-		await devtools.send('Inspector.enable', {}, session);
-		await devtools.send('Runtime.enable', {}, session);
-		await devtools.send('Log.enable', {}, session);
-		await devtools.send('Page.enable', {}, session);
-		if (input_driver?.prepare) { await input_driver.prepare(page_api); }
-		if (options['emulate-media']) {
-			const [name, value] = options['emulate-media'].split('=');
-			if (!name || value === undefined) {
-				fail_usage(`--emulate-media takes <feature>=<value>, not "${options['emulate-media']}"`);
-			}
-			await devtools.send('Emulation.setEmulatedMedia',
+		await setup('Inspector.enable', {}, session);
+		await setup('Runtime.enable', {}, session);
+		await setup('Log.enable', {}, session);
+		await setup('Page.enable', {}, session);
+		if (input_driver?.prepare) {
+			await Promise.race([input_driver.prepare(page_api), wait(left()).then(() => {
+				throw new Error(`the input driver's prepare did not finish within ${timeout_ms / 1000} s`);
+			})]);
+		}
+		if (options.media) {
+			const { name, value } = options.media;
+			await setup('Emulation.setEmulatedMedia',
 				{ features: [{ name, value }] }, session);
 			process.stdout.write(`run_page: emulating ${name}: ${value}\n`);
 		}
 		if (options['hide-extension']) {
-			await devtools.send('Page.addScriptToEvaluateOnNewDocument', {
+			await setup('Page.addScriptToEvaluateOnNewDocument', {
 				source: hide_extension_script(options['hide-extension']),
 			}, session);
 			process.stdout.write(`run_page: hiding ${options['hide-extension']} from the page\n`);
 		}
 		if (options.keys) {
-			await devtools.send('Page.addScriptToEvaluateOnNewDocument',
-				{ source: SAMPLE_HOOK }, session);
+			await setup('Page.addScriptToEvaluateOnNewDocument',
+				{ source: sample_hook(options.sampled_input) }, session);
 			// A headless page is never the focused window, and a key goes to
 			// the focused element of a focused window or nowhere.
-			await devtools.send('Emulation.setFocusEmulationEnabled',
+			await setup('Emulation.setFocusEmulationEnabled',
 				{ enabled: true }, session);
 		}
-		await devtools.send('Page.navigate', { url }, session);
+		await setup('Page.navigate', { url }, session);
 
 		// The navigation commits before the page's first script runs, so the
 		// promise is waited for until it exists and then awaited. ONE DEADLINE
@@ -696,7 +684,7 @@ async function run() {
 		const outcome = await Promise.race([
 			page_end,
 			driven,
-			wait(timeout_ms).then(() => ({ timeout: true })),
+			wait(left()).then(() => ({ timeout: true })),
 		]);
 
 		if (outcome.timeout) {
@@ -780,8 +768,9 @@ async function run() {
 		if (devtools) {
 			await Promise.race([devtools.send('Browser.close').catch(() => {}), wait(3000)]);
 		}
-		await Promise.race([new Promise((done) => child.once('exit', done)), wait(5000)]);
-		if (child.exitCode === null) {
+		// A browser that has already gone, crashed or refused its endpoint,
+		// is not waited for: its 'exit' has been and will not come again.
+		if (!(await exited(child, 5000))) {
 			child.kill();
 		}
 		server.close();
@@ -799,4 +788,14 @@ async function run() {
 	return exit_code;
 }
 
-process.exit(await run());
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+	try {
+		options = parse_arguments(process.argv.slice(2));
+	} catch (error) {
+		if (!(error instanceof UsageError)) { throw error; }
+		process.stderr.write(`run_page: ${error.message}\n${USAGE}`);
+		process.exit(2);
+	}
+	({ root_path: root, page_name, timeout_ms } = options);
+	process.exit(await run());
+}

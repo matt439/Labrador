@@ -117,6 +117,9 @@ if(PROJECT_IS_TOP_LEVEL)
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/sample_input_bridge.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/bundle_host.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/safari_protocol.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/page_harness.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.test.mjs"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/page_wait.test.mjs"
         )
 
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium
@@ -203,6 +206,9 @@ if(PROJECT_IS_TOP_LEVEL)
         endfunction()
         # A sample's development page, quit by its own keys. Arguments after
         # quit_keys are passed to the runner as they are.
+        # Firefox and Safari press each sample's keys from SAMPLES in
+        # tests/render/web/page_harness.mjs; page_harness.test.mjs fails
+        # when an entry below and that table disagree.
         function(labrador_sample_page_test name target quit_keys)
             labrador_page_test(${name} PAGE "$<TARGET_FILE:${target}>"
                 ARGS --quit-keys "${quit_keys}" ${ARGN})

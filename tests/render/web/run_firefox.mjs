@@ -28,30 +28,17 @@
 // https://w3c.github.io/webdriver-bidi/#command-browsingContext-setViewport
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { lstatSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drive_window, expected_complaint as window_expected_complaint } from '../../app/web/window_input.mjs';
-import { FACTORY_WRAPPER, PRELUDE, READY, bundle_state, steps } from './bundle_page.mjs';
+import { BUNDLE_FILES, BUNDLE_KEYS, PRELUDE, READY, bundle_state, bundle_substitute, steps } from './bundle_page.mjs';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
+import { SAMPLES, WEBDRIVER_CONTROL, close_server, deadline_after, exited, frames_expression, key_actions,
+	key_table, module_hook, serve_files } from './page_harness.mjs';
 
-export const SAMPLES = Object.freeze({
-	// The pause menu: RESUME, RESTART, COLOURS, QUIT.
-	linesweeper: { target: 'LineSweeperSample', keys: ['Escape', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'Enter'] },
-	minimal: { target: 'MinimalSample', keys: ['Escape', 'Enter'] },
-	collision: { target: 'CollisionSample', keys: ['Escape'] },
-	audio: { target: 'AudioSample', keys: ['KeyS', 'Escape'] },
-	local_multiplayer: { target: 'LocalMultiplayerSample', keys: ['Escape'] },
-	// The keys ComponentsPageTests presses: a browser can take the first
-	// Escape to leave full screen, so a second one quits the gallery.
-	components: { target: 'ComponentsGallery',
-		keys: ['ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'KeyR', 'Escape', 'Escape'] },
-});
-
-const KEY_VALUES = Object.freeze({ Escape: '\uE00C', Enter: '\uE007', KeyS: 's', KeyR: 'r',
-	ArrowLeft: '\uE012', ArrowUp: '\uE013', ArrowRight: '\uE014', ArrowDown: '\uE015' });
+export { SAMPLES, bundle_substitute, key_actions };
 
 export function parse_options(arguments_) {
 	const options = {};
@@ -107,33 +94,7 @@ export const SAMPLE_HOOK = `() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false,
 		clears: 0, draw_calls: 0, elements: 0, raw_api: null, raw_renderer: null };
 	window.labradorFirefox = heard;
-	let module;
-	Object.defineProperty(window, 'Module', {
-		configurable: true, enumerable: true,
-		get() { return module; },
-		set(value) {
-			module = value;
-			if (!value || typeof value !== 'object' || value.labradorFirefoxHooked) return;
-			Object.defineProperty(value, 'labradorFirefoxHooked', { value: true });
-			for (const [name, flag] of [['onRuntimeInitialized', 'initialized'], ['onQuit', 'quit']]) {
-				const original = value[name];
-				if (name === 'onQuit') {
-					heard.has_quit = typeof original === 'function';
-					if (!heard.has_quit) continue;
-				}
-				value[name] = function (...args) {
-					const result = typeof original === 'function' ? original.apply(this, args) : undefined;
-					heard[flag] = true;
-					return result;
-				};
-			}
-			const original = value.onError;
-			value.onError = function (message, ...args) {
-				heard.errors.push(String(message));
-				if (typeof original === 'function') return original.call(this, message, ...args);
-			};
-		}
-	});
+	${module_hook('labradorFirefoxHooked')}
 	const clear = WebGL2RenderingContext.prototype.clear;
 	WebGL2RenderingContext.prototype.clear = function (...args) {
 		const result = clear.apply(this, args);
@@ -155,56 +116,62 @@ export const SAMPLE_HOOK = `() => {
 	};
 }`;
 
-export function key_actions(keys) {
-	return [{ type: 'key', id: 'keyboard', actions: keys.flatMap((key) => {
-		if (!Object.hasOwn(KEY_VALUES, key)) throw new Error(`Unsupported sample key ${key}.`);
-		return [{ type: 'keyDown', value: KEY_VALUES[key] }, { type: 'pause', duration: 150 },
-			{ type: 'keyUp', value: KEY_VALUES[key] }, { type: 'pause', duration: 150 }];
-	}) }];
-}
-
 const wait = (milliseconds) => new Promise((done) => setTimeout(done, milliseconds));
 
-function frames_expression(count) {
-	return `new Promise((done) => {
-		let left = ${count};
-		const next = () => --left <= 0 ? done(true) : requestAnimationFrame(next);
-		requestAnimationFrame(next);
-	})`;
-}
-
-// Exported for offline control fixtures; this never launches a browser itself.
-export async function drive_sample(protocol, context, url, sample,
-	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log } = {}) {
-	const deadline = Date.now() + timeout_ms;
-	const remaining = () => {
-		const duration = deadline - Date.now();
-		if (duration <= 0) throw new Error('Firefox sample deadline expired.');
-		return Math.min(duration, 10000);
-	};
+// What each drive below keeps while it runs one page in `context`: its
+// deadline, each call of which answers how long one command may take, at
+// most 10 s; every entry the tab logs, written to `log`, with each warning
+// and error kept as a complaint unless `expected_complaint` recognises it;
+// and a protocol failure if the tab itself is destroyed. assert_healthy
+// throws the complaints so far; unsubscribe stops listening.
+function watched_context(protocol, context, { timeout_ms, log, what, expected_complaint = () => false }) {
+	const remaining = deadline_after(timeout_ms, `Firefox ${what}`, 10000);
 	const complaints = [];
 	const unsubscribe = protocol.on((message) => {
 		if (message.method === 'log.entryAdded') {
 			const entry = message.params;
 			log(`Firefox ${entry.level}: ${entry.text ?? '(no text)'}`);
-			if (entry.level === 'warn' || entry.level === 'error') complaints.push(`${entry.level}: ${entry.text}`);
+			if ((entry.level === 'warn' || entry.level === 'error') &&
+				expected_complaint({ level: entry.level, text: entry.text }) !== true) {
+				complaints.push(`${entry.level}: ${entry.text}`);
+			}
 		} else if (message.method === 'browsingContext.contextDestroyed' && message.params.context === context) {
 			protocol.fail('the tested Firefox context was destroyed');
 		}
 	});
+	const assert_healthy = () => {
+		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+	};
+	return { remaining, assert_healthy, unsubscribe };
+}
+
+// Subscribes to the tab's log and its destruction, installs `preload` to run
+// before the page's own scripts, brings the tab forward, sets its device
+// pixel ratio when one is given, and loads `url`.
+async function open_page(protocol, context, url, preload, { device_pixel_ratio } = {}) {
+	await protocol.send('session.subscribe', { events: ['log.entryAdded', 'browsingContext.contextDestroyed'], contexts: [context] });
+	await protocol.send('script.addPreloadScript', { functionDeclaration: preload, contexts: [context] });
+	await protocol.send('browsingContext.activate', { context });
+	if (device_pixel_ratio !== undefined) {
+		await protocol.send('browsingContext.setViewport', { context, devicePixelRatio: device_pixel_ratio });
+	}
+	await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+}
+
+// Exported for offline control fixtures; this never launches a browser itself.
+export async function drive_sample(protocol, context, url, sample,
+	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log } = {}) {
+	const { remaining, assert_healthy, unsubscribe } = watched_context(protocol, context, { timeout_ms, log, what: 'sample' });
 	const evaluate = (expression) => protocol.evaluate(context, expression, remaining());
 	const state = async () => {
-		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+		assert_healthy();
 		const heard = JSON.parse(await evaluate('JSON.stringify(window.labradorFirefox ?? null)'));
-		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+		assert_healthy();
 		if (heard?.errors.length > 0) throw new Error(`Module.onError: ${heard.errors.join('; ')}`);
 		return heard;
 	};
 	try {
-		await protocol.send('session.subscribe', { events: ['log.entryAdded', 'browsingContext.contextDestroyed'], contexts: [context] });
-		await protocol.send('script.addPreloadScript', { functionDeclaration: SAMPLE_HOOK, contexts: [context] });
-		await protocol.send('browsingContext.activate', { context });
-		await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+		await open_page(protocol, context, url, SAMPLE_HOOK);
 		let heard = await state();
 		while (!heard?.initialized) { await pause(25); heard = await state(); }
 		if (!heard.has_quit) throw new Error('The sample supplied no Module.onQuit callback.');
@@ -236,8 +203,7 @@ export async function drive_sample(protocol, context, url, sample,
 // The mouse, the wheel, each finger and the keyboard are input sources of
 // input.performActions, whose state - a held button, a finger down - lasts
 // between calls until it is released, as a DevTools session's does.
-const WINDOW_KEYS = Object.freeze({ ArrowLeft: '\uE012', Space: ' ', KeyA: 'a', Tab: '\uE004' });
-const CONTROL_KEY = '\uE009';
+const WINDOW_KEYS = key_table(['ArrowLeft', 'Space', 'KeyA', 'Tab']);
 
 export function window_input(protocol, context) {
 	const perform = (actions) => protocol.send('input.performActions', { context, actions });
@@ -256,7 +222,7 @@ export function window_input(protocol, context) {
 		const value = WINDOW_KEYS[name];
 		const pressed = [{ type: 'keyDown', value }, { type: 'keyUp', value }];
 		return perform([{ type: 'key', id: 'keyboard', actions: control ?
-			[{ type: 'keyDown', value: CONTROL_KEY }, ...pressed, { type: 'keyUp', value: CONTROL_KEY }] : pressed }]);
+			[{ type: 'keyDown', value: WEBDRIVER_CONTROL }, ...pressed, { type: 'keyUp', value: WEBDRIVER_CONTROL }] : pressed }]);
 	};
 	const touch = (type, points) => {
 		let sources;
@@ -335,42 +301,21 @@ export const WINDOW_HOOK = `() => {
 // window_input.mjs's expected_complaint names for run_page.mjs too.
 export async function drive_window_page(protocol, context, url, drive,
 	{ timeout_ms = 60000, pause = wait, log = console.log, expected_complaint = () => false } = {}) {
-	const deadline = Date.now() + timeout_ms;
-	const remaining = () => {
-		const duration = deadline - Date.now();
-		if (duration <= 0) throw new Error('Firefox page deadline expired.');
-		return Math.min(duration, 10000);
-	};
-	const complaints = [];
-	const unsubscribe = protocol.on((message) => {
-		if (message.method === 'log.entryAdded') {
-			const entry = message.params;
-			log(`Firefox ${entry.level}: ${entry.text ?? '(no text)'}`);
-			if ((entry.level === 'warn' || entry.level === 'error') &&
-				expected_complaint({ level: entry.level, text: entry.text }) !== true) {
-				complaints.push(`${entry.level}: ${entry.text}`);
-			}
-		} else if (message.method === 'browsingContext.contextDestroyed' && message.params.context === context) {
-			protocol.fail('the tested Firefox context was destroyed');
-		}
-	});
+	const { remaining, assert_healthy, unsubscribe } = watched_context(protocol, context,
+		{ timeout_ms, log, what: 'page', expected_complaint });
 	const evaluate = (expression, { user_gesture = false } = {}) =>
 		protocol.evaluate(context, expression, remaining(), { user_activation: user_gesture });
 	const healthy = async () => {
-		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+		assert_healthy();
 		const exit = await evaluate('window.labradorFirefoxWindow?.exit ?? null');
 		if (exit !== null) throw new Error(`The page ended before its input sequence did: ${exit}`);
-		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
+		assert_healthy();
 	};
 	let stopped = false;
 	try {
-		await protocol.send('session.subscribe', { events: ['log.entryAdded', 'browsingContext.contextDestroyed'], contexts: [context] });
-		await protocol.send('script.addPreloadScript', { functionDeclaration: WINDOW_HOOK, contexts: [context] });
-		await protocol.send('browsingContext.activate', { context });
 		// Headless Firefox takes its device pixel ratio from the desktop's
 		// scale, which need not be one.
-		await protocol.send('browsingContext.setViewport', { context, devicePixelRatio: 1 });
-		await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+		await open_page(protocol, context, url, WINDOW_HOOK, { device_pixel_ratio: 1 });
 		const watched = (async () => {
 			while (!stopped) {
 				await healthy();
@@ -396,9 +341,6 @@ export async function drive_window_page(protocol, context, url, drive,
 // Page.navigate, and read whole values back. These are those calls as BiDi
 // commands, and an evaluation that returns any JSON value rather than only a
 // primitive. Any other DevTools method refuses rather than being skipped.
-const BUNDLE_KEYS = Object.freeze({ Escape: '', Enter: '', Tab: '', KeyA: 'a',
-	ArrowLeft: '', ArrowUp: '', ArrowRight: '', ArrowDown: '' });
-
 export function bundle_input(protocol, context, evaluate_primitive, pause = wait) {
 	const perform = (actions) => protocol.send('input.performActions', { context, actions });
 	const mouse = (button_action, { x, y }) => perform([{ type: 'pointer', id: 'mouse',
@@ -430,36 +372,15 @@ export function bundle_input(protocol, context, evaluate_primitive, pause = wait
 // so the same hooks hear each instance's callbacks.
 export async function drive_bundle(protocol, context, url,
 	{ timeout_ms = 120000, pause = wait, log = console.log } = {}) {
-	const deadline = Date.now() + timeout_ms;
-	const remaining = () => {
-		const duration = deadline - Date.now();
-		if (duration <= 0) throw new Error('Firefox bundle deadline expired.');
-		return Math.min(duration, 10000);
-	};
-	const complaints = [];
-	const unsubscribe = protocol.on((message) => {
-		if (message.method === 'log.entryAdded') {
-			const entry = message.params;
-			log(`Firefox ${entry.level}: ${entry.text ?? '(no text)'}`);
-			if (entry.level === 'warn' || entry.level === 'error') complaints.push(`${entry.level}: ${entry.text}`);
-		} else if (message.method === 'browsingContext.contextDestroyed' && message.params.context === context) {
-			protocol.fail('the tested Firefox context was destroyed');
-		}
-	});
-	const healthy = () => {
-		if (complaints.length > 0) throw new Error(`Firefox complaints: ${complaints.join('; ')}`);
-	};
+	const { remaining, assert_healthy, unsubscribe } = watched_context(protocol, context, { timeout_ms, log, what: 'bundle' });
 	const evaluate_primitive = async (expression) => {
-		healthy();
+		assert_healthy();
 		const value = await protocol.evaluate(context, expression, remaining());
-		healthy();
+		assert_healthy();
 		return value;
 	};
 	try {
-		await protocol.send('session.subscribe', { events: ['log.entryAdded', 'browsingContext.contextDestroyed'], contexts: [context] });
-		await protocol.send('script.addPreloadScript', { functionDeclaration: `() => ${PRELUDE}`, contexts: [context] });
-		await protocol.send('browsingContext.activate', { context });
-		await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+		await open_page(protocol, context, url, `() => ${PRELUDE}`);
 		const state = bundle_state();
 		state.phase = 'play and replay';
 		const page = bundle_input(protocol, context, evaluate_primitive, pause);
@@ -469,7 +390,7 @@ export async function drive_bundle(protocol, context, url,
 		await desktop_instructions();
 		await play_restore_replay();
 		await protocol.send('input.releaseActions', { context });
-		healthy();
+		assert_healthy();
 		log('Firefox bundle: desktop play, forced context loss and restore, quit and replay passed. ' +
 			'Not run here: the touch and controller gates, unsupported-browser and failure pages, ' +
 			'a real GPU loss, a real tab switch and repeated-play memory, which Chromium runs.');
@@ -478,67 +399,12 @@ export async function drive_bundle(protocol, context, url,
 	}
 }
 
-const BUNDLE_FILES = Object.freeze(['index.html', 'linesweeper.js', 'linesweeper.wasm', 'poster.png']);
-
 function artifact_files(options) {
 	if (options.bundle !== undefined) return BUNDLE_FILES.map((name) => join(resolve(options.bundle), name));
 	const [directory, target] = options.test !== undefined ?
 		[resolve(options['build-dir'], 'tests', 'app'), options.test] :
 		[resolve(options['build-dir'], 'samples', options.sample), SAMPLES[options.sample].target];
 	return ['html', 'js', 'wasm'].map((extension) => join(directory, `${target}.${extension}`));
-}
-
-// The bundle's loader, asked for without a query, is the wrapper; the
-// wrapper's own import of it, with the query, is the real file.
-export function bundle_substitute(url) {
-	return url.pathname === '/linesweeper.js' && url.search === '' ?
-		{ type: 'text/javascript; charset=utf-8', body: Buffer.from(FACTORY_WRAPPER) } : null;
-}
-
-const CONTENT_TYPES = Object.freeze({ '.wasm': 'application/wasm', '.js': 'text/javascript',
-	'.png': 'image/png', '.html': 'text/html; charset=utf-8' });
-
-async function serve(files, substitute = () => null) {
-	let fatal;
-	const failed = new Promise((_, refuse) => { fatal = refuse; });
-	failed.catch(() => {});
-	const allowed = new Map(files.map((file) => ['/' + basename(file), file]));
-	let denied = false;
-	const server = createServer((request, response) => {
-		if (denied) { response.writeHead(503).end(); return; }
-		const requested = new URL(request.url, 'http://127.0.0.1');
-		const wanted = requested.pathname;
-		if (wanted === '/favicon.ico') { response.writeHead(204).end(); return; }
-		const substituted = substitute(requested);
-		if (substituted) {
-			response.writeHead(200, { 'Cache-Control': 'no-store', 'Content-Type': substituted.type });
-			response.end(substituted.body);
-			return;
-		}
-		const file = allowed.get(wanted);
-		if (!file) {
-			denied = true;
-			response.writeHead(404).end();
-			fatal(new Error(`Unexpected sample resource request: ${wanted}`));
-			return;
-		}
-		try {
-			const bytes = readFileSync(file);
-			const extension = /\.[^.]+$/.exec(file)?.[0] ?? '';
-			response.writeHead(200, { 'Cache-Control': 'no-store',
-				'Content-Type': CONTENT_TYPES[extension] ?? 'application/octet-stream' });
-			response.end(bytes);
-		} catch (error) {
-			denied = true;
-			response.writeHead(500).end();
-			fatal(new Error(`readFileSync ${file}: ${error.code ?? error.name}: ${error.message}`));
-		}
-	});
-	await new Promise((ready, refused) => {
-		server.once('error', refused);
-		server.listen(0, '127.0.0.1', ready);
-	});
-	return { server, failed, url: `http://127.0.0.1:${server.address().port}/${basename(files[0])}` };
 }
 
 export function launch_firefox(browser, profile, spawn_process = spawn) {
@@ -582,15 +448,28 @@ async function bounded(operation, milliseconds, message, expired = () => {}) {
 	} finally { clearTimeout(timer); }
 }
 
-async function exited(child, milliseconds) {
-	if (child.exitCode !== null || child.signalCode !== null) return true;
-	let timer;
-	return new Promise((done) => {
-		const finish = (value) => { clearTimeout(timer); child.off('exit', on_exit); done(value); };
-		const on_exit = () => finish(true);
-		child.once('exit', on_exit);
-		timer = setTimeout(() => finish(false), milliseconds);
-	});
+// A profile kept because its run never established or finished its session
+// (main says why) is for looking at soon after; one that has outlasted
+// `max_age_ms` is removed when a later run starts. Only folders this runner
+// makes, labrador-firefox-*, directly in `directory`, are considered, and a
+// young one may belong to a run still going. Answers what it removed.
+export function remove_stale_profiles(directory, { now = Date.now(), max_age_ms = 24 * 60 * 60 * 1000,
+	log = console.log } = {}) {
+	const removed = [];
+	for (const name of readdirSync(directory)) {
+		if (!name.startsWith('labrador-firefox-')) continue;
+		const path = join(directory, name);
+		try {
+			const status = lstatSync(path);
+			if (!status.isDirectory() || now - status.mtimeMs <= max_age_ms) continue;
+			rmSync(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+			removed.push(path);
+			log(`Removed a retained Firefox profile from an earlier run: ${path}`);
+		} catch (error) {
+			log(`Could not remove the earlier Firefox profile ${path}: ${error.code ?? error.name}: ${error.message}`);
+		}
+	}
+	return removed;
 }
 
 export async function main(options) {
@@ -610,8 +489,10 @@ export async function main(options) {
 	let connected = false;
 	let failure = null;
 	try {
+		remove_stale_profiles(tmpdir());
 		profile = mkdtempSync(join(tmpdir(), 'labrador-firefox-'));
-		service = await serve(files, options.bundle !== undefined ? bundle_substitute : undefined);
+		service = await serve_files(files,
+			{ substitute: options.bundle !== undefined ? bundle_substitute : undefined, deny_after_failure: true });
 		launched = launch_firefox(options.browser, profile);
 		console.log(`Firefox task profile=${profile}, pid=${launched.child.pid ?? 'unavailable'}`);
 		const endpoint = await bounded(launched.endpoint, 30000, 'Firefox did not report its BiDi endpoint in 30 seconds.');
@@ -658,17 +539,16 @@ export async function main(options) {
 			}
 			console.log(launched.diagnostics());
 		}
-		if (service) await new Promise((done) => {
-			service.server.close(done);
-			service.server.closeAllConnections();
-		});
+		if (service) await close_server(service.server);
 		if (profile && closed && (!launched || connected || launched.spawn_failed())) {
 			try {
 				const absolute = realpathSync(profile);
 				if (dirname(absolute) !== realpathSync(tmpdir()) || !basename(absolute).startsWith('labrador-firefox-')) {
 					throw new Error(`Refusing cleanup outside the task-owned temporary profile: ${absolute}`);
 				}
-				rmSync(absolute, { recursive: true, force: true });
+				// The profile can stay locked for a moment after Firefox exits on
+				// Windows, as run_page.mjs's does for Chromium.
+				rmSync(absolute, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 			} catch (error) {
 				const refused = new Error(`cleanup ${profile}: ${error.code ?? error.name}: ${error.message}`);
 				console.error(refused.message);
@@ -683,6 +563,13 @@ export async function main(options) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-	try { await main(parse_options(process.argv.slice(2))); }
-	catch (error) { console.error(`run_firefox: ${error.stack ?? error}`); process.exitCode = 1; }
+	// A command line it cannot run exits 2 with the reason; a run that
+	// fails exits 1 with its stack.
+	let options = null;
+	try { options = parse_options(process.argv.slice(2)); }
+	catch (error) { console.error(`run_firefox: ${error.message}`); process.exitCode = 2; }
+	if (options) {
+		try { await main(options); }
+		catch (error) { console.error(`run_firefox: ${error.stack ?? error}`); process.exitCode = 1; }
+	}
 }

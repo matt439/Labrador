@@ -14,9 +14,11 @@
 using namespace labrador;
 
 // Vibration's checks, its lifetime rules against a transport that records
-// what reached it, and Gamepads' answers on a machine with no pad. No case
-// here turns a motor: what a pad API does with a request is outside every
-// test in this tree.
+// what reached it, and Gamepads' answers for a slot with no pad. No case
+// here turns a motor: the cases that ask the build's own reader aim at a slot
+// it reports empty, so a pad plugged into the machine running them is left
+// alone, and what a pad API does with a request is outside every test in
+// this tree.
 
 namespace
 {
@@ -54,6 +56,34 @@ namespace
 	};
 
 	using Output = VibrationOutput<RecordingTransport>;
+
+	// The first slot with no pad in it, or -1 when all of them have one. A
+	// machine running the tests may have a pad plugged in, so a case that
+	// needs an empty slot looks for one rather than assuming slot 0.
+	int empty_slot(const Gamepads& pads)
+	{
+		for (int slot = 0; slot < Gamepads::max_count; ++slot)
+		{
+			if (!pads.connected(slot))
+			{
+				return slot;
+			}
+		}
+		return -1;
+	}
+
+	int empty_slot(GamepadReader& reader)
+	{
+		reader.sample();
+		for (int slot = 0; slot < Gamepads::max_count; ++slot)
+		{
+			if (!reader.read(slot).connected)
+			{
+				return slot;
+			}
+		}
+		return -1;
+	}
 
 	Vibration rumble(float seconds)
 	{
@@ -274,15 +304,22 @@ TEST_CASE("a slot outside the four reaches nothing")
 
 TEST_CASE("Gamepads answers unavailable for an empty slot and checks before that")
 {
-	// The build's own reader, on a machine running the tests: no pad is
-	// plugged in on CI, and Node has no Gamepad API, so every slot is empty.
+	// The build's own reader, on the machine running the tests: no pad is
+	// plugged in on CI, and Node has no Gamepad API, so every slot is empty
+	// there; a developer's machine may have a pad, whose slot is passed by.
 	GamepadReader reader;
 	Gamepads pads(&reader);
 	pads.poll();
-	REQUIRE_FALSE(pads.connected(0));
+	const int empty = empty_slot(pads);
+	if (empty < 0)
+	{
+		MESSAGE("Every pad slot is occupied; there is no empty slot to ask.");
+		return;
+	}
+	REQUIRE_FALSE(pads.connected(empty));
 
-	CHECK(pads.vibrate(0, rumble(1.0f)) == VibrationResult::unavailable);
-	CHECK_NOTHROW(pads.stop_vibration(0));
+	CHECK(pads.vibrate(empty, rumble(1.0f)) == VibrationResult::unavailable);
+	CHECK_NOTHROW(pads.stop_vibration(empty));
 
 	// A broken call is refused whether or not a pad is there.
 	CHECK_THROWS_AS(pads.vibrate(Gamepads::max_count, rumble(1.0f)),
@@ -299,14 +336,20 @@ TEST_CASE("Gamepads answers unavailable for an empty slot and checks before that
 TEST_CASE("a suspended reader refuses a request and resumes taking them")
 {
 	GamepadReader reader;
+	const int empty = empty_slot(reader);
+	if (empty < 0)
+	{
+		MESSAGE("Every pad slot is occupied; there is no empty slot to ask.");
+		return;
+	}
 	reader.suspend();
-	CHECK_FALSE(reader.vibrate(0, rumble(1.0f)));
+	CHECK_FALSE(reader.vibrate(empty, rumble(1.0f)));
 	reader.resume();
 
 	// Resumed, it still has no pad to reach, and says so.
-	CHECK_FALSE(reader.vibrate(0, rumble(1.0f)));
+	CHECK_FALSE(reader.vibrate(empty, rumble(1.0f)));
 	CHECK_FALSE(reader.vibrate(Gamepads::max_count, rumble(1.0f)));
-	CHECK_NOTHROW(reader.stop_vibration(0));
+	CHECK_NOTHROW(reader.stop_vibration(empty));
 }
 
 TEST_CASE("a suspended reader answers every slot disconnected until it resumes")

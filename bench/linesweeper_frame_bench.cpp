@@ -481,12 +481,23 @@ namespace
 	};
 }
 
+// A command line it cannot run exits 2 with the usage, before anything
+// starts; a run that fails exits 1 with the reason.
 int wmain(int argc, wchar_t* argv[])
 {
+	Options options;
 	try
 	{
-		const Options options =
-			linesweeper_frame_bench::parse_options(argc, argv);
+		options = linesweeper_frame_bench::parse_options(argc, argv);
+	}
+	catch (const std::exception& error)
+	{
+		linesweeper_frame_bench::print_usage();
+		std::fprintf(stderr, "LineSweeperFrameBench refused: %s\n", error.what());
+		return 2;
+	}
+	try
+	{
 		if (!release_build())
 		{
 			throw std::runtime_error(
@@ -512,8 +523,7 @@ int wmain(int argc, wchar_t* argv[])
 	}
 	catch (const std::exception& error)
 	{
-		linesweeper_frame_bench::print_usage();
-		std::fprintf(stderr, "LineSweeperFrameBench refused: %s\n", error.what());
+		std::fprintf(stderr, "LineSweeperFrameBench failed: %s\n", error.what());
 		return 1;
 	}
 }

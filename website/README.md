@@ -37,7 +37,11 @@ W3C WebDriver against a fixture with two releases. They need the browser's
 driver (`chromedriver`, `geckodriver` or `safaridriver`) on `PATH`, in the
 folder `CHROMEWEBDRIVER` or `GECKOWEBDRIVER` names, or given with `--driver`;
 Chrome and Firefox run headless. `acceptance/suite.mjs` explains each check,
-and `acceptance/browsers.mjs` each target.
+and `acceptance/browsers.mjs` each target. The engine's browser page runners
+import from this folder too: `tests/render/web/run_safari.mjs` drives Safari
+with `webdriver.mjs`'s client and `browsers.mjs`'s driver start, and all three
+runners serve with `server.mjs`'s `CONTENT_TYPES`, so a change to those
+exports is checked by `BrowserProtocolTests` as well.
 
 ## It reads the rest of the repository
 

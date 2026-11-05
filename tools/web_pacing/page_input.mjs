@@ -1,7 +1,7 @@
 // Runtime acceptance driver for the wasm-release development page.
 // Node protocol tests and C++ headless counts do not substitute for this
 // actual page run.
-import { is_navigation_race } from '../../tests/render/web/devtools.mjs';
+import { wait_for } from '../../tests/render/web/page_wait.mjs';
 
 export const ready = "window.labradorPacingInitialized === true";
 export const strict_complaints = true;
@@ -116,17 +116,10 @@ export default async function (page) {
 		next.searchParams.set('pacing', mode);
 		next.searchParams.set('pacing_duration_ms', '250');
 		await page.send('Page.navigate', { url: next.href });
-		let report = null;
-		for (let attempt = 0; attempt < 1200; ++attempt) {
-			try {
-				report = await page.evaluate("typeof Module === 'object' ? Module['labradorPacingResult'] : null");
-			} catch (error) {
-				if (!is_navigation_race(error)) throw error;
-			}
-			if (report?.run?.fixture_mode === mode) break;
-			await page.wait(25);
-		}
-		requireValue(report?.run?.fixture_mode === mode, `No ${mode} capture completed.`);
+		const report = await wait_for(page.evaluate,
+			"typeof Module === 'object' ? Module['labradorPacingResult'] : null",
+			{ done: (value) => value?.run?.fixture_mode === mode, timeout_ms: 30000, interval_ms: 25,
+				navigating: true, wait: page.wait, message: `No ${mode} capture completed.` });
 		const progress = await page.evaluate(`(() => {
 			const canvas = document.querySelector('canvas');
 			return { clears: canvas.labradorPacingClears ?? 0, marked: canvas.labradorPacingMarkedDraw ?? null };

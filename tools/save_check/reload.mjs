@@ -1,7 +1,6 @@
 // run_page.mjs --input: prove that C++ reads an IDBFS save after a page reload.
 import assert from 'node:assert/strict';
-
-import { is_navigation_race } from '../../tests/render/web/devtools.mjs';
+import { wait_for } from '../../tests/render/web/page_wait.mjs';
 
 // This driver owns completion across a reload. The original page's exit
 // promise disappears with its execution context and must not end the run.
@@ -9,19 +8,10 @@ export const ready = 'typeof Module === "object" && Module.settingsReady === tru
 export const strict_complaints = true;
 
 export default async function check({ evaluate, send, wait }) {
-	const until = async (expression) => {
-		for (let attempt = 0; attempt < 250; ++attempt) {
-			try {
-				if (await evaluate(expression) === true) return;
-			} catch (error) {
-				if (!is_navigation_race(error)) {
-					throw error;
-				}
-			}
-			await wait(20);
-		}
-		throw new Error(`Timed out waiting for ${expression}`);
-	};
+	// A reload replaces the page while it is asked, so a navigation's
+	// failure counts as not yet.
+	const until = (expression) => wait_for(evaluate, expression,
+		{ timeout_ms: 15000, navigating: true, wait, message: `Timed out waiting for ${expression}` });
 
 	await until('typeof Module !== "undefined" && Module.settingsReady === true');
 	assert.deepEqual(await evaluate('Module.loadedSettings'), {});

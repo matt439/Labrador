@@ -3,21 +3,11 @@
 // The hooks, the substituted responses and the steps it shares with the site's
 // own page's driver (host_input.mjs) are in bundle_page.mjs.
 
-import { READY, bundle_state, expected_complaint as expected, fetched_module,
-	prepare as install, steps } from './bundle_page.mjs';
-
-export const ready = READY;
-export const strict_complaints = true;
+import { bundle_driver, bundle_state, fetched_module, steps } from './bundle_page.mjs';
 
 const state = bundle_state();
 
-export function expected_complaint(complaint) {
-	return expected(state, complaint);
-}
-
-export function prepare(page) {
-	return install(state, page);
-}
+export const { ready, strict_complaints, expected_complaint, prepare } = bundle_driver(state);
 
 export default async function drive(page) {
 	const { evaluate, send } = page;

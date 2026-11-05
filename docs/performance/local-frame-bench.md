@@ -115,7 +115,9 @@ the bench a moment after it started, and should equal `0xFF` on a part with
 two threads per core (`0xF` with one). Each backend takes its build time plus
 5,400 frames, 90 seconds at 60 Hz.
 Each run prints `Wrote 3600 retained frames to <path> (<backend>, <class>)`.
-A refusal prints the usage line and the reason, exits 1 and writes nothing.
+A command line it cannot run prints the usage line and the reason, exits 2
+and writes nothing; a run that fails prints the reason, exits 1 and writes
+nothing.
 Run the block again with `$repetition` raised for another repetition.
 
 ## What a run establishes
