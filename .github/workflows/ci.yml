@@ -716,18 +716,22 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release -j 3 -R "PageTests" -E "^Firefox" --no-tests=error --output-on-failure
 
-      # THE SAME PAGES IN FIREFOX, which the runner image carries: each
-      # sample's page drawn and quit, the window's input sequence, and the
-      # bundle page played, its context lost and restored, quit and played
-      # again, over WebDriver BiDi by tests/render/web/run_firefox.mjs. A
-      # step of its own so a failure names the browser. --no-tests=error, so
-      # an image without Firefox fails here rather than passing by running
-      # nothing; the inventory check above says the same earlier.
-      - name: Load and quit the pages in headless Firefox
+      # THE WEB WINDOW IN FIREFOX, which the runner image carries: the
+      # window's input sequence over WebDriver BiDi, by
+      # tests/render/web/run_firefox.mjs. Only that entry, because the
+      # image's Firefox gives a page no WebGL2 context: the runner has no GPU,
+      # and Firefox, unlike Chrome with SwiftShader, has no software WebGL
+      # without preferences the runner does not set. Every drawing entry
+      # failed at startup on that ("Failed to create WebGL context", run
+      # 41944047596). Configure still registers them, and they run where a
+      # Firefox has a GPU (docs/port/web-to-be-tested.md). --no-tests=error,
+      # so an image without Firefox fails here rather than passing by
+      # running nothing.
+      - name: Drive the web window in headless Firefox
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -j 3 -R "^Firefox" --no-tests=error --output-on-failure
+          ctest --preset wasm-release -R "^FirefoxWebWindowTests$" --no-tests=error --output-on-failure
 
       # WHAT A HOST SERVES: the build writes LineSweeper's bundle to
       # web-dist/linesweeper/ - the module, its example page, the notices for

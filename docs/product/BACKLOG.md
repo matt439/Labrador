@@ -280,7 +280,8 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   `web-dist/linesweeper/` and plays, quits and plays again with the bundle
   page test's assertions, registered when a Firefox is found (`WEB#10`).
   *2026-11-05:* that half landed as `FirefoxLineSweeperBundlePageTests`,
-  which runs in CI's wasm job; the physical pad in Chrome remains.
+  which runs where a Firefox has a GPU (CI's has none, so not in CI); the
+  physical pad in Chrome remains.
   Whether DevTools can drive a real context loss and a real tab switch in
   Chrome was investigated for the same treatment (`WEB#14`): it can, and
   since 2026-11-04 the bundle and host page tests crash Chrome's GPU process
@@ -1091,8 +1092,9 @@ written.
   page's play, quit and replay to `tests/render/web/run_firefox.mjs`, and
   register its runs as ctest entries when configure finds a Firefox.
   *Closed 2026-11-05:* configure registers eight `Firefox*` entries where it
-  finds a Firefox and the render backend rasterizes, and CI's wasm job runs
-  them in the image's Firefox; the record is
+  finds a Firefox and the render backend rasterizes. CI runs the window's
+  entry only, since the image's Firefox makes no WebGL2 context without a
+  GPU; the record is
   [web-to-be-tested.md](../port/web-to-be-tested.md#firefox-sample-checks-web4).
 
 <a id="oca-83"></a>

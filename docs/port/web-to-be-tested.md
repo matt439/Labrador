@@ -504,8 +504,14 @@ Configure registers eight entries where it finds a Firefox
 `FirefoxCollisionPageTests`, `FirefoxAudioPageTests`,
 `FirefoxLocalMultiplayerPageTests`, `FirefoxComponentsPageTests`,
 `FirefoxWebWindowTests` and `FirefoxLineSweeperBundlePageTests`. CI's wasm
-job runs them in the runner image's Firefox, in a step of their own. To run
-them, or one page by hand:
+job runs only `FirefoxWebWindowTests`. The runner image's Firefox gives a page
+no WebGL2 context: the runner has no GPU, and Firefox has no software WebGL
+without preferences the runner does not set, so on 2026-11-05 (run
+41944047596) each drawing entry failed at startup with "Failed to create
+WebGL context" while the window's entry passed. The drawing entries run
+wherever configure finds a Firefox on a machine with a GPU, which is a
+release-time check like `ci_gap_report.py`'s, not a per-pull-request one. To
+run them, or one page by hand:
 
 ```text
 ctest --preset wasm-release -R "^Firefox" --output-on-failure
