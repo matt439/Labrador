@@ -241,13 +241,27 @@ export function steps(page, state) {
 		await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at,
 			button: 'left', buttons: 0, clickCount: 1 });
 	};
+	// Each level lasts two animation frames and 100 ms, so the module's
+	// once-a-frame keyboard poll sees it. Wall time alone does not: on a
+	// software rasteriser drawing a phone-sized buffer one frame can outlast
+	// the whole press, and the game never hears it (sample_key.mjs, the same
+	// rule for the development pages).
+	const held = () => evaluate(`new Promise((done) => {
+		const started = performance.now();
+		let seen = 0;
+		const step = (timestamp) => {
+			if (++seen >= 2 && timestamp - started >= 100) { done(true); }
+			else { requestAnimationFrame(step); }
+		};
+		requestAnimationFrame(step);
+	})`);
 	const key = async (code, vk) => {
 		const event = { code, key: code === 'KeyA' ? 'a' : code,
 			windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk };
 		await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...event });
-		await page.wait(100);
+		await held();
 		await send('Input.dispatchKeyEvent', { type: 'keyUp', ...event });
-		await page.wait(100);
+		await held();
 	};
 	const loaded = (index) => until(`window.labradorBundle.runs[${index}]?.initialized === true &&
 		(window.labradorBundle.runs[${index}].canvas.labradorFrames ?? 0) >= 5`,
