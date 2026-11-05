@@ -8,6 +8,7 @@
 #include "engine/math/quad.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/rectanglef.h"
+#include "engine/math/scalar.h"
 #include "engine/math/triangle.h"
 #include "engine/math/vector2f.h"
 
@@ -134,9 +135,9 @@ TEST_CASE("a ramp resolves along its slope, not along an axis")
 {
 	// A right triangle with its hypotenuse running from (0, 100) up to
 	// (100, 0) - a ramp rising to the right. Nothing about this pair is
-	// expressible as one of eight cardinal directions, which is why the ramp
-	// responses it replaces were 130 lines of special cases and why left
-	// ramps had no response at all until recently.
+	// expressible as one of eight cardinal directions, so a response built
+	// from those directions needs a special case per ramp, and the normal
+	// below needs none.
 	const Triangle ramp(Vector2F(0.0f, 100.0f), Vector2F(100.0f, 100.0f),
 		Vector2F(100.0f, 0.0f));
 	const RectangleF box(60.0f, 40.0f, 20.0f, 20.0f);
@@ -172,24 +173,24 @@ TEST_CASE("one move separates the pair, wherever the overlap is")
 	}
 }
 
-TEST_CASE("one move still separates the pair out where the levels actually are")
+TEST_CASE("one move still separates the pair thousands of units from the origin")
 {
-	// The same sweep as above, translated to the coordinates the game runs at.
+	// The same sweep as above, translated to world coordinates in the
+	// thousands and beyond.
 	//
-	// Every other collision test in this file sits within 100 units of the
-	// origin, where floats are dense and everything works. Levels run to
-	// around 6200, where consecutive floats are 4.88e-4 apart - which is
-	// larger than labrador::default_epsilon (1e-4), so the engine's general tolerance
-	// is exact equality wearing a costume out here.
+	// Within 100 units of the origin floats are dense and everything works.
+	// At 6000, consecutive floats are 4.88e-4 apart - which is larger than
+	// labrador::default_epsilon (1e-4), so the engine's general tolerance is
+	// exact equality wearing a costume out here.
 	//
 	// This is the measurement that decides whether resolution needs a contact
 	// skin - a small extra push so a resting object does not re-collide with
 	// what it is standing on every frame. The honest way to answer that is to
 	// run the arithmetic at the magnitudes it will see, rather than to add a
 	// fudge factor speculatively and never learn whether it was needed (T3).
-	// 6200 is where this game's levels end. The larger origins are headroom,
-	// and they are here so that the answer is a bound rather than a lucky
-	// coincidence at one magnitude.
+	// A level a few thousand units across sits at the first origin. The
+	// larger ones are headroom, and they are here so that the answer is a
+	// bound rather than a lucky coincidence at one magnitude.
 	const float origins[] = { 6000.0f, 60000.0f, 600000.0f };
 
 	for (const float origin : origins)
@@ -566,7 +567,7 @@ namespace
 			Point2F(origin, origin - down), Point2F(origin + across, origin),
 			Point2F(origin, origin + down));
 
-		const float angle = random.uniform_float(0.0f, 3.14159265f);
+		const float angle = random.uniform_float(0.0f, labrador::pi);
 		const Vector2F x_axis(std::cos(angle), std::sin(angle));
 		const Vector2F y_axis(-x_axis.y, x_axis.x);
 		// Built at zero and moved, because the constructor's corner checks

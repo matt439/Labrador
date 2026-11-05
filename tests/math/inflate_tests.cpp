@@ -13,17 +13,17 @@ TEST_SUITE("Inflate")
 {
 	TEST_CASE("inflate never leaves a vertex outside the shape it grew from")
 	{
-		// The existing "an inflated shape contains the shape it grew from"
-		// case only ever uses well-formed triangles. These are the two
-		// shapes where the mitre solve failed the contract outright.
+		// The "an inflated shape contains the shape it grew from" case
+		// uses well-formed triangles. These are the two shapes where a
+		// mitre solve without a guard breaks the contract outright.
 
 		SUBCASE("a collinear triangle is left alone rather than mangled")
 		{
 			// No interior means no outward: the centroid is on the same
-			// line as every vertex, so the orientation test scored exactly
-			// zero for all three edges and no normal was flipped. The
-			// result was {(0,1), (5,1), (10,-1)}, which contains neither
-			// (0,0) nor (10,0).
+			// line as every vertex, so an orientation test scores exactly
+			// zero for all three edges and flips no normal. Inflated
+			// regardless, this one becomes {(0,1), (5,1), (10,-1)}, which
+			// contains neither (0,0) nor (10,0).
 			Triangle collinear(Point2F(0.0f, 0.0f), Point2F(5.0f, 0.0f),
 				Point2F(10.0f, 0.0f));
 			const Triangle before = collinear;
@@ -72,17 +72,15 @@ TEST_SUITE("Inflate")
 	}
 	TEST_CASE("inflate moves every edge out by the full amount, not by a cosine")
 	{
-		// The property the radial version could not hold. Displacing a
-		// vertex by `amount` along its ray from the centroid moves the
-		// edges meeting there by only amount * cos(angle), so a sharp
-		// corner under-inflated badly and a right angle by a factor of
-		// 1/sqrt(2).
+		// A radial inflate cannot hold this. Displacing a vertex by
+		// `amount` along its ray from the centroid moves the edges meeting
+		// there by only amount * cos(angle), so a sharp corner
+		// under-inflates badly and a right angle by a factor of 1/sqrt(2).
 		//
 		// Measured from a FIXED interior point, captured before the
 		// inflation. The centroid of the grown polygon is not the centroid
-		// of the original, so measuring from the live centre compares
-		// against a reference that moved - which is a bug in the test, not
-		// in the arithmetic, and cost one confused run to find.
+		// of the original, so measuring from the live centre would compare
+		// against a reference that moved.
 		const auto edge_distance = [](const Triangle& t, int i,
 			const Point2F& from)
 		{

@@ -45,7 +45,8 @@ namespace
 			{
 				this->on_update_();
 			}
-			// The statement the ten live call sites do not have. If the
+			// A statement after the transition, which a state that
+			// transitions from its own update may well have. If the
 			// transition above destroyed this object, this touches freed
 			// memory and the line below never appears in the log.
 			this->touched_ = true;
@@ -191,14 +192,14 @@ TEST_CASE("transition_to outside update takes effect immediately")
 {
 	std::vector<std::string> log;
 	StateContext context;
-	// Constructible with no device: the seam's whole point, and this test
-	// is the first thing in the tree to depend on it.
+	// A Renderer needs no device to be constructed.
 	Renderer renderer;
 
 	context.transition_to(std::make_unique<RecordingState>("a", &log));
 
 	// init() has already run, so the state is drawable before the first
-	// update. Every nested StateContext in the game is built this way.
+	// update, which is what a state that owns a nested StateContext relies
+	// on when it fills that context in its own init().
 	CHECK(log == std::vector<std::string>{"a:init"});
 
 	context.draw(renderer);
@@ -209,8 +210,6 @@ TEST_CASE("a state transitioning from its own update survives the call")
 {
 	std::vector<std::string> log;
 	StateContext context;
-	// Constructible with no device: the seam's whole point, and this test
-	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 
 	std::unique_ptr<RecordingState> outgoing = std::make_unique<RecordingState>("a", &log);
@@ -240,8 +239,6 @@ TEST_CASE("the last transition in one update wins")
 {
 	std::vector<std::string> log;
 	StateContext context;
-	// Constructible with no device: the seam's whole point, and this test
-	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 
 	std::unique_ptr<RecordingState> outgoing = std::make_unique<RecordingState>("a", &log);
@@ -270,8 +267,6 @@ TEST_CASE("a state transitioning from its own init survives the call")
 {
 	std::vector<std::string> log;
 	StateContext context;
-	// Constructible with no device: the seam's whole point, and this test
-	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 
 	std::unique_ptr<RecordingState> first = std::make_unique<RecordingState>("a", &log);
@@ -295,8 +290,6 @@ TEST_CASE("a state transitioning from its own init survives the call")
 TEST_CASE("an empty context updates and draws without a state")
 {
 	StateContext context;
-	// Constructible with no device: the seam's whole point, and this test
-	// is the first thing in the tree to depend on it.
 	Renderer renderer;
 	context.update(0.0f);
 	context.draw(renderer);
@@ -587,6 +580,30 @@ TEST_CASE("leaving scope destroys the live states from the top down too")
 		"pause:dtor", "match:dtor", "menu:dtor"});
 }
 
+namespace
+{
+	// The one reachable way to have something queued when a context ends: a
+	// drain that did not finish. "level" goes live; its next update pushes
+	// "bad", whose init() throws, and queues "never" behind it. The update
+	// carries the exception out and leaves "never" waiting.
+	void arm_failing_drain(StateContext& context, std::vector<std::string>* log)
+	{
+		std::unique_ptr<RecordingState> level =
+			std::make_unique<RecordingState>("level", log);
+		RecordingState* level_raw = level.get();
+		context.transition_to(std::move(level));
+
+		level_raw->on_update([&context, log]()
+			{
+				std::unique_ptr<RecordingState> bad =
+					std::make_unique<RecordingState>("bad", log);
+				bad->on_init([]() { throw std::runtime_error("init failed"); });
+				context.push(std::move(bad));
+				context.push(std::make_unique<RecordingState>("never", log));
+			});
+	}
+}
+
 TEST_CASE("leaving scope drops a queued state ahead of the live ones")
 {
 	// clear()'s other half, reached the same way: a drain that did not
@@ -594,20 +611,7 @@ TEST_CASE("leaving scope drops a queued state ahead of the live ones")
 	std::vector<std::string> log;
 	{
 		StateContext context;
-
-		std::unique_ptr<RecordingState> level =
-			std::make_unique<RecordingState>("level", &log);
-		RecordingState* level_raw = level.get();
-		context.transition_to(std::move(level));
-
-		level_raw->on_update([&]()
-			{
-				std::unique_ptr<RecordingState> bad =
-					std::make_unique<RecordingState>("bad", &log);
-				bad->on_init([]() { throw std::runtime_error("init failed"); });
-				context.push(std::move(bad));
-				context.push(std::make_unique<RecordingState>("never", &log));
-			});
+		arm_failing_drain(context, &log);
 
 		CHECK_THROWS_AS(context.update(0.0f), std::runtime_error);
 		log.clear();
@@ -631,9 +635,9 @@ TEST_CASE("clear fires no result callbacks")
 	context.clear();
 
 	// A callback is the answer to a pop, and a shutdown is not an answer.
-	// Firing them here would re-enter push() from inside teardown - the game
-	// this engine was written for closes its match frame by reopening the menu,
-	// which pushes - and rebuild the stack being drained.
+	// Firing them here would re-enter push() from inside teardown - a game
+	// that closes its match frame by reopening the menu pushes from its
+	// callback - and rebuild the stack being drained.
 	CHECK(answers.empty());
 	CHECK(context.depth() == 0);
 }
@@ -650,25 +654,11 @@ TEST_CASE("clear on an empty context is a no-op, twice over")
 
 TEST_CASE("clear drops a queued state that never became live")
 {
-	// The one reachable way to have something queued when clear() runs: a
-	// drain that did not finish. An init() that throws carries the exception
-	// out through update() and leaves whatever was issued behind it waiting, and
-	// a client unwinding out of main from there destroys the Application, which
-	// calls this.
+	// A client unwinding out of main from a failed drain destroys the
+	// Application, which calls clear().
 	std::vector<std::string> log;
 	StateContext context;
-
-	std::unique_ptr<RecordingState> level = std::make_unique<RecordingState>("level", &log);
-	RecordingState* level_raw = level.get();
-	context.transition_to(std::move(level));
-
-	level_raw->on_update([&]()
-		{
-			std::unique_ptr<RecordingState> bad = std::make_unique<RecordingState>("bad", &log);
-			bad->on_init([]() { throw std::runtime_error("init failed"); });
-			context.push(std::move(bad));
-			context.push(std::make_unique<RecordingState>("never", &log));
-		});
+	arm_failing_drain(context, &log);
 
 	log.clear();
 	CHECK_THROWS_AS(context.update(0.0f), std::runtime_error);
@@ -687,13 +677,11 @@ TEST_CASE("clear drops a queued state that never became live")
 	CHECK(context.depth() == 0);
 }
 
-TEST_CASE("the shape the game is built out of")
+TEST_CASE("menu, match, pause and confirmation compose on one stack")
 {
 	// menu -> match -> pause menu -> confirmation, each frame answering in its
 	// own type, and every operation issued from inside a state's own update().
-	// The individual mechanisms are pinned above; this is the composition, and
-	// it is the one thing about C3 that cannot be driven from a keyboard - the
-	// paint-shooter reaches it only through a gamepad.
+	// The individual mechanisms are pinned above; this is the composition.
 	std::vector<std::string> log;
 	StateContext context;
 	Renderer renderer;

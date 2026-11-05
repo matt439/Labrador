@@ -74,7 +74,7 @@ TEST_CASE("an axis that cannot separate the pair is refused, not answered")
 
 TEST_CASE("separation_along checks the preconditions its header states")
 {
-	// The header always said `axis` must be unit length and never looked.
+	// The header says `axis` must be unit length, and a longer one throws.
 	CHECK_THROWS_AS(separation_along(Vector2F::direction_down, 5.0f,
 		Vector2F(0.0f, 3.0f)), std::invalid_argument);
 	CHECK_THROWS_AS(separation_along(Vector2F(0.0f, 3.0f), 5.0f,
@@ -120,9 +120,9 @@ TEST_CASE("a slope turns a fall into a slide, not a dead stop")
 TEST_CASE("a run into a slope becomes a climb along it")
 {
 	// Running at 100 along the flat into the same ramp. The result still has
-	// speed 80 and it now points up the hill - the climb rate that
-	// set_velocity_y(0.0f) deletes, since there is no vertical component yet
-	// for it to find.
+	// speed 80 and it now points up the hill. Zeroing the vertical velocity
+	// on contact would delete that climb, since there is no vertical
+	// component yet for it to find.
 	const Vector2F normal = Vector2F(3.0f, 4.0f).normalized();
 
 	const Vector2F after = slide(Vector2F(100.0f, 0.0f), normal);

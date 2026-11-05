@@ -4,7 +4,6 @@
 #include "engine/math/scalar.h"
 #include "engine/math/vector2f.h"
 
-#include <cmath>
 #include <limits>
 #include <stdexcept>
 

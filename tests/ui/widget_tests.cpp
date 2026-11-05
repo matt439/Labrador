@@ -37,8 +37,7 @@ namespace
 
 	// The exhibit, in the smallest form that proves it compiles: a row that is
 	// a label and a value side by side, which is a container the cursor can
-	// land on. Before this it could not exist - UiContainer was a UiObject, so
-	// FocusGroup::add would not take one.
+	// land on. FocusGroup::add takes it because UiContainer is a UiWidget.
 	class OptionRow final : public UiContainer
 	{
 	public:
@@ -160,9 +159,8 @@ TEST_CASE("set_colour reaches every child, through nesting and past what has non
 
 TEST_CASE("a focus group can hold a compound row and paints all of it")
 {
-	// The case the report was filed for. UiContainer was a UiObject, so this
-	// add() would not compile at all, and there was no way to write a row with
-	// a value in it that the cursor could land on.
+	// A row with a value in it that the cursor can land on: the add() below
+	// compiles only because UiContainer is a UiWidget.
 	OptionRow resolution("resolution", 0.0f);
 	OptionRow full_screen("full_screen", 100.0f);
 
@@ -223,7 +221,6 @@ TEST_CASE("a leaf can be derived from and still be held as a widget")
 	std::unique_ptr<UiWidget> owned = std::make_unique<CountingTexture>();
 	owned->set_colour(Colour::green);
 	// Destroyed through UiWidget*, which is safe because the destructor is
-	// virtual from GameObject down. That is the part `final` was not
-	// protecting anything from.
+	// virtual from GameObject down.
 	owned.reset();
 }

@@ -15,10 +15,9 @@ TEST_SUITE("RectangleRotated")
 	TEST_CASE("a rotated rectangle can actually be rotated")
 	{
 		// set_x_axis validates against the unchanged y_axis_ and
-		// set_y_axis against the unchanged x_axis_, so a genuine rotation
-		// was rejected whichever was called first - the rectangle could
-		// not be turned through its own API at all. Both single-axis
-		// setters still refuse, correctly; set_axes is the one that turns.
+		// set_y_axis against the unchanged x_axis_, so neither can turn the
+		// rectangle on its own, whichever is called first. Both refuse,
+		// correctly; set_axes is the one that turns.
 		RectangleRotated r(Point2F(0.0f, 0.0f), Vector2F::direction_right,
 			Vector2F::direction_down, Vector2F(10.0f, 5.0f));
 
@@ -44,12 +43,12 @@ TEST_SUITE("RectangleRotated")
 	}
 	TEST_CASE("a degenerate rotated rectangle answers contains(), it does not throw")
 	{
-		// contains() reached Quad's constructor, which rejects four
-		// coincident points - so a bool predicate on a default-constructed
-		// RectangleRotated threw invalid_argument("Quad is not valid"),
-		// naming a type the caller never mentioned. A shape with no
-		// interior contains nothing, which is what every other degenerate
-		// shape in the library now says.
+		// Quad's constructor rejects four coincident points, so a contains()
+		// that went through a Quad would make a bool predicate on a
+		// default-constructed RectangleRotated throw, naming a type the
+		// caller never mentioned. A shape with no interior contains
+		// nothing, which is what every other degenerate shape in the
+		// library says.
 		const RectangleRotated degenerate;
 
 		CHECK_NOTHROW(point_rectangle_rotated_intersect(Point2F(1.0f, 1.0f), degenerate));
@@ -92,12 +91,11 @@ TEST_SUITE("RectangleRotated")
 
 		CHECK(are_equal(flat.angle(), 0.0f));
 	}
-	TEST_CASE("test_rectangle_rotated_segment_constructor")
+	TEST_CASE("a rotated rectangle built from a segment is centred on it with unit axes")
 	{
-		// The (Segment, thickness) overload is what paint trails and thick
-		// line segments use. Segment::direction() is un-normalised, so taking
-		// it as a unit vector throws for every segment not exactly 1 unit
-		// long.
+		// The (Segment, thickness) overload turns a line into a thick
+		// shape. Segment::direction() is un-normalised, so taking it as a
+		// unit vector would throw for every segment not exactly 1 unit long.
 		const float thickness = 2.0f;
 		Segment s(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
 		RectangleRotated rr(s, thickness);
@@ -128,11 +126,11 @@ TEST_SUITE("RectangleRotated")
 		CHECK(are_equal(rr_diagonal.x_axis().length(),
 			1.0f));
 	}
-	TEST_CASE("test_rectangle_rotated_rejects_invalid")
+	TEST_CASE("a rotated rectangle rejects degenerate axes and extents")
 	{
-		// is_valid() consults edges_valid(), which reads points_. When
-		// points_ was still all-zero at validation time these degenerate
-		// cases were accepted.
+		// is_valid() consults edges_valid(), which reads points_, so the
+		// corners must be computed before validation for these degenerate
+		// cases to be refused.
 
 		// zero-length segment: no direction, so no valid axes
 		Segment degenerate(Point2F(3.0f, 3.0f), Point2F(3.0f, 3.0f));
@@ -148,7 +146,7 @@ TEST_SUITE("RectangleRotated")
 				Vector2F::direction_right, Vector2F::direction_down_right,
 				Vector2F(5.0f, 5.0f)); }(), std::invalid_argument);
 	}
-	TEST_CASE("test_rectangle_rotated_setters_are_transactional")
+	TEST_CASE("a rejected RectangleRotated setter leaves the rectangle as it was")
 	{
 		// A rejected setter argument must leave the rectangle untouched.
 		RectangleRotated rr(Point2F::zero, Vector2F::direction_right,

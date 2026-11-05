@@ -12,12 +12,12 @@ TEST_SUITE("Quad")
 {
 	TEST_CASE("a rejected Quad setter leaves the quad as it was")
 	{
-		// The sibling of "test_rectangle_rotated_setters_are_transactional".
-		// Quad assigned the member first and validated afterwards, so a
-		// rejected point stayed in the object - and because is_valid() is
-		// a convexity test over all four points, the quad was then stuck:
-		// every subsequent setter rejected the shape it had been left in,
-		// so it could not be repaired through its own API.
+		// The sibling of "a rejected RectangleRotated setter leaves the
+		// rectangle as it was". A setter that assigned first and validated
+		// afterwards would keep the rejected point - and because is_valid()
+		// is a convexity test over all four points, the quad would then be
+		// stuck: every later setter would reject the shape it had been left
+		// in, so it could not be repaired through its own API.
 		Quad q(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
 			Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
 		const Quad before = q;

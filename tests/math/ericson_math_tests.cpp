@@ -19,7 +19,7 @@ using namespace labrador;
 
 TEST_SUITE("EricsonMath")
 {
-	TEST_CASE("test_closest_pt_point_AABB")
+	TEST_CASE("the closest point on an AABB is the point inside, or the clamp outside")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 		Point2F p, closest;
@@ -92,27 +92,27 @@ TEST_SUITE("EricsonMath")
 		CHECK(signed_area(flat) == 0.0f);
 		CHECK(signed_area(doubled) == 0.0f);
 	}
-	TEST_CASE("signed_area stays exact at the coordinates the game runs at")
+	TEST_CASE("signed_area stays exact at world coordinates in the thousands")
 	{
-		// Out where the levels are, the raw coordinates form products near
-		// 3e7, and consecutive floats up there are 2 apart. Summing four
-		// of those and cancelling down to the area of a small shape leaves
-		// an error set by the size of the world rather than the size of
-		// the shape - this square comes out as 176.0 computed that way,
-		// against a true 176.88. Taken relative to the first vertex, every
-		// product is the size of the polygon and the answer is exactly the
-		// width times the height.
+		// Thousands of units from the origin, the raw coordinates form
+		// products near 3e7, and consecutive floats up there are 2 apart.
+		// Summing four of those and cancelling down to the area of a small
+		// shape leaves an error set by the size of the world rather than
+		// the size of the shape - this square comes out as 176.0 computed
+		// that way, against a true 176.88. Taken relative to the first
+		// vertex, every product is the size of the polygon and the answer
+		// is exactly the width times the height.
 		//
 		// Round coordinates hide this: a 40-unit tile at (6200, 5000) has
 		// products that are all exactly representable, so both
 		// formulations agree and prove nothing.
-		constexpr float X = 6232.75f;
-		constexpr float Y = 5408.46f;
+		constexpr float left = 6232.75f;
+		constexpr float top = 5408.46f;
 		constexpr float side = 13.3f;
 
 		const std::array<Point2F, 4> tile = {
-			Point2F(X, Y), Point2F(X + side, Y),
-			Point2F(X + side, Y + side), Point2F(X, Y + side) };
+			Point2F(left, top), Point2F(left + side, top),
+			Point2F(left + side, top + side), Point2F(left, top + side) };
 
 		// The side lengths the corners actually store, once each sum has
 		// been rounded to a float.
@@ -199,14 +199,12 @@ TEST_SUITE("EricsonMath")
 	}
 	TEST_CASE("a collinear triangle contains nothing, and says so")
 	{
-		// This case has had three answers and only the third is the one
-		// the title claims. The barycentric form divided by the
-		// triangle's determinant, zero here, and every comparison against
-		// the resulting NaN was false - "outside" for the whole plane, by
-		// accident. The sign form that replaced it accepted every point
-		// whose signed area against all three edges was zero, which is the
-		// entire infinite supporting line, and the point at (2, 0) below
-		// was pinned as INSIDE while the title said otherwise.
+		// Two natural spellings get this wrong. A barycentric form divides
+		// by the triangle's determinant, zero here, and answers "outside"
+		// for the whole plane only because every comparison against NaN is
+		// false. A sign form accepts every point whose signed area against
+		// all three edges is zero, which is the entire infinite supporting
+		// line.
 		//
 		// A shape with no area encloses nothing, which is what
 		// signed_area says about these same three points. So: nothing is
@@ -219,8 +217,8 @@ TEST_SUITE("EricsonMath")
 		CHECK_FALSE(test_point_triangle(Point2F(2.0f, 0.0f), a, b, c));
 		CHECK_FALSE(test_point_triangle(Point2F(2.0f, 3.0f), a, b, c));
 
-		// On the supporting line but far outside the vertices. This is the
-		// one the sign form got most visibly wrong.
+		// On the supporting line but far outside the vertices, which the
+		// sign form would call inside.
 		CHECK_FALSE(test_point_triangle(Point2F(-1000.0f, 0.0f), a, b, c));
 
 		// A vertex of a shape that has none.
@@ -231,10 +229,9 @@ TEST_SUITE("EricsonMath")
 		// The sibling of "a zero-length segment is its own closest point,
 		// not a NaN", and the same arithmetic: the AB edge region divides
 		// by dot(ab, ab), which is zero when a and b are the same point.
-		// The result travelled - test_circle_triangle returns it as the
-		// contact point on the branch that reports a hit, so a caller
-		// asking where two things touched was handed (NaN, NaN) while
-		// being told they did.
+		// test_circle_triangle returns the result as the contact point on
+		// the branch that reports a hit, so a NaN here would tell a caller
+		// that two things touch at (NaN, NaN).
 		const Point2F a(0.0f, 0.0f);
 		const Point2F b(0.0f, 0.0f);
 		const Point2F c(10.0f, 0.0f);
@@ -262,8 +259,7 @@ TEST_SUITE("EricsonMath")
 		CHECK_FALSE(std::isnan(degenerate.y));
 		CHECK(degenerate == a);
 
-		// And the circle test that consumes it now reports a usable point
-		// rather than a poisoned one.
+		// And the circle test that consumes it reports a usable point.
 		Point2F contact;
 		const Circle circle(Point2F(5.0f, 1.0f), 5.0f);
 
@@ -306,7 +302,7 @@ TEST_SUITE("EricsonMath")
 		CHECK(test_segment_AABB(Point2F(-20.0f, 5.0f),
 			Point2F(20.0f, 5.0f), box));
 	}
-	TEST_CASE("test_point_triangle does not depend on the winding")
+	TEST_CASE("a point in a triangle does not depend on the winding")
 	{
 		const Point2F a(0.0f, 0.0f);
 		const Point2F b(10.0f, 0.0f);
@@ -319,8 +315,8 @@ TEST_SUITE("EricsonMath")
 		CHECK_FALSE(test_point_triangle(outside, a, b, c));
 		CHECK_FALSE(test_point_triangle(outside, a, c, b));
 
-		// The boundary is inside, which is what the barycentric form's
-		// v >= 0 && w >= 0 && v + w <= 1 also said.
+		// The boundary is inside, as the barycentric form's
+		// v >= 0 && w >= 0 && v + w <= 1 states it.
 		CHECK(test_point_triangle(Point2F(5.0f, 0.0f), a, b, c));
 		CHECK(test_point_triangle(a, a, b, c));
 	}
@@ -329,8 +325,8 @@ TEST_SUITE("EricsonMath")
 		// The rejecting form - "return false if separated on either axis,
 		// otherwise true" - reports the opposite: it reaches its accept branch
 		// by falling through, and NaN fails every comparison, so a single bad
-		// coordinate gives a box that intersects everything in the level. This
-		// routine is live behind a client's out-of-bounds check.
+		// coordinate gives a box that intersects everything in the world, and
+		// an out-of-bounds check built on it never fires.
 		const float nan = std::numeric_limits<float>::quiet_NaN();
 		const RectangleF good(0.0f, 0.0f, 10.0f, 10.0f);
 		const RectangleF poisoned(nan, 0.0f, 10.0f, 10.0f);
@@ -345,7 +341,7 @@ TEST_SUITE("EricsonMath")
 		CHECK(test_AABB_AABB(good, RectangleF(10.0f, 0.0f, 10.0f, 10.0f)));
 		CHECK_FALSE(test_AABB_AABB(good, RectangleF(11.0f, 0.0f, 10.0f, 10.0f)));
 	}
-	TEST_CASE("test_signed_2D_tri_area")
+	TEST_CASE("signed_2D_tri_area is twice the area, signed by the winding")
 	{
 		Point2F a(0.0f, 0.0f);
 		Point2F b(10.0f, 0.0f);
@@ -360,7 +356,7 @@ TEST_SUITE("EricsonMath")
 		// a, b, c are collinear
 		CHECK(signed_2D_tri_area(a, b, Point2F(20.0f, 0.0f)) == 0.0f);
 	}
-	TEST_CASE("test_test_2D_segment_segment")
+	TEST_CASE("test_2D_segment_segment reports the crossing point and its parameter")
 	{
 		float t;
 		Point2F p;
@@ -378,7 +374,7 @@ TEST_SUITE("EricsonMath")
 		CHECK_FALSE(test_2D_segment_segment(s1.point_0, s1.point_1,
 			s2.point_0, s2.point_1, t, p));
 	}
-	TEST_CASE("test_segment_convex_polygon: the segment clip, closed at the boundary")
+	TEST_CASE("a segment clipped against a convex polygon is closed at the boundary")
 	{
 		// The unit square scaled to ten, listed one way round and then the
 		// other, because nothing here may depend on the winding.
@@ -390,7 +386,7 @@ TEST_SUITE("EricsonMath")
 		// THE CASE THIS EXISTS FOR: corner to opposite corner, through the
 		// whole interior, with both endpoints outside and every crossing
 		// exactly at a vertex. Containment plus a proper crossing per edge
-		// answered false (docs/review/gpt6/README.md, G6-05).
+		// answers false here, because no crossing is proper.
 		CHECK(test_segment_convex_polygon(square,
 			Point2F(-5.0f, -5.0f), Point2F(15.0f, 15.0f)));
 		CHECK(test_segment_convex_polygon(square,
@@ -454,7 +450,7 @@ TEST_SUITE("EricsonMath")
 		CHECK_FALSE(test_segment_convex_polygon(poisoned,
 			Point2F(5.0f, -5.0f), Point2F(5.0f, 15.0f)));
 	}
-	TEST_CASE("test_closest_pt_point_triangle")
+	TEST_CASE("the closest point on a triangle is the point inside, a vertex or an edge projection")
 	{
 		Triangle t(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
 		Point2F t0 = t.point_0();
@@ -477,7 +473,7 @@ TEST_SUITE("EricsonMath")
 		closest = closest_pt_point_triangle(p, t0, t1, t2);
 		CHECK(closest == Point2F(5.0f, 0.0f));
 	}
-	TEST_CASE("test_closest_pt_point_segment")
+	TEST_CASE("the closest point on a segment clamps its parameter to the ends")
 	{
 		Segment s(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
 		Point2F s0 = s.point_0;
@@ -505,7 +501,7 @@ TEST_SUITE("EricsonMath")
 		CHECK(closest == Point2F(5.0f, 0.0f));
 		CHECK(t == 0.5f);
 	}
-	TEST_CASE("test_closest_pt_point_OBB_axis_aligned")
+	TEST_CASE("the closest point on an axis-aligned OBB matches the AABB answer")
 	{
 		// An axis-aligned OBB spanning (-5,-5) to (5,5), so every answer
 		// can be checked against the AABB result.
@@ -533,7 +529,7 @@ TEST_SUITE("EricsonMath")
 		closest_pt_point_OBB(Point2F(5.0f, 0.0f), b, q);
 		CHECK(q == Point2F(5.0f, 0.0f));
 	}
-	TEST_CASE("test_closest_pt_point_OBB_rotated")
+	TEST_CASE("the closest point on a rotated OBB lies on the rotated faces")
 	{
 		// A square rotated 45 degrees - a diamond with vertices at
 		// (+-5*sqrt2, 0) and (0, +-5*sqrt2). Here the OBB answer differs
@@ -560,37 +556,46 @@ TEST_SUITE("EricsonMath")
 		CHECK(are_equal(q.x, half_diagonal / 2.0f));
 		CHECK(are_equal(q.y, half_diagonal / 2.0f));
 	}
-}
-
-TEST_CASE("circle AABB overloads consistently reject contained nonfinite geometry")
-{
-	const RectangleF box(0.0f, 0.0f, 20.0f, 20.0f);
-	const Circle circle(Point2F(10.0f, 10.0f), 1.0f);
-	for (const float poison : { std::numeric_limits<float>::quiet_NaN(),
-		std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() })
+	TEST_CASE("circle AABB overloads consistently reject contained nonfinite geometry")
 	{
-		for (const Circle& invalid : { Circle(Point2F(poison, 10.0f), 1.0f),
-			Circle(Point2F(10.0f, poison), 1.0f), Circle(Point2F(10.0f, 10.0f), poison) })
+		// Both overloads answer false for a non-finite circle or box, and the
+		// one with an out-parameter leaves it untouched when it does.
+		const RectangleF box(0.0f, 0.0f, 20.0f, 20.0f);
+		const Circle circle(Point2F(10.0f, 10.0f), 1.0f);
+		const Point2F untouched(-7.0f, -8.0f);
+
+		for (const float poison : { std::numeric_limits<float>::quiet_NaN(),
+			std::numeric_limits<float>::infinity(),
+			-std::numeric_limits<float>::infinity() })
 		{
-			Point2F closest(-7.0f, -8.0f);
-			CHECK_FALSE(test_circle_AABB(invalid, box));
-			CHECK_FALSE(test_circle_AABB(invalid, box, closest));
-			CHECK(closest == Point2F(-7.0f, -8.0f));
+			for (const Circle& invalid : { Circle(Point2F(poison, 10.0f), 1.0f),
+				Circle(Point2F(10.0f, poison), 1.0f),
+				Circle(Point2F(10.0f, 10.0f), poison) })
+			{
+				Point2F closest = untouched;
+				CHECK_FALSE(test_circle_AABB(invalid, box));
+				CHECK_FALSE(test_circle_AABB(invalid, box, closest));
+				CHECK(closest == untouched);
+			}
+
+			for (const RectangleF& invalid : { RectangleF(poison, 0.0f, 20.0f, 20.0f),
+				RectangleF(0.0f, poison, 20.0f, 20.0f),
+				RectangleF(0.0f, 0.0f, poison, 20.0f),
+				RectangleF(0.0f, 0.0f, 20.0f, poison) })
+			{
+				Point2F closest = untouched;
+				CHECK_FALSE(test_circle_AABB(circle, invalid));
+				CHECK_FALSE(test_circle_AABB(circle, invalid, closest));
+				CHECK(closest == untouched);
+			}
 		}
-		for (const RectangleF& invalid : { RectangleF(poison, 0.0f, 20.0f, 20.0f),
-			RectangleF(0.0f, poison, 20.0f, 20.0f),
-			RectangleF(0.0f, 0.0f, poison, 20.0f),
-			RectangleF(0.0f, 0.0f, 20.0f, poison) })
-		{
-			Point2F closest(-7.0f, -8.0f);
-			CHECK_FALSE(test_circle_AABB(circle, invalid));
-			CHECK_FALSE(test_circle_AABB(circle, invalid, closest));
-			CHECK(closest == Point2F(-7.0f, -8.0f));
-		}
+
+		// A finite circle inside the box intersects it, and a negative
+		// radius does not.
+		Point2F closest;
+		CHECK(test_circle_AABB(circle, box));
+		CHECK(test_circle_AABB(circle, box, closest));
+		CHECK(closest == circle.center());
+		CHECK_FALSE(test_circle_AABB(Circle(Point2F(10.0f, 10.0f), -1.0f), box));
 	}
-	Point2F closest;
-	CHECK(test_circle_AABB(circle, box));
-	CHECK(test_circle_AABB(circle, box, closest));
-	CHECK(closest == circle.center());
-	CHECK_FALSE(test_circle_AABB(Circle(Point2F(10.0f, 10.0f), -1.0f), box));
 }
