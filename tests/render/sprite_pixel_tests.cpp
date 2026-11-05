@@ -18,7 +18,7 @@ using namespace render_tests::pixel;
 
 namespace
 {
-	// A texture that carries a mip chain, which no file in either client does.
+	// A texture that carries a mip chain, which no content file here does.
 	//
 	// Level zero is sixteen pixels of red and level one is eight of blue, so
 	// which level a minified draw sampled is the colour that comes back rather

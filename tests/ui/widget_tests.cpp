@@ -20,7 +20,7 @@ using labrador::UiWidget;
 namespace
 {
 	// A UiObject that is drawn and has no colour, which is the case
-	// UiObject::set_colour's no-op exists for. Nothing in either client is one
+	// UiObject::set_colour's no-op exists for. Nothing in the samples is one
 	// today; the point is that a container holding one still works.
 	class ColourlessObject final : public UiObject
 	{
