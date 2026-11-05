@@ -15,8 +15,7 @@ namespace labrador
 		// carries (cmake/settings.cmake), and apply_deadzone answers exactly
 		// zero inside the deadzone rather than something small. A tolerance
 		// here would be a second deadzone applied on top of the first, which
-		// is the mistake gamepad.h warns about two lines above the function
-		// this calls.
+		// is the mistake GamepadState's stick fields warn about (gamepad.h).
 		if (pushed == Vector2F::zero)
 		{
 			return Direction::none;

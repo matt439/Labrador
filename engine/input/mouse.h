@@ -6,9 +6,9 @@
 
 namespace labrador
 {
-	// Fed, not read, for the reason keyboard.h gives at length and will not
-	// repeat: the messages arrive at the window, so the flow is app -> input
-	// and nothing in this file knows a window exists.
+	// Fed, not read, as the keyboard is: the messages arrive at the window,
+	// so the flow is app -> input and nothing in this file knows a window
+	// exists.
 	//
 	// THE WHEEL IS WHY THAT IS NOT MERELY A PREFERENCE HERE. Cursor position
 	// and buttons both have a polling API on Windows, so a mouse built only
@@ -47,8 +47,9 @@ namespace labrador
 	struct MouseState
 	{
 		// False means the window did not have the mouse this frame. Buttons
-		// are all up when it is false, for the reason keyboard.h documents -
-		// the button-up after a drag out of the window goes somewhere else.
+		// are all up when it is false, as keys are on keyboard focus loss,
+		// because the button-up after a drag out of the window goes somewhere
+		// else.
 		bool focused = false;
 
 		// CLIENT PIXELS: the area the game draws into, origin at its top-left,
@@ -137,14 +138,14 @@ namespace labrador
 	// snapshots rather than advancing them.
 	//
 	// Application owns one, feeds it from the window's messages and polls it
-	// once per frame before any state updates - the same arrangement, and the
-	// same reason, as Gamepads and Keyboard.
+	// once per fixed update before that update's states run - the same
+	// arrangement, and the same reason, as Gamepads and Keyboard.
 	class Mouse
 	{
 	public:
-		// THE FEEDING SIDE, public for the reasons keyboard.h gives: `input`
-		// may not name a class in `app` to friend it, and a test double or a
-		// replay source wants exactly this seam. The tests in tests/input/
+		// THE FEEDING SIDE, public because `input` may not name a class in
+		// `app` to friend it, and a test double or a replay source wants
+		// exactly this seam. The tests in tests/input/
 		// drive a Mouse with no window anywhere.
 		void on_move(const Vector2I& position);
 		void on_button_down(MouseButton button);

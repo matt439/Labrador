@@ -14,7 +14,7 @@ namespace labrador
 	}
 
 
-	// Returns true if sphere s intersects AABB b, false otherwise
+	// Whether boxes a and b overlap, boundaries included.
 	bool test_AABB_AABB(const RectangleF& a,
 		const RectangleF& b)
 	{
@@ -26,8 +26,8 @@ namespace labrador
 		// Stated as "overlapping on both axes", not as "not separated on
 		// either". The two are the same for real numbers and are not the same
 		// for NaN: every comparison against NaN is false, so the rejecting
-		// form fell through to `return true` and one NaN coordinate produced a
-		// box that intersected everything. This form makes the accept branch
+		// form would fall through to `return true` and one NaN coordinate would
+		// produce a box that intersected everything. This form makes the accept branch
 		// something a comparison has to actually reach, so a NaN reports no
 		// intersection - which is the failure a caller can survive
 		// (11.2.2, pp.436-437).
@@ -70,13 +70,12 @@ namespace labrador
 		float vc = d1 * d4 - d3 * d2;
 		if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
 			// d1 - d3 is dot(ab, ab) - the squared length of ab - so it is
-			// zero exactly when a and b are the same point. Unguarded, that
-			// divided 0/0 and returned (NaN, NaN), which test_circle_triangle
-			// hands back as the contact point on the branch where it reports
-			// a hit. Triangle's constructor validates nothing, so the input is
-			// reachable.
+			// zero exactly when a and b are the same point. Dividing by it would
+			// give 0/0 and (NaN, NaN), which test_circle_triangle hands back as
+			// the contact point on the branch where it reports a hit. Triangle's
+			// constructor validates nothing, so the input is reachable.
 			//
-			// Falling through is the fix, NOT returning a. When a and b
+			// Falling through is the answer, NOT returning a. When a and b
 			// coincide the triangle is the segment a-c, and a is only the
 			// closest point on it when p is beyond that end - which the vertex
 			// region above has already tested for. Answering a here removes
@@ -217,11 +216,11 @@ namespace labrador
 		m = m - c; // Translate box and segment to origin
 
 		// Stated as "overlapping on every axis", not as "not separated on
-		// some axis" - the same rewrite, for the same reason, as
-		// test_AABB_AABB at the top of this file. The rejecting form was three
-		// comparisons that are all false against NaN, falling through to
-		// `return 1`, so a segment with one poisoned endpoint coordinate hit
-		// every box in the world (11.2.2, pp.436-437).
+		// some axis" - the same form, for the same reason, as
+		// test_AABB_AABB at the top of this file. The rejecting form is three
+		// comparisons that are all false against NaN, so it would fall through
+		// to `return 1` and a segment with one poisoned endpoint coordinate
+		// would hit every box in the world (11.2.2, pp.436-437).
 		const float adx = std::abs(d.x);
 		const bool overlap_x = std::abs(m.x) <= e.x + adx;
 
@@ -230,8 +229,8 @@ namespace labrador
 
 		// The epsilon term counteracts arithmetic error when the segment runs
 		// (near) parallel to a coordinate axis (see text for detail). It
-		// belongs to the cross test alone, and is still added after the two
-		// axis tests have been decided, exactly as before.
+		// belongs to the cross test alone, and is added only after the two
+		// axis tests have been decided.
 		const float adx_e = adx + segment_parallel_epsilon;
 		const float ady_e = ady + segment_parallel_epsilon;
 
@@ -333,14 +332,12 @@ namespace labrador
 		// Every edge returned exactly zero, so the polygon has no interior:
 		// its vertices are coincident, or all of them are collinear. That is
 		// the case signed_area already calls "encloses nothing", and this
-		// function is the one other place in the file that has to agree.
+		// function agrees with it.
 		//
-		// The disagreement was not academic. A default-constructed Triangle is
-		// three copies of Vector2F::zero, so every edge vector was (0, 0),
-		// every cross product was zero, and the fall-through said "inside" -
-		// which made Triangle().contains(p) true for every point in the plane
-		// and triangles_intersect(anything, Triangle()) true unconditionally,
-		// through its containment pass.
+		// A default-constructed Triangle is three copies of Vector2F::zero, so
+		// every edge vector is (0, 0) and every cross product is zero. Answering
+		// "inside" here would make triangles_intersect(anything, Triangle())
+		// true unconditionally, through its containment pass.
 		return any_signed;
 	}
 
@@ -462,8 +459,6 @@ namespace labrador
 		return false;
 	}
 
-	// Compute barycentric coordinates (u, v, w) for
-	// point p with respect to triangle (a, b, c)
 	bool test_point_triangle(const Point2F& p,
 		const Point2F& a, const Point2F& b, const Point2F& c)
 	{

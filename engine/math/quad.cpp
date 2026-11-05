@@ -84,8 +84,7 @@ namespace labrador
 		//
 		// A quad is convex exactly when its diagonals properly cross
 		// (Ericson, 3.7.1): each diagonal must have the other's endpoints
-		// strictly on opposite sides of it. Four signed areas, no allocation,
-		// against six segment tests over a heap-allocated vector of edges.
+		// strictly on opposite sides of it. Four signed areas, no allocation.
 		//
 		// Strictness is what rejects the degenerate cases - three collinear
 		// points, or a repeated vertex, put a zero on one side and a zero is

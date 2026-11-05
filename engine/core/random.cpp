@@ -9,9 +9,10 @@ namespace labrador
 {
 	std::uint32_t Random::next()
 	{
-		// The golden-ratio increment and Mulberry's mixing constants: the
-		// SplitMix32 that LineSweeper's rules and particles already used,
-		// draw for draw, so a game moving onto this keeps its sequences.
+		// A Weyl step by the golden-ratio increment, then a two-round
+		// xorshift-multiply mixer whose constants come from Chris Wellons'
+		// hash-prospector. LineSweeper's rules/tick.cpp computes the same
+		// sequence, because its rules library does not link the engine.
 		this->position_ += 0x9E3779B9u;
 
 		std::uint32_t value = this->position_;

@@ -70,8 +70,7 @@ namespace labrador
 		// and owes this file nothing. These three arrive as messages in this
 		// window's queue, or as events on its canvas, so the only way into the
 		// input module is out through here - which is the whole reason `input`
-		// is fed rather than read, and the reason nothing in it names a window
-		// (keyboard.h says it at length).
+		// is fed rather than read, and the reason nothing in it names a window.
 		//
 		// const, like on_window_moved and for the same reason: they change
 		// nothing about the window, and everything they do reach is borrowed and

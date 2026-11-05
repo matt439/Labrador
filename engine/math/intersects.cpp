@@ -137,9 +137,8 @@ namespace labrador
 		// Squaring preserves order on non-negative quantities, so a predicate
 		// that only has to decide never needs the root (5.2.5, p.165).
 		//
-		// Forwarded rather than rewritten: test_circle_circle is this test,
-		// already ported and already correct, and it had no callers anywhere
-		// in the tree. Two functions answering one question is a correctness
+		// Forwarded rather than rewritten: test_circle_circle is this test.
+		// Two functions answering one question is a correctness
 		// hazard before it is a duplication one - they round differently at
 		// the grazing boundary, so they can disagree about a contact.
 		return test_circle_circle(a, b);
@@ -300,10 +299,10 @@ namespace labrador
 	bool triangle_segment_intersect(const Triangle& triangle, const Segment& segment)
 	{
 		// One closed clip, not endpoint containment followed by a proper
-		// crossing per edge. That pair missed a segment entering at one
+		// crossing per edge. That pair would miss a segment entering at one
 		// vertex and leaving at another; test_segment_convex_polygon says
 		// why, and it is the definition every segment-against-shape routine
-		// in this file now shares.
+		// in this file shares.
 		return test_segment_convex_polygon(triangle.points,
 			segment.point_0, segment.point_1);
 	}
@@ -423,13 +422,12 @@ namespace labrador
 		// same two point sets, opposite answers, decided by which end the caller
 		// happened to write first.
 		//
-		// It also did not fix the hole it sat in front of - collinear overlap
-		// is still not an intersection here - so it patched exactly one
-		// instance of a uniformly-open boundary and made the rest
-		// inconsistent. Removing it changes no consumer's answer: every
-		// polygon routine that reaches this runs a closed containment pass
-		// over the vertices first, and two identical segments share both
-		// endpoints, so containment has already returned true.
+		// Nor would it close the boundary - collinear overlap is not an
+		// intersection here - so it would patch exactly one instance of a
+		// uniformly-open boundary and make the rest inconsistent. No consumer
+		// needs it: every polygon routine that reaches this runs a closed
+		// containment pass over the vertices first, and two identical segments
+		// share both endpoints, so containment has already returned true.
 		return test_2D_segment_segment(a.point_0, a.point_1,
 			b.point_0, b.point_1, t, p);
 	}
@@ -462,7 +460,7 @@ namespace labrador
 		// Straight onto the corner cache the rectangle already holds.
 		//
 		// NOT BY BUILDING A Quad FROM IT AND TRIANGULATING THAT. A boolean
-		// query would allocate twice, re-prove the convexity of a shape that is
+		// query would re-prove the convexity of a shape that is
 		// convex by construction, and could THROW: Quad's constructor rejects
 		// four coincident points, which is exactly what a default-constructed
 		// RectangleRotated holds - so a predicate returning bool would terminate
@@ -472,9 +470,9 @@ namespace labrador
 		//
 		// point_in_convex_polygon gives the same answer for a convex
 		// quadrilateral - both take the boundary as inside and neither cares
-		// about winding - in four cross products and no allocation. A
-		// degenerate rectangle now answers false rather than throwing, which
-		// is the same thing every other degenerate shape in the library says.
+		// about winding - in four cross products. A degenerate rectangle
+		// answers false rather than throwing, which is the same thing every
+		// other degenerate shape in the library says.
 		return point_in_convex_polygon(rectangle_rotated.points(), point);
 	}
 

@@ -14,12 +14,9 @@ namespace labrador
 		Vector2F() = default;
 		Vector2F(const Vector2F&) = default;
 		Vector2F& operator=(const Vector2F&) = default;
-		// explicit, all of them. A float is not a vector, a Vector2I is not a
-		// Vector2F, and a RectangleF is not a Quad - and an implicit
-		// conversion is one the compiler inserts silently, even at /W4 /WX.
-		// Two of the Quad forms end in a throw, so a wrong-typed argument
-		// would become a runtime exception from inside the callee with no
-		// conversion visible at the call site.
+		// Every single-argument constructor is explicit. A float is not a
+		// vector and a Vector2I is not a Vector2F, and an implicit conversion
+		// is one the compiler inserts silently, even at /W4 /WX.
 		//
 		// constexpr and defined here, the two that take only floats, so the
 		// constants at the bottom of this struct are constant-initialised:

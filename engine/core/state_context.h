@@ -49,7 +49,7 @@ namespace labrador
 		//
 		// Consecutive queued transitions collapse to the last one; discarded
 		// states never run init(). Pushes and pops between transitions preserve
-		// their issue order, because they change which frame is being replaced.
+		// their issue order, because they change which stack entry is being replaced.
 		void transition_to(std::unique_ptr<State> state);
 
 		// Puts a state above the current one and calls the covered state's
@@ -58,12 +58,12 @@ namespace labrador
 		// deferral and entry follow transition_to().
 		void push(std::unique_ptr<State> state);
 
-		// Calls on_closed after this frame is popped, regardless of the result
+		// Calls on_closed after this stack entry is popped, regardless of the result
 		// supplied to pop(). The ordering and shutdown rule match on_result below.
 		void push(std::unique_ptr<State> state, std::function<void()> on_closed);
 
-		// Calls on_result with the typed result when this frame is popped.
-		// The callback belongs to the frame and survives transition_to() replacing
+		// Calls on_result with the typed result when this stack entry is popped.
+		// The callback belongs to the entry and survives transition_to() replacing
 		// its state, so a multi-page screen answers the push that opened it.
 		//
 		// The type is named at the push and checked at the pop:

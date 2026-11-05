@@ -14,8 +14,7 @@
 // repository, so it runs on a build machine, in a container, and on a runner
 // with no sound card - which is what makes it the configuration that can assert
 // what an object played rather than only that playing it did not throw.
-// recording.h carries the argument for why that mattered enough to build;
-// this file is the mechanism.
+// recording.h is what a test reads back; this file is the mechanism.
 //
 // A BANK IS THE LIST OF NAMES IT WAS HANDED, and that is the whole of the
 // container question on this side of the seam. audio_device.h explains why the

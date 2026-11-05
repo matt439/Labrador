@@ -156,16 +156,16 @@ namespace labrador
 		// propagate as exceptions. No output is recreated while suspended.
 		void update();
 
-		// The window lost or regained the foreground. Same contract as
-		// GamepadReader's pair and for the same reason: a game in the
-		// background makes no noise, and what suspension costs the platform is
-		// the platform's affair.
+		// The window was minimised, the system power-suspended or the page
+		// hidden, and then came back. Losing the foreground alone suspends
+		// nothing: a game behind another window keeps its sound. What
+		// suspension costs the platform is the platform's affair.
 		//
 		// A one-shot asked for while suspended is dropped on every backend,
 		// for the reason the gesture paragraph below gives: a sound effect
 		// that plays late plays wrong, and the game's updates go on while it
 		// is minimised. Persistent voices keep their states and calls; what
-		// is playing is heard again after resume().
+		// is playing is heard again after resume(), from where it stopped.
 		void suspend();
 		void resume();
 

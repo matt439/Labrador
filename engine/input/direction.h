@@ -63,10 +63,9 @@ namespace labrador
 	// once, here. The d-pad wins a disagreement, because it is the deliberate
 	// input of the two: a thumb resting on a stick should not fight a press.
 	//
-	// ONE STATE AND NOT A Gamepads, which is gamepad.h's own rule for
-	// everything beside it: "free functions over two values, and Gamepads'
-	// methods of the same names are forwarders to them. That is what makes the
-	// whole of the edge logic testable without a device." A caller with a
+	// ONE STATE AND NOT A Gamepads, as with gamepad.h's queries beside it:
+	// they are free functions over snapshots a caller may construct, and
+	// Gamepads' methods of the same names forward to them. A caller with a
 	// Gamepads writes pad_direction(pads.state(slot)); a test writes the state
 	// by hand and needs no controller plugged into the machine running it.
 	//

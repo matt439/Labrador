@@ -16,9 +16,9 @@ namespace labrador
 	// one. An edge detector a game keeps for itself advances its "previous"
 	// only on the frames its owner happens to be running, so it needs priming
 	// by hand at every transition, and a second one - menus beside gameplay -
-	// drifts from the first. Application polls this once per frame, before
-	// any state updates, so every reader measures across the same two frames
-	// and nothing is primed.
+	// drifts from the first. Application polls this once per fixed update,
+	// before that update's states run, so every reader measures across the
+	// same two polls and nothing is primed.
 	//
 	// A slot is a slot. The backend assigns it (GamepadReader::read) and a pad
 	// keeps it while it stays connected, but it is not stable across a replug

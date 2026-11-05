@@ -11,14 +11,10 @@
 #include <vector>
 
 // The XAudio2 backend, through DirectXTK, and the only file in this repository
-// that includes <Audio.h>.
-//
-// Spread across public engine headers instead, it is what made
-// docs/port/android.md 3.2 call audio "the one place the second-platform claim
-// is provably false today": a game asking what its music was doing named a
-// Microsoft library to ask. Nothing above audio_device.h names an audio API,
-// and cmake/check_engine_includes fails the build for a file outside this
-// folder that reaches for one of ours.
+// that includes <Audio.h>. Nothing above audio_device.h names an audio API,
+// so a game never names a Microsoft library to ask what its music is doing,
+// and cmake/check_engine_includes.cmake fails the build for a file outside
+// this folder that reaches for one of ours.
 //
 // WHAT THIS FILE OWNS THAT THE SEAM DOES NOT. Three things, and they are the
 // three the seam declines to decide:
@@ -31,9 +27,10 @@
 //    would decode the first to four times its size and refuse the second.
 //  - THE LIFETIME RULE. DirectXTK requires the AudioEngine to outlive every
 //    WaveBank and SoundEffectInstance, because their destructors unregister
-//    themselves from it. It is Impl's declaration order, six lines from the
-//    library that requires it, rather than a paragraph in the shell's member
-//    list - which is where a DirectXTK ordering constraint must not sit.
+//    themselves from it. It is Impl's declaration order, in this file beside
+//    the library that requires it, rather than a paragraph in the shell's
+//    member list - which is where a DirectXTK ordering constraint must not
+//    sit.
 //  - DEVICE LOSS. Silent output is retried once a second while active. Reset
 //    preserves banks and instance objects but drops playback, so games decide
 //    which persistent sounds to start again. A suspended engine is not reset:
@@ -49,7 +46,8 @@ namespace labrador
 {
 	namespace
 	{
-		// The one place the container's spelling appears.
+		// The one place this backend spells the container; webaudio/ spells
+		// it the same way in its own copy.
 		std::string container_path(const std::string& directory,
 			const std::string& name)
 		{

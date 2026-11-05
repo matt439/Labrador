@@ -23,8 +23,8 @@ namespace labrador
 	// WHAT IS ON THIS SIDE OF THE SEAM. Everything in this class is engine
 	// arithmetic and engine policy: which name means which wave, which handles
 	// are valid, and the clamp that folds a volume into [0,1] and a pitch and a
-	// pan into [-1,1]. It calls audio_device.h for the four or five things an
-	// audio API actually does.
+	// pan into [-1,1]. It calls audio_device.h for what an audio API actually
+	// does.
 	//
 	// Nothing here may name one. A bank holding a DirectX::WaveBank and a
 	// Registry<DirectX::SoundEffectInstance>, with its effect handle and its

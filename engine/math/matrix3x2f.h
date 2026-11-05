@@ -129,8 +129,8 @@ namespace labrador
 		// taken through it and names nothing when it does (T6).
 		//
 		// The test is that the reciprocal of the determinant is finite, and it
-		// is deliberately not a comparison against default_epsilon. Every tolerance in
-		// scalar.h's ordering bounds a LENGTH, where an absolute number means
+		// is deliberately not a comparison against default_epsilon, which bounds
+		// a LENGTH, where an absolute number means
 		// something over a bounded range of coordinates. A determinant is an
 		// AREA RATIO, so the same bound would mean something different at
 		// every scale: a uniform scale of 0.005 - a legitimate, invertible,

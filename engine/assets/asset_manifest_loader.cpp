@@ -31,8 +31,7 @@ namespace labrador
 			entry.kind = group.identifier("kind");
 			entry.directory = group.identifier("directory");
 
-			// Absent means required, which is the safe default and the one
-			// every existing manifest already meant.
+			// Absent means required, the safe default (asset_manifest_loader.h).
 			entry.optional =
 				group.has("optional") ? group.boolean("optional") : false;
 

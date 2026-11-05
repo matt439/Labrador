@@ -44,7 +44,8 @@ namespace labrador
 		// pixel (nonnegative). Ordinary geometry needs no adjustment. Drawables
 		// that snap in view pixels override this: quantization follows the
 		// camera, so its world-space allowance depends on zoom. bounds() remains
-		// the unsnapped geometry used by layout and collision.
+		// the unsnapped geometry used by layout; collision reads
+		// CollisionObject::shape() instead.
 		virtual RectangleF cull_bounds(float /*units_per_pixel*/) const
 		{
 			return this->bounds();

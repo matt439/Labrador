@@ -26,11 +26,11 @@ wants to run on: a fixed sixteen would make four tasks plus a blocked submitter
 out of a four-view frame on a two-core part.
 
 **`view_capacity` is a property of the layout.** Taking it from a thread count
-is not merely untidy: every view costs a deferred context and a sprite batch's
-dynamic vertex buffer, built eagerly at `create_device` and rebuilt after every
-device restore, whether or not a frame ever uses it. A sixteen-thread default
-would build sixteen of them to draw one pane, out of the same memory the game
-runs in.
+is not merely untidy: every view costs the backend's per-view recording state
+(`engine/render/SEAM.md`), built eagerly at `create_device` and rebuilt after
+every device restore, whether or not a frame ever uses it. A sixteen-thread
+default would build sixteen of them to draw one pane, out of the same memory
+the game runs in.
 
 `ApplicationOptions::validate` refuses a zero in either count, and in
 `target_fps`, before a window opens. `max_threads` reaches `Partitioner` as a

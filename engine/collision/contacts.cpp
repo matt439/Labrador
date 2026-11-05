@@ -68,7 +68,7 @@ namespace labrador
 			}
 
 			// From i + 1, so every pair is considered once and no object is
-			// tested against itself. The loops this replaces did neither.
+			// tested against itself.
 			for (size_t j = i + 1; j < objects.size(); j++)
 			{
 				CollisionObject* const b = objects[j];

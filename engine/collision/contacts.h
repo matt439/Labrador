@@ -39,10 +39,9 @@ namespace labrador
 	// boxes, then narrow_phase. Objects already flagged for deletion take part
 	// in nothing.
 	//
-	// With no broad phase, the pair enumeration is all-pairs - O(n^2), which
-	// bench/ measures at 106 ms for four thousand objects, six times a 60 Hz
-	// frame from one call. Pass one and it enumerates only the pairs whose
-	// bounding boxes overlap, in the same order.
+	// With no broad phase, the pair enumeration is all-pairs, O(n^2);
+	// broad_phase.h gives the measured cost. Pass one and it enumerates only
+	// the pairs whose bounding boxes overlap, in the same order.
 	//
 	// The parameter is a pointer with a default rather than a required
 	// argument because the exhaustive sweep is the specification: it is what

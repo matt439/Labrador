@@ -79,12 +79,13 @@ namespace labrador
 		};
 	}
 	// The INTERIOR angle at each vertex - the one a reader means by "the
-	// angles of a triangle", and the one that makes angles() sum to pi.
+	// angles of a triangle", and the one that makes angle_0() + angle_1()
+	// + angle_2() sum to pi.
 	//
 	// NOT the angle between the two edge DIRECTIONS meeting at the vertex,
 	// which is a different quantity: edge_2 runs p2 -> p0 while the interior
 	// angle at p0 is measured from p0 outwards, so that gives pi minus the
-	// interior angle and makes angles() sum to 2*pi. A right angle is its own
+	// interior angle and makes the three sum to 2*pi. A right angle is its own
 	// supplement, so right_angle_vertex cannot detect the difference.
 	float Triangle::angle_0() const
 	{
@@ -150,12 +151,6 @@ namespace labrador
 		// right angle - and the hypotenuse is the side that does not touch it.
 		// Since edge n runs from vertex n to vertex n + 1, the side opposite
 		// vertex v is edge v + 1.
-		//
-		// Both accessors below used the vertex index as an edge index
-		// directly, so both returned a leg. For the right triangle
-		// (0,0), (0,10), (10,0) the right angle is at vertex 0 and the
-		// hypotenuse runs (0,10) -> (10,0) with length 14.14; they returned
-		// (0,0) -> (0,10), length 10, and a gradient to match.
 		int edge_opposite_vertex(int vertex)
 		{
 			return (vertex + 1) % 3;

@@ -10,8 +10,8 @@
 
 namespace labrador
 {
-	// What the DOM's input events mean to the engine: the browser half of the
-	// message translation engine/app/win32/window.cpp does for Win32. It is
+	// What the DOM's input events mean to the engine: the browser half of
+	// engine/app/win32/keyboard_input.h and pointer_input.h. It is
 	// out of web/window.cpp so that AppTests can pin it under Node, which has
 	// no DOM to deliver an event from and so cannot construct a web Window.
 

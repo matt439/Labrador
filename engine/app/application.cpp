@@ -157,7 +157,7 @@ namespace labrador
 
 		// The layout's number, not the pool's. A thread count here builds the
 		// backend's per-view recording state once per thread the machine might
-		// ever run, to draw a frame that has four panes at the very most - see
+		// ever run, to draw a frame whose pane count the game states in
 		// ApplicationOptions::view_capacity.
 		this->renderer_->set_vsync(this->options_.vsync);
 		this->renderer_->create_device(this->window_->handle(), size.x, size.y,
@@ -428,9 +428,9 @@ namespace labrador
 		this->step_position_ = labrador::step_position(
 			this->timer_.GetFrameCount(), 0, this->timer_.GetTargetElapsedTicks());
 
-		// Before anything reads it, and on every frame whatever is running.
-		// That is what makes "down now, up last frame" true - see gamepads.h
-		// for the two hand-primed edge detectors this replaced.
+		// Before anything reads it, and on every update whatever is running.
+		// That is what makes "down now, up last frame" true - gamepads.h says
+		// why the engine polls and a game does not.
 		//
 		// Every device together, and in one place, so that a frame boundary means
 		// the same thing to every device. A keyboard polled somewhere else in
@@ -626,8 +626,8 @@ namespace labrador
 		//
 		// `width` and `height` are CLIENT pixels: WM_SIZE's lParam is the client
 		// area, and the WM_EXITSIZEMOVE path uses GetClientRect. So no frame
-		// arithmetic belongs here - that is create_window's problem, on the way
-		// in.
+		// arithmetic belongs here - that is the Window's job, on the way in
+		// (window.h, WindowOptions::client_size).
 		//
 		// Exactly, not through the coercing overload. See
 		// ResolutionManager::set_resolution_exactly: the enum-converting path
@@ -641,9 +641,9 @@ namespace labrador
 
 	void Application::on_device_lost()
 	{
-		// Only the resources the device holds. Audio is not one, and tearing
-		// down the sound banks here left every object holding a freed
-		// SoundBank*. The sprite batches and the sampler states belong to the
+		// Only the resources the device holds. Audio is not one, and objects
+		// hold borrowed SoundBank pointers across a device loss. The sprite
+		// batches and the sampler states belong to the
 		// renderer, which has already released them by the time this is called.
 		//
 		// Which resources those are is the table's business, not the shell's.
@@ -705,7 +705,7 @@ namespace labrador
 	{
 		return this->partitioner_.get();
 	}
-	// EIGHT FORWARDERS AND NOT ONE DECISION IN THEM, which is the point. The
+	// THE FORWARDERS, AND NOT ONE DECISION IN THEM, which is the point. The
 	// window decided what the message was; the device decides what a frame of
 	// them adds up to; the game decides what it means. Anything that looked
 	// like policy appearing in this block - a key that opens a menu, a click

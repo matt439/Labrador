@@ -15,8 +15,7 @@ namespace labrador
 		virtual ~State() = default;
 
 		// The seconds since the last update. Frame time is a parameter, not
-		// shared state, for the reason GameObject::update gives (PHILOSOPHY,
-		// Services and lifetimes).
+		// shared state (PHILOSOPHY, Services and lifetimes).
 		//
 		// Only the top of the stack is updated. A state with something above it
 		// is suspended: see on_suspend().
@@ -85,10 +84,10 @@ namespace labrador
 		// still, the clock running down, and the music at full volume over
 		// whatever the player switched to.
 		//
-		// EVERY FRAME IS TOLD, top down, not the top one alone. A match under
-		// a pause menu is not being updated and is still holding the music and
-		// a looping weapon voice, so the frame that most needs to hear this is
-		// the one furthest from the top.
+		// EVERY STATE ON THE STACK IS TOLD, top down, not the top one alone. A
+		// match under a pause menu is not being updated and is still holding the
+		// music and a looping weapon voice, so the state that most needs to hear
+		// this is the one furthest from the top.
 		//
 		// AN EDGE, so a state may pause here and resume there without keeping
 		// a bool of its own. Windows offers no such guarantee - deactivating

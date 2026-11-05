@@ -100,10 +100,9 @@ namespace labrador
 	}
 	void UiContainer::draw(DrawList& draw_list) const
 	{
-		// Every other widget in this header early-outs on hidden(); this one
-		// did not, so set_hidden(true) on a container did nothing at all and
-		// the caller had no way to tell. Hiding a subtree is the only reason
-		// a container would carry the flag.
+		// A hidden container draws none of its children, like every other
+		// widget that early-outs on hidden(). Hiding a subtree is the only
+		// reason a container would carry the flag.
 		if (this->hidden())
 		{
 			return;
@@ -119,9 +118,8 @@ namespace labrador
 	}
 	RectangleF UiContainer::cull_bounds(float units_per_pixel) const
 	{
-		// The union of the children's, which is the recursive definition the
-		// predicate form could only approximate by asking every child in turn.
-		// An empty container occupies nothing.
+		// The union of the children's boxes with positive area. An empty
+		// container occupies nothing.
 		//
 		// Empty-boxed children are skipped rather than unioned. RectangleF::zero
 		// is a point at the world origin, so unioning an empty nested container
