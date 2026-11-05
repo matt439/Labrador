@@ -182,9 +182,9 @@ jobs:
   # One job per browser. Chrome and Firefox use the runner's own drivers
   # (CHROMEWEBDRIVER, GECKOWEBDRIVER). Safari and Safari in the iOS Simulator
   # use safaridriver, which must be enabled once with sudo; the suite boots
-  # the newest runtime's first iPhone. The iOS Simulator is not run here
-  # until it passes reliably: acceptance-trial.yml runs it on request
-  # (SITE#5).
+  # the newest runtime's first iPhone. The Simulator sometimes loses a tap or
+  # a navigation, so on ios the suite repeats a lost tap and runs a failed
+  # check once more (retryLostInput in website/acceptance/browsers.mjs).
   acceptance:
     name: acceptance (${{ matrix.target }})
     needs: acceptance-fixture
@@ -199,6 +199,7 @@ jobs:
           - { target: chrome, os: ubuntu-latest }
           - { target: firefox, os: ubuntu-latest }
           - { target: safari, os: macos-latest }
+          - { target: ios, os: macos-latest }
     defaults:
       run:
         working-directory: website

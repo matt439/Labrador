@@ -42,11 +42,10 @@ and [again in Chrome and Firefox](../website-versioning.md#rebuilt-fixture-quali
 as emulation. Since 2026-11-03 those checks are
 [an automated suite](../website-versioning.md#browser-acceptance-suite) that CI
 runs in Chrome, Firefox and Safari as required checks, with an axe-core WCAG
-A/AA scan, and NVDA is heard announcing the notice; the iOS Simulator runs
-only on request until reliable (`SITE#5`). The owner decided on 2026-11-03
-not to hold `v0.3.0` for the iOS Simulator, so `SITE#5` stays open on its own,
-and the owner's iPhone use that day, which found `SITE#4`, stands as the
-informal phone play. Immutable releases were enabled on 2026-10-27.
+A/AA scan, and NVDA is heard announcing the notice. The owner decided on
+2026-11-03 not to hold `v0.3.0` for the iOS Simulator, and the owner's iPhone
+use that day, which found `SITE#4`, stands as the informal phone play; since
+2026-11-05 the iOS Simulator is a required check as well (`SITE#5`). Immutable releases were enabled on 2026-10-27.
 
 ## Now
 

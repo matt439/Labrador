@@ -10,7 +10,8 @@
 // LABRADOR_ACCEPTANCE_FIREFOX; each must match its driver's major version.
 // The ios target uses LABRADOR_IOS_UDID, or else the first available iPhone
 // of the newest installed iOS runtime, booting it and waiting for its boot to
-// finish; a simulator is left booted afterwards.
+// finish, and shutting it down to boot it again when a boot hangs; a
+// simulator is left booted afterwards.
 // stop() deletes the session and then ends the driver process started here
 // together with any browser it started, which survives the driver otherwise.
 import { execFile, spawn, spawnSync } from 'node:child_process';
@@ -40,6 +41,13 @@ const execFileAsync = promisify(execFile);
 //                  point outside the viewport, so the suite taps only with
 //                  the page scrolled to its top, and nothing lower on the
 //                  page than the viewport is tall can be touched.
+//   retryLostInput the target sometimes loses a tap or a navigation: the
+//                  iOS Simulator has taken a tap as a long press or not at
+//                  all, and left a navigation unanswered. The suite repeats
+//                  a tap that changed nothing and a navigation that timed
+//                  out, as a reader would, and runs a failed check once
+//                  more, in a new session of a restarted Safari, reporting
+//                  that it did; a check that fails twice fails.
 //   simulatorKeyboard
 //                  text is typed on the iOS Simulator's hardware keyboard.
 //                  safaridriver's Element Send Keys on iOS dispatches keydown
@@ -51,18 +59,19 @@ const execFileAsync = promisify(execFile);
 // webpage" setting is off (its default), where Tab skips links and Option-Tab
 // is what reaches them.
 export const TARGETS = Object.freeze({
-	chrome: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false, touchAtPagePoint: false, simulatorKeyboard: false }),
-	firefox: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false, touchAtPagePoint: false, simulatorKeyboard: false }),
-	safari: Object.freeze({ keyboard: true, setWindowRect: true, touch: false, phone: false, touchAtPagePoint: false, simulatorKeyboard: false }),
-	ios: Object.freeze({ keyboard: false, setWindowRect: false, touch: true, phone: true, touchAtPagePoint: true, simulatorKeyboard: true }),
+	chrome: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false, touchAtPagePoint: false, retryLostInput: false, simulatorKeyboard: false }),
+	firefox: Object.freeze({ keyboard: true, setWindowRect: true, touch: true, phone: false, touchAtPagePoint: false, retryLostInput: false, simulatorKeyboard: false }),
+	safari: Object.freeze({ keyboard: true, setWindowRect: true, touch: false, phone: false, touchAtPagePoint: false, retryLostInput: false, simulatorKeyboard: false }),
+	ios: Object.freeze({ keyboard: false, setWindowRect: false, touch: true, phone: true, touchAtPagePoint: true, retryLostInput: true, simulatorKeyboard: true }),
 });
 
 export const DEFAULT_WINDOW = Object.freeze({ width: 1280, height: 800 });
 export const DRIVER_READY_TIMEOUT_MS = 20_000;
 export const IOS_DRIVER_READY_TIMEOUT_MS = 120_000;
-export const SIMULATOR_BOOT_TIMEOUT_MS = 300_000;
+export const SIMULATOR_BOOT_TIMEOUT_MS = 180_000;
+const SIMULATOR_BOOT_ATTEMPTS = 3;
 const DRIVER_START_ATTEMPTS = 3;
-const SESSION_ATTEMPTS = 3;
+const SESSION_ATTEMPTS = 4;
 const OUTPUT_LIMIT = 8_192;
 
 const DRIVERS = Object.freeze({
@@ -186,14 +195,38 @@ export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, l
 		throw new Error(udid ? `No available simulator has UDID ${udid}.` : 'No available iPhone simulator was found.');
 	}
 	log(`simulator ${device.name} (${device.udid}, ${device.runtime}) is ${device.state}`);
-	if (device.state !== 'Booted') await simctl(['boot', device.udid], 120_000);
-	await simctl(['bootstatus', device.udid, '-b'], SIMULATOR_BOOT_TIMEOUT_MS);
+	// A hosted runner's simulator sometimes never finishes booting; it is
+	// shut down and booted again.
+	for (let attempt = 1; ; attempt += 1) {
+		try {
+			if (attempt > 1 || device.state !== 'Booted') await simctl(['boot', device.udid], 120_000).catch((error) => {
+				if (!/current state: Booted/i.test(String(error.stderr ?? error.message))) throw error;
+			});
+			await simctl(['bootstatus', device.udid, '-b'], SIMULATOR_BOOT_TIMEOUT_MS);
+			break;
+		} catch (error) {
+			if (attempt >= SIMULATOR_BOOT_ATTEMPTS) {
+				throw new Error(`The simulator did not boot in ${SIMULATOR_BOOT_ATTEMPTS} attempts: ${error.message}`, { cause: error });
+			}
+			log(`boot attempt ${attempt} failed (${error.message.split('\n')[0]}); shutting the simulator down and booting it again`);
+			await simctl(['shutdown', device.udid], 120_000).catch(() => {});
+		}
+	}
 	// A freshly booted simulator's first Safari launch can outlast
 	// safaridriver's own connection timeout; launching it once here takes
 	// that cost before the session is asked for.
 	await simctl(['launch', device.udid, 'com.apple.mobilesafari'], 120_000)
 		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
 	return device;
+}
+
+// Quits the simulator's Safari and starts it again.
+export async function restartSimulatorSafari(udid, log = () => {}) {
+	await simctl(['terminate', udid, 'com.apple.mobilesafari'], 60_000)
+		.catch((error) => log(`quitting Safari in the simulator failed: ${error.message}`));
+	await simctl(['launch', udid, 'com.apple.mobilesafari'], 120_000)
+		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
+	await new Promise((resolve) => setTimeout(resolve, 5_000));
 }
 
 // Types text on the hardware keyboard that the Simulator app connects to the
@@ -380,6 +413,9 @@ export async function startBrowser(target, {
 			} catch (error) {
 				if (attempt >= SESSION_ATTEMPTS || error?.code !== 'session not created') throw error;
 				log(`session attempt ${attempt} failed (${error.message}); trying again`);
+				// A simulator's Safari that never became ready for the driver
+				// is quit and started again before the next attempt.
+				if (device) await restartSimulatorSafari(device.udid, log);
 			}
 		}
 		if (flags.setWindowRect) await session.setWindowRect({ width: window.width, height: window.height });

@@ -238,14 +238,16 @@ test('waitUntil returns the first truthy value or times out', async () => {
 test('each target declares the flags the suite consults', () => {
 	for (const flags of Object.values(TARGETS)) {
 		assert.deepEqual(Object.keys(flags).sort(),
-			['keyboard', 'phone', 'setWindowRect', 'simulatorKeyboard', 'touch', 'touchAtPagePoint']);
+			['keyboard', 'phone', 'retryLostInput', 'setWindowRect', 'simulatorKeyboard', 'touch', 'touchAtPagePoint']);
 	}
 	assert.equal(TARGETS.ios.setWindowRect, false);
 	assert.equal(TARGETS.ios.phone, true);
-	// Only the iOS Simulator's driver needs its touches and text routed round it.
+	// Only the iOS Simulator's driver needs its touches and text routed round
+	// it, and only it has a failed check run again.
 	for (const [target, flags] of Object.entries(TARGETS)) {
 		assert.equal(flags.touchAtPagePoint, target === 'ios', target);
 		assert.equal(flags.simulatorKeyboard, target === 'ios', target);
+		assert.equal(flags.retryLostInput, target === 'ios', target);
 	}
 });
 
