@@ -108,6 +108,41 @@ TEST_CASE("a container draws, measures and updates its children")
 	CHECK(container.bounds().height == doctest::Approx(50.0f));
 }
 
+TEST_CASE("children lists names and borrowed pointers in insertion order")
+{
+	StubWidget a(0.0f, 0.0f, 100.0f, 50.0f);
+	StubWidget b(0.0f, 100.0f, 100.0f, 50.0f);
+	UiContainer container("rows");
+	container.add_child(&a);
+	container.add_child(&b);
+
+	// Read through a const container, which is how a check that only looks
+	// at a row holds it.
+	const UiContainer& reader = container;
+	REQUIRE(reader.children().size() == 2);
+	CHECK(reader.children()[0].first == "stub");
+	CHECK(reader.children()[0].second == &a);
+	CHECK(reader.children()[1].second == &b);
+
+	container.remove_child(&a);
+	REQUIRE(reader.children().size() == 1);
+	CHECK(reader.children()[0].second == &b);
+}
+
+TEST_CASE("a texture's width and height setters resize the rectangle it draws at")
+{
+	UiTexture texture;
+	texture.set_position(labrador::Vector2F(5.0f, 6.0f));
+	texture.set_size(labrador::Vector2F(40.0f, 20.0f));
+
+	texture.set_width(12.0f);
+	CHECK(texture.rectangle() == labrador::RectangleF(5.0f, 6.0f, 12.0f, 20.0f));
+
+	texture.set_height(30.0f);
+	CHECK(texture.rectangle() == labrador::RectangleF(5.0f, 6.0f, 12.0f, 30.0f));
+	CHECK(texture.bounds() == texture.rectangle());
+}
+
 TEST_CASE("an empty container occupies nothing, and an empty child drags nothing")
 {
 	UiContainer empty("empty");

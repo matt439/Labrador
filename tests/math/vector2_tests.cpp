@@ -151,8 +151,8 @@ TEST_SUITE("Vector2")
 			== doctest::Approx(v.length()));
 
 		// Zero rotates to zero rather than inventing a direction, which is
-		// normalized()'s contract rather than to_unit_vector()'s and is what
-		// a caller rotating a rest velocity needs.
+		// normalized()'s contract and is what a caller rotating a rest
+		// velocity needs.
 		CHECK(Vector2F::rotate_vector(Vector2F::zero, 1.3f)
 			== Vector2F::zero);
 	}

@@ -80,6 +80,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Return UiContainer::children by const reference and test the UI setters
+
+**Retyped public name.** `UiContainer::children()` was a non-const member returning a copy of the list; it is now `const std::vector<std::pair<std::string, UiObject*>>& children() const`. A range-for or an `auto` copy compiles unchanged and a const container can now be read. Code binding the result to a non-const `std::vector<...>&`, or modifying the returned list, must take a copy first (`std::vector<std::pair<std::string, UiObject*>> list = row.children();`). The reference is invalidated by `add_child` and `remove_child`. No sample used it.
+
+### 2026-11-05 - Remove unused render API and test what stays
+
+**Source break.** Render members that nothing called outside tests are removed: the two static `Camera::calculate_view_rectangle(world, camera)` and `(world, camera, view)` overloads (write `camera.calculate_view_rectangle(world)`; the member in-place form stays); `ResolutionManager::set_resolution(const std::string&)`, which turned any unknown name into 720p (use the `ScreenResolution` overload); `Colour::brighten` (add to `r`, `g` and `b` yourself, or `+=` a colour); the `SpriteFrame(const Vector2F& position, const Vector2F& size, origin)` constructor (use `SpriteFrame(RectangleI(...), origin)`); `sprite_quad_bounds` (use `sprite_world_bounds`, which at zero units per pixel is the box around the untruncated quad); and the protected `SpriteSheetObject::set_sprite_sheet(const std::string&)` (pass `render_resources()->resolve_sprite_sheet(name)` to the handle form). `Colour::clamp_colours` is now private; every public constructor and operator already clamps. No sample used any of them, so there is no sample migration diff.
+
+### 2026-11-05 - Remove unused math API and test the clamp and lerp contracts
+
+**Source break.** Public math members that nothing called or tested are removed, with no replacement: `sq_dist_point_AABB` (ericson_math.h), `Vector2F::clamp` and `Vector2F::clamped`, the static `Vector2F::angle(const Vector2F&)` (use the member `v.angle()`), `Vector2F::to_unit_vector` and `Vector2F::unit_vector` (use `normalized()`/`normalize()`, which return zero for a zero vector instead of inventing (1, 0)), the `Vector2F::lerp(a, b, const Vector2F& t)` overload (the float-t `Vector2F::lerp` stays), and both `RectangleF::set_position_from_top_right` overloads (set `rectangle.x = right - rectangle.width; rectangle.y = top;`). `Quad::triangle_0`/`triangle_1` are now private (use `triangles()[0]`/`[1]`) and `Triangle::calculate_gradient` is protected. No sample used any of them, so there is no sample migration diff.
+
 ### 2026-11-05 - Refuse a pad backend at configure where its API does not exist
 
 **Changed: configure refuses a pad backend on the wrong platform.** Setting `LABRADOR_INPUT_BACKEND=xinput` in a browser (Emscripten) build, or `LABRADOR_INPUT_BACKEND=web` in a native build, now stops configure with a message naming the variable and the value it must have. The render and audio backends were already refused this way. Before, the first error came later and named something else: an unnamed `find_package(directxtk)` failure, or a missing Emscripten header at compile time. The defaults are unchanged, so a project that never sets the variable sees no difference.

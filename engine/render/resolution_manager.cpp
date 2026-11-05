@@ -40,11 +40,6 @@ namespace labrador
 		this->size_ = this->convert_resolution_to_ivec(resolution);
 	}
 
-	void ResolutionManager::set_resolution(const std::string& resolution)
-	{
-		this->set_resolution(this->convert_string_to_resolution(resolution));
-	}
-
 	void ResolutionManager::set_resolution(const Vector2F& resolution)
 	{
 		this->set_resolution(this->convert_vec_to_resolution(resolution));
@@ -132,35 +127,6 @@ namespace labrador
 			return std::string("3840x2160");
 		default:
 			return std::string("-1x-1");
-		}
-	}
-
-	ScreenResolution ResolutionManager::convert_string_to_resolution(
-		const std::string& string) const
-	{
-		if (string == this->convert_resolution_to_string(
-			ScreenResolution::s_1280_720))
-		{
-			return ScreenResolution::s_1280_720;
-		}
-		else if (string == this->convert_resolution_to_string(
-			ScreenResolution::s_1920_1080))
-		{
-			return ScreenResolution::s_1920_1080;
-		}
-		else if (string == this->convert_resolution_to_string(
-			ScreenResolution::s_2560_1440))
-		{
-			return ScreenResolution::s_2560_1440;
-		}
-		else if (string == this->convert_resolution_to_string(
-			ScreenResolution::s_3840_2160))
-		{
-			return ScreenResolution::s_3840_2160;
-		}
-		else
-		{
-			return ScreenResolution::s_1280_720;
 		}
 	}
 

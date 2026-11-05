@@ -47,28 +47,16 @@ namespace labrador
 		// returning zero lets the caller detect that; dividing by the length
 		// would produce NaN, which would then propagate silently through
 		// velocities and shape validation.
-		//
-		// Note this is deliberately NOT the same contract as to_unit_vector()
-		// and unit_vector(), which substitute (1, 0) for a zero vector. Use
-		// those only where an arbitrary direction is acceptable.
 		Vector2F normalized() const;
 		void normalize();
 
-		void clamp(const Vector2F& min, const Vector2F& max);
-		Vector2F clamped(const Vector2F& min, const Vector2F& max) const;
-
 		float angle() const;
-		static float angle(const Vector2F& vec);
-
-
-		// Substitutes (1, 0) for a zero-length vector - i.e. it invents a
-		// direction rather than reporting that there is none. See normalize().
-		void to_unit_vector();
 
 		static float angle_between(const Vector2F& a, const Vector2F& b);
 
+		// Componentwise scalar lerp: t is not clamped, so values outside
+		// [0, 1] extrapolate beyond a and b.
 		static Vector2F lerp(const Vector2F& a, const Vector2F& b, float t);
-		static Vector2F lerp(const Vector2F& a, const Vector2F& b, const Vector2F& t);
 
 		static float distance(const Vector2F& a, const Vector2F& b);
 		static float distance_squared(const Vector2F& a, const Vector2F& b);
@@ -118,9 +106,6 @@ namespace labrador
 		// hole in it, and a game fills that hole with a second definition of
 		// engine arithmetic, living outside the engine's tests.
 		static Vector2F rotate_vector(const Vector2F& vec, float angle);
-
-		// Returns (1, 0) for a zero-length vector. See to_unit_vector().
-		static Vector2F unit_vector(const Vector2F& vec);
 
 		static Vector2F normal(const Vector2F& vec);
 

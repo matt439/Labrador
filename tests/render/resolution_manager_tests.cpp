@@ -2,12 +2,14 @@
 
 #include "engine/render/resolution_manager.h"
 #include "engine/render/screen_resolution.h"
+#include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 
 #include <stdexcept>
 
 using labrador::ResolutionManager;
 using labrador::ScreenResolution;
+using labrador::Vector2F;
 using labrador::Vector2I;
 
 TEST_CASE("the default size is the default preset's size")
@@ -98,6 +100,24 @@ TEST_CASE("the coercing overload still coerces, and that is why there are two")
 
 	manager.set_resolution(Vector2I(1600, 900));
 
+	CHECK(manager.resolution() == ScreenResolution::s_1280_720);
+	CHECK(manager.resolution_ivec() == Vector2I(1280, 720));
+}
+
+TEST_CASE("the float overload names an exact preset and coerces anything else")
+{
+	ResolutionManager manager;
+
+	manager.set_resolution(Vector2F(1920.0f, 1080.0f));
+	CHECK(manager.resolution() == ScreenResolution::s_1920_1080);
+	CHECK(manager.resolution_ivec() == Vector2I(1920, 1080));
+
+	manager.set_resolution(Vector2F(3840.0f, 2160.0f));
+	CHECK(manager.resolution() == ScreenResolution::s_3840_2160);
+
+	// Not a preset, so 720p: the same answer the integer overload gives, and
+	// the reason a window size goes through set_resolution_exactly instead.
+	manager.set_resolution(Vector2F(1920.5f, 1080.0f));
 	CHECK(manager.resolution() == ScreenResolution::s_1280_720);
 	CHECK(manager.resolution_ivec() == Vector2I(1280, 720));
 }

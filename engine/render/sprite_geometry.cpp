@@ -211,31 +211,6 @@ namespace labrador
 			rotation, glyph_origin, corners);
 	}
 
-	RectangleF sprite_quad_bounds(const RectangleF& destination,
-		const RectangleI& source,
-		float rotation,
-		const Vector2F& origin)
-	{
-		// The edges build_sprite_quad truncates, truncated the same way, so
-		// the box is the drawn one and not the one asked for: a destination
-		// at x=10.9 draws from x=10, and a box that started at 10.9 would be
-		// a column short on its left.
-		const float left = std::trunc(destination.left());
-		const float top = std::trunc(destination.top());
-		const float right = std::trunc(destination.right());
-		const float bottom = std::trunc(destination.bottom());
-		const Vector2F size(right - left, bottom - top);
-
-		// Unscaled source texels into destination pixels, which is the
-		// origin_ratio * size term of build_quad in one step, with the same
-		// stand-in for a source of no width.
-		const Vector2F origin_pixels(
-			origin.x / without_zero(static_cast<float>(source.width)) * size.x,
-			origin.y / without_zero(static_cast<float>(source.height)) * size.y);
-
-		return quad_bounds(Vector2F(left, top), size, rotation, origin_pixels);
-	}
-
 	RectangleF sprite_world_bounds(const RectangleF& destination,
 		const RectangleI& source, float rotation, const Vector2F& origin,
 		float units_per_pixel)

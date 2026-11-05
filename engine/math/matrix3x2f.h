@@ -111,8 +111,7 @@ namespace labrador
 
 		// Where the origin lands: the bottom row, read back. The static
 		// overload above builds a transform out of an offset; this reports the
-		// offset a composed transform ended up with. Vector2F::angle() is the
-		// same pairing of a factory and a reader under one name.
+		// offset a composed transform ended up with.
 		Vector2F translation() const;
 
 		// The signed area scale of the linear part - how much larger this

@@ -155,36 +155,6 @@ namespace labrador
 		return x * x + y * y <= radius * radius;
 	}
 
-	// Computes the square distance between a point p and an AABB b
-	float sq_dist_point_AABB(const Point2F& p, const RectangleF& b)
-	{
-		float sqDist = 0.0f;
-		Vector2F b_min = b.top_left();
-		Vector2F b_max = b.bottom_right();
-
-		// For each axis count any excess distance outside box extents
-		float v = p.x;
-		if (v < b_min.x)
-		{
-			sqDist += (b_min.x - v) * (b_min.x - v);
-		}
-		if (v > b_max.x)
-		{
-			sqDist += (v - b_max.x) * (v - b_max.x);
-		}
-
-		v = p.y;
-		if (v < b_min.y)
-		{
-			sqDist += (b_min.y - v) * (b_min.y - v);
-		}
-		if (v > b_max.y)
-		{
-			sqDist += (v - b_max.y) * (v - b_max.y);
-		}
-		return sqDist;
-	}
-
 	// Given point p, return the point q on or in AABB b that is closest to p
 	void closest_pt_point_AABB(const Point2F& p,
 		const RectangleF& b, Point2F& q)

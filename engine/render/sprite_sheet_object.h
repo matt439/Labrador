@@ -52,11 +52,9 @@ namespace labrador
 
 		// Re-points this object at another sheet. Every element handle a subclass
 		// is holding refers to the old sheet and is meaningless against the new
-		// one, so a subclass calls either only from a setter that moves its
-		// element in the same breath - never on its own. The handle form
-		// resolves nothing, and its handle must come from this object's own
-		// RenderResources.
-		void set_sprite_sheet(const std::string& sheet_name);
+		// one, so a subclass calls this only from a setter that moves its
+		// element in the same breath - never on its own. It resolves nothing,
+		// and the handle must come from this object's own RenderResources.
 		void set_sprite_sheet(RenderResources::SpriteSheetHandle sheet);
 	private:
 		RenderResources::SpriteSheetHandle sheet_;

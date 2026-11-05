@@ -7,6 +7,7 @@ labrador_add_test_suite(LabradorMathTests
         quad_tests.cpp
         rectangle_rotated_tests.cpp
         rectanglef_tests.cpp
+        scalar_tests.cpp
         shape_intersect_tests.cpp
         shape_tests.cpp
         triangle_tests.cpp

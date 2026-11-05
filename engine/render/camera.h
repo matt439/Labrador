@@ -39,20 +39,10 @@ namespace labrador
 		RectangleF calculate_view_rectangle(
 			const RectangleF& world_rectangle) const;
 
-		// Applies the same world-to-view transform in place.
+		// Applies the same world-to-view transform in place, with the same
+		// result as the form above.
 		void calculate_view_rectangle(
 			RectangleF& rectangle) const;
-
-		// The same transform using the supplied camera.
-		static RectangleF calculate_view_rectangle(
-			const RectangleF& world_rectangle,
-			const Camera& camera);
-
-		// Writes the supplied camera's transform to `view_rectangle`.
-		static void calculate_view_rectangle(
-			const RectangleF& world_rectangle,
-			const Camera& camera,
-			RectangleF& view_rectangle);
 
 		// What `viewport` actually shows of the world under this camera - the
 		// inverse of calculate_view_rectangle for the whole pane.

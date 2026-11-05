@@ -30,7 +30,11 @@ namespace labrador
 		std::string resolution_string() const;
 		ScreenResolution resolution() const;
 		void set_resolution(ScreenResolution resolution);
-		void set_resolution(const std::string& resolution);
+
+		// The preset whose size this is exactly, and s_1280_720 for any size
+		// that is not one of the four. That answer is a coercion, not an
+		// error: set_resolution_exactly below is the setter that keeps an
+		// arbitrary size.
 		void set_resolution(const Vector2F& resolution);
 		void set_resolution(const Vector2I& resolution);
 
@@ -85,8 +89,6 @@ namespace labrador
 			ScreenResolution resolution) const;
 		Vector2F convert_resolution_to_vec(
 			ScreenResolution resolution) const;
-		ScreenResolution convert_string_to_resolution(
-			const std::string& string) const;
 		ScreenResolution convert_vec_to_resolution(
 			const Vector2F& vec) const;
 		ScreenResolution convert_ivec_to_resolution(

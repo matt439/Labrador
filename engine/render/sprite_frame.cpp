@@ -9,13 +9,6 @@ namespace labrador
 	{
 
 	}
-	SpriteFrame::SpriteFrame(const Vector2F& position, const Vector2F& size,
-		const Vector2F& origin) :
-		source_rectangle_(position, size),
-		origin_(origin)
-	{
-
-	}
 
 	const RectangleI& SpriteFrame::source_rectangle() const
 	{

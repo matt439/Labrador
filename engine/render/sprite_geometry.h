@@ -121,14 +121,10 @@ namespace labrador
 		const Vector2F& origin,
 		SpriteVertex* corners);
 
-	// THE AXIS-ALIGNED BOX AROUND THE QUAD build_sprite_quad WOULD BUILD from
-	// the same four arguments: the same truncated edges, the same origin
-	// shift, the same turn about the destination's top left. Tight, not
-	// merely conservative - it is the bounding box of the four corners.
+	// The axis-aligned box around the quad build_sprite_quad would build from
+	// the same destination, source, rotation and origin, measured in world
+	// units before the camera maps and truncates it.
 	//
-	// This is a view-space measurement, not a world-space cull bound.
-	// sprite_world_bounds accounts for the camera-dependent quantization. It
-	// lives here because it has to agree with build_sprite_quad to the term.
 	// The destination rectangle is where a sprite lands only when its origin
 	// is zero and its rotation is zero. An authored frame origin shifts the
 	// sprite by that many texels' worth of destination, and a rotation turns
@@ -140,17 +136,13 @@ namespace labrador
 	// `origin` is the WHOLE origin - the frame's authored one plus the
 	// caller's, summed the way SpriteSheet::draw sums them - in unscaled
 	// source texels, exactly as build_sprite_quad takes it.
-	RectangleF sprite_quad_bounds(
-		const RectangleF& destination,
-		const RectangleI& source,
-		float rotation,
-		const Vector2F& origin);
-
-	// World geometry before view-space quantization, expanded by a bound on
-	// its error at nonnegative world units per pixel (zero for layout).
-	// Each truncated edge moves by less than one pixel; a size moves by less
-	// than two. Rotation mixes those errors and the source-relative pivot
-	// scales them, including origins outside the source rectangle.
+	//
+	// At zero units per pixel (layout) the box is tight around the untruncated
+	// corners. A cull passes the view's nonnegative world units per pixel,
+	// and the box grows by a bound on the quantization error: each truncated
+	// edge moves by less than one pixel and a size by less than two.
+	// Rotation mixes those errors and the source-relative pivot scales them,
+	// including origins outside the source rectangle.
 	RectangleF sprite_world_bounds(
 		const RectangleF& destination,
 		const RectangleI& source, float rotation,
