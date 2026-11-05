@@ -123,7 +123,7 @@ before every run, not only a first contributor's.
 so this list is the record of what those settings must hold. Each name is the
 job's `name:` in its workflow, and the windows jobs are named for their preset
 alone, so changing a matrix entry's `software_device` or `vulkan_sdk` does not
-rename its check. The required contexts are exactly these eighteen:
+rename its check. The required contexts are exactly these nineteen:
 
 - `changes`
 - `lint`
@@ -137,6 +137,7 @@ rename its check. The required contexts are exactly these eighteen:
 - `wasm-null`
 - `wasm-consumer`
 - `consumer`
+- `safari`
 - `website`
 - `acceptance fixture`
 - `acceptance (chrome)`
@@ -144,7 +145,7 @@ rename its check. The required contexts are exactly these eighteen:
 - `acceptance (safari)`
 - `acceptance (nvda)`
 
-The first twelve are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
+The first thirteen are jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml)
 and the last six are jobs in
 [.github/workflows/website.yml](.github/workflows/website.yml).
 The iOS Simulator target runs only on request, in

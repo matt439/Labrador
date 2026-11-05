@@ -262,6 +262,12 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   bundle through frames, keys, quit and replay, plus the owner's informal play
   on the Air. If the runner's Safari has no usable WebGL2, that is recorded as
   the reason the drawing check stays informal on the Air.
+  *Recorded 2026-11-05:* `WEB#1` landed as CI's `safari` job. Its first run,
+  in Safari 26.6.2 on the hosted `macos-26-arm64` runner, had WebGL2 on a
+  virtual Apple GPU, drew the six sample pages with a forced context loss and
+  restore, keys and quit, and played, quit and replayed the bundle
+  ([record](../port/web-to-be-tested.md#safari-sample-checks-web1)). Left:
+  the owner's informal play on the Air.
 - [ ] **[OCA-48](STORIES.md#oca-48)** Should · S · The Outside Adopter · **Owner**: One physical-pad session: trust the desktop pad mapping and know what a backgrounded game receives
   *Amended 2026-11-03 by the persona re-review, under the 2026-11-03
   decision:* the per-button and per-direction mapping criterion is met by

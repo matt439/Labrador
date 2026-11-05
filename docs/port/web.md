@@ -1006,7 +1006,11 @@ has run the other five samples' pages (draw calls submitted, trusted keys,
 quit) and `WebWindowTests`' 39 steps over WebDriver BiDi, with no pixel read
 back and nothing listened to; that list's
 [Firefox section](web-to-be-tested.md#firefox-sample-checks-web4) has the
-runs. M3 owes Safari and R5's pacing on real displays. M4's pad path has been driven by a
+runs. CI's `safari` job draws all six samples' pages and the bundle page in
+desktop Safari on a hosted macOS runner, with a forced context loss, keys,
+quit and the bundle's replay
+([its section](web-to-be-tested.md#safari-sample-checks-web1)). M3 owes R5's
+pacing on real displays and the owner's informal play on the Air. M4's pad path has been driven by a
 page script's fake pad and owes a physical one. M5 is done: the module, the
 bundle, its page and CI's upload are built here, and the owner has deployed
 the demo to <https://mattharding.dev/demo/linesweeper/>, from a bundle built
