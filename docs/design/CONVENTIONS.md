@@ -141,6 +141,11 @@ Almost everything below falls out of one rule:
   the same order; its subject's header has already proved itself in its own
   `.cpp`.
 - Tests are named for their subject: `vector2_tests.cpp`.
+- A test of one backend's or one platform's code sits in a folder named
+  for it inside its module's tests, as that code sits in the engine:
+  `tests/render/d3d12/`, `tests/audio/null/`, `tests/input/web/`,
+  `tests/app/web/`. Tests of what every backend shares stay at the
+  module's top, so where a test lives says which builds compile it.
 
 ## Comments
 

@@ -109,6 +109,13 @@ namespace labrador
 		void validate() const;
 	};
 
+	// The window Application opens for `options`, at `client_size`: every
+	// WindowOptions field ApplicationOptions also has, carried across
+	// unchanged. The client size is the caller's, because Application decides
+	// it from `resolution` and `client_size` together.
+	WindowOptions window_options_for(const ApplicationOptions& options,
+		Vector2I client_size);
+
 	// What the last completed frame cost on the CPU, as steady_clock saw it
 	// (Application::frame_timings).
 	//

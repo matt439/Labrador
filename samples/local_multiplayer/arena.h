@@ -25,6 +25,11 @@ namespace multiplayer
 		labrador::Camera camera(size_t player, const labrador::Viewport& viewport) const;
 		static labrador::Colour player_colour(size_t player);
 
+		// The two shared landmarks' colour, drawn in both views so the two
+		// camera positions show while the players move.
+		static constexpr labrador::Colour landmark_colour =
+			labrador::Colour(129, 103, 186);
+
 	private:
 		labrador::TextureHandle white_;
 		std::array<labrador::Vector2F, player_count> positions_ = {

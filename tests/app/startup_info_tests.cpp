@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
+#include "tests/app/startup_child_exit_codes.h"
+
 #include <Windows.h>
 #include <filesystem>
 #include <string>
@@ -13,10 +15,6 @@
 
 namespace
 {
-	// startup_child.cpp's exit codes.
-	constexpr DWORD child_visible = 10;
-	constexpr DWORD child_hidden = 20;
-
 	// Runs the child with `show` as STARTUPINFO's show command and answers
 	// its exit code.
 	DWORD run_child(WORD show)
@@ -50,11 +48,11 @@ namespace
 
 TEST_CASE("a game launched with SW_HIDE in STARTUPINFO keeps its window hidden")
 {
-	CHECK(run_child(SW_HIDE) == child_hidden);
+	CHECK(run_child(SW_HIDE) == static_cast<DWORD>(startup_child_hidden));
 }
 
 TEST_CASE("a game launched with SW_SHOWNORMAL in STARTUPINFO shows its window")
 {
 	// The other half, so the case above cannot pass by never showing.
-	CHECK(run_child(SW_SHOWNORMAL) == child_visible);
+	CHECK(run_child(SW_SHOWNORMAL) == static_cast<DWORD>(startup_child_visible));
 }

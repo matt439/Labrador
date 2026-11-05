@@ -149,7 +149,7 @@ TEST_CASE("both couch players choosing ready replaces the menu with the shared a
 	std::array<int, Arena::player_count> landmarks = {};
 	for (const RecordedSprite& sprite : sprites)
 	{
-		if (sprite.corners[0].colour == Colour(129, 103, 186))
+		if (sprite.corners[0].colour == Arena::landmark_colour)
 		{
 			landmarks.at(static_cast<std::size_t>(sprite.view))++;
 		}

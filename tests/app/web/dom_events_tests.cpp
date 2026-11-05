@@ -11,10 +11,11 @@
 using namespace labrador;
 
 // The browser half of the window's message translation, asserted with no
-// browser. The Win32 half is window_tests.cpp, which drives a real window
-// through SendMessageW; Node has no DOM to dispatch an event from, so the
-// functions the web window calls with each event's fields are asserted here
-// directly. Compiled into the browser build only, beside the file it tests.
+// browser. The Win32 half is keyboard_input_tests.cpp and window_tests.cpp,
+// which drive a real window through SendMessageW; Node has no DOM to dispatch
+// an event from, so the functions the web window calls with each event's
+// fields are asserted here directly. Compiled into AppTests on every platform:
+// native builds compile engine/app/web/dom_events.cpp into the test target.
 
 TEST_CASE("a key code is a physical position, as a scan code is on Windows")
 {

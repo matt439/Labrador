@@ -63,6 +63,22 @@ namespace labrador
 			"ApplicationOptions::window_class_name must not be empty.");
 	}
 
+	WindowOptions window_options_for(const ApplicationOptions& options,
+		Vector2I client_size)
+	{
+		WindowOptions window_options;
+		window_options.window_class_name = options.window_class_name;
+		window_options.window_title = options.window_title;
+		window_options.client_size = client_size;
+		window_options.fullscreen = options.fullscreen;
+		window_options.visible = options.visible;
+		window_options.cursor_visible = options.cursor_visible;
+		window_options.cursor_confined = options.cursor_confined;
+		window_options.min_window_width = options.min_window_width;
+		window_options.min_window_height = options.min_window_height;
+		return window_options;
+	}
+
 	Application::Application(ApplicationOptions options) :
 		options_(std::move(options))
 	{
@@ -182,17 +198,8 @@ namespace labrador
 
 	void Application::create_window()
 	{
-		WindowOptions window_options;
-		window_options.window_class_name = this->options_.window_class_name;
-		window_options.window_title = this->options_.window_title;
-		window_options.client_size =
-			this->resolution_manager_->resolution_ivec();
-		window_options.fullscreen = this->options_.fullscreen;
-		window_options.visible = this->options_.visible;
-		window_options.cursor_visible = this->options_.cursor_visible;
-		window_options.cursor_confined = this->options_.cursor_confined;
-		window_options.min_window_width = this->options_.min_window_width;
-		window_options.min_window_height = this->options_.min_window_height;
+		const WindowOptions window_options = window_options_for(this->options_,
+			this->resolution_manager_->resolution_ivec());
 
 		// `this` is handed over in the constructor, not after it: the window's
 		// first size report arrives before this call returns, and it is what

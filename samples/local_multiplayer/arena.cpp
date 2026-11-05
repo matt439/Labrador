@@ -84,8 +84,8 @@ namespace multiplayer
 			rectangle(RectangleF(0.0f, y, world.width, 1.0f), Colour(38, 52, 66));
 		}
 		// Shared landmarks make the two camera positions visible while moving.
-		rectangle(RectangleF(880.0f, 490.0f, 40.0f, 100.0f), Colour(129, 103, 186));
-		rectangle(RectangleF(850.0f, 520.0f, 100.0f, 40.0f), Colour(129, 103, 186));
+		rectangle(RectangleF(880.0f, 490.0f, 40.0f, 100.0f), landmark_colour);
+		rectangle(RectangleF(850.0f, 520.0f, 100.0f, 40.0f), landmark_colour);
 		for (size_t player = 0; player < player_count; ++player)
 		{
 			rectangle(RectangleF(this->positions_[player], player_half_size, player_half_size),

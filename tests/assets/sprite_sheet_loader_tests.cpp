@@ -1,4 +1,5 @@
 #include <doctest/doctest.h>
+
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -8,12 +9,14 @@
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/texture_data.h"
 #include "tests/scratch_file.h"
+
 #include <array>
 #include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+
 using namespace labrador;
 using labrador_tests::ScratchFile;
 
@@ -25,10 +28,9 @@ using labrador_tests::ScratchFile;
 // of an authored origin with a caller's is the one claim that needs a DrawList,
 // and it is pinned in tests/render/null_tests.cpp instead.
 //
-// WHY THE TWO KEYS BELOW GET DIFFERENT ANSWERS. Both were parsed into
-// SpriteFrame and then read by nothing, which is one finding and not two; the
-// split is that honouring an origin is an addition on a path that already
-// carries one, and honouring a rotation is the pixel contract. So the origin is
+// WHY THE TWO KEYS BELOW GET DIFFERENT ANSWERS. Honouring an origin is an
+// addition on a path that already carries one, and honouring a rotation is
+// the pixel contract. So the origin is
 // obeyed and the rotation is refused out loud, and both halves are asserted
 // here because a silent capability and a silent refusal fail the same way -
 // invisibly, in somebody else's content.

@@ -81,6 +81,9 @@ namespace labrador
 
 		// A path, not a narrow string, so the UTF-8 name reaches the platform
 		// as UTF-8 wherever narrow is not already that - wide on Windows.
+		// Not read_file_bytes: a missing document is a runtime_error here,
+		// caught with the parse and shape errors every loader reports, where
+		// read_file_bytes answers out_of_range for a name nobody produced.
 		std::ifstream file(path_from_utf8(path), std::ios::binary);
 		if (!file)
 		{

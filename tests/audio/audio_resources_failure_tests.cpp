@@ -161,6 +161,30 @@ namespace
 		bool hook_installed_ = false;
 		bool warning_mode_installed_ = false;
 	};
+
+	// The CRT state an AllocationFailureScope must hand back: the allocation
+	// hook and the warning mode in force before it was armed. Taken before the
+	// scope, and compared after it, with the scope's own conflict report.
+	class CrtBaseline
+	{
+	public:
+		CrtBaseline()
+			: hook_(_CrtGetAllocHook()),
+			mode_(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE))
+		{
+		}
+
+		void require_restored(const AllocationFailureSample& sample) const
+		{
+			REQUIRE_FALSE(sample.hook_conflict);
+			REQUIRE(_CrtGetAllocHook() == this->hook_);
+			REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == this->mode_);
+		}
+
+	private:
+		_CRT_ALLOC_HOOK hook_;
+		int mode_;
+	};
 }
 
 TEST_SUITE("AudioResourcesFailureTests")
@@ -171,8 +195,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 		std::vector<unsigned char> first;
 		std::vector<unsigned char> after_refusal;
 		std::vector<unsigned char> unwinding;
-		const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
-		const int initial_mode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+		const CrtBaseline baseline;
 		AllocationFailureSample sample;
 		bool refused = false;
 		{
@@ -189,9 +212,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 			// The vectors were constructed before arming and are destroyed after.
 			after_refusal.resize(32, 9);
 		}
-		REQUIRE_FALSE(sample.hook_conflict);
-		REQUIRE(_CrtGetAllocHook() == initial_hook);
-		REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+		baseline.require_restored(sample);
 		REQUIRE(sample.injected);
 		REQUIRE(refused);
 		CHECK(sample.attempts == 1);
@@ -210,9 +231,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 		{
 			unwind_refused = true;
 		}
-		REQUIRE_FALSE(unwind_sample.hook_conflict);
-		REQUIRE(_CrtGetAllocHook() == initial_hook);
-		REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+		baseline.require_restored(unwind_sample);
 		REQUIRE(unwind_sample.injected);
 		REQUIRE(unwind_refused);
 		CHECK(unwind_sample.attempts == 1);
@@ -233,8 +252,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 			const std::string later_name = "later";
 			const labrador::SoundGroupHandle kept = resources.add_sound_group(kept_name);
 			resources.set_group_volume(kept, 0.25f);
-			const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
-			const int initial_mode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+			const CrtBaseline baseline;
 			AllocationFailureSample sample;
 			sample.fail_on = fail_on;
 			labrador::SoundGroupHandle attempted;
@@ -251,9 +269,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 
 			CAPTURE(fail_on);
 			CAPTURE(sample.attempts);
-			REQUIRE_FALSE(sample.hook_conflict);
-			REQUIRE(_CrtGetAllocHook() == initial_hook);
-			REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+			baseline.require_restored(sample);
 			CHECK(resources.resolve_sound_group(kept_name) == kept);
 			CHECK(resources.group_volume(kept) == doctest::Approx(0.25f));
 			if (!refused)
@@ -306,8 +322,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 		std::vector<unsigned char> ignored;
 		std::vector<unsigned char> target;
 		std::vector<unsigned char> after_refusal;
-		const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
-		const int initial_mode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+		const CrtBaseline baseline;
 		AllocationFailureSample sample;
 		sample.minimum_bytes = minimum_bytes;
 		bool refused = false;
@@ -324,9 +339,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 			}
 			after_refusal.resize(minimum_bytes + 8, 5);
 		}
-		REQUIRE_FALSE(sample.hook_conflict);
-		REQUIRE(_CrtGetAllocHook() == initial_hook);
-		REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+		baseline.require_restored(sample);
 		REQUIRE(sample.injected);
 		REQUIRE(refused);
 		CHECK(sample.attempts == 1);
@@ -360,9 +373,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 				std::unique_ptr<labrador::SoundBank> attempted_bank =
 					labrador::SoundBank::silent();
 				const labrador::SoundBank* attempted_pointer = attempted_bank.get();
-				const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
-				const int initial_mode =
-					_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+				const CrtBaseline baseline;
 				AllocationFailureSample sample;
 				sample.fail_on = fail_on;
 				// Skip allocating Debug iterator proxies in noexcept string moves.
@@ -381,9 +392,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 				CAPTURE(attempted_name);
 				CAPTURE(fail_on);
 				CAPTURE(sample.attempts);
-				REQUIRE_FALSE(sample.hook_conflict);
-				REQUIRE(_CrtGetAllocHook() == initial_hook);
-				REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+				baseline.require_restored(sample);
 				CHECK(attempted_bank == nullptr);
 				CHECK(resources.resolve_sound_bank(kept_name) == kept);
 				CHECK(resources.sound_bank(kept) == kept_bank);
@@ -468,8 +477,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 			REQUIRE(calls.empty());
 			REQUIRE(bank->effect_state(low) == labrador::SoundState::stopped);
 			REQUIRE(bank->effect_state(high) == labrador::SoundState::stopped);
-			const _CRT_ALLOC_HOOK initial_hook = _CrtGetAllocHook();
-			const int initial_mode = _CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE);
+			const CrtBaseline baseline;
 			AllocationFailureSample sample;
 			sample.fail_on = fail_on;
 			bool refused = false;
@@ -485,9 +493,7 @@ TEST_SUITE("AudioResourcesFailureTests")
 
 			CAPTURE(fail_on);
 			CAPTURE(sample.attempts);
-			REQUIRE_FALSE(sample.hook_conflict);
-			REQUIRE(_CrtGetAllocHook() == initial_hook);
-			REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == initial_mode);
+			baseline.require_restored(sample);
 			CHECK(calls.empty());
 			CHECK(bank->effect_state(high) == labrador::SoundState::stopped);
 			if (refused)

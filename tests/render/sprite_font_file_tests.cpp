@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/sprite_font_file.h"
+#include "engine/core/byte_reader.h"
 #include "engine/render/font.h"
 #include "engine/render/texture_format.h"
 #include "tests/scratch_file.h"
@@ -9,7 +10,6 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -41,13 +41,7 @@ namespace
 
 	std::vector<unsigned char> whole_font()
 	{
-		std::ifstream file(font_path, std::ios::binary | std::ios::ate);
-		REQUIRE(file.good());
-		const std::streamoff size = file.tellg();
-		std::vector<unsigned char> bytes(static_cast<size_t>(size));
-		file.seekg(0, std::ios::beg);
-		file.read(reinterpret_cast<char*>(bytes.data()), size);
-		return bytes;
+		return labrador::read_file_bytes(font_path);
 	}
 }
 

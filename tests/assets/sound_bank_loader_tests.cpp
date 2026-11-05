@@ -21,7 +21,7 @@ using labrador_tests::ScratchFile;
 // is tested separately from reading that container or playing its content.
 //
 // WHERE THE OTHER HALF IS. build_sound_bank needs a device to create voices
-// against, so it is pinned in tests/audio/null_tests.cpp, which compiles in the
+// against, so it is pinned in tests/audio/null/null_tests.cpp, which compiles in the
 // configuration that has the headless backend. The split is the seam's: this
 // file is above it and that one is across it.
 
@@ -40,15 +40,16 @@ TEST_CASE("a definition names its waves and its effect instances")
 		read_sound_bank_definition(definition_file.path().c_str());
 
 	const std::vector<std::string> waves = { "shot", "hit", "engine" };
+	// The order of `waves` is the index space a backend answers wave_index out
+	// of when it has no container of its own to consult, so it is a property
+	// worth pinning rather than an artefact of how the vector was filled.
 	CHECK(definition.waves == waves);
 
 	REQUIRE(definition.effects.size() == 1);
 	CHECK(definition.effects[0].name == "engine_loop");
 	CHECK(definition.effects[0].wave == "engine");
 
-	// The order of `waves` is the index space a backend answers wave_index out
-	// of when it has no container of its own to consult, so it is a property
-	// worth pinning rather than an artefact of how the vector was filled.
+	// The path later failures name, such as a wave the bank does not hold.
 	CHECK(definition.source_path == definition_file.path());
 }
 
@@ -109,11 +110,15 @@ TEST_CASE("two effect instances of one name is a content bug, and it says so")
 
 	// Registry::add refills a name's slot rather than rejecting it, so without
 	// this check the second definition would quietly win and the first would
-	// have been written for nothing. The throw names the file, because a
-	// content bug is found by whoever wrote the content (T6).
-	CHECK_THROWS_AS(std::ignore =
+	// have been written for nothing. The throw names the file and the name,
+	// because a content bug is found by whoever wrote the content (T6).
+	CHECK_THROWS_WITH_AS(std::ignore =
 		read_sound_bank_definition(definition_file.path().c_str()),
+		doctest::Contains(definition_file.path().c_str()),
 		std::runtime_error);
+	CHECK_THROWS_WITH_AS(std::ignore =
+		read_sound_bank_definition(definition_file.path().c_str()),
+		doctest::Contains("'bang'"), std::runtime_error);
 }
 
 TEST_CASE("a name claimed by a per-wave instance is claimed")
@@ -155,8 +160,9 @@ TEST_CASE("a repeated wave is one wave")
 
 TEST_CASE("a definition that is not there names itself")
 {
-	CHECK_THROWS_AS(std::ignore = read_sound_bank_definition(
-		"no_such_sound_bank.json"), std::runtime_error);
+	CHECK_THROWS_WITH_AS(std::ignore = read_sound_bank_definition(
+		"no_such_sound_bank.json"), doctest::Contains("no_such_sound_bank.json"),
+		std::runtime_error);
 }
 
 TEST_CASE("sound bank unknown keys name the file the object and the key")

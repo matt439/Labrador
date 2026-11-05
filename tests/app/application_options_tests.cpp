@@ -1,10 +1,12 @@
 #include <doctest/doctest.h>
 
 #include "engine/app/application.h"
+#include "engine/app/window.h"
+#include "engine/core/step_timer.h"
 #include "engine/math/vector2i.h"
 
-#include <stdexcept>
 #include <limits>
+#include <stdexcept>
 #include <string>
 
 using namespace labrador;
@@ -23,9 +25,8 @@ TEST_CASE("the defaults are valid")
 
 TEST_CASE("the thread ceiling defaults to what the machine reports")
 {
-	// The whole point of the split: this number is a property of the MACHINE,
-	// and not the renderer's view capacity or the partition count. One literal
-	// serving all three is what this pins apart.
+	// This number is a property of the MACHINE, and not the renderer's view
+	// capacity or the partition count: no one literal serves all three.
 	CHECK(default_thread_count() >= 1);
 
 	const ApplicationOptions options;
@@ -67,10 +68,10 @@ TEST_CASE("a view capacity below one is rejected, naming the field")
 	}
 }
 
-TEST_CASE("the checks that were already here still hold")
+TEST_CASE("a zero frame rate, inverted thread range, zero window minimum or empty class name is rejected")
 {
-	// Regression cover for the fields validate() was carrying before
-	// view_capacity joined them - each of these reaches a divisor.
+	// Each of these would otherwise fail after startup: at a divisor, in an
+	// inverted thread range or at a window class with no name.
 	{
 		ApplicationOptions options;
 		options.target_fps = 0;
@@ -132,6 +133,44 @@ TEST_CASE("accepted frame rates always produce an advancing timer period")
 	}
 	catch (const Stop&) {}
 	CHECK(callbacks == 1);
+}
+
+TEST_CASE("the window an Application opens carries every window field of its options")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"WindowOptionsForClass";
+	options.window_title = L"Window options for";
+	options.client_size = Vector2I(900, 500);
+	options.fullscreen = true;
+	options.visible = false;
+	options.cursor_visible = false;
+	options.cursor_confined = true;
+	options.min_window_width = 400;
+	options.min_window_height = 300;
+
+	// The size passed, not options.client_size: the caller decides it.
+	const WindowOptions window = window_options_for(options, Vector2I(640, 360));
+	CHECK(window.window_class_name == options.window_class_name);
+	CHECK(window.window_title == options.window_title);
+	CHECK(window.client_size == Vector2I(640, 360));
+	CHECK(window.fullscreen);
+	CHECK_FALSE(window.visible);
+	CHECK_FALSE(window.cursor_visible);
+	CHECK(window.cursor_confined);
+	CHECK(window.min_window_width == 400);
+	CHECK(window.min_window_height == 300);
+
+	// And from the defaults, the window a game that sets nothing gets.
+	const ApplicationOptions defaults;
+	const WindowOptions plain = window_options_for(defaults, Vector2I(320, 200));
+	CHECK(plain.window_class_name == defaults.window_class_name);
+	CHECK(plain.window_title == defaults.window_title);
+	CHECK(plain.fullscreen == defaults.fullscreen);
+	CHECK(plain.visible == defaults.visible);
+	CHECK(plain.cursor_visible == defaults.cursor_visible);
+	CHECK(plain.cursor_confined == defaults.cursor_confined);
+	CHECK(plain.min_window_width == defaults.min_window_width);
+	CHECK(plain.min_window_height == defaults.min_window_height);
 }
 
 TEST_CASE("a client size is optional, and refused below the minimum window size by name")

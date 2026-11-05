@@ -31,104 +31,101 @@ using namespace labrador;
 //
 // So the assertion is the one a compiler can make and a reader cannot forget.
 
-namespace ThrowIfFailedTests
+TEST_SUITE("ThrowIfFailedTests")
 {
-	TEST_SUITE("ThrowIfFailedTests")
+	TEST_CASE("CONTRACT: a device failure is a std::runtime_error")
 	{
-		TEST_CASE("CONTRACT: a device failure is a std::runtime_error")
+		// The static form, so this is settled at compile time in every
+		// configuration - including the two where no D3D11 file is built
+		// at all and no runtime assertion below could ever run.
+		static_assert(
+			std::is_base_of<std::runtime_error, com_exception>::value,
+			"render/resource_factory.h declares std::runtime_error. "
+			"ThrowIfFailed is how the D3D11 backend keeps that promise, "
+			"so com_exception has to be one.");
+
+		CHECK(std::is_base_of<std::runtime_error, com_exception>::value);
+	}
+
+	TEST_CASE("ThrowIfFailed passes success through and throws on failure")
+	{
+		CHECK_NOTHROW(ThrowIfFailed(S_OK));
+
+		// E_FAIL rather than a made-up value, so the message below is one
+		// somebody could actually meet.
+		CHECK_THROWS_AS(ThrowIfFailed(E_FAIL), std::runtime_error);
+
+		// And catching it as the declared type is what the header invites
+		// a client to write. This is the line that would not have compiled
+		// as a catch of the old type.
+		bool caught = false;
+		try
 		{
-			// The static form, so this is settled at compile time in every
-			// configuration - including the two where no D3D11 file is built
-			// at all and no runtime assertion below could ever run.
-			static_assert(
-				std::is_base_of<std::runtime_error, com_exception>::value,
-				"render/resource_factory.h declares std::runtime_error. "
-				"ThrowIfFailed is how the D3D11 backend keeps that promise, "
-				"so com_exception has to be one.");
-
-			CHECK(std::is_base_of<std::runtime_error, com_exception>::value);
+			ThrowIfFailed(E_FAIL);
 		}
-
-		TEST_CASE("ThrowIfFailed passes success through and throws on failure")
+		catch (const std::runtime_error& error)
 		{
-			CHECK_NOTHROW(ThrowIfFailed(S_OK));
+			caught = true;
 
-			// E_FAIL rather than a made-up value, so the message below is one
-			// somebody could actually meet.
-			CHECK_THROWS_AS(ThrowIfFailed(E_FAIL), std::runtime_error);
-
-			// And catching it as the declared type is what the header invites
-			// a client to write. This is the line that would not have compiled
-			// as a catch of the old type.
-			bool caught = false;
-			try
-			{
-				ThrowIfFailed(E_FAIL);
-			}
-			catch (const std::runtime_error& error)
-			{
-				caught = true;
-
-				// The HRESULT is in the message. It is the only thing this
-				// exception knows and printing it is the whole of what a
-				// caller can do with one, so a message that lost it would
-				// leave a failure report saying nothing at all.
-				const std::string text = error.what();
-				CHECK(text.find("80004005") != std::string::npos);
-			}
-			CHECK(caught);
+			// The HRESULT is in the message. It is the only thing this
+			// exception knows and printing it is the whole of what a
+			// caller can do with one, so a message that lost it would
+			// leave a failure report saying nothing at all.
+			const std::string text = error.what();
+			CHECK(text.find("80004005") != std::string::npos);
 		}
+		CHECK(caught);
+	}
 
-		TEST_CASE("two live exceptions do not share one buffer")
+	TEST_CASE("two live exceptions do not share one buffer")
+	{
+		// A what() formatting into a function-local static char[64] has
+		// every com_exception in a process return the same pointer, so the
+		// last one asked overwrites the answer for all of them. That it
+		// cannot race in this tree today - Scene::draw is the only add_task
+		// site and the pool catches per task - is true and is not a fix.
+		// Holding the message in the base costs nothing and removes the
+		// question.
+		const com_exception first(E_FAIL);
+		const com_exception second(E_INVALIDARG);
+
+		const std::string first_text = first.what();
+		const std::string second_text = second.what();
+
+		CHECK(first_text != second_text);
+		CHECK(first_text.find("80004005") != std::string::npos);
+		CHECK(second_text.find("80070057") != std::string::npos);
+	}
+
+	TEST_CASE("the named form says which operation failed and with what code")
+	{
+		// The engine-written Direct3D sites pass the operation, the way
+		// Vulkan's check_vk does, so a failure report names the call
+		// rather than leaving a bare code and many candidate sites.
+		CHECK_NOTHROW(ThrowIfFailed(S_OK, "The swap chain could not be created"));
+		CHECK_NOTHROW(ThrowIfFailed(S_FALSE, "The swap chain could not be created"));
+
+		std::string message;
+		try
 		{
-			// A what() formatting into a function-local static char[64] has
-			// every com_exception in a process return the same pointer, so the
-			// last one asked overwrites the answer for all of them. That it
-			// cannot race in this tree today - Scene::draw is the only add_task
-			// site and the pool catches per task - is true and is not a fix.
-			// Holding the message in the base costs nothing and removes the
-			// question.
-			const com_exception first(E_FAIL);
-			const com_exception second(E_INVALIDARG);
-
-			const std::string first_text = first.what();
-			const std::string second_text = second.what();
-
-			CHECK(first_text != second_text);
-			CHECK(first_text.find("80004005") != std::string::npos);
-			CHECK(second_text.find("80070057") != std::string::npos);
+			ThrowIfFailed(E_INVALIDARG, "The swap chain could not be created");
 		}
-
-		TEST_CASE("the named form says which operation failed and with what code")
+		catch (const std::runtime_error& error)
 		{
-			// The engine-written Direct3D sites pass the operation, the way
-			// Vulkan's check_vk does, so a failure report names the call
-			// rather than leaving a bare code and many candidate sites.
-			CHECK_NOTHROW(ThrowIfFailed(S_OK, "The swap chain could not be created"));
-			CHECK_NOTHROW(ThrowIfFailed(S_FALSE, "The swap chain could not be created"));
-
-			std::string message;
-			try
-			{
-				ThrowIfFailed(E_INVALIDARG, "The swap chain could not be created");
-			}
-			catch (const std::runtime_error& error)
-			{
-				message = error.what();
-			}
-			CHECK(message ==
-				"The swap chain could not be created (HRESULT 80070057).");
-
-			// Still a com_exception, so the type contract above covers it.
-			CHECK_THROWS_AS(ThrowIfFailed(E_FAIL, "Anything"), com_exception);
+			message = error.what();
 		}
+		CHECK(message ==
+			"The swap chain could not be created (HRESULT 80070057).");
 
-		TEST_CASE("hresult_name spells a code as eight upper-case digits")
-		{
-			CHECK(hresult_name(E_FAIL) == "HRESULT 80004005");
-			CHECK(hresult_name(DXGI_ERROR_DEVICE_REMOVED) ==
-				"HRESULT 887A0005");
-			CHECK(hresult_name(S_OK) == "HRESULT 00000000");
-		}
+		// Still a com_exception, so the type contract above covers it.
+		CHECK_THROWS_AS(ThrowIfFailed(E_FAIL, "Anything"), com_exception);
+	}
+
+	TEST_CASE("hresult_name spells a code as eight upper-case digits")
+	{
+		CHECK(hresult_name(E_FAIL) == "HRESULT 80004005");
+		CHECK(hresult_name(DXGI_ERROR_DEVICE_REMOVED) ==
+			"HRESULT 887A0005");
+		CHECK(hresult_name(S_OK) == "HRESULT 00000000");
 	}
 }

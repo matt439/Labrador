@@ -64,7 +64,7 @@ Target: [xinput_gamepad.h](../engine/input/xinput/xinput_gamepad.h).
 Evidence: [the converter](../engine/input/xinput/xinput_gamepad.cpp),
 [the reader](../engine/input/xinput/gamepad_reader.cpp),
 [gamepad.h](../engine/input/gamepad.h) and the device-free fixture cases in
-[xinput_gamepad_tests.cpp](../tests/input/xinput_gamepad_tests.cpp).
+[xinput_gamepad_tests.cpp](../tests/input/xinput/xinput_gamepad_tests.cpp).
 
 The reader requests DirectXTK `DEAD_ZONE_NONE`; choosing a deadzone remains
 caller policy through `apply_deadzone` (T1). The converter reads a supplied
