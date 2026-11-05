@@ -1,5 +1,7 @@
 #include "samples/linesweeper/presentation/arrangement.h"
 
+#include "engine/scene/scene.h"
+
 using namespace labrador;
 
 namespace linesweeper
@@ -26,6 +28,16 @@ namespace linesweeper
 		arrangement.camera = Camera::frame(framed, arrangement.viewport);
 		arrangement.visible =
 			arrangement.camera.visible_rectangle(arrangement.viewport);
+
+		return arrangement;
+	}
+
+	Arrangement arrange_scene(Scene& scene, const Vector2F& buffer)
+	{
+		const Arrangement arrangement = arrange(buffer);
+
+		scene.clear_views();
+		scene.add_view(arrangement.viewport, arrangement.camera);
 
 		return arrangement;
 	}

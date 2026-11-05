@@ -7,13 +7,13 @@
 #include "engine/render/font.h"
 #include "engine/render/null/recording.h"
 #include "engine/render/render_resources.h"
-#include "engine/render/resource_factory.h"
-#include "engine/render/texture_data.h"
 #include "engine/render/viewport.h"
 #include "engine/scene/scene.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/rules/world.h"
+#include "tests/linesweeper/null_render_harness.h"
 
 #include <array>
 #include <cstddef>
@@ -29,53 +29,7 @@ namespace
 	using namespace labrador;
 	using namespace linesweeper;
 
-	class Harness
-	{
-	public:
-		Harness()
-		{
-			this->renderer_.create_device(nullptr, 1280, 720, 1);
-			this->renderer_.set_resources(&this->resources_);
-
-			TextureData texture;
-			texture.width = texture.height = 1;
-			texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
-			texture.pixels.assign(4, 255);
-			add_texture_asset(this->renderer_, this->resources_, "white", texture);
-			this->white = this->resources_.resolve_texture("white");
-			load_font_asset(this->renderer_, this->resources_,
-				LINESWEEPER_FONT_DIRECTORY, "jetbrains_mono_bold_16");
-		}
-
-		std::vector<RecordedSprite> draw(const TopOutBanner& banner,
-			const Camera& camera = Camera::default_camera)
-		{
-			this->renderer_.begin_frame();
-			this->renderer_.set_view_count(1);
-			DrawList list = this->renderer_.view(0);
-			list.set_camera(camera);
-			list.set_viewport(Viewport(0.0f, 0.0f, 1280.0f, 720.0f));
-			banner.draw(list);
-			this->renderer_.submit();
-			return recorded_sprites(this->renderer_);
-		}
-
-		std::vector<RecordedSprite> draw(const Scene& scene)
-		{
-			this->renderer_.begin_frame();
-			scene.draw(this->renderer_);
-			this->renderer_.submit();
-			return recorded_sprites(this->renderer_);
-		}
-
-		RenderResources& resources() { return this->resources_; }
-
-		TextureHandle white;
-
-	private:
-		RenderResources resources_;
-		Renderer renderer_;
-	};
+	using Harness = linesweeper_tests::NullHarness;
 
 	RectangleF sprite_bounds(const RecordedSprite& sprite,
 		const Camera& camera = Camera::default_camera)
@@ -193,7 +147,7 @@ TEST_CASE("top-out banner bounds include glyph bearings above the measured layou
 {
 	Harness harness;
 	const TextureHandle atlas = harness.resources().font(
-		harness.resources().resolve_sprite_font("jetbrains_mono_bold_16"))->atlas();
+		harness.resources().resolve_sprite_font(font_name))->atlas();
 	Glyph glyph;
 	glyph.character = U'T';
 	glyph.subrect = RectangleI(0, 0, 10, 12);
@@ -203,7 +157,7 @@ TEST_CASE("top-out banner bounds include glyph bearings above the measured layou
 	std::unique_ptr<Font> font =
 		std::make_unique<Font>(atlas, std::move(glyphs), 16.0f);
 	font->set_stand_in(U'T');
-	harness.resources().add_font("jetbrains_mono_bold_16", std::move(font));
+	harness.resources().add_font(font_name, std::move(font));
 
 	const World world = finished_match();
 	const TopOutBanner banner(&world, &harness.resources());

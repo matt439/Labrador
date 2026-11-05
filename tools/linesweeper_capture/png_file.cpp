@@ -76,9 +76,9 @@ namespace capture
 			refuse(path, "the PNG frame could not be started");
 		}
 
-		// The encoder may answer with a format of its own, so the frame is
-		// handed a bitmap that says what it holds and WIC converts if it has
-		// to - the same arrangement golden_image.cpp makes, for its reason.
+		// The encoder may answer SetPixelFormat with a format of its own, so
+		// the frame is handed a bitmap that says what it holds and WIC
+		// converts if it has to, rather than this assuming its first answer.
 		WICPixelFormatGUID format = GUID_WICPixelFormat24bppBGR;
 		ComPtr<IWICBitmap> source;
 		if (FAILED(frame->SetPixelFormat(&format)) ||

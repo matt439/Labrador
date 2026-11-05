@@ -48,7 +48,8 @@ namespace linesweeper
 		if (particles.live() != pacing_particle_count || particles.dropped() != 0)
 		{
 			throw std::runtime_error(
-				"The browser pacing top-out must have exactly 9,600 live particles "
+				"The browser pacing top-out must have exactly " +
+				std::to_string(pacing_particle_count) + " live particles "
 				"and zero dropped emissions; got " + std::to_string(particles.live()) +
 				" live and " + std::to_string(particles.dropped()) + " dropped.");
 		}

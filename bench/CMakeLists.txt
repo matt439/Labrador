@@ -57,6 +57,7 @@ if(WIN32)
         "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/top_out_banner.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/web/pacing_fixture.cpp"
     )
     target_link_libraries(LineSweeperFrameBench PRIVATE
         LineSweeperRules
@@ -95,6 +96,7 @@ if(WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/board_view.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/particles.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/presentation/top_out_banner.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../samples/linesweeper/web/pacing_fixture.cpp"
         )
         target_link_libraries(D3D12DescriptorCountProbe PRIVATE
             LineSweeperRules LabradorEngine labrador_settings

@@ -1,13 +1,12 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/null/recording.h"
-#include "engine/render/render_resources.h"
-#include "engine/render/resource_factory.h"
-#include "engine/render/texture_data.h"
 #include "samples/linesweeper/presentation/board_view.h"
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/world.h"
+#include "tests/linesweeper/null_render_harness.h"
+#include "tests/linesweeper/well_fixtures.h"
 
 #include <array>
 #include <cstddef>
@@ -19,8 +18,8 @@
 // The board, drawn under the null renderer and read back as the sprites it
 // submitted.
 //
-// A BOARDVIEW NEEDS A FONT, NOT A DEVICE. It measures and draws text, so its
-// resource table has to hold a loaded font - and the null backend loads one
+// A BOARDVIEW NEEDS A FONT, NOT A DEVICE. It draws text, so its resource
+// table has to hold a loaded font - and the null backend loads one
 // through the same reader every other backend does, keeping the atlas as a
 // size. So the board's colours are asserted here rather than only looked at:
 // what a palette changes and what it leaves alone. How it looks is still the
@@ -33,8 +32,9 @@ namespace
 	using namespace labrador;
 	using namespace linesweeper;
 
-	constexpr std::array<Kind, 7> kinds = { Kind::i, Kind::j, Kind::l,
-		Kind::o, Kind::s, Kind::t, Kind::z };
+	using Harness = linesweeper_tests::NullHarness;
+
+	constexpr std::array<Kind, kind_count> kinds = piece_kinds;
 
 	// What a sprite's tint is in palette terms: a kind at full strength (a
 	// cell, a preview or the shadow's edge), a kind's shadow fill, or
@@ -63,46 +63,6 @@ namespace
 		return std::nullopt;
 	}
 
-	class Harness
-	{
-	public:
-		Harness()
-		{
-			this->renderer_.create_device(nullptr, 1280, 720, 1);
-			this->renderer_.set_resources(&this->resources_);
-
-			TextureData texture;
-			texture.width = texture.height = 1;
-			texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
-			texture.pixels.assign(4, 255);
-			add_texture_asset(this->renderer_, this->resources_, "white",
-				texture);
-			this->white = this->resources_.resolve_texture("white");
-
-			load_font_asset(this->renderer_, this->resources_,
-				LINESWEEPER_FONT_DIRECTORY, "jetbrains_mono_bold_16");
-		}
-
-		// A copy, because the next begin_frame empties what recorded_sprites
-		// refers to (tests/render/null_test_harness.h, Harness::end).
-		std::vector<RecordedSprite> draw(const BoardView& board)
-		{
-			this->renderer_.begin_frame();
-			this->renderer_.set_view_count(1);
-			DrawList list = this->renderer_.view(0);
-			board.draw(list);
-			this->renderer_.submit();
-			return recorded_sprites(this->renderer_);
-		}
-
-		RenderResources& resources() { return this->resources_; }
-
-		TextureHandle white;
-
-	private:
-		RenderResources resources_;
-		Renderer renderer_;
-	};
 
 	// One locked cell of every kind on the bottom row, a T falling with its
 	// shadow below it, I in the hold slot and five more in the queue: every
@@ -111,12 +71,10 @@ namespace
 	{
 		World world;
 
-		for (int index = 0; index < 7; ++index)
+		for (std::size_t index = 0; index < kinds.size(); ++index)
 		{
-			world.cells[static_cast<std::size_t>(
-				cell_index(index, well_rows - 1))] =
-				static_cast<std::uint8_t>(kinds[static_cast<std::size_t>(
-					index)]);
+			set_cell(world, static_cast<int>(index), well_rows - 1,
+				kinds[index]);
 		}
 
 		world.current = Piece{ Kind::t, 0, 4,
@@ -148,7 +106,7 @@ TEST_CASE("a palette changes every piece the board draws and nothing else")
 
 	// What the standard frame drew, by role: each kind as a cell or preview,
 	// and the falling T's shadow fill.
-	std::array<int, 8> drawn = {};
+	std::array<int, kind_count + 1> drawn = {};
 	int fills = 0;
 	for (const RecordedSprite& sprite : standard)
 	{

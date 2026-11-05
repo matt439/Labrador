@@ -52,6 +52,9 @@ namespace linesweeper
 
 		std::wstring text_;
 		labrador::Vector2F text_size_;
+
+		// Where update() put the text, which draw() and both extents read.
+		labrador::Vector2F text_origin_;
 		labrador::RectangleF text_bounds_;
 
 		// What text_ was built from, and whether it has been built at all -

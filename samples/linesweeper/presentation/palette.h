@@ -175,13 +175,12 @@ namespace linesweeper
 	// THE BLEND STATE IS PREMULTIPLIED ALPHA, and this function is what that
 	// costs a caller.
 	//
-	// DirectXTK substitutes CommonStates::AlphaBlend() for the null blend
-	// state every batch opens with, and that is BLEND_ONE against
-	// BLEND_INV_SRC_ALPHA: the equation is `dst = src.rgb + dst.rgb * (1 - a)`,
-	// so the source's colour channels are expected to have been multiplied by
-	// its alpha already. A tint of (r, g, b, 0.25) therefore does not fade the
-	// quad to a quarter - it adds nearly all of the colour and lets nearly all
-	// of the background through, which reads as a glow.
+	// draw_sprite blends premultiplied on every backend (renderer.h;
+	// engine/render/SEAM.md#5): the equation is
+	// `dst = src.rgb + dst.rgb * (1 - a)`, so the source's colour channels are
+	// expected to have been multiplied by its alpha already. A tint of (r, g, b, 0.25) therefore does not fade
+	// the quad to a quarter - it adds nearly all of the colour and lets nearly
+	// all of the background through, which reads as a glow.
 	//
 	// Which is a feature elsewhere and a bug here. The inside of the shadow
 	// under a falling piece wants to be dimmer than the piece, so it
@@ -195,8 +194,7 @@ namespace linesweeper
 			colour.b * alpha, alpha);
 	}
 
-	// THE OTHER HALF OF THE SAME EQUATION, and the one the README spent a
-	// section predicting would need an atlas.
+	// THE OTHER HALF OF THE SAME EQUATION: additive glow.
 	//
 	// faded() above scales the colour AND the alpha, which under
 	// `dst = src.rgb + dst.rgb * (1 - a)` is ordinary alpha blending: some of
@@ -210,10 +208,9 @@ namespace linesweeper
 	// white instead of averaging. Ten thousand of them doing that is what a
 	// burst looks like (presentation/particles.cpp).
 	//
-	// A tint and not a texture, which is the part worth recording: the sample
-	// predicted the glow would arrive as an atlas of soft radial dots and it
-	// did not. A shrinking quad of pure addition reads as a spark at four
-	// pixels across, and the content stays one white texel.
+	// A tint and not a texture: a shrinking quad of pure addition reads as a
+	// spark at four pixels across, so the glow needs no atlas of soft radial
+	// dots and the content stays one white texel.
 	constexpr labrador::Colour glowing(const labrador::Colour& colour,
 		float brightness)
 	{

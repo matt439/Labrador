@@ -12,9 +12,11 @@
 
 #include <Windows.h>
 
-#include <exception>
 #include <cstdio>
+#include <exception>
 #include <memory>
+#include <utility>
+
 using namespace labrador;
 
 int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
@@ -36,9 +38,10 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 
 		// PINNED, AND THE RULES DEPEND ON IT. Lock delay, the shift timer and
 		// the gravity table are all denominated in fixed ticks, and this is
-		// the number of ticks a second they assume. Nothing in the engine pins
-		// it - validate() only checks it is positive - so a game that sets 120
-		// here silently runs at half speed with no error anywhere.
+		// the number of ticks a second they assume, at one tick per fixed
+		// step. Nothing in the engine pins it - validate() checks only that it
+		// makes a usable step - so a game that sets 120 here silently runs at
+		// double speed with no error anywhere.
 		options.target_fps = 60;
 
 		Application app(std::move(options));

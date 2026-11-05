@@ -1,6 +1,7 @@
 #include "samples/linesweeper/presentation/board_view.h"
 
 #include "engine/math/rectanglei.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/tables.h"
@@ -15,11 +16,6 @@ namespace linesweeper
 {
 	namespace
 	{
-		// Asset names resolve once (T7, T8). Solid rectangles use the white
-		// texture with a tint; text uses the font's atlas through the same seam.
-		const std::string block_texture_name = "white";
-		const std::string font_name = "jetbrains_mono_bold_16";
-
 		// The layout, in board space: the 1280x720 main.cpp asks for, which the
 		// camera fits to whatever buffer there is (arrangement.h).
 		// Shared well coordinates live in layout.h so blocks and particle births
@@ -38,10 +34,10 @@ namespace linesweeper
 		// depend only on literals and constexpr layout fields, so each is
 		// constant-initialised, with no cross-unit initialisation order.
 		const Vector2F well_origin(well_origin_x, well_origin_y);
-		const Vector2F hold_origin(344.0f, 104.0f);
+		const Vector2F hold_origin(hud_column_x, 104.0f);
 		const Vector2F next_origin(816.0f, 104.0f);
 		const Vector2F label_offset(0.0f, -26.0f);
-		const Vector2F hud_origin(344.0f, 236.0f);
+		const Vector2F hud_origin(hud_column_x, 236.0f);
 
 		// Literal colours avoid initialization dependencies on Colour's
 		// namespace-scope palette objects. palette.h owns well/grid colours

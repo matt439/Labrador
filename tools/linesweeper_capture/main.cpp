@@ -16,9 +16,10 @@
 // THE SCENE IS PlayState's, ASSEMBLED HERE, the way
 // bench/linesweeper_frame_bench.cpp assembles it: the state owns its World
 // privately and reads a keyboard, so the tool owns the World and registers
-// the same objects in the same order. The two hint labels' text is the one
-// part copied from play_state.cpp, as the bench copies it, and has to follow
-// any change there. The pause screen is the sample's own PauseState, which
+// the same drawn objects in the same order, with the hint labels' text and
+// places from presentation/hints.h. PlayState's last object, TouchControls,
+// is left out on purpose: it draws nothing until a finger is seen, and these
+// are desktop frames. The pause screen is the sample's own PauseState, which
 // only needs the shell's services to build and draw.
 //
 // tools/linesweeper_capture/README.md says how to run it and how to change
@@ -33,7 +34,9 @@
 #include "engine/render/renderer.h"
 #include "engine/render/viewport.h"
 #include "engine/scene/scene.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/board_view.h"
+#include "samples/linesweeper/presentation/hints.h"
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
@@ -42,8 +45,6 @@
 #include "tools/linesweeper_capture/capture_script.h"
 #include "tools/linesweeper_capture/png_file.h"
 #include "tools/linesweeper_capture/scripted_match.h"
-
-#include <Windows.h>
 
 #include <cstddef>
 #include <cstdio>
@@ -69,14 +70,13 @@ namespace
 	constexpr int frame_width = 1280;
 	constexpr int frame_height = 720;
 
-	// One tick's worth of presentation time. The sample pins sixty ticks a
-	// second (main.cpp) and runs one tick per update, so this is the dt its
-	// particle field sees on every frame the shell keeps up - and a constant
-	// rather than a measurement is what makes the sparks repeatable.
-	constexpr float tick_seconds = 1.0f / 60.0f;
+	// The rate the sample pins (main.cpp), at one rules tick per update.
+	constexpr int ticks_per_second = 60;
 
-	const std::string font_name = "jetbrains_mono_bold_16";
-	const std::string block_texture_name = "white";
+	// One tick's worth of presentation time: the dt the sample's particle
+	// field sees on every frame the shell keeps up - and a constant rather
+	// than a measurement is what makes the sparks repeatable.
+	constexpr float tick_seconds = 1.0f / static_cast<float>(ticks_per_second);
 
 	class CaptureSession
 	{
@@ -134,7 +134,8 @@ namespace
 
 		// PlayState::init's objects, in PlayState::init's order, which is the
 		// sample's whole depth system: the board, the sparks over it, the
-		// banner over the sparks, then the hints.
+		// banner over the sparks, then the hints. Not the touch controls
+		// PlayState adds last, which draw nothing until a finger is seen.
 		std::ignore = this->scene_.add(std::make_unique<BoardView>(
 			&this->match_.world(), resources, &this->palette_));
 
@@ -147,13 +148,11 @@ namespace
 			std::make_unique<TopOutBanner>(&this->match_.world(), resources));
 
 		std::ignore = this->scene_.add(std::make_unique<Label>(
-			L"keyboard   arrows move   Z X rotate   space drops   C holds",
-			font_name, Vector2F(344.0f, resolution.y - 60.0f), resources,
-			Colour::dark_gray));
+			keyboard_hint_text, font_name, Vector2F(hint_x, keyboard_hint_y),
+			resources, Colour::dark_gray));
 
 		std::ignore = this->scene_.add(std::make_unique<Label>(
-			L"pad        d-pad moves   A B rotate   Y drops       X holds",
-			font_name, Vector2F(344.0f, resolution.y - 36.0f), resources,
+			pad_hint_text, font_name, Vector2F(hint_x, pad_hint_y), resources,
 			Colour::dark_gray));
 
 		this->scene_.end_tick();
@@ -180,8 +179,10 @@ namespace
 
 		if (this->sequence_)
 		{
-			std::printf("Sequence: %zu frames at 60 fps (%.3f seconds).\n",
-				this->frames_, static_cast<double>(this->frames_) / 60.0);
+			std::printf("Sequence: %zu frames at %d fps (%.3f seconds).\n",
+				this->frames_, ticks_per_second,
+				static_cast<double>(this->frames_) /
+					static_cast<double>(ticks_per_second));
 		}
 	}
 
@@ -252,11 +253,11 @@ namespace
 		std::fprintf(stderr,
 			"usage: LineSweeperCapture <output-directory> [<script>] "
 			"[--sequence] [--palette <name>]\n"
-			"  --sequence also writes every 60 Hz update to frames/000000.png, ...\n"
+			"  --sequence also writes every %d Hz update to frames/000000.png, ...\n"
 			"  --palette draws the pieces in standard (the default), protan,\n"
 			"    deutan or tritan; the match is the same in every one.\n"
 			"  The script defaults to the checked-in one:\n"
-			"  %s\n", LINESWEEPER_CAPTURE_SCRIPT);
+			"  %s\n", ticks_per_second, LINESWEEPER_CAPTURE_SCRIPT);
 	}
 
 	// The palette a --palette argument names, or none for a name that is not
@@ -385,7 +386,9 @@ int wmain(int argc, wchar_t* argv[])
 		{
 			throw std::runtime_error("The back buffer is " +
 				std::to_string(size.x) + "x" + std::to_string(size.y) +
-				", not 1280x720, so these would not be the sample's frames.");
+				", not " + std::to_string(frame_width) + "x" +
+				std::to_string(frame_height) +
+				", so these would not be the sample's frames.");
 		}
 
 		const RenderDeviceInfo& device = app.renderer()->device_info();

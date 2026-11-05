@@ -6,7 +6,9 @@
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/rules/world.h"
+#include "tests/linesweeper/well_fixtures.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -22,9 +24,14 @@ using linesweeper::Piece;
 using linesweeper::TickResult;
 using linesweeper::World;
 using linesweeper::cell_index;
+using linesweeper::clear_row;
+using linesweeper::fill_row;
+using linesweeper::kind_count;
 using linesweeper::particle_capacity;
 using linesweeper::piece_cell_count;
 using linesweeper::piece_cells;
+using linesweeper::row_full;
+using linesweeper::set_cell;
 using linesweeper::shadow;
 using linesweeper::sparks_per_cell;
 using linesweeper::well_columns;
@@ -34,13 +41,12 @@ using linesweeper::well_visible_rows;
 // The particle field, stepped with no device.
 //
 // THE SIMULATION HALF OF THE SAMPLE'S PRESENTATION, with no renderer at all.
-// board_view.cpp measures text, and measuring walks a font atlas, so a
-// BoardView needs at least the null renderer to load one into; what it draws
-// is recorded under that backend (board_view_tests.cpp, in the null
-// configurations only) and looked at everywhere else. The particle field
-// takes a resolved handle instead of the resource table and nothing in
-// update() touches it, so the whole simulation half runs here, in every
-// configuration.
+// board_view.cpp draws text through a font atlas, so a BoardView needs at least
+// the null renderer to load one into; what it draws is recorded under that
+// backend (board_view_tests.cpp, in the null configurations only) and looked at
+// everywhere else. The particle field takes a resolved handle instead of the
+// resource table and nothing in update() touches it, so the whole simulation
+// half runs here, in every configuration.
 //
 // WHAT IS ASSERTED IS THE POLICY, NOT THE TUNING. Every count below is a ratio
 // or a bound: how many sparks a lock is worth against a clear is a number in
@@ -58,28 +64,9 @@ namespace
 {
 	constexpr float frame = 1.0f / 60.0f;
 
-	// A cell of the well, filled with piece kind 1. Which kind is immaterial
-	// here - the rules store a byte and the palette colours it (world.h).
-	void fill(World& world, int x, int y)
-	{
-		world.cells[static_cast<std::size_t>(cell_index(x, y))] = 1;
-	}
-
-	void fill_row(World& world, int y)
-	{
-		for (int x = 0; x < well_columns; ++x)
-		{
-			fill(world, x, y);
-		}
-	}
-
-	void clear_row(World& world, int y)
-	{
-		for (int x = 0; x < well_columns; ++x)
-		{
-			world.cells[static_cast<std::size_t>(cell_index(x, y))] = 0;
-		}
-	}
+	// Cells are filled with well_fixtures.h's set_cell and fill_row. Which
+	// kind is immaterial here - the rules store a byte and the palette
+	// colours it (world.h).
 
 	// How many particles `cells` cells appearing at once is worth. A piece
 	// locking is this with four.
@@ -91,7 +78,7 @@ namespace
 
 		for (int index = 0; index < cells; ++index)
 		{
-			fill(world, index, well_rows - 1);
+			set_cell(world, index, well_rows - 1, Kind::i);
 		}
 
 		++world.tick;
@@ -103,17 +90,17 @@ namespace
 	// A match one tick away from a single-row clear: the bottom row filled
 	// except for two columns, and an O piece above the gap.
 	//
-	// The setup is checked rather than assumed - the assertions at the end are
-	// the test's own proof that shadow() puts the piece where this comment
-	// says it does, which is the property board_at_lock in particles.cpp rests
-	// on.
+	// The setup is checked rather than assumed: the case "a cleared row is
+	// found even though no World ever holds one" asserts that shadow() puts
+	// the O into the gap and that the row then clears, which is the property
+	// board_at_lock in particles.cpp rests on.
 	World about_to_clear()
 	{
 		World world;
 
 		for (int x = 0; x < well_columns - 2; ++x)
 		{
-			fill(world, x, well_rows - 1);
+			set_cell(world, x, well_rows - 1, Kind::i);
 		}
 
 		world.current = Piece{ Kind::o, 0,
@@ -130,19 +117,7 @@ namespace
 
 		for (int read = well_rows - 1; read >= 0; --read)
 		{
-			bool full = true;
-
-			for (int x = 0; x < well_columns; ++x)
-			{
-				if (world.cells[static_cast<std::size_t>(
-					cell_index(x, read))] == 0)
-				{
-					full = false;
-					break;
-				}
-			}
-
-			if (full)
+			if (row_full(world.cells, read))
 			{
 				++world.lines;
 				continue;
@@ -235,6 +210,14 @@ namespace
 		// the bottom row, which is what board_at_lock has to rediscover.
 		const Piece landed = shadow(world);
 		REQUIRE(landed.kind == Kind::o);
+		const std::array<Coord, piece_cell_count> landed_cells =
+			piece_cells(landed);
+		for (const Coord& cell : landed_cells)
+		{
+			REQUIRE(cell.x >= well_columns - 2);
+		}
+		REQUIRE(std::count_if(landed_cells.begin(), landed_cells.end(),
+			[](const Coord& cell) { return cell.y == well_rows - 1; }) == 2);
 
 		// Constructed before the tick, so previous_ is the pre-lock match -
 		// exactly what the field sees on a real frame.
@@ -248,15 +231,7 @@ namespace
 		// And no row is full now, which is the whole difficulty.
 		for (int y = 0; y < well_rows; ++y)
 		{
-			bool full = true;
-
-			for (int x = 0; x < well_columns; ++x)
-			{
-				full = full && world.cells[static_cast<std::size_t>(
-					cell_index(x, y))] != 0;
-			}
-
-			REQUIRE_FALSE(full);
+			REQUIRE_FALSE(row_full(world.cells, y));
 		}
 
 		field.update(frame);
@@ -290,9 +265,8 @@ namespace
 
 	// THE TICK THAT ROTATES AND LOCKS, through the real tick(). Rebuilding
 	// the board from where a hard drop would have put LAST frame's piece
-	// gives a burst from the wrong row (docs/review/gpt6/README.md, G6-11):
-	// this is the review's board, and the sparks have to come out of the row
-	// that went.
+	// gives a burst from the wrong row on this board, and the sparks have to
+	// come out of the row that went.
 	TEST_CASE("a piece that turns on the tick it locks sparks from the row that went")
 	{
 		World world;
@@ -305,11 +279,11 @@ namespace
 		{
 			if (x < 3 || x > 6)
 			{
-				fill(world, x, 20);
+				set_cell(world, x, 20, Kind::i);
 			}
 			if (x != 5)
 			{
-				fill(world, x, 21);
+				set_cell(world, x, 21, Kind::i);
 			}
 		}
 
@@ -397,7 +371,7 @@ namespace
 		SUBCASE("a full row is worth more per cell than a clear is")
 		{
 			World world;
-			fill_row(world, well_rows - 1);
+			fill_row(world, well_rows - 1, {});
 
 			TickResult result;
 			ParticleField field(&world, &result, TextureHandle{});
@@ -408,6 +382,8 @@ namespace
 
 			CHECK(field.live() > 0);
 			CHECK(field.live() % well_columns == 0);
+			CHECK(field.live() / well_columns >
+				one_row_cleared() / well_columns);
 		}
 
 		SUBCASE("and the whole well is what the capacity was sized for")
@@ -416,7 +392,7 @@ namespace
 
 			for (int y = 0; y < well_rows; ++y)
 			{
-				fill_row(world, y);
+				fill_row(world, y, {});
 			}
 
 			TickResult result;
@@ -451,7 +427,7 @@ namespace
 		ParticleField field(&world, &result, TextureHandle{}, nullptr,
 			motion);
 
-		fill(world, 0, well_rows - 1);
+		set_cell(world, 0, well_rows - 1, Kind::i);
 		++world.tick;
 		field.update(0.0f);
 
@@ -477,7 +453,7 @@ namespace
 
 		for (int y = 0; y < well_rows; ++y)
 		{
-			fill_row(world, y);
+			fill_row(world, y, {});
 		}
 
 		TickResult result;
@@ -560,7 +536,7 @@ namespace
 	TEST_CASE("particles die, and the field empties itself")
 	{
 		World world;
-		fill_row(world, well_rows - 1);
+		fill_row(world, well_rows - 1, {});
 
 		TickResult result;
 		ParticleField field(&world, &result, TextureHandle{});
@@ -590,7 +566,7 @@ namespace
 	{
 		World world;
 		world.tick = 500;
-		fill_row(world, well_rows - 1);
+		fill_row(world, well_rows - 1, {});
 
 		TickResult result;
 		ParticleField field(&world, &result, TextureHandle{});
@@ -624,7 +600,7 @@ namespace
 		{
 			for (int y = well_rows - 4; y < well_rows; ++y)
 			{
-				fill_row(world, y);
+				fill_row(world, y, {});
 			}
 
 			++world.tick;
@@ -649,7 +625,7 @@ namespace
 	TEST_CASE("the sparks are carried on only on a step the field was updated on")
 	{
 		World world;
-		fill_row(world, well_rows - 1);
+		fill_row(world, well_rows - 1, {});
 
 		TickResult result;
 
@@ -692,7 +668,7 @@ namespace
 	TEST_CASE("bounds is the burst, measured, and not the whole screen")
 	{
 		World world;
-		fill_row(world, well_rows - 1);
+		fill_row(world, well_rows - 1, {});
 
 		TickResult result;
 		ParticleField field(&world, &result, TextureHandle{});
@@ -715,7 +691,7 @@ namespace
 		}
 	}
 
-	// BDP-22: a player who asked for reduced motion gets the same bursts with
+	// A player who asked for reduced motion gets the same bursts with
 	// at most sparks_per_cell's reduced count from each cell, and still some.
 	// Each burst's full count per cell is read off the full field, so the
 	// tuning in particles.cpp can move without this moving.
@@ -772,8 +748,8 @@ namespace
 		{
 			for (int x = 0; x < well_columns - 2; ++x)
 			{
-				world.cells[static_cast<std::size_t>(cell_index(x, y))] =
-					static_cast<std::uint8_t>((x + y) % 7 + 1);
+				set_cell(world, x, y,
+					static_cast<Kind>((x + y) % kind_count + 1));
 			}
 		}
 

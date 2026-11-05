@@ -207,8 +207,8 @@ discontinuity events retained; the pre-initialization 300x150 canvas is not
 used as the measured drawing-buffer size.
 
 The [shared fixture](../../samples/linesweeper/web/pacing_fixture.cpp)
-reproduces `build_workload()` in
-[linesweeper_frame_bench.cpp](../../bench/linesweeper_frame_bench.cpp): all
+is the world `build_workload()` in
+[linesweeper_frame_bench.cpp](../../bench/linesweeper_frame_bench.cpp) uses: all
 200 visible cells, the same colour pattern, queue and HUD values. The
 [fixture state](../../samples/linesweeper/web/pacing_state.cpp) registers
 BoardView, ParticleField, TopOutBanner and the two hint labels in the same

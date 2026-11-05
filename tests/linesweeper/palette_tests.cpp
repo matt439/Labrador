@@ -3,6 +3,7 @@
 #include "engine/render/colour.h"
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/world.h"
+#include "tests/linesweeper/well_fixtures.h"
 
 #include <array>
 #include <cmath>
@@ -39,8 +40,8 @@ using linesweeper::well_colour;
 // README records and no test can hold.
 namespace
 {
-	constexpr std::array<Kind, 7> kinds = { Kind::i, Kind::j, Kind::l,
-		Kind::o, Kind::s, Kind::t, Kind::z };
+	constexpr std::array<Kind, linesweeper::kind_count> kinds =
+		linesweeper::piece_kinds;
 
 	// `dst = src.rgb + dst.rgb * (1 - a)`: palette.h's premultiplied blend,
 	// drawing `source` over an opaque `destination`.

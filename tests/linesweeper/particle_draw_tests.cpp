@@ -1,53 +1,41 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/null/recording.h"
-#include "engine/render/render_resources.h"
-#include "engine/render/resource_factory.h"
-#include "engine/render/texture_data.h"
 #include "engine/scene/scene.h"
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/presentation/particles.h"
+#include "tests/linesweeper/null_render_harness.h"
+#include "tests/linesweeper/well_fixtures.h"
 
 #include <algorithm>
-#include <cstdint>
-#include <functional>
+#include <cstddef>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <vector>
 
+using linesweeper_tests::NullHarness;
+
 TEST_CASE("particle bounds contain visible edges and survive an edge-view cull")
 {
 	using namespace labrador;
 	using namespace linesweeper;
-	RenderResources resources;
-	Renderer renderer;
-	renderer.create_device(nullptr, 1280, 720, 1);
-	renderer.set_resources(&resources);
-	TextureData texture;
-	texture.width = texture.height = 1;
-	texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
-	texture.pixels.assign(4, 255);
-	add_texture_asset(renderer, resources, "white", texture);
+	NullHarness harness;
 	World world;
 	TickResult tick;
-	world.cells[static_cast<size_t>(cell_index(0, well_rows - 1))] = 1;
+	set_cell(world, 0, well_rows - 1, Kind::i);
 	Scene scene(nullptr, nullptr);
 	ParticleField* field = scene.add(std::make_unique<ParticleField>(&world, &tick,
-		resources.resolve_texture("white")));
+		harness.white));
 	scene.end_tick();
 	world.topped_out = 1;
 	++world.tick;
 	field->update(0.0f);
-	renderer.begin_frame();
-	renderer.set_view_count(1);
-	DrawList list = renderer.view(0);
-	field->draw(list);
-	renderer.submit();
-	REQUIRE_FALSE(recorded_sprites(renderer).empty());
+	const std::vector<RecordedSprite> sprites = harness.draw(*field);
+	REQUIRE_FALSE(sprites.empty());
 	float left = (std::numeric_limits<float>::max)();
 	const RectangleF cull = field->cull_bounds(1);
-	for (const RecordedSprite& sprite : recorded_sprites(renderer))
+	for (const RecordedSprite& sprite : sprites)
 	for (const SpriteVertex& corner : sprite.corners)
 	{
 		left = std::min(left, corner.position.x);
@@ -59,10 +47,7 @@ TEST_CASE("particle bounds contain visible edges and survive an edge-view cull")
 	// A world-space edge and its pixel-truncated counterpart differ by <1.
 	CHECK(field->bounds().left() < left + 1.0f);
 	scene.add_view(Viewport(0, 0, 1, 720), Camera(left, 0, 1));
-	renderer.begin_frame();
-	scene.draw(renderer);
-	renderer.submit();
-	CHECK_FALSE(recorded_sprites(renderer).empty());
+	CHECK_FALSE(harness.draw(scene).empty());
 	field->update(10.0f);
 	CHECK(field->live() == 0);
 	CHECK(field->cull_bounds(100).width == 0);
@@ -72,40 +57,23 @@ TEST_CASE("sparks carried on between steps stay inside the cull bounds")
 {
 	using namespace labrador;
 	using namespace linesweeper;
-	RenderResources resources;
-	Renderer renderer;
-	renderer.create_device(nullptr, 1280, 720, 1);
-	renderer.set_resources(&resources);
-	TextureData texture;
-	texture.width = texture.height = 1;
-	texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
-	texture.pixels.assign(4, 255);
-	add_texture_asset(renderer, resources, "white", texture);
+	NullHarness harness;
 	World world;
 	TickResult tick;
-	for (int x = 0; x < well_columns; ++x)
-	{
-		world.cells[static_cast<size_t>(cell_index(x, well_rows - 1))] = 1;
-	}
+	fill_row(world, well_rows - 1, {});
 	StepPosition step;
 	step.step = 1;
-	ParticleField field(&world, &tick, resources.resolve_texture("white"), &step);
+	ParticleField field(&world, &tick, harness.white, &step);
 	world.topped_out = 1;
 	++world.tick;
 	field.update(1.0f / 60.0f);
 	REQUIRE(field.live() > 0);
 
 	// Where update() left them, then as far on as a frame can carry them.
-	const std::function<std::vector<RecordedSprite>(float)> draw_at =
-		[&](float fraction)
+	const auto draw_at = [&](float fraction)
 	{
 		step.fraction = fraction;
-		renderer.begin_frame();
-		renderer.set_view_count(1);
-		DrawList list = renderer.view(0);
-		field.draw(list);
-		renderer.submit();
-		return recorded_sprites(renderer);
+		return harness.draw(field);
 	};
 	const std::vector<RecordedSprite> still = draw_at(0.0f);
 	const std::vector<RecordedSprite> carried = draw_at(0.999f);
@@ -113,9 +81,10 @@ TEST_CASE("sparks carried on between steps stay inside the cull bounds")
 
 	bool any_moved = false;
 	const RectangleF cull = field.cull_bounds(1);
-	for (size_t index = 0; index < carried.size(); ++index)
+	for (std::size_t index = 0; index < carried.size(); ++index)
 	{
-		for (size_t corner = 0; corner < std::size(carried[index].corners); ++corner)
+		for (std::size_t corner = 0; corner < std::size(carried[index].corners);
+			++corner)
 		{
 			const Vector2F& position = carried[index].corners[corner].position;
 			CHECK(position.x >= cull.left());
@@ -137,45 +106,26 @@ TEST_CASE("a spark's tint follows the palette selected after it was born")
 {
 	using namespace labrador;
 	using namespace linesweeper;
-	RenderResources resources;
-	Renderer renderer;
-	renderer.create_device(nullptr, 1280, 720, 1);
-	renderer.set_resources(&resources);
-	TextureData texture;
-	texture.width = texture.height = 1;
-	texture.levels.push_back(texture_level(texture.format, 1, 1, 0));
-	texture.pixels.assign(4, 255);
-	add_texture_asset(renderer, resources, "white", texture);
+	NullHarness harness;
 	World world;
 	TickResult tick;
 	for (int x = 0; x < well_columns; ++x)
 	{
-		world.cells[static_cast<size_t>(cell_index(x, well_rows - 1))] =
-			static_cast<std::uint8_t>(Kind::z);
-		world.cells[static_cast<size_t>(cell_index(x, well_rows - 2))] =
-			static_cast<std::uint8_t>(Kind::j);
+		set_cell(world, x, well_rows - 1, Kind::z);
+		set_cell(world, x, well_rows - 2, Kind::j);
 	}
 	Palette palette = Palette::standard;
-	ParticleField field(&world, &tick, resources.resolve_texture("white"),
-		nullptr, Motion::full, &palette);
+	ParticleField field(&world, &tick, harness.white, nullptr, Motion::full,
+		&palette);
 	world.topped_out = 1;
 	++world.tick;
 	field.update(1.0f / 60.0f);
 	REQUIRE(field.live() > 0);
 
-	const std::function<std::vector<RecordedSprite>()> draw = [&]()
-	{
-		renderer.begin_frame();
-		renderer.set_view_count(1);
-		DrawList list = renderer.view(0);
-		field.draw(list);
-		renderer.submit();
-		return recorded_sprites(renderer);
-	};
-	const std::vector<RecordedSprite> standard = draw();
+	const std::vector<RecordedSprite> standard = harness.draw(field);
 	palette = Palette::deutan;
-	const std::vector<RecordedSprite> deutan = draw();
-	REQUIRE(standard.size() == static_cast<size_t>(field.live()));
+	const std::vector<RecordedSprite> deutan = harness.draw(field);
+	REQUIRE(standard.size() == static_cast<std::size_t>(field.live()));
 	REQUIRE(deutan.size() == standard.size());
 
 	const Colour z_standard = kind_colour(Kind::z, Palette::standard);
@@ -187,7 +137,7 @@ TEST_CASE("a spark's tint follows the palette selected after it was born")
 
 	int zs = 0;
 	int js = 0;
-	for (size_t index = 0; index < standard.size(); ++index)
+	for (std::size_t index = 0; index < standard.size(); ++index)
 	{
 		CAPTURE(index);
 		const Colour& before = standard[index].corners[0].colour;
@@ -203,7 +153,7 @@ TEST_CASE("a spark's tint follows the palette selected after it was born")
 		CHECK(before.b == doctest::Approx(from.b * brightness));
 		CHECK(before.a == 0.0f);
 
-		for (size_t corner = 0; corner < std::size(deutan[index].corners);
+		for (std::size_t corner = 0; corner < std::size(deutan[index].corners);
 			++corner)
 		{
 			CHECK(deutan[index].corners[corner].position ==

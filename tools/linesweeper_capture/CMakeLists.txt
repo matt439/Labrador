@@ -30,7 +30,8 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         LineSweeperRules
         LabradorEngine
         labrador_settings
-        # The in-box PNG codec, as RenderPixelTests links it for its golden set.
+        # The in-box PNG codec png_file.cpp writes through (png_file.h says
+        # why it is WIC).
         windowscodecs
     )
 

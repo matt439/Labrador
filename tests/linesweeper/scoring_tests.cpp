@@ -87,7 +87,7 @@ namespace
 		stack_for_a_tetris(world);
 		linesweeper::tick(world, linesweeper::button_hard_drop);
 
-		REQUIRE(world.score == 800);
+		REQUIRE(world.score == linesweeper::line_score[4]);
 		REQUIRE(world.back_to_back == 1);
 		REQUIRE(world.combo == 1);
 
@@ -97,7 +97,10 @@ namespace
 
 		// Half as much again for the chain, plus fifty a level for the second
 		// clear in a row.
-		CHECK(world.score == 800 + 1200 + 50);
+		CHECK(world.score == linesweeper::line_score[4] +
+			linesweeper::line_score[4] * linesweeper::back_to_back_numerator /
+				linesweeper::back_to_back_denominator +
+			linesweeper::combo_score);
 		CHECK(world.combo == 2);
 
 		SUBCASE("an ordinary clear breaks the chain")

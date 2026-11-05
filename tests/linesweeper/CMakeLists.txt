@@ -17,10 +17,17 @@ labrador_add_test_suite(LineSweeperTests
 )
 
 # The tests include their own fixtures header from the repository root, the
-# same way everything else does.
-target_include_directories(LineSweeperTests PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../.."
-)
+# same way everything else does; LineSweeperRules puts the root on the path
+# for everything that links it.
+
+# The capture tool's script reader includes only the rules, so its refusals
+# are tested here too. The tool is Windows-only, and so is this.
+if(WIN32)
+    target_sources(LineSweeperTests PRIVATE
+        capture_script_tests.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/linesweeper_capture/capture_script.cpp"
+    )
+endif()
 
 # --- LineSweeperViewTests - the presentation, with no DEVICE ---
 #
@@ -31,8 +38,8 @@ target_include_directories(LineSweeperTests PRIVATE
 # the states with a hidden window, as specified below. PHILOSOPHY, Tests and
 # toolchain, asks that code below the platform edge be testable headlessly.
 #
-# Three presentation files are in it everywhere. The board view needs the
-# resource table to measure text, and measuring walks a loaded font atlas, so a
+# Three presentation files are in it everywhere. The board view resolves the
+# sample's font by name and draws text through its loaded atlas, so a
 # BoardView is constructed only where the null renderer can load one (below).
 # The particle field takes a resolved texture handle instead - an integer
 # nothing in update() reads - so the ten thousand particles, the compaction and
@@ -60,21 +67,19 @@ labrador_add_test_suite(LineSweeperViewTests
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/web/pacing_fixture.cpp"
     LINKS LineSweeperRules LabradorEngine
 )
-target_include_directories(LineSweeperViewTests PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../.."
-)
-target_include_directories(LineSweeperViewTests SYSTEM PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../external/rapidjson/include"
-)
 
 # The frame bench's pacer and result file, which are Win32 code and are
-# tested where the bench builds (bench/CMakeLists.txt).
+# tested where the bench builds (bench/CMakeLists.txt). The result file is
+# the only source here that reads rapidjson.
 if(WIN32)
     target_sources(LineSweeperViewTests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../bench/frame_pacer.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../bench/linesweeper_frame_result.cpp"
         frame_pacer_tests.cpp
         frame_result_tests.cpp
+    )
+    target_include_directories(LineSweeperViewTests SYSTEM PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../external/rapidjson/include"
     )
 endif()
 

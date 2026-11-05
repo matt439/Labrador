@@ -181,7 +181,13 @@ namespace capture
 			else if (verb == "capture")
 			{
 				command.kind = CommandKind::capture;
-				expected = words.size() == 3 ? 3 : 2;
+				if (words.size() != 2 && words.size() != 3)
+				{
+					refuse(path, line, "'capture' takes a file name and, "
+						"optionally, paused; not " +
+						std::to_string(words.size() - 1) + " arguments");
+				}
+				expected = words.size();
 				if (words.size() == 3 && words[2] != "paused")
 				{
 					refuse(path, line, "'" + words[2] +

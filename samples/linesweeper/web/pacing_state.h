@@ -14,11 +14,15 @@ namespace linesweeper
 {
 	class ParticleField;
 
-	// An opt-in development fixture, not a game mode or an input/replay API.
-	// It fills the benchmark's well, waits 300 fixed steps, then creates the
-	// exact first burst. Its draw remains a pure read through the normal scene.
-	// The profile keeps the bench's fixed landscape hint labels and omits touch
-	// controls, even when the responsive camera frames a portrait buffer.
+	// How many fixed steps the fixture shows the full well before it tops out.
+	inline constexpr int pacing_warmup_updates = 300;
+
+	// An opt-in development fixture, not a game mode or an input/replay API. It
+	// fills the benchmark's well, waits pacing_warmup_updates fixed steps, then
+	// creates the exact first burst. Its draw remains a pure read through the
+	// normal scene. The profile keeps the bench's fixed landscape hint labels
+	// and omits touch controls, even when the responsive camera frames a
+	// portrait buffer.
 	class PacingState final : public labrador::State
 	{
 	public:

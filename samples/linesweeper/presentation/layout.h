@@ -17,10 +17,11 @@
 // one axis at a time - a rectangle's left edge, a banner's middle - and the
 // one Vector2F a caller wants is one it builds itself.
 //
-// Only the WELL is here. The hold slot, the preview column, the HUD rows and
-// the banner are board_view.cpp's alone, and stay there: a constant belongs
-// next to the one thing it configures until a second thing needs it
-// (CONVENTIONS, Constants).
+// The WELL is here, and the HUD column's left edge, which the hint lines
+// align to as well (hints.h). The hold slot, the preview column and the HUD
+// rows are board_view.cpp's alone, and the banner is top_out_banner.cpp's: a
+// constant belongs next to the one thing it configures until a second thing
+// needs it (CONVENTIONS, Constants).
 namespace linesweeper
 {
 	// The layout, in board space: the 1280x720 main.cpp asks for, which the
@@ -30,6 +31,10 @@ namespace linesweeper
 
 	inline constexpr float well_origin_x = 500.0f;
 	inline constexpr float well_origin_y = 72.0f;
+
+	// The left edge of the column left of the well: the hold slot, the
+	// score rows and the control hints under them.
+	inline constexpr float hud_column_x = 344.0f;
 
 	inline constexpr float well_width =
 		static_cast<float>(well_columns) * cell_size;

@@ -66,7 +66,7 @@ namespace linesweeper
 
 	PacingMode pacing_mode()
 	{
-		return static_cast<PacingMode>(linesweeper_pacing_mode());
+		return pacing_mode_from(linesweeper_pacing_mode());
 	}
 
 	void observe_pacing(labrador::Application& app, const PacingSnapshot& snapshot)

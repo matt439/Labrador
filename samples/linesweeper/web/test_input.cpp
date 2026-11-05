@@ -13,7 +13,7 @@
 EM_JS_DEPS(linesweeper_test_input, "$UTF8ToString");
 
 EM_JS(double, linesweeper_test_input_begin,
-	(int held, int pressed, double completed), {
+	(int held, int pressed, double completed, int key_count), {
 	const input = Module["labradorTestInput"];
 	const active = Module["labradorTestInputSession"];
 	if (active && input !== active) {
@@ -46,7 +46,7 @@ EM_JS(double, linesweeper_test_input_begin,
 		if (typeof pending !== "object" || Array.isArray(pending) ||
 			!Number.isSafeInteger(pending.id) || pending.id <= 0 ||
 			!Number.isInteger(pending.code_index) || pending.code_index < 0 ||
-			pending.code_index >= 9 || typeof pending.down !== "boolean") {
+			pending.code_index >= key_count || typeof pending.down !== "boolean") {
 			return fail("malformed sample input phase");
 		}
 		if (pending.id === completed) return -1;
@@ -130,7 +130,8 @@ namespace linesweeper
 			if (keyboard.pressed(sampled_keys[index])) pressed |= bit;
 		}
 
-		this->id_ = linesweeper_test_input_begin(held, pressed, completed_id);
+		this->id_ = linesweeper_test_input_begin(held, pressed, completed_id,
+			static_cast<int>(sampled_keys.size()));
 		this->allowed_ = this->id_ >= 0;
 		if (this->id_ > 0)
 		{

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
@@ -149,12 +150,13 @@ namespace linesweeper
 		std::array<std::uint8_t, well_columns * well_rows> cells = {};
 	};
 
-	// THE FOUR ASSERTS, AND THE FOURTH IS THE INTERESTING ONE.
+	// FOUR ASSERTS, AND THE has_unique_object_representations_v ONE IS THE
+	// INTERESTING ONE.
 	//
-	// The first three say what "the match is a value" means to the compiler:
-	// it can be copied by memcpy, it needs no destructor, and therefore
-	// `world = other` and `World snapshot = world` are complete operations
-	// with nothing left to remember.
+	// The first two say what "the match is a value" means to the compiler: it
+	// can be copied by memcpy and it needs no destructor, so `world = other`
+	// and `World snapshot = world` are complete operations with nothing left to
+	// remember. The last pins the size.
 	//
 	// has_unique_object_representations_v is the standard's own name for "this
 	// type has no padding bits", which is what makes std::memcmp over a World
@@ -193,8 +195,9 @@ namespace linesweeper
 	// before this can start reading indeterminate bytes.
 	//
 	// Not operator==, deliberately. Byte equality and game equality are the
-	// same thing here only because of an invariant three asserts up, and a
-	// spelling that reads like an ordinary comparison would hide that.
+	// same thing here only because of the has_unique_object_representations_v
+	// assert above, and a spelling that reads like an ordinary comparison
+	// would hide that.
 	bool identical(const World& left, const World& right);
 
 	// Index arithmetic, in one place. Row 0 is the top of the buffer, so y
@@ -212,6 +215,24 @@ namespace linesweeper
 	constexpr bool in_well(int x, int y)
 	{
 		return x >= 0 && x < well_columns && y >= 0 && y < well_rows;
+	}
+
+	// Whether every cell of row `y` is filled. It takes the cells rather than
+	// a World because the presentation asks it of a board no World holds -
+	// the one between a lock and its clear (particles.cpp, board_at_lock) -
+	// and the rows the sparks come out of have to be the rows tick() cleared.
+	constexpr bool row_full(
+		const std::array<std::uint8_t, well_columns * well_rows>& cells, int y)
+	{
+		for (int x = 0; x < well_columns; ++x)
+		{
+			if (cells[static_cast<std::size_t>(cell_index(x, y))] == cell_empty)
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	// THE THREE QUESTIONS THE PRESENTATION MAY ALSO ASK.
@@ -238,12 +259,11 @@ namespace linesweeper
 	//
 	// A tick locks and clears in one step, so the World after it holds
 	// neither the piece as it locked - `current` is already empty - nor the
-	// full rows, which are already gone. The presentation reconstructed both
-	// from shadow(before), which is where the piece locked in every case but
-	// one: a piece rotated or moved on the very tick it locked lands
-	// somewhere else, and the field then found a full row at the wrong
-	// height and threw its sparks there (docs/review/gpt6/README.md, G6-11).
-	// This is the exact answer, four bytes, returned rather than stored.
+	// full rows, which are already gone. shadow(before) is where the piece
+	// locks in every case but one: a piece rotated or moved on the very tick
+	// it locks lands somewhere else, and a board rebuilt from the shadow
+	// then shows a full row at the wrong height. This is the exact answer,
+	// four bytes, returned rather than stored.
 	//
 	// RETURNED RATHER THAN STORED, AND THAT IS THE WHOLE DESIGN. The World's
 	// padding assert prices a byte on it at four, and README, The exact

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/game_object.h"
+#include "engine/core/random.h"
 #include "engine/core/step_position.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
@@ -14,39 +15,37 @@
 
 // Ten thousand particles, and one GameObject holding all of them.
 //
-// THIS IS THE HALF OF THE SAMPLE THE README SAID WAS MISSING. `World` is the
-// value-semantics demonstration - 276 bytes, restart is an assignment, a
-// replay is a memcmp. This file is the data-layout one, and PHILOSOPHY, The
-// object model, is the claim it exists to make:
+// `World` is the sample's value-semantics demonstration - 276 bytes, restart
+// is an assignment, a replay is a memcmp. This file is the data-layout one,
+// and PHILOSOPHY, The object model, is the claim it exists to make:
 //
 //   "Both ends of the spectrum are first-class. A game can be written in full
 //    OOP - one registered object per entity - or for full performance: one
 //    registered object standing for thousands of values updated in a tight
 //    loop. Interface granularity is the user's performance dial."
 //
-// Nothing in this repository stood at that end until this file did. The scene
-// holds one object here, not ten thousand: one update(), one draw(), one
-// bounds(), and three virtual calls a frame whatever the particle count. Ten
-// thousand GameObjects would be ten thousand virtual updates, ten thousand
-// heap allocations, ten thousand bounds() against the cull, and a scene whose
-// object list is a pointer chase - which is the shape this paragraph of
-// PHILOSOPHY exists to say a game never has to adopt.
+// This file stands at the second end. The scene holds one object here, not ten
+// thousand: one update(), one draw(), one bounds(), and three virtual calls a
+// frame whatever the particle count. Ten thousand GameObjects would be ten
+// thousand virtual updates, ten thousand heap allocations, ten thousand
+// bounds() against the cull, and a scene whose object list is a pointer chase -
+// which is the shape this paragraph of PHILOSOPHY exists to say a game never
+// has to adopt.
 //
-// IT ASKED THE ENGINE FOR NOTHING. No blend mode, no instancing verb, no
-// particle system, no new backend state and no golden image: ten thousand
-// draw_sprite calls through the one verb renderer.h already had, from inside
-// one draw(). An engine-side particle system would have been the speculative
-// framework T1 rules out - the mechanism the engine owes a game here is a
-// batched sprite draw, and it already owned it.
+// IT ASKS THE ENGINE FOR NOTHING. No blend mode, no instancing verb, no
+// particle system, no backend state of its own: ten thousand draw_sprite
+// calls through renderer.h's one sprite verb, from inside one draw(). An
+// engine-side particle system would be the speculative framework T1 rules
+// out - the mechanism the engine owes a game here is a batched sprite draw,
+// and it owns one.
 //
-// WHAT IT COSTS, PRICED BEFORE IT WAS WRITTEN. bench/render_bench.cpp puts the
-// engine's quad arithmetic at 35.4 ns a sprite on this desktop, flat from a
-// thousand sprites to sixty-five thousand. Ten thousand of them is therefore
-// about 354 microseconds of arithmetic in a 16.7 ms frame - a fiftieth of the
-// budget - and that number is why this file does not bother with a spatial
-// index, a sort, or a second submission path. README, What it costs, measured
-// against what was predicted, records how far that prediction has been
-// checked and what is still unmeasured.
+// WHAT IT COSTS. The engine's quad arithmetic is flat per sprite from a
+// thousand sprites to sixty-five thousand (bench/render_bench.cpp), and ten
+// thousand of them come to about a fiftieth of a 60 Hz frame. That is why
+// this file does not bother with a spatial index, a sort, or a second
+// submission path. README, What it costs, measured against what was
+// predicted, records the measurements, the machine they were taken on and
+// what is still unmeasured.
 namespace linesweeper
 {
 	// The whole field, and it is a compile-time bound rather than a capacity
@@ -140,10 +139,11 @@ namespace linesweeper
 	// same match with entirely different sparks over them.
 	struct Particle
 	{
-		// Back-buffer pixels, and pixels per second. The presentation is the
-		// half of this sample allowed to be smooth - every duration in rules/
-		// is counted in fixed ticks and none in seconds, and every duration
-		// here is the other way round.
+		// Board units, and board units per second: the 1280x720 space the
+		// camera fits to the buffer (layout.h, arrangement.h). The presentation
+		// is the half of this sample allowed to be smooth - every duration in
+		// rules/ is counted in fixed ticks and none in seconds, and every
+		// duration here is the other way round.
 		labrador::Vector2F position;
 		labrador::Vector2F velocity;
 
@@ -159,10 +159,10 @@ namespace linesweeper
 		// never stored.
 		float decay = 0.0f;
 
-		// The side of the quad, in pixels, at a heat of one. The side shrinks
-		// with life (particles.cpp, draw), so a spark born cooler is born
-		// smaller as well as dimmer: a top-out spark starts at about seven
-		// tenths of this.
+		// The side of the quad, in board units, at a heat of one. The side
+		// shrinks with life (particles.cpp, spark_side), so a spark born cooler
+		// is born smaller as well as dimmer: a top-out spark starts at about
+		// seven tenths of this.
 		float size = 0.0f;
 
 		// The rules' own cell byte: 0 empty, 1..7 the piece that filled it.
@@ -222,15 +222,15 @@ namespace linesweeper
 		// difference is what makes this the one drawable in the sample that
 		// can be stepped with no device.
 		//
-		// BoardView needs the table because it measures text, and measuring
-		// walks a font atlas. A particle needs one texture handle, which is an
-		// integer: nothing in update() touches it, so a field built with an
-		// unresolved handle simulates ten thousand particles perfectly well
-		// and only draw() would object. That is why tests/linesweeper/ can
-		// step this file in every configuration and the other one only where
-		// the null renderer can load it a font, and it is the sample's own
-		// version of the rule that a seam ships with a headless
-		// implementation (PHILOSOPHY, Tests and toolchain).
+		// BoardView takes the table to resolve its font and texture by name,
+		// and draws text through a loaded font atlas. A particle needs one
+		// texture handle, which is an integer: nothing in update() touches it,
+		// so a field built with an unresolved handle simulates ten thousand
+		// particles perfectly well and only draw() would object. That is why
+		// tests/linesweeper/ can step this file in every configuration and the
+		// other one only where the null renderer can load it a font, and it is
+		// the sample's own version of the rule that a seam ships with a
+		// headless implementation (PHILOSOPHY, Tests and toolchain).
 		//
 		// The state spells the asset name and resolves it, the same way it
 		// spells the font name for the labels beside this (play_state.cpp).
@@ -333,15 +333,7 @@ namespace linesweeper
 			const labrador::Vector2F& velocity, std::uint8_t kind,
 			float lifetime, float size, float heat);
 
-		// SplitMix32, the same mixer rules/tick.cpp deals pieces with, and
-		// deliberately a SECOND stream rather than a share of that one. The
-		// field may not touch World::rng: it holds a const World* and could
-		// not, and if it could, a spark would change which piece came next and
-		// the recording would stop being a function of its inputs. Sparks are
-		// allowed to differ between two replays of the same match. Pieces are
-		// not.
-		std::uint32_t next_random();
-		float random_unit();
+		// A float from -1 to 1, from one draw of random_.
 		float random_signed();
 
 		const World* world_ = nullptr;
@@ -366,7 +358,15 @@ namespace linesweeper
 
 		int count_ = 0;
 		std::uint32_t dropped_ = 0;
-		std::uint32_t rng_ = 0;
+
+		// The engine's SplitMix32, the same mixer rules/tick.cpp deals pieces
+		// with, and deliberately a SECOND stream rather than a share of that
+		// one. The field may not touch World::rng: it holds a const World* and
+		// could not, and if it could, a spark would change which piece came
+		// next and the recording would stop being a function of its inputs.
+		// Sparks are allowed to differ between two replays of the same match.
+		// Pieces are not.
+		labrador::Random random_;
 
 		labrador::RectangleF extent_;
 

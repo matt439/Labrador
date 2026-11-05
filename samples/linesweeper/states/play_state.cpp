@@ -5,6 +5,8 @@
 #include "engine/input/touch.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
+#include "samples/linesweeper/presentation/assets.h"
+#include "samples/linesweeper/presentation/hints.h"
 #include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/states/pause_state.h"
 #if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
@@ -21,24 +23,6 @@ namespace linesweeper
 {
 	namespace
 	{
-		// Spelt once, resolved to a handle once, never looked up per frame
-		// (PHILOSOPHY T7, T8).
-		const std::string font_name = "jetbrains_mono_bold_16";
-
-		// The one white texel every block, panel and spark on this screen is
-		// drawn from. Spelt here as well as in board_view.cpp for the reason
-		// font_name is: the object that draws it resolves its own handle,
-		// except the particle field, which takes a resolved one so that it can
-		// be stepped with no device at all (particles.h).
-		const std::string block_texture_name = "white";
-
-		// One line per device, under the board in landscape. The capture tool
-		// and the frame bench copy these two strings and have to follow them.
-		const wchar_t* const hint_text =
-			L"keyboard   arrows move   Z X rotate   space drops   C holds";
-		const wchar_t* const pad_hint_text =
-			L"pad        d-pad moves   A B rotate   Y drops       X holds";
-
 		// Game-owned bindings (T1). Key::z names the physical position a US
 		// layout calls Z, independent of the character another layout prints.
 		struct Binding
@@ -133,21 +117,13 @@ namespace linesweeper
 		this->banner_ = this->scene_->add(
 			std::make_unique<TopOutBanner>(&this->world_, resources));
 
-		// One line per device, left-aligned on the HUD column at x = 344 and
-		// columnised against each other by hand, which only works because the
-		// font is monospaced.
-		//
-		// At the bottom of the landscape screen, which is board space rather
-		// than the buffer: the camera puts it where the buffer's bottom is
-		// (arrangement.h).
+		// One line per device under the board (hints.h).
 		this->hint_ = this->scene_->add(std::make_unique<Label>(
-			hint_text, font_name, Vector2F(344.0f, landscape_height - 60.0f),
-			resources,
-			Colour::dark_gray));
+			keyboard_hint_text, font_name, Vector2F(hint_x, keyboard_hint_y),
+			resources, Colour::dark_gray));
 
 		this->pad_hint_ = this->scene_->add(std::make_unique<Label>(
-			pad_hint_text, font_name,
-			Vector2F(344.0f, landscape_height - 36.0f), resources,
+			pad_hint_text, font_name, Vector2F(hint_x, pad_hint_y), resources,
 			Colour::dark_gray));
 
 		// Touch controls draw over the other objects once a finger is seen.
@@ -184,19 +160,15 @@ namespace linesweeper
 		if (hints != this->hints_shown_)
 		{
 			this->hints_shown_ = hints;
-			this->hint_->set_text(hints ? hint_text : L"");
+			this->hint_->set_text(hints ? keyboard_hint_text : L"");
 			this->pad_hint_->set_text(hints ? pad_hint_text : L"");
 		}
 	}
 
 	void PlayState::arrange_screen()
 	{
-		this->arrangement_ =
-			arrange(this->app_->resolution_manager()->resolution_vec());
-
-		this->scene_->clear_views();
-		this->scene_->add_view(this->arrangement_.viewport,
-			this->arrangement_.camera);
+		this->arrangement_ = arrange_scene(*this->scene_,
+			this->app_->resolution_manager()->resolution_vec());
 	}
 
 	// Read held controls: tick() derives edges by comparing this byte with

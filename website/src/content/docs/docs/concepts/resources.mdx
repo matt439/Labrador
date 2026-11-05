@@ -57,9 +57,9 @@ SpriteSheetHandle resolve_sprite_sheet(const std::string& sprite_sheet_name) con
 ```
 
 Resolving a name nothing loaded throws, naming it, so a misspelt asset name fails on the line
-that misspells it rather than drawing nothing. LineSweeper spells its two asset names at the top
-of each file that resolves them, and its play state resolves the texture when it builds the
-particle field:
+that misspells it rather than drawing nothing. LineSweeper spells its two asset names once, in
+<RepoLink path="samples/linesweeper/presentation/assets.h">`presentation/assets.h`</RepoLink>,
+and its play state resolves the texture when it builds the particle field:
 
 <SourceFile
 	path="samples/linesweeper/states/play_state.cpp"
