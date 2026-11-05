@@ -80,6 +80,45 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-05 - Bound what a hand-edited JSON file can ask of the loaders
+
+**Behaviour change.** Hand-edited JSON is bounded:
+
+- The asset manifest and sprite-sheet loaders refuse a repeated key in any
+  fixed-schema object with `std::runtime_error` naming the file, the object
+  and the key. The first value used to win.
+- `JsonValue::number` throws `std::runtime_error` for a number outside
+  `float`'s range instead of returning infinity.
+- `read_sprite_sheet` refuses an animation strip whose `frame_count` exceeds
+  `max_texture_dimension`, or is positive with a first frame of zero width or
+  height. Such a count could ask for gigabytes.
+- Deeply nested JSON is refused with the parse error instead of overflowing
+  the stack.
+
+### 2026-11-05 - Refuse an oversized PNG header before decoding, and test the binary readers' refusals
+
+**Behaviour change.** `decode_png` and `read_png_file` refuse a PNG wider or
+taller than `max_texture_dimension` (16384, declared in
+`engine/render/texture_data.h`), or with a zero side, with
+`std::runtime_error` naming the file, before decoding. Such a file used to
+decode into a texture no device could take, or fail with `std::bad_alloc`.
+
+### 2026-11-05 - Check ThreadPool's counts and read_file_bytes' failures by name
+
+**Behaviour change and source break.** `read_file_bytes` throws
+`std::runtime_error`, not `std::out_of_range`, for a path that exists but
+cannot be read: a directory, a locked or unreadable file, or one too large to
+address. `std::out_of_range` now means only that nothing is there.
+`ThreadPool` throws `std::invalid_argument` unless `1 <= min_num_threads <=
+max_num_threads`, and `std::runtime_error` if Windows cannot create the
+minimum.
+
+`ByteReader` no longer accepts a temporary buffer, which it would have read
+after the buffer was destroyed. `ByteReader reader(read_file_bytes(path),
+path);` becomes `const std::vector<unsigned char> bytes =
+read_file_bytes(path); ByteReader reader(bytes, path);`. No sample needed the
+change.
+
 ### 2026-11-05 - Keep handler exceptions inside the Win32 window, and make a closed window inert
 
 **Behaviour change.** An exception thrown by a `WindowNotify` handler on

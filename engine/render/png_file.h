@@ -23,7 +23,9 @@ namespace labrador
 	//
 	// Throws std::out_of_range naming the path if there is no file there, and
 	// std::runtime_error naming the path and the decoder's reason if there is
-	// one and it is not a PNG it can decode (T6).
+	// one and it is not a PNG it can decode (T6). A header giving either side
+	// above max_texture_dimension (texture_data.h) is refused the same way,
+	// before any pixel is decoded.
 	TextureData read_png_file(const std::string& path);
 
 	// The same for PNG bytes already in memory; `context` names them in a

@@ -8,11 +8,29 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
 namespace labrador
 {
+	namespace
+	{
+		// Checked once here, before either Impl sees the numbers: a negative
+		// count cast to DWORD asks Windows for billions of threads, and a
+		// floor above the ceiling is a pool nobody can describe.
+		int checked_minimum(int minimum, int maximum)
+		{
+			if (minimum < 1 || maximum < minimum)
+			{
+				throw std::invalid_argument("ThreadPool needs 1 <= min_num_threads "
+					"<= max_num_threads; it was asked for " +
+					std::to_string(minimum) + " and " + std::to_string(maximum) + ".");
+			}
+			return minimum;
+		}
+	}
+
 #if defined(_WIN32)
 	// The Win32 thread pool, and the whole of what this class knows about
 	// Windows. Every member below is here rather than on ThreadPool itself,
@@ -69,11 +87,13 @@ namespace labrador
 		{
 			throw std::runtime_error("Failed to create thread pool.");
 		}
-		SetThreadpoolThreadMaximum(pool,
-			static_cast<DWORD>(maximum)); // Set maximum number of threads
-
-		SetThreadpoolThreadMinimum(pool,
-			static_cast<DWORD>(minimum)); // Set minimum number of threads
+		SetThreadpoolThreadMaximum(pool, static_cast<DWORD>(maximum));
+		if (!SetThreadpoolThreadMinimum(pool, static_cast<DWORD>(minimum)))
+		{
+			CloseThreadpool(pool);
+			throw std::runtime_error("Failed to start the thread pool's minimum of " +
+				std::to_string(minimum) + " threads.");
+		}
 
 		cleanup_group = CreateThreadpoolCleanupGroup();
 		if (!cleanup_group)
@@ -219,7 +239,8 @@ namespace labrador
 	// destructor that has to be here rather than defaulted in the header,
 	// because unique_ptr<Impl> cannot destroy an incomplete type.
 	ThreadPool::ThreadPool(int min_num_threads, int max_num_threads) :
-		impl_(std::make_unique<Impl>(min_num_threads, max_num_threads))
+		impl_(std::make_unique<Impl>(
+			checked_minimum(min_num_threads, max_num_threads), max_num_threads))
 	{
 	}
 

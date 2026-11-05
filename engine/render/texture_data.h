@@ -64,6 +64,17 @@ namespace labrador
 		std::vector<unsigned char> pixels;
 	};
 
+	// The widest or tallest image a reader turns into a texture.
+	//
+	// 16384 is Direct3D 11's two-dimensional texture limit at feature level
+	// 11_0, the default backend's, so a larger picture could not become a
+	// texture there anyway. The PNG reader refuses a header beyond it before
+	// decoding, so a few bytes of compressed file cannot ask for gigabytes; a
+	// .dds needs no such check, because its pixels must all be in the file.
+	// A sprite sheet's animation strip, whose frames sit side by side in one
+	// atlas, may have at most this many.
+	inline constexpr int max_texture_dimension = 16384;
+
 	// Whether `format` stores 4x4 blocks rather than pixels.
 	bool is_block_compressed(TextureFormat format);
 

@@ -5,6 +5,7 @@
 #include "engine/render/texture_format.h"
 #include "tests/scratch_file.h"
 
+#include <cstdint>
 #include <fstream>
 #include <stdexcept>
 #include <limits>
@@ -58,10 +59,48 @@ namespace
 	// four-byte magic, then a 124-byte header whose fields never move. Written
 	// as the numbers they are rather than as arithmetic over field counts,
 	// because the arithmetic is exactly what one of these was off by one on.
+	const size_t header_size_at = 4;
+	const size_t height_at = 12;
+	const size_t width_at = 16;
+	const size_t depth_at = 24;
 	const size_t mip_count = 28;
+	const size_t pixel_format_size_at = 76;
 	const size_t pixel_flags = 80;
+	const size_t four_cc_at = 84;
 	const size_t alpha_mask = 104;
 	const size_t caps2 = 112;
+
+	// The fourCC flag; with it set the masks and bit count are not read.
+	const uint32_t four_cc_flag = 0x4;
+
+	uint32_t four_cc_of(const char (&code)[5])
+	{
+		return static_cast<uint32_t>(static_cast<unsigned char>(code[0])) |
+			(static_cast<uint32_t>(static_cast<unsigned char>(code[1])) << 8) |
+			(static_cast<uint32_t>(static_cast<unsigned char>(code[2])) << 16) |
+			(static_cast<uint32_t>(static_cast<unsigned char>(code[3])) << 24);
+	}
+
+	// The message of the refusal `bytes` earn, written to a file named
+	// `name`. Every refusal must name the file, and that is checked here, so
+	// each case only checks the words that say which refusal it was.
+	std::string refusal_of(const std::vector<unsigned char>& bytes,
+		const std::string& name)
+	{
+		const ScratchFile file(name, bytes);
+		try
+		{
+			(void)read_dds_file(file.path());
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			return message;
+		}
+		FAIL("the file was accepted");
+		return {};
+	}
 }
 
 TEST_CASE("the test texture reads back as the four-colour image it is")
@@ -235,5 +274,124 @@ TEST_CASE("DDS rejects malformed large dimensions before payload acceptance")
 		{
 			CHECK(std::string(error.what()).find(file.path()) != std::string::npos);
 		}
+	}
+}
+
+TEST_CASE("each named refusal of a .dds header names the file and its reason")
+{
+	SUBCASE("the DX10 extended header")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, pixel_flags, four_cc_flag);
+		poke(bytes, four_cc_at, four_cc_of("DX10"));
+
+		CHECK(refusal_of(bytes, "dx10.dds").find("DX10 extended header") !=
+			std::string::npos);
+	}
+
+	SUBCASE("a fourCC this engine does not read")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, pixel_flags, four_cc_flag);
+		poke(bytes, four_cc_at, four_cc_of("ATI2"));
+
+		const std::string message = refusal_of(bytes, "ati2.dds");
+		CHECK(message.find("\"ATI2\"") != std::string::npos);
+		CHECK(message.find("does not read") != std::string::npos);
+	}
+
+	SUBCASE("a volume texture by its caps")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, caps2, 0x200000);
+
+		CHECK(refusal_of(bytes, "volume_caps.dds").find("volume texture") !=
+			std::string::npos);
+	}
+
+	SUBCASE("a volume texture by its depth")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, depth_at, 4);
+
+		const std::string message = refusal_of(bytes, "volume_depth.dds");
+		CHECK(message.find("volume texture") != std::string::npos);
+		CHECK(message.find("4 slices") != std::string::npos);
+	}
+
+	SUBCASE("a header size other than 124")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, header_size_at, 120);
+
+		CHECK(refusal_of(bytes, "header_size.dds").find("120 byte header") !=
+			std::string::npos);
+	}
+
+	SUBCASE("a pixel format size other than 32")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, pixel_format_size_at, 28);
+
+		CHECK(refusal_of(bytes, "pixel_format_size.dds").find(
+			"28 byte pixel format") != std::string::npos);
+	}
+
+	SUBCASE("a zero width")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, width_at, 0);
+
+		CHECK(refusal_of(bytes, "zero_width.dds").find("0x2") !=
+			std::string::npos);
+	}
+
+	SUBCASE("a zero height")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, height_at, 0);
+
+		CHECK(refusal_of(bytes, "zero_height.dds").find("2x0") !=
+			std::string::npos);
+	}
+
+	SUBCASE("a file that ends inside its header")
+	{
+		std::vector<unsigned char> bytes = quad_bytes();
+		bytes.resize(60);
+
+		CHECK(refusal_of(bytes, "truncated_header.dds").find("ends after 60 bytes") !=
+			std::string::npos);
+	}
+}
+
+TEST_CASE("DXT2 and DXT4 read as BC2 and BC3, as DXT3 and DXT5 do")
+{
+	// The quad is 2x2, so its sixteen bytes of pixels are exactly one 4x4
+	// block of BC2 or BC3: relabelling the header is a whole valid file.
+	struct Mapping
+	{
+		const char* name;
+		char code[5];
+		TextureFormat format;
+	};
+	const Mapping mappings[] = {
+		{ "dxt2.dds", "DXT2", TextureFormat::bc2_unorm },
+		{ "dxt3.dds", "DXT3", TextureFormat::bc2_unorm },
+		{ "dxt4.dds", "DXT4", TextureFormat::bc3_unorm },
+		{ "dxt5.dds", "DXT5", TextureFormat::bc3_unorm },
+	};
+	for (const Mapping& mapping : mappings)
+	{
+		CAPTURE(mapping.name);
+		std::vector<unsigned char> bytes = quad_bytes();
+		poke(bytes, pixel_flags, four_cc_flag);
+		poke(bytes, four_cc_at, four_cc_of(mapping.code));
+		const ScratchFile file(mapping.name, bytes);
+
+		const TextureData texture = read_dds_file(file.path());
+		CHECK(texture.format == mapping.format);
+		REQUIRE(texture.levels.size() == 1);
+		CHECK(texture.levels[0].size == 16u);
 	}
 }

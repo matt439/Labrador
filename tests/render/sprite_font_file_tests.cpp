@@ -425,3 +425,77 @@ TEST_CASE("spritefont preserves finite metric bit patterns without layout policy
 		CHECK(font.atlas.pixels == std::vector<unsigned char>(4, 0xff));
 	}
 }
+
+namespace
+{
+	// Where one_glyph_font's atlas header sits: after the magic, the count,
+	// one 32-byte glyph, the line spacing and the default character.
+	const std::size_t atlas_format_offset = 60;
+	const std::size_t atlas_stride_offset = 64;
+	const std::size_t atlas_rows_offset = 68;
+
+	std::string font_refusal(const std::vector<unsigned char>& bytes,
+		const std::string& name)
+	{
+		const ScratchFile file(name, bytes);
+		try
+		{
+			static_cast<void>(read_sprite_font_file(file.path()));
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+			return message;
+		}
+		FAIL("the font was accepted");
+		return {};
+	}
+}
+
+TEST_CASE("spritefont refuses an atlas format it does not read, naming the number")
+{
+	// 29 is DXGI's R8G8B8A8_UNORM_SRGB: one off the format MakeSpriteFont
+	// writes, and not one this engine reads.
+	const std::array<uint32_t, 3> formats = { 0u, 29u, 0xffffffffu };
+	for (const uint32_t format : formats)
+	{
+		CAPTURE(format);
+		std::vector<unsigned char> bytes =
+			one_glyph_font(GlyphRectangleEdges{ 0, 0, 1, 1 });
+		REQUIRE(bytes.size() == 76);
+		overwrite_font_word(bytes, atlas_format_offset, format);
+
+		const std::string message = font_refusal(bytes, "unknown-format.spritefont");
+		CHECK(message.find("DXGI format " + std::to_string(format)) !=
+			std::string::npos);
+	}
+}
+
+TEST_CASE("spritefont refuses an atlas whose stride or rows disagree with its format")
+{
+	struct Disagreement
+	{
+		std::size_t offset;
+		uint32_t value;
+		const char* stated;
+	};
+	const std::array<Disagreement, 3> cases = { {
+		{ atlas_stride_offset, 8u, "1 rows of 8 bytes" },
+		{ atlas_stride_offset, 2u, "1 rows of 2 bytes" },
+		{ atlas_rows_offset, 2u, "2 rows of 4 bytes" },
+	} };
+	for (const Disagreement& test : cases)
+	{
+		CAPTURE(test.stated);
+		std::vector<unsigned char> bytes =
+			one_glyph_font(GlyphRectangleEdges{ 0, 0, 1, 1 });
+		REQUIRE(bytes.size() == 76);
+		overwrite_font_word(bytes, test.offset, test.value);
+
+		const std::string message = font_refusal(bytes, "atlas-layout.spritefont");
+		CHECK(message.find(test.stated) != std::string::npos);
+		CHECK(message.find("1x1 image in that format is 1 rows of 4") !=
+			std::string::npos);
+	}
+}

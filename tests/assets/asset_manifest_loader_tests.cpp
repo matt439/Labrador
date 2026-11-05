@@ -258,3 +258,44 @@ TEST_CASE("manifest strict fields preserve optional defaults custom kinds and re
 	CHECK(manifest.entries[3].name == "anything");
 	CHECK_FALSE(manifest.entries[3].optional);
 }
+
+TEST_CASE("manifest repeated keys name the file, the object and the key")
+{
+	struct Refusal
+	{
+		const char* contents;
+		const char* context;
+		const char* key;
+	};
+	const std::array<Refusal, 3> cases = { {
+		{ R"({"assets":[],"assets":[]})", "the document", "assets" },
+		{ R"({"assets":[{"kind":"level","directory":"./","names":["x"],"optional":true,"optional":false}]})",
+			"assets[0]", "optional" },
+		{ R"({"assets":[{"kind":"level","directory":"./","names":[]},{"kind":"level","kind":"font","directory":"./","names":["x"]}]})",
+			"assets[1]", "kind" },
+	} };
+	for (const Refusal& test : cases)
+	{
+		CAPTURE(test.contents);
+		const ScratchFile file("manifest.json", test.contents);
+		try
+		{
+			read_asset_manifest(file.path().c_str());
+			FAIL("a repeated manifest member was accepted");
+		}
+		catch (const std::runtime_error& error)
+		{
+			const std::string message(error.what());
+			CHECK(message.find(file.path()) != std::string::npos);
+			CHECK(message.find(test.context) != std::string::npos);
+			CHECK(message.find(std::string("repeats key '") + test.key + "'") !=
+				std::string::npos);
+		}
+	}
+}
+
+TEST_CASE("an unknown key is reported before a later repeat of it")
+{
+	CHECK_THROWS_WITH_AS(load(R"({"assets":[],"extra":1,"extra":2})"),
+		doctest::Contains("has unknown key 'extra'"), std::runtime_error);
+}

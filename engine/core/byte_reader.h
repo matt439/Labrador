@@ -29,6 +29,11 @@ namespace labrador
 		ByteReader(const std::vector<unsigned char>& bytes,
 			const std::string& what);
 
+		// A temporary buffer would be gone before the first read, so the
+		// compiler refuses one: keep the bytes in a named vector.
+		ByteReader(std::vector<unsigned char>&& bytes,
+			const std::string& what) = delete;
+
 		uint32_t read_u32();
 		int32_t read_i32();
 		float read_f32();
@@ -54,8 +59,10 @@ namespace labrador
 	// The whole file at the UTF-8 `path`, as bytes.
 	//
 	// Throws std::out_of_range naming the path when there is no file there, and
-	// std::runtime_error when there is one and it cannot be read. Those are
-	// different facts: the first is a name nobody produced, which is a content
-	// bug, and the second is a disk.
+	// std::runtime_error when there is one and it cannot be read - a
+	// directory, a file this process may not open, or one too large for this
+	// build's address space. Those are different facts: the first is a name
+	// nobody produced, which is a content bug, and the second is a disk.
+	// Throws std::invalid_argument for a path containing an embedded NUL.
 	std::vector<unsigned char> read_file_bytes(const std::string& path);
 }

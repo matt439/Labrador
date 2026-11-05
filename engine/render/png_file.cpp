@@ -6,7 +6,6 @@
 #include <lodepng.h>
 
 #include <cstddef>
-#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -22,24 +21,44 @@ namespace labrador
 	TextureData decode_png(const std::vector<unsigned char>& bytes,
 		const std::string& context)
 	{
-		std::vector<unsigned char> rgba;
+		// The header first, because the decoder allocates width * height * 4
+		// from it before inflating anything: a zero-filled picture tens of
+		// thousands of pixels a side compresses to a megabyte or two and asks
+		// for gigabytes.
 		unsigned width = 0;
 		unsigned height = 0;
-		const unsigned failed =
-			lodepng::decode(rgba, width, height, bytes, LCT_RGBA, 8);
+		lodepng::State header;
+		const unsigned unreadable = lodepng_inspect(&width, &height, &header,
+			bytes.data(), bytes.size());
+		if (unreadable != 0)
+		{
+			throw std::runtime_error(context + ": not a PNG this engine can read: " +
+				lodepng_error_text(unreadable));
+		}
+
+		const unsigned largest = static_cast<unsigned>(max_texture_dimension);
+		if (width == 0 || height == 0 || width > largest || height > largest)
+		{
+			throw std::runtime_error(context + ": a PNG of " +
+				std::to_string(width) + " by " + std::to_string(height) +
+				" pixels has no texture size: each side must be 1 to " +
+				std::to_string(max_texture_dimension));
+		}
+
+		std::vector<unsigned char> rgba;
+		unsigned decoded_width = 0;
+		unsigned decoded_height = 0;
+		const unsigned failed = lodepng::decode(rgba, decoded_width,
+			decoded_height, bytes, LCT_RGBA, 8);
 		if (failed != 0)
 		{
 			throw std::runtime_error(context + ": not a PNG this engine can read: " +
 				lodepng_error_text(failed));
 		}
-
-		const unsigned largest =
-			static_cast<unsigned>(std::numeric_limits<int>::max());
-		if (width == 0 || height == 0 || width > largest || height > largest)
+		if (decoded_width != width || decoded_height != height)
 		{
-			throw std::runtime_error(context + ": a PNG of " +
-				std::to_string(width) + " by " + std::to_string(height) +
-				" pixels has no texture size");
+			throw std::runtime_error(context +
+				": the decoded PNG is not the size its header gives");
 		}
 
 		// Premultiplied, rounded to nearest: (c * a + 127) / 255 is exact for

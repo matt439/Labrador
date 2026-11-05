@@ -2,14 +2,19 @@
 
 #include "engine/core/byte_reader.h"
 
+#include "tests/scratch_file.h"
+
 #include <bit>
 #include <cstdint>
+#include <filesystem>
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using labrador::ByteReader;
+using labrador::read_file_bytes;
 
 TEST_SUITE("ByteReaderTests")
 {
@@ -238,5 +243,80 @@ TEST_SUITE("ByteReaderTests")
 		}
 		CHECK(reader.position() == 2);
 		CHECK(reader.remaining() == 7);
+	}
+
+	TEST_CASE("a reader cannot be built over a temporary buffer")
+	{
+		static_assert(std::is_constructible_v<ByteReader,
+			const std::vector<unsigned char>&, const std::string&>);
+		static_assert(!std::is_constructible_v<ByteReader,
+			std::vector<unsigned char>&&, const std::string&>);
+		static_assert(!std::is_constructible_v<ByteReader,
+			std::vector<unsigned char>, const std::string&>);
+		CHECK(true);
+	}
+
+	TEST_CASE("a file's bytes are read whole")
+	{
+		const std::vector<unsigned char> contents = { 0x00, 0x7f, 0x80, 0xff, 0x0a };
+		const labrador_tests::ScratchFile file("whole-file.bin", contents);
+
+		CHECK(read_file_bytes(file.path()) == contents);
+	}
+
+	TEST_CASE("an empty file reads as no bytes")
+	{
+		const labrador_tests::ScratchFile file("empty-file.bin",
+			std::vector<unsigned char>());
+
+		CHECK(read_file_bytes(file.path()).empty());
+	}
+
+	TEST_CASE("a missing file is out_of_range naming the path")
+	{
+		const std::string path = (std::filesystem::temp_directory_path() /
+			"labrador_byte_reader_no_such_file.bin").string();
+		REQUIRE_FALSE(std::filesystem::exists(path));
+
+		try
+		{
+			(void)read_file_bytes(path);
+			FAIL("a missing file must throw");
+		}
+		catch (const std::out_of_range& error)
+		{
+			const std::string message = error.what();
+			CHECK(message.find(path) != std::string::npos);
+		}
+	}
+
+	TEST_CASE("a path that exists but is not a readable file is runtime_error, not missing")
+	{
+		const std::string path = std::filesystem::temp_directory_path().string();
+		REQUIRE(std::filesystem::is_directory(path));
+
+		bool threw_runtime_error = false;
+		try
+		{
+			(void)read_file_bytes(path);
+		}
+		catch (const std::out_of_range&)
+		{
+			FAIL("a directory is there; it is not a missing name");
+		}
+		catch (const std::runtime_error& error)
+		{
+			threw_runtime_error = true;
+			const std::string message = error.what();
+			CHECK(message.find(path) != std::string::npos);
+		}
+		CHECK(threw_runtime_error);
+	}
+
+	TEST_CASE("a path with an embedded NUL is invalid_argument")
+	{
+		const std::string path("content/a\0b.bin", 15);
+
+		CHECK_THROWS_AS(read_file_bytes(path), std::invalid_argument);
 	}
 }

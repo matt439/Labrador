@@ -140,5 +140,44 @@ namespace ThreadPoolTests
 			CHECK(pool.min_num_threads() == 2);
 			CHECK(pool.max_num_threads() == 6);
 		}
+
+		TEST_CASE("thread counts outside 1 <= minimum <= maximum are refused")
+		{
+			SUBCASE("a zero minimum")
+			{
+				CHECK_THROWS_AS(ThreadPool(0, 0), std::invalid_argument);
+				CHECK_THROWS_AS(ThreadPool(0, 2), std::invalid_argument);
+			}
+			SUBCASE("a negative minimum")
+			{
+				CHECK_THROWS_AS(ThreadPool(-1, 2), std::invalid_argument);
+			}
+			SUBCASE("a minimum above the maximum")
+			{
+				CHECK_THROWS_AS(ThreadPool(4, 2), std::invalid_argument);
+			}
+			SUBCASE("the message states both numbers")
+			{
+				try
+				{
+					const ThreadPool pool(4, 2);
+					CHECK(pool.max_num_threads() == 2);
+					FAIL("a floor above the ceiling must throw");
+				}
+				catch (const std::invalid_argument& error)
+				{
+					const std::string message = error.what();
+					CHECK(message.find("4 and 2") != std::string::npos);
+				}
+			}
+		}
+
+		TEST_CASE("equal minimum and maximum are a valid pool")
+		{
+			const ThreadPool pool(1, 1);
+
+			CHECK(pool.min_num_threads() == 1);
+			CHECK(pool.max_num_threads() == 1);
+		}
 	}
 }

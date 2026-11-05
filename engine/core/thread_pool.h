@@ -33,6 +33,9 @@ namespace labrador
 	class ThreadPool
 	{
 	public:
+		// Throws std::invalid_argument unless
+		// 1 <= min_num_threads <= max_num_threads, and std::runtime_error if
+		// the platform cannot create the pool or its minimum of threads.
 		ThreadPool(int min_num_threads, int max_num_threads);
 		~ThreadPool();
 
