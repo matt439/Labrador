@@ -623,3 +623,15 @@ the "just outside the corner" point in `test_point_rectangle_rotated_intersect`)
 the null test preamble's ctest census is stale; web.md §9's status paragraph
 still says M3 owes Safari although the record has Safari 27.0.1 on 2026-11-03;
 and `your-version.mdx` quotes `application.h` lines that have since moved.
+
+## Hygiene review, 2026-11-05
+
+[The review at `5cbc6b3`](review/2026-11-05-hygiene/README.md) read every
+tracked first-party file for dead code, duplication, lost errors, ownership,
+comment truth, conventions and weak tests, outside file length. Its 625
+findings, each checked by an independent skeptic, form 21 candidate themes,
+H1 to H21, recommended in that order: behaviour and test-strength fixes first,
+the unused-API trim next, mechanical deduplication and renames after, and the
+comment batches last. The rules above apply to each. Its
+[STATUS.md](review/2026-11-05-hygiene/STATUS.md) is the ledger; a theme the
+owner places in BACKLOG.md becomes an SM story owned here.

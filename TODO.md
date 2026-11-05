@@ -27,7 +27,7 @@ the player* links, waits on the owner.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
-No agent row is open: ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
+One agent row is open, `REV#13`, the hygiene review's themes; other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
@@ -91,6 +91,7 @@ No agent row is open: ready work is Later's next batch in BACKLOG.md's order and
 |---|---|---|---|---|
 | `REV#8` | DECISION | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
 | `REV#3` | DECISION | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
+| `REV#13` | OPEN | could | L | The [hygiene review of 2026-11-05](docs/review/2026-11-05-hygiene/README.md): 625 verified findings in 21 themes, H1 to H21, behaviour fixes first. [STATUS](docs/review/2026-11-05-hygiene/STATUS.md) records each theme. |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
 | `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it. |
