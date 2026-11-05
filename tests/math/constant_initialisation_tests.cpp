@@ -15,15 +15,15 @@ using labrador::Vector2I;
 // THE ORDER THIS TRANSLATION UNIT INITIALISES IN IS THE FINDING. These are
 // namespace-scope objects in a test executable, copied from constants that
 // live in a static library, and on this toolchain the executable's own
-// objects initialise before the library's do. While the constants were
+// objects initialise before the library's do. If the constants were
 // dynamically initialised - out-of-line constructors, so not constant
-// expressions - every copy below read (0, 0) and nothing said so
-// (docs/review/gpt6/README.md, G6-03). A client's own direction table is
-// this shape, and so is a default argument stored in a static.
+// expressions - every copy below would read (0, 0) and nothing would say
+// so. A client's own direction table is this shape, and so is a default
+// argument stored in a static.
 //
-// The definitions are constinit now, which is a compile error if any of
-// them ever stops being a constant expression. This file is the other half:
-// the value a stranger reads, from the position a stranger reads it in.
+// The definitions are constinit, which is a compile error if any of them
+// ever stops being a constant expression. This file is the other half: the
+// value a stranger reads, from the position a stranger reads it in.
 namespace
 {
 	const Vector2F copied_right = Vector2F::direction_right;
@@ -63,7 +63,7 @@ TEST_CASE("the constants are usable in a constant expression's shape")
 	// Not the constants themselves - a const object of class type is not a
 	// constant expression - but the constructors they are built from are,
 	// which is what constinit needs and what a client's own constexpr table
-	// can now be built from.
+	// can be built from.
 	constexpr Vector2F right(1.0f, 0.0f);
 	constexpr Vector2I one(1, 1);
 	constexpr RectangleF unit(0.0f, 0.0f, 1.0f, 1.0f);

@@ -79,7 +79,7 @@ TEST_SUITE("ShapeIntersect")
 		// 2 identical rectangles
 		CHECK(a.intersects(a));
 	}
-	TEST_CASE("test_rectangle_circle_intersect")
+	TEST_CASE("a rectangle and a circle intersect when they overlap, nest or touch")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 		Point2F p;
@@ -112,7 +112,7 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(rectangle_circle_intersect(a, c, p));
 		CHECK(p == Point2F(10.0f, 5.0f));
 	}
-	TEST_CASE("test_rectangle_triangle_intersect")
+	TEST_CASE("a rectangle and a triangle intersect when they overlap, nest or touch")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 
@@ -139,7 +139,7 @@ TEST_SUITE("ShapeIntersect")
 		t = Triangle(Point2F(10.0f + FLT_EPSILON, 10.0f), Point2F(20.0f, 10.0f),
 			Point2F(10.0f + FLT_EPSILON, 20.0f));
 	}
-	TEST_CASE("test_rectangle_quad_intersect")
+	TEST_CASE("a rectangle and a quad intersect when they overlap, nest or touch")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 
@@ -169,7 +169,7 @@ TEST_SUITE("ShapeIntersect")
 		q = Quad(a);
 		CHECK(rectangle_quad_intersect(a, q));
 	}
-	TEST_CASE("test_rectangle_segment_intersect")
+	TEST_CASE("a rectangle and a segment intersect when they cross, nest or touch")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 
@@ -195,7 +195,7 @@ TEST_SUITE("ShapeIntersect")
 		s = Segment(Point2F(10.0f + epsilon_f_2, 10.0f), Point2F(20.0f, 10.0f));
 		CHECK_FALSE(rectangle_segment_intersect(a, s));
 	}
-	TEST_CASE("test_rectangle_point_intersect")
+	TEST_CASE("a point inside a rectangle or on its boundary intersects it")
 	{
 		RectangleF a(0.0f, 0.0f, 10.0f, 10.0f);
 
@@ -213,7 +213,7 @@ TEST_SUITE("ShapeIntersect")
 		p = Point2F(0.0f, 0.0f);
 		CHECK(rectangle_point_intersect(a, p));
 	}
-	TEST_CASE("test_rectangle_rotated_rectangle_intersect")
+	TEST_CASE("a rectangle and a rotated rectangle intersect, aligned or not, and when nested")
 	{
 		// first test with axes aligned
 		RectangleRotated rr = RectangleRotated(Vector2F::zero,
@@ -261,7 +261,7 @@ TEST_SUITE("ShapeIntersect")
 		r = RectangleF(15.0f, 15.0f, 10.0f, 10.0f);
 		CHECK_FALSE(rectangle_rotated_rectangle_intersect(r, rr));
 	}
-	TEST_CASE("test_circles_intersect")
+	TEST_CASE("two circles intersect when they overlap, nest or touch")
 	{
 		Circle a(0.0f, 0.0f, 10.0f);
 
@@ -269,7 +269,7 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(circles_intersect(a, b));
 
 		// a and b are just touching
-		b = Circle(10.0f - epsilon_f, 5.0f, 5.0f);
+		b = Circle(15.0f - epsilon_f, 0.0f, 5.0f);
 		CHECK(circles_intersect(a, b));
 
 		// a and b are just not touching
@@ -287,7 +287,7 @@ TEST_SUITE("ShapeIntersect")
 		// 2 identical circles
 		CHECK(circles_intersect(a, a));
 	}
-	TEST_CASE("test_circle_triangle_intersect")
+	TEST_CASE("a circle and a triangle intersect when they overlap, nest or touch, and report the closest point")
 	{
 		Circle a(0.0f, 0.0f, 10.0f);
 		Point2F p;
@@ -317,12 +317,12 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(are_equal(p, Point2F(10.0f - epsilon_f, 0.0f), 0.1f));
 
 		// a and t are just not touching
-		t = Triangle(Point2F(10.0f + epsilon_f, 10.0f), Point2F(20.0f, 10.0f),
+		t = Triangle(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f),
 			Point2F(10.0f + epsilon_f, 20.0f));
 		CHECK_FALSE(circle_triangle_intersect(a, t, p));
-		CHECK(p == Point2F(10.0f + epsilon_f, 10.0f));
+		CHECK(p == Point2F(10.0f + epsilon_f, 0.0f));
 	}
-	TEST_CASE("test_circle_quad_intersect")
+	TEST_CASE("a circle and a quad intersect when they overlap, nest or touch")
 	{
 		Circle a(0.0f, 0.0f, 10.0f);
 
@@ -345,10 +345,10 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(circle_quad_intersect(a, q));
 
 		// a and q are just not touching
-		q = Quad(RectangleF(10.0f + epsilon_f, 10.0f, 10.0f, 10.0f));
+		q = Quad(RectangleF(10.0f + epsilon_f, 0.0f, 10.0f, 10.0f));
 		CHECK_FALSE(circle_quad_intersect(a, q));
 	}
-	TEST_CASE("test_circle_rectangle_rotated_intersect")
+	TEST_CASE("a circle and a rotated rectangle intersect when they overlap, nest or touch")
 	{
 		RectangleRotated rr(Vector2F::zero,
 			Vector2F::direction_up_right,
@@ -373,7 +373,7 @@ TEST_SUITE("ShapeIntersect")
 		c = Circle(Vector2F::direction_down_right * (20.0f + epsilon_f), 10.0f);
 		CHECK_FALSE(circle_rectangle_rotated_intersect(c, rr));
 	}
-	TEST_CASE("test_circle_segment_intersect")
+	TEST_CASE("a circle and a segment intersect when they cross, nest or touch")
 	{
 		Circle c(0.0f, 0.0f, 10.0f);
 		Point2F p;
@@ -406,7 +406,7 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(circle_segment_intersect(c, s, p));
 		CHECK(p == Point2F(10.0f + epsilon_f, 0.0f));
 	}
-	TEST_CASE("test_triangles_intersect")
+	TEST_CASE("two triangles intersect when they overlap, nest or touch")
 	{
 		Triangle a(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
 
@@ -430,11 +430,11 @@ TEST_SUITE("ShapeIntersect")
 		CHECK(triangles_intersect(a, b));
 
 		// a and b are just not touching
-		b = Triangle(Point2F(10.0f + epsilon_f, 00.0f), Point2F(20.0f, 00.0f),
+		b = Triangle(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f),
 			Point2F(10.0f + epsilon_f, 10.0f));
 		CHECK_FALSE(triangles_intersect(a, b));
 	}
-	TEST_CASE("test_triangle_quad_intersect")
+	TEST_CASE("a triangle and a quad intersect when they overlap, nest or touch")
 	{
 		Triangle a(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
 
@@ -460,7 +460,7 @@ TEST_SUITE("ShapeIntersect")
 		q = Quad(RectangleF(10.0f + epsilon_f, 0.0f, 10.0f, 10.0f));
 		CHECK_FALSE(triangle_quad_intersect(a, q));
 	}
-	TEST_CASE("test_triangle_segment_intersect")
+	TEST_CASE("a triangle and a segment intersect when they cross, nest or touch")
 	{
 		Triangle a(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f), Point2F(0.0f, 10.0f));
 
@@ -486,7 +486,7 @@ TEST_SUITE("ShapeIntersect")
 		s = Segment(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK_FALSE(triangle_segment_intersect(a, s));
 	}
-	TEST_CASE("test_triangle_rectangle_rotated_intersect")
+	TEST_CASE("a triangle and a rotated rectangle intersect when they overlap, nest or touch")
 	{
 		RectangleRotated rr(Vector2F::zero,
 			Vector2F::direction_up_right,
@@ -520,7 +520,7 @@ TEST_SUITE("ShapeIntersect")
 			Vector2F::direction_down_right * 20.0f + Vector2F::direction_up_right * 10.0f);
 		CHECK_FALSE(triangle_rectangle_rotated_intersect(t, rr));
 	}
-	TEST_CASE("test_quads_intersect")
+	TEST_CASE("two quads intersect when they overlap, nest or touch")
 	{
 		Quad a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f));
 
@@ -549,7 +549,7 @@ TEST_SUITE("ShapeIntersect")
 		// 2 identical quads
 		CHECK(quads_intersect(a, a));
 	}
-	TEST_CASE("test_quad_segment_intersect")
+	TEST_CASE("a quad and a segment intersect when they cross, nest or touch")
 	{
 		Quad a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f));
 
@@ -575,7 +575,7 @@ TEST_SUITE("ShapeIntersect")
 		s = Segment(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK_FALSE(quad_segment_intersect(a, s));
 	}
-	TEST_CASE("test_quad_point_intersect")
+	TEST_CASE("a point inside a quad or on its boundary intersects it")
 	{
 		Quad a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f));
 
@@ -593,7 +593,7 @@ TEST_SUITE("ShapeIntersect")
 		p = Point2F(0.0f, 0.0f);
 		CHECK(quad_point_intersect(a, p));
 	}
-	TEST_CASE("test_quad_rectangle_rotated_intersect")
+	TEST_CASE("a quad and a rotated rectangle intersect when they overlap, nest or touch")
 	{
 		RectangleRotated rr(Vector2F::zero,
 			Vector2F::direction_up_right,
@@ -623,7 +623,7 @@ TEST_SUITE("ShapeIntersect")
 			Vector2F(10.0f, 10.0f)));
 		CHECK_FALSE(quad_rectangle_rotated_intersect(q, rr));
 	}
-	TEST_CASE("test_segments_intersect")
+	TEST_CASE("two segments intersect only where they cross, whichever way round they are written")
 	{
 		Segment a(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f));
 		Segment b(Point2F(5.0f, -5.0f), Point2F(5.0f, 10.0f));
@@ -658,21 +658,21 @@ TEST_SUITE("ShapeIntersect")
 			Point2F(0.0f, 10.0f));
 		CHECK(triangles_intersect(t0, t0));
 	}
-	TEST_CASE("test_segment_rectangle_rotated_intersect")
+	TEST_CASE("a segment crossing or inside a rotated rectangle intersects it")
 	{
-		 RectangleRotated rr(Vector2F::zero,
+		RectangleRotated rr(Vector2F::zero,
 			Vector2F::direction_up_right,
 			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
 
-		 Segment s(Point2F(5.0f, 5.0f), Point2F(15.0f, 5.0f));
-		 CHECK(segment_rectangle_rotated_intersect(s, rr));
+		Segment s(Point2F(5.0f, 5.0f), Point2F(15.0f, 5.0f));
+		CHECK(segment_rectangle_rotated_intersect(s, rr));
 
-		 s = Segment(Point2F(500.0f, 500.0f), Point2F(1500.0f, 500.0f));
-		 CHECK_FALSE(segment_rectangle_rotated_intersect(s, rr));
+		s = Segment(Point2F(500.0f, 500.0f), Point2F(1500.0f, 500.0f));
+		CHECK_FALSE(segment_rectangle_rotated_intersect(s, rr));
 
-		 // s is inside rr
-		 s = Segment(Point2F(2.0f, 2.0f), Point2F(3.0f, 3.0f));
-		 CHECK(segment_rectangle_rotated_intersect(s, rr));
+		// s is inside rr
+		s = Segment(Point2F(2.0f, 2.0f), Point2F(3.0f, 3.0f));
+		CHECK(segment_rectangle_rotated_intersect(s, rr));
 	}
 	TEST_CASE("a segment through opposite corners meets the shape, whichever way it runs")
 	{
@@ -719,7 +719,7 @@ TEST_SUITE("ShapeIntersect")
 		CHECK_FALSE(segment_rectangle_rotated_intersect(
 			Segment(Point2F(-5.0f, -4.0f), Point2F(-1.0f, 0.0f)), rotated));
 	}
-	TEST_CASE("test_point_rectangle_rotated_intersect")
+	TEST_CASE("a point inside a rotated rectangle or on its boundary intersects it")
 	{
 		RectangleRotated rr(Vector2F::zero,
 			Vector2F::direction_up_right,
@@ -751,7 +751,7 @@ TEST_SUITE("ShapeIntersect")
 		p = Point2F(2.0f, 2.0f);
 		CHECK(point_rectangle_rotated_intersect(p, rr));
 	}
-	TEST_CASE("test_rectangles_rotated_intersect")
+	TEST_CASE("two rotated rectangles intersect when they overlap, nest or touch")
 	{
 		RectangleRotated a(Vector2F::zero,
 			Vector2F::direction_up_right,

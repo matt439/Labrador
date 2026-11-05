@@ -84,10 +84,10 @@ TEST_SUITE("Vector2")
 	}
 	TEST_CASE("cross separates slivers that a truncating orientation test loses")
 	{
-		// The reason this function exists as a float. A triangle a tenth
-		// of a unit tall is a real triangle; the deleted labrador::sign
-		// cast its area to int and reported every one of these collinear,
-		// which is the failure that turns a thin ramp into a line.
+		// The reason this function returns a float. A triangle a tenth
+		// of a unit tall is a real triangle; an orientation test that
+		// truncates its area to int reports every one of these collinear,
+		// which turns a thin ramp into a line.
 		const Point2F a(0.0f, 0.0f);
 		const Point2F b(1.0f, 0.0f);
 		const Point2F barely_above(0.0f, 0.1f);

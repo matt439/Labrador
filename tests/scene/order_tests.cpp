@@ -2,6 +2,8 @@
 
 #include "engine/render/null/recording.h"
 #include "engine/collision/collision_object.h"
+#include "engine/core/state.h"
+#include "engine/core/state_context.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -11,8 +13,11 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/viewport.h"
 #include "engine/scene/scene.h"
+#include "tests/collision/stub_collider.h"
+#include "tests/render/null_synthetic_harness.h"
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 // What draws over what, which is the order a scene submits in (scene.h,
@@ -57,61 +62,45 @@ namespace
 		TextureHandle white_;
 	};
 
-	class Collider final : public CollisionObject
+	// The shared stub on no layer, drawing its marker.
+	class Collider final : public StubCollider
 	{
 	public:
 		Collider(int id, TextureHandle white) :
-			id_(id), white_(white),
-			rectangle_(static_cast<float>(id), 0.0f, 1.0f, 1.0f)
+			StubCollider(RectangleF(static_cast<float>(id), 0.0f, 1.0f, 1.0f),
+				0, 0),
+			id_(id), white_(white)
 		{
 		}
 
-		void update(float /*dt*/) override {}
 		void draw(DrawList& list) const override
 		{
 			draw_marker(list, this->white_, this->id_);
-		}
-		RectangleF bounds() const override { return this->rectangle_; }
-
-		const Shape* shape() const override { return &this->rectangle_; }
-		CollisionLayer layer() const override { return 0; }
-		CollisionMask mask() const override { return 0; }
-		CollisionTag tag() const override { return 0; }
-		void on_contact(const CollisionObject& /*other*/,
-			const Vector2F& /*normal*/, float /*penetration*/) override
-		{
-		}
-		bool for_deletion() const override { return this->for_deletion_; }
-		void set_for_deletion(bool for_deletion) override
-		{
-			this->for_deletion_ = for_deletion;
 		}
 
 	private:
 		int id_ = 0;
 		TextureHandle white_;
-		RectangleF rectangle_;
-		bool for_deletion_ = false;
 	};
 
 	class Harness
 	{
 	public:
-		Harness()
+		Harness() :
+			null_(64, 64, 1)
 		{
-			this->renderer_.create_device(nullptr, 64, 64, 1);
-			this->renderer_.set_resources(&this->resources_);
-			add_white_texture(this->renderer_, this->resources_);
-			this->white = this->resources_.resolve_texture(white_texture_name);
+			add_white_texture(this->null_.renderer(), this->null_.resources());
+			this->white =
+				this->null_.resources().resolve_texture(white_texture_name);
 		}
 
-		Renderer& renderer() { return this->renderer_; }
+		Renderer& renderer() { return this->null_.renderer(); }
 
 		// The ids in the order the frame drew them.
 		std::vector<int> drawn() const
 		{
 			std::vector<int> ids;
-			for (const RecordedSprite& sprite : recorded_sprites(this->renderer_))
+			for (const RecordedSprite& sprite : this->null_.recording())
 			{
 				ids.push_back(static_cast<int>(sprite.corners[0].position.x));
 			}
@@ -121,8 +110,7 @@ namespace
 		TextureHandle white;
 
 	private:
-		RenderResources resources_;
-		Renderer renderer_;
+		NullSyntheticHarness null_;
 	};
 }
 
@@ -214,4 +202,94 @@ TEST_CASE("CONTRACT: a retirement keeps the collision objects' order")
 	harness.renderer().submit();
 
 	CHECK(harness.drawn() == std::vector<int>{ 10, 12, 13 });
+}
+
+TEST_CASE("a state stack composes split gameplay and a fullscreen scene in order")
+{
+	// A state that covers only part of the screen leaves the one under it
+	// drawn, so the stack is a layer order too: the lower state's scene draws
+	// all its views, then the upper state's scene draws over them. Here the
+	// lower scene is split into two side-by-side views and the upper one is a
+	// single fullscreen view, and each frame records them in that order.
+	class SceneState final : public State
+	{
+	public:
+		SceneState(std::unique_ptr<Scene> scene, bool covers_screen) :
+			scene_(std::move(scene)), covers_screen_(covers_screen)
+		{
+		}
+
+		void init() override {}
+		void update(float /*dt*/) override {}
+		bool covers_screen() const override { return this->covers_screen_; }
+
+		void draw(Renderer& renderer) const override
+		{
+			this->scene_->draw(renderer);
+		}
+
+	private:
+		std::unique_ptr<Scene> scene_;
+		bool covers_screen_ = true;
+	};
+
+	// One 2x2 texture, and a block that draws it across its own rectangle.
+	class Block final : public GameObject
+	{
+	public:
+		Block(const RectangleF& rectangle, TextureHandle texture) :
+			rectangle_(rectangle), texture_(texture)
+		{
+		}
+
+		void update(float /*dt*/) override {}
+
+		void draw(DrawList& list) const override
+		{
+			list.draw_sprite(this->texture_, RectangleI(0, 0, 2, 2),
+				this->rectangle_, Colour::white, 0.0f, Vector2F::zero,
+				SpriteFlip::none, 0.0f);
+		}
+
+		RectangleF bounds() const override { return this->rectangle_; }
+
+	private:
+		RectangleF rectangle_;
+		TextureHandle texture_;
+	};
+
+	NullSyntheticHarness null(1280, 720, 2);
+	const TextureHandle quad = null.add_white_square("quad", 2);
+
+	std::unique_ptr<Scene> split = std::make_unique<Scene>(nullptr, nullptr);
+	split->add(std::make_unique<Block>(
+		RectangleF(0.0f, 0.0f, 10.0f, 10.0f), quad));
+	split->end_tick();
+	split->add_view(Viewport(0.0f, 0.0f, 640.0f, 720.0f));
+	split->add_view(Viewport(640.0f, 0.0f, 640.0f, 720.0f));
+
+	std::unique_ptr<Scene> fullscreen = std::make_unique<Scene>(nullptr, nullptr);
+	fullscreen->add(std::make_unique<Block>(
+		RectangleF(20.0f, 20.0f, 10.0f, 10.0f), quad));
+	fullscreen->end_tick();
+	fullscreen->add_view(Viewport(0.0f, 0.0f, 1280.0f, 720.0f));
+
+	StateContext states;
+	states.transition_to(std::make_unique<SceneState>(std::move(split), true));
+	states.push(std::make_unique<SceneState>(std::move(fullscreen), false));
+
+	for (int frame = 0; frame < 2; ++frame)
+	{
+		null.renderer().begin_frame();
+		states.draw(null.renderer());
+		null.renderer().submit();
+
+		const std::vector<RecordedSprite>& sprites = null.recording();
+		REQUIRE(sprites.size() == 3);
+		CHECK(sprites[0].viewport.width == 640);
+		CHECK(sprites[1].viewport.x == 640);
+		CHECK(sprites[2].viewport.width == 1280);
+		CHECK(sprites[2].corners[0].position == Vector2F(20.0f, 20.0f));
+		CHECK(null.renderer().view_count() == 2);
+	}
 }

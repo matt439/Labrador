@@ -44,44 +44,28 @@ TEST_CASE("speeds are converted against the step the application actually runs")
 		== doctest::Approx(3600.0f));
 }
 
-TEST_CASE("the shipping sniper exceeds the budget, and this is the record of it")
+TEST_CASE("a speed past the budget tunnels, and the budget names the remedies")
 {
-	// The numbers, from the tree rather than from memory:
-	//   weapon_consts.h  DETAILS_SNIPER.starting_vel_length = 2000 units/sec
-	//   projectile_consts.h  DETAILS_JET.col_rect_size      = 20 x 20 units
-	//   main.cpp  options.target_fps                        = 60
-	//   close_quarters.json  spawn_a_ceiling                = 300 x 10 units
-	//
-	// 2000 / 60 is 33.33 units a step against a budget of 20 + 10 = 30, so a
-	// sniper shot fired at one of the 10-unit spawn ceilings passes through it
-	// without a collision ever being tested. T3 says projectile speeds are
-	// capped so nothing tunnels; this is the arithmetic showing that they are
-	// not, and it is deliberately a failing-in-spirit fact pinned as a test
-	// rather than a silent gap.
-	//
-	// The engine cannot fix this. The speed, the projectile size and the level
-	// geometry are all game content, and every available remedy - a slower
-	// sniper, a fatter bullet, thicker ceilings - changes how the game plays.
-	// That is a decision for whoever owns the tuning, not for the commit that
-	// found the arithmetic.
-	//
-	// So this test asserts the violation rather than the fix. It passes today
-	// and it will fail the moment the content is corrected, which is the
-	// point: the failure is the reminder to delete it, and until then nobody
-	// can believe T3's cap exists by reading the philosophy alone.
-	constexpr float sniper_speed = 2000.0f;
-	constexpr float jet_extent = 20.0f;
-	constexpr float thinnest_ceiling = 10.0f;
+	// A worked example with round numbers. A 20-unit projectile moving at
+	// 2000 units a second, stepped 60 times a second, moves 33.33 units a
+	// step. Against a 10-unit wall the budget is 20 + 10 = 30, so the
+	// projectile can pass through the wall without a step on which the two
+	// overlap. T3 caps speeds so that nothing tunnels; a game meets that cap
+	// with a slower projectile, a larger one, or thicker geometry, and these
+	// are the numbers each remedy has to reach.
+	constexpr float speed = 2000.0f;
+	constexpr float projectile_extent = 20.0f;
+	constexpr float wall_thickness = 10.0f;
 	constexpr float step = 1.0f / 60.0f;
 
-	CHECK(can_tunnel(sniper_speed * step, jet_extent, thinnest_ceiling));
+	CHECK(can_tunnel(speed * step, projectile_extent, wall_thickness));
 
-	CHECK(max_safe_speed(jet_extent, thinnest_ceiling, step)
+	CHECK(max_safe_speed(projectile_extent, wall_thickness, step)
 		== doctest::Approx(1800.0f));
 
-	// Which is the number the tuning would have to come down to, or the
-	// geometry would have to come up to 13.34 units thick.
-	CHECK(sniper_speed > max_safe_speed(jet_extent, thinnest_ceiling, step));
+	// So the speed has to come down to 1800, or the wall has to come up to
+	// 13.34 units thick.
+	CHECK(speed > max_safe_speed(projectile_extent, wall_thickness, step));
 }
 
 TEST_CASE("projected extents cannot rule out a diagonal corner crossing")

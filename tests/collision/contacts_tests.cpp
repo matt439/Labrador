@@ -8,14 +8,13 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/vector2f.h"
+#include "tests/collision/stub_collider.h"
 
 #include <algorithm>
 #include <vector>
 
 using labrador::CollisionLayer;
-using labrador::CollisionMask;
 using labrador::CollisionObject;
-using labrador::CollisionTag;
 using labrador::Contact;
 using labrador::dispatch_contacts;
 using labrador::find_contacts;
@@ -28,7 +27,9 @@ namespace
 	constexpr CollisionLayer wall_layer = 1u << 1;
 	constexpr CollisionLayer bullet_layer = 1u << 2;
 
-	class TestObject : public CollisionObject
+	// The shared stub, plus a log of every contact it receives and two
+	// optional responses to one: retiring, and moving out of the overlap.
+	class TestObject : public StubCollider
 	{
 	public:
 		struct Received
@@ -38,26 +39,7 @@ namespace
 			float penetration = 0.0f;
 		};
 
-		TestObject(const RectangleF& rectangle, CollisionLayer layer,
-			CollisionMask mask, CollisionTag tag = 0) :
-			rectangle_(rectangle), layer_(layer), mask_(mask), tag_(tag)
-		{
-		}
-
-		void update(float /*dt*/) override {}
-		void draw(labrador::DrawList& /*draw_list*/) const override {}
-		RectangleF bounds() const override { return this->rectangle_; }
-
-		const labrador::Shape* shape() const override { return &this->rectangle_; }
-		CollisionLayer layer() const override { return this->layer_; }
-		CollisionMask mask() const override { return this->mask_; }
-		CollisionTag tag() const override { return this->tag_; }
-
-		bool for_deletion() const override { return this->for_deletion_; }
-		void set_for_deletion(bool for_deletion) override
-		{
-			this->for_deletion_ = for_deletion;
-		}
+		using StubCollider::StubCollider;
 
 		void on_contact(const CollisionObject& other, const Vector2F& normal,
 			float penetration) override
@@ -65,7 +47,7 @@ namespace
 			this->received_.push_back(Received{ &other, normal, penetration });
 			if (this->retire_on_contact_)
 			{
-				this->for_deletion_ = true;
+				this->set_for_deletion(true);
 			}
 			if (this->separate_on_contact_)
 			{
@@ -74,16 +56,10 @@ namespace
 		}
 
 		const std::vector<Received>& received() const { return this->received_; }
-		const RectangleF& rectangle() const { return this->rectangle_; }
 		void retire_on_contact() { this->retire_on_contact_ = true; }
 		void separate_on_contact() { this->separate_on_contact_ = true; }
 
 	private:
-		RectangleF rectangle_;
-		CollisionLayer layer_ = 0;
-		CollisionMask mask_ = 0;
-		CollisionTag tag_ = 0;
-		bool for_deletion_ = false;
 		bool retire_on_contact_ = false;
 		bool separate_on_contact_ = false;
 		std::vector<Received> received_;
@@ -111,8 +87,7 @@ namespace
 TEST_CASE("an overlapping pair is reported once, not twice and not against itself")
 {
 	// Three objects all in the same place. Three pairs, so three contacts -
-	// the nested loops this replaces produced six, plus three self-pairs that
-	// only an identity check kept out.
+	// not six from visiting each pair from both ends, and no self-pairs.
 	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer | bullet_layer);
 	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), wall_layer, player_layer | bullet_layer);
 	TestObject c(RectangleF(4.0f, 4.0f, 10.0f, 10.0f), bullet_layer, player_layer | wall_layer);
@@ -129,9 +104,9 @@ TEST_CASE("an overlapping pair is reported once, not twice and not against itsel
 
 TEST_CASE("either side can veto a pair")
 {
-	// A responds to walls; B is a wall that responds to nothing. The filter
-	// it replaces asked one participant only, so which answer counted came
-	// down to which of two nested loops reached the pair first.
+	// A responds to walls; B is a wall that responds to nothing. Asking one
+	// participant only would make the answer depend on which of the two the
+	// enumeration reached first.
 	TestObject a(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), player_layer, wall_layer);
 	TestObject b(RectangleF(2.0f, 2.0f, 10.0f, 10.0f), wall_layer, 0);
 
@@ -181,10 +156,10 @@ TEST_CASE("the contact vector is cleared before it is filled")
 
 TEST_CASE("both participants are told, once each, with opposite normals")
 {
-	// The bug this closes: the dispatch fired both objects' responses off one
-	// object's predicate, so a player's response to a projectile ran because
-	// the *projectile* thought they were touching - and then the reversed
-	// pass ran both again.
+	// Each object's response runs once, for the pair the narrow phase
+	// measured, and the two normals are opposite. Firing both responses off
+	// one object's predicate would run a player's response because the
+	// *projectile* thought they were touching.
 	TestObject player(RectangleF(0.0f, 0.0f, 10.0f, 100.0f), player_layer, wall_layer);
 	TestObject wall(RectangleF(8.0f, 0.0f, 100.0f, 100.0f), wall_layer, player_layer);
 
@@ -210,7 +185,7 @@ TEST_CASE("a contact an earlier response already separated is dropped")
 {
 	// A player standing on the seam between two floor tiles: two contacts, the
 	// same depth on each. Separating from the first ends the second, and
-	// applying the depth that was true before it would push them out twice -
+	// applying the depth measured before it would push them out twice -
 	// a visible pop at every tile seam, which is why the depth is measured
 	// again at dispatch rather than taken from the list.
 	TestObject player(RectangleF(95.0f, 100.0f, 20.0f, 100.0f), player_layer, wall_layer);

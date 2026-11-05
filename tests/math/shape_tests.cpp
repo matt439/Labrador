@@ -24,11 +24,10 @@ TEST_SUITE("Shape")
 		// time. These checks are the contract: each slot is the matching named
 		// accessor.
 		//
-		// The order is worth a test rather than a comment. Encoding a
-		// rectangle's paintable faces as edges and recovering them by
-		// positional index put three of four faces on the wrong side of
-		// every paintable structure in the game, because the decoder
-		// assumed {top, right, bottom, left}.
+		// The order is worth a test rather than a comment. A caller that
+		// stores a rectangle's faces by edge index and recovers them by
+		// position puts three of four faces on the wrong side if it
+		// assumes {top, right, bottom, left} rather than the order below.
 		const RectangleF rect(0.0f, 0.0f, 10.0f, 20.0f);
 		const std::array<Segment, 4> rect_edges = rect.edges();
 		static_assert(rect_edges.size() == 4);
@@ -49,6 +48,8 @@ TEST_SUITE("Shape")
 		const std::array<Segment, 4> quad_edges = quad.edges();
 		static_assert(quad_edges.size() == 4);
 		CHECK(quad_edges[0] == quad.edge_0());
+		CHECK(quad_edges[1] == quad.edge_1());
+		CHECK(quad_edges[2] == quad.edge_2());
 		CHECK(quad_edges[3] == quad.edge_3());
 
 		const RectangleRotated rr(Point2F::zero, Vector2F::direction_right,
@@ -56,6 +57,8 @@ TEST_SUITE("Shape")
 		const std::array<Segment, 4> rr_edges = rr.edges();
 		static_assert(rr_edges.size() == 4);
 		CHECK(rr_edges[0] == rr.edge_0());
+		CHECK(rr_edges[1] == rr.edge_1());
+		CHECK(rr_edges[2] == rr.edge_2());
 		CHECK(rr_edges[3] == rr.edge_3());
 	}
 }

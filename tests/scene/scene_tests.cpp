@@ -3,15 +3,14 @@
 #include "engine/scene/scene.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/vector2f.h"
+#include "tests/collision/stub_collider.h"
 
 #include <memory>
 #include <stdexcept>
 #include <vector>
 
 using labrador::CollisionLayer;
-using labrador::CollisionMask;
 using labrador::CollisionObject;
-using labrador::CollisionTag;
 using labrador::GameObject;
 using labrador::Scene;
 using labrador::Camera;
@@ -52,35 +51,22 @@ namespace
 		float last_dt_ = 0.0f;
 	};
 
-	class TestCollider : public CollisionObject
+	// The shared stub, counting its updates and contacts, and able to refuse
+	// deletion the way level geometry does.
+	class TestCollider final : public StubCollider
 	{
 	public:
-		TestCollider(const RectangleF& rectangle, CollisionLayer layer,
-			CollisionMask mask, CollisionTag tag = 0) :
-			rectangle_(rectangle), layer_(layer), mask_(mask), tag_(tag)
-		{
-		}
+		using StubCollider::StubCollider;
 
 		void update(float /*dt*/) override { this->updates_++; }
-		void draw(labrador::DrawList& /*draw_list*/) const override {}
-		RectangleF bounds() const override { return this->rectangle_; }
 
-		const labrador::Shape* shape() const override
-		{
-			return &this->rectangle_;
-		}
-		CollisionLayer layer() const override { return this->layer_; }
-		CollisionMask mask() const override { return this->mask_; }
-		CollisionTag tag() const override { return this->tag_; }
-
-		bool for_deletion() const override { return this->for_deletion_; }
 		void set_for_deletion(bool for_deletion) override
 		{
 			if (this->fixed_)
 			{
 				return;
 			}
-			this->for_deletion_ = for_deletion;
+			this->StubCollider::set_for_deletion(for_deletion);
 		}
 
 		void on_contact(const CollisionObject& other,
@@ -99,11 +85,6 @@ namespace
 		void make_fixed() { this->fixed_ = true; }
 
 	private:
-		RectangleF rectangle_;
-		CollisionLayer layer_ = 0;
-		CollisionMask mask_ = 0;
-		CollisionTag tag_ = 0;
-		bool for_deletion_ = false;
 		bool fixed_ = false;
 		int updates_ = 0;
 		int contacts_ = 0;
@@ -157,8 +138,10 @@ namespace
 	};
 
 	// No thread pool and no partitioner. Everything below the draw is
-	// single-threaded anyway, and draw() itself needs a Renderer - see the
-	// closing comment in this file.
+	// single-threaded anyway, and draw() itself needs a Renderer, so
+	// Scene::draw is covered by fanout_tests.cpp, cull_tests.cpp and
+	// order_tests.cpp. tests/scene/CMakeLists.txt adds those sources only with
+	// the null renderer, whose recording needs no window or graphics adapter.
 	Scene make_scene() { return Scene(nullptr, nullptr); }
 
 	bool holds(const Scene& scene, const CollisionObject* object)
@@ -356,10 +339,6 @@ TEST_CASE("the view list is the game's, and it is refilled not appended to")
 	scene.clear_views();
 	CHECK(scene.view_count() == 0);
 }
-
-// Scene::draw is covered by fanout_tests.cpp, cull_tests.cpp and
-// order_tests.cpp. tests/scene/CMakeLists.txt adds those sources only with
-// the null renderer, whose recording needs no window or graphics adapter.
 
 TEST_CASE("end_tick expires contacts whether or not their participants retire")
 {

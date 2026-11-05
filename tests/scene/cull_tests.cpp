@@ -4,6 +4,7 @@
 #include "engine/core/name_table.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
+#include "engine/math/scalar.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/camera.h"
@@ -21,10 +22,10 @@
 #include "engine/render/visual.h"
 #include "engine/scene/scene.h"
 #include "engine/ui/widget.h"
+#include "tests/render/null_synthetic_harness.h"
 
-#include <memory>
 #include <cmath>
-#include <string>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -47,49 +48,27 @@ namespace
 {
 	using namespace labrador;
 
-	// A renderer with no graphics API, a two-texel texture, and a sheet with
-	// one frame whose authored origin is its own far corner - the shape a
-	// sheet author uses to pin a sprite by its bottom right, which
-	// bounds() has to account for.
+	// A renderer with no graphics API, an eight-texel-square texture, a
+	// two-glyph font over it, and a sheet with one frame whose authored origin
+	// is its own far corner - the shape a sheet author uses to pin a sprite by
+	// its bottom right, which bounds() has to account for.
 	class Harness
 	{
 	public:
-		Harness()
+		Harness() :
+			null_(1280, 720, 1)
 		{
-			this->renderer_.create_device(nullptr, 1280, 720, 1);
-			this->renderer_.set_resources(&this->resources_);
-
-			TextureData texture;
-			texture.width = 8;
-			texture.height = 8;
-			texture.format = TextureFormat::r8g8b8a8_unorm;
-			texture.levels.push_back(texture_level(texture.format, 8, 8, 0));
-			texture.pixels.assign(texture.levels[0].size, 0xFFu);
-			add_texture_asset(this->renderer_, this->resources_, "quad",
-				texture);
+			const TextureHandle quad = this->null_.add_white_square("quad", 8);
 
 			NameTable<SpriteFrame> frames("sprite frame");
 			frames.add("plain", SpriteFrame(RectangleI(0, 0, 8, 8)));
 			frames.add("pinned", SpriteFrame(RectangleI(0, 0, 8, 8),
 				Vector2F(8.0f, 8.0f)));
-			this->resources_.add_sprite_sheet("sheet",
-				std::make_unique<SpriteSheet>(
-					this->resources_.resolve_texture("quad"),
-					std::move(frames), NameTable<AnimationStrip>("strip")));
+			this->null_.resources().add_sprite_sheet("sheet",
+				std::make_unique<SpriteSheet>(quad, std::move(frames),
+					NameTable<AnimationStrip>("strip")));
 
-			// Ten by ten cells on a twenty-tall line, as label_tests.cpp
-			// builds one, so "AB" measures exactly twenty by twenty.
-			std::vector<Glyph> glyphs;
-			Glyph a;
-			a.character = U'A';
-			a.subrect = RectangleI(0, 0, 10, 10);
-			glyphs.push_back(a);
-			Glyph b = a;
-			b.character = U'B';
-			glyphs.push_back(b);
-			this->resources_.add_font("font",
-				std::make_unique<Font>(this->resources_.resolve_texture("quad"),
-					std::move(glyphs), 20.0f));
+			this->null_.add_two_glyph_font("font", "quad");
 		}
 
 		// One view, ninety pixels square at the world's origin: an object is
@@ -106,31 +85,31 @@ namespace
 
 		size_t sprites_drawn(const Scene& scene)
 		{
-			this->renderer_.begin_frame();
-			scene.draw(this->renderer_);
-			this->renderer_.submit();
-			return recorded_sprites(this->renderer_).size();
+			Renderer& renderer = this->null_.renderer();
+			renderer.begin_frame();
+			scene.draw(renderer);
+			renderer.submit();
+			return this->null_.recording().size();
 		}
 
-		RenderResources* resources() { return &this->resources_; }
+		RenderResources* resources() { return &this->null_.resources(); }
 
 		const std::vector<RecordedSprite>& recording() const
 		{
-			return recorded_sprites(this->renderer_);
+			return this->null_.recording();
 		}
 
 	private:
-		RenderResources resources_;
-		Renderer renderer_;
+		NullSyntheticHarness null_;
 	};
 }
 
 TEST_CASE("CONTRACT: a sprite whose origin puts it in view is drawn")
 {
-	// The review's first row. The rectangle is x=100..120, wholly outside a
-	// view that ends at x=90; the frame's origin draws the sprite across
-	// x=80..100, ten pixels of it inside. Culled against the rectangle it
-	// was never submitted, and that happened on every backend at once.
+	// The rectangle is x=100..120, wholly outside a view that ends at x=90;
+	// the frame's origin draws the sprite across x=80..100, ten pixels of it
+	// inside. Culled against the rectangle it would never be submitted, on
+	// every backend at once.
 	Harness harness;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
 	scene->add(std::make_unique<Visual>("sheet", "pinned",
@@ -144,7 +123,7 @@ TEST_CASE("CONTRACT: a sprite turned into view is drawn")
 {
 	// The second row: no origin, a half turn about the top left.
 	Harness harness;
-	const float half_turn = 3.14159265f;
+	const float half_turn = pi;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
 	scene->add(std::make_unique<Visual>("sheet", "plain",
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), harness.resources(),
@@ -159,7 +138,7 @@ TEST_CASE("CONTRACT: a label turned into view is drawn")
 	// The third row: two glyphs, so two sprites, both of them on the far
 	// side of the position once turned.
 	Harness harness;
-	const float half_turn = 3.14159265f;
+	const float half_turn = pi;
 	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
 	scene->add(std::make_unique<Label>(L"AB", "font",
 		Vector2F(100.0f, 20.0f), harness.resources(), Colour::white, 1.0f,
@@ -257,7 +236,7 @@ TEST_CASE("rotated UI textures and container unions follow current geometry")
 	scene.add_view(Viewport(0, 0, 9, 8), Camera(0, 12, 1));
 	std::unique_ptr<UiTexture> texture = std::make_unique<UiTexture>("image", "sheet", "plain",
 		RectangleF(10, 10, 20, 10), harness.resources(), Colour::white,
-		false, 1.57079633f);
+		false, pi_over_2);
 	UiTexture* image = texture.get();
 	UiContainer group("group");
 	group.add_child(image);
@@ -279,7 +258,7 @@ TEST_CASE("rotated UI textures and container unions follow current geometry")
 TEST_CASE("rotated shape visuals emit their centered geometry with local origins")
 {
 	Harness harness;
-	for (float angle : { 0.0f, 1.57079633f, 0.7f, -0.7f })
+	for (float angle : { 0.0f, pi_over_2, 0.7f, -0.7f })
 	for (float extra : { 0.0f, 0.3f })
 	for (bool authored : { false, true })
 	{

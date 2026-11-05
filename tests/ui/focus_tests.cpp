@@ -298,8 +298,8 @@ TEST_CASE("two slots hold independent cursors over one widget set")
 
 	CHECK(group.move(0, Direction::down));
 	CHECK(group.focused(0) == &b);
-	// Slot 1 has not moved. This is the case that does not exist anywhere in
-	// the game today and that PHILOSOPHY promises for split-screen.
+	// Slot 1 has not moved: each player's cursor is its own, which is what
+	// PHILOSOPHY promises for split-screen.
 	CHECK(group.focused(1) == &a);
 
 	CHECK(group.move(1, Direction::down));

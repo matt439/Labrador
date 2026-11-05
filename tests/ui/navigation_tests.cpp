@@ -1,9 +1,10 @@
 #include <doctest/doctest.h>
-#include <vector>
 
 #include "engine/ui/navigation.h"
 #include "engine/math/rectanglef.h"
 #include "tests/ui/stub_widget.h"
+
+#include <vector>
 
 using labrador::Direction;
 using labrador::nearest_in_direction;
@@ -11,8 +12,9 @@ using labrador::RectangleF;
 
 namespace
 {
-	// The shape every menu page in the game hand-writes an adjacency table
-	// for: a left-aligned column of three rows, 100 tall, 40 apart.
+	// A menu column, the shape a hand-written adjacency table would
+	// otherwise describe: a left-aligned column of three rows, 100 tall, 40
+	// apart.
 	std::vector<RectangleF> column()
 	{
 		return {

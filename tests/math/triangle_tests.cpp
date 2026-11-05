@@ -14,11 +14,11 @@ TEST_SUITE("Triangle")
 {
 	TEST_CASE("a triangle's angles are its interior angles, and they sum to pi")
 	{
-		// They were taken between the two edge directions meeting at each
-		// vertex, which is pi minus the interior angle - so an equilateral
-		// triangle reported three 120-degree corners and angles() summed
-		// to 2*pi. A right angle is its own supplement, which is why the
-		// only consumer never noticed.
+		// The angle between the two edge directions meeting at a vertex is
+		// pi minus the interior angle, which would give an equilateral
+		// triangle three 120-degree corners summing to 2*pi. A right angle
+		// is its own supplement, so it cannot tell the two apart; the
+		// equilateral case below can.
 		const Triangle right(Point2F(0.0f, 0.0f), Point2F(0.0f, 10.0f),
 			Point2F(10.0f, 0.0f));
 
@@ -40,10 +40,9 @@ TEST_SUITE("Triangle")
 	}
 	TEST_CASE("the hypotenuse is the side opposite the right angle, not the one beside it")
 	{
-		// find_hypotenuse answers with the VERTEX holding the right angle,
-		// and both accessors used it to index edges() directly. Edge n
-		// runs from vertex n, so the side opposite vertex v is edge v + 1
-		// and they were returning a leg every time.
+		// find_hypotenuse answers with the VERTEX holding the right angle.
+		// Edge n runs from vertex n, so the side opposite vertex v is edge
+		// v + 1, and indexing edges() with v directly returns a leg.
 		const TriangleRightAxisAligned tri(Point2F(0.0f, 0.0f),
 			Point2F(0.0f, 10.0f), Point2F(10.0f, 0.0f));
 
