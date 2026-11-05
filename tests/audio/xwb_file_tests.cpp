@@ -468,21 +468,21 @@ TEST_CASE("a bank this engine cannot play says which way")
 	SUBCASE("bank data shorter than the bank data record")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 16, 95);                      // bank data length
+		put_u32_le(bytes, 16, 95);                      // bank data length
 		CHECK(contains(refusal(bytes), "its bank data is 95 bytes; it is 96."));
 	}
 
 	SUBCASE("entries smaller than a standard entry")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 52 + 72, 20);                 // entry size
+		put_u32_le(bytes, 52 + 72, 20);                 // entry size
 		CHECK(contains(refusal(bytes), "declares 20-byte entries"));
 	}
 
 	SUBCASE("a name table smaller than its names")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 52 + 76, 128);                // name size
+		put_u32_le(bytes, 52 + 76, 128);                // name size
 		const std::string message = refusal(bytes);
 		CHECK(contains(message, "names its 1 entries in 128 bytes each"));
 		CHECK(contains(message, "name table is 64 bytes"));
@@ -491,7 +491,7 @@ TEST_CASE("a bank this engine cannot play says which way")
 	SUBCASE("names of no bytes")
 	{
 		std::vector<unsigned char> bytes = build_bank({ pcm });
-		put_u32(bytes, 52 + 76, 0);                  // name size
+		put_u32_le(bytes, 52 + 76, 0);                  // name size
 		CHECK(contains(refusal(bytes), "names its 1 entries in 0 bytes each"));
 	}
 

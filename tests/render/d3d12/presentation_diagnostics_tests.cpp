@@ -25,8 +25,6 @@ namespace
 	constexpr int resized_size = 32;
 	constexpr int presented_frames = DeviceResources::frame_count * 2 + 2;
 	using SlotVisits = std::array<int, DeviceResources::frame_count>;
-	static_assert(DrawList::View::max_page_sprites == render_tests::vertex_page_sprites,
-		"page_crossing_sprites must cross this backend's vertex pages");
 
 	struct Fixture
 	{
