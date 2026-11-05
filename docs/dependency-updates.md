@@ -26,10 +26,10 @@ passed the checks below.
 | Native build requirements | [CMakeLists.txt](../CMakeLists.txt), [engine/CMakeLists.txt](../engine/CMakeLists.txt), [cmake/settings.cmake](../cmake/settings.cmake) | CMake 3.26 minimum, C++20 and Vulkan 1.2 minimum are requirements, not installed tool versions. |
 | Runner images | ci.yml and [website.yml](../.github/workflows/website.yml): windows-latest and ubuntu-latest | Moving labels. Visual Studio/MSVC, Windows SDK, CMake, Ninja, vcpkg, Python and installed Chrome may change with the image. Chrome's version also sets the SwiftShader the Vulkan job draws on. |
 | Remote Actions | Both workflows and the local Emscripten action use checkout, cache, cache/restore, upload-artifact and setup-node at @v4 where applicable | Major tags, not immutable action commit references. The local composite action itself comes from this checkout. |
-| Website CI Node | website.yml: setup-node node-version 24 | A major-version selector, not an exact patch. |
-| Supported website Node | [package.json](../website/package.json) and the lock's root engines: `^22.18.0 || >=24.0.0` | A compatibility range. There is no website .node-version, .nvmrc or packageManager/npm version pin. |
+| Website Node major | [website/.node-version](../website/.node-version), currently 24; every setup-node step in website.yml and acceptance-trial.yml reads it with node-version-file, and Cloudflare's build reads it in the root directory | A major-version selector, not an exact patch. |
+| Supported website Node | [package.json](../website/package.json) and the lock's root engines: `^22.18.0 || >=24.0.0` | A compatibility range, stated beside .node-version's major. There is no .nvmrc or packageManager/npm version pin. |
 | Website packages | package.json and [package-lock.json](../website/package-lock.json) | Ranges express requested versions; the version-3 lock records the exact graph, resolved archives and integrity values used by npm ci. Neither pins Node/npm itself. |
-| Production Node/deploy tool | [website/README.md](../website/README.md#hosting-and-deployment): recorded dashboard NODE_VERSION=24 and npx wrangler deploy | Owner/provider settings and a deployment-tool selection. Wrangler is not a dependency in the website's manifest/lock. This file does not establish the dashboard's current state or pin the fetched tool. |
+| Production Node/deploy tool | [website/README.md](../website/README.md#hosting-and-deployment): recorded build command `npm ci && npm run gate`, no NODE_VERSION build variable, and npx wrangler deploy | Owner/provider settings and a deployment-tool selection. Wrangler is not a dependency in the website's manifest/lock. This file does not establish the dashboard's current state or pin the fetched tool. |
 | Worker compatibility | [wrangler.jsonc](../website/wrangler.jsonc): compatibility_date 2026-10-08 | Worker compatibility configuration, distinct from the build Node version. |
 
 The website's [Emscripten reader](../website/src/lib/emscripten.ts) reads
@@ -146,19 +146,20 @@ vcpkg, Python and browser versions in qualification. Preserve the existing
 required checks. The weekly drift run can reveal movement in unchanged labels;
 it is not evidence that a deliberate bump has already passed.
 
-For Node, review website.yml's selector, package.json and lock-root engines,
+For Node, review website/.node-version, package.json and lock-root engines,
 README guidance and the separately recorded production setting together.
-Source changes do not update the Cloudflare dashboard. Its current setting
-and any provider procedure need owner/provider qualification; SM-30 remains
-separate. Do not change deployment, preview or compatibility settings as an
-incidental Node update.
+CI reads the file; Cloudflare's build reads it only while the dashboard has no
+`NODE_VERSION` build variable, which source changes cannot remove. The
+dashboard's current setting and any provider procedure need owner/provider
+qualification; SM-30's dashboard edit remains the owner's. Do not change
+deployment, preview or compatibility settings as an incidental Node update.
 
 For npm dependencies, select the intended direct versions/ranges, use the chosen
 supported Node/npm to update them and regenerate package-lock.json, then review
 both files. Inspect transitive changes, engine/peer requirements, resolved
 archives, integrity fields and changed output. Do not hand-edit the transitive
-graph. Validate the checked-in result with `npm ci`, then `npm run check`,
-`npm test` and `npm run build` from website/. `npm ci` consumes the chosen lock;
+graph. Validate the checked-in result with `npm ci`, then `npm run gate` (the
+check, the tests and the build) from website/. `npm ci` consumes the chosen lock;
 it is not the step that selects updated dependency versions.
 
 Do not rewrite existing entries in

@@ -7,7 +7,8 @@ says what is decided and what is not.
 
 It is a static site built with [Astro](https://astro.build/) and
 [Starlight](https://starlight.astro.build/). Use Node 22.18+ in the 22.x line,
-or Node 24 or newer. Node is the only tool it needs.
+or Node 24 or newer; [`.node-version`](.node-version) names the major that CI
+and the production build use, 24. Node is the only tool it needs.
 Nothing in the engine's CMake build depends on this folder, and nothing here
 needs the engine's toolchain.
 
@@ -17,6 +18,7 @@ npm run dev       # a local server that reloads on edits, including to the files
 npm run check     # types
 npm test          # API indexing, rendered code-link and acceptance-tool regressions; no browser
 npm run build     # the site into dist/, published snapshots under dist/versions/ - fails on any broken internal link
+npm run gate      # check, test and build in that order: the whole gate CI runs, and the production build command below
 npm run preview   # serve dist/
 npm run --silent snapshot:source -- v0.3.0  # verify candidate release source; no build or publication
 npm run snapshot:build -- v0.3.0  # verified candidate in dist/snapshot/; no publication
@@ -69,8 +71,8 @@ wrong (PHILOSOPHY T6):
 - any internal link or `#anchor` that does not resolve
   ([starlight-links-validator](https://github.com/HiDeoo/starlight-links-validator)).
 
-`.github/workflows/website.yml` runs the check, the tests, `versions:verify`
-and the build, then checks appended errata links with
+`.github/workflows/website.yml` runs `versions:verify`, then `npm run gate`
+(the check, the tests and the build), then checks appended errata links with
 `versions:verify -- --dist dist`, on every pull request and on pushes to
 master and `review-*` branches. A push to master whose tree its merged pull
 request's run already passed skips those steps and keeps no artifact.
@@ -194,7 +196,7 @@ commit as the source change. Review every changed still.
 
 Watch the whole clip before keeping a regeneration, including the clear and
 top-out effects. Encoding needs FFmpeg only when replacing the checked-in
-MP4: `npm ci`, `npm run check`, `npm run build` and CI still need only Node.
+MP4: `npm ci`, `npm run gate` and CI still need only Node.
 To prepare a candidate without replacing the checked-in asset, pass an output
 filename as the encoder's second argument, for example
 `node website/scripts/encode-footage.mjs out/website-footage/frames out/website-footage/review.mp4`.
@@ -272,14 +274,14 @@ successfully. This launch check does not repeat the full browser validation
 recorded in the plan.
 
 Cloudflare Workers Builds connects to `matt439/Labrador` and deploys `master`.
-The dashboard build settings are:
+The dashboard build settings this checkout expects are:
 
 | Setting | Value |
 | --- | --- |
 | Root directory | `website` |
 | Production branch | `master` |
-| Build variable | `NODE_VERSION=24` |
-| Build command | `npm ci && npm run check && npm test && npm run build` |
+| Build variable | None. Node comes from [`.node-version`](.node-version) in the root directory |
+| Build command | `npm ci && npm run gate` |
 | Deploy command | `npx wrangler deploy` |
 | Preview builds | Off. GitHub's website job already builds every branch and pull request; Cloudflare's per-branch builds ran from the repository root with no build command and failed on every one |
 
@@ -294,6 +296,15 @@ download or verification fails the build, so nothing deploys and the previous
 deployment stays live. This preserves production after a failed build; recovering
 from a regression that already deployed is a separate action in the
 [preview and recovery procedure](#preview-and-recovery).
+
+The build command names one script, `npm run gate`, which the website workflow
+also runs, so a check added to that script in `package.json` reaches
+production with no dashboard edit. Cloudflare reads `.node-version` in the
+root directory, but its documentation does not say which wins against a
+`NODE_VERSION` build variable, so that variable must be absent for the file to
+decide. Until the owner makes the dashboard match this table (SM-30 in
+[TODO.md](../TODO.md)), production still runs the earlier command
+`npm ci && npm run check && npm test && npm run build` with `NODE_VERSION=24`.
 
 These build settings live in Cloudflare's dashboard. The separate
 `.github/workflows/website.yml` checks, builds and retains an artifact for each pull request;

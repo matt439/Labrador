@@ -200,8 +200,8 @@ paths are planning information; they do not establish a build or test result.
 
 ## Website coupling
 
-Build `website/` separately: `npm ci`, `npm run check`, `npm test`,
-`npm run build`. It needs Node, not CMake; [website/README.md](website/README.md)
+Build `website/` separately: `npm ci`, then `npm run gate`, CI's whole gate:
+check, tests and build. It needs Node, not CMake; [website/README.md](website/README.md)
 is its guide, [website-plan.md](docs/website-plan.md) its decisions and
 [website-inventory.md](docs/website-inventory.md) its documentation sources.
 
