@@ -34,7 +34,7 @@
 # script checks that each erratum the change appends links to an emitted page,
 # file or heading, or to a repository URL that answers. Comparing with the base
 # needs the base commit, hence the full-history checkout; the host's build does
-# not depend on history, so the check lives here rather than in npm run build.
+# not depend on history, so the check lives here rather than in npm run gate.
 # The base is the pull request's base, or the previous commit of a push to
 # master that was not forced. Every other run passes an empty base: a branch
 # push may be forced, and a forced push names an old tip the checkout no
@@ -98,19 +98,11 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.tested.outputs.tested != 'true'
         with:
-          node-version: 24
+          node-version-file: website/.node-version
           cache: npm
           cache-dependency-path: website/package-lock.json
 
       - run: npm ci
-        if: steps.tested.outputs.tested != 'true'
-
-      # Types first: a mistake in the code that reads the checkout is cheaper
-      # to read here than as a failed page.
-      - run: npm run check
-        if: steps.tested.outputs.tested != 'true'
-
-      - run: npm test
         if: steps.tested.outputs.tested != 'true'
 
       # The base reaches the script through the environment, not the command
@@ -122,10 +114,15 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/master' && !github.event.forced && github.event.before) || '' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Fails on a broken internal link or anchor (starlight-links-validator),
-      # on a quoted passage whose first or last line has gone, and on a header
-      # the reference reader does not understand.
-      - run: npm run build
+      # The same script is Cloudflare's production build command, so a check
+      # added to it reaches both with no dashboard edit (website/README.md).
+      # Types first, because a mistake in the code that reads the checkout is
+      # cheaper to read there than as a failed page; then the tests; then the
+      # build, which fails on a broken internal link or anchor
+      # (starlight-links-validator), on a quoted passage whose first or last
+      # line has gone, and on a header the reference reader does not
+      # understand.
+      - run: npm run gate
         if: steps.tested.outputs.tested != 'true'
 
       # Only errata this change appends: their links are immutable once merged,
@@ -164,7 +161,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: website/.node-version
           cache: npm
           cache-dependency-path: website/package-lock.json
       - name: Build the fixture
@@ -209,7 +206,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: website/.node-version
           cache: npm
           cache-dependency-path: website/package-lock.json
       # The suite's only package is axe-core, for check 14.
@@ -250,7 +247,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: website/.node-version
           cache: npm
           cache-dependency-path: website/package-lock.json
       - uses: actions/download-artifact@v4

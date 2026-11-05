@@ -929,6 +929,15 @@ written.
   CMake fixtures received explicit installed tool paths after initially skipping.
   The exact ten stopped PowerShell worker/trace cases were never executed.
 - [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer · **Owner**: Change the website gate in one place — after SM-29
+  Source landed 2026-11-05: `npm run gate` in website/package.json runs the
+  check, the tests and the build, and website.yml's job runs it as one step
+  after `versions:verify`. The tracked `website/.node-version` (24) feeds
+  every setup-node step and is the file Cloudflare reads in the root
+  directory. website/README.md records the build command as
+  `npm ci && npm run gate` with no build variable. Left, owner-only: change the
+  Cloudflare build command to `npm ci && npm run gate` and delete the
+  `NODE_VERSION` build variable; the next production build's log showing
+  Node 24 from the file and the gate's steps closes it.
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
 - [x] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
   Source added 2026-10-29. Why links the existing Android scoping record and

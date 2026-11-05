@@ -275,7 +275,7 @@ downloads, and fails closed rather than deploy without a listed release.
 ## CI verification
 
 The [website workflow](../.github/workflows/website.yml) checks out full
-history and runs, after `npm test` and before `npm run build`:
+history and runs, before `npm run gate` (the check, the tests and the build):
 
 ```text
 npm run versions:verify -- --base <commit>
@@ -308,7 +308,7 @@ step, since publication depends on it. Otherwise the step reports it as a
 warning, a GitHub Actions annotation, and passes, so a live-site outage or
 rollback cannot block the change that repairs it.
 
-After `npm run build`, the workflow runs the script's post-build phase:
+After `npm run gate`, the workflow runs the script's post-build phase:
 
 ```text
 npm run versions:verify -- --base <commit> --dist dist
@@ -609,7 +609,7 @@ snapshot with these checks:
    notice. The owner chose not to hold the release for the iOS Simulator job
    (`SITE#5`), and the owner's iPhone use that day stands as the informal play
    on a real phone.
-4. Run `npm ci`, `npm run check`, `npm test` and `npm run build` in the release checkout.
+4. Run `npm ci` and `npm run gate` in the release checkout's `website/`.
    Retain the matching engine qualification and the built site together. Check
    that API anchors and sample quotations resolve within this release, and
    exercise source links against its recorded commit.

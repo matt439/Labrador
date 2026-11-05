@@ -31,7 +31,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
-- Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub).
+- Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `SM-30` (set Cloudflare's build command to `npm ci && npm run gate` and delete its `NODE_VERSION` variable).
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy).
 - Not yet placed: `GAP#1` to `GAP#13` except `GAP#4` (OCA-82), whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below and for `DOC#4`'s two open questions; the calls stay the owner's.
@@ -56,8 +56,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 | `SITE#4` | OPEN | should | S | iOS Safari shows a pill naming the host above the keyboard while typing in search; tapping it, or pressing Go on an empty box, leaves an empty page. Seen 2026-11-03 on the live site and the versioned fixture, so not versioning. Pagefind's form has `action="javascript:void(0);"`, the likely cause. |
 | `OCA-79` | DECISION | should | S | Push a current-release starter project, as *Put your project on GitHub* says, to a public test repository under the owner's account (owner's authorisation), and record its green `ci.yml` run in the guides. [Story](docs/product/BACKLOG.md#oca-79). |
 | `WEB#12` | DECISION | could | S | `check_live.mjs` passes against the host's Worker on loopback; cloud sessions cannot reach the site. Left: run it against the live demo after the next deploy and keep its dated output in [M5](docs/port/web-to-be-tested.md) in place of the manual ticks. |
-
-`SM-30`, the owner-only gate follow-up in [BACKLOG.md, Later](docs/product/BACKLOG.md#later), is ready now that `SM-29` is closed.
+| `SM-30` | DECISION | could | S | `npm run gate` and `website/.node-version` landed; CI runs both. Left: the owner sets Cloudflare's build command to `npm ci && npm run gate` and deletes `NODE_VERSION`; the next production log showing Node 24 and the gate closes it. [Story](docs/product/BACKLOG.md#later). |
 
 ## Performance
 
