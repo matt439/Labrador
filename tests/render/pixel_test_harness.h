@@ -5,6 +5,7 @@
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/texture_data.h"
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
 #include <cstddef>
@@ -38,8 +39,7 @@ namespace render_tests::pixel
 	inline constexpr Pixel blue_pixel{ 0, 0, 255, 255 };
 	inline constexpr Pixel white_pixel{ 255, 255, 255, 255 };
 
-	labrador::TextureData flat_texture(unsigned char red, unsigned char green,
-		unsigned char blue);
+	using render_tests::flat_texture;
 
 	// A device, a table with one texture in it, and a frame you can read back.
 	class Harness
@@ -50,7 +50,7 @@ namespace render_tests::pixel
 		Harness(const Harness&) = delete;
 		Harness& operator=(const Harness&) = delete;
 
-		// Returns view 0, because almost every case here wants one view and
+		// Returns view 0, because almost every pixel case wants one view and
 		// wants it without saying so. The default and the signature are
 		// null_test_harness.h's, deliberately: the two harnesses are the same
 		// shape so that a multi-view case can be written once in each
@@ -75,8 +75,8 @@ namespace render_tests::pixel
 		// being read here. begin_frame clears and rebinds on the next pass, so
 		// never presenting costs a test nothing.
 		//
-		// The read-then-present case below walks the far end of the interval
-		// renderer.h gives read_back_buffer. The native sequences in
+		// pixel_tests.cpp's read-then-present case walks the far end of the
+		// interval renderer.h gives read_back_buffer. The native sequences in
 		// presentation_lifecycle_tests.cpp present without per-frame reads.
 		void end();
 
@@ -97,8 +97,9 @@ namespace render_tests::pixel
 
 		// What the last end() read back, and how big the renderer said it was.
 		// Every case except the three that resize knows both are buffer_side;
-		// at() goes through the reported width anyway so that the three which
-		// do not can be written in the same vocabulary as the rest.
+		// at(), snapshot(), ink_bounds() and row_has_ink() go through the
+		// reported size anyway so that the three which do not can be written
+		// in the same vocabulary as the rest.
 		labrador::Vector2F buffer_size() const;
 		std::size_t byte_count() const;
 
@@ -110,7 +111,8 @@ namespace render_tests::pixel
 		std::vector<Pixel> snapshot() const;
 
 		// The smallest rectangle holding every pixel the clear did not leave
-		// black, and the vocabulary every text case below is written in.
+		// black, and the vocabulary every case in text_pixel_tests.cpp is
+		// written in.
 		//
 		// Empty - width and height zero - when the frame is untouched, which is
 		// itself an assertion two of the cases make.

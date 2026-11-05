@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "tests/render/test_window.h"
+#include "tests/render/vulkan/loader_function.h"
 
 #include "engine/render/renderer.h"
 
@@ -13,19 +14,7 @@
 
 namespace
 {
-	template<typename Function>
-	Function loader_function(const char* name)
-	{
-		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
-		const FARPROC address = module == nullptr ? nullptr :
-			GetProcAddress(module, name);
-		if (address == nullptr)
-		{
-			throw std::runtime_error(std::string("Vulkan test export missing: ") + name);
-		}
-		static_assert(sizeof(Function) == sizeof(FARPROC));
-		return std::bit_cast<Function>(address);
-	}
+	using render_tests::loader_function;
 
 	PFN_vkCreateInstance real_create_instance()
 	{

@@ -1,8 +1,9 @@
-#include "tests/render/test_window.h"
-
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
+#include "tests/render/probe_watchdog.h"
+#include "tests/render/test_textures.h"
+#include "tests/render/test_window.h"
 
 #include <d3d12sdklayers.h>
 #include <d3dcommon.h>
@@ -153,52 +154,13 @@ namespace
 		capture.destructions.fetch_add(1, std::memory_order_release);
 	}
 
-	class Watchdog
+	[[noreturn]] void expire(const char* reason) noexcept
 	{
-	public:
-		Watchdog() : deadline_(std::chrono::steady_clock::now() + std::chrono::seconds(10)),
-			worker_([this]()
-			{
-				std::unique_lock<std::mutex> lock(this->mutex_);
-				if (!this->condition_.wait_until(lock, this->deadline_,
-					[this]() { return this->finished_; }))
-				{
-					std::fputs("D3D12 destruction probe: ten-second deadline expired; "
-						"terminating only this probe process\n", stderr);
-					std::fflush(stderr);
-					std::_Exit(EXIT_FAILURE);
-				}
-			}) {}
-		~Watchdog()
-		{
-			{
-				std::lock_guard<std::mutex> lock(this->mutex_);
-				this->check_deadline();
-				this->finished_ = true;
-			}
-			this->condition_.notify_one();
-			this->worker_.join();
-			this->check_deadline();
-		}
-		Watchdog(const Watchdog&) = delete;
-		Watchdog& operator=(const Watchdog&) = delete;
-	private:
-		void check_deadline() const noexcept
-		{
-			if (std::chrono::steady_clock::now() >= this->deadline_)
-			{
-				std::fputs("D3D12 destruction probe: ten-second completion deadline expired\n",
-					stderr);
-				std::fflush(stderr);
-				std::_Exit(EXIT_FAILURE);
-			}
-		}
-		std::mutex mutex_;
-		std::condition_variable condition_;
-		bool finished_ = false;
-		const std::chrono::steady_clock::time_point deadline_;
-		std::thread worker_;
-	};
+		std::fprintf(stderr, "D3D12 destruction probe: %s; terminating only this probe "
+			"process\n", reason);
+		std::fflush(stderr);
+		std::_Exit(EXIT_FAILURE);
+	}
 
 	void require(bool condition, const char* operation)
 	{
@@ -288,11 +250,7 @@ namespace
 		capture->phase.store(Phase::frames, std::memory_order_release);
 		TextureHandle texture;
 		{
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(*renderer, resources, "destruction_probe", white);
 			texture = resources.resolve_texture("destruction_probe");
 		}
@@ -404,7 +362,7 @@ int main()
 		"Release is unverified and refused.\n", stderr);
 	return EXIT_FAILURE;
 #else
-	Watchdog watchdog;
+	render_tests::ProbeWatchdog watchdog(std::chrono::seconds(10), expire);
 	Capture* capture = nullptr;
 	bool workload_completed = false;
 	try

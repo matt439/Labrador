@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
+#include "tests/render/vulkan/loader_function.h"
 #include "tests/render/vulkan/submit_loss.h"
 
 #include "engine/render/vulkan/backend.h"
@@ -40,18 +42,7 @@ namespace
 		std::_Exit(EXIT_FAILURE);
 	}
 
-	template<typename Function>
-	Function loader_function(const char* name)
-	{
-		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
-		const FARPROC address = module == nullptr ? nullptr : GetProcAddress(module, name);
-		if (address == nullptr)
-		{
-			throw std::runtime_error(std::string("Vulkan test export missing: ") + name);
-		}
-		static_assert(sizeof(Function) == sizeof(FARPROC));
-		return std::bit_cast<Function>(address);
-	}
+	using render_tests::loader_function;
 
 	struct VulkanCalls
 	{
@@ -331,11 +322,7 @@ namespace
 		{
 			this->renderer->create_device(this->window.handle(), initial_size, initial_size, 1);
 			this->renderer->set_resources(&this->resources);
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(*this->renderer, this->resources, "pending_submission", white);
 			const TextureHandle texture = this->resources.resolve_texture("pending_submission");
 			this->renderer->begin_frame();

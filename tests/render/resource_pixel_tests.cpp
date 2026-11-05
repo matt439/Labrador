@@ -1,4 +1,4 @@
-#include "tests/render/pixel_test_harness.h"
+#include <doctest/doctest.h>
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
@@ -8,8 +8,7 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
-
-#include <doctest/doctest.h>
+#include "tests/render/pixel_test_harness.h"
 
 #include <stdexcept>
 #include <string>

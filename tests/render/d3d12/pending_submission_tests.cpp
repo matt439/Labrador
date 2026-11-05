@@ -1,10 +1,12 @@
 #include <doctest/doctest.h>
-#include "tests/render/d3d12/wait_observer.h"
 
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/throw_if_failed.h"
+#include "tests/render/d3d12/event.h"
+#include "tests/render/d3d12/wait_observer.h"
+#include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
 #include <chrono>
@@ -22,6 +24,7 @@ namespace
 {
 	using namespace labrador;
 	using Microsoft::WRL::ComPtr;
+	using render_tests::Event;
 
 	constexpr DWORD completion_timeout_ms = 5000;
 	constexpr int initial_size = 64;
@@ -39,25 +42,6 @@ namespace
 		// isolated test process, never another process/device.
 		std::_Exit(EXIT_FAILURE);
 	}
-
-	class Event
-	{
-	public:
-		Event()
-		{
-			this->handle_ = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-			if (this->handle_ == nullptr)
-			{
-				ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
-			}
-		}
-		~Event() { CloseHandle(this->handle_); }
-		Event(const Event&) = delete;
-		Event& operator=(const Event&) = delete;
-		HANDLE handle() const { return this->handle_; }
-	private:
-		HANDLE handle_ = nullptr;
-	};
 
 	class QueueGate
 	{
@@ -237,11 +221,7 @@ namespace
 		{
 			this->renderer->create_device(this->window.handle(), initial_size, initial_size, 1);
 			this->renderer->set_resources(&this->resources);
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(*this->renderer, this->resources, "pending_submission", white);
 			const TextureHandle texture = this->resources.resolve_texture("pending_submission");
 			this->renderer->begin_frame();
@@ -266,7 +246,7 @@ namespace
 	}
 }
 
-namespace labrador::d3d12_wait_test
+namespace render_tests::d3d12_wait
 {
 	DWORD WINAPI bounded_wait(HANDLE event, DWORD milliseconds, BOOL alertable) noexcept
 	{

@@ -207,6 +207,7 @@ namespace
 		return !file.bad();
 	}
 
+	// On failure `error` names the path and the cause.
 	bool write_png(const std::filesystem::path& path, int width, int height,
 		const std::vector<unsigned char>& rgba, std::string& error)
 	{
@@ -215,19 +216,26 @@ namespace
 			static_cast<unsigned>(width), static_cast<unsigned>(height));
 		if (failed != 0)
 		{
-			error = lodepng_error_text(failed);
+			error = "could not encode " + path.string() + ": " +
+				lodepng_error_text(failed);
 			return false;
 		}
 
-		std::error_code ignored;
-		std::filesystem::create_directories(path.parent_path(), ignored);
+		std::error_code directory_error;
+		std::filesystem::create_directories(path.parent_path(), directory_error);
+		if (directory_error)
+		{
+			error = "could not create " + path.parent_path().string() + ": " +
+				directory_error.message();
+			return false;
+		}
 
 		std::ofstream file(path, std::ios::binary | std::ios::trunc);
 		file.write(reinterpret_cast<const char*>(encoded.data()),
 			static_cast<std::streamsize>(encoded.size()));
 		if (!file)
 		{
-			error = "could not write it";
+			error = "could not write " + path.string();
 			return false;
 		}
 		return true;
@@ -339,8 +347,9 @@ namespace
 	// because tests/render/web/run_page.mjs prints it: Chrome's SwiftShader,
 	// behind ANGLE's Vulkan path.
 	//
-	// MEASURED, NOT GUESSED, with this number set to zero, against the set of
-	// sixty. This machine's GPU writes every frame byte for byte through
+	// MEASURED, NOT GUESSED, with this number set to zero, against every image
+	// the set held when the allowance was measured; images added since are
+	// held to the same allowance and have not needed more. This machine's GPU writes every frame byte for byte through
 	// all four desktop backends and through Chrome's ANGLE. SwiftShader writes
 	// every frame byte for byte too. WARP differs on two frames, both of them
 	// blend cases, by 1. CI's run 41053232985 measured the runner's two:
@@ -358,7 +367,7 @@ namespace
 	// fringes overlap and the blend compounds it - because no specification
 	// fixes how a decoder rounds a colour a third of the way between two
 	// endpoints. That was the only term here that needed an allowance, it is
-	// not one devices agree on, and pixel_tests.cpp's harness takes it out by
+	// not one devices agree on, and pixel_test_harness.cpp takes it out by
 	// drawing the atlas the engine's own decoder (block_decode.h) writes. The
 	// device's BC2 decoder is still held to pixels, by a case whose blocks
 	// decode exactly on every decoder.
@@ -412,7 +421,7 @@ void golden::check_frame(int width, int height,
 		std::string error;
 		if (!write_png(expected_file, width, height, rgba, error))
 		{
-			report = "could not write " + expected_file.string() + ": " + error;
+			report = error;
 		}
 		CHECK_MESSAGE(report.empty(), report);
 		return;
@@ -523,12 +532,38 @@ void golden::check_frame(int width, int height,
 
 	if (!report.empty())
 	{
-		std::string ignored;
-		if (write_png(actual_path(slug), width, height, rgba, ignored))
+		std::string write_error;
+		if (write_png(actual_path(slug), width, height, rgba, write_error))
 		{
 			report += "\n  frame  " + actual_path(slug).string();
+		}
+		else
+		{
+			report += "\n  frame  not written: " + write_error;
 		}
 	}
 
 	CHECK_MESSAGE(report.empty(), report);
+}
+
+TEST_CASE("a golden frame that cannot be written says why")
+{
+	// A regeneration or a mismatch writes into a directory it may have to
+	// create, and when that fails the cause is the one thing the developer
+	// needs. A regular file where the directory should be makes either the
+	// directory or the file fail, and both say which path it was.
+	const std::filesystem::path blocker =
+		std::filesystem::temp_directory_path() / "labrador_golden_write_blocker";
+	{
+		std::ofstream file(blocker, std::ios::binary | std::ios::trunc);
+		REQUIRE(file.is_open());
+	}
+
+	std::string error;
+	CHECK_FALSE(write_png(blocker / "frame.png", 1, 1,
+		std::vector<unsigned char>(4, 255), error));
+	CHECK(error.find(blocker.string()) != std::string::npos);
+
+	std::error_code removed;
+	std::filesystem::remove(blocker, removed);
 }

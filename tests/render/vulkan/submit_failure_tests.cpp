@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 #include "tests/render/device_fixture.h"
+#include "tests/render/test_textures.h"
+#include "tests/render/vulkan/loader_function.h"
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
@@ -19,18 +21,7 @@
 
 namespace
 {
-	template<typename Function>
-	Function loader_function(const char* name)
-	{
-		const HMODULE module = GetModuleHandleW(L"vulkan-1.dll");
-		const FARPROC address = module == nullptr ? nullptr : GetProcAddress(module, name);
-		if (address == nullptr)
-		{
-			throw std::runtime_error(std::string("Vulkan test export missing: ") + name);
-		}
-		static_assert(sizeof(Function) == sizeof(FARPROC));
-		return std::bit_cast<Function>(address);
-	}
+	using render_tests::loader_function;
 
 	struct VulkanCalls
 	{
@@ -88,16 +79,6 @@ namespace
 		const VulkanCalls& calls_;
 		SubmitProbe& probe_;
 	};
-
-	labrador::TextureData white_texture()
-	{
-		labrador::TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.levels.push_back(labrador::texture_level(texture.format, 2, 2, 0));
-		texture.pixels.resize(texture.levels[0].size, 255);
-		return texture;
-	}
 
 	void draw_two_runs(labrador::Renderer& renderer, labrador::TextureHandle texture)
 	{
@@ -160,7 +141,8 @@ TEST_CASE("Vulkan submit closes its render pass when descriptor allocation throw
 	SUBCASE("second run after an earlier draw") { fail_on = 2; }
 	CAPTURE(fail_on);
 	render_tests::DeviceFixture fixture;
-	add_texture_asset(fixture.renderer, fixture.resources, "submit_failure_white", white_texture());
+	add_texture_asset(fixture.renderer, fixture.resources, "submit_failure_white",
+		render_tests::flat_texture(255, 255, 255));
 	const TextureHandle texture = fixture.resources.resolve_texture("submit_failure_white");
 	fixture.renderer.begin_frame();
 	draw_two_runs(fixture.renderer, texture);

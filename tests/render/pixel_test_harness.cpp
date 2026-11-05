@@ -27,29 +27,6 @@ namespace render_tests::pixel
 			<< ", " << static_cast<int>(pixel.a) << ")";
 	}
 
-	// Two by two, one colour, one level. For the case that cares which bytes a
-	// name is holding rather than what an atlas looks like.
-	TextureData flat_texture(unsigned char red, unsigned char green,
-		unsigned char blue)
-	{
-		TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.format = TextureFormat::r8g8b8a8_unorm;
-		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
-		texture.pixels.resize(texture.levels[0].size);
-
-		for (size_t byte = 0; byte < texture.pixels.size(); byte += 4)
-		{
-			texture.pixels[byte] = red;
-			texture.pixels[byte + 1] = green;
-			texture.pixels[byte + 2] = blue;
-			texture.pixels[byte + 3] = 255;
-		}
-
-		return texture;
-	}
-
 	Harness::Harness()
 	{
 		// FOUR VIEWS OF CAPACITY, WHICH IS THE SAME NUMBER null_test_harness.h
@@ -75,8 +52,8 @@ namespace render_tests::pixel
 		// texture: a sample that restyles itself must not be able to move a
 		// pin in here. It is monospaced and bold, which is not decoration -
 		// every character in it steps the pen by the same whole number of
-		// pixels, so the advance cases below can be exact rather than
-		// approximate.
+		// pixels, so the advance cases in text_pixel_tests.cpp can be exact
+		// rather than approximate.
 		load_font_asset(this->renderer_, this->resources_, "./content/",
 			"jetbrains_mono_bold_16");
 		this->font = this->resources_.resolve_sprite_font(
@@ -90,15 +67,15 @@ namespace render_tests::pixel
 		// rounding is not where. A BC2 block's two interpolated colours
 		// are a third and two thirds of the way between its endpoints, no
 		// specification fixes how a decoder rounds them, and the decoders
-		// this file has run on do not agree: decoding the atlas
+		// these tests have run on do not agree: decoding the atlas
 		// themselves, this machine's GPU writes a fringe texel's green as
 		// 80 where SwiftShader writes 85, and WARP is as far from the GPU
 		// - one channel, every text frame, and nearly twice that where two
 		// glyphs' fringes overlap and the blend compounds it. Decoded once
 		// here, every device samples the same bytes. Sampling a
 		// block-compressed texture is still held to pixels, by the BC2
-		// case below, with blocks whose texels are endpoints and so decode
-		// exactly everywhere.
+		// case in resource_pixel_tests.cpp, with blocks whose texels are
+		// endpoints and so decode exactly everywhere.
 		add_texture_asset(this->renderer_, this->resources_,
 			"font:jetbrains_mono_bold_16",
 			decode_block_compressed(read_sprite_font_file(
@@ -126,13 +103,13 @@ namespace render_tests::pixel
 		this->read_frame();
 
 		// And the frame itself is checked against the image of it that is
-		// in the repository - the one statement in this file that holds one
-		// backend to another rather than holding each separately to a
+		// in the repository - the one statement in the pixel tests that holds
+		// one backend to another rather than holding each separately to a
 		// relationship they can both get wrong in the same direction
 		// (tests/render/golden_image.h says why that gap exists at all).
 		//
 		// Here rather than in each case, so that the coverage grows with
-		// the file instead of with a list somebody has to remember to
+		// the cases instead of with a list somebody has to remember to
 		// extend: a case added tomorrow is golden tomorrow.
 		golden::check_frame(static_cast<int>(this->buffer_.x),
 			static_cast<int>(this->buffer_.y), this->pixels_);
@@ -161,7 +138,7 @@ namespace render_tests::pixel
 			static_cast<size_t>(y) * stride + static_cast<size_t>(x) * 4;
 		// Guarded rather than asserted unconditionally: ink_bounds walks
 		// every pixel of every text case, and an assertion per read would
-		// bury the file's real assertion count under four thousand.
+		// bury the real assertion count under four thousand.
 		if (offset + 3 >= this->pixels_.size())
 		{
 			REQUIRE_MESSAGE(false, "pixel (", x, ", ", y,
@@ -174,11 +151,13 @@ namespace render_tests::pixel
 
 	std::vector<Pixel> Harness::snapshot() const
 	{
+		const int width = static_cast<int>(this->buffer_.x);
+		const int height = static_cast<int>(this->buffer_.y);
 		std::vector<Pixel> frame;
-		frame.reserve(buffer_side * buffer_side);
-		for (int y = 0; y < buffer_side; y++)
+		frame.reserve(static_cast<size_t>(width) * static_cast<size_t>(height));
+		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < buffer_side; x++)
+			for (int x = 0; x < width; x++)
 			{
 				frame.push_back(this->at(x, y));
 			}
@@ -188,14 +167,16 @@ namespace render_tests::pixel
 
 	RectangleI Harness::ink_bounds() const
 	{
-		int left = buffer_side;
-		int top = buffer_side;
+		const int width = static_cast<int>(this->buffer_.x);
+		const int height = static_cast<int>(this->buffer_.y);
+		int left = width;
+		int top = height;
 		int right = -1;
 		int bottom = -1;
 
-		for (int y = 0; y < buffer_side; y++)
+		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < buffer_side; x++)
+			for (int x = 0; x < width; x++)
 			{
 				if (this->at(x, y) == black_pixel)
 				{
@@ -212,14 +193,15 @@ namespace render_tests::pixel
 		{
 			return RectangleI::zero;
 		}
-		// Right and bottom are exclusive here, as they are everywhere else
-		// in this file - RectangleI is (x, y, width, height).
+		// right and bottom are the last inked column and row (inclusive);
+		// RectangleI is (x, y, width, height), hence the + 1.
 		return RectangleI(left, top, right - left + 1, bottom - top + 1);
 	}
 
 	bool Harness::row_has_ink(int y) const
 	{
-		for (int x = 0; x < buffer_side; x++)
+		const int width = static_cast<int>(this->buffer_.x);
+		for (int x = 0; x < width; x++)
 		{
 			if (!(this->at(x, y) == black_pixel))
 			{

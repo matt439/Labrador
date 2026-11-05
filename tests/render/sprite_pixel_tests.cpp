@@ -1,4 +1,4 @@
-#include "tests/render/pixel_test_harness.h"
+#include <doctest/doctest.h>
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
@@ -9,8 +9,7 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
-
-#include <doctest/doctest.h>
+#include "tests/render/pixel_test_harness.h"
 
 #include <cmath>
 
@@ -182,9 +181,13 @@ TEST_CASE("CONTRACT: a positive rotation turns the sprite clockwise on screen")
 	Harness harness;
 
 	// Half of pi. Not exactly, because nothing is: std::cos of it is about
-	// 6e-17 rather than 0, so the far corners land a hair off the whole pixels
+	// 8e-8 rather than 0, so the far corners land a hair off the whole pixels
 	// named below and the fill rule decides which side of each they fall. That
 	// is the point of the case as much as the direction is - see below.
+	//
+	// THIS LITERAL AND NOT labrador::pi_over_2, which is the next float up:
+	// the golden image is of this angle, and at corners that land a hair off
+	// whole pixels one float step is enough to move the fill rule's answer.
 	const float quarter_turn = 1.5707963f;
 
 	// A bar four pixels tall and sixteen wide, pivoting on its own top-left

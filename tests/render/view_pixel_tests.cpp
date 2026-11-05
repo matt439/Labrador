@@ -1,4 +1,4 @@
-#include "tests/render/pixel_test_harness.h"
+#include <doctest/doctest.h>
 
 #include "engine/core/game_object.h"
 #include "engine/math/rectanglef.h"
@@ -9,8 +9,7 @@
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
 #include "engine/scene/scene.h"
-
-#include <doctest/doctest.h>
+#include "tests/render/pixel_test_harness.h"
 
 #include <memory>
 
@@ -49,22 +48,18 @@ namespace
 
 // --- the viewport -----------------------------------------------------------
 //
-// NOTHING HERE CALLED set_viewport UNTIL NOW, which is why the two device
-// backends were able to disagree about a pane for as long as they did. The
-// harness above builds one integral 64x64 view, every sample takes its
-// resolution from a Vector2I, and the seam's only production caller of
-// set_viewport is engine/scene/scene.cpp, which no test reached when this was
-// written. So the pane arithmetic was exercised by neither the pixel contract
-// nor the recording. One test reaches that call site now -
-// tests/scene/fanout_tests.cpp drives Scene::draw in the null configuration -
-// so the production path is covered there and the pane it asks for is covered
-// here.
+// THESE CASES PIN THE PANE A BACKEND DRAWS INTO. The harness builds one
+// integral 64x64 view and every sample takes its resolution from a Vector2I,
+// so elsewhere in RenderPixelTests a viewport is only ever the whole buffer.
+// The seam's production caller of set_viewport is engine/scene/scene.cpp;
+// tests/scene/fanout_tests.cpp drives Scene::draw in the null configuration,
+// so the production path is covered there and the pane it asks for is
+// covered here.
 //
 // THE RULE ITSELF IS PINNED HEADLESSLY, in tests/render/viewport_tests.cpp,
 // which runs in every configuration including the null one. What that file
-// cannot see is whether a backend USES it - that is one line in each of two
-// files and needs a rasteriser to observe. These two cases are that
-// observation, and they are the reason the file is worth the device.
+// cannot see is whether a backend USES it - that is a line in each backend
+// and needs a rasteriser to observe. The cases below are that observation.
 
 TEST_CASE("CONTRACT: a viewport offsets the pane and scales the whole of it")
 {
@@ -425,9 +420,9 @@ TEST_CASE("CONTRACT: declaring another view leaves the filled ones alone")
 
 TEST_CASE("CONTRACT: a list reads back its camera and viewport, on a device")
 {
-	// NOT ABOUT A PIXEL EITHER, and so no golden image: nothing is drawn and
-	// nothing is read back. It is here because it is the one file with a
-	// device on all four rasterising backends, and the answer is not reached
+	// NOT ABOUT A PIXEL, and so no golden image: nothing is drawn and nothing
+	// is read back. It is here because RenderPixelTests has a device on all
+	// four rasterising backends, and the answer is not reached
 	// the same way on all of them - gl and vulkan reset a Viewport kept beside
 	// the camera, while the two Direct3D backends write theirs when a view is
 	// bound, from the screen viewport they bind it with. This holds the four
@@ -469,37 +464,64 @@ TEST_CASE("a fullscreen scene overlays both split viewports after their drawing"
 	class Solid final : public GameObject
 	{
 	public:
-		Solid(TextureHandle texture, RectangleF rectangle) : texture_(texture), rectangle_(rectangle) {}
-		void update(float) override {}
-		RectangleF bounds() const override { return rectangle_; }
+		Solid(TextureHandle texture, RectangleF rectangle)
+			: texture_(texture), rectangle_(rectangle)
+		{
+		}
+
+		void update(float) override
+		{
+		}
+
+		RectangleF bounds() const override
+		{
+			return this->rectangle_;
+		}
+
 		void draw(DrawList& list) const override
 		{
-			list.draw_sprite(texture_, RectangleI(0, 0, 2, 2), rectangle_,
-				Colour::white, 0, Vector2F::zero, SpriteFlip::none, 0);
+			list.draw_sprite(this->texture_, RectangleI(0, 0, 2, 2), this->rectangle_,
+				Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
 		}
+
 	private:
 		TextureHandle texture_;
 		RectangleF rectangle_;
 	};
-	Harness h;
-	add_texture_asset(h.renderer(), h.resources(), "base-red", flat_texture(255, 0, 0));
-	add_texture_asset(h.renderer(), h.resources(), "overlay-blue", flat_texture(0, 0, 255));
+
+	const float side = static_cast<float>(buffer_side);
+	const float half = side / 2.0f;
+	const float quarter = side / 4.0f;
+
+	Harness harness;
+	add_texture_asset(harness.renderer(), harness.resources(), "base-red",
+		flat_texture(255, 0, 0));
+	add_texture_asset(harness.renderer(), harness.resources(), "overlay-blue",
+		flat_texture(0, 0, 255));
+
+	// The base scene's sprite fills a pane, and each of its two views draws
+	// it into its own half of the buffer, so the frame is red edge to edge
+	// before the overlay's view covers the middle in blue.
 	Scene base(nullptr, nullptr);
-	base.add(std::make_unique<Solid>(h.resources().resolve_texture("base-red"), RectangleF(0, 0, 32, 64)));
+	base.add(std::make_unique<Solid>(harness.resources().resolve_texture("base-red"),
+		RectangleF(0.0f, 0.0f, half, side)));
 	base.end_tick();
-	base.add_view(Viewport(0, 0, 32, 64));
-	base.add_view(Viewport(32, 0, 32, 64));
+	base.add_view(Viewport(0.0f, 0.0f, half, side));
+	base.add_view(Viewport(half, 0.0f, half, side));
+
 	Scene overlay(nullptr, nullptr);
-	overlay.add(std::make_unique<Solid>(h.resources().resolve_texture("overlay-blue"), RectangleF(16, 16, 32, 32)));
+	overlay.add(std::make_unique<Solid>(harness.resources().resolve_texture("overlay-blue"),
+		RectangleF(quarter, quarter, half, half)));
 	overlay.end_tick();
-	overlay.add_view(Viewport(0, 0, 64, 64));
-	h.renderer().begin_frame();
-	base.draw(h.renderer());
-	overlay.draw(h.renderer());
-	// This new composition contract is asserted at every pixel, so it needs
-	// no generated reference image to accept the implementation's output.
-	h.end_not_comparable();
-	for (int y = 0; y < 64; ++y)
-	for (int x = 0; x < 64; ++x)
-		CHECK(h.at(x, y) == ((x >= 16 && x < 48 && y >= 16 && y < 48) ? blue_pixel : red_pixel));
+	overlay.add_view(Viewport(0.0f, 0.0f, side, side));
+
+	harness.renderer().begin_frame();
+	base.draw(harness.renderer());
+	overlay.draw(harness.renderer());
+
+	// The composition contract is asserted at every pixel, so it needs no
+	// generated reference image to accept the implementation's output.
+	harness.end_not_comparable();
+	check_red_and_blue_frame(harness, RectangleI(0, 0, buffer_side, buffer_side),
+		RectangleI(buffer_side / 4, buffer_side / 4, buffer_side / 2, buffer_side / 2));
 }

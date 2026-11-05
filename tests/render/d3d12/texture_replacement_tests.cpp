@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 #include "tests/render/allocation_scope.h"
 #include "tests/render/device_fixture.h"
+#include "tests/render/test_textures.h"
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
@@ -27,24 +28,6 @@ namespace
 	using render_tests::AllocationScope;
 
 	constexpr int buffer_size = 64;
-
-	TextureData solid_texture(unsigned char red, unsigned char green, unsigned char blue)
-	{
-		TextureData texture;
-		texture.width = 2;
-		texture.height = 2;
-		texture.format = TextureFormat::r8g8b8a8_unorm;
-		texture.levels.push_back(texture_level(texture.format, 2, 2, 0));
-		texture.pixels.resize(texture.levels[0].size);
-		for (size_t i = 0; i < texture.pixels.size(); i += 4)
-		{
-			texture.pixels[i + 0] = red;
-			texture.pixels[i + 1] = green;
-			texture.pixels[i + 2] = blue;
-			texture.pixels[i + 3] = 255;
-		}
-		return texture;
-	}
 
 	std::vector<unsigned char> solid_frame(unsigned char red, unsigned char green,
 		unsigned char blue)
@@ -88,7 +71,8 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	const std::string name = "d3d12_replacement";
 	RenderResources::Impl& table = *fixture.resources.impl();
 
-	add_texture_asset(fixture.renderer, fixture.resources, name, solid_texture(255, 0, 0));
+	add_texture_asset(fixture.renderer, fixture.resources, name,
+		render_tests::flat_texture(255, 0, 0));
 	const TextureHandle handle = fixture.resources.resolve_texture(name);
 	const int slot = table.descriptor_slot(name);
 	REQUIRE(slot >= 0);
@@ -101,7 +85,8 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	located.watched_bytes = sizeof(D3d12Texture);
 	{
 		AllocationScope scope(located);
-		add_texture_asset(fixture.renderer, fixture.resources, name, solid_texture(255, 0, 0));
+		add_texture_asset(fixture.renderer, fixture.resources, name,
+			render_tests::flat_texture(255, 0, 0));
 	}
 	REQUIRE_FALSE(located.hook_conflict);
 	REQUIRE(located.watched_attempts == 1);
@@ -118,7 +103,7 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	{
 		AllocationScope scope(refused);
 		CHECK_THROWS_AS(add_texture_asset(fixture.renderer, fixture.resources, name,
-			solid_texture(0, 255, 0)), std::bad_alloc);
+			render_tests::flat_texture(0, 255, 0)), std::bad_alloc);
 	}
 	REQUIRE_FALSE(refused.hook_conflict);
 	CHECK(refused.refused == 1);
@@ -135,7 +120,8 @@ TEST_CASE("D3D12 failed same-name replacement wrapper keeps the old texture and 
 	CHECK(draw_texture(fixture, handle) == solid_frame(255, 0, 0));
 
 	// The next successful replacement reuses the same slot and is drawn.
-	add_texture_asset(fixture.renderer, fixture.resources, name, solid_texture(0, 255, 0));
+	add_texture_asset(fixture.renderer, fixture.resources, name,
+		render_tests::flat_texture(0, 255, 0));
 	CHECK(table.descriptor_slot(name) == slot);
 	CHECK(table.texture(handle) != nullptr);
 	CHECK(draw_texture(fixture, handle) == solid_frame(0, 255, 0));

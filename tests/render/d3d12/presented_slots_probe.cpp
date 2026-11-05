@@ -1,10 +1,12 @@
-#include "tests/render/d3d12/wait_observer.h"
-#include "tests/render/test_window.h"
-
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/throw_if_failed.h"
+#include "tests/render/d3d12/event.h"
+#include "tests/render/d3d12/wait_observer.h"
+#include "tests/render/probe_watchdog.h"
+#include "tests/render/test_textures.h"
+#include "tests/render/test_window.h"
 
 #include <algorithm>
 #include <array>
@@ -22,6 +24,7 @@ namespace
 {
 	using namespace labrador;
 	using Microsoft::WRL::ComPtr;
+	using render_tests::Event;
 
 	constexpr DWORD completion_timeout_ms = 5000;
 	constexpr int window_size = 64;
@@ -43,65 +46,10 @@ namespace
 		std::_Exit(EXIT_FAILURE);
 	}
 
-	class Watchdog
+	[[noreturn]] void expire(const char* reason) noexcept
 	{
-	public:
-		Watchdog() : deadline_(std::chrono::steady_clock::now() + std::chrono::seconds(10)),
-			worker_([this]()
-			{
-				std::unique_lock<std::mutex> lock(this->mutex_);
-				if (!this->condition_.wait_until(lock, this->deadline_,
-					[this]() { return this->finished_; }))
-				{
-					fail_fast("ten-second process deadline expired", WAIT_TIMEOUT);
-				}
-			}) {}
-		~Watchdog()
-		{
-			{
-				std::lock_guard<std::mutex> lock(this->mutex_);
-				this->check_deadline();
-				this->finished_ = true;
-			}
-			this->condition_.notify_one();
-			this->worker_.join();
-			this->check_deadline();
-		}
-		Watchdog(const Watchdog&) = delete;
-		Watchdog& operator=(const Watchdog&) = delete;
-	private:
-		void check_deadline() const noexcept
-		{
-			if (std::chrono::steady_clock::now() >= this->deadline_)
-			{
-				fail_fast("ten-second completion deadline expired", WAIT_TIMEOUT);
-			}
-		}
-		std::mutex mutex_;
-		std::condition_variable condition_;
-		bool finished_ = false;
-		const std::chrono::steady_clock::time_point deadline_;
-		std::thread worker_;
-	};
-
-	class Event
-	{
-	public:
-		Event()
-		{
-			this->handle_ = CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
-			if (this->handle_ == nullptr)
-			{
-				ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
-			}
-		}
-		~Event() { CloseHandle(this->handle_); }
-		Event(const Event&) = delete;
-		Event& operator=(const Event&) = delete;
-		HANDLE handle() const { return this->handle_; }
-	private:
-		HANDLE handle_ = nullptr;
-	};
+		fail_fast(reason, WAIT_TIMEOUT);
+	}
 
 	enum class Release
 	{
@@ -363,11 +311,7 @@ namespace
 		}
 		TextureHandle texture;
 		{
-			TextureData white;
-			white.width = 2;
-			white.height = 2;
-			white.levels.push_back(texture_level(white.format, 2, 2, 0));
-			white.pixels.resize(white.levels[0].size, 255);
+			const TextureData white = render_tests::flat_texture(255, 255, 255);
 			add_texture_asset(*renderer, resources, "presented_slots_probe", white);
 			texture = resources.resolve_texture("presented_slots_probe");
 		}
@@ -465,7 +409,7 @@ namespace
 	}
 }
 
-namespace labrador::d3d12_wait_test
+namespace render_tests::d3d12_wait
 {
 	DWORD WINAPI bounded_wait(HANDLE event, DWORD milliseconds, BOOL alertable) noexcept
 	{
@@ -504,7 +448,7 @@ namespace labrador::d3d12_wait_test
 int main()
 {
 	// This outlives run_probe's engine owners and its gate/tail cleanup.
-	Watchdog watchdog;
+	render_tests::ProbeWatchdog watchdog(std::chrono::seconds(10), expire);
 	try
 	{
 		const int result = run_probe();

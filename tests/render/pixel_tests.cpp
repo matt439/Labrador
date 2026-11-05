@@ -1,12 +1,11 @@
-#include "tests/render/pixel_test_harness.h"
+#include <doctest/doctest.h>
 
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/colour.h"
 #include "engine/render/renderer.h"
-
-#include <doctest/doctest.h>
+#include "tests/render/pixel_test_harness.h"
 
 #include <tuple>
 #include <vector>
@@ -39,69 +38,45 @@ using namespace render_tests::pixel;
 // Chrome's SwiftShader instead. The null backend is still what makes the seam
 // testable everywhere; this file is what tells it what the right answers are.
 //
-// WHAT THESE PIN. Every term below is one a backend could differ on with
-// nothing else saying so - the samples would simply look slightly wrong, and
-// only to somebody who knew what to look for. A backend is correct when this
-// file passes against it, and each case names the term it fixes rather than
-// describing what it does.
+// WHAT THE GROUP PINS. Every term in these five files is one a backend could
+// differ on with nothing else saying so - the samples would simply look
+// slightly wrong, and only to somebody who knew what to look for. A backend is
+// correct when RenderPixelTests passes against it, and each case names the
+// term it fixes rather than describing what it does. This file holds the
+// frame's own terms: device information, presentation policy, the clear,
+// abandoned and restarted frames, resizes and read-back.
 //
 // WHAT THEY DO NOT PIN, said plainly rather than left to be discovered:
 // non-uniform scale, flipped text, and the clamp that stops a glyph with a
 // negative left bearing hanging off the start of its line - which no glyph in
-// this font has, so no assertion here can reach it.
+// the test font has, so no assertion can reach it.
 //
 // Most frames are also checked against the PNG set in tests/render/golden/,
 // holding every rasterising backend to the same fixed reference. Three resize
-// cases opt out because their size changes or differs by backend; the
-// scene-composition and off-buffer viewport cases instead assert every pixel
-// against analytically known red/blue images.
+// cases in this file opt out because their size changes or differs by
+// backend; the scene-composition and off-buffer viewport cases in
+// view_pixel_tests.cpp instead assert every pixel against analytically known
+// red/blue images.
 // No reference is generated from the output being tested.
 // Harness::end_not_comparable marks these exceptions explicitly.
 //
-// AND ONE MORE THAT IS NOT A GAP IN THE LIST BUT A PROPERTY OF THE METHOD.
-// Because the text cases below are relationships (see two paragraphs down), a
-// term added EQUALLY TO EVERY GLYPH cancels out of every one of them and this
-// file cannot see it at all. The glyph's vertical bearing is exactly such a
-// term: deleting it leaves this file green on every backend that rasterises,
-// the null backend's record test green, and the samples merely a few pixels
-// wrong.
-// It is pinned in tests/render/sprite_geometry_tests.cpp instead, as a
-// difference between two glyphs whose bearings differ - which is the shape an
-// absolute term has to be asked about, and which needs no device. Anything
-// else uniform across a line belongs there for the same reason.
-//
-// TEXT IS PINNED IN text_pixel_tests.cpp, and it is pinned as
-// relationships rather than as colours. A sprite case can assert that one
-// pixel is exactly red because the test texture has four flat texels in it. A
-// glyph has neither property: its edges are anti-aliased, and the atlas a
-// .spritefont carries is block-compressed, so the coverage value at any one
-// pixel is a fact about the compressor. What a caller actually depends on is
-// where the ink landed, how far the next character is from it, and that the
-// box measure_text promised is the box that was filled - and every one of those
-// is a statement about two rectangles, which survives a different rasteriser
-// exactly as the sprite assertions do.
-//
-// THE TEXT TERMS MATTER MORE THAN THE SPRITE ONES: the pen arithmetic is a
-// pile of quirks - a per-glyph left bearing, an XAdvance that is an adjustment
-// to the advance rather than the advance, a whitespace glyph that steps the pen
-// without drawing, a line height that is the larger of the glyph and the line
-// spacing - and a rewrite that dropped any one of them would still draw legible
-// text. Each case below names the term it fixes.
+// TEXT IS PINNED IN text_pixel_tests.cpp, as relationships rather than as
+// colours; that file says why, and what the method cannot see.
 //
 // A HIDDEN WINDOW, not an offscreen target. create_device wants a window
 // handle because a swap chain does, so the cheapest honest answer is a real
 // window that is never shown. It adds nothing to the seam, and if an offscreen
 // path is ever wanted for its own sake it can replace this without touching a
-// single assertion below.
+// single assertion.
 //
 // AND IN A BROWSER, A CANVAS ON A PAGE NOBODY LOOKS AT. The browser build runs
-// this file in headless Chrome (tests/render/web/run_page.mjs), against the same
-// golden set, so the GLES dialect gl/ compiles there is held to the same pixels
-// as the desktop's. The window is behind test_window.h, and what a canvas
+// RenderPixelTests in headless Chrome (tests/render/web/run_page.mjs),
+// against the same golden set, so the GLES dialect gl/ compiles there is held
+// to the same pixels as the desktop's. The window is behind test_window.h, and what a canvas
 // costs is said in tests/render/web/test_window.cpp. Two other terms differ
 // and say so where they are decided: the device-info case's present mode
 // in this file, and golden_image.cpp's dumping(), which never regenerates from a
-// browser. Every case below runs in one synchronous main(), which
+// browser. Every case runs in one synchronous main(), which
 // is what lets read_back_buffer see a frame that a canvas without
 // preserveDrawingBuffer throws away the moment the page composites.
 
@@ -156,9 +131,9 @@ TEST_CASE("the renderer reports the presentation policy set_vsync configured")
 	Harness harness;
 	Renderer& renderer = harness.renderer();
 
-	// Presented, unlike every other case here, because two backends apply a
-	// change at the next present rather than at the call (SEAM.md#6). Nothing
-	// is read back from these frames.
+	// Presented, because two backends apply a change at the next present
+	// rather than at the call (SEAM.md#6). Nothing is read back from these
+	// frames.
 	const auto present = [&harness, &renderer]()
 	{
 		std::ignore = harness.begin();
@@ -260,12 +235,10 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 {
 	Harness harness;
 
-	// back_buffer_size is called by the harness on every frame now
-	// (Harness::read_frame, added a day after this comment so that at() could
-	// address the three frames whose buffer is not 64x64), but this case is
-	// still the only thing in tests/ that ASSERTS on it - which is what turns
-	// the seam's "exactly width * height * 4 bytes" from a sentence into
-	// something a build can fail.
+	// Harness::read_frame calls back_buffer_size on every frame, so that at()
+	// can address the frames whose buffer is not 64x64; this case is the one
+	// that ASSERTS on it - which is what turns the seam's "exactly width *
+	// height * 4 bytes" from a sentence into something a build can fail.
 	std::ignore = harness.begin();
 	harness.end();
 
@@ -303,9 +276,9 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 		list.draw_sprite(harness.quad, Harness::white_texel(),
 			RectangleF(0.0f, 0.0f, pane.x, pane.y), Colour::white, 0.0f,
 			Vector2F::zero, SpriteFlip::none, 0.0f);
-		// The one frame here that is not held against a golden image, because
-		// the buffer it was read out of is a different size on each backend and
-		// the seam says it must be. Harness::end_not_comparable explains.
+		// Not held against a golden image, because the buffer it was read out
+		// of is a different size on each backend and the seam says it must be.
+		// Harness::end_not_comparable explains.
 		harness.end_not_comparable();
 
 		const Vector2F buffer = harness.buffer_size();
@@ -322,21 +295,18 @@ TEST_CASE("CONTRACT: read_back_buffer hands back exactly back_buffer_size")
 
 TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 {
-	// ONE OF TWO CASES HERE THAT ARE NOT ABOUT A PIXEL, and it is in this file
-	// because it is the only one with a device. renderer.h makes it a term of
-	// the seam that window_size_changed may arrive between begin_frame and
+	// A SEAM TERM MORE THAN A PIXEL ONE, and it is in RenderPixelTests because
+	// that executable has a device. renderer.h makes it a term of the seam
+	// that window_size_changed may arrive between begin_frame and
 	// submit - a window message can be SENT rather than posted, and
 	// Application::set_resolution sends one through SetWindowPos on the calling
 	// thread, so a client that changes resolution from inside its own draw walk
 	// gets this mid-frame in one stack. No rule forbidding it would be one the
 	// caller could keep.
 	//
-	// IT WAS WRITTEN BECAUSE ALL THREE BACKENDS ANSWERED DIFFERENTLY AND TWO
-	// WERE WRONG. OpenGL carried on; D3D11 threw DXGI_ERROR_INVALID_CALL out of
-	// ResizeBuffers, because its deferred contexts still held the render
-	// target; D3D12 destroyed the back buffer and then executed command lists
-	// that still named it, which killed the process. Nothing in the tree said
-	// what should happen, so nothing was wrong with any of them.
+	// EVERY BACKEND RESTARTS THE FRAME: it neither carries on drawing into a
+	// buffer that is being replaced nor throws. Resizing a swap chain while a
+	// recorded list still names its back buffer is the failure this rules out.
 	Harness harness;
 	Renderer& renderer = harness.renderer();
 
@@ -381,6 +351,14 @@ TEST_CASE("CONTRACT: a resize arriving mid-frame restarts the frame")
 	// which frame the buffer is holding.
 	CHECK(harness.at(4, 4) == white_pixel);
 	CHECK(harness.at(20, 20) == black_pixel);
+
+	// And the whole-frame helpers describe the buffer that came back, not a
+	// 64x64 one: the second sprite is all the ink there is.
+	CHECK(harness.snapshot().size() ==
+		static_cast<size_t>(buffer_side / 2) * static_cast<size_t>(buffer_side / 2));
+	CHECK(harness.ink_bounds() == RectangleI(0, 0, 8, 8));
+	CHECK(harness.row_has_ink(4));
+	CHECK_FALSE(harness.row_has_ink(20));
 }
 
 TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame")
@@ -391,9 +369,8 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 	// before the first set_view_count is the part where NOTHING IS OPEN - no
 	// view is recording, no list is holding a barrier - so a backend that
 	// decides whether there is a frame to restart by asking what is open
-	// answers "no frame" here and skips the restart. Both Direct3D backends
-	// did, and it cost the new buffer its clear on both and its
-	// PRESENT -> RENDER_TARGET barrier on D3D12.
+	// answers "no frame" here and skips the restart, which costs the new
+	// buffer its clear and, on D3D12, its PRESENT -> RENDER_TARGET barrier.
 	//
 	// WHAT MAKES THE MISSING BARRIER FAIL RATHER THAN PASS IS THE DEBUG LAYER
 	// AND NOT AN ASSERTION BELOW, which is worth saying because it is the
@@ -410,8 +387,7 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 
 	// begin_frame WITHOUT harness.begin(), which is the whole point of the
 	// case: begin() calls set_view_count immediately after begin_frame, so
-	// every other case in this file is past this interval before it can be
-	// resized. It is not a contrived sequence - a shell that lays its views
+	// every other case is past this interval before it can be resized. It is not a contrived sequence - a shell that lays its views
 	// out from the frame's own state does its arithmetic here.
 	renderer.begin_frame();
 
@@ -444,23 +420,22 @@ TEST_CASE("CONTRACT: a resize before the first set_view_count restarts the frame
 TEST_CASE("CONTRACT: a frame may be read back and then presented")
 {
 	// THE INTERVAL renderer.h NAMES, WALKED TO ITS END. read_back_buffer says
-	// it is called "BETWEEN submit() AND end_frame()", and this is the only
-	// case that reaches the second half of that sentence: Harness::end
+	// it is called "BETWEEN submit() AND end_frame()", and this case reaches
+	// the second half of that sentence: Harness::end
 	// deliberately stops at the read, because presenting a flip-model swap
 	// chain discards the buffer it just read. Without it the sequence the seam
 	// explicitly permits - draw, submit, read, present - runs on no backend,
 	// and a client that screenshots a frame and then shows it is doing exactly
 	// that.
 	//
-	// IT WAS A LIVE DEFECT ON THE FIFTH BACKEND AND ONLY THE VALIDATION LAYERS
-	// COULD SEE IT. A read-back there submits the frame's command buffer
-	// mid-frame and waits, and end_frame then wants the same buffer again -
-	// which is not a begin but a wait and a pool reset, because a command
-	// buffer that has been to the queue is not in the state vkBeginCommandBuffer
-	// takes (VUID-vkBeginCommandBuffer-commandBuffer-00050).
+	// ON VULKAN ONLY THE VALIDATION LAYERS CAN SEE IT FAIL. A read-back there
+	// submits the frame's command buffer mid-frame and waits, and end_frame
+	// then wants the same buffer again - which is not a begin but a wait and a
+	// pool reset, because a command buffer that has been to the queue is not
+	// in the state vkBeginCommandBuffer takes
+	// (VUID-vkBeginCommandBuffer-commandBuffer-00050).
 	// engine/render/vulkan/device_resources.cpp's commands() is where that is
-	// answered. The other three had nothing to answer, which is the usual
-	// shape of a term nobody had written down.
+	// answered.
 	//
 	// WHAT IT ASSERTS IS THAT THE NEXT FRAME IS ORDINARY, because that is the
 	// only observable half. What a present does to the buffer it presented is
@@ -478,7 +453,7 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 	CHECK(harness.at(4, 4) == white_pixel);
 	CHECK(harness.at(20, 20) == black_pixel);
 
-	// The half of the interval nothing else in this file walks.
+	// The half of the interval Harness::end stops short of.
 	harness.renderer().end_frame();
 
 	// And an ordinary frame after it, drawing somewhere the first one did not,
@@ -496,7 +471,7 @@ TEST_CASE("CONTRACT: a frame may be read back and then presented")
 
 TEST_CASE("CONTRACT: a frame submitted and never presented contributes nothing to the next")
 {
-	// THIS NAMES A TERM RATHER THAN ADDING COVERAGE. Every case in this file
+	// THIS NAMES A TERM RATHER THAN ADDING COVERAGE. Every pixel case
 	// begins after a frame that was submitted and never presented, because
 	// Harness::end stops at the read; what that relies on is the sentence at
 	// renderer.h's begin_frame, and this is the case that says it.
