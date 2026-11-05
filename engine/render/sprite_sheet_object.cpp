@@ -39,12 +39,6 @@ namespace labrador
 		return this->render_resources()->sprite_sheet(this->sheet_);
 	}
 
-	void SpriteSheetObject::set_sprite_sheet(const std::string& sheet_name)
-	{
-		this->sheet_ = this->render_resources()->resolve_sprite_sheet(
-			sheet_name);
-	}
-
 	void SpriteSheetObject::set_sprite_sheet(
 		RenderResources::SpriteSheetHandle sheet)
 	{

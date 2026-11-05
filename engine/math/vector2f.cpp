@@ -4,7 +4,6 @@
 #include "engine/math/scalar.h"
 
 #include <cmath>
-#include <algorithm>
 
 namespace labrador
 {
@@ -91,37 +90,9 @@ namespace labrador
 		this->x /= length;
 		this->y /= length;
 	}
-	void Vector2F::clamp(const Vector2F& min, const Vector2F& max)
-	{
-		this->x = std::min(std::max(this->x, min.x), max.x);
-		this->y = std::min(std::max(this->y, min.y), max.y);
-	}
-	Vector2F Vector2F::clamped(const Vector2F& min, const Vector2F& max) const
-	{
-		return Vector2F(std::min(std::max(this->x, min.x), max.x),
-			std::min(std::max(this->y, min.y), max.y));
-	}
 	float Vector2F::angle() const
 	{
 		return std::atan2(this->y, this->x);
-	}
-	float Vector2F::angle(const Vector2F& vec)
-	{
-		return std::atan2(vec.y, vec.x);
-	}
-	void Vector2F::to_unit_vector()
-	{
-		float length = this->length();
-		if (length == 0.0f)
-		{
-			this->x = 1.0f;
-			this->y = 0.0f;
-		}
-		else
-		{
-			this->x /= length;
-			this->y /= length;
-		}
 	}
 	float Vector2F::angle_between(const Vector2F& a, const Vector2F& b)
 	{
@@ -154,10 +125,6 @@ namespace labrador
 	{
 		return Vector2F(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
 	}
-	Vector2F Vector2F::lerp(const Vector2F& a, const Vector2F& b, const Vector2F& t)
-	{
-		return Vector2F(a.x + (b.x - a.x) * t.x, a.y + (b.y - a.y) * t.y);
-	}
 	float Vector2F::distance(const Vector2F& a, const Vector2F& b)
 	{
 		return sqrtf((a.x - b.x) * (a.x - b.x) +
@@ -188,19 +155,6 @@ namespace labrador
 		return Vector2F(vec.x * cos_angle - vec.y * sin_angle,
 			vec.x * sin_angle + vec.y * cos_angle);
 	}
-	Vector2F Vector2F::unit_vector(const Vector2F& vec)
-	{
-		float length = vec.length();
-		if (length == 0.0f)
-		{
-			return Vector2F(1.0f, 0.0f);
-		}
-		else
-		{
-			return Vector2F(vec.x / length, vec.y / length);
-		}
-	}
-
 	Vector2F Vector2F::normal(const Vector2F& vec)
 	{
 		return Vector2F(-vec.y, vec.x);
@@ -217,8 +171,8 @@ namespace labrador
 	constinit const Vector2F Vector2F::direction_down = { 0.0f, 1.0f };
 	constinit const Vector2F Vector2F::direction_left = { -1.0f, 0.0f };
 	constinit const Vector2F Vector2F::direction_up = { 0.0f, -1.0f };
-	// Written out rather than derived. unit_vector(direction_up +
-	// direction_right) is a function call and a square root, and neither is
+	// Written out rather than derived. (direction_up +
+	// direction_right).normalized() is a function call and a square root, and neither is
 	// a constant expression - std::sqrt is not constexpr here - so a diagonal
 	// spelt that way would not pass constinit. Without constinit it would be
 	// worse than a compile error: it would read the four cardinal constants

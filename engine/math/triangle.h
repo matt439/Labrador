@@ -43,6 +43,9 @@ namespace labrador
 
 		Vector2F center() const override;
 
+	protected:
+		// dy/dx of edge `edge`, from vertex edge to vertex edge + 1. Throws
+		// std::invalid_argument for an edge outside 0..2.
 		float calculate_gradient(int edge) const;
 	};
 	struct TriangleRightAxisAligned : public Triangle
@@ -60,9 +63,8 @@ namespace labrador
 
 	private:
 		// The gradient helper the base class already provides is NOT
-		// redeclared here. A byte-for-byte copy would hide the public one
-		// behind a private one, so a fix to the base would miss this type
-		// entirely.
+		// redeclared here. A byte-for-byte copy would hide the inherited one,
+		// so a fix to the base would miss this type entirely.
 		int find_hypotenuse(const Triangle& tri) const;
 	};
 }

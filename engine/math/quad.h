@@ -45,8 +45,8 @@ namespace labrador
 		Segment edge_3() const;
 		std::array<Segment, 4> edges() const;
 
-		Triangle triangle_0() const;
-		Triangle triangle_1() const;
+		// Split along the diagonal from point 0 to point 2: (0, 1, 2) and
+		// (0, 2, 3).
 		std::array<Triangle, 2> triangles() const;
 
 		bool operator==(const Quad& other) const;
@@ -55,6 +55,9 @@ namespace labrador
 		Vector2F center() const override;
 
 	private:
+		Triangle triangle_0() const;
+		Triangle triangle_1() const;
+
 		Point2F points_[4] = { Vector2F::zero, Vector2F::zero,
 					Vector2F::zero, Vector2F::zero };
 	};

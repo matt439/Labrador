@@ -137,6 +137,18 @@ TEST_SUITE("Camera::frame")
 		CHECK(on_screen.height <= screen.height + 0.01f);
 	}
 
+	TEST_CASE("the in-place calculate_view_rectangle matches the returning form")
+	{
+		const Camera camera(Vector2F(-40.0f, 25.0f), 0.75f);
+		const RectangleF world(12.5f, -8.0f, 300.0f, 120.0f);
+
+		RectangleF in_place = world;
+		camera.calculate_view_rectangle(in_place);
+
+		CHECK(in_place == camera.calculate_view_rectangle(world));
+		CHECK(in_place == RectangleF(39.375f, -24.75f, 225.0f, 90.0f));
+	}
+
 	TEST_CASE("visible_rectangle is the inverse of calculate_view_rectangle")
 	{
 		const Viewport screen(RectangleF(0.0f, 0.0f, 1920.0f, 1080.0f));

@@ -36,30 +36,10 @@ namespace labrador
 	}
 	void Camera::calculate_view_rectangle(RectangleF& rectangle) const
 	{
-		rectangle.x = (rectangle.x - this->translation.x) * this->scale;
-		rectangle.y = (rectangle.y - this->translation.y) * this->scale;
-		rectangle.width *= this->scale;
-		rectangle.height *= this->scale;
-
-	}
-	RectangleF Camera::calculate_view_rectangle(
-		const RectangleF& world_rectangle,
-		const Camera& camera)
-	{
-		return RectangleF((world_rectangle.x - camera.translation.x) * camera.scale,
-			(world_rectangle.y - camera.translation.y) * camera.scale,
-			world_rectangle.width * camera.scale,
-			world_rectangle.height * camera.scale);
-	}
-	void Camera::calculate_view_rectangle(
-		const RectangleF& world_rectangle,
-		const Camera& camera,
-		RectangleF& view_rectangle)
-	{
-		view_rectangle.x = (world_rectangle.x - camera.translation.x) * camera.scale;
-		view_rectangle.y = (world_rectangle.y - camera.translation.y) * camera.scale;
-		view_rectangle.width = world_rectangle.width * camera.scale;
-		view_rectangle.height = world_rectangle.height * camera.scale;
+		// A const copy, so overload resolution picks the returning form
+		// rather than this one.
+		const RectangleF world_rectangle = rectangle;
+		rectangle = this->calculate_view_rectangle(world_rectangle);
 	}
 	Camera Camera::frame(const RectangleF& world_rectangle,
 		const Viewport& viewport)

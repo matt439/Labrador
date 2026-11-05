@@ -47,9 +47,6 @@ namespace labrador
 	bool test_circle_AABB(const Circle& s,
 		const RectangleF& b, Point2F& p);
 
-	float sq_dist_point_AABB(const Point2F& p,
-		const RectangleF& b);
-
 	void closest_pt_point_AABB(const Point2F& p,
 		const RectangleF& b, Point2F& q);
 

@@ -99,7 +99,7 @@ namespace labrador
 	{
 		return this->children_.size();
 	}
-	std::vector<std::pair<std::string, UiObject*>> UiContainer::children()
+	const std::vector<std::pair<std::string, UiObject*>>& UiContainer::children() const
 	{
 		return this->children_;
 	}

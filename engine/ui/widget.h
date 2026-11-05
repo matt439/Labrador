@@ -76,8 +76,10 @@ namespace labrador
 		void remove_child(const std::string& name);
 		void remove_child(const UiObject* child);
 		size_t child_count() const;
-		// A copy of the list; its pointers remain borrowed.
-		std::vector<std::pair<std::string, UiObject*>> children();
+		// The children's names and pointers in insertion order; the pointers
+		// remain borrowed. The reference is invalidated by add_child and
+		// remove_child.
+		const std::vector<std::pair<std::string, UiObject*>>& children() const;
 
 		// Hidden children still update; hiding a container suppresses its draw.
 		void update(float dt) override;

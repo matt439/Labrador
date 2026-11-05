@@ -360,12 +360,13 @@ TEST_CASE("CONTRACT: a rotated line turns about the string, not each glyph")
 	CHECK(corners[0].position.y == doctest::Approx(220.0f).epsilon(0.001));
 }
 
-// THE BOX A CULL SEES, held to the corners a draw produces. sprite_quad_bounds
-// exists because Visual::bounds() reported the destination rectangle, which is
-// where a sprite lands only with no origin and no turn; these cases are the
-// review's three reproductions (docs/review/gpt6/README.md, G6-04) and then
-// the general statement, which is that the box is the bounding box of the
-// four corners for any combination of the terms.
+// THE BOX A CULL SEES, held to the corners a draw produces. The sprite case
+// is sprite_world_bounds at zero units per pixel, because Visual::bounds()
+// once reported the destination rectangle, which is where a sprite lands only
+// with no origin and no turn; these cases are the review's three
+// reproductions (docs/review/gpt6/README.md, G6-04) and then the general
+// statement, which is that the box is the bounding box of the four corners
+// for any combination of the terms.
 
 namespace
 {
@@ -398,7 +399,7 @@ TEST_CASE("BOUNDS: an origin of the source's own width lands the sprite left of 
 	// box is x=80..100 and not the x=100..120 the rectangle says. This is the
 	// first row of the review's table, and the one an authored frame origin
 	// produces without the caller writing any origin at all.
-	const RectangleF box = sprite_quad_bounds(
+	const RectangleF box = sprite_world_bounds(
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), RectangleI(0, 0, 8, 8),
 		0.0f, Vector2F(8.0f, 8.0f));
 
@@ -408,7 +409,7 @@ TEST_CASE("BOUNDS: an origin of the source's own width lands the sprite left of 
 TEST_CASE("BOUNDS: a half turn about the top left lands the sprite up and left of it")
 {
 	const float half_turn = labrador::pi;
-	const RectangleF box = sprite_quad_bounds(
+	const RectangleF box = sprite_world_bounds(
 		RectangleF(100.0f, 20.0f, 20.0f, 20.0f), RectangleI(0, 0, 8, 8),
 		half_turn, Vector2F::zero);
 
@@ -418,8 +419,10 @@ TEST_CASE("BOUNDS: a half turn about the top left lands the sprite up and left o
 TEST_CASE("BOUNDS: without an origin or a turn, the box is the truncated rectangle")
 {
 	// The unturned case, truncated: x=10.9 draws from 10.
-	const RectangleF box = sprite_quad_bounds(
-		RectangleF(10.9f, 5.0f, 8.0f, 8.0f), whole(), 0.0f, Vector2F::zero);
+	SpriteVertex corners[4];
+	build_sprite_quad(RectangleF(10.9f, 5.0f, 8.0f, 8.0f), whole(), TEXTURE,
+		Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, corners);
+	const RectangleF box = box_around(corners);
 
 	CHECK(box == RectangleF(10.0f, 5.0f, 8.0f, 8.0f));
 }
@@ -429,7 +432,9 @@ TEST_CASE("BOUNDS: the box is the box around the corners, for every combination"
 	// Origins inside and outside the source, turns through every quadrant,
 	// a fractional destination: whatever the terms, the answer is the tight
 	// box around what build_sprite_quad writes - which is the only definition
-	// a cull can be held to.
+	// a cull can be held to. build_sprite_quad truncates the destination's
+	// edges and sprite_world_bounds does not, so the box is asked for the
+	// truncated rectangle the draw lands on.
 	const Vector2F origins[] = { Vector2F::zero, Vector2F(8.0f, 8.0f),
 		Vector2F(4.0f, 2.0f), Vector2F(-3.0f, 12.0f) };
 	const float turns[] = { 0.0f, 0.3f, labrador::pi_over_2, 2.5f, labrador::pi,
@@ -450,7 +455,12 @@ TEST_CASE("BOUNDS: the box is the box around the corners, for every combination"
 				build_sprite_quad(destination, RectangleI(0, 0, 8, 8), TEXTURE,
 					Colour::white, turn, origin, SpriteFlip::both, corners);
 
-				const RectangleF box = sprite_quad_bounds(destination,
+				const float left = std::trunc(destination.left());
+				const float top = std::trunc(destination.top());
+				const RectangleF drawn(left, top,
+					std::trunc(destination.right()) - left,
+					std::trunc(destination.bottom()) - top);
+				const RectangleF box = sprite_world_bounds(drawn,
 					RectangleI(0, 0, 8, 8), turn, origin);
 				if (close(box, box_around(corners)))
 				{

@@ -76,13 +76,6 @@ namespace labrador
 		// hides nothing from anybody.
 		ID3D11ShaderResourceView* texture(TextureHandle texture) const;
 
-		// By name. NOT FOR THE LOADER: the load
-		// path calls add_texture and then asks the seam for a handle
-		// (RenderResources::resolve_texture), because a handle is what a
-		// drawable holds. This overload is the by-name lookup the Registry
-		// offers, kept for parity with the other four backends' Impls.
-		ID3D11ShaderResourceView* texture(const std::string& name) const;
-
 		Registry<ID3D11ShaderResourceView,
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>
 			textures{ "Texture" };

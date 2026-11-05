@@ -122,13 +122,6 @@ namespace labrador
 		this->b = byte_at(hex, 4);
 		this->a = has_alpha ? byte_at(hex, 6) : 1.0f;
 	}
-	void Colour::brighten(float amount)
-	{
-		this->r += amount;
-		this->g += amount;
-		this->b += amount;
-		this->clamp_colours();
-	}
 	void Colour::clamp_colours()
 	{
 		this->r = detail::clamp01(this->r);

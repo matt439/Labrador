@@ -138,14 +138,17 @@ TEST_CASE("re-pointing at another sheet moves the handle, not the table")
 	Content content;
 	Probe object("first", &content.resources);
 
-	object.set_sprite_sheet("second");
+	object.set_sprite_sheet(content.resources.resolve_sprite_sheet("second"));
 
 	CHECK(object.sprite_sheet()->texture() == TextureHandle(2));
 	CHECK(object.render_resources() == &content.resources);
 
-	// And the same refusal as the constructor's, for the same reason.
-	CHECK_THROWS_AS(object.set_sprite_sheet("no_such_sheet"),
+	// The setter takes a handle, so a missing name is refused where it is
+	// resolved, with the constructor's refusal, before the object changes.
+	CHECK_THROWS_AS(object.set_sprite_sheet(
+		content.resources.resolve_sprite_sheet("no_such_sheet")),
 		std::out_of_range);
+	CHECK(object.sprite_sheet()->texture() == TextureHandle(2));
 }
 
 TEST_CASE("a sheet replaced under its own name is seen through a held handle")

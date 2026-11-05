@@ -63,10 +63,6 @@ namespace labrador
 		// channels.
 		void set_from_hex(const std::string& hex);
 
-		void brighten(float amount);
-
-		void clamp_colours();
-
 		// The CSS named colours. Declared here and defined once in colour.cpp,
 		// constant-initialised, so there is one set however many translation
 		// units include this header.
@@ -220,6 +216,10 @@ namespace labrador
 		static const Colour white_smoke;
 		static const Colour yellow;
 		static const Colour yellow_green;
+
+	private:
+		// Restores the [0, 1] invariant after the compound operators.
+		void clamp_colours();
 	};
 
 	Colour operator+ (const Colour& V1, const Colour& V2);

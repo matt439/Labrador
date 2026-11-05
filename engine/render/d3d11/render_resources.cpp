@@ -38,12 +38,6 @@ namespace labrador
 		return this->textures.get(texture_slot(texture));
 	}
 
-	ID3D11ShaderResourceView* RenderResources::Impl::texture(
-		const std::string& name) const
-	{
-		return this->textures.get(name);
-	}
-
 	// --- RenderResources -----------------------------------------------------
 	//
 	// The front half, and it is a short list on purpose. Carrying the whole

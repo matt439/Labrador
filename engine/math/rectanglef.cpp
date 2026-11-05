@@ -184,16 +184,6 @@ namespace labrador
 		this->x = new_x - this->width / 2.0f;
 		this->y = new_y - this->height / 2.0f;
 	}
-	void RectangleF::set_position_from_top_right(const Vector2F& position)
-	{
-		this->x = position.x - this->width;
-		this->y = position.y;
-	}
-	void RectangleF::set_position_from_top_right(float new_x, float new_y)
-	{
-		this->x = new_x - this->width;
-		this->y = new_y;
-	}
 	void RectangleF::set_size(const Vector2F& size)
 	{
 		this->width = size.x;

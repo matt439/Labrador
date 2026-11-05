@@ -61,6 +61,30 @@ TEST_CASE("default focus paint orders focused above unfocused above disabled")
 	CHECK(luminance(unavailable.colour()) > luminance(options.colour()));
 }
 
+TEST_CASE("refresh_style puts the focus paint back after a page recolours a row")
+{
+	StubWidget play(0.0f, 0.0f, 100.0f, 50.0f);
+	StubWidget options(0.0f, 100.0f, 100.0f, 50.0f);
+	StubWidget unavailable(0.0f, 200.0f, 100.0f, 50.0f);
+
+	FocusGroup group(1, test_style());
+	group.add(&play);
+	group.add(&options);
+	group.add(&unavailable);
+	REQUIRE(group.set_enabled(&unavailable, false));
+
+	// A page's own tint, applied over the group's paint.
+	play.set_colour(labrador::Colour::yellow);
+	options.set_colour(labrador::Colour::yellow);
+	unavailable.set_colour(labrador::Colour::yellow);
+
+	group.refresh_style();
+
+	CHECK(play.colour() == labrador::Colour::red);
+	CHECK(options.colour() == labrador::Colour::blue);
+	CHECK(unavailable.colour() == labrador::Colour::green);
+}
+
 TEST_CASE("moving focus repaints both widgets")
 {
 	StubWidget play(0.0f, 0.0f, 100.0f, 50.0f);

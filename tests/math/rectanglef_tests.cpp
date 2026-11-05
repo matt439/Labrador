@@ -40,4 +40,17 @@ TEST_SUITE("RectangleF")
 			RectangleF(4.0f, 9.0f, 0.0f, 0.0f));
 		CHECK(RectangleF::bounding_box_of({}) == RectangleF::zero);
 	}
+
+	TEST_CASE("set_width and set_height change one extent and keep the top left")
+	{
+		RectangleF rectangle(3.0f, 4.0f, 10.0f, 20.0f);
+
+		rectangle.set_width(7.5f);
+		CHECK(rectangle == RectangleF(3.0f, 4.0f, 7.5f, 20.0f));
+
+		rectangle.set_height(2.5f);
+		CHECK(rectangle == RectangleF(3.0f, 4.0f, 7.5f, 2.5f));
+		CHECK(rectangle.right() == 10.5f);
+		CHECK(rectangle.bottom() == 6.5f);
+	}
 }

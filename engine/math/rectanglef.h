@@ -70,8 +70,6 @@ namespace labrador
 		void set_position(float x, float y);
 		void set_position_at_center(const Vector2F& position);
 		void set_position_at_center(float x, float y);
-		void set_position_from_top_right(const Vector2F& position);
-		void set_position_from_top_right(float x, float y);
 		void set_size(const Vector2F& size);
 		void set_size(float width, float height);
 		void set_width(float width);

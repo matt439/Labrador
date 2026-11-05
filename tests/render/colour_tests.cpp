@@ -29,9 +29,11 @@ TEST_SUITE("Colour")
 		CHECK(over.b == doctest::Approx(0.5f));
 		CHECK(over.a == doctest::Approx(1.0f));
 
-		Colour brightened = Colour::black;
-		brightened.brighten(5.0f);
-		CHECK(brightened == Colour(1.0f, 1.0f, 1.0f, 1.0f));
+		// The compound operators keep the invariant too.
+		Colour summed = Colour::black;
+		summed += Colour::white;
+		summed *= 5.0f;
+		CHECK(summed == Colour(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 
 	TEST_CASE("a NaN channel clamps to 0, so 0/0 stays in [0, 1]")
