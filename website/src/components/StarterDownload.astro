@@ -5,7 +5,8 @@
 // command finds it by the start of its name, so nothing has a version to fill
 // in.
 import { Code } from '@astrojs/starlight/components';
-import { REPOSITORY_URL, starterRelease } from '../lib/starter';
+import { GITHUB_REPOSITORY } from '../lib/repository';
+import { starterRelease } from '../lib/starter';
 import { sitePath } from '../lib/site-path';
 
 interface Props {
@@ -91,7 +92,7 @@ const movePin = sitePath('/docs/guides/move-pin/');
 {part === 'download' && !starter && (
 	<>
 		<p>
-			Open <a href={`${REPOSITORY_URL}/releases/latest`}>Labrador's newest release</a> on GitHub and look in its{' '}
+			Open <a href={`${GITHUB_REPOSITORY}/releases/latest`}>Labrador's newest release</a> on GitHub and look in its{' '}
 			<strong>Assets</strong> list, near the bottom of the page, for a file whose name begins <code>labrador-starter-</code>,
 			such as <code>labrador-starter-v0.3.0.zip</code>. Releases up to <code>v0.2.0</code> have no starter ZIP.
 		</p>

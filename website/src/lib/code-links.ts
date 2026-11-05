@@ -3,7 +3,7 @@
 import type { ExpressiveCodePlugin } from '@astrojs/starlight/expressive-code';
 import { h } from '@astrojs/starlight/expressive-code/hast';
 import { codeLink, freeFunctions, symbols } from './reference.ts';
-import { codeReferences, type CodeReference } from './reference-mentions.ts';
+import { CPP_LANGUAGES, codeReferences, type CodeReference } from './reference-mentions.ts';
 import { sitePath } from './site-path.ts';
 
 export function codeLinks(code: string): CodeReference[] {
@@ -18,7 +18,7 @@ export const apiCodeLinks: ExpressiveCodePlugin = {
 	name: 'labrador-api-links',
 	hooks: {
 		annotateCode({ codeBlock }) {
-			if (!['cpp', 'c++', 'cxx', 'cc', 'h', 'hpp'].includes(codeBlock.language)) return;
+			if (!CPP_LANGUAGES.has(codeBlock.language)) return;
 			const links = codeLinks(codeBlock.code);
 			let offset = 0;
 			for (const line of codeBlock.getLines()) {

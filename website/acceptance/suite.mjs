@@ -21,12 +21,14 @@
 //
 // The suite does what a reader does: it clicks or taps the summary and the
 // links and presses real keys. Scripts in the page only read state, such as
-// the location, scroll widths, sizes and attributes, with three exceptions:
-// a phone width a desktop browser window cannot reach is given to the page by
-// an iframe of that width, the colour theme is chosen through the same
-// localStorage entry the site's theme menu writes, and a listener counts the
+// the location, scroll widths, sizes and attributes, except as listed here:
+// an element is scrolled into view before it is tapped, as a reader scrolls
+// to it; a phone width a desktop browser window cannot reach is given to the
+// page by an iframe of that width; the colour theme is chosen through the
+// same localStorage entry the site's theme menu writes; a listener counts the
 // selector's openings so that a check can wait for the list each opening
-// builds instead of sleeping.
+// builds instead of sleeping; and, where the driver keeps no console log, a
+// listener records page errors, as the next paragraph says.
 //
 // Page errors are collected in two ways. Chrome's driver keeps the browser's
 // console log, so every console error, uncaught exception and failed request
@@ -46,14 +48,16 @@ import { fileURLToPath } from 'node:url';
 import {
 	DEFAULT_WINDOW, TARGETS, pressReturnOnSimulatorKeyboard, restartSimulatorSafari, startBrowser, typeOnSimulatorKeyboard,
 } from './browsers.mjs';
-import { FIXTURE_ONLY_HEADING, FIXTURE_ONLY_PATH } from './fixture.mjs';
+import { compareTags } from '../scripts/published-versions.mjs';
+import { FIXTURE_ONLY_HEADING, FIXTURE_ONLY_PATH, FIXTURE_TAGS } from './fixture.mjs';
 import { startServer } from './server.mjs';
 import { Keys, WebDriverError, pressKeys, tap, waitUntil } from './webdriver.mjs';
 
-// What the fixture contains (acceptance/fixture.mjs).
-const RELEASES = ['v0.4.0', 'v0.3.0'];
-const LATEST = 'v0.4.0';
-const OLDEST = 'v0.3.0';
+// What the fixture contains (acceptance/fixture.mjs): its releases, newest
+// first, as the release index and the selector list them.
+const RELEASES = [...FIXTURE_TAGS].sort((a, b) => compareTags(b, a));
+const LATEST = RELEASES[0];
+const OLDEST = RELEASES.at(-1);
 const SHARED_PAGE = 'docs/guides/your-version/';
 const SHARED_HEADING = '#what-was-checked';
 const SHARED_TITLE = 'Which Labrador you have';
@@ -73,6 +77,8 @@ const MAX_TAB_PRESSES = 250;
 // reader taps, and how long each tap but the last is given to take effect.
 const LOST_TAP_ATTEMPTS = 3;
 const LOST_TAP_WAIT_MS = 6_000;
+// How long typed text is given to appear in a field before it is typed again.
+const TYPED_TEXT_WAIT_MS = 3_000;
 
 // The arrival notice, written out rather than taken from the site's own
 // version-switch.mjs, which is the code under test.
@@ -468,6 +474,19 @@ class Context {
 	async type(element, text) {
 		if (this.flags.simulatorKeyboard) await typeOnSimulatorKeyboard(text);
 		else await this.session.sendKeys(element, text);
+	}
+
+	// Types into a field that has focus and waits until the field holds
+	// something. The simulator can drop the first text sent to a box it is
+	// still focusing; a reader whose text did not appear types it again, and
+	// the second text is given waitUntil's default time to arrive.
+	async typeAndConfirm(element, text, where) {
+		await this.type(element, text);
+		const typed = () => this.script('return arguments[0].value;', [element]);
+		if (await waitUntil(typed, { timeoutMs: TYPED_TEXT_WAIT_MS, message: 'the typed text' }).catch(() => '')) return;
+		this.note(`the first text sent to ${where} did not arrive; it was sent again`);
+		await this.type(element, text);
+		await waitUntil(typed, { message: `the text typed again into ${where}` });
 	}
 
 	// The number of openings so far; pass it to waitForList after opening.
@@ -1159,14 +1178,7 @@ async function openSearch(context) {
 async function search(context, label, query) {
 	await context.go(`${versionPath(label)}docs/`);
 	const input = await openSearch(context);
-	await context.type(input, query);
-	// The simulator can drop the first text sent to a box it is still
-	// focusing; a reader whose text did not appear types it again.
-	const arrived = await waitUntil(() => context.script('return arguments[0].value;', [input]), { timeoutMs: 3_000, message: 'the typed text' }).catch(() => '');
-	if (!arrived) {
-		context.note(`the first text sent to the search box on ${label} did not arrive; it was sent again`);
-		await context.type(input, query);
-	}
+	await context.typeAndConfirm(input, query, `the search box on ${label}`);
 	const read = () => context.script(`
 		const dialog = document.querySelector('site-search dialog');
 		const message = dialog.querySelector('.pagefind-ui__message');
@@ -1279,10 +1291,7 @@ async function searchSubmission(context) {
 		const described = query ? `"${query}"` : 'an empty box';
 		await context.go(page);
 		const input = await openSearch(context);
-		if (query) {
-			await context.type(input, query);
-			await waitUntil(() => context.script('return arguments[0].value;', [input]), { timeoutMs: 5_000, message: 'the typed text' });
-		}
+		if (query) await context.typeAndConfirm(input, query, 'the search box');
 		const before = await context.script(SEARCH_FORM);
 		context.expect(before.action === null || !/^\s*javascript:/i.test(before.action),
 			`the search form's action is ${JSON.stringify(before.action)}, which a phone's Go can follow to an empty page.`);

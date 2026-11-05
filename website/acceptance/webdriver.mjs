@@ -5,6 +5,7 @@
 // check that used it instead of hanging the job. Failures are WebDriverError
 // values carrying the protocol's error code (such as "no such element") and
 // the driver's message.
+import { describeError } from '../scripts/snapshot-source.mjs';
 
 // The W3C key under which a driver returns an element reference. An element
 // is passed around as that one-key object, so it can also be handed straight
@@ -45,10 +46,6 @@ export class WebDriverError extends Error {
 
 function trimSlash(url) {
 	return String(url).replace(/\/+$/, '');
-}
-
-function describeError(error) {
-	return error instanceof Error ? error.message : String(error);
 }
 
 // One HTTP round trip. A JSON body's value is returned; a body whose value
@@ -135,10 +132,6 @@ export class Session {
 		return this.send('GET', '/title');
 	}
 
-	async back() {
-		await this.send('POST', '/back', {});
-	}
-
 	async refresh() {
 		await this.send('POST', '/refresh', {});
 	}
@@ -188,14 +181,6 @@ export class Session {
 		await this.send('POST', `${this.element(element)}/value`, { text: String(text) });
 	}
 
-	elementText(element) {
-		return this.send('GET', `${this.element(element)}/text`);
-	}
-
-	elementAttribute(element, name) {
-		return this.send('GET', `${this.element(element)}/attribute/${encodeURIComponent(name)}`);
-	}
-
 	elementProperty(element, name) {
 		return this.send('GET', `${this.element(element)}/property/${encodeURIComponent(name)}`);
 	}
@@ -203,10 +188,6 @@ export class Session {
 	// { x, y, width, height } in CSS pixels relative to the document.
 	elementRect(element) {
 		return this.send('GET', `${this.element(element)}/rect`);
-	}
-
-	windowRect() {
-		return this.send('GET', '/window/rect');
 	}
 
 	// Some drivers, such as the iOS Simulator's, refuse this with

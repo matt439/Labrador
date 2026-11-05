@@ -17,11 +17,17 @@ const label = RELEASE_SOURCE?.tag ?? 'Development';
 <script>
 	import { missingNotice } from '../../lib/version-switch.mjs';
 
+	// How long after load the region is filled. A chosen pause, not a measured
+	// threshold: it lets the browser and a screen reader finish announcing the
+	// new page first. The acceptance suite's NVDA check (screen-reader.mjs) is
+	// the evidence that the notice is spoken with it; change it only with that
+	// check.
+	const ANNOUNCE_DELAY_MS = 500;
 	const notice = document.querySelector<HTMLElement>('[data-version-notice]');
 	const url = new URL(location.href);
 	const text = notice && missingNotice(url.searchParams, notice.dataset.label ?? '');
 	if (notice && text) {
-		const fill = () => setTimeout(() => (notice.textContent = text), 500);
+		const fill = () => setTimeout(() => (notice.textContent = text), ANNOUNCE_DELAY_MS);
 		if (document.readyState === 'complete') fill();
 		else addEventListener('load', fill, { once: true });
 		// The query has done its work; a reload or a copied link should not

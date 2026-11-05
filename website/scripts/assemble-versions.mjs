@@ -9,23 +9,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { parse } from 'parse5';
-import { assetUrl, compareTags, readManifest } from './published-versions.mjs';
-import { extractArchive, readArchive } from './snapshot-archive.mjs';
+import { REPOSITORY_URL, assetUrl, compareTags, readManifest } from './published-versions.mjs';
+import { byteCompare, extractArchive, readArchive, regularFiles } from './snapshot-archive.mjs';
 import { pagePath, verifySnapshotOutput } from './snapshot-output.mjs';
+import { FULL_COMMIT, describeError } from './snapshot-source.mjs';
 
 // The host's limit on files in one deployment.
 export const ASSET_FILE_LIMIT = 100_000;
 export const FETCH_TIMEOUT_MS = 120_000;
 export const FETCH_RETRIES = 3;
 
-const COMMIT_LINK = /^https:\/\/github\.com\/matt439\/Labrador\/commit\/([0-9a-f]{40}|[0-9a-f]{64})$/;
+/** The wait before retry attempt + 1, shared by every retried request in the release scripts. */
+export function retryDelayMs(attempt) {
+	return 1000 * 2 ** attempt;
+}
+
+const COMMIT_PREFIX = `${REPOSITORY_URL}/commit/`;
 
 // Only a failure that a second attempt could change is retried.
 class TransientError extends Error {}
-
-function describeError(error) {
-	return error instanceof Error ? error.message : String(error);
-}
 
 async function step(tag, name, action) {
 	try {
@@ -47,18 +49,8 @@ function kind(filename) {
 	}
 }
 
-function walk(directory, visit, relative = '') {
-	for (const entry of readdirSync(path.join(directory, relative), { withFileTypes: true })) {
-		const name = relative ? `${relative}/${entry.name}` : entry.name;
-		if (entry.isSymbolicLink()) throw new Error(`expected regular files, found a symbolic link at ${name}`);
-		if (entry.isDirectory()) walk(directory, visit, name);
-		else if (entry.isFile()) visit(name);
-		else throw new Error(`expected regular files, found a special entry at ${name}`);
-	}
-}
-
-function byteCompare(a, b) {
-	return Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+function walk(directory, visit) {
+	regularFiles(directory, (found, name) => `expected regular files, found ${found} at ${name}`).forEach(visit);
 }
 
 /**
@@ -103,9 +95,9 @@ function developmentCommit(dist) {
 		for (const child of node.childNodes ?? []) visit(child, revision);
 		if (node.content) visit(node.content, revision);
 	})(document, false);
-	const match = links.length === 1 ? COMMIT_LINK.exec(links[0]) : null;
+	const commit = links.length === 1 && links[0].startsWith(COMMIT_PREFIX) ? links[0].slice(COMMIT_PREFIX.length) : '';
 	// A host may supply a commit that is not a full hash; the field is optional.
-	return match ? match[1] : undefined;
+	return FULL_COMMIT.test(commit) ? commit : undefined;
 }
 
 async function download(url, bytes, fetch) {
@@ -165,7 +157,7 @@ export async function fetchArchive(entry, { fetch = globalThis.fetch, cacheDir, 
 			if (!(error instanceof TransientError) || attempt === FETCH_RETRIES) {
 				throw new Error(attempt ? `${error.message} (after ${attempt + 1} attempts)` : error.message, { cause: error });
 			}
-			await sleep(1000 * 2 ** attempt);
+			await sleep(retryDelayMs(attempt));
 		}
 	}
 }

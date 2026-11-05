@@ -12,6 +12,14 @@ test('every reference header has an explicit audience and renderer helpers show 
 		assert.equal(header.audience, 'renderer writer', file);
 		assert.match(referencePage(header).markdown, /<strong>Audience: renderer writer\.<\/strong>/);
 	}
+	// A note qualifying an audience comes from published.ts and shows on its own header only.
+	const note = 'Game code can use <code>white_texture_name</code>';
+	const factory = REFERENCE_HEADERS.find((entry) => entry.source === 'engine/render/resource_factory.h');
+	assert.ok(factory.audienceNote.startsWith(note));
+	assert.ok(referencePage(factory).markdown.includes(`<strong>Audience: renderer writer.</strong> ${note}`));
+	const plain = REFERENCE_HEADERS.find((entry) => entry.source === 'engine/render/throw_if_failed.h');
+	assert.equal(plain.audienceNote, undefined);
+	assert.ok(!referencePage(plain).markdown.includes(note));
 	const module = REFERENCE_MODULES.find((entry) => entry.name === 'render');
 	const markdown = moduleReferencePage(module);
 	assert.match(markdown, /^## Game code\n/m);
@@ -133,6 +141,15 @@ test('ambiguous names have no guessed target; same-page overloads retain the fir
 		REFERENCE_HEADERS.splice(count);
 		forgetIndexes();
 	}
+});
+
+test('a header comment that names a missing header or document fails, as a guide naming one does', () => {
+	assert.match(commentHtml({ line: 4, lines: ['See engine/render/renderer.h and engine/render/SEAM.md.'] }),
+		/<a href="[^"]*">engine\/render\/renderer\.h<\/a>/);
+	assert.throws(() => commentHtml({ line: 4, lines: ['', 'Moved from engine/render/no_such_header.h.'] }),
+		/header comment from line 5 names `engine\/render\/no_such_header\.h`, and the checkout has no such file/);
+	assert.throws(() => commentHtml({ line: 0, lines: ['- `engine/render/NO_SUCH.md` says why.'] }),
+		/names `engine\/render\/NO_SUCH\.md`/);
 });
 
 test('header prose links functions without linking member calls or ordinary words', () => {

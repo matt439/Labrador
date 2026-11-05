@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { verifySnapshotOutput } from '../scripts/snapshot-output.mjs';
+import { temporaryDirectory, write } from './fixtures/snapshot-site.mjs';
 
 const SOURCE = {
 	schemaVersion: 1,
@@ -15,25 +15,13 @@ const SOURCE = {
 const ORIGIN = 'https://labradorengine.com';
 const PREFIX = SOURCE.snapshotPath;
 
-function write(root, file, contents) {
-	const target = path.join(root, file);
-	mkdirSync(path.dirname(target), { recursive: true });
-	writeFileSync(target, contents);
-}
-
 function page(route = '', extra = '', label = `Release documentation (${SOURCE.tag})`, commit = SOURCE.commit) {
 	return `<!doctype html><html><head><link rel="canonical" href="${ORIGIN}${PREFIX}${route}"></head>
 	<body><p>${label} <a href="https://github.com/matt439/Labrador/commit/${commit}">Source commit</a></p>${extra}</body></html>`;
 }
 
 function fixture(t, { html = page(), searchUrl = `${PREFIX}docs/`, searchCount = 1 } = {}) {
-	const root = mkdtempSync(path.join(tmpdir(), 'labrador-snapshot-output-'));
-	t.after(() => {
-		const target = realpathSync(root);
-		assert.equal(path.dirname(target), realpathSync(tmpdir()));
-		assert.ok(path.basename(target).startsWith('labrador-snapshot-output-'));
-		rmSync(target, { recursive: true, force: true });
-	});
+	const root = temporaryDirectory(t, 'labrador-snapshot-output-');
 	write(root, 'index.html', html);
 	write(root, 'docs/index.html', page('docs/'));
 	write(root, '_astro/example.css', 'body { color: black; }');

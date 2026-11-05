@@ -6,10 +6,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
-import { canonicalize } from './published-versions.mjs';
+import { canonicalize, docsAsset } from './published-versions.mjs';
 import { packTree, readArchive } from './snapshot-archive.mjs';
 import { verifySnapshotOutput } from './snapshot-output.mjs';
-import { verifySnapshotSource } from './snapshot-source.mjs';
+import { describeError, verifySnapshotSource } from './snapshot-source.mjs';
 
 function readBuildRecord(directory) {
 	const filename = path.join(directory, 'snapshot-build.json');
@@ -53,7 +53,7 @@ export async function packSnapshot(root, tag, { now = () => new Date() } = {}) {
 		commit: source.commit,
 		sourceDate: source.sourceDate,
 		path: source.snapshotPath,
-		asset: `labrador-docs-${source.tag}.tar.gz`,
+		asset: docsAsset(source.tag),
 		bytes: archive.length,
 		sha256: createHash('sha256').update(archive).digest('hex'),
 		published: now().toISOString().slice(0, 10),
@@ -79,7 +79,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 		process.stderr.write(`Wrote ${path.relative(process.cwd(), file)}; append this entry to published-versions.json after publishing the release:\n`);
 		process.stdout.write(text);
 	} catch (error) {
-		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+		process.stderr.write(`${describeError(error)}\n`);
 		process.exitCode = 1;
 	}
 }

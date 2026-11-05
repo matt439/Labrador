@@ -8,7 +8,7 @@
 // A relative link inside any published document is resolved against this
 // list: a target that is published becomes a link to its page, and anything
 // else becomes a link to the file on GitHub at the built revision
-// (remark-checkout-links.ts).
+// (markdown-plugins.ts, checkoutLinks).
 
 export interface PublishedDocument {
 	// The file in the repository, from the root.
@@ -59,6 +59,9 @@ export interface ReferenceHeader {
 	title: string;
 	order: number;
 	audience: ReferenceAudience;
+	// HTML shown after the audience line, for a header whose audience needs a
+	// qualification.
+	audienceNote?: string;
 }
 
 export interface ReferenceModule {
@@ -67,8 +70,8 @@ export interface ReferenceModule {
 	// What the module is, for the reference's introduction and module pages.
 	summary: string;
 	// The headers, by file name, in the order a reader meets them, each with
-	// its sidebar label.
-	headers: [file: string, title: string, audience: ReferenceAudience][];
+	// its sidebar label, its audience and any note qualifying that audience.
+	headers: [file: string, title: string, audience: ReferenceAudience, audienceNote?: string][];
 }
 
 // The modules the reference publishes, in ARCHITECTURE's dependency order, and
@@ -172,7 +175,10 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['png_file.h', 'PNG files', 'renderer writer'],
 			['block_decode.h', 'Block decoding', 'renderer writer'],
 			['sprite_font_file.h', 'SpriteFontFile', 'renderer writer'],
-			['resource_factory.h', 'Resource factory', 'renderer writer'],
+			[
+				'resource_factory.h', 'Resource factory', 'renderer writer',
+				'Game code can use <code>white_texture_name</code>; the factories are renderer implementation helpers.',
+			],
 			['throw_if_failed.h', 'throw_if_failed', 'renderer writer'],
 		],
 	},
@@ -263,13 +269,14 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 ];
 
 export const REFERENCE_HEADERS: ReferenceHeader[] = REFERENCE_MODULES.flatMap((module) =>
-	module.headers.map(([file, title, audience], index) => ({
+	module.headers.map(([file, title, audience, audienceNote], index) => ({
 		module: module.name,
 		source: `engine/${module.name}/${file}`,
 		slug: `docs/reference/${module.name}/${file.replace(/\.h$/, '').replace(/_/g, '-')}`,
 		title,
 		order: index + 1,
 		audience,
+		...(audienceNote === undefined ? {} : { audienceNote }),
 	}))
 );
 

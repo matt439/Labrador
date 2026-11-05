@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { mock, test } from 'node:test';
 import zlib from 'node:zlib';
@@ -9,23 +8,7 @@ import {
 	ENTRY_MAX_BYTES, ENTRY_MAX_COUNT, GUNZIP_MAX_BYTES, REQUIRED_FILES,
 	extractArchive, packTree, readArchive,
 } from '../scripts/snapshot-archive.mjs';
-
-function temporaryDirectory(t) {
-	const root = mkdtempSync(path.join(tmpdir(), 'labrador-snapshot-archive-'));
-	t.after(() => {
-		const target = realpathSync(root);
-		assert.equal(path.dirname(target), realpathSync(tmpdir()));
-		assert.ok(path.basename(target).startsWith('labrador-snapshot-archive-'));
-		rmSync(target, { recursive: true, force: true });
-	});
-	return root;
-}
-
-function write(root, file, contents) {
-	const target = path.join(root, file);
-	mkdirSync(path.dirname(target), { recursive: true });
-	writeFileSync(target, contents);
-}
+import { temporaryDirectory, write } from './fixtures/snapshot-site.mjs';
 
 const TREE = {
 	'index.html': '<p>Home</p>',
@@ -42,7 +25,7 @@ const TREE = {
 };
 
 function tree(t, files = TREE, order = Object.keys(files)) {
-	const root = temporaryDirectory(t);
+	const root = temporaryDirectory(t, 'labrador-snapshot-archive-');
 	for (const file of order) write(root, file, files[file]);
 	return root;
 }
@@ -270,7 +253,7 @@ test('a well-formed archive missing a required snapshot file is refused', (t) =>
 });
 
 test('extraction writes a new partial folder and reproduces every file', (t) => {
-	const parent = temporaryDirectory(t);
+	const parent = temporaryDirectory(t, 'labrador-snapshot-archive-');
 	const files = read(packTree(tree(t)));
 	const partial = extractArchive(files, parent, 'v0.3.0');
 	assert.equal(partial, path.join(realpathSync(parent), '.v0.3.0.partial'));
@@ -278,14 +261,14 @@ test('extraction writes a new partial folder and reproduces every file', (t) => 
 });
 
 test('extraction refuses an existing partial folder and leaves it alone', (t) => {
-	const parent = temporaryDirectory(t);
+	const parent = temporaryDirectory(t, 'labrador-snapshot-archive-');
 	write(parent, '.v0.3.0.partial/earlier.txt', 'earlier attempt');
 	assert.throws(() => extractArchive(read(gzip(tar(required()))), parent, 'v0.3.0'), /expected no existing partial extraction, found EEXIST/);
 	assert.equal(readFileSync(path.join(parent, '.v0.3.0.partial/earlier.txt'), 'utf8'), 'earlier attempt');
 });
 
 test('extraction refuses paths that escape, and removes its partial folder', (t) => {
-	const parent = temporaryDirectory(t);
+	const parent = temporaryDirectory(t, 'labrador-snapshot-archive-');
 	const outside = path.join(parent, 'outside.txt');
 	for (const name of ['../outside.txt', path.join(parent, 'outside.txt'), 'docs/../../outside.txt']) {
 		const files = new Map([['index.html', Buffer.from('x')], [name, Buffer.from('escaped')]]);

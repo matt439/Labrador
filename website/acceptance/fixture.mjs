@@ -17,7 +17,9 @@ import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { canonicalize } from '../scripts/published-versions.mjs';
+import { EMPTY_MANIFEST, canonicalize } from '../scripts/published-versions.mjs';
+import { describeError } from '../scripts/snapshot-source.mjs';
+import { isInside } from './server.mjs';
 
 export const FIXTURE_TAGS = ['v0.3.0', 'v0.4.0'];
 export const FIXTURE_ONLY_PATH = '/docs/guides/fixture-only/';
@@ -51,8 +53,6 @@ both the page and this heading's anchor.
 const GIT_TIMEOUT_MS = 2 * 60_000;
 const STEP_TIMEOUT_MS = 15 * 60_000;
 
-const EMPTY_MANIFEST = '{\n  "schemaVersion": 1,\n  "releases": [],\n  "errata": []\n}\n';
-
 // Variables that would make release verification refuse the source or route
 // Git somewhere other than the fixture clone.
 function childEnvironment(extra = {}) {
@@ -63,11 +63,6 @@ function childEnvironment(extra = {}) {
 		}
 	}
 	return { ...environment, ...extra };
-}
-
-function isInside(child, parent) {
-	const relative = path.relative(parent, child);
-	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
 /**
@@ -213,7 +208,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 		const { dist } = buildFixture({ repo, outDir: positional[0], force });
 		process.stdout.write(`${dist}\n`);
 	} catch (error) {
-		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+		process.stderr.write(`${describeError(error)}\n`);
 		process.exitCode = 1;
 	}
 }

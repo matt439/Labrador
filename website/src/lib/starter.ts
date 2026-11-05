@@ -7,20 +7,15 @@
 // is published. Before any is, there is no release known to carry a ZIP, and
 // the page says how to tell whether the newest release has one.
 
-import { RELEASE_SOURCE } from './repository';
-import { publishedReleases } from './versions';
-
-export const REPOSITORY_URL = 'https://github.com/matt439/Labrador';
+import { GITHUB_REPOSITORY, RELEASE_SOURCE } from './repository.ts';
+import { publishedReleases } from './versions.ts';
+import { starterAsset } from '../../scripts/published-versions.mjs';
 
 export interface Starter {
 	tag: string;
 	asset: string;
 	downloadUrl: string;
 	releaseUrl: string;
-}
-
-export function starterAsset(tag: string): string {
-	return `labrador-starter-${tag}.zip`;
 }
 
 /** The release to download a starter ZIP from, or undefined when none is known to carry one. */
@@ -31,7 +26,7 @@ export function starterRelease(): Starter | undefined {
 	return {
 		tag,
 		asset,
-		downloadUrl: `${REPOSITORY_URL}/releases/download/${tag}/${asset}`,
-		releaseUrl: `${REPOSITORY_URL}/releases/tag/${tag}`,
+		downloadUrl: `${GITHUB_REPOSITORY}/releases/download/${tag}/${asset}`,
+		releaseUrl: `${GITHUB_REPOSITORY}/releases/tag/${tag}`,
 	};
 }

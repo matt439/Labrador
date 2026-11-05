@@ -3,12 +3,15 @@
 // every change, and its history is append-only so a publication is permanent.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { releaseVersion } from './snapshot-source.mjs';
+import { FULL_COMMIT, STABLE_TAG, releaseVersion } from './snapshot-source.mjs';
 
 export const ARCHIVE_MAX_BYTES = 256 * 1024 * 1024;
+/** The repository on GitHub that releases, assets and errata links belong to. */
+export const REPOSITORY_URL = 'https://github.com/matt439/Labrador';
+/** The repository's path on github.com, as a URL's pathname spells it. */
+export const REPOSITORY_PATH = new URL(REPOSITORY_URL).pathname;
 
 const MANIFEST_FILE = 'published-versions.json';
-const REPOSITORY_URL = 'https://github.com/matt439/Labrador/';
 const MANIFEST_KEYS = ['schemaVersion', 'releases', 'errata'];
 const RELEASE_KEYS = ['tag', 'commit', 'sourceDate', 'path', 'asset', 'bytes', 'sha256', 'published'];
 const ERRATUM_KEYS = ['tag', 'date', 'title', 'href'];
@@ -35,8 +38,11 @@ export function canonicalize(value) {
 	return `${JSON.stringify(ordered(value), null, 2)}\n`;
 }
 
+/** The manifest before anything is published. */
+export const EMPTY_MANIFEST = canonicalize({ schemaVersion: 1, releases: [], errata: [] });
+
 function stableTag(tag) {
-	const match = typeof tag === 'string' && /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.exec(tag);
+	const match = typeof tag === 'string' && STABLE_TAG.exec(tag);
 	if (!match) throw new Error(`Expected a stable release tag vMAJOR.MINOR.PATCH, found ${JSON.stringify(tag)}.`);
 	return match.slice(1).map(BigInt);
 }
@@ -53,7 +59,20 @@ export function compareTags(a, b) {
 
 /** The download is derived from the tag and asset name, never stored, so an edit cannot redirect it. */
 export function assetUrl(entry) {
-	return `${REPOSITORY_URL}releases/download/${entry.tag}/${entry.asset}`;
+	return `${REPOSITORY_URL}/releases/download/${entry.tag}/${entry.asset}`;
+}
+
+/** The documentation snapshot a release carries: the name pack-snapshot.mjs writes and every entry must use. */
+export function docsAsset(tag) {
+	return `labrador-docs-${tag}.tar.gz`;
+}
+
+/**
+ * The starter ZIP a release carries: the name tools/consumer_check/starter_zip.py
+ * writes, which Get Started links and the publication check requires.
+ */
+export function starterAsset(tag) {
+	return `labrador-starter-${tag}.zip`;
 }
 
 function describe(value) {
@@ -93,15 +112,15 @@ function requireTag(location, value) {
 function validateRelease(location, entry) {
 	requireKeys(location, entry, RELEASE_KEYS);
 	requireTag(`${location}.tag`, entry.tag);
-	if (typeof entry.commit !== 'string' || !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(entry.commit)) {
+	if (typeof entry.commit !== 'string' || !FULL_COMMIT.test(entry.commit)) {
 		throw new Error(`${location}.commit: expected a full lowercase commit of 40 or 64 hex digits, found ${describe(entry.commit)}.`);
 	}
 	requireDate(`${location}.sourceDate`, entry.sourceDate);
 	if (entry.path !== `/versions/${entry.tag}/`) {
 		throw new Error(`${location}.path: expected ${describe(`/versions/${entry.tag}/`)}, found ${describe(entry.path)}.`);
 	}
-	if (entry.asset !== `labrador-docs-${entry.tag}.tar.gz`) {
-		throw new Error(`${location}.asset: expected ${describe(`labrador-docs-${entry.tag}.tar.gz`)}, found ${describe(entry.asset)}.`);
+	if (entry.asset !== docsAsset(entry.tag)) {
+		throw new Error(`${location}.asset: expected ${describe(docsAsset(entry.tag))}, found ${describe(entry.asset)}.`);
 	}
 	if (!Number.isSafeInteger(entry.bytes) || entry.bytes <= 0 || entry.bytes > ARCHIVE_MAX_BYTES) {
 		throw new Error(`${location}.bytes: expected an integer from 1 to ${ARCHIVE_MAX_BYTES}, found ${describe(entry.bytes)}.`);
@@ -123,11 +142,11 @@ function siteRelative(href) {
 }
 
 function repositoryLink(href) {
-	if (!href.startsWith(REPOSITORY_URL)) return false;
+	if (!href.startsWith(`${REPOSITORY_URL}/`)) return false;
 	let url;
 	try { url = new URL(href); } catch { return false; }
 	return url.href === href && url.origin === 'https://github.com' && !url.username && !url.password
-		&& url.pathname.startsWith('/matt439/Labrador/');
+		&& url.pathname.startsWith(`${REPOSITORY_PATH}/`);
 }
 
 function validateErratum(location, erratum, tags) {
@@ -141,7 +160,7 @@ function validateErratum(location, erratum, tags) {
 		throw new Error(`${location}.title: expected a non-empty single-line title, found ${describe(erratum.title)}.`);
 	}
 	if (typeof erratum.href !== 'string' || !(siteRelative(erratum.href) || repositoryLink(erratum.href))) {
-		throw new Error(`${location}.href: expected a site path outside /versions/ or a ${REPOSITORY_URL} URL, found ${describe(erratum.href)}.`);
+		throw new Error(`${location}.href: expected a site path outside /versions/ or a ${REPOSITORY_URL}/ URL, found ${describe(erratum.href)}.`);
 	}
 }
 

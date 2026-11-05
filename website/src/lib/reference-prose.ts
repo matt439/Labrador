@@ -24,8 +24,10 @@ export function createReferenceProse(indexes: ReferenceIndexes): ReferenceProse 
 	// A qualified member, function or header path is unambiguous in prose. Bare
 	// function names need code formatting or call parentheses; bare type names
 	// need code formatting or compound PascalCase, since "Scene" and "State" can
-	// both be ordinary words at the start of a sentence.
-	function linkSymbols(escaped: string, inCode: boolean): string {
+	// both be ordinary words at the start of a sentence. A header or document
+	// path the checkout does not have fails the build, as it does in a guide
+	// (codeLink): a published comment must not name a file that has gone.
+	function linkSymbols(escaped: string, inCode: boolean, comment: CommentBlock): string {
 		const index = symbols();
 		const pages = publishedPages();
 
@@ -34,7 +36,9 @@ export function createReferenceProse(indexes: ReferenceIndexes): ReferenceProse 
 			(match, header: string | undefined, tradeOff: string | undefined, name: string | undefined, call: string | undefined, offset: number) => {
 				if (header) {
 					if (!readableFile(header)) {
-						return match;
+						throw new Error(
+							`A header comment from line ${comment.line + 1} names \`${header}\`, and the checkout has no such file.`
+						);
 					}
 					return link(pages.get(header) ?? sourceUrl(header), match);
 				}
@@ -72,14 +76,14 @@ export function createReferenceProse(indexes: ReferenceIndexes): ReferenceProse 
 	// Backticked spans become code, then symbols are linked inside and outside
 	// them. Everything is escaped first: header prose talks about `<` and `*` and
 	// is not Markdown.
-	function inline(text: string): string {
+	function inline(text: string, comment: CommentBlock): string {
 		return text
 			.split(/(`[^`]+`)/)
 			.map((part) => {
 				if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
-					return `<code>${linkSymbols(escapeHtml(part.slice(1, -1)), true)}</code>`;
+					return `<code>${linkSymbols(escapeHtml(part.slice(1, -1)), true, comment)}</code>`;
 				}
-				return linkSymbols(escapeHtml(part), false);
+				return linkSymbols(escapeHtml(part), false, comment);
 			})
 			.join('');
 	}
@@ -117,10 +121,10 @@ export function createReferenceProse(indexes: ReferenceIndexes): ReferenceProse 
 						items[items.length - 1] += ` ${line.trim()}`;
 					}
 				}
-				blocks.push(`<ul>${items.map((item) => `<li>${inline(item)}</li>`).join('')}</ul>`);
+				blocks.push(`<ul>${items.map((item) => `<li>${inline(item, comment)}</li>`).join('')}</ul>`);
 				continue;
 			}
-			blocks.push(`<p>${inline(paragraph.map((line) => line.trim()).join(' '))}</p>`);
+			blocks.push(`<p>${inline(paragraph.map((line) => line.trim()).join(' '), comment)}</p>`);
 		}
 		// One block per line, with a blank line between, so that Markdown sees
 		// each as an HTML block of its own.

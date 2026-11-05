@@ -51,8 +51,6 @@ export interface TypeItem {
 	keyword: string;
 	name: string;
 	namespace: string;
-	// The declaration line, e.g. `class Scene` or `struct View`.
-	head: string;
 	bases: string[];
 	access: Access;
 	comment?: CommentBlock;
@@ -63,8 +61,6 @@ export interface TypeItem {
 }
 
 export interface HeaderDocument {
-	path: string;
-	includes: string[];
 	namespaces: string[];
 	items: Item[];
 }
@@ -158,7 +154,7 @@ export function declarationName(text: string): string {
 
 export function parseHeader(path: string, text: string): HeaderDocument {
 	const lines = text.replace(/\r\n?/g, '\n').split('\n');
-	const document: HeaderDocument = { path, includes: [], namespaces: [], items: [] };
+	const document: HeaderDocument = { namespaces: [], items: [] };
 	const stack: Scope[] = [{ kind: 'file', items: document.items, access: 'public', startIndex: 0 }];
 
 	let pending: CommentBlock | undefined;
@@ -201,10 +197,6 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 
 		if (trimmed.startsWith('#')) {
 			flushNote();
-			const include = trimmed.match(/^#include\s+[<"]([^>"]+)[>"]/);
-			if (include) {
-				document.includes.push(include[1]);
-			}
 			index++;
 			continue;
 		}
@@ -328,7 +320,6 @@ export function parseHeader(path: string, text: string): HeaderDocument {
 				keyword,
 				name: type[2],
 				namespace: namespaceName(),
-				head,
 				bases: type[3] ? type[3].split(',').map((base) => base.trim()) : [],
 				access: scope().access,
 				comment,

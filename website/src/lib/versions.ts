@@ -7,7 +7,7 @@
 // and a snapshot built at a tag whose manifest says anything never reads it.
 
 import { readFileSync } from 'node:fs';
-import { absolutePath } from './repository';
+import { absolutePath } from './repository.ts';
 import { assetUrl, compareTags, validateManifest } from '../../scripts/published-versions.mjs';
 
 const MANIFEST = 'website/published-versions.json';

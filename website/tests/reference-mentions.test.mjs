@@ -12,7 +12,7 @@ const resolver = {
 	hasFunction: (name) => freeFunctions().has(name),
 };
 
-test('known guide and concept API links generate return links for the six teaching pages', () => {
+test('known guide and concept API links generate return links on six reference headers', () => {
 	const pages = new Map([
 		['engine/input/gamepads.h', '/docs/guides/input/'],
 		['engine/scene/scene.h', '/docs/concepts/drawing/'],

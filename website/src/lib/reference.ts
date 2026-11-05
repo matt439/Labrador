@@ -19,7 +19,6 @@ const pages = createReferencePages(indexes, prose);
 
 export function unlistedHeaders(): string[] { return indexes.unlistedHeaders(); }
 export function symbols(): Map<string, SymbolTarget> { return indexes.symbols(); }
-export function explanationSources(): string[] { return indexes.explanationSources(); }
 export function indexExplanations(
 	pages: readonly ExplanationSource[], dependencies?: Set<string>
 ): Map<string, Explanation[]> { return indexes.indexExplanations(pages, dependencies); }
@@ -29,5 +28,4 @@ export function freeFunctions(): Map<string, SymbolTarget> { return indexes.free
 export function codeLink(code: string, page: string): string | undefined { return indexes.codeLink(code, page); }
 export function forgetIndexes(): void { indexes.forgetIndexes(); }
 export function referencePage(header: ReferenceHeader): ReferencePage { return pages.referencePage(header); }
-export function referencePages(): ReferencePage[] { return pages.referencePages(); }
 export function moduleReferencePage(module: ReferenceModule): string { return pages.moduleReferencePage(module); }

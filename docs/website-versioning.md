@@ -290,7 +290,8 @@ forced and a forced push names an old tip the checkout no longer has. An empty
 or zero base, or one that does not resolve in the checkout, falls back to
 `git merge-base HEAD origin/master` with a message saying so, and a base with
 no manifest counts as empty. The change must be append-only. For each
-appended release, the GitHub release for its tag must be published, not a
+appended release, the GitHub release for its tag, read from the releases API
+with the retries described below for the live index, must be published, not a
 prerelease and immutable, with exactly two uploaded assets: one of the
 entry's asset name whose size and SHA-256 digest match the entry, and the
 release's starter ZIP, `labrador-starter-vX.Y.Z.zip`, whose bytes are not

@@ -1,16 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import net from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { parseRange, startServer } from '../acceptance/server.mjs';
-
-function write(root, file, contents) {
-	const target = path.join(root, file);
-	mkdirSync(path.dirname(target), { recursive: true });
-	writeFileSync(target, contents);
-}
+import { write } from './fixtures/snapshot-site.mjs';
 
 // A miniature built site: development pages, one release with its own 404
 // page, a binary search index and a secret beside the root.

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { verifySnapshotSource } from '../scripts/snapshot-source.mjs';
+import { temporaryDirectory, write } from './fixtures/snapshot-site.mjs';
 
 const SOURCE_DATE = '2026-10-20';
 const COMMIT_ENV = {
@@ -22,25 +22,8 @@ function git(root, ...args) {
 	}).trim();
 }
 
-function write(root, file, contents) {
-	const target = path.join(root, file);
-	mkdirSync(path.dirname(target), { recursive: true });
-	writeFileSync(target, contents);
-}
-
-function temporaryDirectory(t) {
-	const root = mkdtempSync(path.join(tmpdir(), 'labrador-snapshot-'));
-	t.after(() => {
-		const target = realpathSync(root);
-		assert.equal(path.dirname(target), realpathSync(tmpdir()), 'cleanup stays directly inside the temporary directory');
-		assert.ok(path.basename(target).startsWith('labrador-snapshot-'), 'cleanup names a snapshot test fixture');
-		rmSync(target, { recursive: true, force: true });
-	});
-	return root;
-}
-
 function checkout(t, { tag = 'v0.3.0', version = tag.slice(1), annotated = true, lockfile = true, cli = false } = {}) {
-	const root = temporaryDirectory(t);
+	const root = temporaryDirectory(t, 'labrador-snapshot-');
 	git(root, 'init', '--quiet');
 	git(root, 'config', 'user.name', 'Snapshot fixture');
 	git(root, 'config', 'user.email', 'snapshot@example.invalid');
@@ -195,7 +178,7 @@ test('index flags cannot conceal dirty tracked release inputs', (t) => {
 
 test('a clean linked worktree can verify its own release checkout', (t) => {
 	const { root, tag, commit } = checkout(t);
-	const worktree = path.join(temporaryDirectory(t), 'release-worktree');
+	const worktree = path.join(temporaryDirectory(t, 'labrador-snapshot-'), 'release-worktree');
 	git(root, 'worktree', 'add', '--quiet', '--detach', worktree, tag);
 	assert.equal(verifySnapshotSource(worktree, tag).commit, commit);
 });
@@ -345,7 +328,7 @@ test('archive commit environment overrides are refused for release verification'
 	assert.throws(() => verifySnapshotSource(root, tag), Error,
 		'the commit-only archive override is also refused');
 
-	const archive = temporaryDirectory(t);
+	const archive = temporaryDirectory(t, 'labrador-snapshot-');
 	write(archive, 'vcpkg.json', '{"name":"labrador","version-string":"0.3.0"}\n');
 	write(archive, 'engine/core/example.h', '#pragma once\n');
 	write(archive, 'website/package-lock.json', '{"lockfileVersion":3}\n');

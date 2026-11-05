@@ -13,22 +13,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { parse } from 'parse5';
-import { FETCH_RETRIES, fetchArchive, pageList, stageRelease } from './assemble-versions.mjs';
-import { canonicalize, checkAppendOnly, readManifest, validateManifest } from './published-versions.mjs';
+import { FETCH_RETRIES, fetchArchive, pageList, retryDelayMs, stageRelease } from './assemble-versions.mjs';
+import {
+	EMPTY_MANIFEST, REPOSITORY_PATH, REPOSITORY_URL, checkAppendOnly, readManifest, starterAsset, validateManifest,
+} from './published-versions.mjs';
 import { verifySnapshotOutput } from './snapshot-output.mjs';
+import { FULL_COMMIT, describeError, gitEnvironment } from './snapshot-source.mjs';
 
 const MANIFEST_PATH = 'website/published-versions.json';
-const REPOSITORY_URL = 'https://github.com/matt439/Labrador/';
-const RELEASES_API = 'https://api.github.com/repos/matt439/Labrador/releases/tags/';
+const RELEASES_API = `https://api.github.com/repos${REPOSITORY_PATH}/releases/tags/`;
 export const LIVE_INDEX = 'https://labradorengine.com/versions/index.json';
 const REQUEST_TIMEOUT_MS = 30_000;
-const FULL_COMMIT = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
-const EMPTY_MANIFEST = canonicalize({ schemaVersion: 1, releases: [], errata: [] });
 const USAGE = 'Usage: npm run versions:verify -- --base <commit> [--dist <directory>]';
-
-function describeError(error) {
-	return error instanceof Error ? error.message : String(error);
-}
 
 /** Report a problem that does not fail the run; under GitHub Actions it is a warning annotation. */
 export function annotateWarning(message) {
@@ -45,12 +41,7 @@ function logLine(message) {
 
 /** Run git in root with stdout returned exactly, isolated from the caller's repository routing. */
 export function gitIn(root) {
-	const environment = { ...process.env };
-	for (const key of Object.keys(environment)) {
-		if (/^GIT_/i.test(key)) delete environment[key];
-	}
-	environment.GIT_NO_REPLACE_OBJECTS = '1';
-	environment.GIT_OPTIONAL_LOCKS = '0';
+	const environment = gitEnvironment();
 	return (args) => execFileSync('git', ['-C', root, ...args], {
 		encoding: 'utf8', env: environment, stdio: ['ignore', 'pipe', 'pipe'],
 	});
@@ -113,7 +104,7 @@ async function request(fetch, url, options = {}) {
 
 /**
  * A request whose network errors, timeouts, 5xx and 429 answers are retried
- * with fetchArchive's backoff. Any other answer is returned at once, and so is
+ * with fetchArchive's backoff (retryDelayMs). Any other answer is returned at once, and so is
  * the last answer when every attempt was one that could be retried.
  */
 async function requestRetried(fetch, url, options, sleep) {
@@ -128,7 +119,7 @@ async function requestRetried(fetch, url, options, sleep) {
 			const retryable = response.status === 429 || (response.status >= 500 && response.status <= 599);
 			if (!retryable || attempt === FETCH_RETRIES) return { response, attempts: attempt + 1 };
 		}
-		await sleep(1000 * 2 ** attempt);
+		await sleep(retryDelayMs(attempt));
 	}
 }
 
@@ -147,20 +138,21 @@ async function readJson(response, url) {
 /**
  * The GitHub release for entry must be published and immutable, and carry
  * exactly two assets: the pinned documentation asset and the release's
- * starter ZIP, which is uploaded but not pinned.
+ * starter ZIP, which is uploaded but not pinned. The API request is retried
+ * as the other network checks are.
  */
-export async function checkGitHubRelease(entry, { fetch = globalThis.fetch, token } = {}) {
+export async function checkGitHubRelease(entry, { fetch = globalThis.fetch, token, sleep = delay } = {}) {
 	if (!token) throw new Error('expected GITHUB_TOKEN for the GitHub releases API, found none');
 	const url = `${RELEASES_API}${encodeURIComponent(entry.tag)}`;
-	const response = await request(fetch, url, {
+	const { response, attempts } = await requestRetried(fetch, url, {
 		headers: {
 			Accept: 'application/vnd.github+json',
 			Authorization: `Bearer ${token}`,
 			'User-Agent': 'labrador-versions-verify',
 			'X-GitHub-Api-Version': '2022-11-28',
 		},
-	});
-	if (response.status !== 200) throw new Error(`expected HTTP 200 from ${url}, found ${response.status}`);
+	}, sleep);
+	if (response.status !== 200) throw new Error(`expected HTTP 200 from ${url}, found ${statusFound(response.status, attempts)}`);
 	const release = await readJson(response, url);
 	for (const [key, expected] of [['tag_name', entry.tag], ['draft', false], ['prerelease', false], ['immutable', true]]) {
 		if (release?.[key] !== expected) {
@@ -183,14 +175,6 @@ export async function checkGitHubRelease(entry, { fetch = globalThis.fetch, toke
 	if (zip.state !== 'uploaded') {
 		throw new Error(`expected the starter ZIP's state to be "uploaded", found ${JSON.stringify(zip.state)}`);
 	}
-}
-
-/**
- * The starter ZIP Get Started sends readers to for a listed release: the name
- * tools/consumer_check/starter_zip.py writes and src/lib/starter.ts links.
- */
-export function starterAsset(tag) {
-	return `labrador-starter-${tag}.zip`;
 }
 
 /** The commit origin's annotated tag peels to must be the entry's commit. */
@@ -268,7 +252,7 @@ export async function verifyPublishedVersions({
 				throw new Error(`${entry.tag}: ${name}: ${describeError(error)}`, { cause: error });
 			}
 		};
-		await run('GitHub release', () => checkGitHubRelease(entry, { fetch, token }));
+		await run('GitHub release', () => checkGitHubRelease(entry, { fetch, token, sleep }));
 		await run('tag', () => checkTag(entry, git));
 		const bytes = await run('download', () => fetchArchive(entry, { fetch, sleep }));
 		const scratch = mkdtempSync(path.join(tmpdir(), 'labrador-versions-verify-'));
@@ -375,7 +359,7 @@ export async function verifyAppendedErrata({
 	const pages = appended.length ? new Set(pageList(directory, { skip: ['versions'] })) : new Set();
 	for (const [offset, erratum] of appended.entries()) {
 		try {
-			if (erratum.href.startsWith(REPOSITORY_URL)) await checkRepositoryLink(erratum.href, { fetch, sleep });
+			if (erratum.href.startsWith(`${REPOSITORY_URL}/`)) await checkRepositoryLink(erratum.href, { fetch, sleep });
 			else checkSiteLink(erratum.href, directory, pages);
 		} catch (error) {
 			throw new Error(`errata[${previous.errata.length + offset}].href ${erratum.href}: ${describeError(error)}`, { cause: error });

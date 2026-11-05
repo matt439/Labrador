@@ -45,7 +45,6 @@ export interface ReferencePage {
 export interface ReferenceIndexes {
 	unlistedHeaders(): string[];
 	symbols(): Map<string, SymbolTarget>;
-	explanationSources(): string[];
 	indexExplanations(pages: readonly ExplanationSource[], dependencies?: Set<string>): Map<string, Explanation[]>;
 	explanationDependencies(): readonly string[];
 	explanations(): Map<string, Explanation[]>;
@@ -65,6 +64,5 @@ export interface ReferenceProse {
 export interface ReferencePages {
 	layout(header: ReferenceHeader): Layout;
 	referencePage(header: ReferenceHeader): ReferencePage;
-	referencePages(): ReferencePage[];
 	moduleReferencePage(module: ReferenceModule): string;
 }

@@ -14,6 +14,7 @@ import { createReadStream, readdirSync, realpathSync, statSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describeError } from '../scripts/snapshot-source.mjs';
 
 export const CONTENT_TYPES = {
 	'.html': 'text/html; charset=utf-8',
@@ -75,7 +76,8 @@ function isServedFile(root, file) {
 	return isFile(file) && hasExactCase(root, file);
 }
 
-function isInside(child, parent) {
+/** Whether child is parent or a path inside it. */
+export function isInside(child, parent) {
 	const relative = path.relative(parent, child);
 	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
@@ -263,7 +265,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 		process.once('SIGINT', stop);
 		process.once('SIGTERM', stop);
 	} catch (error) {
-		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+		process.stderr.write(`${describeError(error)}\n`);
 		process.exitCode = 1;
 	}
 }
