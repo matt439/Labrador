@@ -57,8 +57,8 @@ text and centres it, as the [Sprites and text guide](/docs/guides/sprites-and-te
 ## The focus group
 
 A `FocusGroup` holds the widgets the cursor can land on, each with the action that runs when it is
-chosen. The pause menu lists its four rows with the answer each would give; the *Colours* row's is
-never given, because its action does not close the menu:
+chosen. The pause menu lists its four rows with the answer each would give; the *Colours* row has
+none, because its action does not close the menu:
 
 <SourceFile path="samples/linesweeper/states/pause_state.cpp" from="const std::array<Row, 4> rows = { {" to="} };" />
 

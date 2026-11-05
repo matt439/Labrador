@@ -3,6 +3,8 @@
 #include "samples/linesweeper/rules/tick.h"
 #include "samples/linesweeper/rules/world.h"
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 
@@ -17,11 +19,15 @@
 // the thing under test is 276 bytes of struct and a free function that steps
 // it (README, The match is one value).
 //
-// It is also why there is no window anywhere in this target: LineSweeperRules
-// links labrador_settings, which carries compiler flags and no libraries, so
-// there is no renderer to fail to create.
+// It needs nothing but the rules, which is why LineSweeperTests, which links
+// no engine, can use it, and why the view tests can share it rather than keep
+// copies of their own.
 namespace linesweeper
 {
+	// Every piece kind, in Kind's order.
+	inline constexpr std::array<Kind, kind_count> piece_kinds = { Kind::i,
+		Kind::j, Kind::l, Kind::o, Kind::s, Kind::t, Kind::z };
+
 	inline void set_cell(World& world, int x, int y, Kind kind)
 	{
 		world.cells[static_cast<std::size_t>(cell_index(x, y))] =
@@ -52,6 +58,15 @@ namespace linesweeper
 			}
 
 			set_cell(world, x, y, hole ? Kind::none : Kind::l);
+		}
+	}
+
+	// Empties a row.
+	inline void clear_row(World& world, int y)
+	{
+		for (int x = 0; x < well_columns; ++x)
+		{
+			set_cell(world, x, y, Kind::none);
 		}
 	}
 

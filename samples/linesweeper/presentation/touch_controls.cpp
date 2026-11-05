@@ -2,6 +2,7 @@
 
 #include "engine/math/rectanglei.h"
 #include "engine/render/colour.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/palette.h"
 
 #include <cstddef>
@@ -13,9 +14,6 @@ namespace linesweeper
 {
 	namespace
 	{
-		const std::string block_texture_name = "white";
-		const std::string font_name = "jetbrains_mono_bold_16";
-
 		// The labels, indexed by Control. ASCII, because the font's atlas is.
 		const std::array<const wchar_t*, control_count> labels = {
 			L"<",

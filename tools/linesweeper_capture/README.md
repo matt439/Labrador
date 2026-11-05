@@ -21,8 +21,11 @@ reads the match.
 So the tool owns the `World` and assembles the scene `PlayState::init` builds.
 That means the board, the particle field, the top-out banner and the two hint
 labels, registered in the same order, the way `bench/linesweeper_frame_bench.cpp`
-already does. The hint labels' text is the one thing copied from
-`play_state.cpp`. If that file changes them, change `main.cpp` to match. The pause screen is
+already does. `PlayState` adds its touch controls last, and the tool leaves them
+out on purpose: they draw nothing until a finger is seen, and these are desktop
+frames. The hint labels' text and places come from
+`samples/linesweeper/presentation/hints.h`, which `PlayState` draws from too,
+and the asset names from `assets.h` beside it. The pause screen is
 the sample's own `PauseState`, built once and drawn over the frame. It needs
 only the shell's services, so the tool constructs an `Application`, initialises
 it on a hidden window, loads the sample's manifest and never calls `run()`.

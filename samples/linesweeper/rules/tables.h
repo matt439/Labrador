@@ -326,8 +326,8 @@ namespace linesweeper
 	// A row is divided into sub-rows so that the drop rate can be finer than
 	// one row a tick without a float, which World forbids outright: a float in
 	// the simulation makes every replay depend on /fp:precise and on this
-	// compiler (world.h, the fourth assert). The accumulator adds a rate each
-	// tick and spends whole rows out of it.
+	// compiler (world.h, the has_unique_object_representations_v assert). The
+	// accumulator adds a rate each tick and spends whole rows out of it.
 	//
 	// A power of two so that "how many rows" and "what is left over" are a
 	// shift and a mask rather than two divides, on the one path that runs

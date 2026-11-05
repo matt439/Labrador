@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <stdexcept>
+#include <string>
 
 namespace labrador
 {
@@ -26,8 +28,31 @@ namespace linesweeper
 		std::uint32_t dropped_particles = 0;
 	};
 
+	// The mode the page's integer names, 0 to 3 in PacingMode's order. Any
+	// other value throws std::invalid_argument rather than becoming an
+	// unnamed enumerator: a page asking for a fixture this build does not
+	// know fails instead of measuring ordinary play.
+	inline PacingMode pacing_mode_from(int value)
+	{
+		switch (value)
+		{
+		case 0:
+			return PacingMode::disabled;
+		case 1:
+			return PacingMode::play;
+		case 2:
+			return PacingMode::top_out;
+		case 3:
+			return PacingMode::top_out_frozen;
+		default:
+			throw std::invalid_argument("Unknown LineSweeper pacing mode " +
+				std::to_string(value) + "; the page may ask for 0 to 3.");
+		}
+	}
+
 	// The development page's pre-js enables this. The packaged module has no
 	// such script, so a page URL alone cannot select a fixture in that module.
+	// Throws as pacing_mode_from does.
 	PacingMode pacing_mode();
 
 	// A separate rAF callback, not a fixed-step update or a draw worker. The

@@ -36,8 +36,9 @@ using labrador::Vector2I;
 // finger lands, so they are pinned here rather than only looked at: a control
 // that is drawn in one place and hit-tested in another is a phone that
 // ignores the thumb on it, and nothing on screen says why. What the controls
-// LOOK like is checked by looking at them; TouchControls itself measures its
-// labels through a font a device filled and is not constructed here.
+// LOOK like is checked by looking at them. TouchControls itself measures its
+// labels, which needs a loaded font, so it is constructed only where the
+// native null-render cases load the sample's (focus_pause_tests.cpp).
 namespace
 {
 	// The board block portrait frames, in board space: from the HOLD column's
@@ -56,17 +57,13 @@ namespace
 			static_cast<int>(std::floor(view.y)));
 	}
 
+	// Strictly: two rectangles that only share an edge do not overlap, which
+	// is the point - neighbouring controls may touch and must not overlap -
+	// and why this is not RectangleF::intersects.
 	bool overlaps(const RectangleF& a, const RectangleF& b)
 	{
 		return a.x < b.x + b.width && b.x < a.x + a.width &&
 			a.y < b.y + b.height && b.y < a.y + a.height;
-	}
-
-	bool inside(const RectangleF& inner, const RectangleF& outer)
-	{
-		return inner.x >= outer.x && inner.y >= outer.y &&
-			inner.x + inner.width <= outer.x + outer.width &&
-			inner.y + inner.height <= outer.y + outer.height;
 	}
 
 	TouchPoint point_at(std::uint32_t id, const Vector2I& position)
@@ -96,7 +93,7 @@ namespace
 
 TEST_SUITE("linesweeper arrangement")
 {
-	TEST_CASE("1280x720 is the identity, so the window main.cpp opens draws as it always did")
+	TEST_CASE("1280x720 is the identity, so the window main.cpp opens draws board space unscaled")
 	{
 		const Arrangement arrangement = arrange(Vector2F(1280.0f, 720.0f));
 
@@ -152,18 +149,21 @@ TEST_SUITE("linesweeper arrangement")
 			const Arrangement arrangement = arrange(buffer);
 
 			CHECK(arrangement.orientation == Orientation::portrait);
-			CHECK(inside(board_block, arrangement.visible));
+			CHECK(arrangement.visible.contains(board_block));
 
 			// The well's middle is the buffer's middle.
 			CHECK(arrangement.visible.x + arrangement.visible.width * 0.5f ==
 				doctest::Approx(640.0f));
 		}
 
-		// A phone is narrow enough that its width is what limits: the block's
-		// 620 units are exactly the buffer's width.
+		// A phone is narrow enough that its width is what limits: the
+		// portrait frame's portrait_width units are exactly the buffer's
+		// width.
 		const Arrangement phone = arrange(Vector2F(1170.0f, 2532.0f));
-		CHECK(phone.visible.width == doctest::Approx(620.0f));
-		CHECK(phone.camera.scale == doctest::Approx(1170.0f / 620.0f));
+		CHECK(phone.visible.width ==
+			doctest::Approx(linesweeper::portrait_width));
+		CHECK(phone.camera.scale ==
+			doctest::Approx(1170.0f / linesweeper::portrait_width));
 	}
 
 	TEST_CASE("a squat portrait buffer is fitted to its height and keeps room for the controls")
@@ -173,7 +173,7 @@ TEST_SUITE("linesweeper arrangement")
 		CHECK(arrangement.orientation == Orientation::portrait);
 		CHECK(arrangement.visible.height ==
 			doctest::Approx(linesweeper::portrait_min_height));
-		CHECK(arrangement.visible.width > 620.0f);
+		CHECK(arrangement.visible.width > linesweeper::portrait_width);
 	}
 
 	TEST_CASE("portrait centres the board in the height the controls leave")
@@ -242,7 +242,7 @@ TEST_SUITE("linesweeper touch controls")
 
 			for (std::size_t first = 0; first < rectangles.size(); ++first)
 			{
-				CHECK(inside(rectangles[first], arrangement.visible));
+				CHECK(arrangement.visible.contains(rectangles[first]));
 				CHECK_FALSE(overlaps(rectangles[first], board_block));
 
 				for (std::size_t second = first + 1; second < rectangles.size();

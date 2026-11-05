@@ -12,10 +12,13 @@
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
 #include "engine/scene/scene.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/board_view.h"
+#include "samples/linesweeper/presentation/hints.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/rules/world.h"
+#include "samples/linesweeper/web/pacing_fixture.h"
 
 #include <DirectXMath.h>
 #include <Windows.h>
@@ -50,9 +53,6 @@ namespace
 	using linesweeper_frame_bench::Options;
 	using linesweeper_frame_bench::Result;
 	using linesweeper_frame_bench::WindowVisibility;
-
-	const char* const font_name = "jetbrains_mono_bold_16";
-	const char* const block_texture_name = "white";
 
 	std::int64_t nanoseconds(Clock::duration duration)
 	{
@@ -211,28 +211,9 @@ namespace
 
 		void build_workload()
 		{
-			this->world_.tick = 1000;
-			this->world_.score = 999999;
-			this->world_.lines = 199;
-			this->world_.level = 14;
-			this->world_.hold_kind = static_cast<std::uint8_t>(Kind::o);
-			this->world_.hold_available = 1;
-
-			for (int index = 0; index < 5; ++index)
-			{
-				this->world_.queue[static_cast<std::size_t>(index)] =
-					static_cast<std::uint8_t>(index % kind_count + 1);
-			}
-			this->world_.queue_count = 5;
-
-			for (int y = well_buffer_rows; y < well_rows; ++y)
-			{
-				for (int x = 0; x < well_columns; ++x)
-				{
-					this->world_.cells[static_cast<std::size_t>(cell_index(x, y))] =
-						static_cast<std::uint8_t>((x + y) % kind_count + 1);
-				}
-			}
+			// The browser pacing page's world, so both measurements describe
+			// the same board, queue and HUD.
+			this->world_ = pacing_world();
 
 			std::ignore = this->scene_.add(
 				std::make_unique<BoardView>(&this->world_, &this->resources_,
@@ -244,14 +225,11 @@ namespace
 				std::make_unique<TopOutBanner>(&this->world_, &this->resources_));
 
 			std::ignore = this->scene_.add(std::make_unique<Label>(
-				L"keyboard   arrows move   Z X rotate   space drops   C holds",
-				font_name, Vector2F(344.0f,
-					static_cast<float>(frame_height) - 60.0f),
-				&this->resources_, Colour::dark_gray));
+				keyboard_hint_text, font_name,
+				Vector2F(hint_x, keyboard_hint_y), &this->resources_,
+				Colour::dark_gray));
 			std::ignore = this->scene_.add(std::make_unique<Label>(
-				L"pad        d-pad moves   A B rotate   Y drops       X holds",
-				font_name, Vector2F(344.0f,
-					static_cast<float>(frame_height) - 36.0f),
+				pad_hint_text, font_name, Vector2F(hint_x, pad_hint_y),
 				&this->resources_, Colour::dark_gray));
 
 			this->scene_.end_tick();
@@ -262,8 +240,7 @@ namespace
 			// Freeze the exact expensive frame: all 200 visible cells top out at
 			// once, producing 48 particles each. One zero-time update materialises
 			// the effect and every measured frame is then a pure read of it.
-			this->world_.topped_out = 1;
-			++this->world_.tick;
+			start_pacing_top_out(this->world_);
 			this->scene_.update(0.0f);
 			this->scene_.end_tick();
 

@@ -14,9 +14,10 @@ namespace linesweeper
 {
 	namespace
 	{
-		// Pixels per second squared, downward. Screen y increases downward,
-		// so gravity is positive - the same convention world.h picks for the
-		// well and for the same reason: the rows and the rasteriser agree.
+		// Board units per second squared, downward. Screen y increases
+		// downward, so gravity is positive - the same convention world.h picks
+		// for the well and for the same reason: the rows and the rasteriser
+		// agree.
 		constexpr float gravity = 900.0f;
 
 		// A cleared row. The sparks go sideways out of the row rather than
@@ -28,10 +29,9 @@ namespace linesweeper
 		constexpr float clear_size = 5.0f;
 
 		// A piece landing. Small, short, upward - a puff of dust off the top
-		// of the four cells that just became stack.
-		// Tuned by looking: six sparks of three and a half pixels for a third
-		// of a second was invisible on screen, which is the whole reason the
-		// drawing half of this sample is verified by running it.
+		// of the four cells that just became stack. Tuned by looking, as the
+		// drawing half of this sample is verified by running it: much smaller,
+		// fewer or shorter-lived than this and the puff is not seen at all.
 		constexpr int lock_particles_per_cell = 10;
 		constexpr float lock_speed = 150.0f;
 		constexpr float lock_lifetime = 0.45f;
@@ -57,6 +57,23 @@ namespace linesweeper
 		// burst's heat is a limit (particles.h): saturating towards white is
 		// a flash when it happens over enough of the screen.
 		constexpr float glow_intensity = 0.85f;
+
+		// A spark's side shrinks with its heat, from its full size at a heat
+		// of one down to this share of it as it dies. Shrinking as it fades is
+		// what makes a flat quad read as a spark instead of a square, and it
+		// costs one multiply where a soft radial texture would have cost an
+		// atlas (README, The particle field). The two add up to one; the
+		// range is spelt rather than computed, so it is the float the
+		// tuning wrote.
+		constexpr float spark_floor = 0.35f;
+		constexpr float spark_range = 0.65f;
+
+		// The side of the quad draw() gives a particle, which update()'s
+		// extent has to contain.
+		float spark_side(const Particle& particle)
+		{
+			return particle.size * (spark_floor + spark_range * particle.life);
+		}
 
 		// The board as it stood between the lock and the clear, which is the
 		// one arrangement no World ever holds.
@@ -102,23 +119,6 @@ namespace linesweeper
 			}
 
 			return cells;
-		}
-
-		// Whether every cell in a row of a reconstructed board is filled.
-		bool row_full(
-			const std::array<std::uint8_t, well_columns * well_rows>& cells,
-			int y)
-		{
-			for (int x = 0; x < well_columns; ++x)
-			{
-				if (cells[static_cast<std::size_t>(cell_index(x, y))] ==
-					cell_empty)
-				{
-					return false;
-				}
-			}
-
-			return true;
 		}
 	}
 
@@ -189,7 +189,7 @@ namespace linesweeper
 			// Both where the spark is and where draw() could carry it before
 			// the next step, which is less than a whole step along its
 			// velocity (lead).
-			const float half = particle.size * (0.35f + 0.65f * particle.life) * 0.5f;
+			const float half = spark_side(particle) * 0.5f;
 			const Vector2F ahead = particle.position + particle.velocity * dt;
 			const float left = std::min(particle.position.x, ahead.x) - half;
 			const float top = std::min(particle.position.y, ahead.y) - half;
@@ -355,12 +355,12 @@ namespace linesweeper
 			// per particle to produce a distribution nobody can distinguish
 			// from this one at four pixels across.
 			const Vector2F velocity =
-				direction * (speed * (0.45f + 0.55f * this->random_unit())) +
+				direction * (speed * (0.45f + 0.55f * this->random_.unit())) +
 				Vector2F(this->random_signed(), this->random_signed()) *
 					(speed * 0.5f);
 
 			this->emit(position, velocity, kind,
-				lifetime * (0.55f + 0.45f * this->random_unit()), size, heat);
+				lifetime * (0.55f + 0.45f * this->random_.unit()), size, heat);
 		}
 	}
 
@@ -417,12 +417,7 @@ namespace linesweeper
 				this->particles_[static_cast<std::size_t>(index)];
 			const Vector2F position = particle.position + particle.velocity * lead;
 
-			// Shrinking as it fades is what makes a flat quad read as a spark
-			// instead of a square, and it costs one multiply where a soft
-			// radial texture would have cost an atlas. README, The particle
-			// field, records that the atlas the sample predicted it would need
-			// turned out not to be needed for this.
-			const float side = particle.size * (0.35f + 0.65f * particle.life);
+			const float side = spark_side(particle);
 			const float half = side * 0.5f;
 
 			// Quadratic, so a spark holds its colour and then goes, which is
@@ -465,29 +460,8 @@ namespace linesweeper
 			this->extent_.height + 2.0f * units_per_pixel);
 	}
 
-	std::uint32_t ParticleField::next_random()
-	{
-		this->rng_ += 0x9E3779B9u;
-
-		std::uint32_t value = this->rng_;
-		value = (value ^ (value >> 16)) * 0x21F0AAADu;
-		value = (value ^ (value >> 15)) * 0x735A2D97u;
-
-		return value ^ (value >> 15);
-	}
-
-	float ParticleField::random_unit()
-	{
-		// The top twenty-four bits over 2^24, which is every float in [0, 1)
-		// that has a chance of being distinct. Using all thirty-two would ask
-		// for precision a float has not got and round some of them to exactly
-		// one.
-		return static_cast<float>(this->next_random() >> 8) /
-			static_cast<float>(1 << 24);
-	}
-
 	float ParticleField::random_signed()
 	{
-		return this->random_unit() * 2.0f - 1.0f;
+		return this->random_.unit() * 2.0f - 1.0f;
 	}
 }

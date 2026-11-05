@@ -261,7 +261,7 @@ Restarting is `world = World{}`. Snapshotting is `World snapshot = world;`.
 Comparing two matches is `std::memcmp`. None of those needed a line of code
 written for them, and that is the T11 demonstration this sample exists to make.
 
-The fourth assert is the one worth reading:
+The `has_unique_object_representations_v` assert is the one worth reading:
 
 ```cpp
 static_assert(std::has_unique_object_representations_v<World>);
@@ -281,8 +281,9 @@ steps, never in seconds. That is what keeps a replay independent of how long a
 frame took.
 
 It also means `options.target_fps = 60` in `main.cpp` is load-bearing rather
-than decorative. Nothing in the engine pins it — `ApplicationOptions::validate`
-only checks it is positive — so a game that sets 120 runs at half speed with no
+than decorative. The game runs one rules tick per fixed step, and nothing in
+the engine pins the rate — `ApplicationOptions::validate` checks only that it
+makes a usable step — so a game that sets 120 runs at double speed with no
 error anywhere. The line carries a comment saying so.
 
 ### The tuning numbers are compiled in, and CONVENTIONS says they should not be
@@ -577,10 +578,10 @@ been exercised:
 autolayout engine, so the rows are y-coordinates and a spacing
 constant. The one thing not done by hand is centring: each string is measured
 once in `init()` through `RenderResources::measure_text`, and the COLOURS row
-again each time it changes. The HUD in
-`board_view.cpp` columnises by counting characters and says it only works
-because the font is monospaced — true, and not a habit a menu with rows of
-different lengths should inherit.
+again each time it changes. The control hints under the board
+(`presentation/hints.h`) are columnised by counting characters, which only
+works because the font is monospaced — true, and not a habit a menu with rows
+of different lengths should inherit.
 
 **The scrim is not a widget**, and that is the only place the widget set did
 not fit. A full-screen dimming quad has no focus, no colour a cursor changes
@@ -641,7 +642,7 @@ puts its glyphs in the same batch as everything else, and the tool that builds a
 the text, which reads better at this resolution anyway — but it is a workaround
 and is named as one.
 
-`board_view.cpp` already has the quad, and it earned its place for the second
+`top_out_banner.cpp` already has the quad, and it earned its place for the second
 reason before the first: the top-out banner is red words over whatever colour
 the sparks the stack became happen to be under them, and no blend mode makes
 that legible. The quad is premultiplied black at 88%, so an eighth of what is
@@ -1107,9 +1108,9 @@ real display or phone.
   ([XAG 103](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/103))
   has no story yet.
 - **Whether the input map belongs in the sample or the engine — now priced,
-  and still open.** `states/` has two tables, `{Key, button}` and
-  `{GamepadButton, button}`, nine entries each, and that is the whole input
-  layer. The engine deliberately has no action-mapping layer: PHILOSOPHY's
+  and still open.** `states/` has three tables, `{Key, button}` and
+  `{GamepadButton, button}` with nine entries each and the touch controls'
+  seven-row `{Control, button}`, and that is the whole input layer. The engine deliberately has no action-mapping layer: PHILOSOPHY's
   boundary table gives bindings and any rebinding to the game, and
   ARCHITECTURE's `input/` entry keeps the table on the game's side (T1). This
   sample reads only `held()` and rebuilds its edges from the combined level,

@@ -16,12 +16,11 @@
 
 // The buttons a touchscreen plays with, drawn by the game over the board.
 //
-// A THIRD DEVICE IS A THIRD TABLE, which is what README, Still open, said the
-// pad's pricing had settled: the keyboard has {Key, button}, the pad has
-// {GamepadButton, button}, and the glass has these eight rectangles and the
-// {Control, button} table in play_state.cpp. The engine gained a touch device
-// and no binding layer (docs/port/web.md, P2), so what a finger on a rectangle
-// means is decided here, in the sample, the same way a key's is.
+// A THIRD DEVICE IS A THIRD TABLE: the keyboard has {Key, button}, the pad
+// has {GamepadButton, button}, and the glass has these eight rectangles and
+// the {Control, button} table in play_state.cpp. The engine has a touch
+// device and no binding layer (docs/port/web.md, P2), so what a finger on a
+// rectangle means is decided here, in the sample, the same way a key's is.
 //
 // THIS FILE DOES NOT KNOW THE RULES' BUTTONS. presentation/ may not include
 // rules/tick.h, where the button bits live (README, Three layers), so a

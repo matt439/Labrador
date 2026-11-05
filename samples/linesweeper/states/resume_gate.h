@@ -9,10 +9,10 @@
 // the menu closes. The rules derive their own edges - down this tick, up last
 // tick, from the byte handed to tick() against the byte before it - so a key
 // that was up when the match was suspended and down when it came back is a
-// press to the simulation, and the piece the player was looking at when they
-// paused went through the floor the instant they chose RESUME. A on the pad
-// confirms and rotates; B cancels and rotates the other way; the same leak,
-// three keys wide (docs/review/gpt6/README.md, G6-07).
+// press to the simulation. Without a mask, the piece the player was looking
+// at when they paused goes through the floor the instant they choose RESUME.
+// A on the pad confirms and rotates, and B cancels and rotates the other way:
+// the same press, three keys wide.
 //
 // The fix is a mask on the play state's side, not an edge on the menu's,
 // because the byte tick() gets has to stay a record of what was held: the
@@ -32,12 +32,11 @@
 // one a player can predict: the match resumes from nothing, whatever the
 // hands were doing. The same mask covers RESTART, which the menu also
 // confirms with the same key over a fresh World whose own input history is
-// empty - the leak there was a hard drop on the first dealt piece.
+// empty - unmasked, that is a hard drop on the first dealt piece.
 //
 // Header-only and engine-free on purpose: the tests for it link the rules
 // and nothing else, so what it does to a byte can be asserted against tick()
-// with no window, which is where the review found the leak in the first
-// place.
+// with no window.
 namespace linesweeper
 {
 	class ResumeGate

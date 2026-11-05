@@ -3,6 +3,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/render/font.h"
 #include "engine/render/sprite_geometry.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 
@@ -15,14 +16,13 @@ namespace linesweeper
 {
 	namespace
 	{
-		// Each object resolves its own asset names during construction (T7).
-		const std::string block_texture_name = "white";
-		const std::string font_name = "jetbrains_mono_bold_16";
-
 		constexpr Colour banner_colour(240, 96, 96);
 
 		// How far the quad extends past the text, top and bottom.
 		constexpr float banner_padding = 10.0f;
+
+		// The text's top edge: halfway down the well.
+		constexpr float banner_middle = well_origin_y + well_height * 0.5f;
 	}
 
 	TopOutBanner::TopOutBanner(const World* world,
@@ -77,9 +77,12 @@ namespace linesweeper
 					this->text_bounds_ = RectangleF::union_of(this->text_bounds_, cell);
 				});
 		}
-		this->text_bounds_.offset(
+		// Floor the centered board-space origin so an odd measured width does
+		// not place it on a half unit at the sample's capture resolution.
+		this->text_origin_ = Vector2F(
 			std::floor(well_origin_x + (well_width - this->text_size_.x) * 0.5f),
-			well_origin_y + well_height * 0.5f);
+			banner_middle);
+		this->text_bounds_.offset(this->text_origin_.x, this->text_origin_.y);
 	}
 
 	void TopOutBanner::set_touch(bool touch)
@@ -94,25 +97,15 @@ namespace linesweeper
 			return;
 		}
 
-		const float middle = well_origin_y + well_height * 0.5f;
-
 		// Premultiplied black attenuates the board and sparks behind the text
 		// while leaving some background visible. The shared sprite blend state
 		// handles this panel and its glyphs; samples/linesweeper/README.md,
 		// Additive blending, describes the compositing choice.
 		draw_list.draw_sprite(this->block_, RectangleI(0, 0, 1, 1),
-			RectangleF(well_origin_x, middle - banner_padding, well_width,
-				this->text_size_.y + banner_padding * 2.0f),
-			faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f, Vector2F::zero,
-			SpriteFlip::none, 0.0f);
+			this->panel_bounds(), faded(Colour(0.0f, 0.0f, 0.0f), 0.88f), 0.0f,
+			Vector2F::zero, SpriteFlip::none, 0.0f);
 
-		// Floor the centered board-space origin so an odd measured width does
-		// not place it on a half unit at the sample's capture resolution.
-		draw_list.draw_text(this->font_, this->text_,
-			Vector2F(
-				std::floor(
-					well_origin_x + (well_width - this->text_size_.x) * 0.5f),
-				middle),
+		draw_list.draw_text(this->font_, this->text_, this->text_origin_,
 			banner_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 	}
 
@@ -130,9 +123,7 @@ namespace linesweeper
 
 	RectangleF TopOutBanner::panel_bounds() const
 	{
-		const float middle = well_origin_y + well_height * 0.5f;
-
-		return RectangleF(well_origin_x, middle - banner_padding, well_width,
-			this->text_size_.y + banner_padding * 2.0f);
+		return RectangleF(well_origin_x, banner_middle - banner_padding,
+			well_width, this->text_size_.y + banner_padding * 2.0f);
 	}
 }

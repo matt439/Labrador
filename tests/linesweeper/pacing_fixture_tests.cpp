@@ -3,6 +3,7 @@
 
 #include "engine/render/renderer.h"
 #include "samples/linesweeper/presentation/particles.h"
+#include "samples/linesweeper/web/pacing_observer.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -38,7 +39,8 @@ TEST_CASE("the browser pacing world has the benchmark's exact visible well and H
 			}
 			else
 			{
-				CHECK(cell == static_cast<std::uint8_t>((x + y) % 7 + 1));
+				CHECK(cell == static_cast<std::uint8_t>(
+					(x + y) % linesweeper::kind_count + 1));
 				++visible_cells;
 			}
 		}
@@ -98,7 +100,21 @@ TEST_CASE("the browser pacing validator refuses a top-out from an incomplete wel
 	CHECK(particles.live() < pacing_particle_count);
 	CHECK(particles.dropped() == 0);
 	CHECK_THROWS_WITH_AS(require_pacing_particles(particles),
-		"The browser pacing top-out must have exactly 9,600 live particles "
+		"The browser pacing top-out must have exactly 9600 live particles "
 		"and zero dropped emissions; got 9552 live and 0 dropped.",
 		std::runtime_error);
+}
+
+TEST_CASE("the page's pacing mode is one of four, and any other number is refused")
+{
+	CHECK(linesweeper::pacing_mode_from(0) == linesweeper::PacingMode::disabled);
+	CHECK(linesweeper::pacing_mode_from(1) == linesweeper::PacingMode::play);
+	CHECK(linesweeper::pacing_mode_from(2) == linesweeper::PacingMode::top_out);
+	CHECK(linesweeper::pacing_mode_from(3) ==
+		linesweeper::PacingMode::top_out_frozen);
+
+	CHECK_THROWS_WITH_AS(linesweeper::pacing_mode_from(4),
+		"Unknown LineSweeper pacing mode 4; the page may ask for 0 to 3.",
+		std::invalid_argument);
+	CHECK_THROWS_AS(linesweeper::pacing_mode_from(-1), std::invalid_argument);
 }

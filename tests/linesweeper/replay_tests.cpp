@@ -67,8 +67,8 @@ namespace
 	//
 	// It runs with no window, no device, no renderer and no engine linked into
 	// the binary at all, and it compares two matches with std::memcmp - which
-	// is defined only because World has no padding bits, which is what the
-	// fourth static_assert in world.h is for.
+	// is defined only because World has no padding bits, which is what
+	// world.h's has_unique_object_representations_v assert is for.
 	TEST_CASE("a match is its inputs")
 	{
 		SUBCASE("the same script twice is the same match, byte for byte")
@@ -128,10 +128,14 @@ namespace
 		}
 	}
 
-	TEST_CASE("the seed is the only thing that changes the deal")
+	TEST_CASE("a different seed can deal a different first piece, and zero is a working seed")
 	{
 		World fresh;
 		linesweeper::tick(fresh, linesweeper::button_none);
+
+		// Zero deals: an xorshift is stuck at zero forever from a zero state,
+		// and `World{}` would have dealt no pieces at all.
+		CHECK(fresh.current.kind != linesweeper::Kind::none);
 
 		bool any_different = false;
 
@@ -147,9 +151,8 @@ namespace
 			}
 		}
 
-		// Zero is a legal seed and a different game from one, which an
-		// xorshift could not have managed - it is stuck at zero forever from a
-		// zero state, and `World{}` would have dealt no pieces at all.
+		// And zero is a game of its own: at least one of the seeds after it
+		// deals a different first piece.
 		CHECK(any_different);
 	}
 }

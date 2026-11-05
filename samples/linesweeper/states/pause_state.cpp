@@ -10,6 +10,7 @@
 #include "engine/render/colour.h"
 #include "engine/render/renderer.h"
 #include "engine/render/viewport.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/palette.h"
 #if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
 #include "samples/linesweeper/web/test_input.h"
@@ -20,6 +21,7 @@
 #include <cmath>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 
 using namespace labrador;
@@ -28,9 +30,6 @@ namespace linesweeper
 {
 	namespace
 	{
-		const std::string font_name = "jetbrains_mono_bold_16";
-		const std::string block_texture_name = "white";
-
 		// Explicit board-space row positions. FocusGroup initially focuses
 		// the first added row, then uses measured bounds for navigation.
 		constexpr float title_y = 236.0f;
@@ -144,18 +143,18 @@ namespace linesweeper
 
 		// The game reads input and asks FocusGroup to invoke the focused row's
 		// action. A result pop is deferred until update() returns, preserving
-		// this object and its callback while it runs. COLOURS instead changes
-		// the borrowed palette and never submits its placeholder choice.
+		// this object and its callback while it runs. COLOURS has no choice:
+		// it changes the borrowed palette and leaves the menu open.
 		struct Row
 		{
 			std::wstring text;
-			PauseChoice choice;
+			std::optional<PauseChoice> choice;
 		};
 
 		const std::array<Row, 4> rows = { {
 			{ L"RESUME", PauseChoice::resume },
 			{ L"RESTART", PauseChoice::restart },
-			{ colours_text(*this->palette_), PauseChoice::resume },
+			{ colours_text(*this->palette_), std::nullopt },
 			{ L"QUIT", PauseChoice::quit },
 		} };
 
@@ -168,7 +167,7 @@ namespace linesweeper
 				centred(*resources, this->font_, entry.text, row_y(index)),
 				resources));
 
-			if (index == colours_row_index)
+			if (!entry.choice.has_value())
 			{
 				this->colours_row_ = row;
 				this->focus_.add(row, [this]()
@@ -181,7 +180,7 @@ namespace linesweeper
 			}
 			else
 			{
-				const PauseChoice choice = entry.choice;
+				const PauseChoice choice = *entry.choice;
 				this->focus_.add(row, [this, choice]()
 					{
 #if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
@@ -215,12 +214,8 @@ namespace linesweeper
 
 	void PauseState::arrange_screen()
 	{
-		this->arrangement_ =
-			arrange(this->app_->resolution_manager()->resolution_vec());
-
-		this->scene_->clear_views();
-		this->scene_->add_view(this->arrangement_.viewport,
-			this->arrangement_.camera);
+		this->arrangement_ = arrange_scene(*this->scene_,
+			this->app_->resolution_manager()->resolution_vec());
 	}
 
 	void PauseState::select_palette(Palette palette)

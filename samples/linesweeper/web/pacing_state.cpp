@@ -3,12 +3,16 @@
 #include "engine/app/application.h"
 #include "engine/render/label.h"
 #include "samples/linesweeper/presentation/arrangement.h"
+#include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/board_view.h"
+#include "samples/linesweeper/presentation/hints.h"
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/web/pacing_fixture.h"
 
+#include <cstdint>
 #include <memory>
+#include <tuple>
 #include <utility>
 
 namespace linesweeper
@@ -21,10 +25,8 @@ namespace linesweeper
 
 	void PacingState::arrange_screen()
 	{
-		const Arrangement arrangement =
-			arrange(this->app_->resolution_manager()->resolution_vec());
-		this->scene_.clear_views();
-		this->scene_.add_view(arrangement.viewport, arrangement.camera);
+		arrange_scene(this->scene_,
+			this->app_->resolution_manager()->resolution_vec());
 	}
 
 	void PacingState::init()
@@ -33,16 +35,14 @@ namespace linesweeper
 		std::ignore = this->scene_.add(std::make_unique<BoardView>(&this->world_, resources,
 			&standard_palette));
 		this->particles_ = this->scene_.add(std::make_unique<ParticleField>(
-			&this->world_, &this->last_tick_, resources->resolve_texture("white"),
+			&this->world_, &this->last_tick_, resources->resolve_texture(block_texture_name),
 			&this->app_->step_position()));
 		std::ignore = this->scene_.add(std::make_unique<TopOutBanner>(&this->world_, resources));
 		std::ignore = this->scene_.add(std::make_unique<labrador::Label>(
-			L"keyboard   arrows move   Z X rotate   space drops   C holds",
-			"jetbrains_mono_bold_16", labrador::Vector2F(344.0f, landscape_height - 60.0f),
+			keyboard_hint_text, font_name, labrador::Vector2F(hint_x, keyboard_hint_y),
 			resources, labrador::Colour::dark_gray));
 		std::ignore = this->scene_.add(std::make_unique<labrador::Label>(
-			L"pad        d-pad moves   A B rotate   Y drops       X holds",
-			"jetbrains_mono_bold_16", labrador::Vector2F(344.0f, landscape_height - 36.0f),
+			pad_hint_text, font_name, labrador::Vector2F(hint_x, pad_hint_y),
 			resources, labrador::Colour::dark_gray));
 		this->scene_.end_tick();
 		this->arrange_screen();
@@ -54,7 +54,8 @@ namespace linesweeper
 	{
 		this->arrange_screen();
 		const std::uint64_t completed = this->app_->frame_timings().frame;
-		if (this->snapshot_->top_out_frame == 0 && ++this->warmup_updates_ >= 300)
+		if (this->snapshot_->top_out_frame == 0 &&
+			++this->warmup_updates_ >= pacing_warmup_updates)
 		{
 			start_pacing_top_out(this->world_);
 			this->snapshot_->top_out_frame = completed + 1;

@@ -195,14 +195,14 @@ namespace linesweeper
 
 		// --- Moving ---
 
-		bool try_move(World& world, int dx)
+		void try_move(World& world, int dx)
 		{
 			Piece candidate = world.current;
 			candidate.x = static_cast<std::int8_t>(candidate.x + dx);
 
 			if (blocked(world, candidate))
 			{
-				return false;
+				return;
 			}
 
 			world.current = candidate;
@@ -212,8 +212,6 @@ namespace linesweeper
 			// state in the simulation that one verb writes and another reads.
 			world.last_action_rotation = 0;
 			grant_lock_reset(world);
-
-			return true;
 		}
 
 		void apply_hold(World& world)
@@ -431,20 +429,6 @@ namespace linesweeper
 				: Spin::mini;
 		}
 
-		bool row_full(const World& world, int y)
-		{
-			for (int x = 0; x < well_columns; ++x)
-			{
-				if (world.cells[static_cast<std::size_t>(cell_index(x, y))] ==
-					cell_empty)
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
 		// Compacts the well upward in one pass: a read cursor and a write
 		// cursor walking from the floor, the write cursor stalling on every
 		// full row. What is left above the write cursor at the end is however
@@ -457,7 +441,7 @@ namespace linesweeper
 
 			for (int read = well_rows - 1; read >= 0; --read)
 			{
-				if (row_full(world, read))
+				if (row_full(world.cells, read))
 				{
 					++cleared;
 					continue;

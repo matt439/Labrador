@@ -16,10 +16,10 @@ using linesweeper::World;
 //
 // This is the one file in the rules-only target that names anything under
 // states/, and it can because resume_gate.h includes nothing but <cstdint>.
-// What it pins is the leak the review found and the policy that closes it
-// (docs/review/gpt6/README.md, G6-07), asserted through tick() rather than
-// against the gate's bits alone: the first case is the review's reproduction
-// and the second is the same bytes through the gate.
+// What it pins is the press a held confirm key becomes after RESUME and the
+// policy that keeps it out of the match, asserted through tick() rather than
+// against the gate's bits alone: the first case is the press without the
+// gate and the second is the same bytes through the gate.
 
 namespace
 {
@@ -44,7 +44,7 @@ TEST_CASE("without the gate, the key that chose RESUME hard-drops the piece")
 	// The rules are right, and this case exists so the next one is read as a
 	// policy rather than as a fix to them.
 	World world = paused_world();
-	const int score_before = world.score;
+	const std::uint32_t score_before = world.score;
 
 	linesweeper::tick(world, linesweeper::button_hard_drop);
 

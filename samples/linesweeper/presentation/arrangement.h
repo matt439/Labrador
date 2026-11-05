@@ -5,6 +5,11 @@
 #include "engine/render/camera.h"
 #include "engine/render/viewport.h"
 
+namespace labrador
+{
+	class Scene;
+}
+
 // Which way up the screen is, and how the board's coordinates reach it.
 //
 // EVERYTHING ELSE IN presentation/ DRAWS IN ONE SPACE: the 1280x720 that
@@ -16,8 +21,8 @@
 // - LANDSCAPE frames that 1280x720 in the buffer, fitted and centred. At
 //   exactly 1280x720 the camera is the identity - a scale of one and no
 //   translation, both exact in floating point - so the window main.cpp opens
-//   draws byte for byte what it drew before there was a camera here, and the
-//   capture tool's images are the evidence.
+//   draws board space byte for byte as it is laid out, which the capture
+//   tool's images rely on.
 // - PORTRAIT frames only the board block - HOLD and the score on the left,
 //   the well, NEXT on the right - fitted to the buffer's WIDTH, and leaves
 //   the height below it for the touch controls. The block is about as wide as
@@ -82,4 +87,11 @@ namespace linesweeper
 	// The arrangement for a buffer of this size, in pixels. Throws
 	// std::invalid_argument for a non-positive extent, as Camera::frame does.
 	Arrangement arrange(const labrador::Vector2F& buffer);
+
+	// arrange(), installed as the scene's one view: every state that draws
+	// the board frames its scene this way, every tick, so a resized buffer
+	// lands in the arrangement that fits on the next frame. Returns the
+	// arrangement, which the touch controls and the scrim read.
+	Arrangement arrange_scene(labrador::Scene& scene,
+		const labrador::Vector2F& buffer);
 }

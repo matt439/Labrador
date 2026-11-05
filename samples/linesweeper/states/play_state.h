@@ -10,9 +10,9 @@
 #include "samples/linesweeper/presentation/particles.h"
 #include "samples/linesweeper/presentation/top_out_banner.h"
 #include "samples/linesweeper/presentation/touch_controls.h"
+#include "samples/linesweeper/rules/world.h"
 #include "samples/linesweeper/states/pause_state.h"
 #include "samples/linesweeper/states/resume_gate.h"
-#include "samples/linesweeper/rules/world.h"
 
 #include <cstdint>
 #include <memory>

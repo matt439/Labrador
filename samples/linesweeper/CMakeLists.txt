@@ -223,13 +223,14 @@ elseif(WIN32)
         labrador_settings
     )
 
-    # Its own content, not a share of the other sample's. Two samples is few enough
-    # that independence is cheaper than the coupling - an engine with forty would
-    # put the media in one place and pay the coupling instead.
+    # Its own content, not a share of another sample's. Each sample keeps its
+    # own: at this handful, independence is cheaper than the coupling - an
+    # engine with forty would put the media in one place and pay the coupling
+    # instead.
     #
     # One texture, and it is one white texel. Every block, panel and rule on the
     # screen is that texel with a tint on it - a solid rectangle is a sprite, and
-    # the renderer seam draws sprites (presentation/board_view.cpp says why there
-    # is no draw_rect and should not be one).
+    # the renderer seam draws sprites (README.md, The whole screen is one white
+    # texel, says why there is no draw_rect and should not be one).
     linesweeper_add_content_copy(linesweeper_content LineSweeperSample)
 endif()
