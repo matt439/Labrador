@@ -246,8 +246,9 @@ protocol's. Touch cancellation is the one step BiDi cannot send.
 **WEB#10, 2026-11-05:** the runner adds LineSweeper's development page and
 its bundle page's play, forced context loss, quit and replay, and configure
 registers all eight runs as `Firefox*` ctest entries where it finds a
-Firefox; CI's wasm job runs them in the runner image's Firefox. All eight
-passed in headless Firefox 159.0.1; the
+Firefox. All eight passed in headless Firefox 159.0.1 on the desktop. CI's
+wasm job runs only the window's entry, because the runner image's Firefox
+makes no WebGL2 context without a GPU; the
 [record](web-to-be-tested.md#firefox-sample-checks-web4) gives the counts and
 what the bundle run leaves to Chromium.
 

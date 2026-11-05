@@ -80,7 +80,9 @@ teardown to fake WebSockets under Node, with no browser or device.
 render backend rasterizes, eight `Firefox*` entries run the six sample pages,
 `WebWindowTests`' sequence and the bundle page's desktop play, forced context
 loss, quit and replay over WebDriver BiDi
-([run_firefox.mjs](tests/render/web/run_firefox.mjs)); CI's image has one.
+([run_firefox.mjs](tests/render/web/run_firefox.mjs)). CI's image has a
+Firefox but no WebGL2 in it (no GPU, and no software WebGL by default), so CI
+runs only `FirefoxWebWindowTests`; the drawing entries need a GPU.
 
 The faster CI workflow is documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 Changes confined to `.md` files or `docs/` run the standalone CMake lint
