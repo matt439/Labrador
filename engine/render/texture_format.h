@@ -26,9 +26,9 @@ namespace labrador
 	// as such by sprite_font_file_tests.cpp. r8g8b8a8_unorm is also what every
 	// decoded block texture becomes. bc1_unorm is here because it completes a
 	// switch over what a .dds can say, and b4g4r4a4_unorm because
-	// MakeSpriteFont offers it. A file naming
-	// anything else is rejected by name (T6) rather than passed through to fail
-	// as a device error, and this list grows when a real file needs it to.
+	// MakeSpriteFont offers it. A file naming anything else is rejected by
+	// name (T6) rather than passed through to fail as a device error, and this
+	// list grows when a real file needs it to.
 	//
 	// THE BLOCK-COMPRESSED ENTRIES ARE THE ONES TO WATCH ON A BACKEND, and they
 	// are not a corner of the content: compressed art is the common case and

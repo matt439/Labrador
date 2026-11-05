@@ -70,10 +70,10 @@ namespace labrador
 	// renderer.h never gains a definition; the handles that name it index the
 	// table below, and this is where the index becomes a resource.
 	//
-	// It holds one table, the textures, keyed to D3D11 views: the one resource
-	// type this folder owns, and the sole reason this class cannot be written
-	// once for everybody. The font and sheet tables are RenderResources' own
-	// members; engine/render/render_resources.h says why.
+	// It holds one table, the textures, holding D3D11 shader-resource views:
+	// the one resource type this folder owns, and the sole reason this class
+	// cannot be written once for everybody. The font and sheet tables are
+	// RenderResources' own members; engine/render/render_resources.h says why.
 	class RenderResources::Impl
 	{
 	public:

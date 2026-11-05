@@ -35,8 +35,8 @@ namespace labrador
 		// through, hand back a resolvable handle and draw with it. That is the
 		// wrong way round: this is the configuration a client is most likely to
 		// be tested in, so a rule it cannot enforce is a rule that reaches a
-		// shipping build unbroken. The seam states the
-		// ordering (resource_factory.h) and all five keep it, each throwing a
+		// shipping build unbroken. The seam states the ordering
+		// (resource_factory.h) and all five keep it, each throwing a
 		// runtime_error that names the texture.
 		if (!renderer.impl()->device_created)
 		{

@@ -12,13 +12,14 @@ namespace labrador
 	// table.
 	//
 	// THE LOADERS ARE THE ENGINE'S AND add_texture_asset IS THE BACKEND'S, and
-	// the line between them is the point of the file. Loading a texture is:
-	// work out the path, read the file, put the result in the table. Only the
-	// third step names a graphics type. So the first two are written once, in
-	// resource_factory.cpp, and a backend supplies add_texture_asset and
-	// nothing else - which is the whole of what a port owes for content, and
-	// costs what the API charges. engine/render/SEAM.md#4 orders the backends
-	// by it.
+	// the line between them is the point of the file: load_texture_asset,
+	// load_font_asset and add_white_texture are the engine's. Loading a
+	// texture is: work out the path, read the file, put the result in the
+	// table. Only the third step names a graphics type. So the first two are
+	// written once, in resource_factory.cpp, and a backend supplies
+	// add_texture_asset and nothing else - which is the whole of what a port
+	// owes for content, and costs what the API charges.
+	// engine/render/SEAM.md#4 orders the backends by it.
 	//
 	// Nothing declared here names a graphics type, so a caller compiles against
 	// it with no backend header in scope. Asking for a backend that was not built
@@ -84,11 +85,11 @@ namespace labrador
 	// renderer's device from bytes the engine has already decoded
 	// (engine/render/texture_data.h), and puts it in the table under `name`.
 	//
-	// The loaders above call it, so a backend never sees a file; a test or a
-	// tool may call it directly to install TextureData it built itself. Throws
-	// std::runtime_error naming `name` and the format if the device will not
-	// take it, which is the answer a backend that cannot upload block
-	// compression owes rather than a blank texture.
+	// The engine functions above call it, so a backend never sees a file; a
+	// test or a tool may call it directly to install TextureData it built
+	// itself. Throws std::runtime_error naming `name` and the format if the
+	// device will not take it, which is the answer a backend that cannot
+	// upload block compression owes rather than a blank texture.
 	//
 	// AFTER create_device, AND THAT IS A RULE OF THE SEAM RATHER THAN ONE
 	// BACKEND'S PREFERENCE. `renderer` is named here only because a texture is

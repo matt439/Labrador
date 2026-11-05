@@ -805,9 +805,10 @@ namespace labrador
 			// told, making the call a self-comparison that changes nothing; the
 			// GL backend answers it from the window (renderer.h,
 			// back_buffer_size; SEAM.md#6 has each backend's answer), so
-			// ungated, every step hands it the already-current client rect. That costs a
-			// viewport, a clear and a per-view reset per mouse-move step, and
-			// then has gl answer "nothing changed" to the WM_EXITSIZEMOVE
+			// ungated, every step hands it the already-current client rect.
+			// That costs a viewport, a clear and a per-view reset per
+			// mouse-move step, and then has gl answer "nothing changed" to the
+			// WM_EXITSIZEMOVE
 			// below - the one message that ends a resize, which the other
 			// backends answer true to.
 			if (!this->in_sizemove)

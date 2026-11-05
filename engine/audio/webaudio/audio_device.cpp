@@ -78,8 +78,9 @@
 // the stop it asks for keeps the buffer queued; this backend gives the outcome
 // the seam's words describe instead. The null backend has no clock, so it
 // keeps answering playing as XAudio2 does (engine/audio/null/recording.h),
-// and only this backend reports the natural end. A non-looping voice that reaches its end answers stopped from the
-// next voice_state(), exactly as DirectXTK's GetState does.
+// and only this backend reports the natural end. A non-looping voice that
+// reaches its end answers stopped from the next voice_state(), exactly as
+// DirectXTK's GetState does.
 
 // Global rather than in labrador::, because EM_JS declares a C function, and
 // prefixed for the same reason.

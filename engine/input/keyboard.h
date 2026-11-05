@@ -171,7 +171,7 @@ namespace labrador
 
 		// Called by the shell once per fixed update before readers. Current becomes
 		// previous, fed key/focus state becomes current, and accumulated text
-		// replaces the prior frame's text.
+		// replaces the text accumulated before the previous poll.
 		void poll();
 
 		// Borrowed snapshots owned by this Keyboard; poll() replaces their values.

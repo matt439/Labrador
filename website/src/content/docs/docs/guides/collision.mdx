@@ -47,9 +47,11 @@ contact count and how many times the player has entered the trigger.
 ## Give each object a shape, layer and mask
 
 `CollisionObject` extends `GameObject`: it can update and draw, and also supplies
-its collision shape, layer, mask, tag and contact callback. `bounds()` is the
-broad-phase extent; `shape()` is the geometry the narrow phase measures. Here
-both come from the same rectangle, which is also the sprite destination:
+its collision shape, layer, mask, tag and contact callback. `shape()` supplies
+both the broad-phase box (its `bounding_box()`) and the geometry the narrow
+phase measures; `bounds()` is the object's extent for culling and layout, which
+collision does not read. Here both come from the same rectangle, which is also
+the sprite destination:
 
 <SourceFile path="samples/collision/body.cpp" from="RectangleF Body::bounds() const" to="const Shape* Body::shape() const" />
 

@@ -54,8 +54,9 @@ namespace labrador
 		// belong to the AudioDevice, which frees them when it is destroyed.
 		// Replacing or emptying a name therefore neither stops nor frees the
 		// previous bank's voices, and a looping effect it was playing keeps
-		// sounding with no handle left to stop it. Stop a bank's effects
-		// before replacing it.
+		// sounding with no handle left to stop it until the device is
+		// destroyed or, on XAudio2, reset after a device loss. Stop a bank's
+		// effects before replacing it.
 		void add_sound_bank(const std::string& sound_bank_name,
 			std::unique_ptr<SoundBank> sound_bank);
 

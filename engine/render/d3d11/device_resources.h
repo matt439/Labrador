@@ -32,7 +32,8 @@ namespace labrador
     // look for it.
     //
     //  - No depth buffer. The renderer draws 2D and nothing else, so there is
-    //    no depth format, depth texture, depth view or per-frame DiscardView.
+    //    no depth format, depth texture, depth view, or a per-frame
+    //    DiscardView of one.
     //  - No tearing. Present takes the sync interval Renderer::set_vsync
     //    chose, and an interval of 0 without the tearing flag is composed in a
     //    window rather than torn.
