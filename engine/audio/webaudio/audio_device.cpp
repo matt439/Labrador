@@ -242,8 +242,14 @@ EM_JS(void, labrador_audio_install, (), {
 					window.removeEventListener(name, device.listener, true);
 				}
 			}
+			// Teardown finishes whatever one voice answers: a stop() refused
+			// for a reason detach() does not expect must not leave the other
+			// voices sounding, the context open or the slot taken.
 			for (const voice of device.voices) {
-				detach(voice);
+				try {
+					detach(voice);
+				} catch (ignored) {
+				}
 			}
 			if (device.context) {
 				device.context.close();

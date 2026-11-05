@@ -27,11 +27,10 @@ namespace labrador
 		// allocation).
 		//
 		// Preconditions, checked: num_partitions >= 1 and num_elements >= 0.
-		// num_partitions is a divisor on the first line, and it arrives from
-		// ApplicationOptions::max_threads by way of ThreadPool, and unchecked
-		// anywhere on that route a zero in a config file is an integer
-		// divide-by-zero on the first frame of the first match. A failed
-		// check throws std::invalid_argument and leaves `ranges` unchanged.
+		// num_partitions is a divisor on the first line, so this function
+		// checks it itself rather than trusting a caller's earlier check. A
+		// failed check throws std::invalid_argument and leaves `ranges`
+		// unchanged.
 		void partition(int num_elements, int num_partitions,
 			std::vector<std::pair<int, int>>& ranges) const;
 

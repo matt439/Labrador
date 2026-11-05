@@ -66,9 +66,10 @@ namespace labrador
 
 	// The widest or tallest image a reader turns into a texture.
 	//
-	// 16384 is Direct3D 11's two-dimensional texture limit at feature level
-	// 11_0, the default backend's, so a larger picture could not become a
-	// texture there anyway. The PNG reader refuses a header beyond it before
+	// 16384 is the two-dimensional texture limit Direct3D 11 guarantees at
+	// feature level 11_0 and above, so a larger picture could not become a
+	// texture on such a device anyway; a feature level 10 device stops at
+	// 8192. The PNG reader refuses a header beyond it before
 	// decoding, so a few bytes of compressed file cannot ask for gigabytes; a
 	// .dds needs no such check, because its pixels must all be in the file.
 	// A sprite sheet's animation strip, whose frames sit side by side in one

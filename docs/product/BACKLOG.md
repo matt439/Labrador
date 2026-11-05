@@ -278,6 +278,11 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   list, decides the remaining criteria: the `gamepad_reader.h` disclaimer
   replaced, the input guide's focus-loss note, or a defect in
   `engine/input/xinput/`.
+  *Amended 2026-11-05 by SM-73:* the engine now decides the suspended case.
+  A suspended XInput reader answers every slot disconnected, as the web
+  reader did, and `gamepad_reader.h` states that one contract with no
+  disclaimer. The session's observation checks it on the physical pad; it no
+  longer chooses between the three outcomes above.
 - [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
   *Amended 2026-11-03 by the persona re-review, under the 2026-11-03
   decision:* the Firefox half is automated rather than played: a bundle mode
@@ -1102,9 +1107,9 @@ written.
 
 - [x] **[OCA-83](#oca-83)** Could - S - The Outside Adopter: Click, tap and drag the components gallery's rows
 
-- [ ] **[SM-73](#sm-73)** Should - L - The Outside Adopter, The Sole Owner-Maintainer: Backends keep their seam contracts, and content mistakes fail loudly
+- [x] **[SM-73](#sm-73)** Should - L - The Outside Adopter, The Sole Owner-Maintainer: Backends keep their seam contracts, and content mistakes fail loudly
 
-- [ ] **[SM-74](#sm-74)** Should - M - The Outside Adopter, The Sole Owner-Maintainer: Hostile content and failing callbacks raise the documented exception
+- [x] **[SM-74](#sm-74)** Should - M - The Outside Adopter, The Sole Owner-Maintainer: Hostile content and failing callbacks raise the documented exception
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its

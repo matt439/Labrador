@@ -13,6 +13,10 @@
 #include <type_traits>
 #include <vector>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using labrador::ByteReader;
 using labrador::read_file_bytes;
 
@@ -312,6 +316,37 @@ TEST_SUITE("ByteReaderTests")
 		}
 		CHECK(threw_runtime_error);
 	}
+
+#ifdef _WIN32
+	TEST_CASE("a file another handle holds exclusively is runtime_error, not missing")
+	{
+		const labrador_tests::ScratchFile file("locked-file.bin",
+			std::vector<unsigned char>{ 0x01 });
+		const std::filesystem::path native(file.path());
+		const HANDLE lock = CreateFileW(native.c_str(), GENERIC_READ, 0,
+			nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		REQUIRE(lock != INVALID_HANDLE_VALUE);
+
+		bool threw_runtime_error = false;
+		try
+		{
+			(void)read_file_bytes(file.path());
+		}
+		catch (const std::out_of_range&)
+		{
+			CloseHandle(lock);
+			FAIL("a locked file is there; it is not a missing name");
+		}
+		catch (const std::runtime_error& error)
+		{
+			threw_runtime_error = true;
+			const std::string message = error.what();
+			CHECK(message.find(file.path()) != std::string::npos);
+		}
+		CloseHandle(lock);
+		CHECK(threw_runtime_error);
+	}
+#endif
 
 	TEST_CASE("a path with an embedded NUL is invalid_argument")
 	{
