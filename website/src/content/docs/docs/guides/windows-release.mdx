@@ -286,7 +286,7 @@ the instructions it was compiled for, and stops with
 
 | Renderer | The floor | Where it is enforced |
 | --- | --- | --- |
-| Direct3D 11 | Direct3D feature level 10_0 | The device is made at the highest of 11_1 down to the floor, 10_0, which is `DeviceResources`' default (<RepoLink path="engine/render/d3d11/device_resources.h">d3d11/device_resources.h</RepoLink>, <RepoLink path="engine/render/d3d11/device_resources.cpp">device_resources.cpp</RepoLink>). The shaders are compiled for `4_0_level_9_1`, below it (<RepoLink path="engine/CMakeLists.txt">engine/CMakeLists.txt</RepoLink>). |
+| Direct3D 11 | Direct3D feature level 10_0 | The device is made at the highest of 11_1 down to the floor, 10_0, the last level `device_resources.cpp` lists (<RepoLink path="engine/render/d3d11/device_resources.h">d3d11/device_resources.h</RepoLink>, <RepoLink path="engine/render/d3d11/device_resources.cpp">device_resources.cpp</RepoLink>). The shaders are compiled for `4_0_level_9_1`, below it (<RepoLink path="engine/CMakeLists.txt">engine/CMakeLists.txt</RepoLink>). |
 | Direct3D 12 | Feature level 11_0, shader model 5.1 | `min_feature_level` (<RepoLink path="engine/render/d3d12/device_resources.cpp">d3d12/device_resources.cpp</RepoLink>); shaders compiled for `vs_5_1` and `ps_5_1` (<RepoLink path="engine/CMakeLists.txt">engine/CMakeLists.txt</RepoLink>) |
 | OpenGL | GL 3.3 core, with `WGL_EXT_swap_control` | The context asked of WGL (<RepoLink path="engine/render/gl/wgl_context.cpp">gl/wgl_context.cpp</RepoLink>) |
 | Vulkan | Vulkan 1.2, with timeline semaphores | `min_api_version` and the `timelineSemaphore` check (<RepoLink path="engine/render/vulkan/device_resources.cpp">vulkan/device_resources.cpp</RepoLink>) |

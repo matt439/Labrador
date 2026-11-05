@@ -7,6 +7,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 #include "engine/render/text_encoding.h"

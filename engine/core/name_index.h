@@ -15,13 +15,13 @@ namespace labrador::detail
 		// The slot `name` holds, or nothing for a name never claimed.
 		std::optional<int> find(const std::string& name) const
 		{
-			const std::map<std::string, int>::const_iterator it =
+			const std::map<std::string, int>::const_iterator found =
 				this->indices_.find(name);
-			if (it == this->indices_.end())
+			if (found == this->indices_.end())
 			{
 				return std::nullopt;
 			}
-			return it->second;
+			return found->second;
 		}
 
 		// Gives a new `name` slot `index`, then calls `store`, which stores
