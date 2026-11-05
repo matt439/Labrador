@@ -20,7 +20,9 @@ The client's workarounds are described generically on purpose. The ledger's
 owner approved only minimal engine-focused disclosure, so no ColourWars path,
 name or line appears here. The client's repository has been
 public since 3 November 2026; that does not change this boundary, which is the
-owner's decision rather than a visibility fact.
+owner's decision rather than a visibility fact. A review on 5 November 2026
+found no report here linking into the client's repository and left them so;
+the README and the website's *Why Labrador?* page link the repository itself.
 
 The owner reaffirmed this boundary on 27 October 2026 for `PI-09`'s public
 filings. Recheck each report against current master and file an engine-focused

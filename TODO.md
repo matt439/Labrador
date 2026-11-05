@@ -12,7 +12,7 @@ An index of open work, one row per item; each row points to the document that ow
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
 allows. Next's hardware and release gates remain open. Apart from the
 re-planned rows below, what remains in Later waits on the owner, on another
-story or on an outside event. `DOC#4` is ready: ColourWars' repository is public.
+story or on an outside event.
 
 Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -34,7 +34,7 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 - Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `SM-30` (set Cloudflare's build command to `npm ci && npm run gate` and delete its `NODE_VERSION` variable).
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy).
 - Not yet placed: `GAP#1` to `GAP#13` except `GAP#4` (OCA-82), whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
-- [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below and for `DOC#4`'s two open questions; the calls stay the owner's.
+- [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below; the calls stay the owner's.
 - New proposals: `IDEA#1` to `IDEA#5` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following and grid-sheet authoring. `IDEA#8` to `IDEA#19`, except `IDEA#10`, from the engine review of 2026-10-31: scene queries, contact edges, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
 
 ## Input, menus, settings and saves
@@ -103,7 +103,6 @@ Ready agent rows from the 2026-11-03 persona re-review are listed in their secti
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `DOC#4` | OPEN | should | S | ColourWars is public (2026-11-03). Fixed: README.md (links it), AGENTS.md, colourwars-reports' README, web.md §6, review INDEX, website plan. Left: whether the site links it; report links reviewed within the 2026-10-27 disclosure boundary. |
 | `PI-14` | DECISION | should | M | Sandbox run at `v0.2.0` reached a keyboard match. Radeon criterion: not run, none available; the pad match is informal play. Run and record are ColourWars'. Owner: close as delegated, or await its `v0.3.0` run. [BACKLOG](docs/product/BACKLOG.md#next). |
 
 ## Records and design decisions
