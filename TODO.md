@@ -168,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#28` | OPEN | could | M | Nothing generates or lints the ctest counts in `AGENTS.md`'s preset table against `tests/ctest_inventory.json`; `cmake/check_agent_brief.cmake` checks only CLAUDE.md's first line. |
 | `REV#29` | OPEN | could | S | A new dated survey beside `docs/survey/2026-10-27.md` cites a source per claim and adds the C and C++ code-first frameworks it left out, SFML first, which `why.mdx` already compares. |
 | `REV#30` | DECISION | should | S | `sprite_sheet_loader.cpp` checks no frame or strip against the atlas size or for sign and zero area; a refusal rewrites the negative-rectangle cases SM-71 kept, and needs a texture size at the loader. |
 | `REV#31` | DECISION | should | S | `RenderResources` has no texture-size accessor although every backend holds the size, so the guides make a game type width and height by hand; a whole-texture scene object is a separate engine-or-component call. |

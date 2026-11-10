@@ -198,8 +198,11 @@ jobs:
       - name: Check every document a comment cites resolves
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_doc_citations.cmake
 
-      - name: Check that CLAUDE.md imports AGENTS.md
-        run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_agent_brief.cmake
+      - name: Check the agent brief's import, its ctest counts and failing fixtures
+        run: |
+          cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_agent_brief.cmake
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_agent_brief_fixtures.cmake
 
       - name: Check engine include boundaries and failing fixtures
         run: |

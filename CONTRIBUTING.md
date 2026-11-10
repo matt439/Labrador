@@ -154,8 +154,8 @@ and the last seven are jobs in
 **A change that touches only documentation is linted, not built**: when
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
-citation check, the agent brief check, the engine and LineSweeper include walls
-with their offline layer fixtures, offline source
+citation check, the agent brief check with its offline fixtures, the engine and
+LineSweeper include walls with their offline layer fixtures, offline source
 revision fixtures, the whitespace check, the flash-definition, pacing-analysis
 and bundle-verification tests, and the Python tooling suite.
 
@@ -477,3 +477,12 @@ AGENTS.md alone. [CLAUDE.md](CLAUDE.md) is not a second copy; its first line is
 anything below that line is for Claude Code alone. The build fails if that
 first line is anything else
 ([cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake)).
+
+The same check derives the ctest counts in the brief's preset table from
+[tests/ctest_inventory.json](tests/ctest_inventory.json) and fails when one
+differs, naming the row, the stated count and the derived count. A commit that
+changes how many entries a checked configuration registers therefore changes
+the inventory and the brief together. The inventory lists CI's configurations,
+not every preset: the check
+prints the counts it has no source for, which stay a reviewer's to keep true,
+as do the counts in README.md.

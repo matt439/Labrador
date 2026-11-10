@@ -69,14 +69,17 @@ if(PROJECT_IS_TOP_LEVEL)
     # a targeted build here runs it and a consumer's never sees it.
     add_dependencies(labrador_settings check_doc_citations)
 
-    # The agent brief: AGENTS.md, which CLAUDE.md imports rather than copies.
+    # The agent brief: AGENTS.md, which CLAUDE.md imports rather than copies,
+    # and whose ctest counts are derived from tests/ctest_inventory.json.
     # Top-level only for the same reason: it guards this repository's own
-    # records, not a consumer's build.
+    # records, not a consumer's build. The build asks for one line; a
+    # standalone run lists the counts the inventory cannot check.
     add_custom_target(check_agent_brief ALL
         COMMAND "${CMAKE_COMMAND}"
             "-DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+            -DLIST_NOT_CHECKED=OFF
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_agent_brief.cmake"
-        COMMENT "Checking that CLAUDE.md imports AGENTS.md"
+        COMMENT "Checking that CLAUDE.md imports AGENTS.md and its ctest counts match the inventory"
         VERBATIM
     )
     add_dependencies(labrador_settings check_agent_brief)
