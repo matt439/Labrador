@@ -125,6 +125,12 @@ to draw (from the topmost state that covers the screen upward, as
 [States and the stack](/docs/concepts/states/#what-a-covered-state-sees) describes), submits what
 they recorded, and presents. Nothing is drawn before the first step has run.
 
+A minimised window is the one case with steps and no frames. On Windows the steps go on at
+their rate and nothing is drawn, and between steps the loop sleeps where it otherwise never
+waits. A sleep can end late, and the steps then owed run together, as they do
+after any slow frame. `frame_timings()` stands still until the window is restored. A window
+that was created hidden, as a smoke test's is, is not minimised and draws as usual.
+
 Drawing reads what the steps wrote and changes nothing. That rule is what makes the frame safe to
 draw on several threads at once, and it is the subject of the next page.
 

@@ -73,6 +73,13 @@ namespace labrador
 
 		// The fixed step the simulation advances at. Rendering is not capped by it.
 		// Must convert to at least one StepTimer tick (at most 10,000,000 FPS).
+		//
+		// A MINIMISED WINDOW STILL STEPS AT THIS RATE AND DRAWS NOTHING. On
+		// Windows the loop sleeps between the steps, so a wake that comes
+		// late runs the steps it owes together, and no frame is drawn or
+		// counted in frame_timings until the window is restored. A window
+		// that is only hidden - `visible` above - is not minimised, and
+		// draws.
 		int target_fps = 60;
 
 		// Whether presenting waits for the display, from the first frame.
@@ -301,10 +308,11 @@ namespace labrador
 		// safe to read from a draw worker.
 		//
 		// ONLY THE LOOP'S OWN FRAMES. A tick that renders nothing - before the
-		// first update - publishes nothing, and neither does a frame that
-		// throws. A frame a game draws itself, such as a capture
-		// (Renderer::read_back_buffer), is not one of them, and the time it
-		// takes inside an update is part of update_time.
+		// first update, or while the window is minimised - publishes
+		// nothing, and neither does a frame that throws. A frame a game
+		// draws itself, such as a capture (Renderer::read_back_buffer), is
+		// not one of them, and the time it takes inside an update is part of
+		// update_time.
 		//
 		// THE CLOCK'S RESOLUTION IS THE PLATFORM'S. In a browser steady_clock
 		// is performance.now(), which a page without cross-origin isolation
@@ -449,6 +457,10 @@ namespace labrador
 
 		void update();
 
+		// Runs every fixed step the clock owes and publishes the step
+		// position a draw after them would read. Answers how many ran.
+		int run_owed_updates();
+
 		// Points the resolution manager at the size the game last asked for:
 		// the preset, then client_size over it when one is set, so the label
 		// stays the preset unless the size is one.
@@ -463,6 +475,11 @@ namespace labrador
 		// through the base pointer the window holds. APPLICATION.md#5 says
 		// why they stay on Application rather than moving into Window.
 		void tick() override;
+
+		// The steps tick() runs and no frame: what a minimised window gets.
+		// Answers the time until the clock owes the next step, which is how
+		// long the window's loop may sleep (engine/app/frame_timer.h).
+		std::chrono::nanoseconds tick_minimized() override;
 
 		// The four that mean "the player is looking at us" or "the player is
 		// not", and the only four that reach the state stack. Non-const for

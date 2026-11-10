@@ -227,6 +227,14 @@ row's clause should shrink to that.
 assume the default of vsync on, if it does not already, which is a sentence
 rather than a story.
 
+*Note, 2026-11-10.* Option A's clause that vsync caps a native window did not
+hold for a minimised one: with no present to wait on, the loop ran unthrottled
+(`REV#15`, [the review of 2026-11-10](review/2026-11-10/FINDINGS.md#rev15)).
+The loop now sleeps between fixed steps and draws nothing while minimised
+(`engine/app/APPLICATION.md`, section 8). The clause was not checked again for
+a window that is unfocused and still shown, and this note changes neither the
+options nor the recommendation.
+
 ### IDEA#17. Cursor shapes
 
 `OCA-50` closed without a hand cursor, and no client has asked.

@@ -6,6 +6,7 @@
 
 #include <Windows.h>
 
+#include <chrono>
 #include <exception>
 #include <memory>
 #include <optional>
@@ -203,6 +204,29 @@ namespace labrador
 			}
 			return 0;
 		}
+
+		// The longest the loop sleeps in one wait, whatever its owner
+		// answered (window.h, pump_until_quit).
+		constexpr std::chrono::milliseconds longest_minimized_wait(1000);
+
+		// A wait as MsgWaitForMultipleObjectsEx takes it: whole
+		// milliseconds, ROUNDED UP, so the loop wakes after the moment asked
+		// for rather than just before it and then spins through the
+		// remainder. Nothing at or below zero, and nothing past the longest
+		// wait, which also keeps the answer clear of INFINITE.
+		DWORD wait_milliseconds(std::chrono::nanoseconds wait)
+		{
+			if (wait <= std::chrono::nanoseconds::zero())
+			{
+				return 0;
+			}
+			if (wait >= longest_minimized_wait)
+			{
+				return static_cast<DWORD>(longest_minimized_wait.count());
+			}
+			return static_cast<DWORD>(
+				std::chrono::ceil<std::chrono::milliseconds>(wait).count());
+		}
 	}
 
 	// The Win32 window. Everything a message needs to find is here, and the
@@ -216,6 +240,10 @@ namespace labrador
 		Impl& operator=(const Impl&) = delete;
 
 		void update_suspension();
+
+		// Sleeps until a message arrives or `wait` has passed, while the
+		// window is minimised and still up (window.h, pump_until_quit).
+		void wait_while_minimized(std::chrono::nanoseconds wait) const;
 
 		// Clips the pointer to the client area when it should be confined
 		// now, and releases a clip this window made when it should not
@@ -577,9 +605,22 @@ namespace labrador
 				// runs against a window fail() destroyed, and what it throws
 				// next is a consequence; the handler's exception is the one
 				// that comes out.
+				//
+				// MINIMISED IS THE TRACKED WM_SIZE STATE, not IsIconic and
+				// not whether the window is shown, so a hidden window runs
+				// this loop as a shown one does and a test can minimise one
+				// with the message alone.
+				std::chrono::nanoseconds wait = std::chrono::nanoseconds::zero();
 				try
 				{
-					this->impl_->notify->tick();
+					if (this->impl_->minimized)
+					{
+						wait = this->impl_->notify->tick_minimized();
+					}
+					else
+					{
+						this->impl_->notify->tick();
+					}
 				}
 				catch (...)
 				{
@@ -589,6 +630,7 @@ namespace labrador
 					}
 					throw;
 				}
+				this->impl_->wait_while_minimized(wait);
 			}
 		}
 		if (this->impl_->failure)
@@ -596,6 +638,28 @@ namespace labrador
 			std::rethrow_exception(this->impl_->failure);
 		}
 		this->impl_->exit_code = static_cast<int>(message.wParam);
+	}
+
+	void Window::Impl::wait_while_minimized(std::chrono::nanoseconds wait) const
+	{
+		// Not after a failure, which ends the loop with no message to wake
+		// this, and not once the window has gone: its WM_QUIT is already
+		// queued.
+		const DWORD timeout = wait_milliseconds(wait);
+		if (timeout == 0 || !this->minimized || this->failure ||
+			this->handle == nullptr)
+		{
+			return;
+		}
+
+		// ANY MESSAGE ENDS IT, sent ones included, and so does one that was
+		// already queued when the wait began: MWMO_INPUTAVAILABLE is what
+		// counts a message the tick itself posted, which the queue would
+		// otherwise call old news. The loop dispatches what woke it. A wait
+		// that fails returns at once, and the loop is then the one it was
+		// without it.
+		std::ignore = MsgWaitForMultipleObjectsEx(0, nullptr, timeout,
+			QS_ALLINPUT, MWMO_INPUTAVAILABLE);
 	}
 
 	void Window::close() const

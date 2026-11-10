@@ -142,3 +142,49 @@ exception that the entry point catches itself and reports through
 `Module.onError` is not released. The window never closed, so the instance
 keeps what `initialize()` built until the page drops it, and a page offering
 another try loses that canvas's context itself.
+
+## 8. A minimised window is stepped, not drawn
+
+The Win32 loop ticks whenever its queue is empty and waits for nothing: the
+present is what paces it. A minimised window has no present to wait on, so
+left to itself the same loop runs thousands of frames a second into no area,
+each one asking a backend what presenting into nothing means. Measured once,
+on Vulkan, that is 8,429 frames in about 3.3 seconds
+([the Vulkan entry in the review index](../../docs/review/INDEX.md)).
+
+While the window is minimised the loop calls `WindowNotify::tick_minimized` in
+place of `tick`, and then sleeps until a message arrives or the time that call
+answered has passed. `Application` answers it by running the fixed steps the
+clock owes, drawing nothing, and returning the time until the next step is
+due.
+
+**The steps go on, at their rate.** `engine/core/state.h` publishes that a
+state not told of the background keeps being updated, and
+`engine/audio/audio_device.h` that a game's updates go on while it is
+minimised, so stopping them would be a different contract and the owner's
+decision. A sleep ends when the system's timer says, which can be late by a
+step or more; the clock then owes those steps and the next tick runs them
+together.
+The count is kept and the instants are not. `minimized_wait` in
+`frame_timer.h` never answers more than 50 ms, because `StepTimer` forgives at
+most a tenth of a second between two ticks and drops the rest: a longer sleep
+would cost a slow step its time.
+
+**The gate is the window's minimised state, not whether it is shown.** A window
+created hidden (`ApplicationOptions::visible`) is what a smoke test and a
+capture tool run under, and both draw. The Win32 window reads the state it
+tracks from `WM_SIZE`, so a test minimises a hidden window with the message
+alone. `shown_` (§6) is not the gate either: it is also false through a power
+suspend, and in a browser it follows the page, where the frame loop is the
+browser's and already stops for a hidden tab.
+
+**Why the window asks and the owner answers.** The loop is the window's and
+the clock is the owner's. A wait in `Application` would need a Win32 call above
+the seam; a step length in `Window` would give it a clock. One call that
+returns a duration keeps each where it was. An owner that does not override it
+gets `tick` and no wait.
+
+**Coming back.** The restore arrives as `on_resuming`, which already resets the
+clock, so what was held toward the next step is dropped and no catch-up runs.
+No frame is published while minimised, so `frame_timings` stands still and the
+first frame back has no interval.

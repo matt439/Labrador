@@ -1154,8 +1154,10 @@ namespace labrador
 		{
 			// A minimised window. There is nothing to present into and there
 			// will be again; present() answers this by doing nothing rather
-			// than by refusing, because a shell that keeps drawing while
-			// minimised is the ordinary case and not a mistake.
+			// than by refusing, because drawing while minimised is not a
+			// mistake: Application's loop stops drawing then, and an owner
+			// with no minimised tick of its own does not
+			// (WindowNotify::tick_minimized).
 			//
 			// AND THE OLD ONE IS RELEASED HERE, WHICH IS WHAT MAKES THAT
 			// SENTENCE TRUE. Returning from this branch with swapchain_ still

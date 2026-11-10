@@ -417,11 +417,7 @@ namespace labrador
 	{
 		this->frame_timer_.begin(std::chrono::steady_clock::now());
 
-		const std::uint32_t steps_before = this->timer_.GetFrameCount();
-		this->timer_.Tick([&]() { this->update(); });
-		this->step_position_ = labrador::step_position(
-			this->timer_.GetFrameCount(), this->timer_.GetLeftOverTicks(),
-			this->timer_.GetTargetElapsedTicks());
+		const int updates = this->run_owed_updates();
 
 		// A state can close the window during a fixed update. Every owed
 		// update still runs, but a closed window has no frame to present.
@@ -431,10 +427,36 @@ namespace labrador
 		}
 
 		FrameMarks marks;
-		marks.updates =
-			static_cast<int>(this->timer_.GetFrameCount() - steps_before);
+		marks.updates = updates;
 		marks.updated = std::chrono::steady_clock::now();
 		this->render(marks);
+	}
+
+	// A MINIMISED WINDOW IS STEPPED AND NOT DRAWN. state.h publishes that a
+	// state not told of the background goes on being updated, so the steps
+	// keep their rate; a frame nobody can see is the only thing given up,
+	// and with it every backend's answer to presenting into no area.
+	//
+	// No frame is begun with the frame timer, because none is published:
+	// the restore arrives as on_resuming, whose discontinuity is what the
+	// first frame back is measured from. That same reset drops whatever the
+	// clock held toward the next step, so coming back runs no catch-up
+	// (APPLICATION.md#8).
+	std::chrono::nanoseconds Application::tick_minimized()
+	{
+		std::ignore = this->run_owed_updates();
+		return minimized_wait(this->timer_.GetLeftOverTicks(),
+			this->timer_.GetTargetElapsedTicks());
+	}
+
+	int Application::run_owed_updates()
+	{
+		const std::uint32_t steps_before = this->timer_.GetFrameCount();
+		this->timer_.Tick([&]() { this->update(); });
+		this->step_position_ = labrador::step_position(
+			this->timer_.GetFrameCount(), this->timer_.GetLeftOverTicks(),
+			this->timer_.GetTargetElapsedTicks());
+		return static_cast<int>(this->timer_.GetFrameCount() - steps_before);
 	}
 
 	void Application::update()

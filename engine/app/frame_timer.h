@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 
 namespace labrador
 {
@@ -49,4 +50,21 @@ namespace labrador
 		bool has_previous_ = false;
 		bool start_is_baseline_ = true;
 	};
+
+	// The longest minimized_wait answers. StepTimer forgives at most a tenth
+	// of a second between two ticks and drops the rest, so a wait that ran
+	// to that length would cost a slow step its time. Half of it leaves the
+	// other half for a wake that comes late.
+	constexpr std::chrono::milliseconds longest_step_wait(50);
+
+	// How long a loop that draws nothing may sleep before its clock owes
+	// the next fixed step (WindowNotify::tick_minimized): what is left of a
+	// step of `step_ticks` once `left_over_ticks` are held toward it, in
+	// StepTimer's ticks of 100 ns, and never more than longest_step_wait.
+	//
+	// IT READS NO CLOCK, as FrameTimer does not. A step already owed, which
+	// the clock's own invariant rules out, and a step_ticks of zero both
+	// answer zero: no wait, rather than one of a length nothing chose.
+	std::chrono::nanoseconds minimized_wait(std::uint64_t left_over_ticks,
+		std::uint64_t step_ticks);
 }

@@ -4,6 +4,8 @@
 #include "engine/app/application.h"
 
 #include <chrono>
+#include <cstdint>
+#include <limits>
 
 // What Application::frame_timings() publishes, with the clock taken out.
 //
@@ -165,4 +167,54 @@ TEST_CASE("a discontinuity during a tick zeroes that frame's interval and the ne
 
 	run_tick(timer, timings, 3017, 1);
 	CHECK(timings.interval == milliseconds(17));
+}
+
+// The sleep of a minimised window's loop (WindowNotify::tick_minimized),
+// with the clock taken out the same way: the ticks are StepTimer's, ten
+// million to the second.
+
+TEST_CASE("a minimised loop waits for what is left of the step, and no longer")
+{
+	// A 60 Hz step is 166,666 ticks.
+	const std::uint64_t step = labrador::StepTimer::TicksPerSecond / 60;
+
+	// Nothing held: the whole step, to the tick.
+	CHECK(labrador::minimized_wait(0, step) == nanoseconds(16666600));
+
+	// 10 ms held: what is left, 6.6666 ms.
+	CHECK(labrador::minimized_wait(100000, step) == nanoseconds(6666600));
+
+	// One tick short of the step is one tick, which is 100 ns.
+	CHECK(labrador::minimized_wait(step - 1, step) == nanoseconds(100));
+}
+
+TEST_CASE("a minimised loop never waits past half the time the clock forgives")
+{
+	CHECK(labrador::longest_step_wait == milliseconds(50));
+
+	// Exactly the cap, and one tick either side of it.
+	const std::uint64_t cap_ticks = 500000;
+	CHECK(labrador::minimized_wait(0, cap_ticks - 1) == nanoseconds(49999900));
+	CHECK(labrador::minimized_wait(0, cap_ticks) == milliseconds(50));
+	CHECK(labrador::minimized_wait(0, cap_ticks + 1) == milliseconds(50));
+
+	// A 2 Hz step with most of it still to come, and a step no clock could
+	// run: the cap, with no overflow on the way to it.
+	const std::uint64_t slow = labrador::StepTimer::TicksPerSecond / 2;
+	CHECK(labrador::minimized_wait(1000, slow) == milliseconds(50));
+	CHECK(labrador::minimized_wait(0,
+		(std::numeric_limits<std::uint64_t>::max)()) == milliseconds(50));
+
+	// The same slow step with 10 ms left is 10 ms: the cap is a ceiling,
+	// not the answer.
+	CHECK(labrador::minimized_wait(slow - 100000, slow) == milliseconds(10));
+}
+
+TEST_CASE("a step already owed, or no step at all, is no wait")
+{
+	const std::uint64_t step = labrador::StepTimer::TicksPerSecond / 60;
+	CHECK(labrador::minimized_wait(step, step) == nanoseconds::zero());
+	CHECK(labrador::minimized_wait(step + 1, step) == nanoseconds::zero());
+	CHECK(labrador::minimized_wait(0, 0) == nanoseconds::zero());
+	CHECK(labrador::minimized_wait(5, 0) == nanoseconds::zero());
 }
