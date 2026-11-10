@@ -42,7 +42,10 @@ ctest lists exactly the game's two tests, `MyGameTests` and
 `MyGameSmokeTests`, and so none of the engine's, and runs them. Then it builds
 the `x64-release` preset, installs it into an empty folder, checks that the
 folder holds exactly what `release-files.txt` lists, and starts the
-installed game with `--smoke-test` from there. It does not
+installed game with `--smoke-test` from there. Last,
+`tools/consumer_check/rename_check.py` copies the project without its `out`
+folder, runs the replacement line of *Rename your game* on the copy, and
+builds and tests it on `x64-debug` under the new name. The job does not
 use Git or clone the public repository, and does not run `ci.yml`: its steps
 are the job's own, which is what the guide says. `ci.yml` itself ran
 on 26 October 2026, with the steps it has now, in

@@ -991,6 +991,8 @@ jobs:
   # CMakeLists.txt - the engine's tests are not in a consumer's ctest, and the
   # game's are - and then the game's tests run: the rules test, and the
   # start-up check, which opens the game hidden, draws a few frames and quits.
+  # After the release folder, the last step renames a copy of the project with
+  # the Rename your game guide's own line and builds and tests it again.
   #
   # IT FETCHES NOTHING FROM A CLIENT. The engine cannot reach a repository
   # that consumes it and should not learn how (docs/design/PHILOSOPHY.md,
@@ -1109,3 +1111,22 @@ jobs:
       - name: Start the game from the release folder
         working-directory: C:\
         run: C:\dev\mygame-release\MyGame.exe --smoke-test
+
+      # THE SAME PROJECT UNDER ANOTHER NAME, as Rename your game
+      # (website/src/content/docs/docs/guides/your-name.mdx) has a reader make
+      # it. rename_check.py copies the starter above without its out folder,
+      # reads the guide's replacement line, name and count out of the guide,
+      # runs that line through cmd, and fails unless it prints the guide's
+      # count and leaves MyGame in neither CMakeLists.txt. Then it does the
+      # guide's step 5 on x64-debug - the engine built once more, in a folder
+      # as short as the first - and fails unless ctest lists the renamed
+      # game's two tests and no other, the program has the new name, nothing
+      # in the build folder is named MyGame, and both tests pass. It is last,
+      # so a failure above is not hidden behind it, and it is a step of this
+      # job, not a job: a new job would be a new required check. The titles
+      # the guide edits by hand, the release and the browser build are not
+      # renamed here.
+      - name: Rename the game as the guide says, then build and test it
+        run: |
+          call "%VCVARS%"
+          python tools\consumer_check\rename_check.py C:\dev\hopper --from C:\dev\mygame

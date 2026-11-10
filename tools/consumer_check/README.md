@@ -95,6 +95,49 @@ the game wrote to standard error, which reaches the file only through
 `start`'s `/b`. Install into a folder that does not exist yet, or
 an empty one: the install never deletes a file.
 
+**Under another name.** The job's last step is `rename_check.py`, which makes
+the project of *Rename your game*
+(`website/src/content/docs/docs/guides/your-name.mdx`). It reads three things
+out of the guide itself, so that the line a reader pastes and the line checked
+are the same text: the name in the `set "NAME=..."` line, step 2's PowerShell
+replacement line, and the count the guide says that line prints. It copies the
+starter without its `out` folder, runs the line through `cmd` in the copy with
+`NAME` set, and fails unless the line prints the guide's count, prints
+`Replaced MyGame 0 times.` when run again, leaves `MyGame` in neither
+`CMakeLists.txt` nor in `CMakePresets.json` or the workflow, puts the new name
+where the old one was as many times as the count, and leaves the name in
+`vcpkg.json` in lower case. Then it does the guide's step 5 on `x64-debug`,
+without opening the game: configure, build, and `ctest`, failing unless the
+tests listed are the renamed game's two and no other, `game\<name>.exe` is
+there, `CMakeCache.txt` has the new project name, and no file or folder in
+the build folder is named `MyGame`. To run it as CI does, in the same prompt,
+after the first block above:
+
+```bat
+python <engine>\tools\consumer_check\rename_check.py C:\dev\hopper --from C:\dev\mygame
+```
+
+Without `--from` it assembles its own starter from the engine tree, as
+`assemble.py` does, so this one line is the whole check from nothing:
+
+```bat
+python tools\consumer_check\rename_check.py C:\dev\hopper
+```
+
+It must end `renamed to SkyHopper by the guide's own line, and x64-debug built
+and passed SkyHopperTests and SkyHopperSmokeTests.` With `--no-build` it stops
+after the line and the check of the files, which takes a few seconds and
+needs no compiler. The folder must be new or empty, and as short as
+`C:\dev\mygame`. It does not make the guide's edits by hand, the window's
+title, the error box and the page's title, and it renames neither the release
+folder nor the browser build; the guide's *What was checked* records those
+runs. The offline tests (`tools/tests/test_consumer_check_rename.py`, in CI's
+`lint` job) run the guide's line on the walkthrough's build files on Windows
+and hold the guide's count to them, so a guide or walkthrough change that
+breaks the rename fails before anything is built. A guide whose step 2 no
+longer has exactly one such line, name or count is refused, naming the script
+to change with it.
+
 **On a clean machine.** `sandbox.py` writes a Windows Sandbox configuration
 for a release folder, for the check the runner cannot do, because it has
 Visual Studio and the Visual C++ redistributable installed:
