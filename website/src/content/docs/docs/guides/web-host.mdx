@@ -38,7 +38,8 @@ so the folder can be anywhere on the site. There is no separate content file to 
 `--embed-file` packs the content into `MyGame.wasm`; a game with more content has a larger
 module rather than more files. The sizes were measured on 25 October 2026 from the project Get
 Started builds, with Emscripten's release settings and Brotli at its highest quality; your game's
-will be larger as it grows.
+will be larger as it grows. `MyGame.html` has grown since then, by the lines that report a failed
+download, and has not been measured again.
 
 ## What the server must send
 
@@ -66,7 +67,7 @@ The game is single-threaded, so the list is short.
 
 - **If the site sends a `Content-Security-Policy`**, its `script-src` must include
   `'wasm-unsafe-eval'`, or the browser refuses to compile the module and the game never starts.
-  The page stays at its loading line, and the console says that compiling or
+  The template's page says `The game could not be loaded.`, and the console says that compiling or
   instantiating WebAssembly violates the policy. The template's page also runs an inline script,
   so a policy for it needs `'unsafe-inline'` as well, or a hash of that script:
 

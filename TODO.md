@@ -168,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#23` | OPEN | should | S | `samples/minimal/web/shell.html` and the other five development shells never replace "Loading..." when the `.wasm` or `.data` fetch fails; the fix also updates the four guide passages on the stuck line (audio, browser, your-web-page, web-host). |
 | `REV#25` | OPEN | could | XS | The filter section of `sprites-and-text.mdx` does not say that a sheet frame drawn under `TextureFilter::linear` with scaling or rotation can blend in its neighbour, or that frames want spacing. |
 | `REV#26` | OPEN | could | S | No CI step builds a renamed starter: your-name.mdx's MyGame replacement was followed once in the beginner-guide audit and is in neither tools/consumer_check nor ci.yml's consumer job. |
 | `REV#27` | OPEN | could | XS | The six development shells under `samples/*/web/shell.html` give the canvas no accessible name and the status paragraph no role; `your-web-page.mdx:60` quotes the markup and changes with it. |

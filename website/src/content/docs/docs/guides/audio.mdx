@@ -359,7 +359,8 @@ and `MyGame.wasm`: `MyGame.data`, which holds the content folder, 99,711 bytes f
 the `tones` bank of [Play a sound in your game](/docs/guides/your-sound/). Serve and open the
 page as before, or run that guide's page check; the game starts as it did, and the server's
 window shows a `GET /MyGame.data` line. Copy `MyGame.data` with the other three wherever you
-put the page. Without it the game never starts, and the browser's console, opened with **F12**,
+put the page. Without it the game never starts: the starter's page is written to say `The game
+could not be loaded.` under the canvas, and the browser's console, opened with **F12**,
 shows `Failed to load resource: the server responded with a status of 404 (Not Found)` for
 `MyGame.data`, then an uncaught `Error: 404:` with its address.
 

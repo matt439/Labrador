@@ -340,8 +340,9 @@ Make it public: under **Settings**, **General**, at the bottom in the *Danger Zo
 visibility**.
 </Aside>
 
-<Aside type="caution" title="The page stays at Loading..., and the console says Failed to load resource: the server responded with a status of 404">
-For `MyGame.js` or `MyGame.wasm`: the page is there and its script or module is not. Run `dir C:\dev\mygame-web` and check all five
+<Aside type="caution" title="The page says The game could not be loaded., and the console says Failed to load resource: the server responded with a status of 404">
+For `MyGame.js` or `MyGame.wasm`: the page is there and its script or module is not. The page's
+own sentence is the one a player sees; the console's line names the file. Run `dir C:\dev\mygame-web` and check all five
 files are listed, then `git status` there: a file listed as untracked was not committed. Commit
 and push it.
 </Aside>

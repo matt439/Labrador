@@ -11,7 +11,8 @@
   Module.canvas is sized by CSS, focusable and with touch-action: none.
   This page supplies Module.onQuit and Module.onError; the optional graphics
   hooks are Module.onContextLost and Module.onContextRestored. Keep the canvas
-  attached until the game quits.
+  attached until the game quits. A file that fails to download is the page's
+  own to report, because the engine never runs: the lines below Module do it.
   Escape asks before it quits, and a finger on the canvas shows a marker with
   the point's id.
 -->
@@ -43,6 +44,7 @@
   var Module = {
     canvas: canvas,
     onRuntimeInitialized: function () {
+      loading = false;
       statusLine.textContent =
         "Arrows, WASD or the left stick move the text, and a finger on it shows its id. Escape asks to quit; Enter says yes.";
       canvas.focus();
@@ -54,7 +56,29 @@
       statusLine.className = "error";
       statusLine.textContent = message;
     },
+    onAbort: loadFailed,
   };
+
+  // A download that fails never reaches the engine, so Module.onError cannot
+  // report it. Emscripten's loader calls Module.onAbort when the .wasm cannot
+  // be fetched or compiled; a preloaded .data file or the loader script
+  // fails as a rejected promise or an error event instead. The console still
+  // has the reason. This line is for the player, and only until the game has
+  // started.
+  var loading = true;
+  function loadFailed() {
+    if (!loading) { return; }
+    loading = false;
+    statusLine.className = "error";
+    statusLine.textContent =
+      "The game could not be loaded. Check your connection and reload the page.";
+  }
+  window.addEventListener("unhandledrejection", loadFailed);
+  window.addEventListener("error", function (event) {
+    // An uncaught exception arrives at the window, and a script that would
+    // not download at its own tag. A missing image is neither.
+    if (event.target === window || event.target.tagName === "SCRIPT") { loadFailed(); }
+  }, true);
 </script>
 {{{ SCRIPT }}}
 </body>

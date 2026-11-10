@@ -23,6 +23,9 @@
     the browser took the canvas's WebGL2 context away, and gave it
     back with the game drawing again. Between them the canvas is blank, so
     the page says why; a context that never comes back leaves the message up.
+  - A download that fails is the page's own to report. The engine never runs,
+    so none of those calls arrives; the lines below Module hear Emscripten's
+    loader and the browser instead, and tell the player.
 
   And what a phone needs of it, because this page lets a phone play. The rule
   that a phone is shown a poster and a recording rather than the module is
@@ -123,6 +126,7 @@
   var Module = {
     canvas: canvas,
     onRuntimeInitialized: function () {
+      loading = false;
       statusLine.textContent = matchMedia("(pointer: coarse)").matches
         ? "Touch the screen to show the controls."
         : "Arrows move, X rotates, Up or Space drops, C holds, Escape pauses.";
@@ -135,6 +139,7 @@
       statusLine.className = "error";
       statusLine.textContent = message;
     },
+    onAbort: loadFailed,
     onContextLost: function () {
       shownBeforeLoss = statusLine.textContent;
       statusLine.className = "error";
@@ -146,6 +151,27 @@
       statusLine.textContent = shownBeforeLoss;
     },
   };
+
+  // A download that fails never reaches the engine, so Module.onError cannot
+  // report it. Emscripten's loader calls Module.onAbort when the .wasm cannot
+  // be fetched or compiled; a preloaded .data file or the loader script
+  // fails as a rejected promise or an error event instead. The console still
+  // has the reason. This line is for the player, and only until the game has
+  // started.
+  var loading = true;
+  function loadFailed() {
+    if (!loading) { return; }
+    loading = false;
+    statusLine.className = "error";
+    statusLine.textContent =
+      "The game could not be loaded. Check your connection and reload the page.";
+  }
+  window.addEventListener("unhandledrejection", loadFailed);
+  window.addEventListener("error", function (event) {
+    // An uncaught exception arrives at the window, and a script that would
+    // not download at its own tag. A missing image is neither.
+    if (event.target === window || event.target.tagName === "SCRIPT") { loadFailed(); }
+  }, true);
 </script>
 {{{ SCRIPT }}}
 </body>
