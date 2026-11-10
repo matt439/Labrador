@@ -27,7 +27,7 @@ the player* links, waits on the owner.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
-**Open agent rows:** `REV#104`, a verified defect from issue #125, then `REV#14` to `REV#29`, the rows that need no owner call (`REV#14` to `REV#19` and `REV#103` are verified defects and false statements) from [the review of 2026-11-10](docs/review/2026-11-10/README.md), in id order. Other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
+**Open agent rows:** `REV#104`, a verified defect in how the Direct3D backends classify a software adapter (issue #125). Other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
@@ -119,7 +119,7 @@ the player* links, waits on the owner.
 
 ## Features other engines have
 
-**Owner:** [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md), which holds what each involves and what was left out. Every row is the owner's call; a yes becomes a story in [BACKLOG.md](docs/product/BACKLOG.md) before the work starts.
+**Owner:** [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md), which holds what each involves and what was left out; [the comparison of 2026-11-10](docs/survey/2026-11-10.md) re-checks its counts against sources and adds six C and C++ frameworks. Every row is the owner's call; a yes becomes a story in [BACKLOG.md](docs/product/BACKLOG.md) before the work starts.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
@@ -164,11 +164,10 @@ ready queue above.
 
 ## Review of 2026-11-10
 
-**Owner:** [the review of 2026-11-10](docs/review/2026-11-10/README.md): [FINDINGS.md](docs/review/2026-11-10/FINDINGS.md) holds each row's evidence under its id, and [STATUS.md](docs/review/2026-11-10/STATUS.md) records each resolution. An `OPEN` row needs no owner call: `REV#14` to `REV#19` and `REV#103` are verified defects, false statements and missing records, and `REV#20` to `REV#29` are missing tests, checks, caveats and records an agent can add. A `DECISION` row is the owner's call, and a yes becomes a story in [BACKLOG.md](docs/product/BACKLOG.md) before the work starts. A `DEFERRED` row waits for a measurement or a caller that shows the need.
+**Owner:** [the review of 2026-11-10](docs/review/2026-11-10/README.md): [FINDINGS.md](docs/review/2026-11-10/FINDINGS.md) holds each row's evidence under its id, and [STATUS.md](docs/review/2026-11-10/STATUS.md) records each resolution. A `DECISION` row is the owner's call, and a yes becomes a story in [BACKLOG.md](docs/product/BACKLOG.md) before the work starts. A `DEFERRED` row waits for a measurement or a caller that shows the need.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#29` | OPEN | could | S | A new dated survey beside `docs/survey/2026-10-27.md` cites a source per claim and adds the C and C++ code-first frameworks it left out, SFML first, which `why.mdx` already compares. |
 | `REV#30` | DECISION | should | S | `sprite_sheet_loader.cpp` checks no frame or strip against the atlas size or for sign and zero area; a refusal rewrites the negative-rectangle cases SM-71 kept, and needs a texture size at the loader. |
 | `REV#31` | DECISION | should | S | `RenderResources` has no texture-size accessor although every backend holds the size, so the guides make a game type width and height by hand; a whole-texture scene object is a separate engine-or-component call. |
 | `REV#32` | DECISION | should | S | `font.h` measures and wraps but offers no aligned origin for a measured line; LineSweeper centres text by hand at three sites, one of them without the floor the other two apply. |
