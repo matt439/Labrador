@@ -115,6 +115,60 @@ namespace
 		int* destroyed_ = nullptr;
 	};
 
+	// The collision counterpart: logs its id every update, into the same log
+	// a LoggingObject writes, so one list shows the order across both kinds.
+	class LoggingCollider final : public StubCollider
+	{
+	public:
+		LoggingCollider(int id, std::vector<int>* log) :
+			StubCollider(RectangleF(0.0f, 0.0f, 4.0f, 4.0f), player_layer,
+				wall_layer),
+			id_(id), log_(log)
+		{
+		}
+
+		void update(float /*dt*/) override { this->log_->push_back(this->id_); }
+
+	private:
+		int id_ = 0;
+		std::vector<int>* log_ = nullptr;
+	};
+
+	// Adds one object of each kind from inside its first update(), the call
+	// add() is deferred for, and logs its own id like the rest.
+	class SpawningObject : public GameObject
+	{
+	public:
+		SpawningObject(int id, Scene* scene, std::vector<int>* log,
+			int* destroyed) :
+			id_(id), scene_(scene), log_(log), destroyed_(destroyed)
+		{
+		}
+
+		void update(float /*dt*/) override
+		{
+			this->log_->push_back(this->id_);
+			if (this->spawned_)
+			{
+				return;
+			}
+			this->spawned_ = true;
+			this->scene_->add(std::make_unique<LoggingObject>(this->id_ + 1,
+				this->log_, this->destroyed_));
+			this->scene_->add(std::make_unique<LoggingCollider>(this->id_ + 2,
+				this->log_));
+		}
+		void draw(labrador::DrawList& /*draw_list*/) const override {}
+		RectangleF bounds() const override { return RectangleF(); }
+
+	private:
+		int id_ = 0;
+		Scene* scene_ = nullptr;
+		std::vector<int>* log_ = nullptr;
+		int* destroyed_ = nullptr;
+		bool spawned_ = false;
+	};
+
 	// Asks to be removed from inside its own update(), the call remove() is
 	// deferred for.
 	class SelfRemovingObject : public GameObject
@@ -198,6 +252,99 @@ TEST_CASE("update() steps every object in the world, and nothing pending")
 	CHECK(plain->updates() == 1);
 	CHECK(plain->last_dt() == doctest::Approx(0.25f));
 	CHECK(collider->updates() == 1);
+}
+
+TEST_CASE("CONTRACT: update() steps collision objects in insertion order, then plain objects")
+{
+	// Before the scene, so they outlive the objects that write to them.
+	std::vector<int> log;
+	int destroyed = 0;
+	Scene scene = make_scene();
+
+	// Interleaved on purpose: the split is by kind, not by when. Collision
+	// ids are in the twenties.
+	scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
+	scene.add(std::make_unique<LoggingCollider>(21, &log));
+	scene.add(std::make_unique<LoggingObject>(2, &log, &destroyed));
+	scene.add(std::make_unique<LoggingCollider>(22, &log));
+	scene.add(std::make_unique<LoggingObject>(3, &log, &destroyed));
+	scene.add(std::make_unique<LoggingCollider>(23, &log));
+	scene.end_tick();
+
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 21, 22, 23, 1, 2, 3 });
+
+	// The same order every tick.
+	log.clear();
+	scene.end_tick();
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 21, 22, 23, 1, 2, 3 });
+}
+
+TEST_CASE("CONTRACT: a removal or a retirement keeps update order, and a later add steps last of its kind")
+{
+	// Before the scene, so they outlive the objects that write to them.
+	std::vector<int> log;
+	int destroyed = 0;
+	Scene scene = make_scene();
+
+	LoggingObject* first_plain =
+		scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
+	scene.add(std::make_unique<LoggingObject>(2, &log, &destroyed));
+	scene.add(std::make_unique<LoggingObject>(3, &log, &destroyed));
+	scene.add(std::make_unique<LoggingCollider>(21, &log));
+	LoggingCollider* removed_collider =
+		scene.add(std::make_unique<LoggingCollider>(22, &log));
+	LoggingCollider* retired_collider =
+		scene.add(std::make_unique<LoggingCollider>(23, &log));
+	scene.add(std::make_unique<LoggingCollider>(24, &log));
+	scene.add(std::make_unique<LoggingCollider>(25, &log));
+	scene.end_tick();
+
+	// Both ways out, from the front and the middle of a list, with adds of
+	// both kinds waiting in the same tick.
+	scene.remove(first_plain);
+	scene.remove(removed_collider);
+	retired_collider->set_for_deletion(true);
+	scene.add(std::make_unique<LoggingCollider>(26, &log));
+	scene.add(std::make_unique<LoggingObject>(4, &log, &destroyed));
+
+	// Asked for is not gone, and added is not admitted: this tick still
+	// steps the world the last end_tick() left.
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 21, 22, 23, 24, 25, 1, 2, 3 });
+
+	scene.end_tick();
+	CHECK(destroyed == 1);
+
+	log.clear();
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 21, 24, 25, 26, 2, 3, 4 });
+}
+
+TEST_CASE("CONTRACT: an object added from inside update() first steps next tick, last of its kind")
+{
+	// Before the scene, so they outlive the objects that write to them.
+	std::vector<int> log;
+	int destroyed = 0;
+	Scene scene = make_scene();
+
+	// The spawner is the first plain object, with one of each kind after
+	// it, so an add that joined the walk in progress would show in the log.
+	scene.add(std::make_unique<SpawningObject>(10, &scene, &log, &destroyed));
+	scene.add(std::make_unique<LoggingObject>(1, &log, &destroyed));
+	scene.add(std::make_unique<LoggingCollider>(21, &log));
+	scene.end_tick();
+
+	// It adds plain object 11 and collision object 12 here.
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 21, 10, 1 });
+
+	scene.end_tick();
+
+	log.clear();
+	scene.update(0.0f);
+	CHECK(log == std::vector<int>{ 21, 12, 10, 1, 11 });
 }
 
 TEST_CASE("resolve() measures the pairs in the world and tells both sides")

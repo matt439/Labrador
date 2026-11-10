@@ -168,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#14` | OPEN | should | XS | Scene::update steps collision objects first, then plain objects; engine/scene/scene.h does not say so and no test in tests/scene pins the order between kinds or within one. |
 | `REV#15` | OPEN | should | S | `Window::pump_until_quit` and `Application::tick` neither wait nor skip rendering while minimised. The gate is minimise, not `visible = false`; the wait is timed, so fixed updates keep their rate as `engine/core/state.h` publishes. |
 | `REV#16` | OPEN | should | XS | `Application::load_manifest` and `Application::run` dereference null members when `initialize()` has not run; each should throw `std::logic_error` naming the step, with a test in `tests/app` for each. |
 | `REV#17` | OPEN | should | XS | content-tools.mdx line 10 says Labrador does not load PNG pictures and its texconv table row sends the picture guides through conversion; both are false on the development site since OCA-82. |

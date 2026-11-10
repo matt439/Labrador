@@ -62,7 +62,9 @@ questions during `update`; the [input guide](/docs/guides/input/) covers them.
 Inside the top state's `update`, a state that owns a [`Scene`](/docs/reference/scene/scene/)
 steps it in four phases, in this order:
 
-1. **`scene->update(dt)`** steps every object once: collision objects first, then the rest.
+1. **`scene->update(dt)`** steps every object once: collision objects first, then the rest, each
+   kind in the order its objects were added. An object added during the tick is first stepped
+   on the next one.
 2. **`scene->resolve()`** finds every overlapping pair of collision objects and tells both
    participants, through `on_contact`. The list of contacts stays readable from
    `scene->contacts()` until the end of the tick, so a game or a test can see what touched what.

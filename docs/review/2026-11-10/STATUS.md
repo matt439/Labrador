@@ -5,7 +5,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | id | Finding | State |
 |---|---|---|
 | `REV#103` | [Issues #122 to #125 are open and unindexed; #124 asks for a non-const on_contact](FINDINGS.md#rev103) | Done. Issues #122 to #125 are indexed in [the reports table](../colourwars-reports/README.md) as open and undecided; `contact.md` drafts #124 with the verdict left to the owner; `device-kind.md` confirms #125 by reading (no such device was run), now `REV#104` in TODO.md; the owner's verdicts are `REV#105`. |
-| `REV#14` | [Scene::update's order is published in a guide but is in neither scene.h nor a test](FINDINGS.md#rev14) | Open |
+| `REV#14` | [Scene::update's order is published in a guide but is in neither scene.h nor a test](FINDINGS.md#rev14) | Done. `engine/scene/scene.h` states the order as contract: collision objects in insertion order, then plain objects in insertion order, kept across removal and retirement, with an object added mid-update first stepped next tick. Three cases in `tests/scene/scene_tests.cpp` pin it; SceneTests passes on the five native Debug presets and both wasm presets. |
 | `REV#15` | [A minimised window runs the frame loop unthrottled](FINDINGS.md#rev15) | Open |
 | `REV#16` | [Application::load_manifest and run dereference null before initialize()](FINDINGS.md#rev16) | Open |
 | `REV#17` | [content-tools.mdx says Labrador does not load PNG, and the picture guides still route through texconv](FINDINGS.md#rev17) | Open |
