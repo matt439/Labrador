@@ -26,8 +26,10 @@ It suits you if:
 
 It does not suit you if you want a visual editor, a scripting language, 3D or online play. Those
 four are permanent decisions, explained below. It does not suit you yet if you need a platform
-beyond Windows and a desktop browser (phones among them): that one is provisional. And it is a
-small project, with no asset store and no years of answered questions.
+beyond Windows and a desktop browser (phones among them): that one is provisional. Nor does it
+suit a game that must take any controller a player owns: on Windows it reads only
+XInput-compatible gamepads, and in a browser only those the browser maps to its standard layout.
+And it is a small project, with no asset store and no years of answered questions.
 
 It does have a real game built on it: the engine is developed against
 [ColourWars](https://github.com/matt439/ColourWars), a split-screen paint-shooter in its own public
@@ -108,7 +110,10 @@ focus shows up in three places.
   be drawn on worker threads at the same time if a game asks for it.
 - **Input.** Four gamepad slots, with deadzones the game applies and press edges that ignore a
   pad that was not connected on both frames. Keyboard and mouse have the same shape, and a stick
-  or a d-pad can be turned into menu directions with repeat.
+  or a d-pad can be turned into menu directions with repeat. On Windows the slots are filled
+  through XInput, so a controller that is not XInput-compatible does not appear; in a browser
+  they are filled from the Gamepad API, by pads the browser gives its standard mapping
+  ([Gamepads](/docs/guides/input/#gamepads)).
 - **Interface.** A small widget set with focus and directional navigation, so menus work with a
   controller without a mouse.
 
@@ -123,6 +128,20 @@ tests hold split-screen frames to reference images.
 ever shape the engine's design. 3D is permanently out of scope too. The math library is 2D by
 design, not by omission
 ([Non-goals](/docs/design/philosophy/#non-goals)).
+
+Within 2D the engine is narrow as well, and these are worth knowing before a design depends on
+them:
+
+- **Drawing** is textured sprites and bitmap-font text through one fixed shader. A game cannot
+  supply its own shader or draw into a texture. A sprite can be rotated; a camera pans and zooms
+  but does not turn.
+- **Text** is one glyph for each character, left to right, from an atlas made ahead of time.
+  That puts Latin, Greek, Cyrillic, Chinese, Japanese and Korean in reach, given an atlas that
+  holds the characters, though only ASCII has been drawn so far. Arabic, Hebrew, the Indic
+  scripts, Thai and emoji are out of reach
+  ([Which languages the text path can draw](/docs/guides/sprites-and-text/#which-languages-the-text-path-can-draw)).
+- **Sound** is wave banks made from WAV files and held whole in memory. There is no streamed
+  music and no reader for OGG or MP3 ([Audio](/docs/guides/audio/)).
 
 ## Rules you can test without a window
 
