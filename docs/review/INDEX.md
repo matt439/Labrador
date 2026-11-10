@@ -32,6 +32,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [Renderer construction](2026-10-28-renderer-construction.md) | Source-only SM-54 review at `8048e24`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-54-renderer-construction-review) closes the per-backend verdicts; SM-56/57 own confirmed exception gaps and SM-58 the selected D3D12 pipeline cut. |
 | [Web Audio transport](2026-10-28-webaudio-transport.md) | Source-only SM-55 review at `8048e24`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-55-web-audio-transport-review) closes the keep verdict. No extraction is selected; browser graph/unlock and WEB#3 listening acceptance remain separate. |
 | [2026-11-05-hygiene/](2026-11-05-hygiene/README.md) | Read-only code hygiene review at `5cbc6b3`, 2026-11-05: 625 verified findings in 21 themes | [STATUS.md](2026-11-05-hygiene/STATUS.md) closes every theme: SM-73, SM-74 and SM-75 took them all on 2026-11-05. Five findings were not taken, each with its reason there. |
+| [2026-11-10/](2026-11-10/README.md) | Read-only improvement and feature review at `e1fa9a8d`, 2026-11-10, with comparable projects read: 104 findings from 120 candidates | [STATUS.md](2026-11-10/STATUS.md) is live. TODO.md indexes the open findings as REV#14 to REV#103 and OCA-76; [FINDINGS.md](2026-11-10/FINDINGS.md) holds each one's evidence. Eight were not taken, each with its reason there. |
 | INDEX.md | This map | Live. Maintain this roster when adding or retiring a review, and the tracking below when resolving an item it owns. |
 
 ## D3D12 tracking
