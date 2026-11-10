@@ -57,7 +57,8 @@ Requests without either label are open. These searches separate the three:
 
 Before filing, the declined search shows whether a need was already turned
 down and on what terms. The engine's decisions on ColourWars' reports, made
-ahead of their filing, are in [the client reports table](docs/review/colourwars-reports/README.md).
+ahead of their filing, are in [the client reports table](docs/review/colourwars-reports/README.md),
+which also indexes the reports that client has since filed as issues.
 
 The two labels are repository settings the owner creates once:
 

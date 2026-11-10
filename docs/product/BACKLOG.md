@@ -776,6 +776,11 @@ written.
   - Closed 2026-11-03 by the owner's decision: every filed report has its
     recorded answer in the reports table. PI-11 stays parked, unbuilt and
     undeclined, until an exhibit-backed packaging request is filed (T1).
+  - *Noted 2026-11-10:* issues #122 to #125 were filed on 2026-11-05, after
+    this closed. They are open and undecided, and
+    [indexed in the reports table](../review/colourwars-reports/README.md#issues-filed-on-the-tracker-2026-11-05);
+    none is a packaging request. Whether they are answered under this story
+    or under rows of their own is the owner's call.
 - [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
 - [ ] **[PI-11](STORIES.md#pi-11)** Could · M · The Pinned Submodule Integrator: Stage the runtime files the engine makes my game need, without hand-keeping that list — after PI-10, OCA-60
 - [x] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
