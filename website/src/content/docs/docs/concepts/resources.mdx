@@ -37,6 +37,11 @@ The game loads its manifest once, after `initialize()` and before `run()`:
 
 <SourceFile path="samples/minimal/main.cpp" from="app.load_manifest(" to="app.load_manifest(" />
 
+Once, because a second `load_manifest` loads what it names and then replaces the first manifest
+as what the engine replays when a graphics device is restored: the restore rebuilds what the
+second manifest names and nothing that only the first did. A game with more than one manifest
+loads them as one.
+
 A relative path is relative to the executable, not to the folder the game was started from, and
 directories inside the manifest are relative to the manifest. On Windows, each sample's build
 copies its content beside the executable, so it runs from anywhere. A browser build has no
