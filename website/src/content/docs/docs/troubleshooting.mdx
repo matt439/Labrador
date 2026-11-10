@@ -828,8 +828,9 @@ Before the page has a qualifying key, click or touch, Web Audio has no context t
 `SoundBank::play_wave` drops a one-shot requested then; it does not save it for the first
 gesture, and the engine does not log an error. A persistent `play_effect` waits, including a
 loop, unless it is paused or stopped immediately with `stop_effect(effect, true)` first.
-Escape alone does not unlock sound. Start a title jingle after the player's start gesture,
-or use a persistent effect when waiting is intended.
+Escape alone does not unlock sound, and neither does a gamepad button: expect a player who uses
+only a pad to hear nothing until the page has had a key, click or touch. Start a title jingle
+after the player's start gesture, or use a persistent effect when waiting is intended.
 [Browser audio and the first gesture](/docs/guides/audio/#browser-audio-and-the-first-gesture)
 states the contract and how it applies to the game's sounds.
 

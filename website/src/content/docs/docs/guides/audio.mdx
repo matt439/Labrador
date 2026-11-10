@@ -43,6 +43,18 @@ press of **1** plays the ping. The
 <RepoLink path="samples/audio/README.md">sample's README</RepoLink> has the
 commands to build and serve it.
 
+**A gamepad button is not that gesture.** The backend listens for key, mouse,
+pointer and touch events. A pad is polled, and a browser has no event for its
+buttons, so nothing tells the backend one was pressed. Expect a player who picks
+up a pad and never touches the keyboard, mouse or screen to hear nothing for as
+long as they play that way. That is read from the backend's code and has not
+been tried with a pad in a browser; a browser that counts a pad press as
+activity on the page would change it only for a bank opened after the press.
+The engine does not work around this. The audio sample's page tells the player
+to press a key or click, and starts without waiting for it. If your game is
+played on pads, have its page ask for one key press, click or tap before the
+game starts.
+
 This also applies to your game's own sounds. A one-shot requested through
 `SoundBank::play_wave` before that gesture is **dropped** and will never play
 later. An effect instance requested through `play_effect`, including a looping

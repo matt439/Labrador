@@ -179,6 +179,20 @@ EM_JS(double, test_source_value, (int source, int which), {
 		node.playbackRate.value][which];
 });
 
+// How many capture-phase listeners the fake window holds for one event:
+// 0 keydown, 1 mousedown, 2 pointerdown, 3 pointerup, 4 touchend. Any other
+// number asks how many it holds for every other event together.
+EM_JS(int, test_listener_count, (int which), {
+	const gestures = ["keydown", "mousedown", "pointerdown", "pointerup",
+		"touchend"];
+	const listeners = globalThis.labradorFakeAudio.listeners;
+	if (which >= 0 && which < gestures.length) {
+		return listeners.filter((entry) => entry.name === gestures[which] &&
+			entry.capture === true).length;
+	}
+	return listeners.filter((entry) => !gestures.includes(entry.name)).length;
+});
+
 namespace
 {
 	const std::vector<std::string> tone_names = { "ping", "chime", "drone" };
@@ -428,6 +442,30 @@ TEST_CASE("devices are independent, and survive a move")
 	moved.resume();
 	moved.update();
 	CHECK(moved.voice_state(voice) == SoundState::playing);
+}
+
+TEST_CASE("sound is unlocked by key, mouse, pointer and touch events and no other")
+{
+	// What audio_device.h tells a caller about a pad rests on this list: a
+	// gamepad has no event among them, and the backend listens for nothing
+	// else. Changing the list changes that paragraph.
+	const FakeWebAudio fake;
+	{
+		const AudioDevice device;
+		for (int gesture = 0; gesture < 5; gesture++)
+		{
+			CAPTURE(gesture);
+			CHECK(test_listener_count(gesture) == 1);
+		}
+		CHECK(test_listener_count(5) == 0);
+	}
+
+	// And a device that has gone leaves none behind.
+	for (int gesture = 0; gesture < 6; gesture++)
+	{
+		CAPTURE(gesture);
+		CHECK(test_listener_count(gesture) == 0);
+	}
 }
 
 TEST_CASE("a wave's loop region reaches its source node, in seconds")

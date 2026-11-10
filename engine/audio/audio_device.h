@@ -178,6 +178,17 @@ namespace labrador
 		// from where it was when sound is allowed, which is what music started
 		// at boot wants. Every other call behaves as it always does. A platform
 		// with no audio output at all answers the same way for ever.
+		//
+		// A GAMEPAD BUTTON IS NOT THAT EVENT. The backend hears keys, mouse
+		// buttons, pointers and touches. A pad is polled, and a browser has no
+		// event for its buttons, so nothing tells the backend one was pressed.
+		// Expect a player who uses only a pad to hear nothing until the page
+		// has had one key press, click or touch; a game meant to be played
+		// that way asks for one on its page before it starts. A browser that
+		// counts a pad press as activity on the page changes this only for a
+		// bank opened after the press, which is not something to rely on. This
+		// device does not read pads to find out: input is not audio's to
+		// depend on.
 
 		// The backend's own state, for a backend header that has to reach it.
 		// Declared here and defined in engine/audio/<backend>/, so naming it is
