@@ -273,10 +273,13 @@ pull request already passed. Citation checking skips `website/`.
   builds it, verifies only
   the game's two tests are registered, runs them, installs a Release folder,
   checks `website/src/walkthrough/release-files.txt` and starts the installed
-  game. `wasm-consumer` builds the same project as a browser page and quits it
-  in Chrome. Follow [consumer_check/README.md](tools/consumer_check/README.md)
-  for local checks; standalone tests cannot prove consumer-relative paths or
-  dependencies. A clean-machine Sandbox check is separate from CI's runtime.
+  game. Last, `rename_check.py` runs the Rename your game guide's own
+  replacement line, read from the `.mdx`, on a copy, then builds and tests it
+  on `x64-debug` and fails if its build files, its tests or a file in its
+  build folder still name `MyGame`. `wasm-consumer` builds the same project as
+  a browser page and quits it in Chrome. Follow
+  [consumer_check/README.md](tools/consumer_check/README.md) for local checks;
+  standalone tests cannot prove consumer-relative paths or dependencies. A clean-machine Sandbox check is separate from CI's runtime.
 
 Standalone lint commands (no configure required):
 
