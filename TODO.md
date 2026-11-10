@@ -169,7 +169,6 @@ ready queue above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#15` | OPEN | should | S | `Window::pump_until_quit` and `Application::tick` neither wait nor skip rendering while minimised. The gate is minimise, not `visible = false`; the wait is timed, so fixed updates keep their rate as `engine/core/state.h` publishes. |
-| `REV#16` | OPEN | should | XS | `Application::load_manifest` and `Application::run` dereference null members when `initialize()` has not run; each should throw `std::logic_error` naming the step, with a test in `tests/app` for each. |
 | `REV#17` | OPEN | should | XS | content-tools.mdx line 10 says Labrador does not load PNG pictures and its texconv table row sends the picture guides through conversion; both are false on the development site since OCA-82. |
 | `REV#18` | OPEN | should | XS | README.md says samples/minimal is about 760 lines (861 now) and tests/ about 38k (about 42k now); examples.mdx line 22 and get-started/run-minimal.mdx line 37 repeat 760. No tool checks these figures. |
 | `REV#19` | OPEN | should | XS | `SECURITY.md` still says JSON nesting can exhaust the stack, omits the PNG reader from the trusted-content list and its "three binary readers", and its memory bullet predates the PNG side cap. |

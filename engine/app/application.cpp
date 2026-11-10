@@ -238,6 +238,15 @@ namespace labrador
 
 	void Application::load_manifest(const std::string& manifest_path)
 	{
+		// There is no loader to walk the manifest into until initialize() has
+		// built one, and saying so is the difference between a message and an
+		// access violation (T6).
+		if (!this->resource_loader_)
+		{
+			throw std::logic_error("Application::load_manifest was called "
+				"before Application::initialize().");
+		}
+
 		// Both sentences of content_root.h: the manifest under the
 		// executable's directory unless it is absolute, and every relative
 		// directory inside it under the manifest's.
@@ -250,6 +259,14 @@ namespace labrador
 
 	int Application::run(std::unique_ptr<State> first_state)
 	{
+		// Before the first state is entered, not after: its init() is the
+		// game's own code, and would be the first to meet a null service.
+		if (!this->window_)
+		{
+			throw std::logic_error("Application::run was called before "
+				"Application::initialize().");
+		}
+
 		this->transition_to(std::move(first_state));
 
 		this->window_->pump_until_quit();
