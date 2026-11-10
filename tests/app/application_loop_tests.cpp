@@ -2,8 +2,13 @@
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
+#include "engine/core/state_context.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/renderer.h"
+#include "engine/render/resolution_manager.h"
 #include "engine/render/resource_factory.h"
+
+#include <Windows.h>
 
 #include <chrono>
 #include <cstdint>
@@ -397,4 +402,184 @@ TEST_CASE("on_closed releases the states, then every service but the window")
 	CHECK(app.mouse() == nullptr);
 	CHECK(app.touch() == nullptr);
 	CHECK(app.window() != nullptr);
+}
+
+namespace
+{
+	struct MinimizeObservation
+	{
+		int draws = 0;
+		int draws_at_minimize = -1;
+		int draws_at_restore = -1;
+		std::uint64_t frame_at_minimize = 0;
+		std::uint64_t frame_at_restore = 0;
+
+		// The updates that ran between the two, whether each saw the stack
+		// inactive, and the times of the first and last.
+		int minimized_updates = 0;
+		bool active_while_minimized = false;
+		std::chrono::steady_clock::time_point first_minimized_update;
+		std::chrono::steady_clock::time_point last_minimized_update;
+
+		// The first frame the loop completed after the restore.
+		bool saw_first_frame_back = false;
+		std::chrono::nanoseconds first_interval_back{ 1 };
+	};
+
+	// Minimises its own hidden window once the loop has drawn, lets a
+	// number of updates run, restores it, and quits once the loop has drawn
+	// again.
+	//
+	// THE WINDOW STAYS HIDDEN THROUGHOUT. Each change is the WM_SIZE the
+	// system would send, posted so that it arrives between two ticks as a
+	// real one does, and the window's tracked state is what the loop reads.
+	// Nothing is shown and nothing reaches the taskbar.
+	class MinimizeDuringRun : public State
+	{
+	public:
+		MinimizeDuringRun(Application* app, MinimizeObservation* observation) :
+			app_(app), observation_(observation)
+		{
+		}
+
+		void init() override {}
+
+		void update(float /*dt*/) override
+		{
+			const HWND window = static_cast<HWND>(this->app_->window());
+			switch (this->phase_)
+			{
+			case Phase::drawing:
+				if (this->app_->frame_timings().frame > 0)
+				{
+					REQUIRE(PostMessageW(window, WM_SIZE, SIZE_MINIMIZED, 0)
+						!= FALSE);
+					this->phase_ = Phase::waiting;
+				}
+				break;
+
+			case Phase::minimized:
+			{
+				const std::chrono::steady_clock::time_point now =
+					std::chrono::steady_clock::now();
+				if (this->observation_->minimized_updates == 0)
+				{
+					this->observation_->first_minimized_update = now;
+				}
+				this->observation_->last_minimized_update = now;
+				this->observation_->minimized_updates++;
+				this->observation_->active_while_minimized =
+					this->observation_->active_while_minimized ||
+					this->context()->active();
+
+				if (this->observation_->minimized_updates == minimized_update_count)
+				{
+					const Vector2I size =
+						this->app_->resolution_manager()->resolution_ivec();
+					REQUIRE(PostMessageW(window, WM_SIZE, SIZE_RESTORED,
+						MAKELPARAM(size.x, size.y)) != FALSE);
+					this->phase_ = Phase::waiting;
+				}
+				break;
+			}
+
+			case Phase::restored:
+				if (this->observation_->saw_first_frame_back)
+				{
+					this->app_->quit();
+					this->phase_ = Phase::waiting;
+				}
+				break;
+
+			// Between a posted message and its arrival, and after the quit:
+			// the tick that posted may still owe steps, and they are not
+			// counted.
+			case Phase::waiting:
+				break;
+			}
+		}
+
+		void draw(Renderer& /*renderer*/) const override
+		{
+			++this->observation_->draws;
+
+			// The loop's draw of the frame after the first one back sees
+			// that first one published.
+			const FrameTimings timings = this->app_->frame_timings();
+			if (this->phase_ == Phase::restored &&
+				!this->observation_->saw_first_frame_back &&
+				timings.frame == this->observation_->frame_at_restore + 1)
+			{
+				this->observation_->saw_first_frame_back = true;
+				this->observation_->first_interval_back = timings.interval;
+			}
+		}
+
+		void on_deactivated() override
+		{
+			this->observation_->draws_at_minimize = this->observation_->draws;
+			this->observation_->frame_at_minimize =
+				this->app_->frame_timings().frame;
+			this->phase_ = Phase::minimized;
+		}
+
+		void on_activated() override
+		{
+			this->observation_->draws_at_restore = this->observation_->draws;
+			this->observation_->frame_at_restore =
+				this->app_->frame_timings().frame;
+			this->phase_ = Phase::restored;
+		}
+
+		// 72 steps at 240 Hz: three tenths of a second minimised.
+		static constexpr int minimized_update_count = 72;
+
+	private:
+		enum class Phase { drawing, minimized, restored, waiting };
+
+		Application* app_ = nullptr;
+		MinimizeObservation* observation_ = nullptr;
+		Phase phase_ = Phase::drawing;
+	};
+}
+
+TEST_CASE("a minimised window keeps its updates at their rate and draws nothing")
+{
+	ApplicationOptions options = hidden_options(L"MinimizedLoopTestWindow");
+	options.target_fps = 240;
+	Application app(std::move(options));
+	app.initialize();
+
+	MinimizeObservation observation;
+	CHECK(app.run(std::make_unique<MinimizeDuringRun>(&app, &observation)) == 0);
+
+	// Hidden and drawing until it was minimised: visible = false is not the
+	// gate.
+	REQUIRE(observation.draws_at_minimize >= 1);
+	CHECK(observation.frame_at_minimize >= 1);
+
+	// Nothing drawn and no frame published from the minimise to the restore.
+	REQUIRE(observation.draws_at_restore >= 0);
+	CHECK(observation.draws_at_restore == observation.draws_at_minimize);
+	CHECK(observation.frame_at_restore == observation.frame_at_minimize);
+
+	// And every update still ran, on a stack that had been told.
+	CHECK(observation.minimized_updates ==
+		MinimizeDuringRun::minimized_update_count);
+	CHECK_FALSE(observation.active_while_minimized);
+
+	// AT THEIR RATE, HELD LOOSELY. 72 steps are 300 ms of the clock. A loop
+	// whose sleeps ran past what StepTimer forgives would take seconds over
+	// them; the bound leaves a loaded machine room and still tells the two
+	// apart. That the loop sleeps at all is held by window_tests.cpp, and
+	// for how long by frame_timer_tests.cpp.
+	const std::chrono::steady_clock::duration minimized_for =
+		observation.last_minimized_update - observation.first_minimized_update;
+	CHECK(minimized_for < std::chrono::seconds(2));
+
+	// Drawing resumed, and the first frame back is measured from the
+	// restore: no interval, as after any time that was not the game's.
+	CHECK(observation.saw_first_frame_back);
+	CHECK(observation.first_interval_back == std::chrono::nanoseconds::zero());
+	CHECK(observation.draws > observation.draws_at_restore);
 }

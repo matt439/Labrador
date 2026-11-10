@@ -4,9 +4,13 @@
 
 #include <Windows.h>
 #include <algorithm>
+#include <chrono>
+#include <cstddef>
 #include <functional>
 #include <stdexcept>
 #include <string>
+#include <thread>
+#include <tuple>
 #include <vector>
 
 using labrador::Key;
@@ -45,6 +49,20 @@ namespace
 			{
 				this->on_tick();
 			}
+		}
+
+		// What the minimised tick does and answers, when a case sets it.
+		// Unset, the window gets WindowNotify's own: tick(), and no wait.
+		std::function<std::chrono::nanoseconds()> on_minimized_tick;
+
+		std::chrono::nanoseconds tick_minimized() override
+		{
+			if (!this->on_minimized_tick)
+			{
+				return WindowNotify::tick_minimized();
+			}
+			this->log.push_back("minimized tick");
+			return this->on_minimized_tick();
 		}
 
 		void on_activated() override { this->log.push_back("activated"); }
@@ -423,6 +441,145 @@ TEST_CASE("a minimise is one suspend and a restore is one resume")
 
 	CHECK(notify.log == std::vector<std::string>{
 		"suspending", "size 64x64", "resuming", "size 64x64"});
+}
+
+TEST_CASE("a minimised window's loop calls the minimised tick and sleeps as long as it answers")
+{
+	// Minimised by the message alone, which is the state the loop reads: the
+	// window stays hidden, and nothing is put on the taskbar.
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	SendMessageW(hwnd(window), WM_SIZE, SIZE_MINIMIZED, 0);
+	notify.log.clear();
+
+	// A fifth of a second of minimised ticks, each answering 20 ms. Ten fit
+	// if every wait is exact; a loop that did not wait would run this many
+	// thousands of times.
+	const std::chrono::steady_clock::time_point start =
+		std::chrono::steady_clock::now();
+	notify.on_minimized_tick = [&]()
+		{
+			if (std::chrono::steady_clock::now() - start >=
+				std::chrono::milliseconds(200))
+			{
+				window.close();
+			}
+			return std::chrono::nanoseconds(std::chrono::milliseconds(20));
+		};
+
+	window.pump_until_quit();
+
+	const std::ptrdiff_t minimized_ticks = std::count(notify.log.begin(),
+		notify.log.end(), std::string("minimized tick"));
+	const std::ptrdiff_t ticks = std::count(notify.log.begin(),
+		notify.log.end(), std::string("tick"));
+
+	// The bound is loose on purpose. A wait may end early for a message
+	// the system sends any window, and the timer it sleeps on is coarse, so
+	// the count is neither exact nor near its ceiling - only far from a
+	// spin.
+	CHECK(minimized_ticks >= 2);
+	CHECK(minimized_ticks <= 60);
+	CHECK(ticks == 0);
+}
+
+TEST_CASE("a message ends a minimised wait at once, and the restored loop ticks again")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	SendMessageW(handle, WM_SIZE, SIZE_MINIMIZED, 0);
+	notify.log.clear();
+
+	// The owner asks for ten seconds, which the loop cuts to its own
+	// longest wait of one. The restore is posted from another thread 50 ms
+	// after the first minimised tick, as the system would post it, and has
+	// to end the wait there.
+	std::thread restorer;
+	std::chrono::steady_clock::time_point start;
+	notify.on_minimized_tick = [&]()
+		{
+			if (!restorer.joinable())
+			{
+				start = std::chrono::steady_clock::now();
+				restorer = std::thread([handle]()
+					{
+						std::this_thread::sleep_for(
+							std::chrono::milliseconds(50));
+						std::ignore = PostMessageW(handle, WM_SIZE,
+							SIZE_RESTORED, MAKELPARAM(64, 64));
+					});
+			}
+			return std::chrono::nanoseconds(std::chrono::seconds(10));
+		};
+	notify.on_tick = [&]() { window.close(); };
+
+	window.pump_until_quit();
+	const std::chrono::steady_clock::duration elapsed =
+		std::chrono::steady_clock::now() - start;
+	REQUIRE(restorer.joinable());
+	restorer.join();
+
+	// Minimised ticks first - one, or more if the system sent the window
+	// something of its own meanwhile - then the restore in the order the
+	// window always gives it, then the first ordinary tick, which closes
+	// the window.
+	const std::vector<std::string>::const_iterator first_other =
+		std::find_if(notify.log.cbegin(), notify.log.cend(),
+			[](const std::string& entry) { return entry != "minimized tick"; });
+	CHECK(first_other != notify.log.cbegin());
+	CHECK(std::vector<std::string>(first_other, notify.log.cend()) ==
+		std::vector<std::string>{ "size 64x64", "resuming", "tick" });
+
+	// Well inside the second the wait would have run to unwoken.
+	CHECK(elapsed < std::chrono::milliseconds(800));
+}
+
+TEST_CASE("an owner with no minimised tick of its own gets tick, and no wait")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	SendMessageW(hwnd(window), WM_SIZE, SIZE_MINIMIZED, 0);
+	notify.log.clear();
+
+	int ticks = 0;
+	notify.on_tick = [&]()
+		{
+			ticks++;
+			if (ticks == 3)
+			{
+				window.close();
+			}
+		};
+
+	window.pump_until_quit();
+	CHECK(ticks == 3);
+}
+
+TEST_CASE("a hidden window that is not minimised never gets the minimised tick")
+{
+	// WindowOptions::visible false is what a smoke test and a capture tool
+	// run under, and both draw: hidden is not minimised.
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.log.clear();
+
+	notify.on_minimized_tick = []()
+		{
+			return std::chrono::nanoseconds(std::chrono::seconds(10));
+		};
+	int ticks = 0;
+	notify.on_tick = [&]()
+		{
+			ticks++;
+			if (ticks == 3)
+			{
+				window.close();
+			}
+		};
+
+	window.pump_until_quit();
+	CHECK(notify.log == std::vector<std::string>{ "tick", "tick", "tick" });
 }
 
 

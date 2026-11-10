@@ -2,6 +2,9 @@
 
 #include "engine/app/application.h"
 
+#include <chrono>
+#include <cstdint>
+
 namespace labrador
 {
 	void FrameTimer::begin(std::chrono::steady_clock::time_point tick_start)
@@ -37,5 +40,31 @@ namespace labrador
 		this->previous_start_ = this->tick_start_;
 
 		timings = frame;
+	}
+
+	std::chrono::nanoseconds minimized_wait(std::uint64_t left_over_ticks,
+		std::uint64_t step_ticks)
+	{
+		if (step_ticks == 0 || left_over_ticks >= step_ticks)
+		{
+			return std::chrono::nanoseconds::zero();
+		}
+
+		// Compared in ticks, before the multiplication, so a step of any
+		// length reaches the cap without overflowing on the way.
+		const std::uint64_t ticks_per_second = StepTimer::TicksPerSecond;
+		const std::uint64_t longest_ticks = ticks_per_second / 1000 *
+			static_cast<std::uint64_t>(longest_step_wait.count());
+		const std::uint64_t remaining = step_ticks - left_over_ticks;
+		if (remaining >= longest_ticks)
+		{
+			return longest_step_wait;
+		}
+
+		const std::uint64_t nanoseconds_per_tick =
+			1000000000 / ticks_per_second;
+		return std::chrono::nanoseconds(
+			static_cast<std::chrono::nanoseconds::rep>(
+				remaining * nanoseconds_per_tick));
 	}
 }

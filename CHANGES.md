@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-10 - Sleep between steps and draw nothing while minimised
+
+**Behaviour change.** On Windows, a minimised window no longer draws, and its loop sleeps between fixed steps. Before this change the loop ticked as fast as it could while minimised and rendered every tick into a window with no area. Now `update` still runs at `ApplicationOptions::target_fps`, as `engine/core/state.h` says it does for a state that was not told of the background, but no state's `draw` is called, no frame is presented and `Application::frame_timings().frame` does not advance until the window is restored. The sleep ends when the system's timer says, so a wake can be late and the steps then owed run together in one tick, as they do after any slow frame; the count of updates is kept. A game that advances something from `draw`, or waits in `update` for `frame_timings().frame` to move, sees it stand still while minimised and should move that work into `update` or pause in `on_deactivated`. A window created hidden with `ApplicationOptions::visible = false` is not minimised and draws as before. `WindowNotify` gains `tick_minimized()`, with a default that calls `tick()` and asks for no wait, so a type that implements `WindowNotify` compiles and behaves as it did. The browser build is unchanged.
+
 ### 2026-11-05 - Refuse a ScreenResolution outside the four presets
 
 **Behaviour change.** `ResolutionManager::set_resolution(ScreenResolution)` and `ResolutionManager::convert_resolution_to_string` now throw `std::invalid_argument` for a value that is not one of the four presets. Only a cast can produce such a value. Before this change, `set_resolution` stored it with a size of -1 by -1, which reached `ViewportManager` and everything that divides by the size, and `convert_resolution_to_string` named it "-1x-1". `set_resolution` now throws before it changes either the label or the size. A game that casts an integer to `ScreenResolution` should keep the integer between 0 and `ScreenResolution::max`, which is the range ColourWars' option cycling already uses.

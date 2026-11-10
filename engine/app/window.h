@@ -4,6 +4,7 @@
 #include "engine/input/mouse.h"
 #include "engine/math/vector2i.h"
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -29,6 +30,21 @@ namespace labrador
 		// browser it is the animation-frame callback, which is the only loop
 		// there is.
 		virtual void tick() = 0;
+
+		// THE FRAME WHILE THE WINDOW IS MINIMISED, which a Win32 window
+		// calls in place of tick(). Nothing drawn could be seen, so the owner
+		// advances what tick() advances and draws nothing, and answers how
+		// long it has nothing to do: the loop may wait that long before it
+		// calls again (Window::pump_until_quit). Zero is no wait.
+		//
+		// An owner that does not override it gets tick() and no wait. A
+		// canvas is never minimised, and a hidden page gets no frames at
+		// all, so a browser window never calls this.
+		virtual std::chrono::nanoseconds tick_minimized()
+		{
+			this->tick();
+			return std::chrono::nanoseconds::zero();
+		}
 
 		virtual void on_activated() = 0;
 		virtual void on_deactivated() = 0;
@@ -269,6 +285,16 @@ namespace labrador
 		// window is closed there, with no further tick and no notify call
 		// after it. The loop then ends and that exception is rethrown here,
 		// even if the tick it interrupted throws again on the way out.
+		//
+		// WHILE THE WINDOW IS MINIMISED THE LOOP WAITS, where otherwise it
+		// never does. On an empty queue it calls tick_minimized() in place
+		// of tick(), then sleeps until a message arrives or the time that
+		// call answered has passed, whichever is first, and never longer
+		// than a second. A message therefore still wakes it at once, and an
+		// owner that answers the time to its next fixed step keeps its
+		// steps at their rate. Minimised is the window's state, not
+		// WindowOptions::visible: a window created hidden is not minimised,
+		// and its loop runs as a shown one's does.
 		//
 		// IN A BROWSER THIS CALL DOES NOT RETURN, and the stack below it does
 		// not survive it. The loop is the browser's: tick() runs once per
