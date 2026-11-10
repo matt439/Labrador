@@ -54,6 +54,27 @@ withdrawal of the original fifteen, this closes `PI-09`'s filing queue.
 The records contain only public engine mechanisms and engine-owned evidence,
 with no client exhibit content; the client's own ledger remains its own.
 
+## Issues filed on the tracker, 2026-11-05
+
+Four reports arrived as GitHub issues on 5 November 2026, after `PI-09`'s
+queue closed, through the route [CONTRIBUTING.md](../../../CONTRIBUTING.md)
+gives every consumer. They are numbered by issue, not by the client's ledger.
+**All four are open and none is decided.** The verdicts on #122, #123 and
+#124 are the owner's; #125 is a defect report whose fix is not yet made. A
+row here is ticked in the commit that answers its issue, as in the table
+below.
+
+| | Issue | Engine-focused claim | State on 2026-11-10 |
+|---|---|---|---|
+| [ ] | [#122](https://github.com/matt439/Labrador/issues/122) | Request. A consumer's tests cannot put a chosen `GamepadState` into a slot or see what was asked of a pad without replacing `GamepadReader`'s members at link time; `LABRADOR_INPUT_BACKEND` has no headless choice. A rider asks for a way to remove a name from a `Registry`. | Open, undecided. No decision file. The pad half is the owner's decision `REV#40` in [TODO.md](../../../TODO.md). That row describes a `null` value for `LABRADOR_INPUT_BACKEND`; the issue says a reader chosen at configure time does not meet its need, because its tests link the engine build the game ships with, and asks for one that sits beside the configured backend. The `Registry` rider has no row of its own. |
+| [ ] | [#123](https://github.com/matt439/Labrador/issues/123) | Request. A game can recognise "no usable graphics device" only by comparing an exception's message, and each render backend words its refusal differently. | Open, undecided. No decision file and no draft. |
+| [ ] | [#124](https://github.com/matt439/Labrador/issues/124) | Request. `CollisionObject::on_contact` receives `const CollisionObject& other`, so a response has no defined way to change the other participant. | Open, undecided. [contact.md](contact.md) is a draft: evidence, four options and a recommendation, with the verdict left to the owner. |
+| [ ] | [#125](https://github.com/matt439/Labrador/issues/125) | Bug. The Direct3D backends report a CPU rasteriser that lacks `DXGI_ADAPTER_FLAG_SOFTWARE` as `RenderDeviceKind::hardware`, and a release build starts on it. | Open, not fixed. [device-kind.md](device-kind.md) confirms by reading that both backends classify and select on that one flag, and describes the fix; no such device was run. Whether a release build should still start there is the owner's call. |
+
+The workarounds behind #122 to #124 are described in the issues by the
+client itself, on this repository's public tracker. The files here restate
+only the engine-side claim, as the boundary above requires.
+
 ## The files
 
 | File | Reports | What they share |
@@ -65,10 +86,13 @@ with no client exhibit content; the client's own ledger remains its own.
 | [content.md](content.md) | 6, 12, 15 | Above the audio seam, in `assets/json`, and in the template's CMake. Three independent PRs. |
 | [resize.md](resize.md) | 23 | The size-only Win32 path and its hidden-window activation regression. |
 | [vibration.md](vibration.md) | 25 | A narrowed output-transport decision; PI-21 owns implementation. |
+| [contact.md](contact.md) | Issue #124 | A draft, not a decision: what `on_contact` may do to the other participant. |
+| [device-kind.md](device-kind.md) | Issue #125 | A source check, not a fix: how the Direct3D backends derive `RenderDeviceKind`. |
 
 ## The decisions
 
-This list is kept current. Tick a box in the commit that implements the report
+This list covers the ledger's reports; the four tracker issues have their own
+table above. This list is kept current. Tick a box in the commit that implements the report
 or files its answer, and say there which commit or issue answered it.
 
 | | # | Decision | Size | Answer |

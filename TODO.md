@@ -27,7 +27,7 @@ the player* links, waits on the owner.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
-**Open agent rows:** `REV#14` to `REV#29` and `REV#103`, the 17 rows that need no owner call (`REV#14` to `REV#19` and `REV#103` are verified defects and false statements) from [the review of 2026-11-10](docs/review/2026-11-10/README.md), in id order. Other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
+**Open agent rows:** `REV#104`, a verified defect from issue #125, then `REV#14` to `REV#29`, the rows that need no owner call (`REV#14` to `REV#19` and `REV#103` are verified defects and false statements) from [the review of 2026-11-10](docs/review/2026-11-10/README.md), in id order. Other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
@@ -36,6 +36,7 @@ the player* links, waits on the owner.
 - Not yet placed: `GAP#1` to `GAP#13` except `GAP#4` (OCA-82), whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below; the calls stay the owner's.
 - Review of 2026-11-10: every `DECISION` row of [that section](#review-of-2026-11-10), 59 between `REV#30` and `REV#94` plus `OCA-76`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md (`OCA-76` already is one).
+- Client reports: `REV#105`, the verdicts on issues #122 to #124 in [the reports table](docs/review/colourwars-reports/README.md).
 - New proposals: `IDEA#1` to `IDEA#5` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following and grid-sheet authoring. `IDEA#8` to `IDEA#19`, except `IDEA#10`, from the engine review of 2026-10-31: scene queries, contact edges, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
 
 ## Input, menus, settings and saves
@@ -99,11 +100,13 @@ the player* links, waits on the owner.
 
 ## ColourWars and the pin
 
-**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, in its own repository. [docs/review/colourwars-reports/](docs/review/colourwars-reports/README.md) records the original fifteen answers and the two newer drafts; its table is kept current.
+**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, in its own repository. [docs/review/colourwars-reports/](docs/review/colourwars-reports/README.md) records the original fifteen answers, the two newer drafts and the four issues filed on 2026-11-05; its table is kept current.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `PI-14` | DECISION | should | M | Sandbox run at `v0.2.0` reached a keyboard match. Radeon criterion: not run, none available; the pad match is informal play. Run and record are ColourWars'. Owner: close as delegated, or await its `v0.3.0` run. [BACKLOG](docs/product/BACKLOG.md#next). |
+| `REV#104` | OPEN | should | S | Both Direct3D backends take `RenderDeviceKind` from `DXGI_ADAPTER_FLAG_SOFTWARE` alone, so an unflagged CPU rasteriser reads as hardware (issue #125). Selection using a fix is the owner's. [Record](docs/review/colourwars-reports/device-kind.md). |
+| `REV#105` | DECISION | should | S | Verdicts on issues #123 and #124 ([draft](docs/review/colourwars-reports/contact.md)), and whether `REV#40` meets #122, whose tests link the shipping build. [Table](docs/review/colourwars-reports/README.md). |
 
 ## Records and design decisions
 
@@ -165,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#103` | OPEN | should | S | Issues #122 to #125 have no row in docs/review/colourwars-reports/README.md: index all four, check #125's device-kind claim and draft #124's decision file. The verdicts on #122 (`REV#40`), #123 and #124 are the owner's. |
 | `REV#14` | OPEN | should | XS | Scene::update steps collision objects first, then plain objects; engine/scene/scene.h does not say so and no test in tests/scene pins the order between kinds or within one. |
 | `REV#15` | OPEN | should | S | `Window::pump_until_quit` and `Application::tick` neither wait nor skip rendering while minimised. The gate is minimise, not `visible = false`; the wait is timed, so fixed updates keep their rate as `engine/core/state.h` publishes. |
 | `REV#16` | OPEN | should | XS | `Application::load_manifest` and `Application::run` dereference null members when `initialize()` has not run; each should throw `std::logic_error` naming the step, with a test in `tests/app` for each. |
