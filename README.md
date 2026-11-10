@@ -26,8 +26,8 @@ of its own. Nothing here depends on it: this repository builds, tests and
 benchmarks standalone.)*
 
 Six samples come with it, and they answer different questions.
-`samples/minimal` is about 760 lines, its test and start-up check included,
-and is the answer to "how do I start a project on this" — copy it. `samples/linesweeper` is a falling-block game and
+`samples/minimal` is about 860 lines of C++, its test, start-up check and
+browser entry point included, and is the answer to "how do I start a project on this" — copy it. `samples/linesweeper` is a falling-block game and
 is the answer to "what does a finished game look like on this engine" — read
 it, and read [its README](samples/linesweeper/README.md) for the decisions
 behind it. [Play LineSweeper in a desktop browser](https://mattharding.dev/demo/linesweeper/)
@@ -48,9 +48,9 @@ gallery shows them running. [Its README](samples/components/README.md)
 says why they are copied, and when one would move into the engine.
 
 ```
-engine/    ~42k lines   the engine: ten modules with a fixed dependency direction
+engine/    ~44k lines   the engine: ten modules with a fixed dependency direction
 samples/                the starter template, LineSweeper, three focused guide examples and components to copy
-tests/     ~38k lines   doctest, run by ctest with the entries that sit beside their samples
+tests/     ~42k lines   doctest, run by ctest with the entries that sit beside their samples
 bench/                  throughput, run by ctest alongside them
 docs/                   the design documents, and the reviews that argued with them
 website/                the public site, built with npm from this same checkout
