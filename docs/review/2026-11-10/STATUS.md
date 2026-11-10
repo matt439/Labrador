@@ -15,7 +15,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#21` | [A pad press never unlocks browser audio, and the audio contract does not say so](FINDINGS.md#rev21) | Open |
 | `REV#22` | [Evaluation pages do not state that pads are XInput only](FINDINGS.md#rev22) | Open |
 | `REV#23` | [Template page stays at "Loading..." when a download fails](FINDINGS.md#rev23) | Open |
-| `REV#24` | [The second-manifest rule is missing from Application::load_manifest](FINDINGS.md#rev24) | Open |
+| `REV#24` | [The second-manifest rule is missing from Application::load_manifest](FINDINGS.md#rev24) | Done. `Application::load_manifest`'s comment and the resources concept page state that a second manifest replaces the first as what a device restore replays; the behaviour is pinned by the existing `tests/assets/resource_loader_tests.cpp` case. |
 | `REV#25` | [Linear filtering can sample neighbouring atlas frames and the guide does not say so](FINDINGS.md#rev25) | Open |
 | `REV#26` | [No standing check builds a renamed starter project](FINDINGS.md#rev26) | Open |
 | `REV#27` | [Development and starter page canvases have no accessible name](FINDINGS.md#rev27) | Open |

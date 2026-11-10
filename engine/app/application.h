@@ -194,6 +194,12 @@ namespace labrador
 		// wherever the game was started from. An absolute path is
 		// taken as it is.
 		//
+		// ONE MANIFEST. A second call loads what it names as well, and then
+		// replaces the first as what a device restore replays, so a restore
+		// rebuilds what the second manifest names and nothing that only the
+		// first did. A game with more than one manifest loads them as one
+		// (ResourceLoader::load_manifest).
+		//
 		// Throws std::logic_error naming this call if initialize() has not
 		// run, because there is no loader to load into (T6).
 		void load_manifest(const std::string& manifest_path);
