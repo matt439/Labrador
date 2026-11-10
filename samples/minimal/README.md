@@ -41,6 +41,10 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-10.** `web/shell.html` names its canvas for a screen reader,
+  `aria-label="Minimal sample"`, and gives the status line `role="status"` so
+  that a change to it is read out. A copy wants both attributes, with its own
+  game's name in the label: it is a placeholder, as the `<title>` is.
 - **2026-11-10.** `web/shell.html` says so when the game's files do not load.
   A `.wasm`, loader script or `.data` file that fails to download left the
   page at `Loading...`, because the engine never runs to call

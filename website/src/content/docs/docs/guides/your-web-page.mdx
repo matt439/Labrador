@@ -48,7 +48,7 @@ account, so anyone can read the five files; that is true of every web page anywa
    notepad game\web\shell.html
    ```
 
-   Search with **Ctrl+F** for `<p id="status">`. Below that line, add:
+   Search with **Ctrl+F** for `<p id="status"`. Below that line, add:
 
    ```html
      <p><a href="NOTICE.txt" style="color: #8cf">Third-party notices</a></p>
@@ -57,12 +57,16 @@ account, so anyone can read the five files; that is true of every web page anywa
    so that the two lines read:
 
    ```html
-     <p id="status">Loading...</p>
+     <p id="status" role="status">Loading...</p>
      <p><a href="NOTICE.txt" style="color: #8cf">Third-party notices</a></p>
    ```
 
-   Save and close Notepad. While you are there, you can change the `<title>` line near the top,
-   `Labrador - minimal sample`, to your game's name: it is the browser tab's title.
+   `role="status"` is there so that a screen reader reads the line out when the page changes it.
+   The line above it, `<canvas id="canvas" tabindex="0" aria-label="Minimal sample"></canvas>`,
+   is the game's picture, and `aria-label` is the name a screen reader gives it. `Minimal sample`
+   is a placeholder, as the title is: change both to your game's name. The `<title>` line is
+   near the top, `Labrador - minimal sample`, and it is the browser tab's title. Save and close
+   Notepad.
 
 2. **Configure the release build.** This is needed once:
 
@@ -395,7 +399,8 @@ On 2026-10-30 and 31, in a starter project made from a starter ZIP of this tree 
 `C:\dev\g8-author\exact\mygame`, with Emscripten 6.0.12, Visual Studio 2026's CMake 4.3.1 and Git
 for Windows 2.52.0, steps 1 to 6 and 8 ran as shown, with `C:\dev\g8-author\exact` in place of
 `C:\dev` in the script and the commands, and the output above is from those runs with the folder
-changed back. Step 1's line was added to `shell.html` as worded, and `web-release.bat` saved with
+changed back. Step 1's line was added to `shell.html` as then worded, by a search for the status
+line's whole tag, which had no `role` yet, and `web-release.bat` saved with
 Windows' line ends, as Notepad saves it. The configure took 11 seconds; the first run of the
 script 13, and a run after changing the page's title 6, after which `git add`, `git commit` and
 `git push` sent the two changed files, `index.html` and `BUILD.json`. On another configure the

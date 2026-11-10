@@ -108,6 +108,14 @@ cd /d C:\dev\mygame
    <title>Sky Hopper</title>
    ```
 
+   Then search for `aria-label`. It is on the canvas's line, and it is the name a screen reader
+   gives the game's picture; change `Minimal sample` between the quotation marks to the same
+   words, so that the line reads:
+
+   ```html
+     <canvas id="canvas" tabindex="0" aria-label="Sky Hopper"></canvas>
+   ```
+
    In `game\main_web.cpp`, the line `std::fprintf(stderr, "MinimalSample: %s\n", e.what());`
    starts the message a failed browser start writes to the browser's console; change
    `MinimalSample` there too if you like. Save and close Notepad.
@@ -305,7 +313,8 @@ browser passed with `--quit-keys Escape,Enter`, and the page's title read `Sky H
 headless Chrome. The project's folder was renamed with `out` kept, giving the `CMakeCache.txt`
 error, and built again after deleting `out`; `ren` was tried from inside the folder, giving the
 `being used by another process` message. Each failure above was made on purpose by one change at
-a time, except the file in use in `out`, which was not tried.
+a time, except the file in use in `out`, which was not tried. Step 4's `aria-label` change is
+later than this check and was not part of it.
 
 A second agent then followed the page as worded in another fresh starter, after
 [Make a first change](/docs/get-started/first-change/)'s steps 2 to 4. The line's count and
