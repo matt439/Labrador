@@ -261,6 +261,14 @@ pull request already passed. Citation checking skips `website/`.
   `renderer.h` and `application.h` are caller contract.
 - [check_agent_brief.cmake](cmake/check_agent_brief.cmake) requires CLAUDE.md's
   first line to be `@AGENTS.md`. Amend only this brief; CLAUDE imports it.
+  It also derives the preset table's ctest counts from the inventory below and
+  names the row, the stated count and the derived count when they differ. It
+  checks the six native counts for the configurations CI runs (five Debug
+  presets and `x64-release`), `wasm-release`'s count with Chromium and both
+  Firefox counts. The other four native Release presets, `wasm-debug`'s 33 and
+  the 19 without a browser have no inventory source: a standalone run lists
+  them as not checked. The [fixture script](cmake/check_agent_brief_fixtures.cmake)
+  proves the failures. README.md's counts are not checked.
 - Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
   add each new `.cpp`, or it is silently absent from the build.
 - [ctest_inventory.json](tests/ctest_inventory.json) lists the ctest entries
@@ -286,6 +294,7 @@ Standalone lint commands (no configure required):
 ```text
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief.cmake
+cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_agent_brief_fixtures.cmake
 cmake -DENGINE_DIR=C:/Projects/Labrador/engine -P cmake/check_engine_includes.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_engine_include_fixtures.cmake
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_linesweeper_layers.cmake
