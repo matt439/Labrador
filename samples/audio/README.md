@@ -172,6 +172,14 @@ verifier checks format, durations, names, signal levels and every payload byte;
 run the XAudio2 playback check after rebuilding. Python and XWBTool are not
 needed to build or run the checked-in example.
 
+None of the three waves carries a loop region, and the verifier requires that:
+the drone loops its whole wave. A WAV with a `smpl` chunk packs into an entry
+with a region, which a looping effect then repeats after playing the wave from
+its start. The audio guide's
+[loop region section](https://labradorengine.com/docs/guides/audio/#a-loop-region-inside-a-wave)
+says what of that has been checked on each platform; nobody has listened to
+one, and this sample does not exercise it.
+
 The font is copied at build time from `samples/minimal/content/fonts`; its
 provenance is in the root [NOTICE](../../NOTICE). The Windows build also
 compiles the template's DPI awareness declaration,

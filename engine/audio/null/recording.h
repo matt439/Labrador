@@ -28,6 +28,10 @@
 // open_wave_bank stores the supplied wave names without opening a container.
 // Missing-container failures and ResourceLoader's optional-bank fallback to
 // SoundBank::silent() therefore cannot be exercised through this backend.
+// A wave's loop region is in the container and never crosses the seam, so no
+// record carries one: play_voice records the loop it was asked for and not
+// which frames would repeat. tests/audio/webaudio/webaudio_tests.cpp follows a
+// region from a container to the browser's source node.
 
 namespace labrador
 {

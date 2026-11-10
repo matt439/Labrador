@@ -30,7 +30,9 @@ namespace labrador
 		int sample_rate = 0;
 
 		// The loop region, in frames. A length of zero means the wave carries
-		// none, and a looping voice then loops the whole wave.
+		// none, and a looping voice then loops the whole wave. With a region,
+		// a looping voice plays from the wave's first frame and then repeats
+		// the region; a voice that is not looping ignores it.
 		uint32_t loop_start = 0;
 		uint32_t loop_length = 0;
 

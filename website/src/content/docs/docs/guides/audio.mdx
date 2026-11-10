@@ -273,6 +273,42 @@ adpcmencode3 pcm\ping128.wav ping.wav
 A quarter-second sound of 5,512 samples at 22,050 Hz, encoded as it was, read back at 22,018 Hz;
 padded to 5,632 samples first, it read back at 22,050 Hz.
 
+### A loop region inside a wave
+
+A looping effect repeats its whole wave unless the wave carries a **loop region**: a first frame
+and a length, kept in the bank beside the wave. With one, `play_effect(effect, true)` plays from
+the start of the wave and then repeats the region, which is how a music track keeps an
+introduction that is heard once. `stop_effect(effect)` without `true` leaves the loop and lets
+the rest of the wave play. An effect played without the loop flag ignores the region, and so does
+every `play_wave` one-shot. The sample's three waves carry none, and its drone loops whole.
+
+The region comes from the WAV. A WAV can hold a sampler chunk, `smpl`, whose loop names a first
+and a last sample; XWBTool copies the first forward loop it finds there into the bank's entry.
+Its source looks for a DLS `wsmp` chunk before `smpl` and takes a loop from that one when it
+finds one; only a `smpl` chunk has been packed here. A compact entry cannot hold one; the standard entries `-nc` writes can. The engine's reader
+refuses a region that runs past the end of its wave, naming the entry.
+
+What has been checked, and what has not:
+
+- **Packing.** XWBTool from the `may2026` release packed a mono 16-bit PCM WAV whose `smpl` chunk
+  loops samples 1,000 to 2,999 into an entry that loops 2,000 frames from frame 1,000. The result
+  matched, byte for byte apart from the tool's build time, the bank
+  <RepoLink path="tests/audio/content/make_loop_bank.py">make_loop_bank.py</RepoLink> writes for
+  the engine's tests; that script writes the WAVs and makes the comparison. Which audio editors
+  write a `smpl` chunk on export has not been checked, and neither has a region on an MS-ADPCM
+  wave.
+- **In a browser.** The engine's reader reads the region and the Web Audio backend hands it to the
+  source node as its `loopStart` and `loopEnd`. `AudioTests` holds those values, and where a
+  paused loop resumes from, against a stand-in for Web Audio under Node. No browser played that
+  bank.
+- **On Windows.** DirectX Tool Kit's reader hands the same region to XAudio2 as the buffer's
+  `LoopBegin` and `LoopLength`, with an unending loop count when the effect loops. That is read
+  from the `may2026` source, in `WaveBank.cpp` and `SoundEffectInstance.cpp`. No test here runs
+  it.
+- **By ear.** Nobody has listened to a region loop on either platform.
+
+The `-null` presets open no container, so their recording holds the loop flag and no region.
+
 ## Music, bank memory and the page download
 
 Labrador loads wave banks into memory on both platforms, including every music

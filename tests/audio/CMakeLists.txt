@@ -24,15 +24,18 @@ endif()
 # "./content/" relative to it, which under Node is the same directory through
 # NODERAWFS. tones.xwb and its three sources are the audio sample's, copied
 # rather than referred to, so the test reads exactly what that sample ships;
-# ping_adpcm.xwb is this folder's own, and make_adpcm_bank.py beside it says
-# how it was made. One target, for the reason tests/render/CMakeLists.txt
-# gives for its own content.
+# ping_adpcm.xwb and loop_region.xwb are this folder's own, and
+# make_adpcm_bank.py and make_loop_bank.py beside them say how each was made.
+# loop_region.xwb is the one bank here whose wave carries a loop region, which
+# webaudio/webaudio_tests.cpp follows to the source node. One target, for the
+# reason tests/render/CMakeLists.txt gives for its own content.
 add_custom_target(audio_test_content ALL)
 add_custom_command(TARGET audio_test_content POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E make_directory
         "$<TARGET_FILE_DIR:AudioTests>/content"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/content/ping_adpcm.xwb"
+        "${CMAKE_CURRENT_SOURCE_DIR}/content/loop_region.xwb"
         "${PROJECT_SOURCE_DIR}/samples/audio/content/sounds/tones.xwb"
         "${PROJECT_SOURCE_DIR}/samples/audio/source/ping.wav"
         "${PROJECT_SOURCE_DIR}/samples/audio/source/chime.wav"
