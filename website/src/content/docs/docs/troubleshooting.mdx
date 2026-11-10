@@ -649,6 +649,13 @@ A handle was used before it was resolved, usually because a drawable was default
 built before the manifest was loaded. Build drawables in a state's `init()`
 ([States and the stack](/docs/concepts/states/#a-states-life)).
 
+### `Application::load_manifest was called before Application::initialize().`
+
+`main.cpp` calls the three steps in the wrong order, or the `app.initialize();` line is gone.
+`Application::run was called before Application::initialize().` is the same mistake met one
+line later. The order is `app.initialize()`, then `app.load_manifest(...)`, then `app.run(...)`
+([The game](/docs/concepts/game/)).
+
 ### The window opens and nothing moves when I press keys
 
 Keys are read once per step, and a key pressed and released between two steps is not seen. More

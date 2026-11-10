@@ -13,6 +13,7 @@ labrador_add_test_suite(AppTests
 )
 if(NOT EMSCRIPTEN)
     target_sources(AppTests PRIVATE
+        application_order_tests.cpp
         keyboard_input_tests.cpp
         pointer_input_tests.cpp
         startup_info_tests.cpp

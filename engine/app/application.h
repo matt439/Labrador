@@ -193,6 +193,9 @@ namespace labrador
 		// "./manifest.json" therefore means the file beside the game,
 		// wherever the game was started from. An absolute path is
 		// taken as it is.
+		//
+		// Throws std::logic_error naming this call if initialize() has not
+		// run, because there is no loader to load into (T6).
 		void load_manifest(const std::string& manifest_path);
 
 		// Takes the first state and runs until the window closes. Returns the
@@ -207,6 +210,10 @@ namespace labrador
 		// outlives main - a static - is the shape a web entry point has.
 		// Nothing after this call in main ever runs, and quit() ends the loop
 		// rather than returning here.
+		//
+		// Throws std::logic_error naming this call if initialize() has not
+		// run, on either platform and before the first state is entered, so
+		// no init() meets a service that does not exist (T6).
 		int run(std::unique_ptr<State> first_state);
 
 		// Closes the window, which ends run(). This is the whole of the quit path:
