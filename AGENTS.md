@@ -189,7 +189,8 @@ paths are planning information; they do not establish a build or test result.
   LineSweeper entry point does. WebGL context loss and restore notify
   `DeviceNotify` together at `begin_frame`; optional host callbacks report both
   ends from frames. Pads follow page visibility, keys canvas focus. Web Audio
-  waits for the first key/click/touch. `WebWindowTests` drives real input through
+  waits for the first key/click/touch; a pad press is not one, so expect
+  pad-only play to be silent. `WebWindowTests` drives real input through
   the shell CSS; its visibility event is synthetic.
 - Do not claim real hardware acceptance from emulation. Safari, real pads and
   touchscreens, real-phone layout/memory and display pacing have open checks in

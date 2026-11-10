@@ -987,6 +987,28 @@ as decisions rather than finds them as diffs.
 The touch device and its `WindowNotify` calls are P1, and the wave-bank reader
 is D9, so neither has a row of its own here.
 
+**D13's consequence for a pad, stated 2026-11-10 (`REV#21`).** The gesture D13
+has the backend listen for is a `keydown`, `mousedown`, `pointerdown`,
+`pointerup` or `touchend` event on the window. A gamepad button is none of
+them: the Gamepad API is polled and has no event for a button. The backend's
+only other way to sound is a bank opened once `navigator.userActivation` says
+the page has been active, and nothing polls that afterwards. So a pad press
+by itself never unlocks sound, and a player who has only ever pressed a pad is
+to be expected to hear nothing until the page receives one key, click or
+touch; one-shots are dropped meanwhile and persistent voices wait, as the row
+says. The one way round is a browser that counts a pad press as activity on
+the page, and then only for a bank opened after the press; whether any
+browser does has not been checked. All of this is read from
+`engine/audio/webaudio/audio_device.cpp`, not observed with a pad in a
+browser. D13 is unchanged by it. Making audio listen to pads would have
+`audio/` read input for one platform, when D13 kept the gesture inside the
+backend so that nothing grew for a browser alone. A page that wants pad-only
+play to sound asks for one key, click or touch before the game starts.
+Whether a sample's page holds its game back for one is the owner's choice,
+and none does for sound: the audio sample's page asks in its status line and
+starts regardless, and LineSweeper's Play button is there for its download
+and that game has no sound.
+
 ### Open
 
 Nothing. Anything else this plan meets that would change a design document, a public header or a rule in `CLAUDE.md` comes back here as a new row before it is built.
