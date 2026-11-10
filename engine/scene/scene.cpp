@@ -121,6 +121,9 @@ namespace labrador
 
 	void Scene::update(float dt)
 	{
+		// Collision objects, then plain objects, each in insertion order:
+		// scene.h states it as contract, and end_tick()'s stable erasure and
+		// appended adds are what keep it.
 		for (const std::unique_ptr<CollisionObject>& object :
 			this->collision_objects_)
 		{

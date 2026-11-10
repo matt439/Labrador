@@ -210,6 +210,19 @@ namespace labrador
 		bool in_bounds(const CollisionObject& object) const;
 
 		// PHASE 1. Steps every object in the world, once.
+		//
+		// THE ORDER IS FIXED: the collision objects in the order they were
+		// added, then the plain objects in the order they were added. So a
+		// plain object's update() reads every collision object where this
+		// tick's step left it, and a collision object reads the plain objects
+		// where the previous tick left them. Neither a retirement nor a
+		// remove() reorders what is left. This is not the order draw() uses,
+		// which puts the plain objects first.
+		//
+		// The world is what the last end_tick() left. An object added during
+		// this call is not stepped by it: it joins the end of its kind at the
+		// next end_tick(). An object removed or flagged for deletion during
+		// this call is still in the world, and is stepped when its turn comes.
 		void update(float dt);
 
 		// PHASE 2. Measures every overlapping pair and tells both participants.
