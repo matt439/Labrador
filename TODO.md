@@ -27,7 +27,7 @@ the player* links, waits on the owner.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
-**Open agent rows:** `REV#104`, a verified defect in how the Direct3D backends classify a software adapter (issue #125). Other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
+**Open agent rows:** `REV#104`, a verified defect in how the Direct3D backends classify a software adapter (issue #125); and `REV#106` to `REV#117` of [the first-run review](#first-run-review-of-2026-11-10), `REV#106` to `REV#108` first. Other ready work is Later's next batch in BACKLOG.md's order and the hygiene lane.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
@@ -36,6 +36,7 @@ the player* links, waits on the owner.
 - Not yet placed: `GAP#1` to `GAP#13` except `GAP#4` (OCA-82), whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below; the calls stay the owner's.
 - Review of 2026-11-10: every `DECISION` row of [that section](#review-of-2026-11-10), 59 between `REV#30` and `REV#94` plus `OCA-76`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md (`OCA-76` already is one).
+- First-run review of 2026-11-10: `REV#118` to `REV#121` in [that section](#first-run-review-of-2026-11-10), and its run evidence for `REV#62`, `REV#63` and `REV#66`.
 - Client reports: `REV#105`, the verdicts on issues #122 to #124 in [the reports table](docs/review/colourwars-reports/README.md).
 - New proposals: `IDEA#1` to `IDEA#5` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following and grid-sheet authoring. `IDEA#8` to `IDEA#19`, except `IDEA#10`, from the engine review of 2026-10-31: scene queries, contact edges, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
 
@@ -201,7 +202,7 @@ ready queue above.
 | `OCA-76` | DECISION | could | S | `OCA-76` still waits for a second caller; the caller-free slice is walking the starter through IDBFS (`GUIDE#12`'s leftover) and weighing `autoPersist` there. An engine JSON writer needs README's boundary amended. |
 | `REV#60` | DECISION | could | S | A read-only reduced-motion fact on Application or the window, read from the browser media query and from Windows' client-area animation setting; LineSweeper's native `main.cpp` ignores the setting today. |
 | `REV#61` | DECISION | could | M | Whether the engine offers a shared fatal-error report (title, message) for `samples/minimal/main.cpp` and `main_web.cpp`, or a run helper; the two-file anatomy is ARCHITECTURE's stated design and would be amended. |
-| `REV#62` | DECISION | could | M | Guides on the development site use features newer than the starter's release with no note at the passage (your-picture.mdx's PNG aside); choose a banner or per-passage version notes without reopening the 2026-10-27 default. |
+| `REV#62` | DECISION | could | M | Five guides use features newer than the starter's release with no note at the passage ([run in a v0.3.0 starter](docs/review/2026-11-10-first-run/FINDINGS.md#rev62)); choose a banner or per-passage notes without reopening the 2026-10-27 default. |
 | `REV#63` | DECISION | could | S | Whether the starter ZIP carries a `.vsconfig` and `prerequisites.mdx` one documented installer command, against the 2026-10-30 'no bundled installer' decision; needs one Sandbox run to verify and measure. |
 | `REV#64` | DECISION | could | M | A copyable touch-control component in `samples/components`: held button rectangles answering a bitset per step and a stick region answering a Vector2F, with headless tests over synthetic TouchPoints. |
 | `REV#65` | DECISION | could | S | Whether to document and test FetchContent, flag the walkthrough repository as a GitHub template, or add install/export or a vcpkg port; `README.md` documents only the submodule and the starter ZIP. |
@@ -242,6 +243,29 @@ ready queue above.
 | `REV#100` | DEFERRED | could | S | `tools/web_bundle/bundle.mjs` writes raw and Brotli sizes to `BUILD.json` with no threshold; the budget is `REV#53`'s call, and a Brotli tolerance is deferred until that budget is taken. Bench output stays ungated. |
 | `REV#101` | DEFERRED | could | S | Only `.editorconfig` and `cmake/check_whitespace.cmake` check style; a pinned ruff or actionlint step for `tools/` is deferred until a tooling defect it would catch is recorded. A `.clang-format` is not proposed. |
 | `REV#102` | DEFERRED | could | S | Closure, emmalloc, `-Os`/`-Oz` and LTO are untried for `wasm-release` (`cmake/settings.cmake:85-92`); measure them once a size budget exists to hold the result. |
+
+## First-run review of 2026-11-10
+
+**Owner:** [the first-run review of 2026-11-10](docs/review/2026-11-10-first-run/README.md): [FINDINGS.md](docs/review/2026-11-10-first-run/FINDINGS.md) holds each row's evidence under its id, and [STATUS.md](docs/review/2026-11-10-first-run/STATUS.md) records each resolution. An `OPEN` row needs no owner call; three say they are unverified and are reproduced before anything is written. A `DECISION` row is the owner's call.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `REV#106` | OPEN | should | S | The starter's `x64-debug` preset builds a 32-bit game in a 32-bit prompt without complaint; the next x64 build fails with about 1,400 linker lines that reconfiguring does not cure. Guard the compiler in CMake and add an `LNK4272` entry. |
+| `REV#107` | OPEN | should | XS | `prerequisites.mdx`'s *Keeping a deep folder* sends readers to the root of a `subst` drive, where Windows' `tar` cannot extract the starter ZIP, and `starter.mdx`'s boxes hard-code `C:\dev`. |
+| `REV#108` | OPEN | should | S | `starter-update.mdx` carries only `game` into the new project: `.git`, `web-release.bat` and top-level pictures stay in `mygame-old`, which the page then invites the reader to delete. |
+| `REV#109` | OPEN | should | S | Troubleshooting lacks entries for messages produced in a v0.3.0 starter: the moved-folder `CMakeCache.txt` error, what follows a failed configure, deep-folder outcomes, a failed download, the debug runtime box and an unsaved edit. |
+| `REV#110` | OPEN | should | S | `prerequisites.mdx` step 1 says nothing of the installer's screens before the Workloads tab, nothing marks where a starter reader is finished, and the installer is still unwalked: one clean-machine install settles it. |
+| `REV#111` | OPEN | could | S | No page states a Windows version, Arm, S mode or administrator rights before the install, and the total disk, download and time first appear in step 1 of the second page. |
+| `REV#112` | OPEN | could | S | Unverified: Smart App Control or Defender blocking the reader's own `MyGame.exe` has no page, and `starter.mdx` step 7 would send them to rebuild. Reproduce on such a machine, then write the entry. |
+| `REV#113` | OPEN | could | S | Unverified: on a Windows that is not in English, cmd, vcpkg and the compiler print translated messages no page quotes. Check whether `VSLANG=1033` restores the English text, then say so in `prerequisites.mdx`. |
+| `REV#114` | OPEN | could | S | Unverified: what a build prints after a Visual Studio update is not recorded, and no page says how to remove everything or where vcpkg's cache is. Apply one update to a built starter, then write both. |
+| `REV#115` | OPEN | could | XS | The release page lists the docs tarball first and *Source code (zip)* at the starter's size with no page recognising a wrong pick, and `starter.mdx` step 3 run again overwrites an edited `mygame` silently. |
+| `REV#116` | OPEN | could | S | Eight findability stumbles: the home card and Examples' button describe the Git route, *Edit and debug*'s next page is the Git route's first, the guides index is one ungrouped grid of 42 cards, and errata link the wrong pages. |
+| `REV#117` | OPEN | could | S | Day-two guides interact unstated: four pages rely on the start-up test after *Add a screen* changed it, *Bigger text* times out the levels page's test, the build keeps a swapped-out texture, and a JPG works where the page says PNG only. |
+| `REV#118` | DECISION | could | S | The starter ZIP is the whole engine repository (1,146 files, 16 the reader's), and `game\README.md` and its comments still call the project the minimal sample; whether `starter_zip.py` slims or rewrites is a scope call. |
+| `REV#119` | DECISION | could | M | No page reads the starter's own three files at the 2026-10-30 floor, *Make a first change* routes a beginner to comments written for engine programmers, and Get Started uses about 40 terms with no glossary. |
+| `REV#120` | DECISION | could | S | Whether the starter carries batch files that find Visual Studio and run configure, build, test and play, removing the x64 Native Tools prompt from the route; it borders the 2026-10-30 guided-terminal decision. |
+| `REV#121` | DECISION | could | S | The first configure downloads a 53 MB CMake and a 117 MB PowerShell that Visual Studio 2026 has just installed older versions of; whether the starter can avoid it is uninvestigated. |
 
 ## Ports
 
