@@ -168,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#19` | OPEN | should | XS | `SECURITY.md` still says JSON nesting can exhaust the stack, omits the PNG reader from the trusted-content list and its "three binary readers", and its memory bullet predates the PNG side cap. |
 | `REV#20` | OPEN | should | S | Loop regions parsed by `engine/audio/xwb_file.cpp` play on Web Audio with no test above the reader, no field in the null recording and no guide; XAudio2 behaviour and xwbtool authoring are unchecked. |
 | `REV#21` | OPEN | should | S | Web Audio unlocks only on key, mouse, pointer or touch events, so pad-only play stays silent in every browser; audio.mdx, audio_device.h and web.md D13 do not say so. The row is that sentence; a start gesture on minimal's page is the owner's choice. |
 | `REV#22` | OPEN | could | S | index.mdx's What Labrador is not and why.mdx promise gamepads without saying pads are XInput only on Windows; state it there without promising GAP#1, and check each other limit against the headers before listing it. |
