@@ -457,3 +457,24 @@ void draw(labrador::DrawList& draw_list) const override
 
 At its own size a picture looks the same under either filter; the difference shows only when
 `bounds()` makes it bigger or smaller than the texture.
+
+**A sheet frame drawn under linear can pick up its neighbour.** Linear blends the texels around
+each point it samples, and a frame's source rectangle is mapped edge to edge with no inset, so
+a point within half a texel of a frame's edge blends in the first texel on the other side of
+it. That texel belongs to whatever is next to the frame in the sheet. It shows as a thin line
+of the neighbouring frame's colour along an edge of the sprite, when the frame is drawn
+bigger or smaller than its rectangle, rotated, or placed off a whole pixel. Only the texture's
+own outer edge is protected, because sampling stops there; that is why the whole-texture
+picture above is safe. Under point each pixel takes one texel from inside the rectangle, and at
+its own size on whole pixels linear does the same.
+
+For a frame that will be drawn under linear, keep its neighbours one texel away, which is as far
+as the blend reaches:
+
+- **Separate frames** in a sheet: leave at least one fully transparent texel between their
+  rectangles. Most sheet packers have a spacing or padding setting for this.
+- **Frames of an animation strip** touch, because a strip steps by the first frame's width. Draw
+  each frame with a transparent border one texel wide inside its rectangle, so that what lies
+  across every edge is transparent.
+- **Tiles that must meet with no gap** cannot have a transparent border, which would show as a
+  faint seam between them. Draw those under point.
