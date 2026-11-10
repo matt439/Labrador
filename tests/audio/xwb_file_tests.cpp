@@ -21,6 +21,8 @@
 // (tests/audio/content/make_adpcm_bank.py says which and how), and what it
 // decodes to is held to the source and to a fingerprint of the decode
 // Windows' own MS-ADPCM codec produces from the same blocks.
+// content/loop_region.xwb is the one real bank whose wave carries a loop
+// region (tests/audio/content/make_loop_bank.py).
 
 namespace
 {
@@ -234,6 +236,34 @@ TEST_CASE("the audio sample's bank reads back as the WAVs it was packed from")
 		CHECK(wave.frames() == source.size());
 		CHECK(wave.samples == source);
 	}
+}
+
+TEST_CASE("a packed bank's loop region reads back in frames")
+{
+	// content/loop_region.xwb, whose bytes are what xwbtool writes from a WAV
+	// with a sampler chunk (tests/audio/content/make_loop_bank.py). The WAV
+	// spells the loop as samples 1,000 to 2,999 inclusive; the entry holds a
+	// start and a length.
+	const WaveBankData bank = read_xwb_file("./content/loop_region.xwb");
+
+	CHECK(bank.name == "loop_region");
+	REQUIRE(bank.waves.size() == 2);
+
+	const WaveData& looped = bank.waves[0];
+	CHECK(looped.name == "looped");
+	CHECK(looped.encoding == WaveEncoding::pcm16);
+	CHECK(looped.channels == 1);
+	CHECK(looped.sample_rate == 8000);
+	CHECK(looped.frames() == 4000);
+	CHECK(looped.loop_start == 1000);
+	CHECK(looped.loop_length == 2000);
+
+	const WaveData& whole = bank.waves[1];
+	CHECK(whole.name == "whole");
+	CHECK(whole.sample_rate == 8000);
+	CHECK(whole.frames() == 2000);
+	CHECK(whole.loop_start == 0);
+	CHECK(whole.loop_length == 0);
 }
 
 TEST_CASE("an MS-ADPCM bank decodes to its source within the codec's error")

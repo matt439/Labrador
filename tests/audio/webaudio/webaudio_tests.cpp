@@ -5,6 +5,8 @@
 #include "engine/audio/audio_resources.h"
 #include "engine/audio/sound_bank.h"
 
+#include <emscripten/em_js.h>
+
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -26,10 +28,189 @@ using namespace labrador;
 //
 // The bank is the audio sample's tones.xwb, which this folder's CMakeLists
 // copies beside the executable for xwb_file_tests.cpp.
+//
+// THE LAST CASES GIVE THE BACKEND A WEB AUDIO THAT RECORDS, because what it
+// does with a wave's loop region happens only once a context exists: the
+// region goes to the source node as seconds, and a paused voice's position is
+// folded back into it. The stand-in below is constructors that keep what they
+// were handed and a clock the case moves by hand. It holds this backend's
+// arithmetic and the values it passes; it says nothing about what a browser
+// plays from them. Their bank is content/loop_region.xwb, which
+// content/make_loop_bank.py writes and describes.
+
+// Stands a recording Web Audio and a window in for the ones Node lacks, and
+// sets the backend's script object aside so that the next device installs a
+// new one that sees them. Sources are kept in the order they were created.
+EM_JS(void, test_install_fake_web_audio, (), {
+	const fake = {
+		saved_audio: Module.labradorAudio,
+		saved_window: Object.getOwnPropertyDescriptor(globalThis, "window"),
+		now: 0,
+		sources: [],
+		listeners: [],
+	};
+	class FakeNode {
+		connect() {
+		}
+		disconnect() {
+		}
+	}
+	globalThis.AudioContext = class {
+		constructor() {
+			this.state = "running";
+			this.destination = new FakeNode();
+		}
+		get currentTime() {
+			return fake.now;
+		}
+		suspend() {
+			this.state = "suspended";
+		}
+		resume() {
+			this.state = "running";
+		}
+		close() {
+			this.state = "closed";
+		}
+	};
+	globalThis.AudioBuffer = class {
+		constructor(options) {
+			this.channels = [];
+			for (let channel = 0; channel < options.numberOfChannels; channel++) {
+				this.channels.push(new Float32Array(options.length));
+			}
+		}
+		getChannelData(channel) {
+			return this.channels[channel];
+		}
+	};
+	globalThis.AudioBufferSourceNode = class extends FakeNode {
+		constructor(context, options) {
+			super();
+			this.loop = options.loop;
+			this.loopStart = options.loopStart;
+			this.loopEnd = options.loopEnd;
+			this.playbackRate = { value: options.playbackRate };
+			this.onended = null;
+			this.offset = -1;
+			fake.sources.push(this);
+		}
+		start(when, offset) {
+			this.offset = offset === undefined ? 0 : offset;
+		}
+		stop() {
+		}
+	};
+	globalThis.GainNode = class extends FakeNode {
+		constructor(context, options) {
+			super();
+			this.gain = { value: options.gain };
+		}
+	};
+	globalThis.StereoPannerNode = class extends FakeNode {
+		constructor(context, options) {
+			super();
+			this.pan = { value: options.pan };
+		}
+	};
+	Object.defineProperty(globalThis, "window", {
+		value: {
+			addEventListener(name, listener, capture) {
+				fake.listeners.push({
+					name: name,
+					listener: listener,
+					capture: capture,
+				});
+			},
+			removeEventListener(name, listener) {
+				fake.listeners = fake.listeners.filter((entry) =>
+					!(entry.name === name && entry.listener === listener));
+			},
+		},
+		configurable: true,
+		writable: true,
+	});
+	Module.labradorAudio = undefined;
+	globalThis.labradorFakeAudio = fake;
+});
+
+// Puts back what the install replaced. Every device made in between must be
+// gone by now, because it is an index into the script object dropped here.
+EM_JS(void, test_remove_fake_web_audio, (), {
+	const fake = globalThis.labradorFakeAudio;
+	Module.labradorAudio = fake.saved_audio;
+	for (const name of ["AudioContext", "AudioBuffer", "AudioBufferSourceNode",
+		"GainNode", "StereoPannerNode"]) {
+		delete globalThis[name];
+	}
+	if (fake.saved_window) {
+		Object.defineProperty(globalThis, "window", fake.saved_window);
+	} else {
+		delete globalThis.window;
+	}
+	delete globalThis.labradorFakeAudio;
+});
+
+// A keydown at the fake window: Escape, which grants no activation, or a
+// letter, which does.
+EM_JS(void, test_send_key, (int escape), {
+	const event = { type: "keydown", key: escape ? "Escape" : "a" };
+	for (const entry of globalThis.labradorFakeAudio.listeners.slice()) {
+		if (entry.name === event.type) {
+			entry.listener(event);
+		}
+	}
+});
+
+// Moves the fake context's clock on.
+EM_JS(void, test_advance_clock, (double seconds), {
+	globalThis.labradorFakeAudio.now += seconds;
+});
+
+EM_JS(int, test_source_count, (), {
+	return globalThis.labradorFakeAudio.sources.length;
+});
+
+// One of a source node's values: 0 loop as 0 or 1, 1 loopStart, 2 loopEnd,
+// 3 the offset it was started at, 4 its playback rate.
+EM_JS(double, test_source_value, (int source, int which), {
+	const node = globalThis.labradorFakeAudio.sources[source];
+	return [node.loop ? 1 : 0, node.loopStart, node.loopEnd, node.offset,
+		node.playbackRate.value][which];
+});
 
 namespace
 {
 	const std::vector<std::string> tone_names = { "ping", "chime", "drone" };
+
+	// loop_region.xwb, at 8,000 Hz: `looped` is 4,000 frames looping frames
+	// 1,000 to 3,000, and `whole` is 2,000 frames with no region.
+	const std::vector<std::string> loop_names = { "looped", "whole" };
+
+	constexpr int source_loop = 0;
+	constexpr int source_loop_start = 1;
+	constexpr int source_loop_end = 2;
+	constexpr int source_offset = 3;
+	constexpr int source_rate = 4;
+
+	// The recording Web Audio for one case's length, so that every other
+	// case in the suite still runs where there is none. Declare it before the
+	// AudioDevice it serves: the device has to be destroyed first.
+	struct FakeWebAudio
+	{
+		FakeWebAudio()
+		{
+			test_install_fake_web_audio();
+		}
+
+		~FakeWebAudio()
+		{
+			test_remove_fake_web_audio();
+		}
+
+		FakeWebAudio(const FakeWebAudio&) = delete;
+		FakeWebAudio& operator=(const FakeWebAudio&) = delete;
+	};
 
 	struct Fixture
 	{
@@ -247,4 +428,123 @@ TEST_CASE("devices are independent, and survive a move")
 	moved.resume();
 	moved.update();
 	CHECK(moved.voice_state(voice) == SoundState::playing);
+}
+
+TEST_CASE("a wave's loop region reaches its source node, in seconds")
+{
+	const FakeWebAudio fake;
+	AudioDevice device;
+	const AudioDevice::WaveBankHandle bank = device.open_wave_bank(
+		"./content/", "loop_region", loop_names);
+	const AudioDevice::VoiceHandle looped = device.create_voice(bank, 0);
+	const AudioDevice::VoiceHandle whole = device.create_voice(bank, 1);
+	const AudioDevice::VoiceHandle once = device.create_voice(bank, 0);
+
+	// Asked for before the gesture, so nothing is built yet, and Escape is
+	// not the gesture.
+	device.play_voice(looped, true, 1.0f, 0.0f, 0.0f);
+	device.play_voice(whole, true, 1.0f, 0.0f, 0.0f);
+	device.play_voice(once, false, 1.0f, 0.0f, 0.0f);
+	CHECK(test_source_count() == 0);
+	test_send_key(1);
+	CHECK(test_source_count() == 0);
+
+	// The waiting voices start inside the gesture, in the order they were
+	// created.
+	test_send_key(0);
+	REQUIRE(test_source_count() == 3);
+
+	// Frames 1,000 to 3,000 at 8,000 Hz. The voice starts at the wave's
+	// beginning, so what comes before the region plays once.
+	CHECK(test_source_value(0, source_loop) == 1.0);
+	CHECK(test_source_value(0, source_loop_start) == doctest::Approx(0.125));
+	CHECK(test_source_value(0, source_loop_end) == doctest::Approx(0.375));
+	CHECK(test_source_value(0, source_offset) == doctest::Approx(0.0));
+
+	// No region: both ends are zero, which Web Audio reads as the whole
+	// buffer.
+	CHECK(test_source_value(1, source_loop) == 1.0);
+	CHECK(test_source_value(1, source_loop_start) == 0.0);
+	CHECK(test_source_value(1, source_loop_end) == 0.0);
+
+	// The region loops nothing unless the voice was asked to loop, and a
+	// one-shot never is.
+	CHECK(test_source_value(2, source_loop) == 0.0);
+	device.play_wave(bank, 0, 1.0f, 0.0f, 0.0f);
+	REQUIRE(test_source_count() == 4);
+	CHECK(test_source_value(3, source_loop) == 0.0);
+}
+
+TEST_CASE("a paused looping voice resumes from inside its loop region")
+{
+	const FakeWebAudio fake;
+	AudioDevice device;
+	const AudioDevice::WaveBankHandle bank = device.open_wave_bank(
+		"./content/", "loop_region", loop_names);
+	const AudioDevice::VoiceHandle voice = device.create_voice(bank, 0);
+	test_send_key(0);
+
+	device.play_voice(voice, true, 1.0f, 0.0f, 0.0f);
+	REQUIRE(test_source_count() == 1);
+
+	// Half a second in, the voice has played the 0.125 s before the region,
+	// the 0.25 s region once and 0.125 s of it again.
+	test_advance_clock(0.5);
+	device.pause_voice(voice);
+	device.resume_voice(voice);
+	REQUIRE(test_source_count() == 2);
+	CHECK(test_source_value(1, source_offset) == doctest::Approx(0.25));
+	CHECK(test_source_value(1, source_loop) == 1.0);
+	CHECK(test_source_value(1, source_loop_start) == doctest::Approx(0.125));
+	CHECK(test_source_value(1, source_loop_end) == doctest::Approx(0.375));
+
+	// Short of the region's end nothing is folded.
+	test_advance_clock(0.0625);
+	device.pause_voice(voice);
+	device.resume_voice(voice);
+	REQUIRE(test_source_count() == 3);
+	CHECK(test_source_value(2, source_offset) == doctest::Approx(0.3125));
+
+	// An octave up the wave runs at twice the clock: 0.0625 s is 0.125 s of
+	// wave, which passes the region's end by 0.0625 s.
+	device.set_voice_pitch(voice, 1.0f);
+	test_advance_clock(0.0625);
+	device.pause_voice(voice);
+	device.resume_voice(voice);
+	REQUIRE(test_source_count() == 4);
+	CHECK(test_source_value(3, source_offset) == doctest::Approx(0.1875));
+	CHECK(test_source_value(3, source_rate) == doctest::Approx(2.0));
+
+	// A stop that is not immediate leaves the loop: the node stops looping
+	// where it is, and the position runs on past the region's end towards
+	// the wave's.
+	device.stop_voice(voice, false);
+	CHECK(test_source_value(3, source_loop) == 0.0);
+	CHECK_FALSE(device.is_voice_looping(voice));
+	test_advance_clock(0.125);
+	device.pause_voice(voice);
+	device.resume_voice(voice);
+	REQUIRE(test_source_count() == 5);
+	CHECK(test_source_value(4, source_offset) == doctest::Approx(0.4375));
+	CHECK(test_source_value(4, source_loop) == 0.0);
+}
+
+TEST_CASE("a looping voice with no region wraps at the end of its wave")
+{
+	const FakeWebAudio fake;
+	AudioDevice device;
+	const AudioDevice::WaveBankHandle bank = device.open_wave_bank(
+		"./content/", "loop_region", loop_names);
+	const AudioDevice::VoiceHandle voice = device.create_voice(bank, 1);
+	test_send_key(0);
+
+	// A quarter-second wave, once round and half of it again.
+	device.play_voice(voice, true, 1.0f, 0.0f, 0.0f);
+	test_advance_clock(0.375);
+	device.pause_voice(voice);
+	device.resume_voice(voice);
+	REQUIRE(test_source_count() == 2);
+	CHECK(test_source_value(1, source_offset) == doctest::Approx(0.125));
+	CHECK(test_source_value(1, source_loop_start) == 0.0);
+	CHECK(test_source_value(1, source_loop_end) == 0.0);
 }

@@ -175,7 +175,9 @@ paths are planning information; they do not establish a build or test result.
 - Check `engine/audio/` changes beyond the default preset. `AudioTests` is
   always headless: XAudio2 presets use `SoundBank::silent()` and bank-reader
   tests; native null adds recorded wave/level/order assertions; wasm uses
-  `webaudio_tests.cpp` under Node with no Web Audio. The shared `.xwb` reader
+  `webaudio_tests.cpp` under Node with no Web Audio, and holds a wave's loop
+  region to a recording stand-in there; no XAudio2 test plays a region and null
+  records none. The shared `.xwb` reader
   checks PCM/MS-ADPCM against original WAVs and refuses xWMA/XMA/compact entries.
   XAudio2 keeps DirectXTK's reader. `samples/audio/README.md` owns authoring and
   playback; XAudio2 smoke needs an endpoint. Browser `AudioSampleTests` tests

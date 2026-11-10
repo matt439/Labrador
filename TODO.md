@@ -168,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#20` | OPEN | should | S | Loop regions parsed by `engine/audio/xwb_file.cpp` play on Web Audio with no test above the reader, no field in the null recording and no guide; XAudio2 behaviour and xwbtool authoring are unchecked. |
 | `REV#21` | OPEN | should | S | Web Audio unlocks only on key, mouse, pointer or touch events, so pad-only play stays silent in every browser; audio.mdx, audio_device.h and web.md D13 do not say so. The row is that sentence; a start gesture on minimal's page is the owner's choice. |
 | `REV#22` | OPEN | could | S | index.mdx's What Labrador is not and why.mdx promise gamepads without saying pads are XInput only on Windows; state it there without promising GAP#1, and check each other limit against the headers before listing it. |
 | `REV#23` | OPEN | should | S | `samples/minimal/web/shell.html` and the other five development shells never replace "Loading..." when the `.wasm` or `.data` fetch fails; the fix also updates the four guide passages on the stuck line (audio, browser, your-web-page, web-host). |
