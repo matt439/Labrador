@@ -622,7 +622,11 @@ beside two of Emscripten's own:
 owns its place in the DOM and its size in CSS; the engine follows that size and the device pixel
 ratio when setting the drawing buffer. Keep `tabindex="0"` on the canvas so it can take keyboard
 focus, and `touch-action: none` so a finger on it does not scroll the page. Call `canvas.focus()`
-when the player starts playing, as the template does.
+when the player starts playing, as the template does. A canvas has no text of its own, so the
+template names it with `aria-label` for a screen reader; `Minimal sample` is a placeholder to
+replace with your game's name, as the `<title>` is. The status line has `role="status"`, so a
+change to it is read out. What else the page or the game does for accessibility is the game's
+choice.
 
 The four callbacks below are optional. **Names are exact and case sensitive.** A misspelled name
 is silently ignored, with no warning; a value that is not a function is ignored too. The engine
