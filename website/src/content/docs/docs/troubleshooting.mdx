@@ -760,10 +760,11 @@ server still open on the same port gives it too, for the samples' pages as
 [Run the samples](/docs/guides/samples/#in-a-browser) says. A `404` for `favicon.ico` alone is
 harmless.
 
-### The page stays at `Loading...` when opened from `file://`
+### `The game could not be loaded.` when opened from `file://`
 
-Double-clicking the generated HTML file is not enough. In Chrome, the minimal sample stays at
-`Loading...`, and the developer console includes:
+Double-clicking the generated HTML file is not enough. In Chrome, the minimal sample's page
+replaces `Loading...` with `The game could not be loaded. Check your connection and reload the
+page.`, and the developer console includes:
 
 ```text
 Aborted(Assertion failed: readAsync does not work with file:// URLs)
@@ -784,7 +785,7 @@ No Chromium found, so RenderPixelTests, RenderPixelTestsWithoutS3tc, RenderConte
 ```
 
 For the engine's default browser configurations, `ctest --preset wasm-debug -N` then lists
-**19 tests instead of 32**; Release lists **19 instead of 33**. These are absent entries,
+**19 tests instead of 34**; Release lists **19 instead of 35**. These are absent entries,
 not skipped or passing page tests. The remaining tests run under Node, which cannot check
 drawing or page input. The counts describe the engine checkout; the copied Get Started
 project has one rules test and does not register these engine tests.

@@ -242,6 +242,14 @@ if(PROJECT_IS_TOP_LEVEL)
         # Escape asks, and Enter answers yes.
         labrador_sample_page_test(MinimalPageTests MinimalSample
             "Escape,Enter")
+        # The same page with its .wasm answered 404, a failure the engine
+        # never runs to report: the page's own line must replace "Loading..."
+        # and the loader's console error must still arrive
+        # (tests/render/web/load_failure_input.mjs). The six development
+        # pages carry the same lines; this drives the template's.
+        labrador_page_test(MinimalLoadFailurePageTests
+            PAGE "$<TARGET_FILE:MinimalSample>"
+            ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/load_failure_input.mjs")
         labrador_sample_page_test(CollisionPageTests CollisionSample "Escape")
         # S stops a loop that is not playing, so it changes nothing on the
         # board, and it is a key that grants activation: the gesture that

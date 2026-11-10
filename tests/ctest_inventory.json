@@ -113,6 +113,10 @@
     "LocalMultiplayerSmokeTests": [
       "x64-debug-null"
     ],
+    "MinimalLoadFailurePageTests": [
+      "wasm-release",
+      "wasm-release-null"
+    ],
     "MinimalPageTests": [
       "wasm-release",
       "wasm-release-null"
@@ -150,6 +154,7 @@
     "RenderContextLossTests",
     "WebWindowTests",
     "MinimalPageTests",
+    "MinimalLoadFailurePageTests",
     "CollisionPageTests",
     "AudioPageTests",
     "LocalMultiplayerPageTests",

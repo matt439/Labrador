@@ -330,7 +330,7 @@ which a browser build reads in place of everything below it:
 ## Serve it and open it
 
 A browser will not run a WebAssembly module from a file opened by double-clicking: opened that
-way the page stays at `Loading...`. It has to come from a web server, and the Python that came
+way the page says `The game could not be loaded.` It has to come from a web server, and the Python that came
 with Emscripten has one. Start it in a window of its own, from the prompt in `C:\dev\mygame`:
 
 ```bat
@@ -613,7 +613,8 @@ licence. Rebuild and rerun it when the engine pin, toolchain or content changes.
 
 `web/shell.html` is yours to change. Its title, its status line and its styles are the minimal
 sample's, and you replace them with your own. Set `Module` before Emscripten's generated script
-starts the game. The template supplies a canvas and two of the four optional page callbacks:
+starts the game. The template supplies a canvas and two of the four optional page callbacks,
+beside two of Emscripten's own:
 
 <SourceFile path="samples/minimal/web/shell.html" from="var Module = {" to="};" lang="js" />
 
@@ -637,6 +638,18 @@ reads each callback from `Module` when it is due.
 Keep the startup error forwarding in `main_web.cpp` when you change the entry point. A script,
 fetch or WebAssembly compilation failure can happen before the engine runs, so the page must
 handle loader failures separately; `onError` cannot report every failure to load the module.
+The template does it in the lines below `Module`:
+
+<SourceFile path="samples/minimal/web/shell.html" from="// A download that fails" to="}, true);" lang="js" />
+
+`onAbort` and `onRuntimeInitialized` are Emscripten's names, not the engine's: its loader calls
+the first when it gives up on the `.wasm`, and the second when the module is ready and `main` is
+about to run, which is where the template stops listening. The two listeners catch what the
+loader does not report, a script that would not download and a promise nobody caught, such as a
+missing `.data` file's. None of them hides anything: the browser's console still shows the
+failure, and the page check still fails on it. The sentence is for a player, so it does not name
+a file; change its words as you change the others. Without these lines a page whose download
+failed would stay at `Loading...`.
 
 The context callbacks run from a frame, rather than directly from the browser's context events.
 Loss is reported before restoration, even if both happen between two frames. Restoration has no
@@ -776,10 +789,12 @@ and the first goes on answering, from whatever folder it serves. Close every ser
 start one, and press Ctrl+F5.
 </Aside>
 
-<Aside type="caution" title="The page stays at Loading...">
+<Aside type="caution" title="The page says The game could not be loaded., or stays at Loading...">
 The address starts `file://`: the page was opened from Explorer. Open it from the server, at
 `http://127.0.0.1:8000/MyGame.html`. Otherwise press **F12** and read the **Console**: the first
-red line that is not about `favicon.ico` says what failed. [Troubleshooting](/docs/troubleshooting/#browser-builds) lists the
+red line that is not about `favicon.ico` says what failed. The page's sentence is for a player
+and names no file; the console does. A page that stays at `Loading...` has not run its own
+script, or lost the lines of `shell.html` that report a failed download. [Troubleshooting](/docs/troubleshooting/#browser-builds) lists the
 browser messages.
 </Aside>
 
@@ -865,7 +880,8 @@ licence file. `curl` was given a host that does not exist, which printed `curl: 
 resolve host:` and the host, and a tag that does not exist, which printed the `404`; a machine
 with no connection was not tried. The `copy` of the licence ran; its `curl` fallback for an
 older engine did not. The page runner passed with Chrome 156 and Edge 156. Safari, a phone and a slow machine
-were not used.
+were not used. The page's own sentence for a failed download is later than these checks, and
+the page has not been opened from `file://` since it was added.
 
 The same day the page was followed again as worded, in a second fresh starter at
 `C:\dev\g10-follow\mygame` with Git hidden from `PATH`. There `emsdk install` took 78 seconds and

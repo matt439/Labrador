@@ -56,13 +56,16 @@ Web Audio and web input.
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 21; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 21; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 22; no graphics/audio API; no RenderPixelTests |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 33 Debug / 34 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 34 Debug / 35 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
 `WebWindowTests`, all six sample `*PageTests`, `LineSweeperReducedMotionPageTests`,
-`LineSweeperPalettePageTests`, `ComponentsPointerPageTests` and
-`LineSweeperBundlePageTests` registered. The bundle test loads `web-dist/linesweeper/index.html`, plays and
+`LineSweeperPalettePageTests`, `ComponentsPointerPageTests`,
+`MinimalLoadFailurePageTests` and
+`LineSweeperBundlePageTests` registered. `MinimalLoadFailurePageTests` answers
+the template page's `.wasm` with 404 and asserts its failure line and the
+loader's console error; a failed loader script or `.data` file is untested. The bundle test loads `web-dist/linesweeper/index.html`, plays and
 replays, checks the touch gate, restores a context after a forced loss and a
 GPU process crash, switches tabs and asserts failure UI.
 It requires a rasterizing backend. `LineSweeperHostPageTests` drives the

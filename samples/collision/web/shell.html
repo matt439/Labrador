@@ -41,6 +41,7 @@
   var Module = {
     canvas: canvas,
     onRuntimeInitialized: function () {
+      loading = false;
       statusLine.textContent =
         "WASD, arrows or the left stick move. R resets. Escape quits.";
       canvas.focus();
@@ -52,7 +53,29 @@
       statusLine.className = "error";
       statusLine.textContent = message;
     },
+    onAbort: loadFailed,
   };
+
+  // A download that fails never reaches the engine, so Module.onError cannot
+  // report it. Emscripten's loader calls Module.onAbort when the .wasm cannot
+  // be fetched or compiled; a preloaded .data file or the loader script
+  // fails as a rejected promise or an error event instead. The console still
+  // has the reason. This line is for the player, and only until the game has
+  // started.
+  var loading = true;
+  function loadFailed() {
+    if (!loading) { return; }
+    loading = false;
+    statusLine.className = "error";
+    statusLine.textContent =
+      "The game could not be loaded. Check your connection and reload the page.";
+  }
+  window.addEventListener("unhandledrejection", loadFailed);
+  window.addEventListener("error", function (event) {
+    // An uncaught exception arrives at the window, and a script that would
+    // not download at its own tag. A missing image is neither.
+    if (event.target === window || event.target.tagName === "SCRIPT") { loadFailed(); }
+  }, true);
 </script>
 {{{ SCRIPT }}}
 </body>

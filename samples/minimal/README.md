@@ -41,6 +41,14 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-10.** `web/shell.html` says so when the game's files do not load.
+  A `.wasm`, loader script or `.data` file that fails to download left the
+  page at `Loading...`, because the engine never runs to call
+  `Module.onError`. The page now replaces that line with "The game could not
+  be loaded. Check your connection and reload the page." A copy wants the
+  lines below the `Module` object (`loading`, `loadFailed` and the two
+  listeners), `onAbort: loadFailed` in `Module`, and `loading = false;` at
+  the top of `onRuntimeInitialized`. The console still shows the reason.
 - **2026-11-05.** `HelloState` sets a touch marker's text only when its
   finger changes, as `engine/render/label.h` asks of a caller that would
   otherwise re-measure every frame: `touch_marker_ids_` in `hello_state.h`
