@@ -7,12 +7,15 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-Labrador does not load PNG pictures, font files or WAV sounds directly. It loads files made from
-them by three free command-line programs from Microsoft:
+Labrador does not load font files or WAV sounds directly: it loads files made from them. The
+picture guides likewise load a `.dds` texture made from a PNG. The engine reads a PNG as it is
+too, so for a picture the conversion is a choice:
+[Put a picture in your game](/docs/guides/your-picture/) says how to keep the PNG and what that
+costs. The conversions are done by three free command-line programs from Microsoft:
 
 | Program | Turns | Into | Used by |
 | --- | --- | --- | --- |
-| `texconv` | a picture, such as a PNG | a `.dds` texture | [Put a picture in your game](/docs/guides/your-picture/), [Animate a sprite sheet](/docs/guides/your-animation/) |
+| `texconv` | a picture, such as a PNG | a `.dds` texture | [Put a picture in your game](/docs/guides/your-picture/), which can keep the PNG and leave this out, and [Animate a sprite sheet](/docs/guides/your-animation/) |
 | `MakeSpriteFont` | a font installed on Windows | a `.spritefont` atlas | [Fonts and text in your game](/docs/guides/your-font/) |
 | `xwbtool` | WAV sounds | a `.xwb` wave bank | [Play a sound in your game](/docs/guides/your-sound/), [Audio](/docs/guides/audio/) |
 

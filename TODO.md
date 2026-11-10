@@ -168,7 +168,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#17` | OPEN | should | XS | content-tools.mdx line 10 says Labrador does not load PNG pictures and its texconv table row sends the picture guides through conversion; both are false on the development site since OCA-82. |
 | `REV#18` | OPEN | should | XS | README.md says samples/minimal is about 760 lines (861 now) and tests/ about 38k (about 42k now); examples.mdx line 22 and get-started/run-minimal.mdx line 37 repeat 760. No tool checks these figures. |
 | `REV#19` | OPEN | should | XS | `SECURITY.md` still says JSON nesting can exhaust the stack, omits the PNG reader from the trusted-content list and its "three binary readers", and its memory bullet predates the PNG side cap. |
 | `REV#20` | OPEN | should | S | Loop regions parsed by `engine/audio/xwb_file.cpp` play on Web Audio with no test above the reader, no field in the null recording and no guide; XAudio2 behaviour and xwbtool authoring are unchecked. |
