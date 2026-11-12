@@ -313,8 +313,9 @@ test('a sample run fails on a complaint, on onError, and on draws that never res
 		{ pause: async () => {}, log: () => {} }), /Module.onError: abort/);
 	await assert.rejects(drive_sample(sample_session({ draws_after_restore: false }).session, 'u', SAMPLES.minimal,
 		{ pause: async () => {}, log: () => {}, timeout_ms: 200 }), /deadline expired/);
+	// Long enough for every key's confirmation queries on a slow runner.
 	await assert.rejects(drive_sample(sample_session({ quits: false }).session, 'u', SAMPLES.minimal,
-		{ pause: async () => {}, log: () => {}, timeout_ms: 200 }), /deadline expired.*did not quit the sample; page .*CANVAS/);
+		{ pause: async () => {}, log: () => {}, timeout_ms: 3000 }), /deadline expired.*did not quit the sample; page .*CANVAS/);
 });
 
 test('a sample run sends no keys until its canvas has the keyboard, and names the focus when it never does', async () => {
@@ -415,10 +416,12 @@ test('a key release the page never receives is sent again behind a repeated pres
 	assert.equal(performed, SAMPLES.minimal.keys.length * 2 + 2);
 });
 
-test('the audio sample\'s keys go as one action list, every other sample\'s one level at a time', async () => {
-	const audio = sample_session();
-	await drive_sample(audio.session, 'u', SAMPLES.audio, { pause: async () => {}, log: () => {} });
-	assert.deepEqual(audio.log.filter(([kind]) => kind === 'perform'), [['perform', SAMPLES.audio.keys.length * 4]]);
+test('the audio and components samples\' keys go as one action list, every other sample\'s one level at a time', async () => {
+	for (const sample of [SAMPLES.audio, SAMPLES.components]) {
+		const run = sample_session();
+		await drive_sample(run.session, 'u', sample, { pause: async () => {}, log: () => {} });
+		assert.deepEqual(run.log.filter(([kind]) => kind === 'perform'), [['perform', sample.keys.length * 4]]);
+	}
 	const minimal = sample_session();
 	await drive_sample(minimal.session, 'u', SAMPLES.minimal, { pause: async () => {}, log: () => {} });
 	assert.deepEqual(minimal.log.filter(([kind]) => kind === 'perform'),

@@ -421,13 +421,15 @@ export async function drive_sample(session, url, sample,
 	//   Safari stretch an arrow key's hold to about 550 ms, past the 400 ms
 	//   before a held menu direction repeats, so LineSweeper's pause menu
 	//   moved two rows a press; this form passed LineSweeper in every run.
-	// - The audio sample's keys as one action list: once its first key starts
-	//   Web Audio, keys sent in separate actions went missing, three runs of
-	//   three in two forms, while one list passed three of three. Its keys
-	//   move no menu, so a stretched hold costs nothing there.
+	// - One action list for a page whose keys start Web Audio (the audio
+	//   sample) or full screen (the components gallery): after either, keys
+	//   sent in separate actions went missing, while one list passed. Their
+	//   quit needs no exact menu row, so a stretched hold costs nothing: the
+	//   audio sample's keys move no menu, and the gallery quits on Escape from
+	//   any row, its second Escape covering one spent leaving full screen.
 	// Every resend is logged, so none is silent.
 	progress.phase = 'pressing the quit keys';
-	if (sample === SAMPLES.audio) {
+	if (sample === SAMPLES.audio || sample === SAMPLES.components) {
 		await session.perform(key_actions(sample.keys));
 	} else {
 		for (const key of sample.keys) {
