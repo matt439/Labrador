@@ -40,7 +40,7 @@ A game's level is a class of yours that owns a `Scene` and adds the rules.
 ## The interfaces are small
 
 [`State`](/docs/reference/core/state/) is a screen or mode: a title screen, a match, a pause menu.
-The engine calls its `init()` once, then `update(dt)` and `draw(renderer)` every frame, and tells
+The engine calls its `init()` once, then `update(dt)` every step and `draw(renderer)` every frame, and tells
 it when something covers it. [States and the stack](/docs/concepts/states/) covers the rest.
 
 [`GameObject`](/docs/reference/core/game-object/) is anything a scene updates and draws. It has

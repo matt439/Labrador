@@ -20,7 +20,7 @@ graph of menus or a state-machine asset, Labrador has states you push and pop fr
    state's first `update()` and before it is next drawn. Build what the state draws in `init()`:
    anything that resolves a resource by name needs the content loaded, and a game loads its
    content before `app.run` makes the first state live.
-3. **Every frame it is on top**, it gets `update(dt)`, and every frame it is visible it gets
+3. **Every step it is on top**, it gets `update(dt)`, and every frame it is visible it gets
    `draw(renderer)`.
 4. **When it is popped or replaced**, the stack destroys it. Release what it set up in its
    destructor; the services it borrowed are still alive at that point, even when the application

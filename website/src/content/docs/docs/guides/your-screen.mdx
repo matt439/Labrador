@@ -72,7 +72,7 @@ cd /d C:\dev\mygame
 
    `class TitleState : public labrador::State` says that a `TitleState` is one of the engine's
    states. The three functions after `public:` are the ones every state has, and the engine calls
-   them: `init` once, when the screen starts, then `update` and `draw` on every frame. They must
+   them: `init` once, when the screen starts, then `update` on every step and `draw` on every frame. They must
    be spelt exactly as here, including `const` at the end of `draw`; `override` asks the compiler
    to check that they are. Under `private:` are the two things the state keeps: the application,
    which gives it the keyboard, the pads and the fonts, and a **scene**, which holds what it draws.

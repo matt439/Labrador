@@ -1,6 +1,6 @@
 ---
 title: The tick
-description: The fixed step, when input is read, the four phases of a scene, and when drawing happens.
+description: The fixed step, when input is read, the four phases of a scene, when drawing happens, and drawing between steps.
 sidebar:
   order: 3
 ---
@@ -27,7 +27,10 @@ flowchart TD
 ## The step
 
 `ApplicationOptions::target_fps` sets the step, and the engine's clock runs `update` as many times
-as wall-clock time says are owed. Usually that is once per frame. After a slow frame it is
+as wall-clock time says are owed, then draws a frame. On a display that refreshes at the step's
+rate that is usually once per frame. On a faster display, 120 or 144 Hz against the default 60,
+most frames owe no step and draw the same one again, which
+[Drawing between steps](#drawing-between-steps) below is about. After a slow frame it is
 several times in a row, at full speed, before the next frame is drawn. At most a tenth of a
 second is ever owed at once, so a game paused in a debugger does not run a minute of updates when
 it resumes.
@@ -133,5 +136,46 @@ that was created hidden, as a smoke test's is, is not minimised and draws as usu
 
 Drawing reads what the steps wrote and changes nothing. That rule is what makes the frame safe to
 draw on several threads at once, and it is the subject of the next page.
+
+## Drawing between steps
+
+On a 144 Hz display a game stepping 60 times a second draws each step's state on two or three
+frames in a row. Anything that moves repeats a position and then jumps. That is judder, and it
+is why a display faster than the step shows nothing smoother for anything drawn straight from
+the last `update`.
+
+`Application::step_position()` says where the frame falls. Its `StepPosition` has two members:
+`step`, the number of updates run so far, and `fraction`, how far past that step the frame is as
+a share of one step, at least 0 and less than 1. The engine moves nothing with it. Each drawable
+chooses what to do:
+
+- **Draw where the last update left it.** Everything does this unless it asks. It is the only
+  right answer for something that must not be seen between places, such as a cell on a grid.
+- **Interpolate.** Keep where it was one step back as well, and draw it `fraction` of the way
+  from there to where it is now. It never overshoots, and it is drawn up to one step late.
+- **Extrapolate.** Carry it on along its velocity by `fraction` of a step. It is not late, and it
+  can overshoot when the motion turns.
+
+`application.h` sets one more rule: **a state that was not updated must not use the fraction.**
+Only the top state is updated. A match drawn under a pause menu has stopped, while the fraction
+goes on cycling every step, so a drawable that used it there would shimmer back and forth. That
+is what `step` is for: record it in `update()`, and in `draw()` use the fraction only if it is
+unchanged. LineSweeper's sparks extrapolate this way. Their `update()` records the step:
+
+<SourceFile
+	path="samples/linesweeper/presentation/particles.cpp"
+	from="if (this->step_ != nullptr)"
+	to="this->step_seconds_ = dt;"
+/>
+
+and `draw()` asks how far to carry each spark, which is nothing when the field was not updated on
+the latest step:
+
+<SourceFile path="samples/linesweeper/presentation/particles.cpp" from="float ParticleField::lead() const" to="}" />
+
+On a display at the step's own rate the fraction barely moves from one frame to the next, and
+nothing drawn with it looks different. The starter's greeting is drawn where `update` puts it;
+[Smooth movement on a fast display](/docs/guides/your-window/#smooth-movement-on-a-fast-display)
+interpolates it.
 
 Next: [Drawing, views and cameras](/docs/concepts/drawing/).
