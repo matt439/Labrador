@@ -271,6 +271,11 @@ pull request already passed. Citation checking skips `website/`.
   proves the failures. README.md's counts are not checked.
 - Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
   add each new `.cpp`, or it is silently absent from the build.
+- No preset sets a ctest timeout, so each entry carries its own:
+  `labrador_add_test_suite` gives 60 s unless given `TIMEOUT`, sized from the
+  CI durations its comment records; page entries are bounded by their
+  runner's `--timeout`; every other entry sets `TIMEOUT` except the template's
+  rules-only `MinimalTests`, whose copies are the game's own.
 - [ctest_inventory.json](tests/ctest_inventory.json) lists the ctest entries
   each configuration must register: CI fails on any difference in the eight it
   runs, and `ci_gap_report.py` in the four other native Release presets and

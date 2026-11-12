@@ -73,6 +73,7 @@ target_link_libraries(AudioSampleTests PRIVATE
 target_compile_definitions(AudioSampleTests PRIVATE
     "LABRADOR_AUDIO_SAMPLE_CONTENT=\"${CMAKE_CURRENT_SOURCE_DIR}/content\"")
 add_test(NAME AudioSampleTests COMMAND AudioSampleTests)
+set_tests_properties(AudioSampleTests PROPERTIES TIMEOUT 60)
 
 # In a browser build the tests run under Node and read the content where it is
 # checked in. The root CMakeLists.txt gives every test these two options, but

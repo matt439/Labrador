@@ -39,6 +39,9 @@ endif()
 # months. It asserts on complexity class rather than on wall-clock, so it is
 # not a flaky test on a busy machine; see main.cpp.
 add_test(NAME Benchmarks COMMAND LabradorBench)
+# CI's longest run took 9.74 s (x64-debug-gl; tests/CMakeLists.txt names the
+# runs), so a hang stops here rather than at the job's limit.
+set_tests_properties(Benchmarks PROPERTIES TIMEOUT 120)
 
 # Windows only. Its pacer waits on a Win32 waitable timer and its result file
 # is written through the Win32 file API so that it lands whole or not at all,
