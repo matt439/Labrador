@@ -136,9 +136,12 @@ TEST_SUITE("ShapeIntersect")
 			Point2F(10.0f - FLT_EPSILON, 20.0f));
 		CHECK(rectangle_triangle_intersect(a, t));
 
-		// a and t are just not touching
-		t = Triangle(Point2F(10.0f + FLT_EPSILON, 10.0f), Point2F(20.0f, 10.0f),
-			Point2F(10.0f + FLT_EPSILON, 20.0f));
+		// a and t are just not touching. FLT_EPSILON is no gap at 10: the
+		// spacing between floats there is eight times larger, so
+		// 10.0f + FLT_EPSILON rounds back to 10.0f and touches a's corner.
+		t = Triangle(Point2F(10.0f + epsilon_f_100, 10.0f), Point2F(20.0f, 10.0f),
+			Point2F(10.0f + epsilon_f_100, 20.0f));
+		CHECK_FALSE(rectangle_triangle_intersect(a, t));
 	}
 	TEST_CASE("a rectangle and a quad intersect when they overlap, nest or touch")
 	{
@@ -864,6 +867,7 @@ TEST_SUITE("ShapeIntersect")
 		// p is just outside the corner of rr
 		p = Vector2F::direction_down_right * (10.0f + epsilon_f_100) +
 			Vector2F::direction_up_right * (10.0f + epsilon_f_100);
+		CHECK_FALSE(point_rectangle_rotated_intersect(p, rr));
 
 		// p is inside rr
 		p = Point2F(2.0f, 2.0f);

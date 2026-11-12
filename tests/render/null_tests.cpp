@@ -27,12 +27,10 @@
 // the one being built. Asking for a backend that was not built is a missing
 // symbol (T5), and that applies to a test as much as to a client.
 //
-// WHAT THESE COVER THAT RenderPixelTests CANNOT. That file needs a device, and
-// a build machine has one for Direct3D and not for the other two: CI runs
-// thirteen of fourteen entries against the GL preset and against the Vulkan
-// one, and all fourteen against every Direct3D preset - including x64-release,
-// where the WARP fallback is compiled out, which is how the runner is known to
-// offer an adapter rather than to fall back to one (.github/workflows/ci.yml).
+// WHAT THESE COVER THAT RenderPixelTests CANNOT. That file needs a device; a
+// null configuration does not build it at all. Which entries each CI
+// configuration registers is tests/ctest_inventory.json, and which device
+// each one draws on is .github/workflows/ci.yml.
 // These run everywhere, and they assert something the pixel tests
 // cannot even see: not what a frame looked like, but which sprites were
 // submitted, in what order, from which texture, into which view. A cull that
