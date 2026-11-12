@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Refuse a 32-bit Windows compiler at configure and add an LNK4272 entry
+
+**Behaviour change.** Configure now stops on a Windows build with a 32-bit compiler, such as one from the plain Developer Command Prompt, with `Labrador needs the 64-bit compiler, and this build folder has a 32-bit one`, naming the x64 Native Tools Command Prompt and the build folder to delete. Before this, a game configured and built as 32-bit without any message, and its next build from the x64 prompt failed to link with `LNK4272`. The check is in Labrador's top-level `CMakeLists.txt`, so a project that adds Labrador gets it with no change of its own. Browser builds are unaffected. (REV#106)
+
 ### 2026-11-13 - Refuse a NaN audio level above the seam (REV#125)
 
 **Behaviour change.** `SoundBank::play_wave`, `play_effect`, `set_effect_volume`, `set_effect_pitch`, `set_effect_pan` and `AudioResources::set_group_volume` now throw `std::invalid_argument` naming the call and the level for a NaN volume, pitch or pan, before the handle is checked. Before, `clamp` passed NaN through to the device, where Web Audio threw a `TypeError` inside the frame and XAudio2 received it as a level. An infinity still folds into range. (REV#125)

@@ -173,11 +173,11 @@ Ninja and the compiler that follow it are consequences of the first one. Set `VC
 start [from nothing](#starting-the-build-again-from-nothing).
 </Aside>
 
-<Aside type="caution" title="warning C4309: 'argument': truncation of constant value">
-The build stopped in `tests\app\window_tests.cpp` with this warning and `error C2220`, after
-building the samples. The prompt was a 32-bit one, such as the plain Developer Command Prompt,
-so everything was compiled for 32-bit Windows, which this guide does not set up. Open the x64
-Native Tools Command Prompt and start [from nothing](#starting-the-build-again-from-nothing).
+<Aside type="caution" title="Labrador needs the 64-bit compiler, and this build folder has a 32-bit one">
+Configure stopped with this, after vcpkg built 32-bit copies of the libraries. The prompt was a
+32-bit one, such as the plain Developer Command Prompt, and the build folder keeps the compiler
+it was made with, so configuring again in another prompt does not help. Open the x64 Native
+Tools Command Prompt and start [from nothing](#starting-the-build-again-from-nothing).
 </Aside>
 
 [Troubleshooting](/docs/troubleshooting/) has more messages, each with what it means and how to

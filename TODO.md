@@ -251,7 +251,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#106` | OPEN | should | S | The starter's `x64-debug` preset builds a 32-bit game in a 32-bit prompt without complaint; the next x64 build fails with about 1,400 linker lines that reconfiguring does not cure. Guard the compiler in CMake and add an `LNK4272` entry. |
 | `REV#109` | OPEN | should | S | Troubleshooting lacks entries for messages produced in a v0.3.0 starter: the moved-folder `CMakeCache.txt` error, what follows a failed configure, deep-folder outcomes, a failed download, the debug runtime box and an unsaved edit. |
 | `REV#110` | OPEN | should | S | `prerequisites.mdx` step 1 says nothing of the installer's screens before the Workloads tab, nothing marks where a starter reader is finished, and the installer is still unwalked: one clean-machine install settles it. |
 | `REV#111` | OPEN | could | S | No page states a Windows version, Arm, S mode or administrator rights before the install, and the total disk, download and time first appear in step 1 of the second page. |

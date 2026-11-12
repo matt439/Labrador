@@ -5,6 +5,20 @@ cmake_minimum_required(VERSION 3.26)
 # the top-level build.
 project(Labrador LANGUAGES CXX)
 
+# Windows builds are 64-bit only. A 32-bit compiler, which the plain Developer
+# Command Prompt sets up, would otherwise configure and build without a word,
+# and the build folder keeps that compiler: a later build from an x64 prompt
+# then fails in the linker with LNK4272 and hundreds of unresolved externals,
+# and configuring again does not change the compiler. Stopping here, in the
+# engine's file rather than a game's, covers the engine on its own and every
+# project that adds it. The browser build is 32-bit and is not WIN32.
+if(WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR
+        "Labrador needs the 64-bit compiler, and this build folder has a 32-bit one: "
+        "${CMAKE_CXX_COMPILER}. Open the x64 Native Tools Command Prompt, delete the "
+        "build folder ${CMAKE_BINARY_DIR} and configure again.")
+endif()
+
 include(cmake/source_revision.cmake)
 labrador_set_source_revision("${CMAKE_CURRENT_SOURCE_DIR}")
 
