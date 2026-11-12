@@ -7,6 +7,7 @@
 
 #include <emscripten/em_js.h>
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -36,7 +37,10 @@ using namespace labrador;
 // were handed and a clock the case moves by hand. It holds this backend's
 // arithmetic and the values it passes; it says nothing about what a browser
 // plays from them. Their bank is content/loop_region.xwb, which
-// content/make_loop_bank.py writes and describes.
+// content/make_loop_bank.py writes and describes. The stand-in's levels also
+// count every value that is not finite: a browser's AudioParam and node
+// options are WebIDL floats and throw a TypeError on one, so a level case
+// asserts that none arrived.
 
 // Stands a recording Web Audio and a window in for the ones Node lacks, and
 // sets the backend's script object aside so that the next device installs a
@@ -47,8 +51,24 @@ EM_JS(void, test_install_fake_web_audio, (), {
 		saved_window: Object.getOwnPropertyDescriptor(globalThis, "window"),
 		now: 0,
 		sources: [],
+		gains: [],
 		listeners: [],
+		non_finite: 0,
 	};
+	class FakeParam {
+		constructor(value) {
+			this.value = value;
+		}
+		get value() {
+			return this.stored;
+		}
+		set value(value) {
+			if (!Number.isFinite(value)) {
+				fake.non_finite++;
+			}
+			this.stored = value;
+		}
+	}
 	class FakeNode {
 		connect() {
 		}
@@ -90,7 +110,7 @@ EM_JS(void, test_install_fake_web_audio, (), {
 			this.loop = options.loop;
 			this.loopStart = options.loopStart;
 			this.loopEnd = options.loopEnd;
-			this.playbackRate = { value: options.playbackRate };
+			this.playbackRate = new FakeParam(options.playbackRate);
 			this.onended = null;
 			this.offset = -1;
 			fake.sources.push(this);
@@ -104,13 +124,14 @@ EM_JS(void, test_install_fake_web_audio, (), {
 	globalThis.GainNode = class extends FakeNode {
 		constructor(context, options) {
 			super();
-			this.gain = { value: options.gain };
+			this.gain = new FakeParam(options.gain);
+			fake.gains.push(this);
 		}
 	};
 	globalThis.StereoPannerNode = class extends FakeNode {
 		constructor(context, options) {
 			super();
-			this.pan = { value: options.pan };
+			this.pan = new FakeParam(options.pan);
 		}
 	};
 	Object.defineProperty(globalThis, "window", {
@@ -177,6 +198,16 @@ EM_JS(double, test_source_value, (int source, int which), {
 	const node = globalThis.labradorFakeAudio.sources[source];
 	return [node.loop ? 1 : 0, node.loopStart, node.loopEnd, node.offset,
 		node.playbackRate.value][which];
+});
+
+// How many levels the fake nodes were handed that were not finite.
+EM_JS(int, test_non_finite_levels, (), {
+	return globalThis.labradorFakeAudio.non_finite;
+});
+
+// A gain node's gain, in the order the nodes were created.
+EM_JS(double, test_gain_value, (int gain), {
+	return globalThis.labradorFakeAudio.gains[gain].gain.value;
 });
 
 // How many capture-phase listeners the fake window holds for one event:
@@ -565,6 +596,62 @@ TEST_CASE("a paused looping voice resumes from inside its loop region")
 	REQUIRE(test_source_count() == 5);
 	CHECK(test_source_value(4, source_offset) == doctest::Approx(0.4375));
 	CHECK(test_source_value(4, source_loop) == 0.0);
+}
+
+TEST_CASE("a NaN level is refused before it reaches a node")
+{
+	// A NaN assigned to an AudioParam throws a TypeError inside the frame,
+	// where nothing can answer it. SoundBank and AudioResources refuse one
+	// with std::invalid_argument at the call, so the stand-in sees none.
+	const FakeWebAudio fake;
+	AudioDevice device;
+	SoundBankDefinition definition;
+	definition.source_path = "tones.json";
+	definition.waves = tone_names;
+	definition.effects = {
+		SoundBankDefinition::Effect{ "drone_loop", "drone" }
+	};
+	const AudioDevice::WaveBankHandle wave_bank = device.open_wave_bank(
+		"./content/", "tones", definition.waves);
+
+	AudioResources resources;
+	resources.add_sound_bank("tones",
+		build_sound_bank(&device, wave_bank, definition));
+	SoundBank* bank = resources.sound_bank("tones");
+	const AudioResources::SoundGroupHandle music =
+		resources.add_sound_group("music");
+	const SoundBank::WaveHandle ping = bank->resolve_wave("ping");
+	const SoundBank::EffectHandle drone = bank->resolve_effect("drone_loop");
+	bank->set_effect_group(drone, music);
+	test_send_key(0);
+
+	bank->play_effect(drone, true, 0.5f);
+	REQUIRE(test_source_count() == 1);
+
+	const float not_a_number = std::numeric_limits<float>::quiet_NaN();
+	CHECK_THROWS_AS(bank->play_wave(ping, not_a_number), std::invalid_argument);
+	CHECK_THROWS_AS(bank->play_wave(ping, 1.0f, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->play_wave(ping, 1.0f, 0.0f, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->set_effect_volume(drone, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->set_effect_pitch(drone, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->set_effect_pan(drone, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(resources.set_group_volume(music, not_a_number),
+		std::invalid_argument);
+
+	// No one-shot was built, and the playing voice kept its level.
+	CHECK(test_source_count() == 1);
+	CHECK(test_gain_value(0) == doctest::Approx(0.5));
+	CHECK(test_non_finite_levels() == 0);
+
+	// A level that is in range still arrives.
+	resources.set_group_volume(music, 0.5f);
+	CHECK(test_gain_value(0) == doctest::Approx(0.25));
+	CHECK(test_non_finite_levels() == 0);
 }
 
 TEST_CASE("a looping voice with no region wraps at the end of its wave")

@@ -275,7 +275,6 @@ ready queue above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#124` | DECISION | should | S | Non-finite and zero/non-finite-scale refusals landed. Left for the owner: is a negative (mirroring) `Camera` scale supported? A hand-built one gives a negative-extent `visible_rectangle`, and Scene's cull (`engine/scene/scene.cpp`) then intersects nothing, so the view goes blank without any signal. |
-| `REV#125` | OPEN | should | S | `labrador::clamp` returns NaN unchanged, so `SoundBank` and group volumes pass NaN on although `audio_device.h:57-58` says levels arrive clamped; Web Audio then throws in the frame. Refuse it as `Random::chance` does, tested on null and Node. |
 | `REV#126` | OPEN | should | M | PHILOSOPHY.md:702 forbids per-frame heap allocation and four headers claim it, but only D3D12 and Vulkan submit tests count allocations. Count across warmed Scene ticks, contacts, the four-view fan-out and LineSweeper's top-out on native null. |
 | `REV#127` | OPEN | could | S | `font.h:170-176` names the glyph walk as frame-path code and `font.cpp:186-189` claims `wrap` is linear, but `bench/` asserts neither. Add both to `linear_phases`; text is headless, so every configuration runs them. |
 | `REV#128` | OPEN | could | S | `StepTimer::Tick` reads the clock itself, so the 0.1 s clamp, the quarter-millisecond snap and catch-up have no exact test, and `step_timer.h:145`'s signed cast is undefined for a huge target. Split out a pure advance step, as FrameTimer does. Not consumer-visible. |

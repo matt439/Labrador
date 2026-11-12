@@ -1,5 +1,4 @@
 #include "engine/audio/audio_resources.h"
-#include "engine/math/scalar.h"
 
 #include <algorithm>
 #include <map>
@@ -98,7 +97,8 @@ namespace labrador
 	void AudioResources::set_group_volume(SoundGroupHandle group, float volume)
 	{
 		// Clamp, then the handle: the same order as every SoundBank method.
-		volume = clamp(volume, 0.0f, 1.0f);
+		volume = SoundBank::clamp_level(volume, 0.0f, 1.0f,
+			"AudioResources::set_group_volume", "volume");
 		static_cast<void>(this->group_volume(group));
 
 		(*this->group_volumes_)[static_cast<size_t>(group.index())] = volume;

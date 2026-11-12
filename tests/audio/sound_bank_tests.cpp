@@ -3,6 +3,7 @@
 #include "engine/audio/audio_device.h"
 #include "engine/audio/sound_bank.h"
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
@@ -125,6 +126,31 @@ TEST_CASE("a bank with no content plays nothing, and every verb still runs")
 	// true: nothing is playing, because nothing can.
 	CHECK(bank->effect_state(effect) == SoundState::stopped);
 	CHECK(bank->is_effect_looping(effect) == false);
+}
+
+TEST_CASE("a bank with no content refuses a NaN level, as every bank does")
+{
+	const std::unique_ptr<SoundBank> bank = SoundBank::silent();
+	const SoundBank::WaveHandle wave = bank->resolve_wave("shot");
+	const SoundBank::EffectHandle effect = bank->resolve_effect("engine_loop");
+	const float not_a_number = std::numeric_limits<float>::quiet_NaN();
+
+	// The refusal is part of the clamp, so it sits above the check for
+	// content with it: a NaN computed from a game's own arithmetic throws in
+	// a build with no wave bank as it does in one with.
+	CHECK_THROWS_AS(bank->play_wave(wave, not_a_number), std::invalid_argument);
+	CHECK_THROWS_AS(bank->play_wave(wave, 1.0f, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->play_wave(wave, 1.0f, 0.0f, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->play_effect(effect, false, not_a_number, 0.0f, 0.0f),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->set_effect_volume(effect, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->set_effect_pitch(effect, not_a_number),
+		std::invalid_argument);
+	CHECK_THROWS_AS(bank->set_effect_pan(effect, not_a_number),
+		std::invalid_argument);
 }
 
 TEST_CASE("a handle nobody resolved is refused by a bank with no content too")

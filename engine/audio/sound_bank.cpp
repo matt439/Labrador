@@ -4,6 +4,7 @@
 #include "engine/math/scalar.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -127,7 +128,7 @@ namespace labrador
 		// not any backend's, and it is the same kind of engine-side decision as
 		// the glyph walk in render/font.h. It runs for silent banks as well as
 		// content-backed banks, before the check for content can return.
-		clamp_levels(volume, pitch, pan);
+		clamp_levels("SoundBank::play_wave", volume, pitch, pan);
 
 		if (!wave.valid())
 		{
@@ -150,7 +151,7 @@ namespace labrador
 	void SoundBank::play_effect(EffectHandle effect, bool loop, float volume,
 		float pitch, float pan) const
 	{
-		clamp_levels(volume, pitch, pan);
+		clamp_levels("SoundBank::play_effect", volume, pitch, pan);
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
@@ -198,7 +199,8 @@ namespace labrador
 
 	void SoundBank::set_effect_volume(EffectHandle effect, float volume) const
 	{
-		volume = clamp(volume, 0.0f, 1.0f);
+		volume = clamp_level(volume, 0.0f, 1.0f,
+			"SoundBank::set_effect_volume", "volume");
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
@@ -213,7 +215,8 @@ namespace labrador
 
 	void SoundBank::set_effect_pitch(EffectHandle effect, float pitch) const
 	{
-		pitch = clamp(pitch, -1.0f, 1.0f);
+		pitch = clamp_level(pitch, -1.0f, 1.0f,
+			"SoundBank::set_effect_pitch", "pitch");
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
@@ -225,7 +228,8 @@ namespace labrador
 
 	void SoundBank::set_effect_pan(EffectHandle effect, float pan) const
 	{
-		pan = clamp(pan, -1.0f, 1.0f);
+		pan = clamp_level(pan, -1.0f, 1.0f,
+			"SoundBank::set_effect_pan", "pan");
 		const AudioDevice::VoiceHandle voice = this->voice(effect);
 		if (!this->audible())
 		{
@@ -332,10 +336,26 @@ namespace labrador
 		}
 	}
 
-	void SoundBank::clamp_levels(float& volume, float& pitch, float& pan)
+	float SoundBank::clamp_level(float value, float minimum, float maximum,
+		const char* call, const char* level)
 	{
-		volume = clamp(volume, 0.0f, 1.0f);
-		pitch = clamp(pitch, -1.0f, 1.0f);
-		pan = clamp(pan, -1.0f, 1.0f);
+		// clamp() answers NaN with NaN, because both of its comparisons are
+		// false, and no backend can take one: Web Audio's AudioParam throws a
+		// TypeError on it and XAudio2 would be handed it as a level.
+		if (std::isnan(value))
+		{
+			throw std::invalid_argument(std::string(call) + ": the " + level +
+				" is NaN.");
+		}
+
+		return clamp(value, minimum, maximum);
+	}
+
+	void SoundBank::clamp_levels(const char* call, float& volume, float& pitch,
+		float& pan)
+	{
+		volume = clamp_level(volume, 0.0f, 1.0f, call, "volume");
+		pitch = clamp_level(pitch, -1.0f, 1.0f, call, "pitch");
+		pan = clamp_level(pan, -1.0f, 1.0f, call, "pan");
 	}
 }

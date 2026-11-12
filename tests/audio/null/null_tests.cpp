@@ -6,6 +6,7 @@
 #include "engine/audio/null/recording.h"
 #include "engine/audio/sound_bank.h"
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -155,6 +156,62 @@ TEST_CASE("the level clamp is engine arithmetic, and this is where it is read")
 	CHECK(played[2].volume == doctest::Approx(1.0f));
 	CHECK(played[3].pitch == doctest::Approx(-1.0f));
 	CHECK(played[4].pan == doctest::Approx(1.0f));
+}
+
+TEST_CASE("a NaN level is refused above the seam, and reaches no device")
+{
+	const Fixture fixture;
+	const SoundBank::WaveHandle wave = fixture.bank->resolve_wave("shot");
+	const SoundBank::EffectHandle effect =
+		fixture.bank->resolve_effect("engine_loop");
+	const float not_a_number = std::numeric_limits<float>::quiet_NaN();
+
+	// clamp() returns a NaN unchanged, so the clamp alone would pass one to
+	// the device: Web Audio throws on it in the frame and XAudio2 is handed
+	// it as a level. Each call refuses it and names itself and the level.
+	CHECK_THROWS_WITH_AS(fixture.bank->play_wave(wave, not_a_number),
+		"SoundBank::play_wave: the volume is NaN.", std::invalid_argument);
+	CHECK_THROWS_WITH_AS(fixture.bank->play_wave(wave, 1.0f, not_a_number),
+		"SoundBank::play_wave: the pitch is NaN.", std::invalid_argument);
+	CHECK_THROWS_WITH_AS(
+		fixture.bank->play_wave(wave, 1.0f, 0.0f, not_a_number),
+		"SoundBank::play_wave: the pan is NaN.", std::invalid_argument);
+	CHECK_THROWS_WITH_AS(
+		fixture.bank->play_effect(effect, false, not_a_number),
+		"SoundBank::play_effect: the volume is NaN.", std::invalid_argument);
+	CHECK_THROWS_WITH_AS(
+		fixture.bank->play_effect(effect, false, 1.0f, not_a_number),
+		"SoundBank::play_effect: the pitch is NaN.", std::invalid_argument);
+	CHECK_THROWS_WITH_AS(
+		fixture.bank->play_effect(effect, false, 1.0f, 0.0f, not_a_number),
+		"SoundBank::play_effect: the pan is NaN.", std::invalid_argument);
+	CHECK_THROWS_WITH_AS(
+		fixture.bank->set_effect_volume(effect, not_a_number),
+		"SoundBank::set_effect_volume: the volume is NaN.",
+		std::invalid_argument);
+	CHECK_THROWS_WITH_AS(
+		fixture.bank->set_effect_pitch(effect, not_a_number),
+		"SoundBank::set_effect_pitch: the pitch is NaN.",
+		std::invalid_argument);
+	CHECK_THROWS_WITH_AS(fixture.bank->set_effect_pan(effect, not_a_number),
+		"SoundBank::set_effect_pan: the pan is NaN.", std::invalid_argument);
+	CHECK(recorded_sounds(fixture.device).empty());
+
+	// Above the handle check too, as the clamp is, so the refusal names the
+	// level whatever the handle.
+	CHECK_THROWS_AS(
+		fixture.bank->play_wave(SoundBank::WaveHandle(), not_a_number),
+		std::invalid_argument);
+
+	// An infinity has a side, and folds like any other level.
+	const float infinity = std::numeric_limits<float>::infinity();
+	fixture.bank->play_wave(wave, infinity, -infinity, infinity);
+	const std::vector<RecordedSound>& played =
+		recorded_sounds(fixture.device);
+	REQUIRE(played.size() == 1);
+	CHECK(played[0].volume == doctest::Approx(1.0f));
+	CHECK(played[0].pitch == doctest::Approx(-1.0f));
+	CHECK(played[0].pan == doctest::Approx(1.0f));
 }
 
 TEST_CASE("each effect verb reaches the device as its own call")
@@ -448,6 +505,29 @@ TEST_CASE("a grouped one-shot launches at its level times its group's")
 	CHECK(played[0].volume == doctest::Approx(0.25f));
 	CHECK(played[1].volume == doctest::Approx(0.5f));
 	CHECK(played[2].volume == doctest::Approx(0.5f));
+}
+
+TEST_CASE("a NaN group volume is refused, and the group keeps its level")
+{
+	GroupFixture fixture;
+	const SoundBank::EffectHandle theme =
+		fixture.first->resolve_effect("theme_loop");
+	fixture.first->set_effect_group(theme, fixture.music);
+	fixture.resources.set_group_volume(fixture.music, 0.5f);
+	fixture.first->play_effect(theme, true, 0.5f);
+
+	CHECK_THROWS_WITH_AS(fixture.resources.set_group_volume(fixture.music,
+		std::numeric_limits<float>::quiet_NaN()),
+		"AudioResources::set_group_volume: the volume is NaN.",
+		std::invalid_argument);
+
+	// Nothing is stored and nothing is pushed to the playing effect.
+	CHECK(fixture.resources.group_volume(fixture.music) ==
+		doctest::Approx(0.5f));
+	const std::vector<RecordedSound>& played = fixture.played();
+	REQUIRE(played.size() == 1);
+	CHECK(played[0].call == SoundCall::play_voice);
+	CHECK(played[0].volume == doctest::Approx(0.25f));
 }
 
 TEST_CASE("a group change reaches the next one-shot and not one in flight")
