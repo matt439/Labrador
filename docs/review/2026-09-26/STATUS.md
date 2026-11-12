@@ -65,5 +65,5 @@ all 81 tests with no skips in the Visual Studio developer environment,
 including the worker/trace PowerShell integration cases. This supersedes the
 2026-10-26 local execution-policy blocker; no execution policy was changed.
 This local pass does not replace the deliberately failing throwaway-branch CI
-observation, which remains open. The existing numbered-finding results above
+observation, which the table above records on 2026-10-27. The existing numbered-finding results above
 remain the historical verification of their own fixes.

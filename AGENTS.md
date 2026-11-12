@@ -383,8 +383,8 @@ or trust their line numbers as current. The first two rounds' `game/...` paths
 refer to ColourWars. Backend-equivalence, backend-equivalence-2, D3D12 and
 Vulkan reviews postdate the split. Read their STATUS.md/README.md for current
 disposition. `rtcd/` is a candidate list, not a plan; round-2/PLAN.md owns it.
-Unverified findings are questions to check before acting: D3D12 §6, Vulkan §7
-and Vulkan's unresolved minimize/platform-surface questions remain in TODO.md.
+Unverified findings are questions to check before acting: D3D12 §6.5
+(`REV#3`) and Vulkan §6.2 (`REV#5`) remain in TODO.md.
 Deleting a false sentence does not itself answer the question it got wrong.
 
 `docs/review/colourwars-reports/` is the engine's decision on client reports,
