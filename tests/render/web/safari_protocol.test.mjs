@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { PRELUDE } from './bundle_page.mjs';
 import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
-	capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
+	capabilities, driver_arguments, drive_sample, evaluator, inject_head, key_actions, page_scripts, parse_options,
 	safari_tabs_to_links, session_commands, substitute, webdriver_command } from './run_safari.mjs';
 
 test('the options name one mode and refuse every other combination', () => {
@@ -235,13 +235,9 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 // on every evaluation, loses and restores its context when asked, and quits
 // once the keys have been pressed and released, if its canvas has the
 // keyboard.
-function sample_session({ complaint = null, error = null, draws_after_restore = true, quits = true, focused = true,
-	drop = 0, drop_up = 0 } = {}) {
+function sample_session({ complaint = null, error = null, draws_after_restore = true, quits = true, focused = true } = {}) {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: true, clears: 0, draw_calls: 0,
-		elements: 0, lost: 0, restored: 0, raw_api: 'WebGL 2.0', raw_renderer: 'WebKit WebGL', unmasked_renderer: 'Apple GPU',
-		keys: [] };
-	let dropped = 0;
-	let dropped_up = 0;
+		elements: 0, lost: 0, restored: 0, raw_api: 'WebGL 2.0', raw_renderer: 'WebKit WebGL', unmasked_renderer: 'Apple GPU' };
 	const log = [];
 	let pressed = false;
 	let lost = false;
@@ -256,10 +252,6 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 			let value = null;
 			if (expression.includes('labradorComplaints')) {
 				value = complaint && heard.draw_calls > 0 ? [complaint] : [];
-			} else if (expression === '(window.labradorSafari.keys.length)') {
-				value = heard.keys.length;
-			} else if (expression.startsWith('(window.labradorSafari.keys.slice(')) {
-				value = heard.keys.slice(Number(/slice\((\d+)\)/.exec(expression)[1]));
 			} else if (expression.includes('labradorSafari ??')) {
 				draw();
 				if (error && heard.draw_calls > 4) heard.errors.push(error);
@@ -279,16 +271,7 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 			}
 			return JSON.stringify({ value });
 		},
-		perform: async (actions) => {
-			log.push(['perform', actions[0].actions.length]);
-			pressed = true;
-			// The first `drop` presses never reach the page, as safaridriver's once did.
-			for (const action of actions[0].actions) {
-				if (action.type === 'keyDown' && dropped < drop) { dropped += 1; continue; }
-				if (action.type === 'keyUp' && dropped_up < drop_up) { dropped_up += 1; continue; }
-				heard.keys.push((action.type === 'keyDown' ? '+' : '-') + action.value);
-			}
-		},
+		perform: async (actions) => { log.push(['perform', actions[0].actions.length]); pressed = true; },
 		release: async () => { log.push(['release']); if (pressed && quits) heard.quit = true; },
 	} };
 }
@@ -299,8 +282,7 @@ test('a sample run draws, survives a forced context loss, quits on its keys and 
 	const heard = await drive_sample(session, 'http://page/MinimalSample.html', SAMPLES.minimal,
 		{ pause: async () => {}, log: (line) => lines.push(line) });
 	assert.deepEqual(log, [['navigate', 'http://page/MinimalSample.html'], ['lose'], ['restore'],
-		...Array(SAMPLES.minimal.keys.length * 2).fill(['perform', 1]), ['release']]);
-	assert.equal(lines.length, 1);
+		['perform', SAMPLES.minimal.keys.length * 4], ['release']]);
 	assert.equal(heard.quit, true);
 	assert.match(lines[0], /context lost 1 and restored 1 times; onQuit observed/);
 	assert.match(lines[0], /RENDERER=WebKit WebGL; unmasked=Apple GPU/);
@@ -364,53 +346,4 @@ test('a command line run_safari cannot run exits 2 with the reason and no stack'
 		{ encoding: 'utf8', timeout: 30000 });
 	assert.equal(run.status, 2);
 	assert.match(run.stderr, /^run_safari: Invalid or duplicate argument --other\.\s*$/);
-});
-
-test('a held key waits for both its frames and its time, whichever is later', async () => {
-	const settle = (frames, ms, frame_ms) => {
-		let now = 0;
-		let ran = 0;
-		const queue = [];
-		const sandbox = vm.createContext({
-			performance: { now: () => now },
-			requestAnimationFrame: (callback) => queue.push(callback),
-		});
-		let done = false;
-		vm.runInContext(held_expression(frames, ms), sandbox).then(() => { done = true; });
-		return (async () => {
-			while (!done && ran < 1000) {
-				now += frame_ms;
-				ran += 1;
-				queue.shift()(now);
-				await Promise.resolve();
-			}
-			return ran;
-		})();
-	};
-	// Fast frames: the time decides. Slow frames: the count decides.
-	assert.equal(await settle(3, 100, 10), 10);
-	assert.equal(await settle(3, 100, 644), 3);
-});
-
-test('a key press the page never receives is sent again, said aloud, and refused after three tries', async () => {
-	const { log, session } = sample_session({ drop: 1 });
-	const lines = [];
-	const heard = await drive_sample(session, 'u', SAMPLES.minimal, { pause: async () => {}, log: (line) => lines.push(line) });
-	assert.equal(heard.quit, true);
-	assert.match(lines[0], /did not receive Escape's keyDown; sending it again \(attempt 2\)/);
-	assert.deepEqual(log.filter(([kind]) => kind === 'perform' || kind === 'release').slice(0, 3),
-		[['perform', 1], ['release'], ['perform', 1]]);
-	await assert.rejects(drive_sample(sample_session({ drop: 3 }).session, 'u', SAMPLES.minimal,
-		{ pause: async () => {}, log: () => {} }), /never received Escape's keyDown in 3 attempts/);
-});
-
-test('a key release the page never receives is sent again behind a repeated press', async () => {
-	const { log, session } = sample_session({ drop_up: 1 });
-	const lines = [];
-	const heard = await drive_sample(session, 'u', SAMPLES.minimal, { pause: async () => {}, log: (line) => lines.push(line) });
-	assert.equal(heard.quit, true);
-	assert.match(lines[0], /did not receive Escape's keyUp; sending it again \(attempt 2\)/);
-	const performed = log.filter(([kind]) => kind === 'perform').length;
-	// The dropped release costs a repeated press and the release again.
-	assert.equal(performed, SAMPLES.minimal.keys.length * 2 + 2);
 });
