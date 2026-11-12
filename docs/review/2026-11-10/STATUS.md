@@ -42,10 +42,10 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#48` | [An optional starter workflow that builds the browser page and deploys it to GitHub Pages](FINDINGS.md#rev48) | Open |
 | `REV#49` | [No sanitizer configuration on the device-free hosts](FINDINGS.md#rev49) | Open |
 | `REV#50` | [Nothing tallies CI failures by step](FINDINGS.md#rev50) | Open |
-| `REV#51` | [No lint that every source file is enumerated in a CMake file](FINDINGS.md#rev51) | Open |
+| `REV#51` | [No lint that every source file is enumerated in a CMake file](FINDINGS.md#rev51) | Open. A check on 2026-11-12 matched every tracked `.cpp` under `engine/`, `tests/`, `samples/` and `bench/` to a CMake file up its folder chain and found none unlisted. |
 | `REV#52` | [The configurations CI skips are built only at release](FINDINGS.md#rev52) | Open |
 | `REV#53` | [No size budget holds the browser module's payload in CI](FINDINGS.md#rev53) | Open |
-| `REV#54` | [GitHub's own traffic and download counters are not recorded at each release](FINDINGS.md#rev54) | Open |
+| `REV#54` | [GitHub's own traffic and download counters are not recorded at each release](FINDINGS.md#rev54) | Open. The window that includes v0.3.0's release day is [recorded](2026-11-12-github-counters.md), read 2026-11-12; the release-procedure step is the owner's call. |
 | `REV#55` | [Texture repeat addressing for tiled and scrolling backgrounds](FINDINGS.md#rev55) | Open |
 | `REV#56` | [Typed text is UTF-8 while drawn text is std::wstring](FINDINGS.md#rev56) | Open |
 | `REV#57` | [A shape with a NaN coordinate stops colliding without any signal](FINDINGS.md#rev57) | Open |
@@ -90,7 +90,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#95` | [The broad phase is not benchmarked on touching static tiles or masked-out pairs](FINDINGS.md#rev95) | Open |
 | `REV#96` | [No upper bound on the browser drawing buffer's pixel ratio](FINDINGS.md#rev96) | Open |
 | `REV#97` | [Drawing buffer rounded from CSS size times ratio, not read from device-pixel-content-box](FINDINGS.md#rev97) | Open |
-| `REV#98` | [Per-run ccache keys fill the Actions cache past 10 GB](FINDINGS.md#rev98) | Open |
+| `REV#98` | [Per-run ccache keys fill the Actions cache past 10 GB](FINDINGS.md#rev98) | Deferred. Re-measured 2026-11-12 with `gh cache list`: 37 caches, 2.84 GB, 27 of them ccache; the oldest dates from 2026-10-26, and no expensive cache was seen evicted. |
 | `REV#99` | [No code coverage measurement](FINDINGS.md#rev99) | Open |
 | `REV#100` | [Bundle size has no budget; benchmark output is not kept](FINDINGS.md#rev100) | Open |
 | `REV#101` | [No mechanical style check for the Python and Node tooling](FINDINGS.md#rev101) | Open |

@@ -1038,7 +1038,8 @@ bundle, its page and CI's upload are built here, and the owner has deployed
 the demo to <https://mattharding.dev/demo/linesweeper/>, from a bundle built
 at `c369e8b` (`v0.1.0`), where on 2026-10-13 it played in headless Chrome,
 calm top-out included, its files matched `BUILD.json` and `curl -I` showed the
-§7.2 headers; Firefox and Safari on the live page are still to be checked. M6's items are all done. M7a's touch device
+§7.2 headers; Safari 27.0.1 on macOS 27.0.1 loaded and briefly played it on
+2026-11-03, and Firefox on the live page is still to be checked. M6's items are all done. M7a's touch device
 has been driven by Chrome's touch emulation and by touch injected into a
 Win32 window, and owes a real touchscreen. M7b's controls, portrait layout,
 page handling and texture path are built and emulated, and owe a real iPhone,
