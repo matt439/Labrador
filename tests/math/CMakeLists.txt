@@ -3,6 +3,7 @@ labrador_add_test_suite(LabradorMathTests
         constant_initialisation_tests.cpp
         ericson_math_tests.cpp
         inflate_tests.cpp
+        integer_geometry_tests.cpp
         matrix3x2f_tests.cpp
         quad_tests.cpp
         rectangle_rotated_tests.cpp
