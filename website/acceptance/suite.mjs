@@ -258,6 +258,13 @@ const MENU_HIDDEN = `
 
 const SCROLL_INTO_VIEW = 'arguments[0].scrollIntoView({ block: "center", inline: "nearest" });';
 
+const CLEAR_SELECTION = `
+	const selection = window.getSelection();
+	const text = selection ? selection.toString().trim().replace(/\\s+/g, ' ').slice(0, 60) : '';
+	if (selection) selection.removeAllRanges();
+	return text;
+`;
+
 // Brings the element into view with the page scrolled to its top, so far as
 // it can be: the page is scrolled only when the element lies below the first
 // screen. Returns where the element is and how far the page scrolled.
@@ -466,8 +473,16 @@ class Context {
 			await this.activate(element);
 			const result = await waitUntil(done, { timeoutMs: tapAt < taps ? LOST_TAP_WAIT_MS : lastWaitMs, message }).catch(() => false);
 			if (result || tapAt >= taps) return result;
-			this.note(`tap ${tapAt} did not bring ${message}; it was tapped again`);
+			const selected = await this.clearLongPress();
+			this.note(`tap ${tapAt} did not bring ${message}${selected ? `, and became a long press that selected "${selected}"` : ''}; it was tapped again`);
 		}
+	}
+
+	// A tap the simulator stretches into a long press selects text instead
+	// of activating; while that selection stands, the next tap only dismisses
+	// it. Clears any selection and returns its text, or '' when there was none.
+	async clearLongPress() {
+		return this.script(CLEAR_SELECTION).catch(() => '');
 	}
 
 	// Types into a field that has focus: on the target's keyboard where its
@@ -510,6 +525,7 @@ class Context {
 			await this.activate(menu);
 			const opened = await waitUntil(() => this.script(MENU_OPEN), { timeoutMs: 5_000, message: 'the phone menu to open' }).catch(() => false);
 			if (opened) return;
+			await this.clearLongPress();
 		}
 		throw new Error('Three taps of the menu button did not open the phone menu.');
 	}
