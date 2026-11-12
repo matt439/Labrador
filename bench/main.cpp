@@ -7,6 +7,7 @@
 
 void run_scene_benchmarks();
 void run_render_benchmarks();
+void run_text_benchmarks();
 
 // Compiled from fanout_bench_null.cpp against the null backend and from
 // fanout_bench_absent.cpp against the other four - bench/CMakeLists.txt lists
@@ -63,6 +64,13 @@ namespace
 		{ "build_sprite_quad", false },
 		{ "build_sprite_quad (rotated)", false },
 		{ "build_scaled_quad", false },
+
+		// Text layout (text_bench.cpp). The glyph walk is what a HUD runs for
+		// every string every frame, and Font::wrap rewinds to the last space
+		// on overflow, which font.cpp bounds at two visits a unit. Both are
+		// per unit of the string, with a glyph table that does not grow.
+		{ "Font::measure (glyph walk)", false },
+		{ "Font::wrap (every word breaks)", false },
 
 		// The per-view render fan-out, which exists in the null configuration
 		// alone (fanout_bench_null.cpp). Both rows are linear for the reason
@@ -127,6 +135,7 @@ int main()
 {
 	run_scene_benchmarks();
 	run_render_benchmarks();
+	run_text_benchmarks();
 	const std::string fanout_note = run_fanout_benchmarks();
 	bench::report();
 
