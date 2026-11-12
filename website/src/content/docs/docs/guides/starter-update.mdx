@@ -11,10 +11,10 @@ import ReleaseNote from '~/components/ReleaseNote.astro';
 
 A project made from the [starter ZIP](/docs/get-started/starter/) holds the engine as a plain
 folder, `external\labrador`, at the release it came with. Nothing moves it for you. To take a
-newer release, you download that release's starter ZIP, put your `game` folder into it, and
-switch to it once it builds. Your old project stays as it is, under another name, until you
-delete it, so a release that does not work for you costs nothing. It takes about half an hour,
-most of it reading what changed, and downloads about 9 MB.
+newer release, you download that release's starter ZIP, put your `game` folder and everything
+else you added into it, and switch to it once it builds. Your old project stays as it is, under
+another name, until you delete it, so a release that does not work for you costs nothing. It
+takes about half an hour, most of it reading what changed, and downloads about 9 MB.
 
 This is safer than replacing `external\labrador` by itself, because the project's own files
 (`CMakeLists.txt`, `CMakePresets.json` and above all `vcpkg.json`, which pins the engine's
@@ -23,7 +23,9 @@ libraries) must match the engine, and the new ZIP has them matching.
 If your project is in Git with the engine as a submodule, because you followed
 [Start your own project](/docs/get-started/your-project/) or
 [Put your project in Git](/docs/guides/starter-to-git/), use
-[Move your engine pin](/docs/guides/move-pin/) instead.
+[Move your engine pin](/docs/guides/move-pin/) instead. A project in Git that keeps the engine
+as plain files, as [Put your project on GitHub](/docs/guides/your-github/) leaves it, moves by
+this page: step 5 carries its history across and step 10 commits the move.
 
 The commands run in the x64 Native Tools Command Prompt. They assume your project is
 `C:\dev\mygame`; if yours has another name, put it in place of `mygame` wherever a command has
@@ -94,7 +96,45 @@ project before you start.
    copy, and not your own. `xcopy` lists each file it copies and ends with a count such as
    `15 File(s) copied`.
 
-6. **Compare the project's own files.** Run these four lines. Each compares a file in your
+   Your project can hold more than `game`: a picture such as `hero.png` from
+   [Put a picture in your game](/docs/guides/your-picture/), `web-release.bat` from
+   [Put your game on the web](/docs/guides/your-web-page/), and, if you put the project in Git,
+   the hidden `.git` folder that holds its history. List the top folder of both projects:
+
+   ```bat
+   dir /a /b C:\dev\mygame
+   dir /a /b C:\dev\new\mygame
+   ```
+
+   `/a` lists hidden names such as `.git` as well. The second list is the starter's own:
+
+   ```text title="Output"
+   .github
+   .gitignore
+   CMakeLists.txt
+   CMakePresets.json
+   external
+   game
+   README.txt
+   vcpkg.json
+   ```
+
+   Every name in the first list that the second lacks is yours, except `out`, your build folder,
+   and `.vs`, Visual Studio's, which the new project makes again. Copy each one across, a file
+   with `copy` and a folder with `xcopy`. For the three examples above:
+
+   ```bat
+   copy C:\dev\mygame\hero.png C:\dev\new\mygame\
+   copy C:\dev\mygame\web-release.bat C:\dev\new\mygame\
+   xcopy C:\dev\mygame\.git C:\dev\new\mygame\.git /E /I /H
+   ```
+
+   Each `copy` prints `1 file(s) copied.` and `xcopy` ends with its count; `/H` copies hidden
+   files too. These copy rather than move, so your old project keeps its own until you delete
+   it. Run the two `dir` lines again: now only `out` and `.vs` may be in the first list and not
+   the second.
+
+6. **Compare the project's own files.** Run these six lines. Each compares a file in your
    project with the new project's:
 
    ```bat
@@ -102,6 +142,8 @@ project before you start.
    fc C:\dev\mygame\CMakePresets.json C:\dev\new\mygame\CMakePresets.json
    fc C:\dev\mygame\vcpkg.json C:\dev\new\mygame\vcpkg.json
    fc C:\dev\mygame\external\labrador\website\src\walkthrough\game-CMakeLists.txt C:\dev\new\mygame\external\labrador\website\src\walkthrough\game-CMakeLists.txt
+   fc C:\dev\mygame\.gitignore C:\dev\new\mygame\.gitignore
+   fc C:\dev\mygame\.github\workflows\ci.yml C:\dev\new\mygame\.github\workflows\ci.yml
    ```
 
    `FC: no differences encountered` means the file is the same in both. Otherwise `fc` lists the
@@ -138,6 +180,10 @@ project before you start.
      `notepad C:\dev\new\mygame\game\CMakeLists.txt`, and make in it the changes the fourth
      comparison shows, using CHANGES.md and the template's list from step 4 to see why each was
      made.
+   - **`.gitignore` and `.github\workflows\ci.yml`**: keep the new project's, and add back any
+     line you added to yours. A `.vs/` line that
+     [Put your project on GitHub](/docs/guides/your-github/) had you add to `.gitignore` is in
+     the new one already, so leave it out.
 
    If you are not sure what you changed, keeping the new project's file and adding back only the
    additions you remember making is safe: the build in step 9 tells you if one is missing, and
@@ -206,6 +252,21 @@ project before you start.
      line that matters. If it does not match a CHANGES.md entry you understand, go back to your old
      project with the box under [Going back](#going-back), and report the first error in
      [Labrador's issues](https://github.com/matt439/Labrador/issues) with the two releases.
+
+10. **Commit the move, if your project is in Git.** Step 5 copied its history, so Git in the new
+    project sees the move as changes to the files it already tracks:
+
+    ```bat
+    git status --short
+    git add .
+    git commit -m "Move to Labrador v0.4.0"
+    ```
+
+    Put the new release in place of `v0.4.0`. `git status --short` lists the changed and new
+    files, and `git add .` may print line-end warnings, which are harmless. If `git status` says
+    `not a git repository`, the project was not in Git, or step 5 did not copy `.git`. If you
+    keep the project on GitHub, push as [Put your project on GitHub](/docs/guides/your-github/)
+    does.
 
 </Steps>
 
@@ -317,8 +378,11 @@ When the new project builds, passes its tests and plays as you expect, delete th
 rmdir /s /q C:\dev\mygame-old
 ```
 
-It deletes the folder and everything in it without asking. Any change you made to the old
-project after step 5 is in that folder only, so check you have none first.
+It deletes the folder and everything in it without asking. Check first that the new project
+has everything of yours: run step 5's two `dir` lines with `C:\dev\mygame-old` in place of
+`C:\dev\mygame` and `C:\dev\mygame` in place of `C:\dev\new\mygame`, and copy across anything
+but `out` and `.vs` that only the old project has. Any change you made to the old project after
+step 5 is in that folder only, so check you have none as well.
 
 ## What was checked
 
@@ -361,3 +425,16 @@ place, renamed to `mygame-old` with a new one moved into its name, came back wit
 two lines, each printing nothing; its build then had nothing to compile and both tests passed,
 and `rmdir /s /q` deleted `mygame-new` and printed nothing. Step 2's text for a release that has
 a starter ZIP was not shown, because no release had one then.
+
+On 13 November 2026 the files outside `game` were checked. Two projects were extracted with
+Windows' `tar` from one starter ZIP of a development revision; the old one was put in Git, given
+a `hero.png`, an empty `web-release.bat`, `.vs` and `out` folders and a second `.vs/` line in
+`.gitignore`, and committed. Step 5's `dir /a /b` lines listed `.git`, `.vs`, `hero.png`, `out`
+and `web-release.bat` in the old project beyond the starter's eight names, which the new one
+listed as quoted; the two `copy` lines each printed `1 file(s) copied.` and `xcopy` copied the
+hidden `.git` folder. Step 6's two added comparisons found the extra `.vs/` line and no
+difference in `ci.yml`. After step 8's swap, `git status --short` in the new project listed
+`.gitignore` alone, since both projects came from one ZIP; step 10's commit followed the old
+project's two in `git log`, the old project's own history was unchanged, and `rmdir /s /q`
+deleted `mygame-old` with its `.git`. Nothing was built in this check, and it was not a move
+between two releases.
