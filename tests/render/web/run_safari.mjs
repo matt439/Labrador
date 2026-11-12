@@ -53,7 +53,7 @@ const KEY_VALUES = key_table(['Escape', 'Enter', 'Tab', 'KeyS', 'KeyR', 'KeyA',
 
 export function parse_options(arguments_) {
 	const options = {};
-	const valued = new Set(['pages', 'sample', 'bundle', 'timeout', 'frames', 'driver', 'browser-name']);
+	const valued = new Set(['pages', 'sample', 'bundle', 'timeout', 'frames', 'driver', 'browser-name', 'key-mode']);
 	for (let index = 0; index < arguments_.length; index++) {
 		const name = arguments_[index].replace(/^--/, '');
 		if (!arguments_[index].startsWith('--') || Object.hasOwn(options, name)) {
@@ -77,6 +77,13 @@ export function parse_options(arguments_) {
 			'--browser-name is safari (the default) or firefox.');
 	}
 	options.browser_name = browser_name;
+	// How a sample's quit keys are sent (REV#159): 'confirm' (each level alone,
+	// confirmed in the page's key log and resent), 'separate' (each level alone
+	// with fixed waits and no page queries) or 'chain' (one action list).
+	options.key_mode = options['key-mode'] ?? 'confirm';
+	if (!['confirm', 'separate', 'chain'].includes(options.key_mode)) {
+		throw new Error('--key-mode is confirm (the default), separate or chain.');
+	}
 	options.label = browser_name === 'safari' ? 'Safari' : 'Firefox through geckodriver';
 	options.driver ??= browser_name === 'safari' ? 'safaridriver' : 'geckodriver';
 	options.timeout_ms = Number(options.timeout ?? (options.bundle !== undefined ? 120 : 60)) * 1000;
@@ -355,7 +362,8 @@ export function held_expression(frames, ms) {
 }
 
 export async function drive_sample(session, url, sample,
-	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {} } = {}) {
+	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {},
+		key_mode = 'confirm' } = {}) {
 	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} sample`, 15000));
 	progress.phase = 'loading the page';
 	const state = async () => {
@@ -421,10 +429,19 @@ export async function drive_sample(session, url, sample,
 	// samples keys once per update and drops a key pressed and released
 	// between two polls. Every resend is logged, so none is silent.
 	progress.phase = 'pressing the quit keys';
-	for (const key of sample.keys) {
-		for (const type of ['keyDown', 'keyUp']) {
-			await send_key(session, evaluate, key, type, { pause, log, label });
-			await evaluate(held_expression(KEY_HOLD_FRAMES, KEY_HOLD_MS));
+	if (key_mode === 'chain') {
+		await session.perform(key_actions(sample.keys));
+	} else {
+		for (const key of sample.keys) {
+			for (const type of ['keyDown', 'keyUp']) {
+				if (key_mode === 'separate') {
+					await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type, value: KEY_VALUES[key] }] }]);
+					await pause(KEY_HOLD_MS * 3);
+				} else {
+					await send_key(session, evaluate, key, type, { pause, log, label });
+					await evaluate(held_expression(KEY_HOLD_FRAMES, KEY_HOLD_MS));
+				}
+			}
 		}
 	}
 	await session.release();
