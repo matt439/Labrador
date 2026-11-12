@@ -70,6 +70,8 @@ export const DRIVER_READY_TIMEOUT_MS = 20_000;
 export const IOS_DRIVER_READY_TIMEOUT_MS = 120_000;
 export const SIMULATOR_BOOT_TIMEOUT_MS = 180_000;
 const SIMULATOR_BOOT_ATTEMPTS = 3;
+const SIMULATOR_LIST_TIMEOUT_MS = 120_000;
+const SIMULATOR_LIST_ATTEMPTS = 3;
 const DRIVER_START_ATTEMPTS = 3;
 const SESSION_ATTEMPTS = 4;
 // A pause after the simulator's Safari is relaunched, before a session is
@@ -197,9 +199,25 @@ function findDevice(list, udid) {
 	return null;
 }
 
+// A hosted runner's first simctl command can wait on CoreSimulator starting
+// and outlast its timeout with nothing on stderr; it is asked again.
+async function listSimulators(log) {
+	for (let attempt = 1; ; attempt += 1) {
+		try {
+			return JSON.parse(await simctl(['list', 'devices', 'available', '--json'], SIMULATOR_LIST_TIMEOUT_MS));
+		} catch (error) {
+			if (attempt >= SIMULATOR_LIST_ATTEMPTS) {
+				throw new Error(`Listing the simulators failed in ${SIMULATOR_LIST_ATTEMPTS} attempts: ${error.message}`, { cause: error });
+			}
+			const why = error.killed ? `timed out after ${SIMULATOR_LIST_TIMEOUT_MS / 1000} s` : error.message.split('\n')[0];
+			log(`listing the simulators ${why}; asking again`);
+		}
+	}
+}
+
 // Chooses and boots the simulator, returning { udid, name, runtime }.
 export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, log = () => {} } = {}) {
-	const list = JSON.parse(await simctl(['list', 'devices', 'available', '--json'], 60_000));
+	const list = await listSimulators(log);
 	const device = udid ? findDevice(list, udid) : chooseIosDevice(list);
 	if (!device) {
 		throw new Error(udid ? `No available simulator has UDID ${udid}.` : 'No available iPhone simulator was found.');
