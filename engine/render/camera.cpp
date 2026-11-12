@@ -1,10 +1,21 @@
 #include "engine/render/camera.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace labrador
 {
+	namespace
+	{
+		// True for a finite number greater than zero. Written as a positive
+		// test so a NaN, which fails every comparison, is refused with zero.
+		bool positive_finite(float value)
+		{
+			return value > 0.0f && std::isfinite(value);
+		}
+	}
+
 	Camera::Camera(const Vector2F& translation, float scale) :
 		translation(translation), scale(scale)
 	{
@@ -43,12 +54,17 @@ namespace labrador
 	Camera Camera::frame(const RectangleF& world_rectangle,
 		const Viewport& viewport)
 	{
-		if (world_rectangle.width <= 0.0f || world_rectangle.height <= 0.0f ||
-			viewport.width <= 0.0f || viewport.height <= 0.0f)
+		if (!std::isfinite(world_rectangle.x) ||
+			!std::isfinite(world_rectangle.y) ||
+			!positive_finite(world_rectangle.width) ||
+			!positive_finite(world_rectangle.height) ||
+			!positive_finite(viewport.width) ||
+			!positive_finite(viewport.height))
 		{
 			throw std::invalid_argument(
-				"Camera::frame: a world rectangle and a viewport both need a "
-				"positive width and height to fit one inside the other.");
+				"Camera::frame: a world rectangle needs a finite position, and "
+				"it and a viewport both need a finite, positive width and "
+				"height to fit one inside the other.");
 		}
 
 		// Fit, not stretch: the smaller of the two ratios is the one that gets
@@ -64,15 +80,26 @@ namespace labrador
 			world_rectangle.x - (shown.x - world_rectangle.width) / 2.0f,
 			world_rectangle.y - (shown.y - world_rectangle.height) / 2.0f);
 
+		// Finite, positive inputs can still divide out of float's range: a
+		// world far larger than the pane underflows the scale to zero, and
+		// one far smaller overflows it to infinity.
+		if (!positive_finite(scale) || !std::isfinite(origin.x) ||
+			!std::isfinite(origin.y))
+		{
+			throw std::invalid_argument(
+				"Camera::frame: the world rectangle and the viewport differ in "
+				"size by more than a float scale can represent.");
+		}
+
 		return Camera(origin, scale);
 	}
 	RectangleF Camera::visible_rectangle(const Viewport& viewport) const
 	{
-		if (this->scale == 0.0f)
+		if (this->scale == 0.0f || !std::isfinite(this->scale))
 		{
 			throw std::invalid_argument(
-				"Camera::visible_rectangle: the camera's scale is zero, so it "
-				"shows no region of the world");
+				"Camera::visible_rectangle: the camera's scale is zero or not "
+				"finite, so it shows no region of the world");
 		}
 
 		return RectangleF(this->translation,
@@ -82,11 +109,11 @@ namespace labrador
 	Vector2F Camera::world_position(const Vector2I& buffer_point,
 		const Viewport& viewport) const
 	{
-		if (this->scale == 0.0f)
+		if (this->scale == 0.0f || !std::isfinite(this->scale))
 		{
 			throw std::invalid_argument(
-				"Camera::world_position: the camera's scale is zero, so no "
-				"world point is under any pixel");
+				"Camera::world_position: the camera's scale is zero or not "
+				"finite, so no world point is under any pixel");
 		}
 
 		const RectangleI pane = viewport.pixel_rect();

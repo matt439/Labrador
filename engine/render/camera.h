@@ -58,9 +58,9 @@ namespace labrador
 		// reports a visible region 31 times too small in each axis and a cull
 		// built on it throws away almost everything on screen.
 		//
-		// Throws std::invalid_argument for a zero scale, which is not a
-		// viewpoint but a division by nothing. Camera::frame cannot produce
-		// one; a hand-built camera can.
+		// Throws std::invalid_argument for a zero or non-finite scale, which
+		// is not a viewpoint but a division by nothing or by infinity.
+		// Camera::frame cannot produce one; a hand-built camera can.
 		RectangleF visible_rectangle(const Viewport& viewport) const;
 
 		// The world point under a back-buffer pixel seen through `viewport`
@@ -76,8 +76,8 @@ namespace labrador
 		// answers the world point the camera would put there, and which pane
 		// a pointer is in is the caller's question.
 		//
-		// Throws std::invalid_argument for a zero scale, as visible_rectangle
-		// does.
+		// Throws std::invalid_argument for a zero or non-finite scale, as
+		// visible_rectangle does.
 		Vector2F world_position(const Vector2I& buffer_point,
 			const Viewport& viewport) const;
 
@@ -87,9 +87,12 @@ namespace labrador
 		// fits, and the surplus on the other axis is split evenly so the
 		// requested rectangle ends up centred.
 		//
-		// Throws std::invalid_argument if either rectangle has a
-		// non-positive extent: a zero there is an infinite or a zero scale,
-		// which poisons every cull and every draw taken through the result.
+		// Throws std::invalid_argument if the world rectangle's position is
+		// not finite, if either rectangle has an extent that is not finite
+		// and positive, or if the two differ in size by more than a float
+		// scale can represent: each would give a zero, infinite or NaN scale
+		// or translation, which poisons every cull and every draw taken
+		// through the result. The scale it returns is finite and positive.
 		static Camera frame(const RectangleF& world_rectangle,
 			const Viewport& viewport);
 

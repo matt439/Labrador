@@ -6,6 +6,8 @@
 #include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 
+#include <cmath>
+#include <limits>
 #include <stdexcept>
 
 using labrador::Camera;
@@ -121,6 +123,63 @@ TEST_SUITE("Camera::frame")
 			nothing), std::invalid_argument);
 	}
 
+	TEST_CASE("a non-finite rectangle or viewport throws instead of a NaN camera")
+	{
+		const float nan = std::numeric_limits<float>::quiet_NaN();
+		const float infinity = std::numeric_limits<float>::infinity();
+		const Viewport screen(RectangleF(0.0f, 0.0f, 1920.0f, 1080.0f));
+
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, 0.0f, nan, 100.0f),
+			screen), std::invalid_argument);
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, 0.0f, 100.0f, nan),
+			screen), std::invalid_argument);
+		CHECK_THROWS_AS(Camera::frame(RectangleF(nan, 0.0f, 100.0f, 100.0f),
+			screen), std::invalid_argument);
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, infinity, 100.0f,
+			100.0f), screen), std::invalid_argument);
+
+		// An infinite world would otherwise give 1920 / inf, a zero scale.
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, 0.0f, infinity,
+			100.0f), screen), std::invalid_argument);
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, 0.0f, 100.0f,
+			infinity), screen), std::invalid_argument);
+
+		const RectangleF world(0.0f, 0.0f, 100.0f, 100.0f);
+		CHECK_THROWS_AS(Camera::frame(world,
+			Viewport(0.0f, 0.0f, nan, 1080.0f)), std::invalid_argument);
+		CHECK_THROWS_AS(Camera::frame(world,
+			Viewport(0.0f, 0.0f, 1920.0f, infinity)), std::invalid_argument);
+	}
+
+	TEST_CASE("a scale outside float's range throws instead of zero or infinity")
+	{
+		const float largest = std::numeric_limits<float>::max();
+		const float smallest = std::numeric_limits<float>::denorm_min();
+
+		// A finite world far wider than the pane: 1e-10 / max is below the
+		// smallest subnormal and rounds to a zero scale.
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, 0.0f, largest, largest),
+			Viewport(0.0f, 0.0f, 1e-10f, 1e-10f)), std::invalid_argument);
+
+		// A finite world far narrower than the pane: 1920 / denorm_min
+		// overflows to an infinite scale.
+		CHECK_THROWS_AS(Camera::frame(RectangleF(0.0f, 0.0f, smallest,
+			smallest), Viewport(0.0f, 0.0f, 1920.0f, 1080.0f)),
+			std::invalid_argument);
+	}
+
+	TEST_CASE("a camera from frame has a finite, positive scale")
+	{
+		const Camera camera = Camera::frame(
+			RectangleF(-100.0f, 4300.0f, 6200.0f, 2800.0f),
+			Viewport(0.0f, 0.0f, 1920.0f, 1080.0f));
+
+		CHECK(camera.scale > 0.0f);
+		CHECK(std::isfinite(camera.scale));
+		CHECK(std::isfinite(camera.translation.x));
+		CHECK(std::isfinite(camera.translation.y));
+	}
+
 	TEST_CASE("framing round-trips through calculate_view_rectangle")
 	{
 		const Viewport screen(RectangleF(0.0f, 0.0f, 1920.0f, 1080.0f));
@@ -206,6 +265,19 @@ TEST_SUITE("Camera::frame")
 			CHECK_THROWS_AS(blind.visible_rectangle(screen),
 				std::invalid_argument);
 		}
+
+		SUBCASE("a non-finite scale is refused rather than divided by")
+		{
+			const Camera not_a_number(Vector2F::zero,
+				std::numeric_limits<float>::quiet_NaN());
+			const Camera infinite(Vector2F::zero,
+				std::numeric_limits<float>::infinity());
+
+			CHECK_THROWS_AS(not_a_number.visible_rectangle(screen),
+				std::invalid_argument);
+			CHECK_THROWS_AS(infinite.visible_rectangle(screen),
+				std::invalid_argument);
+		}
 	}
 }
 
@@ -277,6 +349,20 @@ TEST_SUITE("Camera::world_position")
 			const Camera blind(Vector2F::zero, 0.0f);
 			CHECK_THROWS_AS(
 				blind.world_position(Vector2I(1, 1), Viewport(0, 0, 10, 10)),
+				std::invalid_argument);
+		}
+
+		SUBCASE("a non-finite scale throws rather than divide by it")
+		{
+			const Camera not_a_number(Vector2F::zero,
+				std::numeric_limits<float>::quiet_NaN());
+			const Camera infinite(Vector2F::zero,
+				-std::numeric_limits<float>::infinity());
+			const Viewport pane(0.0f, 0.0f, 10.0f, 10.0f);
+
+			CHECK_THROWS_AS(not_a_number.world_position(Vector2I(1, 1), pane),
+				std::invalid_argument);
+			CHECK_THROWS_AS(infinite.world_position(Vector2I(1, 1), pane),
 				std::invalid_argument);
 		}
 	}
