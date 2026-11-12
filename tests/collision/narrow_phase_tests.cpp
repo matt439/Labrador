@@ -9,12 +9,15 @@
 #include "engine/math/rectangle_rotated.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/scalar.h"
+#include "engine/math/shape.h"
+#include "engine/math/shape_type.h"
 #include "engine/math/triangle.h"
 #include "engine/math/vector2f.h"
 
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <stdexcept>
 
 using labrador::Manifold;
 using labrador::narrow_phase;
@@ -44,6 +47,34 @@ namespace
 
 		return !narrow_phase(moved, fixed).has_value();
 	}
+
+	// A shape that answers ShapeType::none, which no engine shape does: the
+	// one way to reach narrow_phase's refusal of an untyped shape.
+	struct UntypedShape : labrador::Shape
+	{
+		RectangleF bounding_box() const override
+		{
+			return RectangleF(0.0f, 0.0f, 10.0f, 10.0f);
+		}
+
+		labrador::ShapeType shape_type() const override
+		{
+			return labrador::ShapeType::none;
+		}
+
+		void offset(const Vector2F&) override
+		{
+		}
+
+		Point2F center() const override
+		{
+			return Point2F(5.0f, 5.0f);
+		}
+
+		void inflate(float) override
+		{
+		}
+	};
 }
 
 TEST_CASE("shapes that are nowhere near each other have no manifold")
@@ -490,6 +521,31 @@ TEST_CASE("a circle is measured against every polygon type")
 	CHECK(from_rotated->normal.y == doctest::Approx(diagonal));
 	CHECK(from_rotated->penetration
 		== doctest::Approx(3.0f - 2.0f * 1.41421356f).epsilon(0.001));
+}
+
+TEST_CASE("a shape with no type throws rather than reporting no contact")
+{
+	// Every real shape overlaps the untyped one's box, so a silent miss
+	// would be a wrong answer. Circles dispatch before polygon conversion,
+	// so the circle checks the refusal on its own path in both positions.
+	const UntypedShape untyped{};
+	const RectangleF rectangle(0.0f, 0.0f, 10.0f, 10.0f);
+	const Circle circle(Vector2F(5.0f, 5.0f), 3.0f);
+	const Triangle triangle(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+		Point2F(0.0f, 10.0f));
+	const labrador::Quad quad(Point2F(0.0f, 0.0f), Point2F(10.0f, 0.0f),
+		Point2F(10.0f, 10.0f), Point2F(0.0f, 10.0f));
+	const RectangleRotated rotated(Point2F(5.0f, 5.0f),
+		Vector2F(1.0f, 0.0f), Vector2F(0.0f, 1.0f), Vector2F(5.0f, 5.0f));
+
+	const labrador::Shape* const shapes[] = {
+		&rectangle, &circle, &triangle, &quad, &rotated, &untyped,
+	};
+	for (const labrador::Shape* shape : shapes)
+	{
+		CHECK_THROWS_AS(narrow_phase(untyped, *shape), std::invalid_argument);
+		CHECK_THROWS_AS(narrow_phase(*shape, untyped), std::invalid_argument);
+	}
 }
 
 TEST_CASE("a circle with no area, or a nonfinite one, contacts nothing")

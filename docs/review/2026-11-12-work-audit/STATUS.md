@@ -5,7 +5,7 @@ The live ledger for [the audit](README.md). Record each resolution here in the c
 | id | Finding | State |
 |---|---|---|
 | `REV#122` | [The circle predicates disagree on a negative or non-finite radius](FINDINGS.md#rev122) | Done. Circle::is_valid states the rule once. Every circle predicate in intersects.h and ericson_math.h returns false for a negative radius or a nonfinite centre or radius, and leaves its out-parameter unchanged when it does. Tests now cover circle_point_intersect, plus a table that holds every predicate to the rule. |
-| `REV#123` | [narrow_phase's documented throw for a shape with no type is untested](FINDINGS.md#rev123) | Open |
+| `REV#123` | [narrow_phase's documented throw for a shape with no type is untested](FINDINGS.md#rev123) | Done. `narrow_phase_tests.cpp` uses a test-local `Shape` that answers `ShapeType::none`. It asserts `std::invalid_argument` against every real shape type and against itself, in both argument positions. The circle cases cover the circle dispatch branch. |
 | `REV#124` | [Camera::frame accepts non-finite rectangles and can return the zero scale its header rules out](FINDINGS.md#rev124) | Open |
 | `REV#125` | [A NaN volume, pitch or pan passes the audio clamp and reaches the backends](FINDINGS.md#rev125) | Open |
 | `REV#126` | [Nothing asserts that a warmed frame allocates nothing](FINDINGS.md#rev126) | Open |
