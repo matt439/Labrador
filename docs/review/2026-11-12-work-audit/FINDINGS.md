@@ -260,6 +260,15 @@ No tool, workflow or document reads `.ninja_log` or uses `-ftime-trace`. The onl
 
 *Suggested.* Run the gap report on this machine's GPU, walk CONTRIBUTING's release steps up to the tag, and hand the owner the notes and the report's section.
 
+### REV#159: CI's Safari job fails intermittently on the components gallery page
+
+<a id="rev159"></a>
+*fix: no owner call · OPEN · should · S*
+
+Failing safari jobs at `f55bd469` and `9adee0d9` (branches) and `e1fa9a8d` (master) on 2026-11-05, and twice at this audit's branch on 2026-11-12, all on image `macos-26-arm64` 20261102 with Safari 27.2; the same engine and sample code passed the job at `3067c67c` on 2026-11-10. Four ended 'Safari sample deadline expired. The keys did not quit the sample' with the canvas focused and the page visible; one ended 'Safari page timed out' before the keys. `tests/render/web/page_harness.mjs:22-23` presses eight keys for the gallery, the most of any sample, each held 150 ms (`page_harness.mjs:61-67`), and `engine/input/keyboard.h:150-151` states that a key pressed and released between two polls has no sampled edge, so a stalled frame can lose a key.
+
+*Suggested.* Record the gallery's frame times and the keys it heard in the failing case (the runner can read them before giving up), find whether frames stall or a key is dropped, and fix the cause; holding a key until the page reports it is the runner-side answer if the frames are the cause. Retries are not the fix.
+
 ## Constrained hardware and the browser
 
 ### REV#150: CI's Firefox draws nothing because it has no software WebGL2

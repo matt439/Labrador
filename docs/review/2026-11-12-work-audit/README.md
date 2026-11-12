@@ -9,7 +9,7 @@ but neither had an open item: every unticked Later story waits on the owner, on
 hardware or on ColourWars, and every unit of [Code hygiene](../../code-hygiene.md)
 has closed. [STATUS.md](STATUS.md) is the live ledger,
 [FINDINGS.md](FINDINGS.md) holds each new row with its evidence, and TODO.md
-indexes the open ones as `REV#122` to `REV#158`.
+indexes the open ones as `REV#122` to `REV#159`.
 
 ## Method
 
@@ -60,9 +60,9 @@ web.md section 9 once web.md records the Safari 27.0.1 play of 2026-11-03.
 dropped release day: [the record](../2026-11-10/2026-11-12-github-counters.md),
 under `REV#54`, whose release-procedure step stays the owner's.
 
-**Thirty-seven new rows**, 31 needing no call, are in
+**Thirty-eight new rows**, 32 needing no call, are in
 [FINDINGS.md](FINDINGS.md): ten on engine correctness and tests, seven on the
-guides, eleven on tooling, CI and release, and nine on constrained hardware and
+guides, twelve on tooling, CI and release, and nine on constrained hardware and
 the browser.
 
 **No work hides in comments.** No `TODO`, `FIXME` or `HACK` marker is in
