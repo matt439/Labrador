@@ -252,7 +252,6 @@ ready queue above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#106` | OPEN | should | S | The starter's `x64-debug` preset builds a 32-bit game in a 32-bit prompt without complaint; the next x64 build fails with about 1,400 linker lines that reconfiguring does not cure. Guard the compiler in CMake and add an `LNK4272` entry. |
-| `REV#107` | OPEN | should | XS | `prerequisites.mdx`'s *Keeping a deep folder* sends readers to the root of a `subst` drive, where Windows' `tar` cannot extract the starter ZIP, and `starter.mdx`'s boxes hard-code `C:\dev`. |
 | `REV#108` | OPEN | should | S | `starter-update.mdx` carries only `game` into the new project: `.git`, `web-release.bat` and top-level pictures stay in `mygame-old`, which the page then invites the reader to delete. |
 | `REV#109` | OPEN | should | S | Troubleshooting lacks entries for messages produced in a v0.3.0 starter: the moved-folder `CMakeCache.txt` error, what follows a failed configure, deep-folder outcomes, a failed download, the debug runtime box and an unsaved edit. |
 | `REV#110` | OPEN | should | S | `prerequisites.mdx` step 1 says nothing of the installer's screens before the Workloads tab, nothing marks where a starter reader is finished, and the installer is still unwalked: one clean-machine install settles it. |

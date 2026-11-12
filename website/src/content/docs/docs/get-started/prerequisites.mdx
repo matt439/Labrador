@@ -306,16 +306,15 @@ folder still fails.
 
 ### Keeping a deep folder
 
-If your projects have to live in a deep folder, give that folder a drive letter of its own with
-`subst` and work from the drive. The compiler then sees the short path. Git still sees the real
-one, so it needs `core.longpaths` as well:
+This is for a project that has to stay in a deep folder, such as one that already stopped with
+`C1083` there. If you are starting with the starter project and have no such folder, skip it
+and use `C:\dev`:
+[Get the starter project](/docs/get-started/starter/) writes `C:\dev` in its boxes, inside
+lines that are not meant to be changed.
 
-```bat
-git config --global core.longpaths true
-```
-
-Then paste this line, and **before you press Enter, change the folder after `P:` to your
-own**:
+Give the deep folder a drive letter of its own with `subst` and work from the drive. The
+compiler then sees the short path. Paste this line, and **before you press Enter, change the
+folder after `P:` to your own**:
 
 ```bat
 subst P: C:\Users\you\source\repos\clients\studio\projects
@@ -327,9 +326,23 @@ It prints nothing when it works. Then go to the new drive:
 P:
 ```
 
-Use `P:\` wherever the following pages use `C:\dev`. The drive letter lasts until you sign out,
-so run the `subst` line again after signing in, and always open the project through the drive
-letter: a build folder belongs to the path it was configured from.
+The drive letter lasts until you sign out, so run the `subst` line again after signing in, and
+always open the project through the drive letter: a build folder belongs to the path it was
+configured from. A project already built through the long path needs its `out\build` folder
+deleted and configuring again from the drive.
+
+If you use Git, it still sees the real path, so it needs `core.longpaths` as well:
+
+```bat
+git config --global core.longpaths true
+```
+
+On [the Git route](/docs/get-started/build-labrador/), use `P:\` wherever its pages use
+`C:\dev`.
+
+Do not extract a starter ZIP at the root of the drive. Windows' `tar` cannot create files
+there: it prints `Can't create '\\?\P:\mygame\...': No such file or directory` for every file
+and extracts nothing. In a folder on the drive, such as `P:\dev`, it works.
 
 <Aside title="Only for the Vulkan renderer">
 On Windows Labrador builds its Direct3D 11 renderer by default, and nothing else on this page is needed for
@@ -352,3 +365,7 @@ pages. The **x64 Native Tools Command Prompt for VS** shortcut was found in the 
 folder step 3 names. A second agent measured the same three sizes, found the shortcut under
 `Visual Studio Tools\VC`, and read the same 20 to 50 GB on Microsoft's page; neither agent
 clicked through the Start menu's **All** list.
+
+On 10 November 2026 Windows' `tar` (bsdtar 3.8.9) was run on the `v0.3.0` starter ZIP on a
+temporary `subst` drive. At the drive's root it printed 1,147 `Can't create` lines and extracted
+nothing; in a folder on the same drive it extracted the whole `mygame` folder.
