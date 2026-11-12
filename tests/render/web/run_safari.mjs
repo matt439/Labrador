@@ -149,9 +149,40 @@ export const COMPLAINT_HOOK = `(() => {
 export const SAMPLE_HOOK = `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false,
 		clears: 0, draw_calls: 0, elements: 0, lost: 0, restored: 0,
-		raw_api: null, raw_renderer: null, unmasked_renderer: null };
+		raw_api: null, raw_renderer: null, unmasked_renderer: null,
+		frames: 0, longest_frame_gap_ms: 0, last_frame_ms: null, keys: [], logs: [] };
 	window.labradorSafari = heard;
 	${module_hook('labradorSafariHooked')}
+	// What a failed run reports: whether frames kept coming and how far apart,
+	// which key events the page received, and the page's last console lines.
+	if (typeof requestAnimationFrame === 'function') {
+		const request = requestAnimationFrame;
+		window.requestAnimationFrame = function (callback) {
+			return request.call(window, (time) => {
+				++heard.frames;
+				if (heard.last_frame_ms !== null) {
+					heard.longest_frame_gap_ms = Math.max(heard.longest_frame_gap_ms, time - heard.last_frame_ms);
+				}
+				heard.last_frame_ms = time;
+				return callback(time);
+			});
+		};
+	}
+	if (typeof addEventListener === 'function') {
+		for (const type of ['keydown', 'keyup']) {
+			addEventListener(type, (event) => {
+				if (heard.keys.length < 64) heard.keys.push((type === 'keydown' ? '+' : '-') + event.code);
+			}, true);
+		}
+	}
+	if (typeof console === 'object' && typeof console.log === 'function') {
+		const log = console.log;
+		console.log = function (...args) {
+			heard.logs.push(args.map((value) => String(value)).join(' ').slice(0, 200));
+			if (heard.logs.length > 8) heard.logs.shift();
+			return log.apply(this, args);
+		};
+	}
 	let watched = null;
 	const watch = (canvas) => {
 		if (watched === canvas) return;
@@ -246,8 +277,9 @@ async function complaints_of(evaluate) {
 }
 
 export async function drive_sample(session, url, sample,
-	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari' } = {}) {
+	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {} } = {}) {
 	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} sample`, 15000));
+	progress.phase = 'loading the page';
 	const state = async () => {
 		await complaints_of(evaluate);
 		const heard = await evaluate('window.labradorSafari ?? null');
@@ -261,8 +293,10 @@ export async function drive_sample(session, url, sample,
 	};
 	await session.navigate(url);
 	let heard = await until((value) => value?.initialized);
+	progress.phase = 'waiting for the first draw';
 	if (!heard.has_quit) throw new Error('The sample supplied no Module.onQuit callback.');
 	const first = await until((value) => value.draw_calls > 0 && value.elements > 0 && value.clears > 0);
+	progress.phase = 'drawing the first frames';
 	await evaluate(frames_expression(frames));
 	heard = await state();
 	if (heard.clears <= first.clears || heard.draw_calls <= first.draw_calls) {
@@ -271,6 +305,7 @@ export async function drive_sample(session, url, sample,
 
 	// A forced loss and its restoration: the engine hears both, and draws
 	// on the new context. Draws on a lost context are not counted.
+	progress.phase = 'losing the context';
 	await evaluate(`(() => {
 		const loss = Module.canvas.getContext('webgl2').getExtension('WEBGL_lose_context');
 		if (!loss) { throw new Error('WEBGL_lose_context is unavailable'); }
@@ -279,6 +314,7 @@ export async function drive_sample(session, url, sample,
 	})()`);
 	heard = await until((value) => value.lost === 1);
 	await evaluate(frames_expression(5));
+	progress.phase = 'restoring the context';
 	await evaluate('window.labradorSafariLoss.restoreContext()');
 	const restored = await until((value) => value.restored === 1);
 	await evaluate(frames_expression(frames));
@@ -294,18 +330,22 @@ export async function drive_sample(session, url, sample,
 		focused: document.activeElement?.tagName ?? null, page_focused: document.hasFocus(),
 		visibility: document.visibilityState })`);
 	const canvas_has_keyboard = 'document.hasFocus() && document.activeElement === Module.canvas';
+	progress.phase = 'giving the canvas the keyboard';
 	const focus_by = Date.now() + 10000;
 	while (!(await evaluate(canvas_has_keyboard))) {
 		if (Date.now() > focus_by) throw new Error(`The sample's canvas never took the keyboard; page ${await focus_state()}`);
 		await pause(50);
 	}
+	progress.phase = 'pressing the quit keys';
 	await session.perform(key_actions(sample.keys));
 	await session.release();
+	progress.phase = 'waiting for the quit';
 	try {
 		heard = await until((value) => value.quit);
 	} catch (error) {
 		throw new Error(`${error.message} The keys did not quit the sample; page ${await focus_state().catch(() => 'unreadable')}`);
 	}
+	progress.phase = 'drawing after the quit';
 	await evaluate(frames_expression(10));
 	heard = await state();
 	log(`${label} sample: ${heard.clears} clears, ${heard.draw_calls} drawElements calls, ` +
@@ -431,6 +471,7 @@ export async function main(options) {
 	let driver;
 	let session;
 	let failure = null;
+	const progress = { phase: 'starting' };
 	try {
 		const scripts = page_scripts(options);
 		service = await serve_files(files, { substitute: (url) => substitute(options, url),
@@ -443,7 +484,7 @@ export async function main(options) {
 		const option_tab = options.browser_name === 'safari' && !(await safari_tabs_to_links());
 		const driven = options.renderer ? report_renderer(session, service.url, options) :
 			options.bundle !== undefined ? drive_bundle(session, service.url, { ...options, option_tab }) :
-				drive_sample(session, service.url, SAMPLES[options.sample], options);
+				drive_sample(session, service.url, SAMPLES[options.sample], { ...options, progress });
 		let timer;
 		try {
 			await Promise.race([service.failed, driven, new Promise((_, refuse) => {
@@ -456,6 +497,14 @@ export async function main(options) {
 				`${label} ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
 	} catch (error) {
 		failure = error;
+		if (session && !options.renderer && options.bundle === undefined) {
+			console.error(`last phase: ${progress.phase}`);
+			const page = await evaluator(session, () => 10000)(`JSON.stringify({ heard: window.labradorSafari ?? null,
+				now_ms: performance.now(), visibility: document.visibilityState,
+				focused: document.activeElement?.tagName ?? null, page_focused: document.hasFocus() })`)
+				.catch((reason) => `unreadable (${reason.message})`);
+			console.error(`page state: ${page}`);
+		}
 	} finally {
 		if (session) {
 			try { await session.close(); } catch (error) { console.error(`Session close: ${error.message}`); }
