@@ -16,7 +16,7 @@ needs the engine's toolchain.
 npm ci            # once, and after package-lock.json changes
 npm run dev       # a local server that reloads on edits, including to the files below
 npm run check     # types
-npm test          # API indexing, rendered code-link and acceptance-tool regressions; no browser
+npm test          # API indexing, rendered code-link, guide-anchor and acceptance-tool regressions; no browser
 npm run build     # the site into dist/, published snapshots under dist/versions/ - fails on any broken internal link
 npm run gate      # check, test and build in that order: the whole gate CI runs, and the production build command below
 npm run preview   # serve dist/
@@ -74,6 +74,13 @@ wrong (PHILOSOPHY T6):
   by name (`src/lib/reference.ts`, `unlistedHeaders`);
 - any internal link or `#anchor` that does not resolve
   ([starlight-links-validator](https://github.com/HiDeoo/starlight-links-validator)).
+
+`npm test` fails, naming the page and line, on a guide step's 'search for `...`',
+'Search with **Ctrl+F** for `...`', 'find the line `...`' or 'find the next `...`'
+text that is in no file the starter's project holds
+(`samples/minimal/` with its includes edited, `src/walkthrough/`), no component
+the components guide copies, and no code block earlier on its page or on the guide
+it continues (`tests/guide-anchors.test.mjs`).
 
 `.github/workflows/website.yml` runs `versions:verify`, then `npm run gate`
 (the check, the tests and the build), then checks appended errata links with
