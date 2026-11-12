@@ -43,7 +43,7 @@ content is, and which state runs first. Everything else is the engine's.
 <SourceFile path="samples/minimal/main.cpp" from="ApplicationOptions options;" to="return app.run(" />
 
 **A state is a screen or mode of the game.** The engine calls a state's `init()` once, then its
-`update()` and `draw()` every frame. `HelloState` puts its two lines of text in a scene and
+`update()` every step, sixty times a second, and its `draw()` every frame. `HelloState` puts its two lines of text in a scene and
 gives the scene one view covering the whole window:
 
 <SourceFile

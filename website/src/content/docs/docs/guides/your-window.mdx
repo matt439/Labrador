@@ -1,6 +1,6 @@
 ---
 title: Colours, the window and the background
-description: Change the greeting's colour, size and starting place, the window's size, start full screen or switch with F11, and put a colour or a picture behind everything, in the starter project, step by step, with what each failure means.
+description: Change the greeting's colour, size and starting place, the window's size, start full screen or switch with F11, put a colour or a picture behind everything, and smooth the greeting's movement on a fast display, in the starter project, step by step, with what each failure means.
 sidebar:
   order: 0.907
 ---
@@ -9,9 +9,9 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 
 This page changes how the game from [Get the starter project](/docs/get-started/starter/) looks:
-the greeting's colour, its size and where it starts, the size of the window, full screen, and
-what is behind everything. Each part is a few lines in one or two files, and each ends with the
-same build, test and run line. Do them in order or pick the ones you want: each section says
+the greeting's colour, its size and where it starts, the size of the window, full screen, what
+is behind everything and, last, smoother movement on a fast display. Each part is a few lines
+in one or two files, and each ends with the same build, test and run line. Do them in order or pick the ones you want: each section says
 what it needs from the ones before. All of them together take about 30 minutes.
 
 Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know the
@@ -653,6 +653,133 @@ folder and the `Picture` class, and [Install the content tools](/docs/guides/con
 A misspelt name in the manifest or the code fails the start-up test with the messages listed on
 [Put a picture in your game](/docs/guides/your-picture/#if-something-fails).
 
+## Smooth movement on a fast display
+
+The game steps sixty times a second, and `update()` puts the greeting in its new place on each
+step. A 120 or 144 Hz display draws two or three frames per step, each with the greeting in the
+same place, so the circling greeting moves in small jumps.
+[Drawing between steps](/docs/concepts/tick/#drawing-between-steps) explains why. This section
+keeps where the greeting was on the step before, and draws it part of the way from there to
+where it is now, by how far the frame falls between the two steps. On a 60 Hz display it looks
+the same as before.
+
+Do this section last. It takes the greeting out of the scene so that the state can draw it
+itself, so a page that later asks you to search for `this->greeting_ = this->scene_->add(` finds
+`this->greeting_ = std::make_unique<Label>(` instead, and the greeting is drawn over everything
+in the scene, the hint and any background included.
+
+<Steps>
+
+1. **Keep the greeting, and two things about the last step.** Open the state's header:
+
+   ```bat
+   notepad game\states\hello_state.h
+   ```
+
+   Search for `greeting_ = nullptr`:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.h"
+   	from="labrador::Label* greeting_ = nullptr;"
+   	to="labrador::Label* greeting_ = nullptr;"
+   />
+
+   Replace that line with:
+
+   ```cpp
+   	std::unique_ptr<labrador::Label> greeting_ = nullptr;
+
+   	// Where the greeting was before the last update moved it, and which
+   	// step that update ran, so that draw() can place it between the two.
+   	labrador::Vector2F previous_position_ = { 0.0f, 0.0f };
+   	std::uint64_t stepped_at_ = 0;
+   ```
+
+   The state now owns the greeting instead of the scene, so the comment above the line, which
+   says the scene owns it, is no longer true of the greeting. Save and close Notepad.
+
+2. **Make the greeting outside the scene.** Open the state's code:
+
+   ```bat
+   notepad game\states\hello_state.cpp
+   ```
+
+   Search for `this->greeting_ = this->scene_->add(`. Change that line to:
+
+   ```cpp
+   	this->greeting_ = std::make_unique<Label>(
+   ```
+
+   and delete one `)` from the end of the last of its lines, so that it ends `);` instead of
+   `));`. With the starter's colour it reads:
+
+   ```cpp
+   		labrador::Colour::white);
+   ```
+
+3. **Remember the last step at the start of each update.** Search for
+   `void HelloState::update(float dt)`. Click at the end of the `{` line under it, press
+   **Enter**, and paste:
+
+   ```cpp
+   	// The step this update runs, and where the greeting is before it moves.
+   	this->stepped_at_ = this->app_->step_position().step;
+   	this->previous_position_ = greeting_position(this->motion_);
+
+   ```
+
+4. **Draw the greeting between the two.** Search for `this->scene_->draw(renderer);`, the last
+   line of `draw()`:
+
+   <SourceFile
+   	path="samples/minimal/states/hello_state.cpp"
+   	from="this->scene_->draw(renderer);"
+   	to="this->scene_->draw(renderer);"
+   />
+
+   Replace it with:
+
+   ```cpp
+   	// Part of the way from last step's place to this step's, by how far
+   	// this frame falls between them. Only when this state ran the latest
+   	// step: under the quit question it is not updated, and it stays where
+   	// it stopped.
+   	const StepPosition& step = this->app_->step_position();
+   	const Vector2F now = greeting_position(this->motion_);
+   	Vector2F position = now;
+   	if (step.step == this->stepped_at_)
+   	{
+   		position = Vector2F::lerp(this->previous_position_, now, step.fraction);
+   	}
+
+   	this->scene_->draw(renderer,
+   		[this, position](int, DrawList& list)
+   		{
+   			this->greeting_->draw_with(list, this->greeting_->colour(),
+   				position, 1.0f);
+   		});
+   ```
+
+   The function after `this->scene_->draw(renderer,` runs once for each view, after the scene's
+   own objects, so the greeting is drawn over them. `draw_with` draws the greeting with the colour,
+   place and size it is given, and changes none of them, because `draw()` may not change
+   anything. `1.0f` is the size: if you did [Bigger text](#bigger-text), write `2.0f` there.
+   Save and close Notepad.
+
+5. **Build, test and run** with the line from the first section. The greeting circles as before,
+   and on a display faster than 60 Hz it moves without the small jumps.
+
+</Steps>
+
+**The quit question stops the greeting, and the check keeps it still.** Only the state on top is
+updated. While the question is open the greeting's state is not, so `stepped_at_` stays on the
+last step it ran, while `step_position()` moves on. Without the `if`, the greeting would be drawn
+between its last two places on every frame under the question, flickering back and forth.
+
+`draw()` works out the greeting's place from `this->motion_` the way `update()` does. If you
+changed the `this->greeting_->set_position(` line in `update()`, make the same change to the two
+`greeting_position(this->motion_)` calls above.
+
 ## Where to go next
 
 - [Put a picture in your game](/docs/guides/your-picture/) draws pictures, and
@@ -687,6 +814,11 @@ and headless Chrome showed the page with the sky and the question; it was not ch
 browser whether **F11** makes the canvas full screen. A colour from three whole numbers and
 from three numbers with `f`, and `Vector2F(200, 150)`, were built, and a screenshot showed the
 greeting near the top-left corner after the start-position change.
+
+The *Smooth movement on a fast display* section was added on 13 November 2026 and has not yet
+been followed in a starter, built or run. Its code was checked only by reading it against the
+engine's headers: `Application::step_position()`, `StepPosition`, `Vector2F::lerp`,
+`Scene::draw` with a view overlay, and `TextObject::draw_with`.
 
 The *Any other size* lines under *The window's size* were added on 4 November 2026 with
 `client_size` and have not yet been followed in a starter. The engine's hidden-window tests open a
