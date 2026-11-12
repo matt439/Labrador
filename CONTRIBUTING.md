@@ -482,7 +482,8 @@ The same check derives the ctest counts in the brief's preset table from
 [tests/ctest_inventory.json](tests/ctest_inventory.json) and fails when one
 differs, naming the row, the stated count and the derived count. A commit that
 changes how many entries a checked configuration registers therefore changes
-the inventory and the brief together. The inventory lists CI's configurations,
-not every preset: the check
-prints the counts it has no source for, which stay a reviewer's to keep true,
-as do the counts in README.md.
+the inventory and the brief together. The inventory lists every preset, CI's
+and those `ci_gap_report.py` runs, and CI's `wasm-release-null` build. The
+check prints the counts it has no source for, such as a `wasm-*` build's
+without a browser, which stay a reviewer's to keep true, as do the counts in
+README.md.

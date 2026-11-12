@@ -104,18 +104,44 @@ class JunitTests(unittest.TestCase):
         self.assertEqual((result, detail),
                          ("passed", "4/4 passed; RenderPixelTests, MinimalSmokeTests and "
                                     "CollisionSmokeTests passed"))
-        # Without a Chromium, configure registers 19 of wasm-debug's 34 tests.
+        # Without a browser, configure registers 19 of wasm-debug's 42 entries.
         wasm = report.GAPS[-1]
-        unregistered = [f"Headless{index}" for index in range(19)]
-        result, detail = report.judge(wasm, report.junit_summary(junit(unregistered)))
+        self.assertEqual(wasm.preset, "wasm-debug")
+        self.assertEqual(len(wasm.expected), 42)
+        headless = [name for name in wasm.expected if name not in report.INVENTORY["chromium_registered"]
+                    and not name.startswith("Firefox")]
+        self.assertEqual(len(headless), 19)
+        result, detail = report.judge(wasm, report.junit_summary(junit(headless)))
         self.assertEqual(result, "failed")
-        self.assertIn("19/19 passed; not registered: RenderPixelTests,", detail)
-        result, detail = report.judge(wasm, report.junit_summary(
-            junit(unregistered + list(report.BROWSER_TESTS))))
-        self.assertEqual((result, detail), ("passed", "34/34 passed; including 15 required tests"))
-        result, detail = report.judge(report.Gap("x64-release-null"), report.junit_summary(CTEST_JUNIT))
-        self.assertEqual(result, "failed")
-        self.assertEqual(detail, "1/6 passed; failed: Bad, Slow; skipped: Missing, Skipper; disabled: Off")
+        self.assertIn("19/19 passed; not registered: ", detail)
+        self.assertIn("RenderPixelTests", detail)
+        self.assertIn("FirefoxWebWindowTests", detail)
+        result, detail = report.judge(wasm, report.junit_summary(junit(list(wasm.expected))))
+        self.assertEqual((result, detail), ("passed", "42/42 passed; the inventory's entries exactly"))
+
+    def test_a_whole_preset_must_register_its_inventory_list_exactly(self):
+        gaps = {gap.preset: gap for gap in report.GAPS}
+        null = gaps["x64-release-null"]
+        self.assertEqual(len(null.expected), 22)
+        self.assertIn("LocalMultiplayerSmokeTests", null.expected)
+        self.assertNotIn("RenderPixelTests", null.expected)
+        everything = list(null.expected)
+        result, detail = report.judge(null, report.junit_summary(junit(everything[1:])))
+        self.assertEqual((result, detail), ("failed", f"21/21 passed; not registered: {everything[0]}"))
+        result, detail = report.judge(null, report.junit_summary(junit(everything + ["BrandNewTests"])))
+        self.assertEqual((result, detail), ("failed", "23/23 passed; not in the inventory: BrandNewTests"))
+        self.assertEqual(len(gaps["x64-release-d3d12"].expected), 22)
+        self.assertIn("D3D12SynchronizationTests", gaps["x64-release-d3d12"].expected)
+        for preset in ("x64-release-gl", "x64-release-vulkan"):
+            self.assertEqual(len(gaps[preset].expected), 21, preset)
+        self.assertNotIn("LineSweeperPacingPageTests", gaps["wasm-debug"].expected)
+
+    def test_a_failed_test_is_reported_once_and_not_as_unregistered(self):
+        listed = report.Gap("x64-release-null", expected=("Bad", "Good", "Missing", "Off", "Skipper", "Slow"))
+        for gap in (report.Gap("x64-release-null"), listed):
+            result, detail = report.judge(gap, report.junit_summary(CTEST_JUNIT))
+            self.assertEqual(result, "failed")
+            self.assertEqual(detail, "1/6 passed; failed: Bad, Slow; skipped: Missing, Skipper; disabled: Off")
 
 
 def fake_commands(*, configure_fails=(), ctest_code=0, documents=None):
@@ -189,8 +215,9 @@ class MainTests(unittest.TestCase):
         self.assertEqual(text.count("\n| `"), len(report.GAPS))
 
     def test_execute_records_commit_dirty_tree_and_exit_code(self):
+        wasm = next(gap for gap in report.GAPS if gap.preset == "wasm-debug")
         run, _ = fake_commands(documents={"x64-release-null": CTEST_JUNIT,
-                                          "wasm-debug": junit(list(report.BROWSER_TESTS))})
+                                          "wasm-debug": junit(list(wasm.expected))})
         with tempfile.TemporaryDirectory() as directory:
             code, text, stderr = self.main(
                 ["--execute", "--preset", "wasm-debug", "--preset", "x64-release-null",
@@ -199,7 +226,7 @@ class MainTests(unittest.TestCase):
             self.assertTrue((Path(directory) / "evidence/wasm-debug.log").is_file())
         self.assertEqual(code, 1)
         self.assertIn("at `" + "b" * 40 + "`, working tree with 2 uncommitted change(s)", text)
-        self.assertIn("| `wasm-debug` | whole preset | passed: 15/15 passed; including 15 required tests |", text)
+        self.assertIn("| `wasm-debug` | whole preset | passed: 42/42 passed; the inventory's entries exactly |", text)
         self.assertIn("| `x64-release-null` | whole preset | failed: 1/6 passed;", text)
         self.assertIn("Logs and JUnit:", stderr)
 

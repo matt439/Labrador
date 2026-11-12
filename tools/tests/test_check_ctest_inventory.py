@@ -14,6 +14,7 @@ from tools.tests.tool_fixtures import load_tool
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 inventory_check = load_tool("tools/check_ctest_inventory.py")
+gap_report = load_tool("tools/ci_gap_report.py")
 
 INVENTORY = json.loads(inventory_check.INVENTORY.read_text(encoding="utf-8"))
 
@@ -73,7 +74,12 @@ class Drift(unittest.TestCase):
     def test_every_configuration_ci_tests_is_checked_and_listed(self):
         workflow = (REPOSITORY / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         matrix = set(re.findall(r"^\s+- preset: (\S+)$", workflow, re.MULTILINE))
-        self.assertEqual(set(INVENTORY["configurations"]), matrix | {"wasm-release", "wasm-release-null"})
+        # The rest are the presets CI never builds, which ci_gap_report holds
+        # to the same lists.
+        whole = {gap.preset for gap in gap_report.GAPS if not gap.real_driver}
+        self.assertEqual(set(INVENTORY["configurations"]),
+                         matrix | {"wasm-release", "wasm-release-null"} | whole)
+        self.assertFalse(matrix & whole)
         checked = set(re.findall(r"check_ctest_inventory\.py --configuration (\S+)", workflow))
         # The windows job passes its matrix preset, which reads as "${{" here.
         self.assertEqual(checked, {"${{", "wasm-release", "wasm-release-null"})

@@ -22,7 +22,7 @@ The live ledger for [the audit](README.md). Record each resolution here in the c
 | `REV#137` | [Copying the components into a game leaves their tests behind](FINDINGS.md#rev137) | Open |
 | `REV#138` | [Hand-written declaration listings in the concept and guide pages are unchecked](FINDINGS.md#rev138) | Open |
 | `REV#139` | [The verification planner models render paths only](FINDINGS.md#rev139) | Open |
-| `REV#140` | [The configurations only ci_gap_report runs have no inventory, and the brief contradicts itself](FINDINGS.md#rev140) | Open |
+| `REV#140` | [The configurations only ci_gap_report runs have no inventory, and the brief contradicts itself](FINDINGS.md#rev140) | Done. tests/ctest_inventory.json lists x64-release-d3d12, -gl, -vulkan, -null and wasm-debug, with counts taken from the CMake registrations (22/21/21/22, and 42 for wasm-debug with a Chromium and a Firefox). ci_gap_report holds each preset CI never builds to its list in both directions. check_agent_brief checks the Release rows and wasm-debug's counts and has four new fixtures. AGENTS.md's wrong figure of 33 is removed. No schedule is added; REV#52 still holds that. |
 | `REV#141` | [The release procedure has no preflight](FINDINGS.md#rev141) | Open |
 | `REV#142` | [Whether CHANGES.md's rule covers every build file a consumer's configure runs](FINDINGS.md#rev142) | Open |
 | `REV#143` | [No doctest suite has a ctest timeout](FINDINGS.md#rev143) | Open |

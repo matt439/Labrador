@@ -3,9 +3,14 @@
     "x64-debug",
     "x64-release",
     "x64-debug-d3d12",
+    "x64-release-d3d12",
     "x64-debug-gl",
+    "x64-release-gl",
     "x64-debug-vulkan",
+    "x64-release-vulkan",
     "x64-debug-null",
+    "x64-release-null",
+    "wasm-debug",
     "wasm-release",
     "wasm-release-null"
   ],
@@ -31,17 +36,21 @@
   ],
   "some_configurations": {
     "AudioPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "AudioSmokeTests": [
-      "x64-debug-null"
+      "x64-debug-null",
+      "x64-release-null"
     ],
     "BrowserProtocolTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "CollisionPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
@@ -49,75 +58,98 @@
       "x64-debug",
       "x64-release",
       "x64-debug-d3d12",
+      "x64-release-d3d12",
       "x64-debug-gl",
+      "x64-release-gl",
       "x64-debug-vulkan",
-      "x64-debug-null"
+      "x64-release-vulkan",
+      "x64-debug-null",
+      "x64-release-null"
     ],
     "ComponentsPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "ComponentsPointerPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "D3D12SynchronizationTests": [
-      "x64-debug-d3d12"
+      "x64-debug-d3d12",
+      "x64-release-d3d12"
     ],
     "FirefoxAudioPageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxCollisionPageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxComponentsPageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxLineSweeperBundlePageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxLineSweeperPageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxLocalMultiplayerPageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxMinimalPageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "FirefoxWebWindowTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "LineSweeperBundlePageTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "LineSweeperPacingPageTests": [
       "wasm-release"
     ],
     "LineSweeperPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "LineSweeperPalettePageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "LineSweeperReducedMotionPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "LocalMultiplayerPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "LocalMultiplayerSmokeTests": [
-      "x64-debug-null"
+      "x64-debug-null",
+      "x64-release-null"
     ],
     "MinimalLoadFailurePageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
     "MinimalPageTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ],
@@ -125,25 +157,36 @@
       "x64-debug",
       "x64-release",
       "x64-debug-d3d12",
+      "x64-release-d3d12",
       "x64-debug-gl",
+      "x64-release-gl",
       "x64-debug-vulkan",
-      "x64-debug-null"
+      "x64-release-vulkan",
+      "x64-debug-null",
+      "x64-release-null"
     ],
     "RenderContextLossTests": [
+      "wasm-debug",
       "wasm-release"
     ],
     "RenderPixelTests": [
       "x64-debug",
       "x64-release",
       "x64-debug-d3d12",
+      "x64-release-d3d12",
       "x64-debug-gl",
+      "x64-release-gl",
       "x64-debug-vulkan",
+      "x64-release-vulkan",
+      "wasm-debug",
       "wasm-release"
     ],
     "RenderPixelTestsWithoutS3tc": [
+      "wasm-debug",
       "wasm-release"
     ],
     "WebWindowTests": [
+      "wasm-debug",
       "wasm-release",
       "wasm-release-null"
     ]

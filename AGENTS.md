@@ -122,6 +122,7 @@ The current mapping covers render paths only:
 (GL/Vulkan pixel and smoke tests on a real driver, four release presets,
 `wasm-debug`) and prints
 the PR template's section; its test fails if `ci.yml` drifts from its list.
+A preset CI never builds fails unless it registers exactly its inventory list.
 It is a release step, not a per-PR one: a pull request without a GPU writes
 "Not run" ([CONTRIBUTING](CONTRIBUTING.md#before-opening-a-pull-request)).
 
@@ -263,19 +264,20 @@ pull request already passed. Citation checking skips `website/`.
   first line to be `@AGENTS.md`. Amend only this brief; CLAUDE imports it.
   It also derives the preset table's ctest counts from the inventory below and
   names the row, the stated count and the derived count when they differ. It
-  checks the six native counts for the configurations CI runs (five Debug
-  presets and `x64-release`), `wasm-release`'s count with Chromium and both
-  Firefox counts. The other four native Release presets, `wasm-debug`'s 33 and
-  the 19 without a browser have no inventory source: a standalone run lists
-  them as not checked. The [fixture script](cmake/check_agent_brief_fixtures.cmake)
+  checks every native count, both wasm counts with Chromium and both Firefox
+  counts. The 19 without a browser have no inventory source, and
+  `wasm-release-null` has no row: a standalone run lists them as not checked.
+  The [fixture script](cmake/check_agent_brief_fixtures.cmake)
   proves the failures. README.md's counts are not checked.
 - Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
   add each new `.cpp`, or it is silently absent from the build.
 - [ctest_inventory.json](tests/ctest_inventory.json) lists the ctest entries
-  each CI configuration must register, and CI fails on any difference. Adding,
+  each configuration must register: CI fails on any difference in the eight it
+  runs, and `ci_gap_report.py` in the four other native Release presets and
+  `wasm-debug`, whose list needs a Chromium and a Firefox. Adding,
   removing or renaming an entry changes it in the same commit. It sees entries,
   not the doctest cases inside them. Its `chromium_registered` list names the
-  entries configure adds only with a Chromium, for the two verification tools.
+  entries configure adds only with a Chromium, for the render planner.
 - CI's `consumer` makes Get Started's starter ZIP from this checkout
   (`starter_zip.py`, the release asset), extracts it with Windows' `tar`,
   builds it, verifies only

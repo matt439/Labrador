@@ -300,7 +300,8 @@ ones being pages run in headless Chrome, one for each sample among them, and no
 start-up check, because a page has no command line. Where configure also finds
 a Firefox, eight `Firefox*` entries run the same pages in it.
 [`tests/ctest_inventory.json`](tests/ctest_inventory.json) lists the entries
-each CI configuration registers, and CI fails when the two differ.
+each configuration registers, with both browsers. CI fails when one of its own
+configurations differs, and `tools/ci_gap_report.py` when one it runs does.
 
 The benchmark (`bench/`) asserts on **complexity class** rather than on
 wall-clock: a phase that is linear in the object count must stay linear when

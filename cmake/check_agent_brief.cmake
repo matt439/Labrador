@@ -8,11 +8,12 @@
 #
 # The brief's preset table is a second copy of another kind: it states how many
 # ctest entries each preset pair registers, and tests/ctest_inventory.json is
-# the list CI holds each of its configurations to. A count written by hand
-# beside a machine source drifts the first time an entry is added, so the
-# counts are derived from the inventory here, and a difference names the row,
-# the stated count and the derived one. The table speaks of preset pairs and
-# the inventory of CI configurations, and the two overlap without matching:
+# the list CI holds each of its configurations to, and tools/ci_gap_report.py
+# each preset CI never builds. A count written by hand beside a machine source
+# drifts the first time an entry is added, so the counts are derived from the
+# inventory here, and a difference names the row, the stated count and the
+# derived one. The table speaks of preset pairs and the inventory of
+# configurations, and the two overlap without matching:
 #
 #   - A bare count is checked for each preset of its row that the inventory
 #     lists. A preset the inventory does not list is reported as not checked.
