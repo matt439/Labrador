@@ -236,13 +236,16 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 // once the keys have been pressed and released, if its canvas has the
 // keyboard.
 function sample_session({ complaint = null, error = null, draws_after_restore = true, quits = true, focused = true,
-	drop = 0, drop_up = 0 } = {}) {
+	drop = 0, drop_up = 0, quit_after = 1 } = {}) {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: true, clears: 0, draw_calls: 0,
 		elements: 0, lost: 0, restored: 0, raw_api: 'WebGL 2.0', raw_renderer: 'WebKit WebGL', unmasked_renderer: 'Apple GPU',
 		keys: [] };
 	let dropped = 0;
 	let dropped_up = 0;
 	const log = [];
+	// How many key performs the page needs before a release quits it: two for
+	// a gallery whose first list of Escapes Safari spent leaving full screen.
+	let performs = 0;
 	let pressed = false;
 	let lost = false;
 	const draw = () => {
@@ -272,6 +275,8 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 				draw(); value = true;
 			} else if (expression.includes('activeElement === Module.canvas')) {
 				value = focused;
+			} else if (expression.includes('fullscreenElement')) {
+				value = true;
 			} else if (expression.includes('visibilityState')) {
 				value = JSON.stringify({ focused: focused ? 'CANVAS' : 'BODY', page_focused: focused, visibility: 'visible' });
 			} else {
@@ -281,7 +286,8 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 		},
 		perform: async (actions) => {
 			log.push(['perform', actions[0].actions.length]);
-			pressed = true;
+			performs += 1;
+			pressed = performs >= quit_after;
 			// The first `drop` presses never reach the page, as safaridriver's once did.
 			for (const action of actions[0].actions) {
 				if (action.type === 'keyDown' && dropped < drop) { dropped += 1; continue; }
@@ -422,6 +428,14 @@ test('the audio and components samples\' keys go as one action list, every other
 		await drive_sample(run.session, 'u', sample, { pause: async () => {}, log: () => {} });
 		assert.deepEqual(run.log.filter(([kind]) => kind === 'perform'), [['perform', sample.keys.length * 4]]);
 	}
+	// A gallery still running after its list, once out of full screen, gets
+	// one more Escape, and says so.
+	const spent = sample_session({ quit_after: 2 });
+	const lines = [];
+	const heard = await drive_sample(spent.session, 'u', SAMPLES.components, { pause: async () => {}, log: (line) => lines.push(line) });
+	assert.equal(heard.quit, true);
+	assert.deepEqual(spent.log.filter(([kind]) => kind === 'perform'), [['perform', SAMPLES.components.keys.length * 4], ['perform', 4]]);
+	assert.match(lines[0], /still running after its keys; pressing Escape once more/);
 	const minimal = sample_session();
 	await drive_sample(minimal.session, 'u', SAMPLES.minimal, { pause: async () => {}, log: () => {} });
 	assert.deepEqual(minimal.log.filter(([kind]) => kind === 'perform'),

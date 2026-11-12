@@ -431,6 +431,19 @@ export async function drive_sample(session, url, sample,
 	progress.phase = 'pressing the quit keys';
 	if (sample === SAMPLES.audio || sample === SAMPLES.components) {
 		await session.perform(key_actions(sample.keys));
+		if (sample === SAMPLES.components) {
+			// Safari has spent both of the gallery's Escapes leaving full screen,
+			// neither press reaching the page. Once the page is out of full
+			// screen, one more Escape quits it if it is still running.
+			await session.release();
+			const windowed = '!(document.fullscreenElement ?? document.webkitFullscreenElement)';
+			const windowed_by = Date.now() + 10000;
+			while (!(await evaluate(windowed)) && Date.now() < windowed_by) await pause(50);
+			if (!(await state()).quit) {
+				log(`${label}: the gallery is still running after its keys; pressing Escape once more, out of full screen.`);
+				await session.perform(key_actions(['Escape']));
+			}
+		}
 	} else {
 		for (const key of sample.keys) {
 			for (const type of ['keyDown', 'keyUp']) {
