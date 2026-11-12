@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { USAGE, UsageError, parse_arguments } from './run_page.mjs';
+import { USAGE, UsageError, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
 
 const page = join('build', 'samples', 'minimal', 'MinimalSample.html');
 const sample = ['--browser', 'chrome', '--page', page, '--quit-keys', 'Escape,Enter'];
@@ -45,4 +45,15 @@ test('the usage names the options either form takes', () => {
 		assert.match(USAGE, new RegExp(option));
 	}
 	assert.match(USAGE, /either form: .*--emulate-media.*--expect-console.*--root/);
+});
+
+test('a context-lost warning is excused only by the page\'s own report of an unasked loss, one for one', () => {
+	const lost = 'WebGL: CONTEXT_LOST_WEBGL: loseContext: context lost';
+	const other = 'WebGL: INVALID_OPERATION: bindTexture: object does not belong to this context';
+	const report = 'unasked context loss: the browser lost the context before the test asked\n';
+	assert.deepEqual(unexcused_browser_complaints([lost, other], []), [lost, other]);
+	assert.deepEqual(unexcused_browser_complaints([lost, other], ['ok: a step\n', report]), [other]);
+	assert.deepEqual(unexcused_browser_complaints([lost, lost], [report]), [lost]);
+	assert.deepEqual(unexcused_browser_complaints([other], [report, report]), [other]);
+	assert.deepEqual(unexcused_browser_complaints([lost], [`said: ${report}`]), [lost]);
 });
