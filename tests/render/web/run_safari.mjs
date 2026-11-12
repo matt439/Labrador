@@ -171,7 +171,7 @@ export const SAMPLE_HOOK = `(() => {
 	if (typeof addEventListener === 'function') {
 		for (const type of ['keydown', 'keyup']) {
 			addEventListener(type, (event) => {
-				if (heard.keys.length < 64) heard.keys.push((type === 'keydown' ? '+' : '-') + event.code);
+				if (heard.keys.length < 256) heard.keys.push((type === 'keydown' ? '+' : '-') + event.code);
 			}, true);
 		}
 	}
@@ -281,6 +281,34 @@ async function complaints_of(evaluate) {
 const KEY_HOLD_FRAMES = 3;
 const KEY_HOLD_MS = 100;
 
+// Sends one key level and waits for the page's key log to show it, sending it
+// again (after releasing the keyboard, for a press) when the page reports
+// nothing. The log is the sample hook's, which records the event's code; the
+// match is on press or release only, because Safari reports WebDriver's Enter
+// as NumpadEnter.
+async function send_key(session, evaluate, key, type, { pause, log, label }) {
+	const mark = type === 'keyDown' ? '+' : '-';
+	for (let attempt = 1; ; attempt++) {
+		const before = await evaluate('window.labradorSafari.keys.length');
+		await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type, value: KEY_VALUES[key] }] }]);
+		const heard_by = Date.now() + KEY_HEARD_MS;
+		while (Date.now() < heard_by) {
+			const since = await evaluate(`window.labradorSafari.keys.slice(${before})`);
+			if (since.some((entry) => entry.startsWith(mark))) return;
+			await pause(25);
+		}
+		if (attempt >= KEY_ATTEMPTS) {
+			throw new Error(`The page never received ${key}'s ${type} in ${KEY_ATTEMPTS} attempts.`);
+		}
+		log(`${label}: the page did not receive ${key}'s ${type}; sending it again (attempt ${attempt + 1}).`);
+		if (type === 'keyDown') await session.release();
+	}
+}
+
+// How long a page has to report one key level, and how many sends it gets.
+const KEY_HEARD_MS = 2000;
+const KEY_ATTEMPTS = 3;
+
 // An expression that settles once `frames` animation frames have run and
 // `ms` milliseconds have passed, whichever is later.
 export function held_expression(frames, ms) {
@@ -352,14 +380,16 @@ export async function drive_sample(session, url, sample,
 		if (Date.now() > focus_by) throw new Error(`The sample's canvas never took the keyboard; page ${await focus_state()}`);
 		await pause(50);
 	}
-	// Each press and each release is its own action, and the next waits for
-	// frames past it: the engine samples keys once per update and drops a key
-	// pressed and released between two polls, and the hosted Mac has stalled
-	// a frame for 644 ms, longer than a fixed hold covers.
+	// Each press and each release is its own action, sent until the page
+	// reports receiving it, and the next waits for frames past it. On the
+	// hosted Mac safaridriver has delivered a release without its press, and a
+	// frame has stalled for 644 ms, longer than a fixed hold covers; the engine
+	// samples keys once per update and drops a key pressed and released
+	// between two polls. Every resend is logged, so none is silent.
 	progress.phase = 'pressing the quit keys';
 	for (const key of sample.keys) {
 		for (const type of ['keyDown', 'keyUp']) {
-			await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type, value: KEY_VALUES[key] }] }]);
+			await send_key(session, evaluate, key, type, { pause, log, label });
 			await evaluate(held_expression(KEY_HOLD_FRAMES, KEY_HOLD_MS));
 		}
 	}
