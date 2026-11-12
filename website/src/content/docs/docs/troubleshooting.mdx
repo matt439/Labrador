@@ -109,29 +109,37 @@ The same mistake in a PowerShell or Terminal window, which also has none of the 
 commands in these pages are written for the command prompt, so open the x64 Native Tools
 Command Prompt rather than looking for a PowerShell equivalent.
 
-#### A 32-bit prompt: `x86-windows`, `Hostx86` or `warning C4309`
+#### A 32-bit prompt: `Labrador needs the 64-bit compiler`
 
 The plain **Developer Command Prompt**, **Developer PowerShell** and the x86 prompts set up the
-32-bit compiler, and nothing refuses it at first. `cmake --preset x64-debug` configures without
-an error, but its output says vcpkg is `Detecting compiler hash for triplet x86-windows...` and names a compiler under
-`Hostx86/x86/cl.exe`, and vcpkg builds 32-bit copies of every dependency. Building Labrador
-itself then stops in the tests, after the samples have been built:
+32-bit compiler. `cmake --preset x64-debug` then says vcpkg is
+`Detecting compiler hash for triplet x86-windows...`, builds 32-bit copies of the engine's
+libraries, and stops with:
 
-```text
-C:\dev\Labrador\tests\app\window_tests.cpp(475): error C2220: the following warning is treated as an error
-C:\dev\Labrador\tests\app\window_tests.cpp(475): warning C4309: 'argument': truncation of constant value
+```text title="Output"
+  Labrador needs the 64-bit compiler, and this build folder has a 32-bit one:
+  C:/Program Files/Microsoft Visual
+  Studio/18/Community/VC/Tools/MSVC/14.51.36231/bin/Hostx86/x86/cl.exe.  Open
+  the x64 Native Tools Command Prompt, delete the build folder
+  C:/dev/mygame/out/build/x64-debug and configure again.
 ```
 
-Your own project builds no engine tests, so it may build a 32-bit game with no error at all.
-Either way the build folder is now a 32-bit one. Open the x64 Native Tools Command Prompt,
-check it prints `x64` as above, then delete the build folder and configure again from your
-project's folder:
+The line above it starts `CMake Error at external/labrador/CMakeLists.txt`, or at
+`CMakeLists.txt` when you build Labrador itself. The build folder remembers the compiler it was
+made with, so configuring again in the right prompt is not enough. Open the x64 Native Tools
+Command Prompt, check it prints `x64` as above, then delete the build folder and configure
+again from your project's folder:
 
 ```bat
 rmdir /s /q out\build\x64-debug
 cmake --preset x64-debug
 cmake --build --preset x64-debug
 ```
+
+A project on a Labrador older than this check, such as the `v0.3.0` starter, configures in a
+32-bit prompt without an error and builds a 32-bit game. Its next build in the right prompt
+fails with [`warning LNK4272`](#warning-lnk4272-and-hundreds-of-unresolved-externals), and the
+same three lines cure it.
 
 ### `'git' is not recognized`, or `INFO: Could not find "git".`
 
@@ -533,8 +541,10 @@ game\MyGame.exe : fatal error LNK1120: 1 unresolved externals
 ```
 
 Every file compiled, but the linker found no body for a function the game uses: here
-`starting_score`, used in `HelloState::init`. `LNK1120` counts these lines. The causes, in
-order of likelihood:
+`starting_score`, used in `HelloState::init`. `LNK1120` counts these lines. Hundreds of them at
+once, naming functions you never wrote, such as `__purecall` or `operator new`, are not this
+entry: see [`warning LNK4272`](#warning-lnk4272-and-hundreds-of-unresolved-externals). The
+causes, in order of likelihood:
 
 - **A new `.cpp` file is not in the build.** Every source file is listed by name in
   `game\CMakeLists.txt`, and the game's sources are listed **twice**: in the `add_executable(MyGame`
@@ -566,6 +576,32 @@ is spelt differently from what you searched for.
 
 The browser build's linker says the same thing as
 [`undefined symbol`](#wasm-ld-error--undefined-symbol).
+
+### `warning LNK4272` and hundreds of unresolved externals
+
+```text title="Output"
+LabradorMath.lib(quad.cpp.obj) : error LNK2001: unresolved external symbol _purecall
+...
+...\lib\x86\MSVCRTD.lib : warning LNK4272: library machine type 'x86' conflicts with target machine type 'x64'
+game\MyGame.exe : fatal error LNK1120: 209 unresolved externals
+```
+
+The build compiled your change and then failed to link with well over a thousand `LNK2001` and
+`LNK2019` lines, about engine and Windows functions rather than yours. Your code is not at
+fault: the build ran in a 32-bit prompt, such as the plain Developer Command Prompt, so the
+linker was given 32-bit Windows libraries for a 64-bit game. A build with nothing to compile
+still succeeds in that prompt, which is why it can seem fine until the first edit. Check the
+prompt with `echo %VSCMD_ARG_TGT_ARCH%` as in
+[The wrong command prompt](#the-wrong-command-prompt), then:
+
+- **The message says `library machine type 'x86' conflicts with target machine type 'x64'`.**
+  The build folder is right and the prompt is wrong. Open the x64 Native Tools Command Prompt,
+  go back to your project's folder and build again. There is nothing to delete.
+- **It says `library machine type 'x64' conflicts with target machine type 'x86'`.** The build
+  folder was made in a 32-bit prompt, by a Labrador older than the check in
+  [A 32-bit prompt](#a-32-bit-prompt-labrador-needs-the-64-bit-compiler), and it keeps the
+  32-bit compiler: configuring again does not change it. In the x64 Native Tools Command
+  Prompt, delete the build folder and configure and build again, as that entry shows.
 
 ## Running
 

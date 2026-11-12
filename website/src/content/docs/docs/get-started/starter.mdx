@@ -135,9 +135,12 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    If a line says `FAILED`, the build stopped there. The lines under it name the reason: skip
    the long line that starts with the compiler's path, find the first line with `error` in it,
    and look up its message in [Troubleshooting](/docs/troubleshooting/#building). On a first
-   build the usual ones are
-   [a folder too deep for the compiler](/docs/troubleshooting/#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument)
-   and [a 32-bit prompt](/docs/troubleshooting/#a-32-bit-prompt-x86-windows-hostx86-or-warning-c4309).
+   build the usual one is
+   [a folder too deep for the compiler](/docs/troubleshooting/#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument).
+   Hundreds of `unresolved external symbol` lines at once, with a `warning LNK4272` among them,
+   mean the wrong command prompt, not a fault in the code:
+   [`LNK4272`](/docs/troubleshooting/#warning-lnk4272-and-hundreds-of-unresolved-externals)
+   says what to do.
    Do not go on to the next step until the build works: the tests and the game need the
    program it makes.
 
@@ -259,7 +262,8 @@ cd /d C:\dev\mygame
 ```
 
 The build only recompiles what changed, so running the build, test and play lines again is
-always safe.
+always safe. Open the x64 prompt, not the plain Developer Command Prompt: a build in that one fails after your first edit, with
+[hundreds of unresolved externals](/docs/troubleshooting/#warning-lnk4272-and-hundreds-of-unresolved-externals).
 
 ## Starting the build again from nothing
 
