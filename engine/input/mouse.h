@@ -147,6 +147,11 @@ namespace labrador
 		// `app` to friend it, and a test double or a replay source wants
 		// exactly this seam. The tests in tests/input/
 		// drive a Mouse with no window anywhere.
+		//
+		// Button changes become visible at poll(), as keys do. A button
+		// pressed and released between polls has no sampled edge: neither
+		// pressed() nor released() reports it. Touch keeps such a tap; the
+		// mouse does not.
 		void on_move(const Vector2I& position);
 		void on_button_down(MouseButton button);
 		void on_button_up(MouseButton button);

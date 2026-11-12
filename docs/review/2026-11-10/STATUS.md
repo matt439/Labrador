@@ -29,7 +29,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#35` | [Random is compiled into LabradorEngine, out of reach of a math-only rules library](FINDINGS.md#rev35) | Open |
 | `REV#36` | [Vector2F arithmetic is out of line and no build enables whole-program optimisation](FINDINGS.md#rev36) | Open |
 | `REV#37` | [Nothing holds off the screensaver or display sleep during pad-only play](FINDINGS.md#rev37) | Open |
-| `REV#38` | [A mouse click begun and ended between two polls leaves no edge; touch keeps it](FINDINGS.md#rev38) | Open |
+| `REV#38` | [A mouse click begun and ended between two polls leaves no edge; touch keeps it](FINDINGS.md#rev38) | Partly done. mouse.h now states, as keyboard.h does, that a button pressed and released between two polls has no edge and that touch keeps such a tap. Whether the mouse should latch a click is still the owner's decision. |
 | `REV#39` | [A game cannot see or answer a request to close the window](FINDINGS.md#rev39) | Open |
 | `REV#40` | [The pad seam has no headless backend](FINDINGS.md#rev40) | Open |
 | `REV#41` | [No engine diagnostic sink for non-fatal messages](FINDINGS.md#rev41) | Open |
