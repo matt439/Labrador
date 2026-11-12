@@ -124,6 +124,9 @@ if(PROJECT_IS_TOP_LEVEL)
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_page.test.mjs"
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/page_wait.test.mjs"
         )
+        # CI's longest run took 16.21 s (wasm-null; tests/CMakeLists.txt names
+        # the runs).
+        set_tests_properties(BrowserProtocolTests PROPERTIES TIMEOUT 120)
 
         # AND THE ONES NODE CANNOT RUN ARE PAGES, run in a headless Chromium
         # by tests/render/web/run_page.mjs: the render tests' two, which need
