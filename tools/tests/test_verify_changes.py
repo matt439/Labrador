@@ -320,6 +320,22 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(any(identifier.startswith("EMSDK/") for identifier in identifiers))
         self.assertIn("wasm-debug:Chromium-registration-basis", identifiers)
 
+    def test_inherited_msystem_blocks_the_planned_wasm_tracks(self):
+        environment, tools, browser = self.fake_tooling()
+        plan = self.plan(browser=browser)
+        self.write_caches(plan, environment, browser)
+        self.assertFalse(any(item["id"] == "MSYSTEM" for item in self.inspect(plan, environment, tools)))
+        environment["MSYSTEM"] = "MINGW64"
+        checks = self.inspect(plan, environment, tools)
+        check = next(item for item in checks if item["id"] == "MSYSTEM")
+        self.assertEqual(check["configurations"], list(planner.WASM_CONFIGURATIONS))
+        self.assertTrue(check["blocking"])
+        self.assertIn("run `set MSYSTEM=` before emsdk_env.bat", check["detail"])
+        self.assertEqual([item["id"] for item in checks if item["blocking"]], ["MSYSTEM"])
+        native = dict(plan, configurations=[item for item in plan["configurations"]
+                                            if not item["id"].startswith("wasm-")])
+        self.assertFalse(any(item["id"] == "MSYSTEM" for item in self.inspect(native, environment, tools)))
+
     def test_path_dxc_does_not_replace_the_sdk_owned_compiler(self):
         environment, tools, browser = self.fake_tooling()
         (Path(environment["VULKAN_SDK"]) / "Bin/dxc.exe").unlink()
