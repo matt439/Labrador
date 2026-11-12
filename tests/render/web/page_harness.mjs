@@ -57,13 +57,12 @@ export const SAMPLE_KEYS = key_table(['Escape', 'Enter', 'KeyS', 'KeyR',
 	'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']);
 
 // One key source pressing each key in turn, each held for hold_ms and
-// released for gap_ms (hold_ms unless given), so a page's once-a-frame poll
-// sees both levels.
-export function key_actions(keys, { table = SAMPLE_KEYS, hold_ms = 150, gap_ms = hold_ms } = {}) {
+// released for as long, so a page's once-a-frame poll sees both levels.
+export function key_actions(keys, { table = SAMPLE_KEYS, hold_ms = 150 } = {}) {
 	return [{ type: 'key', id: 'keyboard', actions: keys.flatMap((key) => {
 		if (!Object.hasOwn(table, key)) throw new Error(`Unsupported sample key ${key}.`);
 		return [{ type: 'keyDown', value: table[key] }, { type: 'pause', duration: hold_ms },
-			{ type: 'keyUp', value: table[key] }, { type: 'pause', duration: gap_ms }];
+			{ type: 'keyUp', value: table[key] }, { type: 'pause', duration: hold_ms }];
 	}) }];
 }
 

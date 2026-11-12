@@ -311,7 +311,7 @@ ready queue above.
 | `REV#156` | OPEN | could | XS | `web_context.cpp:286-306` says every context attribute is stated, but `powerPreference`, which picks the GPU on a hybrid laptop, is left to the default. Make it explicit and record what Chrome selects under each value; choosing another is the owner's. |
 | `REV#157` | OPEN | could | S | The bundle page's context loss is forced through the WebGL extension and has run on SwiftShader only. Run it headed in Chrome on this desktop's GPU, including a GPU process crash, and record the result in web-to-be-tested.md. |
 | `REV#158` | OPEN | could | S | ColourWars report 19's next step is evidence: what a default-visible `x64-release` minimal launch shows before the first present, then a hidden launch shown natively. The engine's show-after-first-frame shape waits on it; capturing it needs no call. |
-| `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. Keys now go as one action list, held 150 ms with 400 ms between (separate actions fail once Web Audio runs; longer holds repeat menus), and a failure prints the page's keys and focus. Close after a week clean. |
+| `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. The audio sample's keys now go as one action list, every other sample's one confirmed key level at a time, each the form that passed every run there; failures print the page's keys and focus. Close after a week clean. |
 
 ## Ports
 

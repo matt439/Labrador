@@ -252,8 +252,8 @@ export function inject_head(html, scripts) {
 // ---------------------------------------------------------------------------
 // Input.
 
-export function key_actions(keys, { hold_ms = 150, gap_ms = hold_ms } = {}) {
-	return webdriver_key_actions(keys, { table: KEY_VALUES, hold_ms, gap_ms });
+export function key_actions(keys, { hold_ms = 150 } = {}) {
+	return webdriver_key_actions(keys, { table: KEY_VALUES, hold_ms });
 }
 
 // Whether desktop Safari's Tab moves to links and buttons: off by default,
@@ -303,17 +303,56 @@ async function complaints_of(evaluate) {
 	if (complaints.length > 0) throw new Error(`Page complaints: ${complaints.join('; ')}`);
 }
 
-// How long each quit key is held and how long the keyboard rests before the
-// next, in one action list (REV#159). The hold stays short because the hosted
-// Mac has stretched a 250 ms pause to 500 ms, past the 400 ms before a held
-// menu direction repeats (DirectionRepeat's default), which moved LineSweeper's
-// pause menu two rows a press. The rest is long, so a stalled frame (644 ms
-// has been seen) still polls each release before the next press. One list
-// matters: once a page's Web Audio runs, keys sent in separate action commands
-// go missing there, three runs of three in each of two forms, while one list
-// passed three of three.
-const KEY_HOLD_MS = 150;
-const KEY_GAP_MS = 400;
+// How long each key level is held before the next action: at least this many
+// of the page's animation frames, and at least this long.
+const KEY_HOLD_FRAMES = 3;
+const KEY_HOLD_MS = 100;
+
+// Sends one key level and waits for the page's key log to show it, sending it
+// again (after releasing the keyboard, for a press) when the page reports
+// nothing. The log is the sample hook's, which records the event's code; the
+// match is on press or release only, because Safari reports WebDriver's Enter
+// as NumpadEnter.
+async function send_key(session, evaluate, key, type, { pause, log, label }) {
+	const mark = type === 'keyDown' ? '+' : '-';
+	for (let attempt = 1; ; attempt++) {
+		const before = await evaluate('window.labradorSafari.keys.length');
+		await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type, value: KEY_VALUES[key] }] }]);
+		const heard_by = Date.now() + KEY_HEARD_MS;
+		while (Date.now() < heard_by) {
+			const since = await evaluate(`window.labradorSafari.keys.slice(${before})`);
+			if (since.some((entry) => entry.startsWith(mark))) return;
+			await pause(25);
+		}
+		if (attempt >= KEY_ATTEMPTS) {
+			throw new Error(`The page never received ${key}'s ${type} in ${KEY_ATTEMPTS} attempts.`);
+		}
+		log(`${label}: the page did not receive ${key}'s ${type}; sending it again (attempt ${attempt + 1}).`);
+		if (type === 'keyDown') {
+			await session.release();
+		} else {
+			// The driver counts the key as released already, so a lone keyUp
+			// would dispatch nothing: press it again first. The page, which never
+			// heard the release, sees a repeated press, which adds none.
+			await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type: 'keyDown', value: KEY_VALUES[key] }] }]);
+		}
+	}
+}
+
+// How long a page has to report one key level, and how many sends it gets.
+const KEY_HEARD_MS = 2000;
+const KEY_ATTEMPTS = 3;
+
+// An expression that settles once `frames` animation frames have run and
+// `ms` milliseconds have passed, whichever is later.
+export function held_expression(frames, ms) {
+	return `new Promise((done) => {
+		const until = performance.now() + ${ms};
+		let left = ${frames};
+		const next = (time) => --left <= 0 && time >= until ? done(true) : requestAnimationFrame(next);
+		requestAnimationFrame(next);
+	})`;
+}
 
 export async function drive_sample(session, url, sample,
 	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {} } = {}) {
@@ -375,8 +414,29 @@ export async function drive_sample(session, url, sample,
 		if (Date.now() > focus_by) throw new Error(`The sample's canvas never took the keyboard; page ${await focus_state()}`);
 		await pause(50);
 	}
+	// Two ways of sending the keys, each chosen by what CI's hosted Mac did
+	// (REV#159, docs/review/2026-11-12-work-audit/STATUS.md):
+	// - Each press and each release alone, sent until the page reports it,
+	//   then held for frames past it. One action list held a fixed time lets
+	//   Safari stretch an arrow key's hold to about 550 ms, past the 400 ms
+	//   before a held menu direction repeats, so LineSweeper's pause menu
+	//   moved two rows a press; this form passed LineSweeper in every run.
+	// - The audio sample's keys as one action list: once its first key starts
+	//   Web Audio, keys sent in separate actions went missing, three runs of
+	//   three in two forms, while one list passed three of three. Its keys
+	//   move no menu, so a stretched hold costs nothing there.
+	// Every resend is logged, so none is silent.
 	progress.phase = 'pressing the quit keys';
-	await session.perform(key_actions(sample.keys, { hold_ms: KEY_HOLD_MS, gap_ms: KEY_GAP_MS }));
+	if (sample === SAMPLES.audio) {
+		await session.perform(key_actions(sample.keys));
+	} else {
+		for (const key of sample.keys) {
+			for (const type of ['keyDown', 'keyUp']) {
+				await send_key(session, evaluate, key, type, { pause, log, label });
+				await evaluate(held_expression(KEY_HOLD_FRAMES, KEY_HOLD_MS));
+			}
+		}
+	}
 	await session.release();
 	progress.phase = 'waiting for the quit';
 	try {
