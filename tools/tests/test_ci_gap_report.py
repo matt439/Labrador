@@ -198,6 +198,7 @@ class ExecuteTests(unittest.TestCase):
 class MainTests(unittest.TestCase):
     def main(self, arguments, **keywords):
         stdout, stderr = io.StringIO(), io.StringIO()
+        keywords.setdefault("environment", {})
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             code = report.main(arguments, **keywords)
         return code, stdout.getvalue(), stderr.getvalue()
@@ -237,6 +238,32 @@ class MainTests(unittest.TestCase):
                                            runner=run, git_runner=git_runner(["c" * 40, "d" * 40]))
         self.assertEqual((code, text), (2, ""))
         self.assertIn("HEAD moved", stderr)
+
+    def test_inherited_msystem_refuses_wasm_debug_before_any_command(self):
+        def refuse(*_, **__):
+            raise AssertionError("no command may run with MSYSTEM set")
+        with tempfile.TemporaryDirectory() as directory:
+            code, text, stderr = self.main(["--execute", "--preset", "x64-release-null", "--preset", "wasm-debug"],
+                                           root=Path(directory), runner=refuse,
+                                           git_runner=git_runner(["e" * 40]), environment={"MSYSTEM": "MINGW64"})
+            self.assertEqual(list(Path(directory).iterdir()), [])
+        self.assertEqual((code, text), (2, ""))
+        self.assertIn("MSYSTEM='MINGW64'", stderr)
+        self.assertIn("run `set MSYSTEM=` before emsdk_env.bat", stderr)
+
+    def test_inherited_msystem_does_not_refuse_native_presets_or_the_plan(self):
+        null = {gap.preset: gap for gap in report.GAPS}["x64-release-null"]
+        run, calls = fake_commands(documents={"x64-release-null": junit(list(null.expected))})
+        with tempfile.TemporaryDirectory() as directory:
+            code, _, _ = self.main(["--execute", "--preset", "x64-release-null", "--output-dir", "evidence"],
+                                   root=Path(directory), runner=run, git_runner=git_runner(["f" * 40, "f" * 40]),
+                                   environment={"MSYSTEM": "MINGW64"})
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 3)
+        code, text, _ = self.main(["--preset", "wasm-debug"], root=REPOSITORY, git_runner=git_runner(["a" * 40]),
+                                  environment={"MSYSTEM": "MINGW64"})
+        self.assertEqual(code, 0)
+        self.assertIn("planned: cmake --preset wasm-debug;", text)
 
     def test_output_dir_requires_execute(self):
         with self.assertRaises(SystemExit) as raised, contextlib.redirect_stderr(io.StringIO()):

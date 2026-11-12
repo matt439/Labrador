@@ -4,8 +4,9 @@ The default prints the plan and runs nothing. --execute configures, builds and
 tests each selected preset in turn, records ctest's JUnit per preset and keeps
 going after a failure so the section covers every selected preset. It activates
 no toolchain: run it from a shell where vcvars (and emsdk_env for wasm-debug)
-are already set. It records the commit and working-tree state, not which device
-drew; the person running it names the machine. docs/verification.md owns the
+are already set. With wasm-debug selected it refuses to start while MSYSTEM
+is set. It records the commit and working-tree state, not which device drew;
+the person running it names the machine. docs/verification.md owns the
 procedure.
 """
 
@@ -14,6 +15,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass, field
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -138,6 +140,19 @@ def judge(gap: Gap, groups: dict[str, list[str]]) -> tuple[str, str]:
     return "passed", summary
 
 
+def environment_problem(gaps: list[Gap], environment) -> str:
+    """Why this shell cannot build a selected wasm preset, or an empty string.
+
+    A cmd started from Git Bash inherits MSYSTEM; emsdk_env.bat then prints
+    bash exports instead of setting the environment, and emcc is not on PATH."""
+    wasm = [gap.preset for gap in gaps if gap.preset.startswith("wasm-")]
+    value = environment.get("MSYSTEM", "")
+    if not wasm or not value:
+        return ""
+    return (f"MSYSTEM={value!r} is inherited, so emsdk_env.bat leaves emcc off PATH for "
+            f"{', '.join(wasm)}; run `set MSYSTEM=` before emsdk_env.bat")
+
+
 def git_state(root: Path, runner=None) -> tuple[str, int]:
     run = runner or (lambda argv: git_local.git(root, *argv[1:], text=True, error=ReportError))
     head = run(["git", "rev-parse", "HEAD"])
@@ -219,7 +234,7 @@ def markdown(outcomes: list[Outcome], *, commit: str, changed: int, executed: bo
 
 
 def main(arguments: list[str] | None = None, *, root: Path | None = None, runner=None,
-         git_runner=None) -> int:
+         git_runner=None, environment=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--preset", action="append", choices=[gap.preset for gap in GAPS],
@@ -239,6 +254,9 @@ def main(arguments: list[str] | None = None, *, root: Path | None = None, runner
                                 "; ".join(" ".join(argv) for argv in commands(gap.preset, Path("<junit>"))))
                         for gap in selected]
         else:
+            problem = environment_problem(selected, os.environ if environment is None else environment)
+            if problem:
+                raise ReportError(problem)
             target = Path(options.output_dir) if options.output_dir else \
                 Path("out/ci-gap") / uuid.uuid4().hex
             target = (root / target).resolve()

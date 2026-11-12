@@ -30,7 +30,11 @@ CONFIGURATIONS = tuple(RENDER_BACKENDS)
 BACKENDS = tuple(RENDER_BACKENDS.values())
 D3D_PRESETS = tuple(name for name, render in RENDER_BACKENDS.items() if render in {"d3d11", "d3d12"})
 WASM_CONFIGURATIONS = tuple(name for name in CONFIGURATIONS if name.startswith("wasm-"))
-ENVIRONMENT_KEYS = ("PATH", "PATHEXT", "VCPKG_ROOT", "VULKAN_SDK", "EMSDK", "EMSDK_NODE")
+ENVIRONMENT_KEYS = ("PATH", "PATHEXT", "VCPKG_ROOT", "VULKAN_SDK", "EMSDK", "EMSDK_NODE", "MSYSTEM")
+# A cmd started from Git Bash inherits MSYSTEM; emsdk_env.bat then prints bash
+# exports instead of setting the environment, and emcc is not on PATH.
+MSYSTEM_DETAIL = ("MSYSTEM={value!r} is inherited, so emsdk_env.bat leaves emcc off PATH; "
+                  "run `set MSYSTEM=` before emsdk_env.bat")
 SOURCE_FILES = ("CMakePresets.json", "engine/CMakeLists.txt", "cmake/compile_shaders.cmake",
                 ".github/workflows/ci.yml", "CMakeLists.txt", "tests/ctest_inventory.json")
 NULL_CONFIGURE = ["cmake", "--preset", "wasm-release", "-B", "out/build/wasm-release-null",
@@ -367,6 +371,9 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
     for variable, relative, ids in requirements:
         base = environment.get(variable, "")
         file_check(variable + "/" + relative, ids, Path(base) / relative if base else None)
+    planned_wasm = [item["id"] for item in plan["configurations"] if item["id"].startswith("wasm-")]
+    if planned_wasm and environment.get("MSYSTEM"):
+        add("MSYSTEM", planned_wasm, "tooling", "mismatch", MSYSTEM_DETAIL.format(value=environment["MSYSTEM"]))
     for configuration in plan["configurations"]:
         name = configuration["id"]
         ids = [name]

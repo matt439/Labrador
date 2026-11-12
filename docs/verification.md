@@ -90,6 +90,10 @@ Bin/dxc.exe, and EMSDK's toolchain/compiler entry file. A PATH dxc is no substit
 for the Vulkan SDK compiler. Emscripten's selected Node must come from the existing
 EMSDK_NODE value or configured emulator; an arbitrary host Node on PATH does not
 establish that selection. Presence checks do not establish versions/capabilities.
+A set `MSYSTEM` is a blocking mismatch for the planned wasm tracks: a cmd started
+from Git Bash inherits it, `emsdk_env.bat` then prints bash exports instead of
+setting the environment, and `emcc` is not on PATH. Run `set MSYSTEM=` before
+`emsdk_env.bat`. Since `--execute` runs the same preflight first, it refuses too.
 
 Existing cache checks compare source/build directories, generator, build type,
 render/audio/input selections, toolchains and the explicit wasm triplet. A named
@@ -292,8 +296,10 @@ pasting it names the adapter and driver. It activates no toolchain. Run it
 from a cmd shell with vcvars, and with `emsdk_env.bat` for `wasm-debug`. A
 cmd started from Git Bash inherits `MSYSTEM`, which makes `emsdk_env.bat`
 print bash exports and leave the environment unset; clear it with
-`set MSYSTEM=` first. Passing the record does not complete the manual checks
-listed above: those still go in the template's own section.
+`set MSYSTEM=` first. With `wasm-debug` selected, `--execute` refuses to start
+while `MSYSTEM` is set, exiting 2 before any preset runs. Passing the record
+does not complete the manual checks listed above: those still go in the
+template's own section.
 
 The first run, on 2026-10-29 at `33975df` with the tool's own files
 uncommitted, on the RTX 5080 (NVIDIA 616.92), passed `x64-debug-gl` and
