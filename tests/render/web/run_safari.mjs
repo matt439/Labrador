@@ -150,7 +150,7 @@ export const SAMPLE_HOOK = `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false,
 		clears: 0, draw_calls: 0, elements: 0, lost: 0, restored: 0,
 		raw_api: null, raw_renderer: null, unmasked_renderer: null,
-		frames: 0, longest_frame_gap_ms: 0, last_frame_ms: null, keys: [], logs: [] };
+		frames: 0, longest_frame_gap_ms: 0, last_frame_ms: null, keys: [], logs: [], audio: [], focus: [] };
 	window.labradorSafari = heard;
 	${module_hook('labradorSafariHooked')}
 	// What a failed run reports: whether frames kept coming and how far apart,
@@ -168,10 +168,37 @@ export const SAMPLE_HOOK = `(() => {
 			});
 		};
 	}
+	// Each AudioContext's state changes, with the page time of each.
+	if (typeof AudioContext === 'function') {
+		const Original = AudioContext;
+		window.AudioContext = function (...args) {
+			const context = new Original(...args);
+			const index = heard.audio.length;
+			heard.audio.push([context.state + '@' + Math.round(performance.now())]);
+			context.addEventListener('statechange', () => {
+				if (heard.audio[index].length < 16) heard.audio[index].push(context.state + '@' + Math.round(performance.now()));
+			});
+			return context;
+		};
+		window.AudioContext.prototype = Original.prototype;
+	}
+	// The window's focus and the document's visibility as they change, with
+	// the page time of each: the engine drops key edges unless the window is
+	// focused on both frames, and clears held keys on a blur.
+	if (typeof addEventListener === 'function') {
+		for (const type of ['blur', 'focus']) {
+			addEventListener(type, (event) => {
+				if (event.target === window && heard.focus.length < 64) heard.focus.push(type + '@' + Math.round(performance.now()));
+			}, true);
+		}
+		addEventListener('visibilitychange', () => {
+			if (heard.focus.length < 64) heard.focus.push(document.visibilityState + '@' + Math.round(performance.now()));
+		}, true);
+	}
 	if (typeof addEventListener === 'function') {
 		for (const type of ['keydown', 'keyup']) {
 			addEventListener(type, (event) => {
-				if (heard.keys.length < 256) heard.keys.push((type === 'keydown' ? '+' : '-') + event.code);
+				if (heard.keys.length < 256) heard.keys.push((type === 'keydown' ? '+' : '-') + event.code + '@' + Math.round(performance.now()));
 			}, true);
 		}
 	}
@@ -301,7 +328,14 @@ async function send_key(session, evaluate, key, type, { pause, log, label }) {
 			throw new Error(`The page never received ${key}'s ${type} in ${KEY_ATTEMPTS} attempts.`);
 		}
 		log(`${label}: the page did not receive ${key}'s ${type}; sending it again (attempt ${attempt + 1}).`);
-		if (type === 'keyDown') await session.release();
+		if (type === 'keyDown') {
+			await session.release();
+		} else {
+			// The driver counts the key as released already, so a lone keyUp
+			// would dispatch nothing: press it again first. The page, which never
+			// heard the release, sees a repeated press, which adds none.
+			await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type: 'keyDown', value: KEY_VALUES[key] }] }]);
+		}
 	}
 }
 

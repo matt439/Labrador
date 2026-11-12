@@ -236,11 +236,12 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 // once the keys have been pressed and released, if its canvas has the
 // keyboard.
 function sample_session({ complaint = null, error = null, draws_after_restore = true, quits = true, focused = true,
-	drop = 0 } = {}) {
+	drop = 0, drop_up = 0 } = {}) {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: true, clears: 0, draw_calls: 0,
 		elements: 0, lost: 0, restored: 0, raw_api: 'WebGL 2.0', raw_renderer: 'WebKit WebGL', unmasked_renderer: 'Apple GPU',
 		keys: [] };
 	let dropped = 0;
+	let dropped_up = 0;
 	const log = [];
 	let pressed = false;
 	let lost = false;
@@ -284,6 +285,7 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 			// The first `drop` presses never reach the page, as safaridriver's once did.
 			for (const action of actions[0].actions) {
 				if (action.type === 'keyDown' && dropped < drop) { dropped += 1; continue; }
+				if (action.type === 'keyUp' && dropped_up < drop_up) { dropped_up += 1; continue; }
 				heard.keys.push((action.type === 'keyDown' ? '+' : '-') + action.value);
 			}
 		},
@@ -400,4 +402,15 @@ test('a key press the page never receives is sent again, said aloud, and refused
 		[['perform', 1], ['release'], ['perform', 1]]);
 	await assert.rejects(drive_sample(sample_session({ drop: 3 }).session, 'u', SAMPLES.minimal,
 		{ pause: async () => {}, log: () => {} }), /never received Escape's keyDown in 3 attempts/);
+});
+
+test('a key release the page never receives is sent again behind a repeated press', async () => {
+	const { log, session } = sample_session({ drop_up: 1 });
+	const lines = [];
+	const heard = await drive_sample(session, 'u', SAMPLES.minimal, { pause: async () => {}, log: (line) => lines.push(line) });
+	assert.equal(heard.quit, true);
+	assert.match(lines[0], /did not receive Escape's keyUp; sending it again \(attempt 2\)/);
+	const performed = log.filter(([kind]) => kind === 'perform').length;
+	// The dropped release costs a repeated press and the release again.
+	assert.equal(performed, SAMPLES.minimal.keys.length * 2 + 2);
 });
