@@ -373,8 +373,8 @@ inside `add_task` in turn.
 that with `performance.now()`, which browsers coarsen (*general knowledge:*
 about 100 µs in Chrome and 1 ms in Firefox without cross-origin isolation). For
 a 60 Hz fixed step clamped at 0.1 s
-([`:41-42`](../../engine/core/step_timer.h#L41-L42),
-[`:128-130`](../../engine/core/step_timer.h#L128-L130)), that is adequate.
+([`:46-47`](../../engine/core/step_timer.h#L46-L47),
+[`:138-142`](../../engine/core/step_timer.h#L138-L142)), that is adequate.
 Changing the Windows clock source is a change to fixed-step timing on every
 preset. The alternative keeps QPC on Windows behind a two-line platform
 split. **Decision D4.**

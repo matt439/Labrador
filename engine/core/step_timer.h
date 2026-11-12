@@ -25,6 +25,11 @@ namespace labrador
     class StepTimer
     {
     public:
+        // Source timing data uses the clock's own units.
+        using Clock = std::chrono::steady_clock;
+        static_assert(Clock::period::num == 1,
+            "StepTimer assumes a clock whose tick is a whole fraction of a second.");
+
         StepTimer() noexcept(false) :
             m_elapsedTicks(0),
             m_totalTicks(0),
@@ -114,10 +119,20 @@ namespace labrador
         {
             // Query the current time.
             const Clock::time_point currentTime = Clock::now();
-
-            uint64_t timeDelta = static_cast<uint64_t>((currentTime - m_lastTime).count());
-
+            const Clock::duration elapsed = currentTime - m_lastTime;
             m_lastTime = currentTime;
+
+            Advance(elapsed, update);
+        }
+
+        // Advance by a caller-measured interval instead of reading the clock.
+        // Tick is a clock read followed by this. A negative interval counts as
+        // none.
+        template<typename TUpdate>
+        void Advance(Clock::duration elapsed, const TUpdate& update)
+        {
+            uint64_t timeDelta = elapsed.count() > 0 ? static_cast<uint64_t>(elapsed.count()) : 0;
+
             m_secondCounter += timeDelta;
 
             // Clamp excessively large time deltas (e.g. after paused in the debugger).
@@ -143,7 +158,10 @@ namespace labrador
                 // accumulate enough tiny errors that it would drop a frame. It is better to just round
                 // small deviations down to zero to leave things running smoothly.
 
-                if (static_cast<uint64_t>(std::abs(static_cast<int64_t>(timeDelta - m_targetElapsedTicks))) < TicksPerSecond / 4000)
+                const uint64_t deviation = timeDelta > m_targetElapsedTicks
+                    ? timeDelta - m_targetElapsedTicks
+                    : m_targetElapsedTicks - timeDelta;
+                if (deviation < TicksPerSecond / 4000)
                 {
                     timeDelta = m_targetElapsedTicks;
                 }
@@ -186,10 +204,6 @@ namespace labrador
         }
 
     private:
-        // Source timing data uses the clock's own units.
-        using Clock = std::chrono::steady_clock;
-        static_assert(Clock::period::num == 1,
-            "StepTimer assumes a clock whose tick is a whole fraction of a second.");
         static constexpr uint64_t ClockFrequency = Clock::period::den;
 
         Clock::time_point m_lastTime;

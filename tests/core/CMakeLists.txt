@@ -8,6 +8,7 @@ labrador_add_test_suite(CoreTests
         registry_tests.cpp
         state_context_tests.cpp
         step_position_tests.cpp
+        step_timer_tests.cpp
         thread_pool_tests.cpp
         utf8_tests.cpp
     LINKS LabradorEngine

@@ -5,7 +5,6 @@
 #include "engine/core/step_timer.h"
 #include "engine/math/vector2i.h"
 
-#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -110,29 +109,7 @@ TEST_CASE("accepted frame rates always produce an advancing timer period")
 	++options.target_fps;
 	CHECK_THROWS_AS(options.validate(), std::invalid_argument);
 	StepTimer timer;
-	timer.SetFixedTimeStep(true);
-	CHECK_THROWS_AS(timer.SetTargetElapsedTicks(0), std::invalid_argument);
 	CHECK_THROWS_AS(timer.SetTargetElapsedSeconds(1.0 / options.target_fps), std::invalid_argument);
-	CHECK_THROWS_AS(timer.SetTargetElapsedSeconds(-1.0), std::invalid_argument);
-	CHECK_THROWS_AS(timer.SetTargetElapsedSeconds(std::numeric_limits<double>::infinity()), std::invalid_argument);
-	CHECK_THROWS_AS(timer.SetTargetElapsedSeconds(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
-	timer.SetTargetElapsedTicks(1);
-	int callbacks = 0;
-	struct Stop {};
-	try
-	{
-		for (int tick = 0; tick < 1000 && callbacks == 0; ++tick)
-		{
-			timer.Tick([&]()
-			{
-				CHECK(timer.GetElapsedTicks() == 1);
-				++callbacks;
-				throw Stop{};
-			});
-		}
-	}
-	catch (const Stop&) {}
-	CHECK(callbacks == 1);
 }
 
 TEST_CASE("the window an Application opens carries every window field of its options")
