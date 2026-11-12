@@ -5,7 +5,8 @@ website build tool. Choose the new input deliberately, record what changed,
 then qualify the resulting engine and consumer. A version label in a proposed
 command is not an installation or test result.
 
-The inventory below was read on 29 October 2026. Its linked source files own
+The inventory below was read on 29 October 2026, its rapidjson row on
+13 November 2026. Its linked source files own
 the values; update this record if a bump makes a displayed value false.
 SM-25's SDK pin, browser logging and weekly schedule are in place, and a
 scheduled run has been observed passing; [BACKLOG](product/BACKLOG.md#next)
@@ -17,6 +18,7 @@ passed the checks below.
 | Input | Source of truth and current selection | Meaning |
 | --- | --- | --- |
 | Engine packages | [vcpkg.json](../vcpkg.json): builtin-baseline `d92484ed3c5020c6679d095ad3e5add907887b62`; directxtk with xaudio2redist on Windows, doctest and lodepng | The full baseline commit fixes the registry baseline used to resolve the manifest. There are currently no top-level overrides or features. |
+| Vendored rapidjson | [external/rapidjson/README.md](../external/rapidjson/README.md): upstream Tencent/rapidjson commit `24b5e7a8b27f42fa16b96fc70aade9106cf7102f` (2025-02-05), copied 2026-08-06 | Exact commit of the checked-in `include/rapidjson/` and `license.txt`; not fetched or resolved by vcpkg. Upstream has tagged nothing since 1.1.0, so a move names a commit, not a release. |
 | Installed vcpkg | [CMakePresets.json](../CMakePresets.json): VCPKG_ROOT; CI uses VCPKG_INSTALLATION_ROOT | A toolchain location, not an exact installed vcpkg version. |
 | Emscripten | [.github/workflows/ci.yml](../.github/workflows/ci.yml): EMSDK_VERSION, currently 6.0.12 | Exact SDK release shared by the browser jobs. |
 | SDK bootstrap manager | [.github/actions/emscripten/action.yml](../.github/actions/emscripten/action.yml): shallow clone of emsdk's tag named EMSDK_VERSION, then install/activate EMSDK_VERSION | The manager's checkout follows the SDK release: emsdk tags each release by its version. A tag is a name, not a digest. |
@@ -102,6 +104,19 @@ possible restore from an older cache do not prove a fresh dependency build.
 Use an isolated clean build/install tree and document cache use; do not delete
 another project's cache or overwrite an existing configure tree merely to
 force a qualification run.
+
+## Vendored rapidjson
+
+rapidjson is source in this checkout, not a vcpkg port, so no baseline moves
+it. Choose an upstream commit and read the upstream changes since the recorded
+one. Replace `external/rapidjson/include/rapidjson/` with that commit's folder,
+compare `license.txt` with upstream's, and change the commit named in
+[its README](../external/rapidjson/README.md) and in the table above. A changed
+licence also changes [NOTICE](../NOTICE) and the copies the release notices
+make from `license.txt`. The engine includes it `SYSTEM PRIVATE`, so its own
+warnings are not measured, but every engine and bench target that parses JSON
+must still build under every preset. A client that vendors its own copy, as
+ColourWars does, moves it separately.
 
 ## SDK and cache-tool releases
 

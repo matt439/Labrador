@@ -61,7 +61,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#66` | [Prebuilt Windows sample binaries on each release](FINDINGS.md#rev66) | Open |
 | `REV#67` | [Fuzz targets for the content readers](FINDINGS.md#rev67) | Open |
 | `REV#68` | [No static analysis beyond the warning flags](FINDINGS.md#rev68) | Open |
-| `REV#69` | [rapidjson is outside the dependency inventory; Dependabot alerts are off](FINDINGS.md#rev69) | Open |
+| `REV#69` | [rapidjson is outside the dependency inventory; Dependabot alerts are off](FINDINGS.md#rev69) | Partly done. external/rapidjson/README.md names upstream commit 24b5e7a8 (its include/rapidjson tree matches that commit exactly) and no longer describes ArtAttack.vcxproj or C:\VSIncludes. docs/dependency-updates.md has a rapidjson row and a section on moving the vendored copy. Turning on Dependabot alerts and deciding what to do about the Node 20 action tags is still the owner's call. |
 | `REV#70` | [No tag-named rebuild or digest comparison of release assets](FINDINGS.md#rev70) | Open |
 | `REV#71` | [The real thread pool is never run under a race detector](FINDINGS.md#rev71) | Open |
 | `REV#72` | [No itch.io publishing guide and no test of a page in a cross-origin iframe](FINDINGS.md#rev72) | Open |
