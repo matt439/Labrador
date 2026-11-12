@@ -252,8 +252,8 @@ export function inject_head(html, scripts) {
 // ---------------------------------------------------------------------------
 // Input.
 
-export function key_actions(keys, { hold_ms = 150 } = {}) {
-	return webdriver_key_actions(keys, { table: KEY_VALUES, hold_ms });
+export function key_actions(keys, { hold_ms = 150, gap_ms = hold_ms } = {}) {
+	return webdriver_key_actions(keys, { table: KEY_VALUES, hold_ms, gap_ms });
 }
 
 // Whether desktop Safari's Tab moves to links and buttons: off by default,
@@ -303,13 +303,17 @@ async function complaints_of(evaluate) {
 	if (complaints.length > 0) throw new Error(`Page complaints: ${complaints.join('; ')}`);
 }
 
-// How long each quit key and each gap between keys is held, in one action
-// list (REV#159). Above the hosted Mac's usual frame stalls, and below the
-// 400 ms before a held menu direction repeats (DirectionRepeat's default).
-// One list matters: once a page's Web Audio runs, keys sent in separate
-// action commands go missing in Safari on the hosted Mac, three runs of
-// three in each of two forms, while one list passed three of three.
-const KEY_HOLD_MS = 250;
+// How long each quit key is held and how long the keyboard rests before the
+// next, in one action list (REV#159). The hold stays short because the hosted
+// Mac has stretched a 250 ms pause to 500 ms, past the 400 ms before a held
+// menu direction repeats (DirectionRepeat's default), which moved LineSweeper's
+// pause menu two rows a press. The rest is long, so a stalled frame (644 ms
+// has been seen) still polls each release before the next press. One list
+// matters: once a page's Web Audio runs, keys sent in separate action commands
+// go missing there, three runs of three in each of two forms, while one list
+// passed three of three.
+const KEY_HOLD_MS = 150;
+const KEY_GAP_MS = 400;
 
 export async function drive_sample(session, url, sample,
 	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {} } = {}) {
@@ -372,7 +376,7 @@ export async function drive_sample(session, url, sample,
 		await pause(50);
 	}
 	progress.phase = 'pressing the quit keys';
-	await session.perform(key_actions(sample.keys, { hold_ms: KEY_HOLD_MS }));
+	await session.perform(key_actions(sample.keys, { hold_ms: KEY_HOLD_MS, gap_ms: KEY_GAP_MS }));
 	await session.release();
 	progress.phase = 'waiting for the quit';
 	try {
