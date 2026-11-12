@@ -27,7 +27,7 @@ the player* links, waits on the owner.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
-**Open agent rows:** `REV#104`, a verified defect in how the Direct3D backends classify a software adapter (issue #125); `REV#106` to `REV#117` of [the first-run review](#first-run-review-of-2026-11-10), `REV#106` to `REV#108` first; the `OPEN` rows of [the review of 2026-11-10](#review-of-2026-11-10) and `OCA-76`, each a measurement, reproduction or record fix that comes before the owner's call; and the `OPEN` rows of [the work audit](#work-audit-of-2026-11-12), `REV#122` to `REV#159`. Later and the hygiene lane have no ready item ([the audit](docs/review/2026-11-12-work-audit/README.md)).
+**Open agent rows:** `REV#104`, a verified defect in how the Direct3D backends classify a software adapter (issue #125); `REV#106` to `REV#117` of [the first-run review](#first-run-review-of-2026-11-10), `REV#106` to `REV#108` first; the `OPEN` rows of [the review of 2026-11-10](#review-of-2026-11-10) and `OCA-76`, each a measurement, reproduction or record fix that comes before the owner's call; and the `OPEN` rows of [the work audit](#work-audit-of-2026-11-12), `REV#122` to `REV#158`. Later and the hygiene lane have no ready item ([the audit](docs/review/2026-11-12-work-audit/README.md)).
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
@@ -311,7 +311,6 @@ ready queue above.
 | `REV#156` | OPEN | could | XS | `web_context.cpp:286-306` says every context attribute is stated, but `powerPreference`, which picks the GPU on a hybrid laptop, is left to the default. Make it explicit and record what Chrome selects under each value; choosing another is the owner's. |
 | `REV#157` | OPEN | could | S | The bundle page's context loss is forced through the WebGL extension and has run on SwiftShader only. Run it headed in Chrome on this desktop's GPU, including a GPU process crash, and record the result in web-to-be-tested.md. |
 | `REV#158` | OPEN | could | S | ColourWars report 19's next step is evidence: what a default-visible `x64-release` minimal launch shows before the first present, then a hidden launch shown natively. The engine's show-after-first-frame shape waits on it; capturing it needs no call. |
-| `REV#159` | OPEN | should | S | CI's `safari` job failed on the components gallery five times in a week while the other samples passed. First suspect: its keys request full screen, which no other sample does. Since `f0198ff1` a failure prints the page's phase, frames and keys; read the next one, then fix. |
 
 ## Ports
 

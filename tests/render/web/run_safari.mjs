@@ -276,6 +276,22 @@ async function complaints_of(evaluate) {
 	if (complaints.length > 0) throw new Error(`Page complaints: ${complaints.join('; ')}`);
 }
 
+// How long each key level is held before the next action: at least this many
+// of the page's animation frames, and at least this long.
+const KEY_HOLD_FRAMES = 3;
+const KEY_HOLD_MS = 100;
+
+// An expression that settles once `frames` animation frames have run and
+// `ms` milliseconds have passed, whichever is later.
+export function held_expression(frames, ms) {
+	return `new Promise((done) => {
+		const until = performance.now() + ${ms};
+		let left = ${frames};
+		const next = (time) => --left <= 0 && time >= until ? done(true) : requestAnimationFrame(next);
+		requestAnimationFrame(next);
+	})`;
+}
+
 export async function drive_sample(session, url, sample,
 	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {} } = {}) {
 	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} sample`, 15000));
@@ -336,8 +352,17 @@ export async function drive_sample(session, url, sample,
 		if (Date.now() > focus_by) throw new Error(`The sample's canvas never took the keyboard; page ${await focus_state()}`);
 		await pause(50);
 	}
+	// Each press and each release is its own action, and the next waits for
+	// frames past it: the engine samples keys once per update and drops a key
+	// pressed and released between two polls, and the hosted Mac has stalled
+	// a frame for 644 ms, longer than a fixed hold covers.
 	progress.phase = 'pressing the quit keys';
-	await session.perform(key_actions(sample.keys));
+	for (const key of sample.keys) {
+		for (const type of ['keyDown', 'keyUp']) {
+			await session.perform([{ type: 'key', id: 'keyboard', actions: [{ type, value: KEY_VALUES[key] }] }]);
+			await evaluate(held_expression(KEY_HOLD_FRAMES, KEY_HOLD_MS));
+		}
+	}
 	await session.release();
 	progress.phase = 'waiting for the quit';
 	try {
