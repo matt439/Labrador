@@ -783,6 +783,10 @@ jobs:
           path: ${{ runner.temp }}/linesweeper
       - name: Enable safaridriver
         run: sudo safaridriver --enable
+      # Whether this runner has an audio device, which a failed key in the
+      # audio sample's run is read against (REV#159). It never fails the job.
+      - name: Audio devices
+        run: system_profiler SPAudioDataType || true
       - name: Safari's WebGL2 renderer
         run: node tests/render/web/run_safari.mjs --renderer
       - name: Sample pages in Safari
