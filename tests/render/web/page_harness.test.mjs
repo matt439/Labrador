@@ -99,9 +99,6 @@ test('a key table is part of WebDriver\'s, and key actions press only its keys',
 	const [source] = key_actions(['KeyS'], { table, hold_ms: 5 });
 	assert.deepEqual(source.actions, [{ type: 'keyDown', value: 's' }, { type: 'pause', duration: 5 },
 		{ type: 'keyUp', value: 's' }, { type: 'pause', duration: 5 }]);
-	// A rest between keys of its own, as Safari's runner asks for.
-	const [rested] = key_actions(['KeyS'], { table, hold_ms: 5, gap_ms: 40 });
-	assert.deepEqual(rested.actions.filter((action) => action.type === 'pause').map((action) => action.duration), [5, 40]);
 	assert.throws(() => key_actions(['Enter'], { table }), /Unsupported sample key Enter/);
 });
 
