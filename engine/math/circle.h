@@ -28,6 +28,13 @@ namespace labrador
 		Vector2F center() const override;
 		float radius() const;
 
+		// Whether the centre and radius are finite and the radius is not
+		// negative. A zero radius is a point and is valid. The constructors
+		// and inflate accept any radius; the circle predicates in
+		// intersects.h and ericson_math.h answer false for a circle that is
+		// not valid.
+		bool is_valid() const;
+
 	private:
 		Vector2F center_ = Vector2F::zero;
 		float radius_ = 0.0f;

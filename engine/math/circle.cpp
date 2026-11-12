@@ -2,6 +2,8 @@
 
 #include "engine/math/rectanglef.h"
 
+#include <cmath>
+
 namespace labrador
 {
 
@@ -52,6 +54,11 @@ namespace labrador
 	float Circle::radius() const
 	{
 		return this->radius_;
+	}
+	bool Circle::is_valid() const
+	{
+		return std::isfinite(this->center_.x) && std::isfinite(this->center_.y)
+			&& std::isfinite(this->radius_) && this->radius_ >= 0.0f;
 	}
 
 }

@@ -297,11 +297,10 @@ namespace labrador
 
 		// The same question for a circle. A radius of zero encloses nothing,
 		// and a negative one, which inflate() can produce, is not a shape.
+		// Stricter than Circle::is_valid, which accepts a point.
 		bool measurable(const Circle& circle)
 		{
-			const Vector2F center = circle.center();
-			return std::isfinite(center.x) && std::isfinite(center.y)
-				&& std::isfinite(circle.radius()) && circle.radius() > 0.0f;
+			return circle.is_valid() && circle.radius() > 0.0f;
 		}
 
 		// Two circles overlap along the line between their centres, by as

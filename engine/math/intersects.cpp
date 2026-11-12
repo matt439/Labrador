@@ -173,6 +173,12 @@ namespace labrador
 
 	bool circle_segment_intersect(const Circle& circle, const Segment& segment, Point2F& point)
 	{
+		// Before point is written; see the rule at the top of intersects.h.
+		if (!circle.is_valid())
+		{
+			return false;
+		}
+
 		float t;
 		closest_pt_point_segment(circle.center(),
 			segment.point_0, segment.point_1, t, point);
@@ -192,6 +198,11 @@ namespace labrador
 
 	bool circle_point_intersect(const Circle& circle, const Point2F& point)
 	{
+		if (!circle.is_valid())
+		{
+			return false;
+		}
+
 		return Vector2F::distance_squared(circle.center(), point) <=
 			circle.radius() * circle.radius();
 	}

@@ -43,6 +43,13 @@ namespace labrador
 
 	bool test_circle_circle(const Circle& a, const Circle& b)
 	{
+		// Before squaring: a negative radius squares to a positive one, so
+		// two circles of radius -3 five apart would otherwise overlap.
+		if (!a.is_valid() || !b.is_valid())
+		{
+			return false;
+		}
+
 		// Calculate squared distance between centers
 		Vector2F d = a.center() - b.center();
 		float distance_squared = Vector2F::dot(d, d);
@@ -135,8 +142,7 @@ namespace labrador
 		// Validate before clamping: failed comparisons against a NaN can
 		// otherwise turn an invalid center or box into zero distance.
 		const Point2F center = s.center();
-		if (!std::isfinite(center.x) || !std::isfinite(center.y)
-			|| !std::isfinite(s.radius()) || !(s.radius() >= 0.0f)
+		if (!s.is_valid()
 			|| !std::isfinite(b.x) || !std::isfinite(b.y)
 			|| !std::isfinite(b.width) || !std::isfinite(b.height)
 			|| !std::isfinite(b.right()) || !std::isfinite(b.bottom()))
@@ -190,6 +196,13 @@ namespace labrador
 	bool test_circle_triangle(const Circle& s, const Point2F& a,
 		const Point2F& b, const Point2F& c, Point2F& p)
 	{
+		// Before p is written, so a rejected circle leaves it unchanged, as
+		// test_circle_AABB does.
+		if (!s.is_valid())
+		{
+			return false;
+		}
+
 		// Find point P on triangle ABC closest to sphere center
 		p = closest_pt_point_triangle(s.center(), a, b, c);
 		// Sphere and triangle intersect if the (squared) distance from sphere

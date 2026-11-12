@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Refuse an invalid circle in every circle predicate
+
+**Behaviour change.** `circles_intersect`, `circle_triangle_intersect`, `circle_quad_intersect`, `circle_segment_intersect`, `circle_point_intersect`, `test_circle_circle` and `test_circle_triangle` now return false for a circle with a negative radius or a nonfinite centre or radius, as `test_circle_AABB` already did. Before, they squared the radius, so a radius of -3 acted as 3. A rejected circle leaves the point out-parameter unchanged. The new `Circle::is_valid()` states the rule: the centre and radius are finite and the radius is not negative. A zero radius is a point and is valid.
+
 ### 2026-11-10 - Sleep between steps and draw nothing while minimised
 
 **Behaviour change.** On Windows, a minimised window no longer draws, and its loop sleeps between fixed steps. Before this change the loop ticked as fast as it could while minimised and rendered every tick into a window with no area. Now `update` still runs at `ApplicationOptions::target_fps`, as `engine/core/state.h` says it does for a state that was not told of the background, but no state's `draw` is called, no frame is presented and `Application::frame_timings().frame` does not advance until the window is restored. The sleep ends when the system's timer says, so a wake can be late and the steps then owed run together in one tick, as they do after any slow frame; the count of updates is kept. A game that advances something from `draw`, or waits in `update` for `frame_timings().frame` to move, sees it stand still while minimised and should move that work into `update` or pause in `on_deactivated`. A window created hidden with `ApplicationOptions::visible = false` is not minimised and draws as before. `WindowNotify` gains `tick_minimized()`, with a default that calls `tick()` and asks for no wait, so a type that implements `WindowNotify` compiles and behaves as it did. The browser build is unchanged.

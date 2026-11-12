@@ -274,7 +274,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#122` | OPEN | should | S | `test_circle_AABB` refuses a negative or non-finite radius; the circle-circle, circle-triangle, circle-segment and circle-point tests square it, so r=-3 acts as r=3. `circle_point_intersect` has no test. One guard and one table case. |
 | `REV#123` | OPEN | could | XS | `narrow_phase.h:85-86` promises `std::invalid_argument` for a `ShapeType::none` shape and `narrow_phase.cpp:154-157` throws it, but no test asserts it; `narrow_phase_tests.cpp` has no `CHECK_THROWS`. |
 | `REV#124` | OPEN | should | S | `Camera::frame` checks only `<= 0`, so a NaN extent passes and an infinite world gives scale 0, which `camera.h:61-63` says it cannot produce. Refuse non-finite input and a zero or non-finite scale; whether a negative scale is supported is the owner's. |
 | `REV#125` | OPEN | should | S | `labrador::clamp` returns NaN unchanged, so `SoundBank` and group volumes pass NaN on although `audio_device.h:57-58` says levels arrive clamped; Web Audio then throws in the frame. Refuse it as `Random::chance` does, tested on null and Node. |
