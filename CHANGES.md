@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Refuse non-finite input and a zero or non-finite scale in Camera
+
+**Behaviour change.** `Camera::frame` now throws `std::invalid_argument` for a NaN or infinite world-rectangle position or extent, a NaN or infinite viewport extent, and world/viewport sizes so far apart that the scale would underflow to zero or overflow to infinity. Before this, those inputs returned a NaN camera or one with a zero or infinite scale. `Camera::visible_rectangle` and `Camera::world_position` now refuse a NaN or infinite scale as well as a zero one. A negative scale is still accepted unchanged.
+
 ### 2026-11-13 - Refuse an invalid circle in every circle predicate
 
 **Behaviour change.** `circles_intersect`, `circle_triangle_intersect`, `circle_quad_intersect`, `circle_segment_intersect`, `circle_point_intersect`, `test_circle_circle` and `test_circle_triangle` now return false for a circle with a negative radius or a nonfinite centre or radius, as `test_circle_AABB` already did. Before, they squared the radius, so a radius of -3 acted as 3. A rejected circle leaves the point out-parameter unchanged. The new `Circle::is_valid()` states the rule: the centre and radius are finite and the radius is not negative. A zero radius is a point and is valid.

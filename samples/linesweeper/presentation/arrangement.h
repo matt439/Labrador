@@ -85,7 +85,8 @@ namespace linesweeper
 	};
 
 	// The arrangement for a buffer of this size, in pixels. Throws
-	// std::invalid_argument for a non-positive extent, as Camera::frame does.
+	// std::invalid_argument for an extent that is not finite and positive,
+	// as Camera::frame does.
 	Arrangement arrange(const labrador::Vector2F& buffer);
 
 	// arrange(), installed as the scene's one view: every state that draws
