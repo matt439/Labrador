@@ -193,6 +193,40 @@ check_inventory_change(firefox_entry_added fail
     "states 2 Firefox* ctest entries for `web-release`" "derives 3"
     "prose \"two `Firefox*` entries\"")
 
+# The inventory listing the row presets a base case reports as not checked,
+# as tests/ctest_inventory.json lists the presets only ci_gap_report runs:
+# three-release registers 4 entries, and web-debug 5, 3 not named Firefox*.
+# Their stated counts are then checked, and a wrong one fails.
+set(listed_inventory "${base_inventory}")
+string(REPLACE "\"configurations\": [\"two-debug\","
+    "\"configurations\": [\"three-release\", \"web-debug\", \"two-debug\","
+    listed_inventory "${listed_inventory}")
+string(REPLACE "\"SmokeTests\": [\"two-debug\", \"two-release\", \"three-debug\"]"
+    "\"SmokeTests\": [\"two-debug\", \"two-release\", \"three-debug\", \"three-release\"]"
+    listed_inventory "${listed_inventory}")
+string(REPLACE "\"ExtraTests\": [\"three-debug\"]" "\"ExtraTests\": [\"three-debug\", \"three-release\"]"
+    listed_inventory "${listed_inventory}")
+string(REPLACE "\"PageTests\": [\"web-release\"]" "\"PageTests\": [\"web-debug\", \"web-release\"]"
+    listed_inventory "${listed_inventory}")
+string(REPLACE "\"FirefoxPageTests\": [\"web-release\"],\n    \"FirefoxPixelTests\": [\"web-release\"]"
+    "\"FirefoxPageTests\": [\"web-debug\", \"web-release\"],\n    \"FirefoxPixelTests\": [\"web-debug\", \"web-release\"]"
+    listed_inventory "${listed_inventory}")
+if(listed_inventory STREQUAL base_inventory)
+    message(FATAL_ERROR "The listed inventory changed nothing")
+endif()
+check_fixture(gap_presets_listed pass "${base_brief}" "${listed_inventory}" "@AGENTS.md\n"
+    "9 ctest counts in AGENTS.md match")
+string(REPLACE "| 4; debug" "| 5; debug" brief "${base_brief}")
+check_fixture(gap_release_count fail "${brief}" "${listed_inventory}" "@AGENTS.md\n"
+    "states 5 ctest entries for `three-release`" "derives 4")
+string(REPLACE "3 Debug /" "4 Debug /" brief "${base_brief}")
+check_fixture(gap_debug_browser_count fail "${brief}" "${listed_inventory}" "@AGENTS.md\n"
+    "states 4 ctest entries not named Firefox* for `web-debug`" "derives 3")
+string(REPLACE "\"FirefoxPixelTests\": [\"web-debug\", \"web-release\"]"
+    "\"FirefoxPixelTests\": [\"web-release\"]" inventory "${listed_inventory}")
+check_fixture(gap_debug_firefox_count fail "${base_brief}" "${inventory}" "@AGENTS.md\n"
+    "states 2 Firefox* ctest entries for `web-debug`" "derives 1")
+
 # A row reworded so that nothing in it can be checked fails; it does not pass
 # by no longer being read.
 check_brief_change(count_reworded fail

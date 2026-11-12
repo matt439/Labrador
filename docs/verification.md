@@ -254,7 +254,8 @@ also leaves out the four release presets other than `x64-release` (CI's
 It runs before each release on a real GPU, which CONTRIBUTING's *Cutting a
 release* makes a step, and is not required of a pull request.
 `tools/ci_gap_report.py` holds that list; its test derives the same list from
-`ci.yml` and `CMakePresets.json` and fails when they drift apart.
+`ci.yml` and `CMakePresets.json` and fails when they drift apart, and the
+inventory's test fails when its configurations are not CI's and these.
 
 ```text
 python tools/ci_gap_report.py
@@ -270,11 +271,15 @@ so the record covers every selected preset. Results come from JUnit, because
 `LastTest.log` writes "Test Passed." for a test whose executable is missing
 and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
 case, a nonzero ctest exit, or a required test that was never registered makes
-the preset fail. The required tests are the GL/Vulkan pixel and smoke tests and
-`wasm-debug`'s browser tests, which configure registers only when it finds a
-Chromium: without one, its headless tests would otherwise pass alone.
-`chromium_registered` in `tests/ctest_inventory.json` lists them for this
-report and the planner alike. A tool missing from the shell fails its preset
+the preset fail. On `x64-debug-gl` and `x64-debug-vulkan` the required tests
+are the pixel and smoke tests. Each preset CI never builds must register
+exactly its list in `tests/ctest_inventory.json`, the file CI holds its own
+configurations to: an entry missing from the run or one the list does not
+name fails the preset, naming the entry. `wasm-debug`'s list has the pages
+configure registers only when it finds a Chromium and a Firefox, so the run
+needs both: without them its headless tests would otherwise pass alone. A
+configure given `LABRADOR_HOST_SITE` adds `LineSweeperHostPageTests`, which no
+list names, and fails the same way. A tool missing from the shell fails its preset
 and the run moves on. With `--execute` the exit code is 0 when every selected
 preset passed and 1 when any failed. It is 2, with no section printed, when the checkout state cannot be
 read, HEAD moved during the run, or the output directory exists or cannot be

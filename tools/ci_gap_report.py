@@ -21,6 +21,7 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import check_ctest_inventory  # noqa: E402
 import git_local  # noqa: E402
 import verification_runner  # noqa: E402
 
@@ -35,27 +36,34 @@ class Gap:
     # a software rasteriser, so a real driver is the gap.
     real_driver: tuple[str, ...] = ()
     # Tests that must have run and passed. Registration can quietly drop them:
-    # a GL or Vulkan run must include the device tests, and configure registers
-    # wasm-debug's browser tests only when it finds a Chromium.
+    # a GL or Vulkan run must include the device tests.
     required: tuple[str, ...] = ()
+    # For a preset CI never builds, the exact set of entries ctest must
+    # register, from tests/ctest_inventory.json: one missing or one extra
+    # fails the preset. Configure registers wasm-debug's browser pages only
+    # when it finds a Chromium and a Firefox, so without them its headless
+    # tests would otherwise pass alone.
+    expected: tuple[str, ...] = ()
 
 
 DEVICE_TESTS = ("RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests")
-# The entries a wasm build that rasterizes registers only when configure finds
-# a Chromium; tests/ctest_inventory.json owns the list.
-BROWSER_TESTS = tuple(json.loads((REPOSITORY / "tests/ctest_inventory.json").read_text(
-    encoding="utf-8"))["chromium_registered"])
+INVENTORY = json.loads((REPOSITORY / "tests/ctest_inventory.json").read_text(encoding="utf-8"))
+
+
+def whole_preset(preset: str) -> Gap:
+    return Gap(preset, expected=tuple(sorted(check_ctest_inventory.expected_tests(INVENTORY, preset))))
+
 
 # What .github/workflows/ci.yml leaves out. tools/tests/test_ci_gap_report.py
 # derives the same list from ci.yml and CMakePresets.json and fails on drift.
 GAPS = (
     Gap("x64-debug-gl", DEVICE_TESTS, DEVICE_TESTS),
     Gap("x64-debug-vulkan", DEVICE_TESTS, DEVICE_TESTS),
-    Gap("x64-release-d3d12"),
-    Gap("x64-release-gl"),
-    Gap("x64-release-vulkan"),
-    Gap("x64-release-null"),
-    Gap("wasm-debug", required=BROWSER_TESTS),
+    whole_preset("x64-release-d3d12"),
+    whole_preset("x64-release-gl"),
+    whole_preset("x64-release-vulkan"),
+    whole_preset("x64-release-null"),
+    whole_preset("wasm-debug"),
 )
 
 
@@ -105,14 +113,19 @@ def junit_summary(text: str) -> dict[str, list[str]]:
 
 def judge(gap: Gap, groups: dict[str, list[str]]) -> tuple[str, str]:
     total = sum(len(names) for names in groups.values())
+    registered = {name for names in groups.values() for name in names}
     problems = []
     for key in ("failed", "skipped", "disabled"):
         if groups[key]:
             problems.append(f"{key}: {', '.join(groups[key])}")
-    missing = [name for name in gap.required if name not in groups["passed"]
-               and not any(name in groups[key] for key in ("failed", "skipped", "disabled"))]
+    wanted = list(gap.required) + [name for name in gap.expected if name not in gap.required]
+    missing = [name for name in wanted if name not in registered]
     if missing:
         problems.append(f"not registered: {', '.join(missing)}")
+    if gap.expected:
+        extra = sorted(registered - set(gap.expected))
+        if extra:
+            problems.append(f"not in the inventory: {', '.join(extra)}")
     summary = f"{len(groups['passed'])}/{total} passed"
     if problems:
         return "failed", summary + "; " + "; ".join(problems)
@@ -120,8 +133,8 @@ def judge(gap: Gap, groups: dict[str, list[str]]) -> tuple[str, str]:
         names = list(gap.real_driver)
         spoken = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
         summary += "; " + spoken + " passed"
-    elif gap.required:
-        summary += f"; including {len(gap.required)} required tests"
+    elif gap.expected:
+        summary += "; the inventory's entries exactly"
     return "passed", summary
 
 
