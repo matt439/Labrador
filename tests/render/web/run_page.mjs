@@ -71,7 +71,10 @@
 // subject is something the browser complains about rather than the module -
 // a WebGL call on an object the context does not own raises an error into a
 // queue the engine drains before its next upload, and the browser's warning is
-// the only place it is still visible afterwards.
+// the only place it is still visible afterwards. One warning is excused: the
+// "loseContext: context lost" Chrome logs when it loses a context the page
+// did not ask to lose, once for each such loss the page itself reported on a
+// console line starting "unasked context loss:" (see UNASKED_LOSS below).
 //
 // --hide-extension makes every WebGL context the page creates answer as one
 // without that extension: getExtension returns null for it and
@@ -513,6 +516,28 @@ async function run_sample(devtools, session, complaints) {
 // message of any other type still counts.
 const PERFORMANCE_NOTE = /GL Driver Message \([^,]*, Performance,/;
 
+// A context the browser lost without being asked - its GPU process crashed or
+// was restarted under load, as a hosted runner's SwiftShader has done at a
+// page's start - is logged as this warning. A page that recognised the loss,
+// waited for the context to come back and started its sequence again says so
+// on a console line starting with UNASKED_LOSS_REPORT; each such line excuses
+// one of these warnings and nothing else. A loss nobody reported still counts.
+const UNASKED_LOSS = /^WebGL: CONTEXT_LOST_WEBGL: loseContext: context lost$/;
+const UNASKED_LOSS_REPORT = 'unasked context loss:';
+
+// The browser's complaints that are not excused by the page's own reports of
+// unasked context losses, from the complaints' texts and every console line.
+export function unexcused_browser_complaints(complaint_texts, console_lines) {
+	let reports = console_lines.filter((line) => line.startsWith(UNASKED_LOSS_REPORT)).length;
+	return complaint_texts.filter((text) => {
+		if (reports > 0 && UNASKED_LOSS.test(text)) {
+			reports--;
+			return false;
+		}
+		return true;
+	});
+}
+
 async function run() {
 	const input_driver = options.input === undefined ? undefined :
 		await import(pathToFileURL(resolve(options.input)).href);
@@ -522,7 +547,7 @@ async function run() {
 	const { child, endpoint, diagnostics } = launch(options.browser, profile);
 
 	let exit_code = 1;
-	let browser_complaints = 0;
+	const browser_complaints = [];
 	// What a sample's page is failed by: everything above, and the page's own
 	// console errors and warnings and uncaught exceptions as well.
 	const sample_complaints = { count: 0 };
@@ -576,7 +601,7 @@ async function run() {
 				return;
 			}
 			sample_complaints.count++;
-			if (source === 'browser') { browser_complaints++; }
+			if (source === 'browser') { browser_complaints.push(text); }
 		};
 
 		devtools.on((message) => {
@@ -709,8 +734,13 @@ async function run() {
 				`"${options['expect-console']}", which --expect-console requires\n`);
 			exit_code = exit_code === 0 ? 1 : exit_code;
 		}
-		if (options['browser-warnings'] === 'fail' && browser_complaints > 0) {
-			process.stderr.write(`run_page: the browser logged ${browser_complaints} ` +
+		const unexcused = unexcused_browser_complaints(browser_complaints, console_heard);
+		if (options['browser-warnings'] === 'fail' && unexcused.length < browser_complaints.length) {
+			process.stdout.write(`run_page: excused ${browser_complaints.length - unexcused.length} ` +
+				'browser warning(s) for context losses the page reported as unasked\n');
+		}
+		if (options['browser-warnings'] === 'fail' && unexcused.length > 0) {
+			process.stderr.write(`run_page: the browser logged ${unexcused.length} ` +
 				'warning(s) or error(s), and --browser-warnings fail counts each as a failure\n');
 			exit_code = exit_code === 0 ? 1 : exit_code;
 		}

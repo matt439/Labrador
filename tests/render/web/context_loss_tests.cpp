@@ -54,6 +54,16 @@
 //
 // The loss is asked for through WEBGL_lose_context, which is the browser's
 // own way to rehearse one, on the canvas's existing context.
+//
+// A LOSS NOBODY ASKED FOR, before the page asks for its own, starts the
+// sequence again. A hosted runner's Chrome has lost this page's context at
+// its start, its GPU process gone under three pages' SwiftShader drawing at
+// once; the first read-back then threw and nothing pinned above was reached.
+// The page waits for the browser to give the context back, as a game would,
+// lets the renderer and the shell hear both halves, forgets what they heard,
+// and begins again, saying so on a line starting "unasked context loss:" -
+// which is also what excuses the browser's one warning about it in
+// run_page.mjs. More than max_unasked_losses of them fail the run.
 
 // The extension object is kept from the loss to the restore, because a lost
 // context hands out no extensions: getExtension answers null until it is back.
@@ -62,6 +72,12 @@ EM_JS(void, labrador_lose_context, (const char* target), {
 	var extension = canvas.getContext("webgl2").getExtension("WEBGL_lose_context");
 	Module["labradorLoseContext"] = extension;
 	extension.loseContext();
+});
+
+// Whether the canvas's context is lost now, asked for or not.
+EM_JS(int, labrador_context_is_lost, (const char* target), {
+	var canvas = document.querySelector(UTF8ToString(target));
+	return canvas.getContext("webgl2").isContextLost() ? 1 : 0;
 });
 
 EM_JS(void, labrador_restore_context, (), {
@@ -83,6 +99,10 @@ EM_JS(void, labrador_install_page_hooks, (), {
 
 EM_JS(void, labrador_set_in_frame, (int in_frame), {
 	Module["labradorInFrame"] = in_frame !== 0;
+});
+
+EM_JS(void, labrador_page_heard_forget, (), {
+	Module["labradorPageHeard"] = [];
 });
 
 EM_JS(int, labrador_page_heard_count, (), {
@@ -107,6 +127,10 @@ namespace
 	// back: more than one, so that a frame between the loss event and the
 	// restore is certainly drawn.
 	constexpr int frames_to_lose = 3;
+
+	// How many losses the browser may make unasked, each waited out and the
+	// sequence begun again, before the run fails.
+	constexpr int max_unasked_losses = 2;
 
 	// How long anything may take before the run fails rather than waits.
 	constexpr int give_up_after_frames = 600;
@@ -156,6 +180,7 @@ namespace
 
 	enum class Step
 	{
+		recover_unasked_loss,
 		draw_before_loss,
 		draw_while_lost,
 		wait_for_restore,
@@ -175,6 +200,7 @@ namespace
 		Step step = Step::draw_before_loss;
 		int frame = 0;
 		int lost_frames = 0;
+		int unasked_losses = 0;
 		std::vector<unsigned char> pixels;
 	};
 
@@ -244,8 +270,52 @@ namespace
 
 		switch (run.step)
 		{
+		case Step::recover_unasked_loss:
+		{
+			// Drawn into as into any lost context, until the browser gives it
+			// back and begin_frame tells the shell both halves.
+			try
+			{
+				draw_red(run);
+				run.renderer.end_frame();
+			}
+			catch (const std::exception& error)
+			{
+				check(false, std::string("a frame drawn while the browser's own "
+					"loss is waited out throws nothing (") + error.what() + ")");
+				finish();
+				return;
+			}
+			if (run.shell->heard.size() < 2 || labrador_context_is_lost(target(run)))
+			{
+				break;
+			}
+			std::printf("the context is back after the unasked loss; starting again\n");
+			run.shell->heard.clear();
+			labrador_page_heard_forget();
+			run.step = Step::draw_before_loss;
+			break;
+		}
+
 		case Step::draw_before_loss:
 		{
+			if (labrador_context_is_lost(target(run)))
+			{
+				run.unasked_losses++;
+				std::printf("unasked context loss: the browser lost the context "
+					"before the test asked for its loss (%d of at most %d); "
+					"waiting for it to come back, then starting again\n",
+					run.unasked_losses, max_unasked_losses);
+				if (run.unasked_losses > max_unasked_losses)
+				{
+					check(false, "the browser lost the context unasked at most " +
+						std::to_string(max_unasked_losses) + " times");
+					finish();
+					return;
+				}
+				run.step = Step::recover_unasked_loss;
+				break;
+			}
 			draw_red(run);
 			check(centre_is_red(run), "the quad draws before the loss");
 			run.renderer.end_frame();

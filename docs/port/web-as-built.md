@@ -366,6 +366,10 @@ its canvas. `RenderContextLossTests` fails on any warning the browser logs
 (`run_page.mjs --browser-warnings fail`), because the stale delete's error
 is drained by the next upload and the warning is the only place it is still
 visible. With the `glIsTexture` guard taken out, it fails on exactly that.
+The one warning it excuses is Chrome's for a loss nobody asked for: CI's
+Chrome lost the page's context at its start in six runs between 2026-11-03
+and 2026-11-12, before a step had passed. The page now waits out such a loss,
+reports it, and begins its sequence again.
 
 **The host page hears both ends of a loss**, which the shell by design does
 not: `Module.onContextLost` from the first `begin_frame` after the lost
