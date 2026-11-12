@@ -35,6 +35,9 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    starter's. Do step 2 to download the ZIP, then follow [A second project](#a-second-project)
    below in place of steps 3 and 4.
 
+   Every box on this page uses `C:\dev` as written, even if you gave a deep folder a drive
+   letter in [Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder).
+
 2. **Download the starter ZIP.**
 
    <StarterDownload part="download" />
@@ -63,7 +66,10 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    ```
 
    If `tar` says `Error opening archive: Failed to open`, the ZIP is not in `C:\dev`, or has
-   another name: `dir /b C:\dev\*.zip` lists the ZIP files that are there.
+   another name: `dir /b C:\dev\*.zip` lists the ZIP files that are there. If it prints
+   `Can't create '\\?\P:\mygame\...'` for every file, with your drive letter in place of `P:`,
+   the ZIP was extracted at the root of a drive made with `subst`, where Windows' `tar` cannot
+   create files. Run the box above as written, which extracts in `C:\dev`.
 
    To extract it with File Explorer instead, right-click the ZIP and choose **Extract All...**.
    In the box under *Files will be extracted to this folder*, replace the folder shown with

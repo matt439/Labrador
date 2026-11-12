@@ -5,7 +5,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | id | Finding | State |
 |---|---|---|
 | `REV#106` | [A 32-bit prompt builds the starter silently, and the next x64 build fails with a linker flood](FINDINGS.md#rev106) | Open |
-| `REV#107` | [Install the tools sends deep-folder readers to a subst drive, where the starter's extract fails](FINDINGS.md#rev107) | Open |
+| `REV#107` | [Install the tools sends deep-folder readers to a subst drive, where the starter's extract fails](FINDINGS.md#rev107) | Done. Keeping a deep folder now applies only to a project that has to stay in a deep folder. It sends starter readers to C:\dev, puts core.longpaths behind "if you use Git", keeps P:\ for the Git route only, and warns that Windows' tar cannot extract at a subst drive's root. The starter page says its boxes use C:\dev as written and names the Can't create message with its cause. |
 | `REV#108` | [Move a starter project to a newer Labrador carries over only the game folder](FINDINGS.md#rev108) | Open |
 | `REV#109` | [Troubleshooting has no entry for several messages a first-timer really gets](FINDINGS.md#rev109) | Open |
 | `REV#110` | [Install the tools: the installer's own screens are unwritten and nothing says where a starter reader is finished](FINDINGS.md#rev110) | Open |
