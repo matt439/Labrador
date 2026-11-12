@@ -41,3 +41,4 @@ The live ledger for [the audit](README.md). Record each resolution here in the c
 | `REV#156` | [The WebGL context leaves powerPreference unstated](FINDINGS.md#rev156) | Open |
 | `REV#157` | [The bundle's context restore has never met a real driver reset](FINDINGS.md#rev157) | Open |
 | `REV#158` | [Report 19's first-frame evidence can be captured here](FINDINGS.md#rev158) | Open |
+| `REV#159` | [CI's Safari job fails intermittently on the components gallery page](FINDINGS.md#rev159) | Open |
