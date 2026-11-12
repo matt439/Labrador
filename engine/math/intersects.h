@@ -17,6 +17,11 @@
 // The collision module does not call these. narrow_phase measures a pair -
 // an axis and a depth - rather than answering yes or no, and builds its own
 // polygons and runs its own separating-axis test to do it.
+//
+// Every predicate taking a Circle answers false for a circle that is not
+// Circle::is_valid - a nonfinite centre or radius, or a negative radius -
+// and leaves its point out-parameter unchanged when it does. A zero radius
+// is a point, and the boundary is inside.
 
 namespace labrador
 {

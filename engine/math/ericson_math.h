@@ -31,6 +31,10 @@ namespace labrador
 	bool test_AABB_AABB(const RectangleF& a,
 		const RectangleF& b);
 
+	// The three circle tests answer false for a circle that is not
+	// Circle::is_valid: a nonfinite centre or radius, or a negative radius.
+	// Squaring would otherwise make a radius of -3 act as 3. An
+	// out-parameter is left unchanged when the circle is rejected.
 	bool test_circle_circle(const Circle& a,
 		const Circle& b);
 
@@ -39,8 +43,8 @@ namespace labrador
 		const Point2F& a, const Point2F& b,
 		const Point2F& c);
 
-	// Both overloads reject nonfinite geometry and negative radii. The
-	// closest-point overload leaves p unchanged when rejecting such input.
+	// Both overloads also reject a nonfinite box, and the closest-point
+	// overload leaves p unchanged when they do.
 	bool test_circle_AABB(const Circle& s,
 		const RectangleF& b);
 

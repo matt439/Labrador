@@ -11,6 +11,7 @@
 #include "engine/math/vector2f.h"
 
 #include <cfloat>
+#include <limits>
 
 using namespace labrador;
 
@@ -405,6 +406,123 @@ TEST_SUITE("ShapeIntersect")
 		s = Segment(Point2F(10.0f + epsilon_f, 0.0f), Point2F(20.0f, 0.0f));
 		CHECK_FALSE(circle_segment_intersect(c, s, p));
 		CHECK(p == Point2F(10.0f + epsilon_f, 0.0f));
+	}
+	TEST_CASE("a circle contains a point inside or on its boundary")
+	{
+		const Circle c(0.0f, 0.0f, 10.0f);
+
+		CHECK(circle_point_intersect(c, Point2F(0.0f, 0.0f)));
+		CHECK(circle_point_intersect(c, Point2F(3.0f, -4.0f)));
+
+		// The boundary is inside: 10 squared against 10 squared, exactly.
+		CHECK(circle_point_intersect(c, Point2F(10.0f, 0.0f)));
+		CHECK(circle_point_intersect(c, Point2F(0.0f, -10.0f)));
+
+		CHECK_FALSE(circle_point_intersect(c, Point2F(10.5f, 0.0f)));
+		CHECK_FALSE(circle_point_intersect(c, Point2F(8.0f, 8.0f)));
+
+		// A zero radius is a point, and contains itself and nothing else.
+		const Circle dot(2.0f, 3.0f, 0.0f);
+		CHECK(circle_point_intersect(dot, Point2F(2.0f, 3.0f)));
+		CHECK_FALSE(circle_point_intersect(dot, Point2F(2.0f, 3.5f)));
+
+		const float nan = std::numeric_limits<float>::quiet_NaN();
+		const float infinity = std::numeric_limits<float>::infinity();
+		CHECK_FALSE(circle_point_intersect(c, Point2F(nan, 0.0f)));
+		CHECK_FALSE(circle_point_intersect(c, Point2F(0.0f, nan)));
+		CHECK_FALSE(circle_point_intersect(c, Point2F(infinity, 0.0f)));
+		CHECK_FALSE(circle_point_intersect(Circle(nan, 0.0f, 10.0f), Point2F(0.0f, 0.0f)));
+		CHECK_FALSE(circle_point_intersect(Circle(0.0f, 0.0f, nan), Point2F(0.0f, 0.0f)));
+	}
+	TEST_CASE("a circle is valid when its centre and radius are finite and the radius is not negative")
+	{
+		const float nan = std::numeric_limits<float>::quiet_NaN();
+		const float infinity = std::numeric_limits<float>::infinity();
+
+		CHECK(Circle(1.0f, 2.0f, 3.0f).is_valid());
+		CHECK(Circle(1.0f, 2.0f, 0.0f).is_valid());
+		CHECK(Circle().is_valid());
+
+		CHECK_FALSE(Circle(1.0f, 2.0f, -3.0f).is_valid());
+		CHECK_FALSE(Circle(1.0f, 2.0f, -0.0001f).is_valid());
+		CHECK_FALSE(Circle(nan, 2.0f, 3.0f).is_valid());
+		CHECK_FALSE(Circle(1.0f, nan, 3.0f).is_valid());
+		CHECK_FALSE(Circle(1.0f, 2.0f, nan).is_valid());
+		CHECK_FALSE(Circle(infinity, 2.0f, 3.0f).is_valid());
+		CHECK_FALSE(Circle(1.0f, -infinity, 3.0f).is_valid());
+		CHECK_FALSE(Circle(1.0f, 2.0f, infinity).is_valid());
+
+		// inflate accepts any amount, and can take a circle out of validity.
+		Circle shrunk(1.0f, 2.0f, 3.0f);
+		shrunk.inflate(-4.0f);
+		CHECK_FALSE(shrunk.is_valid());
+	}
+	TEST_CASE("every circle predicate answers false for a negative or nonfinite radius or centre")
+	{
+		// Each shape below lies within 3 of the origin, so a circle of
+		// radius 3 there meets all of them. Each predicate squares the
+		// radius, so without the validity check -3 would act as 3.
+		const Circle reference(0.0f, 0.0f, 3.0f);
+		const Circle partner(5.0f, 0.0f, 3.0f);
+		const Triangle triangle(Point2F(1.0f, 0.0f), Point2F(5.0f, 0.0f), Point2F(1.0f, 5.0f));
+		const Quad quad(RectangleF(1.0f, -1.0f, 4.0f, 2.0f));
+		const Segment segment(Point2F(1.0f, -5.0f), Point2F(1.0f, 5.0f));
+		const Point2F point(1.0f, 0.0f);
+		const RectangleF rectangle(1.0f, -1.0f, 4.0f, 2.0f);
+		const RectangleRotated rectangle_rotated(Vector2F::zero,
+			Vector2F::direction_up_right,
+			Vector2F::direction_down_right, Vector2F(10.0f, 10.0f));
+
+		Point2F p;
+		CHECK(circles_intersect(reference, partner));
+		CHECK(circle_triangle_intersect(reference, triangle));
+		CHECK(circle_triangle_intersect(reference, triangle, p));
+		CHECK(circle_quad_intersect(reference, quad));
+		CHECK(circle_segment_intersect(reference, segment));
+		CHECK(circle_segment_intersect(reference, segment, p));
+		CHECK(circle_point_intersect(reference, point));
+		CHECK(rectangle_circle_intersect(rectangle, reference));
+		CHECK(rectangle_circle_intersect(rectangle, reference, p));
+		CHECK(circle_rectangle_rotated_intersect(reference, rectangle_rotated));
+
+		const float nan = std::numeric_limits<float>::quiet_NaN();
+		const float infinity = std::numeric_limits<float>::infinity();
+		const Circle invalid_circles[] = {
+			Circle(0.0f, 0.0f, -3.0f),
+			Circle(nan, 0.0f, 3.0f),
+			Circle(0.0f, nan, 3.0f),
+			Circle(0.0f, 0.0f, nan),
+			Circle(infinity, 0.0f, 3.0f),
+			Circle(0.0f, -infinity, 3.0f),
+			Circle(0.0f, 0.0f, infinity),
+		};
+
+		const Point2F untouched(-7.0f, -8.0f);
+		for (const Circle& invalid : invalid_circles)
+		{
+			CHECK_FALSE(circles_intersect(invalid, partner));
+			CHECK_FALSE(circles_intersect(partner, invalid));
+			CHECK_FALSE(circles_intersect(invalid, invalid));
+			CHECK_FALSE(circle_triangle_intersect(invalid, triangle));
+			CHECK_FALSE(circle_quad_intersect(invalid, quad));
+			CHECK_FALSE(circle_segment_intersect(invalid, segment));
+			CHECK_FALSE(circle_point_intersect(invalid, point));
+			CHECK_FALSE(rectangle_circle_intersect(rectangle, invalid));
+			CHECK_FALSE(circle_rectangle_rotated_intersect(invalid, rectangle_rotated));
+
+			p = untouched;
+			CHECK_FALSE(circle_triangle_intersect(invalid, triangle, p));
+			CHECK(p == untouched);
+			CHECK_FALSE(circle_segment_intersect(invalid, segment, p));
+			CHECK(p == untouched);
+			CHECK_FALSE(rectangle_circle_intersect(rectangle, invalid, p));
+			CHECK(p == untouched);
+		}
+
+		// Two circles of radius -3 five apart: the sum of radii squares to
+		// 36, more than the 25 between their centres.
+		CHECK_FALSE(circles_intersect(Circle(0.0f, 0.0f, -3.0f),
+			Circle(5.0f, 0.0f, -3.0f)));
 	}
 	TEST_CASE("two triangles intersect when they overlap, nest or touch")
 	{
