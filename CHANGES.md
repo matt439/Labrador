@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Refuse a NaN audio level above the seam (REV#125)
+
+**Behaviour change.** `SoundBank::play_wave`, `play_effect`, `set_effect_volume`, `set_effect_pitch`, `set_effect_pan` and `AudioResources::set_group_volume` now throw `std::invalid_argument` naming the call and the level for a NaN volume, pitch or pan, before the handle is checked. Before, `clamp` passed NaN through to the device, where Web Audio threw a `TypeError` inside the frame and XAudio2 received it as a level. An infinity still folds into range. (REV#125)
+
 ### 2026-11-13 - Refuse non-finite input and a zero or non-finite scale in Camera
 
 **Behaviour change.** `Camera::frame` now throws `std::invalid_argument` for a NaN or infinite world-rectangle position or extent, a NaN or infinite viewport extent, and world/viewport sizes so far apart that the scale would underflow to zero or overflow to infinity. Before this, those inputs returned a NaN camera or one with a zero or infinite scale. `Camera::visible_rectangle` and `Camera::world_position` now refuse a NaN or infinite scale as well as a zero one. A negative scale is still accepted unchanged.

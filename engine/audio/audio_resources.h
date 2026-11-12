@@ -83,8 +83,9 @@ namespace labrador
 		// name was added.
 		SoundGroupHandle resolve_sound_group(const std::string& group_name) const;
 
-		// Clamped to [0,1]. Throws std::out_of_range through an unresolved
-		// handle.
+		// Clamped to [0,1]. Throws std::invalid_argument for a NaN volume,
+		// before the handle is checked, and std::out_of_range through an
+		// unresolved handle.
 		//
 		// A one-shot already playing keeps the level it was launched with, and
 		// one launched after this call takes the new level. A retained effect

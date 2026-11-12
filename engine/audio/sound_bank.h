@@ -23,8 +23,8 @@ namespace labrador
 	// WHAT IS ON THIS SIDE OF THE SEAM. Everything in this class is engine
 	// arithmetic and engine policy: which name means which wave, which handles
 	// are valid, and the clamp that folds a volume into [0,1] and a pitch and a
-	// pan into [-1,1]. It calls audio_device.h for what an audio API actually
-	// does.
+	// pan into [-1,1] and refuses a NaN, which has no place in either range. It
+	// calls audio_device.h for what an audio API actually does.
 	//
 	// Nothing here may name one. A bank holding a DirectX::WaveBank and a
 	// Registry<DirectX::SoundEffectInstance>, with its effect handle and its
@@ -156,6 +156,11 @@ namespace labrador
 		// click or touch is dropped and never replayed. Escape alone does not
 		// count as that gesture. On every platform, a call while the game is
 		// suspended (minimised) is dropped the same way.
+		//
+		// Every level this class takes, here and on the effect verbs below,
+		// is folded into its range, an infinity included, and a NaN throws
+		// std::invalid_argument naming the call and the level. Both happen
+		// above every other check, in every bank.
 		void play_wave(WaveHandle wave, float volume = 1.0f,
 			float pitch = 0.0f, float pan = 0.0f) const;
 
@@ -224,6 +229,13 @@ namespace labrador
 		// that resolved every name must not then reject the handle it issued.
 		AudioDevice::VoiceHandle voice(EffectHandle effect) const;
 
-		static void clamp_levels(float& volume, float& pitch, float& pan);
+		// Folds `value` into [minimum, maximum], and throws
+		// std::invalid_argument naming `call` and `level` for a NaN, which
+		// clamp() would return unchanged. AudioResources' group volume goes
+		// through it too.
+		static float clamp_level(float value, float minimum, float maximum,
+			const char* call, const char* level);
+		static void clamp_levels(const char* call, float& volume, float& pitch,
+			float& pan);
 	};
 }

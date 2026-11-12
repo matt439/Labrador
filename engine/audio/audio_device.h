@@ -55,10 +55,10 @@ namespace labrador
 	// WHERE THE CUT IS, AND WHAT IS DELIBERATELY ABOVE IT. Everything this
 	// engine decides is above: which name means which wave, which handles are
 	// valid, and the clamp that folds a volume into [0,1] and a pitch and a pan
-	// into [-1,1]. Levels arrive here already clamped and handles arrive here
-	// already checked. Below is what an audio API actually does - open a
-	// container, find a name in it, build a voice, and start, stop, adjust or
-	// report one - and nothing else.
+	// into [-1,1] and refuses a NaN. Levels arrive here already clamped, never
+	// NaN, and handles arrive here already checked. Below is what an audio API
+	// actually does - open a container, find a name in it, build a voice, and
+	// start, stop, adjust or report one - and nothing else.
 	//
 	// WHAT THE SEAM DOES NOT DECIDE IS THE CONTAINER, AND THAT IS DELIBERATE.
 	// open_wave_bank takes a directory and a bank name, never a file name: the

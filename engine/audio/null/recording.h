@@ -13,7 +13,8 @@
 // engine code. Its fields name no platform audio API.
 //
 // Records expose call order, bank and wave identity, voice handles and levels
-// passed through the seam. SoundBank's level clamping can be checked here;
+// passed through the seam. SoundBank's level clamping, and that a refused NaN
+// level records nothing, can be checked here;
 // SoundBank::silent() declines playback instead of recording it. Between
 // suspend() and resume(), play_wave is dropped and not recorded, as every
 // backend drops it; voice calls are recorded as at any other time.

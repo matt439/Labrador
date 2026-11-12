@@ -140,7 +140,8 @@ state destruction.
 
 Volume is in `[0, 1]`, pitch in `[-1, 1]` (one octave down to one octave up),
 and pan in `[-1, 1]` (left to right). `SoundBank` clamps values at the engine
-boundary. The sample also clamps its own displayed settings:
+boundary, an infinity included, and throws `std::invalid_argument` for a NaN
+level, as does `AudioResources::set_group_volume`. The sample also clamps its own displayed settings:
 
 <SourceFile path="samples/audio/sound_board.cpp" from="void SoundBoard::set_volume" to="}" />
 

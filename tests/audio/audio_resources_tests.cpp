@@ -3,6 +3,7 @@
 #include "engine/audio/audio_resources.h"
 #include "engine/audio/sound_bank.h"
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -150,6 +151,25 @@ TEST_CASE("a group volume is clamped into [0,1]")
 
 	resources.set_group_volume(music, -1.0f);
 	CHECK(resources.group_volume(music) == doctest::Approx(0.0f));
+}
+
+TEST_CASE("a NaN group volume is refused, above the handle")
+{
+	AudioResources resources;
+	const AudioResources::SoundGroupHandle music =
+		resources.add_sound_group("music");
+	const float not_a_number = std::numeric_limits<float>::quiet_NaN();
+	resources.set_group_volume(music, 0.25f);
+
+	CHECK_THROWS_WITH_AS(resources.set_group_volume(music, not_a_number),
+		"AudioResources::set_group_volume: the volume is NaN.",
+		std::invalid_argument);
+	CHECK(resources.group_volume(music) == doctest::Approx(0.25f));
+
+	// The level is checked first, as SoundBank's are.
+	CHECK_THROWS_AS(resources.set_group_volume(
+		AudioResources::SoundGroupHandle(), not_a_number),
+		std::invalid_argument);
 }
 
 TEST_CASE("a group handle nothing issued is refused")
