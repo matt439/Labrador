@@ -715,6 +715,68 @@ the monitor's; both have the client size asked for above the system's
 smallest window, and engine/app/window.h now states the exception. (b) A show after the first present on d3d12
 and Vulkan happens after a present to a window that has never been visible, and
 each backend's behaviour presenting to a hidden window, flip-model swap chains
-especially, has to be checked before the engine-side shape is chosen. (c) The
+especially, has to be checked before the engine-side shape is chosen. Partly
+answered by the evidence below: D3D11, which presents with
+`DXGI_SWAP_EFFECT_FLIP_DISCARD` on this Windows, presented four or five frames
+to the never-shown window without error and showed the drawn frame. D3D12,
+Vulkan and GL presenting to a hidden window are still unchecked. (c) The
 white flash is inferred from the class brush and has not been observed; that is
-evidence (1).
+evidence (1). Answered by the evidence below: it is observed on all four
+rasterising backends.
+
+### Evidence, 2026-11-13
+
+Captured on the owner's desktop (Windows 11, RTX 5080) against `samples/minimal`
+built at `1dc8533c`. A scratch capture program started the sample, found its
+window by process id while it was still hidden, and copied the screen over
+the window's client rectangle with `BitBlt` in a loop, one sample every 15 to
+20 ms, from before the window was visible until a second after. Each sample
+records its time, whether `IsWindowVisible` was true and the client area's
+white and black fractions and mean colour. The machine was shared with other
+work, so the timings are loaded ones. A screen copy sees what DWM composed,
+including its open animation; a composed frame shorter than the sampling
+interval can fall between two samples.
+
+1. **A default-visible launch shows the class brush until the first present.**
+   The unmodified `x64-release` sample (three launches) and a scratch build
+   of it that only logs its calls and creates the window topmost (three
+   more) behaved alike. The window becomes visible 66 to 115 ms after
+   launch, inside the `Window` constructor. DWM fades it in over about 80 ms,
+   and from then the client area is the white `COLOR_WINDOW` brush until the
+   first present, 315 to 383 ms after the window became visible: 225 to
+   305 ms of white on every launch. The logged runs place the first `draw`
+   call 4 to 22 ms before the first drawn sample, after `initialize`
+   finishes creating the device and loading content. The `x64-debug`,
+   `x64-debug-d3d12`, `x64-debug-gl` and `x64-debug-vulkan` builds of the same
+   commit, unmodified, two launches each, show the same white, for 197 to
+   868 ms.
+2. **A hidden launch shown natively shows no sustained white.** The scratch
+   build created the window hidden and called `ShowWindow(SW_SHOWDEFAULT)`
+   on `Application::window()` from inside the engine's frame loop, three
+   launches each way. Shown when the first state's `init` returned, before
+   any present, the window faded in over about 85 ms straight to the drawn
+   frame; in two of the three launches one sample during the fade was a
+   brighter tint (mean colour 67 to 71 against the desktop's 35): the
+   white brush blended in for at most one sample before the first present
+   replaced it. Shown on frame 4 or 5, after that many presents to the
+   never-visible window, it faded from the desktop straight to the drawn
+   frame in all three launches, with no sample brighter than the desktop
+   underneath. `ShowWindow` itself took 22 to 40 ms to return.
+
+[The timeline](window-19/timeline.png) has one row per launch, each sample
+drawn in its mean colour and aligned on the moment the window became
+visible (red line); the blue tick is the logged first `draw` call. Rows
+named `d3d11-stock` are the unmodified `x64-release` build, `d3d11-visible`
+the logged default-visible build, `d3d11-show-in-init` and
+`d3d11-show-after-frame` the two hidden launches, and the `x64-debug` rows the
+unmodified debug builds. [Before the first present](window-19/visible-launch-before-present.png)
+and [the first present](window-19/visible-launch-first-present.png) are the
+client area at a quarter of its size from one unmodified launch. Frames that
+show the desktop under the window are not kept.
+
+That meets the condition stated above for the engine-side shape: (1) shows a
+flash of a quarter of a second or more and (2) shows that showing after the first
+frame cures it. Not captured: the client's own launch, which is its owner's;
+a hidden launch on D3D12, Vulkan or GL; and a full-screen launch, where the
+engine shows with `SW_SHOWMAXIMIZED`. Whether to land the engine-side shape is
+the owner's call.

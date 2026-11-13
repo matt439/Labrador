@@ -280,7 +280,7 @@ ready queue above.
 | `REV#151` | OPEN | could | M | Safari and Firefox runs prove drawing and keys but read back nothing; `RenderPixelTests` and `WebWindowTests` run only in Chromium. Run both pages in CI's Safari job, recording per-case drift on the Apple GPU; Firefox follows REV#150. |
 | `REV#152` | DECISION | could | M | Every phone check of the game is Chrome emulation; the website already drives Safari on the iOS Simulator, but the game does not. A second Simulator lane adds the flakiness CI already retries around, so it is the owner's call. |
 | `REV#156` | DECISION | could | XS | powerPreference is now stated as "default", and web-as-built.md records that Chrome picks the same GPU under every value on this one-GPU desktop. Left: the owner's choice of value, and a measurement on a hybrid laptop. |
-| `REV#158` | OPEN | could | S | ColourWars report 19's next step is evidence: what a default-visible `x64-release` minimal launch shows before the first present, then a hidden launch shown natively. The engine's show-after-first-frame shape waits on it; capturing it needs no call. |
+| `REV#158` | DECISION | could | S | ColourWars report 19's evidence is in window.md (2026-11-13): a visible launch shows the white brush for about 225 to 305 ms before the first present; showing a hidden window after its first frames shows none. Owner decides whether to land the engine-side show-after-first-frame shape. |
 | `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. Pages whose keys start Web Audio or full screen now get one action list, the others one confirmed key at a time, each the form that passed there; failures print the page's keys and focus. Close after a week clean. |
 
 ## Ports
