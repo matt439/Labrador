@@ -52,7 +52,9 @@ Other lines can come between the error and `ninja: build stopped`: progress line
 files the build was already working on, or a second `FAILED:` for another file. Read from the
 first `FAILED:` down, not from the bottom up. A build with no error has no `FAILED:` line and
 ends with a `Linking` line, such as `[4/4] Linking CXX executable game\MyGame.exe`; the numbers,
-and which program is linked last, can differ.
+and which program is linked last, can differ. A build that found nothing changed has no
+`Linking` line either, which usually means
+[the edit was not saved](/docs/troubleshooting/#the-game-has-not-changed-after-an-edit-and-the-build-printed-no-building-line).
 
 ## Fix it and build again
 

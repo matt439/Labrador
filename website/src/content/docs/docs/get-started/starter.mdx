@@ -118,8 +118,11 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    CMake also prints a time in brackets after each `done`. If it ends with `Configuring
    incomplete, errors occurred!` instead, find the first line that says `Error` and look it up
    in [Troubleshooting](/docs/troubleshooting/). The usual ones are
-   [the wrong command prompt](/docs/troubleshooting/#the-wrong-command-prompt) and
-   [`Could not find toolchain file`](/docs/troubleshooting/#could-not-find-toolchain-file-scriptsbuildsystemsvcpkgcmake).
+   [the wrong command prompt](/docs/troubleshooting/#the-wrong-command-prompt),
+   [`Could not find toolchain file`](/docs/troubleshooting/#could-not-find-toolchain-file-scriptsbuildsystemsvcpkgcmake),
+   [a download that failed](/docs/troubleshooting/#error-curl-operation-failed-with-error-code),
+   and a project folder too deep, which configure warns about with
+   [`CMAKE_OBJECT_PATH_MAX`](/docs/troubleshooting/#a-warning-that-an-object-file-path-exceeds-cmake_object_path_max).
 
 6. **Build it:**
 
@@ -134,13 +137,16 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
 
    If a line says `FAILED`, the build stopped there. The lines under it name the reason: skip
    the long line that starts with the compiler's path, find the first line with `error` in it,
-   and look up its message in [Troubleshooting](/docs/troubleshooting/#building). On a first
-   build the usual one is
-   [a folder too deep for the compiler](/docs/troubleshooting/#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument).
+   and look up its message in [Troubleshooting](/docs/troubleshooting/#building). A project
+   folder deep enough to have warned in step 5 can stop the build with
+   [C1083](/docs/troubleshooting/#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument).
    Hundreds of `unresolved external symbol` lines at once, with a `warning LNK4272` among them,
    mean the wrong command prompt, not a fault in the code:
    [`LNK4272`](/docs/troubleshooting/#warning-lnk4272-and-hundreds-of-unresolved-externals)
-   says what to do.
+   says what to do. A build that prints no numbered lines at all means the configure in step 5
+   did not finish:
+   [its entry](/docs/troubleshooting/#is-not-a-directory-build-tool-execution-failed-loading-buildninja-or-no-tests-were-found)
+   lists what it prints instead.
    Do not go on to the next step until the build works: the tests and the game need the
    program it makes.
 
@@ -197,6 +203,9 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    internal or external command, operable program or batch file.` or
    `The system cannot find the path specified.`, the build in step 6 did not finish: run it
    again and read its last lines.
+
+   This `MyGame.exe` is a debug build, which runs only on a PC with Visual Studio. To give the
+   game to someone, follow [Send your game to a friend](/docs/guides/your-release/).
 
 </Steps>
 
@@ -278,7 +287,10 @@ cmake --build --preset x64-debug
 ```
 
 `rmdir /s /q` deletes the folder and everything in it without asking, so check that the prompt
-ends `mygame>` before you run it. It deletes only what the build made.
+ends `mygame>` before you run it. It deletes only what the build made. After moving or renaming
+the project's folder, configure and build fail with
+[`The current CMakeCache.txt directory ... is different`](/docs/troubleshooting/#the-current-cmakecachetxt-directory--is-different-than-the-directory--where-cmakecachetxt-was-created),
+and that entry's box is the one to run.
 
 ## A second project
 
