@@ -189,6 +189,12 @@ if(PROJECT_IS_TOP_LEVEL)
                 "are not registered with ctest. Set LABRADOR_TEST_FIREFOX "
                 "to run them.")
         endif()
+        # Off by default: a Firefox on a machine with a GPU draws on it. On
+        # a Windows machine without one, Firefox gives a page no WebGL2
+        # context, and this passes the runner's --software-webgl, which puts
+        # it on WARP (run_firefox.mjs says which preferences it writes).
+        option(LABRADOR_FIREFOX_SOFTWARE_WEBGL
+            "Run the Firefox* page entries on WARP, for a machine without a GPU" OFF)
     endif()
 
     add_subdirectory(tests)
@@ -342,6 +348,10 @@ if(PROJECT_IS_TOP_LEVEL)
         AND NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         set(labrador_firefox_runner
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/run_firefox.mjs")
+        set(labrador_firefox_software_webgl "")
+        if(LABRADOR_FIREFOX_SOFTWARE_WEBGL)
+            set(labrador_firefox_software_webgl --software-webgl)
+        endif()
         set(labrador_firefox_samples
             linesweeper minimal collision audio local_multiplayer components)
         set(labrador_firefox_names
@@ -354,6 +364,7 @@ if(PROJECT_IS_TOP_LEVEL)
                     --build-dir "${CMAKE_BINARY_DIR}"
                     --sample ${sample}
                     --timeout 60
+                    ${labrador_firefox_software_webgl}
             )
             set_tests_properties(Firefox${name}PageTests PROPERTIES TIMEOUT 90)
         endforeach()
@@ -363,6 +374,7 @@ if(PROJECT_IS_TOP_LEVEL)
                 --build-dir "${CMAKE_BINARY_DIR}"
                 --test WebWindowTests
                 --timeout 60
+                ${labrador_firefox_software_webgl}
         )
         set_tests_properties(FirefoxWebWindowTests PROPERTIES TIMEOUT 90)
         add_test(NAME FirefoxLineSweeperBundlePageTests
@@ -370,6 +382,7 @@ if(PROJECT_IS_TOP_LEVEL)
                 --browser "${LABRADOR_TEST_FIREFOX}"
                 --bundle "${CMAKE_BINARY_DIR}/web-dist/linesweeper"
                 --timeout 120
+                ${labrador_firefox_software_webgl}
         )
         # Never beside the other LineSweeper pages that time frames on the
         # same software rasteriser, for the reason Chromium's bundle entry gives.

@@ -9,9 +9,9 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
 import { FACTORY_WRAPPER, PRELUDE } from './bundle_page.mjs';
-import { SAMPLES, SAMPLE_HOOK, WINDOW_HOOK, bidi_endpoint, bundle_input, bundle_substitute, drive_bundle,
-	drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox, parse_options,
-	remove_stale_profiles, window_input } from './run_firefox.mjs';
+import { SAMPLES, SAMPLE_HOOK, SOFTWARE_WEBGL_PREFERENCES, WINDOW_HOOK, bidi_endpoint, bundle_input,
+	bundle_substitute, drive_bundle, drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox,
+	parse_options, remove_stale_profiles, user_js, window_input } from './run_firefox.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -268,6 +268,35 @@ test('Firefox CLI accepts six samples, WebWindowTests or the bundle and uses a f
 	assert.equal(bidi_endpoint('WebDriver BiDi listening on ws://127.0.0.1:46'), null);
 	assert.equal(bidi_endpoint('DevTools listening on ws://127.0.0.1:1/devtools/browser'), null);
 	assert.equal(bidi_endpoint('WebDriver BiDi listening on ws://192.0.2.1:1234'), null);
+});
+
+test('--software-webgl is an opt-in flag without a value that writes only its preferences to user.js', () => {
+	const plain = parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--sample', 'minimal']);
+	assert.equal(plain.software_webgl, false);
+	for (const arguments_ of [
+		['--software-webgl', '--browser', 'firefox.exe', '--build-dir', 'build', '--sample', 'minimal'],
+		['--browser', 'firefox.exe', '--software-webgl', '--build-dir', 'build', '--test', 'WebWindowTests'],
+		['--browser', 'firefox.exe', '--bundle', 'web-dist/linesweeper', '--timeout', '120', '--software-webgl'],
+	]) {
+		const options = parse_options(arguments_);
+		assert.equal(options.software_webgl, true);
+		assert.equal(options.browser, 'firefox.exe');
+	}
+	assert.equal(parse_options(['--browser', 'firefox.exe', '--software-webgl', '--build-dir', 'build',
+		'--sample', 'audio', '--timeout', '30']).timeout_ms, 30000);
+	for (const extra of [['--software-webgl', '--software-webgl'], ['--software-webgl', 'true'],
+		['--software_webgl', 'true']]) {
+		assert.throws(() => parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--sample', 'minimal',
+			...extra]));
+	}
+	assert.deepEqual(Object.keys(SOFTWARE_WEBGL_PREFERENCES).sort(),
+		['webgl.angle.force-warp', 'webgl.force-enabled', 'webgl.sanitize-unmasked-renderer']);
+	assert.ok(Object.isFrozen(SOFTWARE_WEBGL_PREFERENCES));
+	assert.equal(user_js(SOFTWARE_WEBGL_PREFERENCES),
+		'user_pref("webgl.force-enabled", true);\n' +
+		'user_pref("webgl.angle.force-warp", true);\n' +
+		'user_pref("webgl.sanitize-unmasked-renderer", false);\n');
+	assert.equal(user_js({}), '');
 });
 
 test('preload preserves callbacks and observes real-method submission calls only for the module canvas', () => {

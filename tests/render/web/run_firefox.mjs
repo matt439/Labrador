@@ -1,8 +1,8 @@
 // The six development sample pages, WebWindowTests' page and LineSweeper's
 // bundle page in Firefox over WebDriver BiDi, separate from Chromium's runner
-// (run_page.mjs). No geckodriver, browser preferences, shared profile or
-// GPU/security flags. The root CMakeLists registers each as a ctest entry
-// when configure finds a Firefox.
+// (run_page.mjs). No geckodriver, shared profile or security flags, and no
+// browser preferences unless --software-webgl asks for its three. The root
+// CMakeLists registers each as a ctest entry when configure finds a Firefox.
 //
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --build-dir out/build/wasm-release --sample minimal [--timeout 60] [--frames 60]
@@ -10,6 +10,16 @@
 //   --build-dir out/build/wasm-release --test WebWindowTests [--timeout 60]
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --bundle out/build/wasm-release/web-dist/linesweeper [--timeout 120]
+// Any of these takes --software-webgl, with no value.
+//
+// --software-webgl writes SOFTWARE_WEBGL_PREFERENCES below into the fresh
+// profile's user.js, for a Windows machine with no GPU, where Firefox gives a
+// page no WebGL context: it overrides the driver blocklist and puts ANGLE's
+// Direct3D 11 device on WARP, Windows' software rasteriser, as Chrome's
+// SwiftShader stands in on the same machine. It also unmasks the renderer
+// string a sample's run logs, so the run shows which device drew. It is
+// opt-in: a machine with a GPU runs on its GPU without it. WARP is not the
+// device a player's Firefox uses.
 //
 // --test WebWindowTests runs tests/app/web/window_input.mjs's sequence against
 // tests/app/web/window_page.cpp's page with window_input below: the same
@@ -28,7 +38,7 @@
 // https://w3c.github.io/webdriver-bidi/#command-browsingContext-setViewport
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { lstatSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
+import { lstatSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +54,12 @@ export function parse_options(arguments_) {
 	const options = {};
 	const allowed = new Set(['browser', 'build-dir', 'sample', 'test', 'bundle', 'timeout', 'frames']);
 	for (let index = 0; index < arguments_.length; index += 2) {
+		if (arguments_[index] === '--software-webgl') {
+			if (options.software_webgl) throw new Error('Invalid or duplicate argument --software-webgl.');
+			options.software_webgl = true;
+			--index;
+			continue;
+		}
 		const name = arguments_[index].replace(/^--/, '');
 		if (!arguments_[index].startsWith('--') || !allowed.has(name) ||
 			index + 1 >= arguments_.length || Object.hasOwn(options, name)) {
@@ -64,6 +80,7 @@ export function parse_options(arguments_) {
 	}
 	options.timeout_ms = Number(options.timeout ?? 60) * 1000;
 	options.frames = Number(options.frames ?? 60);
+	options.software_webgl ??= false;
 	if (!Number.isFinite(options.timeout_ms) || options.timeout_ms < 1000 || options.timeout_ms > 600000 ||
 		!Number.isInteger(options.frames) || options.frames < 1 || options.frames > 36000) {
 		throw new Error('Timeout must be 1-600 seconds; frames must be an integer in 1-36000.');
@@ -73,6 +90,25 @@ export function parse_options(arguments_) {
 
 export function firefox_arguments(profile) {
 	return ['--headless', '--profile', profile, '--remote-debugging-port=0', 'about:blank'];
+}
+
+// Firefox's own preference names, each run in Firefox 160
+// (docs/port/web-to-be-tested.md, under the Firefox entries).
+export const SOFTWARE_WEBGL_PREFERENCES = Object.freeze({
+	// Draw although the blocklist refuses the device, as it refuses the
+	// Microsoft Basic Render Driver that is a GPU-less machine's only adapter.
+	// On such a machine this one alone draws, on WARP.
+	'webgl.force-enabled': true,
+	// ANGLE's Direct3D 11 device on WARP even where a hardware adapter
+	// exists, so a machine with a GPU can reproduce the GPU-less run.
+	'webgl.angle.force-warp': true,
+	// The real renderer string rather than the sanitized one.
+	'webgl.sanitize-unmasked-renderer': false,
+});
+
+export function user_js(preferences) {
+	return Object.entries(preferences)
+		.map(([name, value]) => `user_pref(${JSON.stringify(name)}, ${JSON.stringify(value)});\n`).join('');
 }
 
 export function bidi_endpoint(text) {
@@ -491,6 +527,10 @@ export async function main(options) {
 	try {
 		remove_stale_profiles(tmpdir());
 		profile = mkdtempSync(join(tmpdir(), 'labrador-firefox-'));
+		if (options.software_webgl) {
+			writeFileSync(join(profile, 'user.js'), user_js(SOFTWARE_WEBGL_PREFERENCES));
+			console.log(`Firefox software WebGL preferences: ${JSON.stringify(SOFTWARE_WEBGL_PREFERENCES)}`);
+		}
 		service = await serve_files(files,
 			{ substitute: options.bundle !== undefined ? bundle_substitute : undefined, deny_after_failure: true });
 		launched = launch_firefox(options.browser, profile);

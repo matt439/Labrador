@@ -533,7 +533,7 @@ the tested tab, and `Module.onError`, fail any of them. Artifact byte
 lengths/hashes, session/browser capabilities, for a sample raw WebGL strings, and Firefox's
 last 16 KiB of stderr are logged. Submission counts do not prove pixel
 correctness, audible audio or a physical adapter. No browser run is claimed by
-the 27 offline BiDi transport, control and input-translation fixtures;
+the 30 offline BiDi transport, control, input-translation and option fixtures;
 `BrowserProtocolTests` runs them under Node, without a browser or device,
 beside Chromium's transport, sample-key, input-bridge and bundle-host
 fixtures, 78 cases in all.
@@ -545,13 +545,48 @@ Configure registers eight entries where it finds a Firefox
 `FirefoxLocalMultiplayerPageTests`, `FirefoxComponentsPageTests`,
 `FirefoxWebWindowTests` and `FirefoxLineSweeperBundlePageTests`. CI's wasm
 job runs only `FirefoxWebWindowTests`. The runner image's Firefox gives a page
-no WebGL2 context: the runner has no GPU, and Firefox has no software WebGL
-without preferences the runner does not set, so on 2026-11-05 (run
-41944047596) each drawing entry failed at startup with "Failed to create
-WebGL context" while the window's entry passed. The drawing entries run
-wherever configure finds a Firefox on a machine with a GPU, which is a
-release-time check like `ci_gap_report.py`'s, not a per-pull-request one. To
-run them, or one page by hand:
+no WebGL2 context: the runner has no GPU, and Firefox's driver blocklist
+refuses the software adapter it has, so on 2026-11-05 (run 41944047596) each
+drawing entry failed at startup with "Failed to create WebGL context" while
+the window's entry passed. The drawing entries run wherever configure finds a
+Firefox on a machine with a GPU, which is a release-time check like
+`ci_gap_report.py`'s, not a per-pull-request one.
+
+Configuring with `-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` passes the runner's
+opt-in `--software-webgl` to all eight entries. It writes three preferences
+into the temporary profile's `user.js`: `webgl.force-enabled` past the
+blocklist, `webgl.angle.force-warp` to put ANGLE's Direct3D 11 device on WARP,
+Windows' software rasteriser, and `webgl.sanitize-unmasked-renderer` off, so
+each sample's logged renderer names the device that drew. On 2026-11-13, with
+Firefox 160 and `wasm-release` at `1dc8533c`:
+
+- In Windows Sandbox with its virtual GPU disabled, whose only display adapter
+  was the Microsoft Remote Display Adapter, `minimal` and `linesweeper` failed
+  without the flag ("AllowWebgl2:false restricts context creation on this
+  system"), as CI's did. `webgl.force-enabled` alone drew `minimal` on
+  "ANGLE (Microsoft, Microsoft Basic Render Driver (0x0000008C) Direct3D11
+  vs_5_0 ps_5_0)", which is WARP; the blocklist, not a missing device, was what
+  refused. With all three preferences the six samples and the bundle page
+  drew and passed on that device, and the window's sequence passed. Not every
+  attempt passed: the first two Firefox launches after the Sandbox booted
+  waited past the runner's 30-second BiDi endpoint limit, one launch failed to
+  start its tab process, and `audio` failed two of its three completed runs
+  with "InvalidStateError: Closed before resume completed" from
+  `AudioSample.js`, a Web Audio context closed at quit before its resume
+  settled, which no other `audio` run here has shown. The Sandbox is not CI's
+  runner; whether that runner's Firefox reaches WARP the same way is shown
+  only by a CI run with the option.
+- On the desktop with its RTX 5080, Firefox draws `minimal` on its GPU without
+  the flag (the logged string is Firefox's sanitized "NVIDIA GeForce GTX 980"
+  bucket) and on the Microsoft Basic Render Driver with it, so
+  `webgl.angle.force-warp` moves a machine with a GPU onto WARP. Configured
+  with the option, all eight `Firefox*` entries passed through ctest there.
+
+WARP is not the device a player's Firefox uses, and a submission count on it
+proves no more than one on a GPU. CI does not yet pass the option: its wasm
+job would configure with it and run `-R "^Firefox"` in place of
+`-R "^FirefoxWebWindowTests$"`. To run them, or one page by hand (either
+runner command also takes `--software-webgl`):
 
 ```text
 ctest --preset wasm-release -R "^Firefox" --output-on-failure

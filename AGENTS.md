@@ -86,7 +86,9 @@ render backend rasterizes, eight `Firefox*` entries run the six sample pages,
 loss, quit and replay over WebDriver BiDi
 ([run_firefox.mjs](tests/render/web/run_firefox.mjs)). CI's image has a
 Firefox but no WebGL2 in it (no GPU, and no software WebGL by default), so CI
-runs only `FirefoxWebWindowTests`; the drawing entries need a GPU.
+runs only `FirefoxWebWindowTests`. The drawing entries need a GPU, or
+`-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON`, which puts Firefox on WARP and which
+CI does not yet pass ([web-to-be-tested.md](docs/port/web-to-be-tested.md)).
 CI's `safari` job, on macos-latest, runs the six sample pages and the bundle
 page from the `wasm` job's artifacts in desktop Safari through
 [run_safari.mjs](tests/render/web/run_safari.mjs) and safaridriver; it is not
