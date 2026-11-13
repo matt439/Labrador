@@ -7,6 +7,7 @@
 #include "engine/render/renderer.h"
 #include "tests/render/pixel_test_harness.h"
 
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -85,9 +86,13 @@ TEST_CASE("the renderer reports the rasterising device it selected")
 	Harness harness;
 	const RenderDeviceInfo& info = harness.renderer().device_info();
 
-	// Printed, because the same green means different things on a GPU and on
-	// a software rasteriser. CI's windows jobs read this line.
-	MESSAGE("Drawing on ", info.device_name);
+	// Printed with its classification, because the same green means
+	// different things on a GPU and on a software rasteriser. CI's windows
+	// jobs read this line.
+	const std::string kind_name =
+		info.kind == RenderDeviceKind::hardware ? "hardware"
+		: info.kind == RenderDeviceKind::software ? "software" : "null";
+	MESSAGE("Drawing on ", info.device_name, " (", kind_name, ")");
 
 	CHECK_FALSE(info.backend.empty());
 	CHECK_FALSE(info.api.empty());

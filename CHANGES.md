@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Classify an unflagged Basic Render Driver as a software device
+
+**Behaviour change.** The Direct3D 11 and 12 backends' `Renderer::device_info().kind` is `RenderDeviceKind::software` for an adapter DXGI does not flag as software when its vendor and device numbers (`0x1414`, `0x8c`) or its name identify the Microsoft Basic Render Driver; it was `hardware` there. Adapter selection is unchanged, so a release build still starts on such an adapter and now reports it as `software`. ([#125](https://github.com/matt439/Labrador/issues/125))
+
 ### 2026-11-13 - Count allocations across warmed frames outside the backends (REV#126)
 
 **Behaviour change.** `ThreadPool` keeps the slot and Win32 work object it builds for each submission and reuses them after `wait_for_tasks_to_complete`. Once a pool has held as many tasks between two waits as it is given now, `add_task` allocates nothing for a callable that `std::function` stores in place, and a warmed fanned-out `Scene::draw` makes no heap allocation. A task's callable, and its captures, are now destroyed by the wait that follows its submission, on the waiting thread. They used to be destroyed on the worker right after the task ran. The pool's work objects stay open until the pool is destroyed.

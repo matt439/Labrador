@@ -39,10 +39,12 @@ namespace labrador
 		// other two).
 		const D3D_FEATURE_LEVEL min_feature_level = D3D_FEATURE_LEVEL_11_0;
 
-		// Whether hardware_adapter may take this adapter: not the Basic
-		// Render Driver, which is software and is not what the fallback in
-		// create_device_resources means by WARP, and able to make a Direct3D
-		// 12 device at the floor.
+		// Whether hardware_adapter may take this adapter: not carrying
+		// DXGI_ADAPTER_FLAG_SOFTWARE, and able to make a Direct3D 12 device
+		// at the floor. The flag is the whole software test, so an unflagged
+		// CPU rasteriser such as the Basic Render Driver on some GPU-less
+		// machines is taken, and device_info reports it as software
+		// (dxgi_device_kind.h).
 		//
 		// THE SECOND TEST IS ONE THE D3D11 FILE DOES NOT NEED. There, every
 		// adapter DXGI enumerates supports D3D11 at some level; here an

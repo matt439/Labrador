@@ -71,8 +71,11 @@ namespace labrador
             D3D_FEATURE_LEVEL_10_0,
         };
 
-        // Whether an adapter GetHardwareAdapter may take: any but the Basic
-        // Render Driver, which is software. Traced in a debug build.
+        // Whether an adapter GetHardwareAdapter may take: any that does not
+        // carry DXGI_ADAPTER_FLAG_SOFTWARE. The flag is the whole test, so an
+        // unflagged CPU rasteriser such as the Basic Render Driver on some
+        // GPU-less machines is taken, and device_info reports it as software
+        // (dxgi_device_kind.h). Traced in a debug build.
         bool IsUsableAdapter(IDXGIAdapter1* adapter, [[maybe_unused]] UINT adapterIndex)
         {
             DXGI_ADAPTER_DESC1 desc;
@@ -80,7 +83,7 @@ namespace labrador
 
             if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
             {
-                // Don't select the Basic Render Driver adapter.
+                // Don't select an adapter DXGI flags as software.
                 return false;
             }
 

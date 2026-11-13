@@ -1,6 +1,7 @@
 # The Direct3D device kind: issue #125
 
-**Checked by reading, 2026-11-10. Not fixed, and not decided.**
+**Checked by reading, 2026-11-10. Part 1 below, the report, is fixed;
+part 2, selection, is the owner's and not decided.**
 [Issue #125](https://github.com/matt439/Labrador/issues/125) is a bug report:
 on a machine with no GPU, a `d3d11` build's `Renderer::device_info()` names
 the Microsoft Basic Render Driver, vendor `0x1414`, device `0x8c`, and gives
@@ -106,7 +107,13 @@ a Direct3D CI job, as the GL and Vulkan jobs already do, and read its
 ## The change that would answer it
 
 Not made in the commit that adds this file. In two parts, because the second
-is an owner decision and the first is not.
+is an owner decision and the first is not. Part 1 was made later, in
+*Classify an unflagged Basic Render Driver as a software device*: the shared
+function is `engine/render/dxgi_device_kind.h`, which also matches the name
+`Microsoft Basic Render` as the GL backend does, with its tests in
+`tests/render/dxgi_device_kind_tests.cpp`; CI's step that records the device
+now prints the name and kind for the Direct3D entries too, without a name to
+match. The section below is the plan as written before it.
 
 **1. Report the truth (a defect fix).** Move the classification out of the
 two `selected_device` functions into one headless function in

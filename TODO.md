@@ -107,7 +107,7 @@ the player* links, waits on the owner.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `PI-14` | DECISION | should | M | Sandbox run at `v0.2.0` reached a keyboard match. Radeon criterion: not run, none available; the pad match is informal play. Run and record are ColourWars'. Owner: close as delegated, or await its `v0.3.0` run. [BACKLOG](docs/product/BACKLOG.md#next). |
-| `REV#104` | OPEN | should | S | Both Direct3D backends take `RenderDeviceKind` from `DXGI_ADAPTER_FLAG_SOFTWARE` alone, so an unflagged CPU rasteriser reads as hardware (issue #125). Selection using a fix is the owner's. [Record](docs/review/colourwars-reports/device-kind.md). |
+| `REV#104` | DECISION | should | S | Direct3D now reports an unflagged Basic Render Driver as `software` (issue #125); selection still reads DXGI's flag alone, so whether a release build refuses that adapter (T6, and CI's release D3D runs) is the owner's call. |
 | `REV#105` | DECISION | should | S | Verdicts on issues #123 and #124 ([draft](docs/review/colourwars-reports/contact.md)), and whether `REV#40` meets #122, whose tests link the shipping build. [Table](docs/review/colourwars-reports/README.md). |
 
 ## Records and design decisions
