@@ -104,7 +104,7 @@ wrapper, `engine/assets/json.h`. Its accessors check the node's type and any
 requested key or element before reading it. Failures name the source and
 position, plus the key when one was requested:
 
-```cpp
+```cpp title="engine/assets/json.h"
 JsonDocument read_json_file(const char* path);   // throws naming the path if it cannot be read or parsed
 JsonDocument parse_json(std::string_view text, std::string source_name);  // the same parse, from memory; errors name source_name
 
@@ -141,7 +141,7 @@ The engine knows four kinds: `texture`, `font`, `sprite_sheet` and `sound_bank`.
 more (levels, dialogue, enemy definitions) by registering a loader for each kind **before** it
 loads the manifest:
 
-```cpp
+```cpp title="engine/assets/resource_loader.h"
 void register_kind(const std::string& kind, AssetKind asset_kind);
 
 struct AssetKind
