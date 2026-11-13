@@ -139,8 +139,10 @@ gate. It stays closed until both are complete. No Android phone is available;
       `Application::frame_timings()`, paired with rAF intervals and the same
       observed-judder record as R5. The opt-in exact fixture/export passes
       in headless Chrome on the desktop.
-      Headless ParticleField counts, ordinary played top-out and native bench
-      timings cannot supply this phone result. No phone measurement is added.
+      Headless ParticleField counts, ordinary played top-out, native bench
+      timings and the throttled desktop rehearsal in
+      [web-as-built.md](web-as-built.md#throttled-desktop-rehearsal-2026-11-13)
+      cannot supply this phone result. No phone measurement is added.
 - [ ] Rotating with the pause menu open re-arranges the match underneath only
       on resume (known and documented; check it reads acceptably).
 - [ ] Deferred, optional (`SM-44`): repeat the phone checks on a mid-range

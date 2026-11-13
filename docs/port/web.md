@@ -1170,7 +1170,10 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
 - **R6 — the particle field on the low tier.** 9,600 particles a frame,
   single-threaded, in wasm, uploaded with `glBufferSubData`. Desktop is
   probably fine. The constrained hardware this engine positions itself for is
-  not measured, and `LineSweeperFrameBench`'s numbers do not transfer.
+  not measured, and `LineSweeperFrameBench`'s numbers do not transfer. A
+  throttled desktop rehearsal ([web-as-built.md](web-as-built.md#throttled-desktop-rehearsal-2026-11-13))
+  exercises the fixture and the catch-up limit under a slowed main thread;
+  it is emulation, not that measurement.
 
 ---
 

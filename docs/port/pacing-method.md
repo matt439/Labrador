@@ -3,9 +3,9 @@
 This is SM-08's method for R5/R6. It contains no display or phone result.
 R5 has a console procedure and an offline reducer; R6 has an opt-in
 development-page engine-frame exporter and an exact 9,600-particle fixture.
-§4 records their headless Chrome acceptance. Neither headless cadence nor the
-native frame bench closes the real-device boxes in
-[web-to-be-tested.md](web-to-be-tested.md).
+§4 records their headless Chrome acceptance and §5 a throttled desktop
+rehearsal. Neither headless cadence, throttling nor the native frame bench
+closes the real-device boxes in [web-to-be-tested.md](web-to-be-tested.md).
 
 ## 1. Record the run before collecting
 
@@ -339,3 +339,49 @@ module's. The packaged `linesweeper.js`, in the build and in `web-dist/`, has
 none of them, and its wasm is byte-identical in both. None of these numbers
 is a display, pacing or phone result: headless Chrome has no physical refresh
 or scan-out.
+
+## 5. Throttled desktop rehearsal
+
+Before a phone is on the desk, Chrome's DevTools throttling slows this
+desktop to rehearse what a slow device does to the §3 fixture and to the
+packaged page's load. `run_page.mjs --cpu-throttle <rate>` applies
+`Emulation.setCPUThrottlingRate` to the page and `--network <profile>`
+applies `Network.emulateNetworkConditions` with the latency and throughput
+it names (`slow-4g`: 562.5 ms, 180,000 bytes/s down, Chrome's preset of that
+name). Both are emulation on this machine: the renderer's main thread is
+slowed, while the GPU process, the compositor, the display
+and the memory are this desktop's; no phone's cores, thermal limits, browser
+or radio are modelled. A throttled result is recorded as desktop emulation,
+never in the R6 or phone-load records of web-to-be-tested.md.
+
+From the repository root, with a `wasm-release` build in `<build>`:
+
+```text
+set LABRADOR_THROTTLE_OUT=out/throttle/r6
+set LABRADOR_THROTTLE_LABEL=cpu-4x
+node tests/render/web/run_page.mjs --browser <chrome> ^
+  --page <build>/samples/linesweeper/LineSweeperSample.html ^
+  --input tools/web_pacing/throttle_input.mjs --cpu-throttle 4 --timeout 560
+
+set LABRADOR_THROTTLE_OUT=out/throttle/load
+set LABRADOR_THROTTLE_LABEL=slow-4g
+node tests/render/web/run_page.mjs --browser <chrome> ^
+  --page <build>/web-dist/linesweeper/index.html ^
+  --input tools/web_pacing/bundle_load_input.mjs --network slow-4g --timeout 560
+```
+
+The first runs `LABRADOR_THROTTLE_TRIGGERS` (default 3) fresh `topout`
+triggers of `LABRADOR_THROTTLE_DURATION_MS` (default 3,000) each, keeps each
+raw export, applies the §4 acceptance checks and records a failed check as a
+result. Its summary gives updates per completed frame (the 0.1 s step clamp
+allows at most six), phase p50/p99/max over the measured rows, the marked
+burst frame's phases and following interval, and the time from navigation
+start to the first WebGL clear. The second loads the packaged page as
+built, with no substituted response, clicks Play through browser input and
+waits for five game frames; it records each file's bytes and arrival from
+Resource Timing and the time from the click to the first clear. The local
+server sends files uncompressed, unlike the live host. Interleave rates and
+repeat a rate, since other work on the machine moves throttled figures.
+`node --test tools/web_pacing/throttle.test.mjs` holds the summaries on
+synthetic exports. [web-as-built.md](web-as-built.md#throttled-desktop-rehearsal-2026-11-13)
+records the first rehearsal.
