@@ -211,6 +211,11 @@ settings hold, and its contexts should be this list.
 the branch protection in the same change**, and this list with it. A removed or
 renamed context leaves every later pull request waiting on a check that never
 reports; an added one that is not required can fail and still merge.
+[test_required_checks.py](tools/tests/test_required_checks.py), in the `lint`
+job's offline tooling tests, derives the check names from both workflows,
+expanding matrix names, and fails when this list leaves one out or names one
+no job reports. It cannot read GitHub's settings, so the `gh api` comparison
+above stays a manual step after such a change.
 
 **Required checks are strict**: a branch must be up to date with `master`
 before it merges, so its checks have run against the tree it will produce. Two
