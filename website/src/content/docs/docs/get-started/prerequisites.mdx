@@ -14,6 +14,35 @@ The browser build needs Emscripten, and Python 3 to install it with, but not Git
 [Build for the browser](/docs/guides/browser/#install-emscripten) covers both when you get
 there, and nothing in Get Started needs them.
 
+## Before you install
+
+Visual Studio is a download of several gigabytes and takes about 16 GB of disk on the desktop
+these pages were checked on, so check the machine first. Open **Settings**, then **System**, then
+**About**, and look at two lines there:
+
+- **System type**, under *Device specifications*, should say **x64-based processor**. If it
+  says **ARM-based processor**, the PC is a Windows on Arm laptop, such as one with a Snapdragon
+  chip. Microsoft supports Visual Studio on Windows 11 on Arm, but these pages and the starter
+  project build an x64 game and have not been tried on an Arm PC, so whether every step works
+  there as written is not known.
+- **Edition**, under *Windows specifications*, should name **Windows 11**. These pages were
+  checked only on Windows 11. Microsoft's requirements for Visual Studio 2026, which the
+  download link below gives, and for Visual Studio 2022 list Windows 11 and Windows Server
+  but not Windows 10, and what the installer does on Windows 10 has not been tried. If the
+  edition ends **in S mode**, Windows runs only apps from the Microsoft Store, and Microsoft
+  does not support Visual Studio there. Microsoft's
+  [S mode questions](https://support.microsoft.com/en-us/windows/windows-10-and-windows-11-in-s-mode-faq-851057d6-1ee9-b9e5-c30b-93baebeebc85)
+  say how to switch out of it, from **Settings > System > Activation**: it is free, but it is
+  one-way, and you cannot turn S mode back on.
+
+You also need to be able to approve an administrator prompt: Microsoft's
+[system requirements](https://learn.microsoft.com/en-us/visualstudio/releases/2026/vs-system-requirements)
+say administrator rights are needed to install or update Visual Studio. On a school or work PC
+where Windows asks for someone else's password, ask whoever manages the PC.
+
+A graphics card is not needed to follow these pages: the debug build they make falls back to
+Windows' software renderer when there is none. No one has followed them on such a machine.
+
 ## Typing the commands
 
 Every command these pages ask you to run is in a box like the one below. Nothing in a box needs
