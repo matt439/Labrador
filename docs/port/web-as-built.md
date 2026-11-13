@@ -747,3 +747,23 @@ and unfetched, and fetched no module.
 and Safari on this page, a real context loss, a real phone seeing the
 recording, and the top-out's flash count on this page rather than the
 desktop build.
+
+## WebGL adapter preference, 2026-11-13
+
+The browser context now states `powerPreference` as `"default"` in
+`engine/render/gl/web_context.cpp`, the value it already had when left unset,
+so what the browser selects is unchanged. The term is stated because on a
+machine with an integrated and a discrete GPU it chooses between them, and
+which of the two a page should ask for is the low-tier question of
+[PHILOSOPHY.md](../design/PHILOSOPHY.md); choosing `"low-power"` or
+`"high-performance"` is the owner's decision.
+
+A scratch DevTools script created a WebGL2 context under each value in
+headless Chrome 157.0.8103.78 on the desktop, one fresh browser process per
+value, and read `WEBGL_debug_renderer_info`. All three reported the same
+renderer, `ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11
+vs_5_0 ps_5_0, D3D11)`, and `getContextAttributes()` echoed the value asked
+for. That machine has one enabled GPU (its integrated Radeon is switched off),
+so the result shows only that the term reaches Chrome and changes nothing with
+one adapter. It says nothing about what any value selects on a hybrid laptop,
+which nobody here has measured.

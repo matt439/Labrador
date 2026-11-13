@@ -283,8 +283,13 @@ namespace labrador
 		std::unique_ptr<Context> made = std::make_unique<Context>();
 		made->target = static_cast<const char*>(native_window);
 
-		// Every term is stated, rather than left at Emscripten's defaults,
-		// because each is part of what the seam promises about a pixel.
+		// Every term the browser's getContext receives is stated, rather than
+		// left at Emscripten's defaults, because each is part of what the seam
+		// promises about a pixel or about which GPU and presentation path draws
+		// it. The three terms only Emscripten's own glue reads (swap control,
+		// proxying to the main thread, an offscreen back buffer) keep
+		// emscripten_webgl_init_context_attributes's values: all off on the
+		// main thread, which is where these builds make the context.
 		EmscriptenWebGLContextAttributes attributes;
 		emscripten_webgl_init_context_attributes(&attributes);
 		attributes.majorVersion = 2;
@@ -301,6 +306,16 @@ namespace labrador
 		attributes.antialias = false;
 		attributes.preserveDrawingBuffer = false;
 		attributes.failIfMajorPerformanceCaveat = false;
+		// The browser's own choice of adapter. On a machine with an
+		// integrated and a discrete GPU this term picks between them, so it
+		// is stated rather than inherited; asking for either one by name is a
+		// decision about which GPU the low tier draws on, and
+		// docs/port/web-as-built.md records what each value selected where
+		// measured.
+		attributes.powerPreference = EM_WEBGL_POWER_PREFERENCE_DEFAULT;
+		// Presented through the page's compositor like any other canvas. A
+		// desynchronized canvas may skip it for lower latency, and may tear.
+		attributes.desynchronized = false;
 		// The extensions this backend uses are asked for by name below, so
 		// the list is the code's rather than Emscripten's.
 		attributes.enableExtensionsByDefault = false;
