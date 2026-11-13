@@ -113,15 +113,17 @@ draws outside its bounds (a glow, a shadow, text snapped to whole pixels) says s
 Objects draw into a `DrawList`: a recording target for one view, which already carries that
 view's viewport and camera. It has two drawing calls:
 
-```cpp
-void draw_sprite(TextureHandle texture, const RectangleI& source, const RectangleF& destination,
-                 const Colour& tint, float rotation, const Vector2F& origin,
-                 SpriteFlip flip, float layer_depth);
+<SourceFile
+	path="engine/render/renderer.h"
+	from="void draw_sprite(TextureHandle texture,"
+	to="float layer_depth);"
+/>
 
-void draw_text(FontHandle font, const std::wstring& text, const Vector2F& position,
-               const Colour& tint, float scale, float rotation, const Vector2F& origin,
-               float layer_depth);
-```
+<SourceFile
+	path="engine/render/renderer.h"
+	from="void draw_text(FontHandle font,"
+	to="float layer_depth);"
+/>
 
 The destination and position are in world space, and the list's camera maps them. Textures and
 fonts are passed as handles, never as names (see

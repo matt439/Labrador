@@ -55,11 +55,11 @@ before loading the manifest.
 A **handle** is a resolved name: a small value that says which slot of which table the item is
 in. `RenderResources` hands them out, by kind:
 
-```cpp
-TextureHandle resolve_texture(const std::string& texture_name) const;
-FontHandle resolve_sprite_font(const std::string& font_name) const;
-SpriteSheetHandle resolve_sprite_sheet(const std::string& sprite_sheet_name) const;
-```
+<SourceFile
+	path="engine/render/render_resources.h"
+	from="TextureHandle resolve_texture(const std::string& texture_name) const;"
+	to="const std::string& sprite_sheet_name) const;"
+/>
 
 Resolving a name nothing loaded throws, naming it, so a misspelt asset name fails on the line
 that misspells it rather than drawing nothing. LineSweeper spells its two asset names once, in

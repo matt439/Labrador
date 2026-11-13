@@ -82,6 +82,14 @@ text that is in no file the starter's project holds
 the components guide copies, and no code block earlier on its page or on the guide
 it continues (`tests/guide-anchors.test.mjs`).
 
+A page quotes a public declaration with a `SourceFile` excerpt. A listing that
+cannot be one, because it picks members out of a class or gathers several
+scopes, is a `cpp` code block titled with its header's path
+(`title="engine/assets/json.h"`). `npm test` fails, naming the page and line,
+on a declaration in such a listing that the header, read by
+`src/lib/cpp-header.ts`, does not declare in the same words apart from
+whitespace and comments (`tests/declaration-listings.test.mjs`).
+
 `.github/workflows/website.yml` runs `versions:verify`, then `npm run gate`
 (the check, the tests and the build), then checks appended errata links with
 `versions:verify -- --dist dist`, on every pull request and on pushes to
