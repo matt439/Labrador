@@ -201,9 +201,12 @@ records passing Windows `x64-debug`, `x64-debug-null`, `x64-debug-gl`,
 `x64-debug-d3d12`, `x64-debug-vulkan` and `x64-release` runs, and
 `wasm-debug`/`wasm-release` tests under Node from a Windows host. Those are
 historical results, not a fresh qualification of every current configuration.
-The native presets are Windows-only. Building the wasm presets on Linux or
-macOS remains unverified; having no wasm host restriction is not evidence of
-a passing run there. Node runs the rules binary without a browser or WebGL.
+The native presets are Windows-only. The wasm presets were built once on
+WSL 2 Ubuntu, where their Node tests passed and no page ran
+([record](../../docs/review/2026-11-10/2026-11-13-wsl-wasm-build.md)); no CI
+job builds there, and macOS remains unverified. Having no wasm host
+restriction is not evidence of a passing run elsewhere. Node runs the rules
+binary without a browser or WebGL.
 
 On 29 October 2026, the Windows rules-only build and exact one-entry ctest
 selection passed at `ae82fc0` with both `x64-debug-null` and `x64-debug`.
