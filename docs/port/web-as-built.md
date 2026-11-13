@@ -116,11 +116,31 @@ neutral and `app/win32/` and `app/web/` each define its `Impl`. What it found:
   keeps the module packaging, the host page and the deploy.
 - **D2 met three callers that hid their window**, and D6 is how they still
   do. D7 is the other choice it made.
-- **The drawing buffer is measured, not observed**: CSS box times
-  `devicePixelRatio`, once a frame before the tick, rather than a
-  `ResizeObserver`. It is one code path, and it sees a zoom and a move to a
-  denser display, which no layout event announces. The page must size the
-  canvas in CSS, since a canvas at its default layout is as big as its buffer.
+- **The drawing buffer is measured once a frame before the tick**: CSS box
+  times `devicePixelRatio`, which sees a zoom and a move to a denser display
+  that no layout event announces. Where a `ResizeObserver` reports the
+  canvas's `device-pixel-content-box` within a pixel of that product, the
+  buffer takes that box instead, because the browser snaps a canvas at a
+  fractional device-pixel position to it and resamples a buffer of any other
+  size. A browser that reports no such box keeps the rounded product. The
+  page must size the canvas in CSS, since a canvas at its default layout is
+  as big as its buffer.
+
+  *2026-11-13 (REV#97).* Headless Chrome 157 with
+  `--force-device-scale-factor` at 1.25, 1.5 and 1.75 drew the wasm-release
+  minimal sample at eight CSS widths (odd and fractional, 536.3 to 1186) by
+  six heights (302.4 to 667) at five offsets (0, 0.25, 0.33, 0.5 and 0.8 CSS
+  pixels). With the rounded product, 96, 69 and 118 of 240 cases per ratio
+  differed by one pixel in width or height from the observed box, none at
+  offset 0; at ratio 1, 84 of 240. A 2D canvas of one-pixel black and white
+  checks in those cases, screenshotted at the device scale, came out 78-100%
+  grey where the sizes differed and with no grey pixel where they matched,
+  so the mismatch is a visible resample. With the box, all 720 cases match.
+  `Emulation.setDeviceMetricsOverride` changes `devicePixelRatio` and not the
+  box in Chromium, and Firefox under WebDriver BiDi reports the box at its own
+  scale rather than the ratio its viewport is given, so emulated ratios take
+  the rounded path; `WebWindowTests` checks the snapped box at the ratio of
+  one. No physical scaled display was used.
 - **The keyboard keeps every unmodified key but Tab and the function keys**,
   so the arrows and Space do not scroll the page and Firefox's find bar does
   not open, and gives every chord back to the browser. Text is keydown's

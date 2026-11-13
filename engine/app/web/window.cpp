@@ -58,6 +58,46 @@ EM_JS(double, labrador_measured_canvas_top, (), {
 	return Module.labradorCanvasTop;
 });
 
+// The canvas's box in whole device pixels, as the browser snaps it to the
+// screen: a ResizeObserver's device-pixel-content-box. That box can be one
+// pixel wider or taller than the CSS size times devicePixelRatio, rounded,
+// when the canvas sits at a fractional device-pixel position, and a buffer of
+// the rounded size is then resampled to the box and blurs. A browser that
+// does not report the box - the option is refused, or the entry has no such
+// size - leaves no answer, and an answer of zero means none. The observer
+// reports after layout, so an answer can be a frame older than the CSS size
+// the frame measures; measure() decides whether it still belongs to it.
+EM_JS(void, labrador_observe_device_box, (int on), {
+	if (Module.labradorDeviceBoxObserver) {
+		Module.labradorDeviceBoxObserver.disconnect();
+		Module.labradorDeviceBoxObserver = null;
+	}
+	Module.labradorDeviceBox = null;
+	if (!on || typeof ResizeObserver === "undefined") {
+		return;
+	}
+	const observer = new ResizeObserver((entries) => {
+		const sizes = entries[entries.length - 1].devicePixelContentBoxSize;
+		Module.labradorDeviceBox = sizes && sizes[0] ?
+			{ width: sizes[0].inlineSize, height: sizes[0].blockSize } : null;
+	});
+	try {
+		observer.observe(specialHTMLTargets["!canvas"],
+			{ box: "device-pixel-content-box" });
+	} catch (error) {
+		return;
+	}
+	Module.labradorDeviceBoxObserver = observer;
+});
+
+EM_JS(int, labrador_device_box_width, (), {
+	return Module.labradorDeviceBox ? Module.labradorDeviceBox.width : 0;
+});
+
+EM_JS(int, labrador_device_box_height, (), {
+	return Module.labradorDeviceBox ? Module.labradorDeviceBox.height : 0;
+});
+
 // A refused full-screen request has no event in the html5 API: the
 // browser rejects the request's promise and fires fullscreenerror at the
 // document. One listener notes it, and the frame takes the note.
@@ -154,6 +194,21 @@ namespace labrador
 	namespace
 	{
 		constexpr char canvas_target[] = "!canvas";
+
+		// One side of the drawing buffer: the observed device-pixel box's
+		// side while it is within a pixel of the exact product, which is as
+		// far as snapping moves it, and the product rounded otherwise. A side
+		// further away is the box before a change the observer has not
+		// reported yet, which the next frame has, or a box at another scale
+		// than devicePixelRatio, which an emulated ratio gives.
+		int device_extent(double exact, int observed)
+		{
+			if (observed > 0 && std::fabs(observed - exact) < 1.0)
+			{
+				return observed;
+			}
+			return static_cast<int>(std::lround(exact));
+		}
 	}
 
 	// The page's canvas. Every html5 callback carries this object as its
@@ -171,8 +226,11 @@ namespace labrador
 
 		// THE DRAWING BUFFER FOLLOWS THE CANVAS'S BOX, in device pixels: its
 		// CSS size times devicePixelRatio, and never below the minimum the
-		// options name. The page lays the canvas out, so the size is measured
-		// rather than chosen, once a frame before the tick - which also
+		// options name. Where the browser reports the box it snaps the canvas
+		// to (labrador_observe_device_box), that box's size is used, so the
+		// buffer maps one to one onto the screen's pixels; elsewhere the
+		// product is rounded. The page lays the canvas out, so the size is
+		// measured rather than chosen, once a frame before the tick - which also
 		// catches the two changes no layout event announces, a zoom and a
 		// move to a display of another density. A canvas with no box yet,
 		// which is what display:none gives, keeps the size it has.
@@ -421,6 +479,7 @@ namespace labrador
 			on ? on_fullscreen_change : nullptr);
 		labrador_watch_fullscreen_errors(on ? 1 : 0);
 		labrador_listen_pointers(user_data, on ? on_pointer : nullptr);
+		labrador_observe_device_box(on ? 1 : 0);
 
 		if (!on)
 		{
@@ -451,9 +510,9 @@ namespace labrador
 
 		const double ratio = emscripten_get_device_pixel_ratio();
 		const int device_width = std::max(this->min_width,
-			static_cast<int>(std::lround(width * ratio)));
+			device_extent(width * ratio, labrador_device_box_width()));
 		const int device_height = std::max(this->min_height,
-			static_cast<int>(std::lround(height * ratio)));
+			device_extent(height * ratio, labrador_device_box_height()));
 
 		if (device_width == this->buffer_width &&
 			device_height == this->buffer_height)
