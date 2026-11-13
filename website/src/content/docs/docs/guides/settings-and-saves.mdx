@@ -330,7 +330,8 @@ ask for it by name on later runs with `audio->resolve_sound_group("effects")`.
 `add_sound_group("effects")` ran twice: a second call to it, such as
 `audio->add_sound_group("effects");` left on a line of its own, or the state made a second
 time, as above. The build passes, `MyGameSmokeTests` fails with this line and
-`50% tests passed, 1 tests failed out of 2`, and the game started on its own shows it in the
+`50% tests passed, 1 tests failed out of 2` (`67% ... out of 3` with the components page's
+optional tests), and the game started on its own shows it in the
 `Sample - startup failure` box. Keep one `add_sound_group` for each name.
 </Aside>
 
