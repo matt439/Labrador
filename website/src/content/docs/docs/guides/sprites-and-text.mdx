@@ -37,6 +37,13 @@ block-compressed BC1, BC2 or BC3. Anything else is refused at load, with the fil
 file is listed in the [manifest](/docs/concepts/resources/#the-manifest) by name, without its
 extension.
 
+The Direct3D 12 backend holds at most 256 distinct texture names, because its textures sit in one
+fixed-size table on the graphics card. Every texture, every sprite sheet and every font's atlas
+takes one name, and the engine's own one-pixel white texture takes another, so a game has 255.
+Loading a 256th name of the game's own throws at load with `Texture '<name>' does not fit`,
+giving the limit. Loading a name that is already there again reuses its place and takes no new
+one. The other backends have no such count.
+
 ## Making textures and fonts
 
 Both tools are free Windows programs from Microsoft, each a single executable attached to its
