@@ -47,8 +47,9 @@ Every command on this page runs in the x64 Native Tools Command Prompt from
 
    The first time you run this, vcpkg downloads and builds Labrador's dependencies: DirectX Tool
    Kit and the DirectXMath library it uses, the XAudio2 redistributable, the doctest test
-   framework and the lodepng image library. It may also download a CMake and a PowerShell of its
-   own if it finds Visual Studio's unsuitable. With nothing cached, the first configure downloads
+   framework and the lodepng image library. It may also download a CMake of its own, when
+   Visual Studio's is older than the one vcpkg asks for, and a PowerShell 7, which Visual Studio
+   does not install. With nothing cached, the first configure downloads
    about 330 MB in all.
    On a fast desktop with an empty cache that configure took 2 minutes 17 seconds, 1.2 minutes of
    it vcpkg building seven packages, and vcpkg keeps the results, so later configures are quick.

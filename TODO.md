@@ -258,7 +258,7 @@ ready queue above.
 | `REV#118` | DECISION | could | S | The starter ZIP is the whole engine repository (1,146 files, 16 the reader's), and `game\README.md` and its comments still call the project the minimal sample; whether `starter_zip.py` slims or rewrites is a scope call. |
 | `REV#119` | DECISION | could | M | No page reads the starter's own three files at the 2026-10-30 floor, *Make a first change* routes a beginner to comments written for engine programmers, and Get Started uses about 40 terms with no glossary. |
 | `REV#120` | DECISION | could | S | Whether the starter carries batch files that find Visual Studio and run configure, build, test and play, removing the x64 Native Tools prompt from the route; it borders the 2026-10-30 guided-terminal decision. |
-| `REV#121` | OPEN | could | S | The first configure downloads a 53 MB CMake and a 117 MB PowerShell that Visual Studio 2026 has just installed. Find out why vcpkg fetches them and whether a setting reuses Visual Studio's; changing the starter is the owner's call. |
+| `REV#121` | DECISION | could | S | vcpkg fetches CMake 4.3.2 (VS ships 4.3.1) and PowerShell 7 (VS has none) for its ABI hashes; VCPKG_FORCE_SYSTEM_BINARIES reuses VS's CMake but needs a PowerShell 7 installed (2026-11-13 record). Choose: accept the downloads, use the setting and add PowerShell 7 to the prerequisites, or another mechanism. |
 
 ## Work audit of 2026-11-12
 
