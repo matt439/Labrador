@@ -623,7 +623,11 @@ things to know when you make levels:
   covers about 490 to 840 pixels across and 330 to 410 down. A goal that covers that place is
   touched at once, and the level is over before you see it. If it is any level but the last,
   the start-up test also stops working: see the `Timeout` entry under
-  [If something fails](#if-something-fails).
+  [If something fails](#if-something-fails). If you gave the greeting `, 2.0f` under
+  [Bigger text](/docs/guides/your-window/#bigger-text), its text is twice as wide and twice as
+  high, and covers about 490 to 1110 pixels across and 330 to 440 down: level 1's goal above,
+  at 1000 across and 300 down, is then touched at once. Move that goal further right or down,
+  or take the `, 2.0f` out again.
 - **The order of the lines is the order of the levels.** To take a level out, delete its line,
   and the comma after the line before it if it was the last.
 - **Use whole numbers.** `120.5` is refused, because the reader asks for whole numbers.
@@ -631,7 +635,10 @@ things to know when you make levels:
   `game\content`, so a change shows only after a build.
 
 To check a file for mistakes without playing every level, run the build line: the start-up test
-reads the whole file, and fails with the message if any level in it is wrong.
+reads the whole file, and fails with the message if any level in it is wrong. If your game
+opens on a title screen from [Add a screen](/docs/guides/your-screen/), the start-up test runs
+only the title and never reads `levels.json`, so it passes whatever the file says: press Enter
+at the title, and a mistake shows in the game's error box instead.
 
 ## If you leave out one of the lists
 
@@ -690,6 +697,12 @@ A mistake in this page's files shows in one of four places:
 
   Started on its own, the game shows the same reason in a box titled
   `Sample - startup failure`, whatever your game is called, and closes when you click **OK**.
+
+  If your game opens on a title screen from [Add a screen](/docs/guides/your-screen/), the
+  start-up test checks only the title, as that page's
+  [What the start-up test checks now](/docs/guides/your-screen/#what-the-start-up-test-checks-now)
+  says. A mistake in this page's files then passes `ctest`, and the box shows when you press
+  Enter at the title.
 
 The messages about the levels file name the level as the reader counts, from 0: `levels[0]` is
 the first line of levels in the file, and `levels[1]` the second. Each message is below.
@@ -763,7 +776,9 @@ or another level's but the last, covers the place where the greeting starts. The
 runs the first level for 30 frames and then stops the game; but the greeting touches that goal
 at once, the game moves on to a new level's screen, and the start-up test is left behind, so the
 hidden game never stops until `ctest` stops it. Move that goal away from the middle of the
-window, as [Make your own levels](#make-your-own-levels) says. When the test is run on its own
+window, as [Make your own levels](#make-your-own-levels) says. A greeting made bigger with
+[Bigger text](/docs/guides/your-window/#bigger-text) reaches level 1's goal from the page as
+written: move that goal, or take the `, 2.0f` out. When the test is run on its own
 with `start /wait out\build\x64-debug\game\MyGame.exe --smoke-test`, it does not return either:
 close it with `taskkill /im MyGame.exe /f`.
 </Aside>
@@ -840,3 +855,10 @@ manifest block also matched a line in the browser part; a key held through a cha
 carried the greeting out of the window; and one sentence in step 4 was misleading. Neither run
 had a gamepad, so Enter is the only way checked to start again after winning, and Notepad's
 Find Next and **F3** were not driven.
+
+The notes about [Bigger text](/docs/guides/your-window/#bigger-text) and
+[Add a screen](/docs/guides/your-screen/) were added on 13 November 2026 after a review's run
+in a v0.3.0 starter: with `, 2.0f` and this page, `ctest` timed out after 60 seconds, and behind
+a title screen it passed with a broken `levels.json`. The figures for the bigger greeting are
+worked out from the starter's font and the greeting's circle, not measured on screen, and these
+notes have not been followed in a starter.

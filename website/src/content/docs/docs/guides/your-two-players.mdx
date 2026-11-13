@@ -406,7 +406,9 @@ screen's step 3 says.
 </Aside>
 
 <Aside type="caution" title="startup failure: Renderer::set_view_count(2) is outside the capacity of 1 create_device was given.">
-The start-up test fails with this, and the game shows it in its error box. The split screen
+The start-up test fails with this, and the game shows it in its error box. If your game opens
+on a title screen from [Add a screen](/docs/guides/your-screen/), the start-up test checks only
+the title and passes, and the box shows when you press Enter. The split screen
 adds two views, and `main.cpp` still sets aside room for one. Change
 `view_capacity` to `2` in `main.cpp`, and in `main_web.cpp` for the browser.
 </Aside>

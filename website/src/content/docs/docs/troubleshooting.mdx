@@ -1094,7 +1094,17 @@ which writes a format the engine reads.
 ### `Texture ... has two files`
 
 A texture's folder holds both `name.dds` and `name.png`, and the engine will not guess which one
-is current. Delete the one you no longer use.
+is current. Delete the one you no longer use. The two paths in the message are where the game
+looked, the folder beside the game, not `game\content`: the build copies new
+files there but never removes old ones, so delete the old one in both places, for example:
+
+```bat
+del game\content\textures\hero.dds
+del out\build\x64-debug\game\textures\hero.dds
+```
+
+[Content and the manifest](/docs/guides/assets/#optional-content-and-stale-copies) says why the
+copy stays.
 
 ### `No file at ...`
 

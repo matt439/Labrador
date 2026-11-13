@@ -279,6 +279,8 @@ since that section adds six lines above it.
 
 <Aside type="caution" title="startup failure: Renderer::set_view_count(7) is outside the capacity of 1 create_device was given.">
 The start-up test fails with this, and the game stops with the same message in its error box.
+If your game opens on a title screen from [Add a screen](/docs/guides/your-screen/), the
+start-up test checks only the title and passes, and the box shows when you press Enter.
 The `this->scene_->clear_views();` line from step 3 is missing, so each frame adds one more view
 to the ones before, and the game has room for one. The number in it can differ. Put the line back,
 above `this->scene_->add_view(`.
