@@ -242,7 +242,7 @@ ready queue above.
 | `REV#98` | DEFERRED | could | XS | `.github/actions/emscripten/action.yml:80-85` saves a ccache per run and attempt; re-measured 2026-11-12 at 37 caches, 2.84 GB, 27 of them ccache. Deferred until an expensive cache is seen evicted, since restore-only changes documented reuse. |
 | `REV#99` | DEFERRED | could | S | No coverage tooling exists in `cmake/`, `tools/`, `.github/` or `CMakePresets.json`; deferred until a decision waits on a coverage figure, since the dark backend recovery paths are already named in the `REV#` rows. |
 | `REV#100` | DEFERRED | could | S | `tools/web_bundle/bundle.mjs` writes raw and Brotli sizes to `BUILD.json` with no threshold; the budget is `REV#53`'s call, and a Brotli tolerance is deferred until that budget is taken. Bench output stays ungated. |
-| `REV#101` | OPEN | could | XS | Only `.editorconfig` and `cmake/check_whitespace.cmake` check style. One run of pinned ruff over `tools/` and actionlint over `.github/`, outside CI, either records a defect, which fires the deferral, or confirms it. No `.clang-format`. |
+| `REV#101` | DEFERRED | could | XS | Pinned ruff 0.14.5 and actionlint 1.7.8 with shellcheck found no defect on 2026-11-13 (STATUS records each class of noise), so no style check is added; it reopens when a defect slips through. No .clang-format. |
 | `REV#102` | DEFERRED | could | S | Closure, emmalloc, `-Os`/`-Oz` and LTO are untried for `wasm-release` (`cmake/settings.cmake:85-92`); measure them once a size budget exists to hold the result. |
 
 ## First-run review of 2026-11-10
