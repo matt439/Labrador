@@ -29,7 +29,7 @@ cd /d C:\dev\mygame
 
 <Steps>
 
-1. **Get a picture.** It must be a PNG file named `hero.png` in `C:\dev\mygame`. If you have no
+1. **Get a picture.** This page uses a PNG file named `hero.png` in `C:\dev\mygame`. If you have no
    picture yet, this line draws one, an orange face 64 pixels across:
 
    ```bat
@@ -41,11 +41,13 @@ cd /d C:\dev\mygame
    folder:
 
    ```bat
-   copy "%USERPROFILE%\Pictures\my picture.png" hero.png
+   copy /y "%USERPROFILE%\Pictures\my picture.png" hero.png
    ```
 
    Change `my picture.png` to your file's name before you press Enter. It prints
-   `1 file(s) copied.` If it prints `The system cannot find the file specified.`, the picture is
+   `1 file(s) copied.` `/y` replaces a `hero.png` that is already there, such as the face from
+   the line above, without asking; without it, `copy` asks `Overwrite hero.png? (Yes/No/All):`,
+   and typing **y** and Enter does the same. If it prints `The system cannot find the file specified.`, the picture is
    not where the line looked. On a computer that backs up to OneDrive, the Pictures folder is
    `%USERPROFILE%\OneDrive\Pictures`. Or, in File Explorer, right-click the picture, choose
    **Copy as path**, and paste that in place of the first quoted path, quotation marks included.
@@ -53,6 +55,13 @@ cd /d C:\dev\mygame
    Paint can make one too: draw, then save it as `hero.png` in `C:\dev\mygame`, choosing PNG as
    the type. Keep it small to start with, a few hundred pixels across at most, because it is
    drawn at its own size in a window 1280 pixels wide.
+
+   A JPG, such as a photo from a phone, works too. Step 2's `texconv` line reads a JPG as it
+   is, with `hero.jpg` in place of `hero.png`; the *Or keep it a PNG* box under step 2 needs a
+   PNG. Paint turns any picture into one: open it, choose **File** > **Save as** > **PNG
+   picture**, and save it as `hero.png` in `C:\dev\mygame`. A picture that is too big shrinks
+   the same way: in Paint, press **Ctrl+W**, choose **Pixels**, type the width you want with
+   **Maintain aspect ratio** ticked, click **OK**, and save.
 
 2. **Convert it to a texture.** Make the folder the game's pictures live in, then convert:
 
@@ -92,8 +101,20 @@ cd /d C:\dev\mygame
    the rest of the page is the same with `hero.png` wherever it says `hero.dds`. The picture's
    width and height for step 6 are in File Explorer: right-click it, choose **Properties**, and
    read **Dimensions** on the **Details** tab. Keep one of the two files in the folder, not both:
-   with both, the game stops with `Texture 'hero' has two files`. A PNG takes four bytes a pixel
-   and is decoded each time the game starts, so for many or large pictures the compressed
+   with both, the game stops with `Texture 'hero' has two files`. The build copies new files
+   beside the game but never removes old ones, so after changing from one to the other, delete
+   the old copy there too, here after a `hero.dds`:
+
+   ```bat
+   del game\content\textures\hero.dds
+   del out\build\x64-debug\game\textures\hero.dds
+   ```
+
+   Without the second line, the game still stops with `has two files`, and the two paths in the
+   message are in `out\build\x64-debug\game\textures`. Going the other way, from a PNG to a
+   `.dds`, delete `hero.png` in the same two places.
+
+   A PNG takes four bytes a pixel and is decoded each time the game starts, so for many or large pictures the compressed
    formats [Sprites and text](/docs/guides/sprites-and-text/) describes are smaller.
    </Aside>
 
@@ -415,6 +436,9 @@ cd /d C:\dev\mygame
 To change the picture, change `hero.png` and run the `texconv` line from step 2 again, then the
 build line from step 8. `-y` replaces the old `hero.dds`, and the build copies the new one beside
 the game. If the new picture is a different size, change the `64, 64` in step 6 to its numbers.
+To change from a `.dds` to a PNG or back, delete the old file both in `game\content\textures` and
+beside the game, as the *Or keep it a PNG* box under step 2 shows: the build never removes the
+old copy.
 
 To leave the picture where it is instead of following the greeting, delete the two lines you
 added in step 7. It then stays at the position in step 6. The window is 1280 pixels wide and
@@ -569,3 +593,9 @@ The *Or keep it a PNG* note under step 2 and the two-path message for a missing 
 added on 4 November 2026, when the engine began reading PNG textures, and have not been followed
 in a starter. The engine's tests load a `.png` through the same path, refuse a texture with both
 files and with neither, and check the colours a PNG decodes to.
+
+The lines for deleting the old copy beside the game, the JPG and Paint notes in step 1 and
+`copy /y` were added on 13 November 2026 after a review's run in a v0.3.0 starter, where the
+build folder kept `hero.dds` after the one in `game\content\textures` was deleted, and `texconv`
+with this page's options read a JPG photo. A `.dds` made from a JPG has not been loaded in the
+game, and these notes have not been followed in a starter.

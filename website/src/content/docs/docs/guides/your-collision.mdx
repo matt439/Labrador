@@ -540,7 +540,8 @@ A mistake in this page's files shows in one of three places:
   line as `LNK2019`, or `wasm-ld: error: ... undefined symbol` in the browser build, above.
 - **The start-up test fails.** The build worked, but the game stopped as it started. The
   `ctest` output shows `***Exception: SegFault` for `MyGameSmokeTests`, and the game does not
-  start.
+  start. If your game opens on a title screen from [Add a screen](/docs/guides/your-screen/),
+  the start-up test checks only the title and passes, and the game crashes when you press Enter.
 - **Nothing fails, but the box does not stop.** Every check passes and the box goes through the
   wall: the scene was never asked to check for collisions. See the last entry below.
 
