@@ -42,6 +42,9 @@
 // catch-up updates from repeating that phase while a DevTools reply is delayed;
 // a neutral release is sampled before the next down. It does not qualify normal
 // gameplay timing or key repeat. The palette, error and onQuit checks remain.
+// A sample's run also prints the byte length of the module's WebAssembly
+// memory after the --frames warm-up and again at quit: a record of the heap,
+// which grows, for the web port's memory question; nothing compares it.
 //
 // --input runs a script against the page while it runs, for a page whose
 // subject is what the browser delivers to it rather than what it computes.
@@ -452,13 +455,40 @@ const RENDERER_EXPRESSION = `(() => {
 // Evaluated in a sample's page before any of its own scripts: module_hook
 // (page_harness.mjs) says how it hears the page's Module. What it hears is in
 // window.labradorRun, with the input protocol's state for --sample-input.
+// Each WebAssembly.Memory the module's instantiation exports is held, weakly,
+// in window.labradorRunMemories, so that HEAP_EXPRESSION can read its size.
 function sample_hook(sampled_input) {
 	return `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false };
 	heard.input = ${sampled_input ? SAMPLE_INPUT_HOOK : 'undefined'};
 	window.labradorRun = heard;
+	window.labradorRunMemories = [];
+	for (const name of ['instantiate', 'instantiateStreaming']) {
+		const original = WebAssembly[name];
+		WebAssembly[name] = async function (...args) {
+			const result = await original.apply(this, args);
+			for (const value of Object.values((result.instance ?? result).exports)) {
+				if (value instanceof WebAssembly.Memory) {
+					window.labradorRunMemories.push(new WeakRef(value));
+				}
+			}
+			return result;
+		};
+	}
 	${module_hook('labradorRunHooked', 'if (heard.input) { value.labradorTestInput = heard.input; }')}
 })()`;
+}
+
+// The byte length of each module heap the page instantiated, in order, or
+// null for one already collected. Printed, never compared: the heap grows
+// (cmake/settings.cmake), and no figure yet says how much is too much.
+const HEAP_EXPRESSION = `(window.labradorRunMemories ?? [])
+	.map((memory) => memory.deref()?.buffer.byteLength ?? null)`;
+
+export function heap_line(when, sizes) {
+	const text = sizes.length === 0 ? 'no module heap was seen' : sizes.map((bytes) =>
+		(bytes === null ? 'collected' : `${bytes} bytes (${(bytes / 1048576).toFixed(2)} MiB)`)).join(', ');
+	return `run_page: wasm heap ${when}: ${text}\n`;
 }
 
 function frames_expression(count) {
@@ -502,6 +532,8 @@ async function run_sample(devtools, session, complaints) {
 
 	await evaluate(devtools, session, frames_expression(options.frame_count), true);
 	process.stdout.write(`run_page: ${options.frame_count} animation frames\n`);
+	process.stdout.write(heap_line(`after ${options.frame_count} frames`,
+		await evaluate(devtools, session, HEAP_EXPRESSION)));
 	let why = failed(await heard());
 	if (why) {
 		return { abort: why };
@@ -540,6 +572,7 @@ async function run_sample(devtools, session, complaints) {
 
 	// A few frames more, so that a failure on the way out is heard too.
 	await evaluate(devtools, session, frames_expression(10), true);
+	process.stdout.write(heap_line('at quit', await evaluate(devtools, session, HEAP_EXPRESSION)));
 	why = failed(await heard());
 	return why ? { abort: why } : { code: 0 };
 }

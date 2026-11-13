@@ -457,15 +457,18 @@ start, lets 60 frames draw, presses Escape and then Enter, and waits for the pag
 
 ```text title="Output"
 run_page: 60 animation frames
+run_page: wasm heap after 60 frames: 17956864 bytes (17.13 MiB)
 run_page: pressed Escape
 run_page: pressed Enter
 run_page: Module.onQuit was called
+run_page: wasm heap at quit: 17956864 bytes (17.13 MiB)
 run_page: browser: Edg/156.0.4314.50 (DevTools 1.3, revision @af2ba23ae0ecf7084d900446fc59d5119dd5fd5e)
 run_page: WebGL2 renderer: ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)
 0
 ```
 
-with your own browser's version and graphics card. **A pass is the `0` at the end.** A console
+with your own browser's version and graphics card, and your own game's heap size, which the
+runner prints but does not judge. **A pass is the `0` at the end.** A console
 error or warning, a failed assertion, an uncaught exception, a browser warning or error, or a call
 to `Module.onError` fails the run and prints the message, even if the page also quits; the last
 line is then `1`. A missing `Module.onQuit` fails, and a page that never starts or quits stops

@@ -114,6 +114,10 @@ export const BUNDLE_KEYS = key_table(['Escape', 'Enter', 'Tab', 'KeyA',
 // dispatch latency to every level, so a shorter level leaves that walk room.
 const KEY_LEVEL_MS = 100;
 
+// The frames a loaded game draws before its heap is recorded, as a sample's
+// development page draws before run_page.mjs presses its keys.
+const WARM_UP_FRAMES = 60;
+
 // How long a step waits for the page, in ms. Every runner shares these, and
 // the slowest to ask is Safari: run_safari's evaluate is several WebDriver
 // round trips, so one attempt there costs about 80 ms where Chromium's costs a
@@ -335,6 +339,19 @@ export function steps(page, state) {
 	const loaded = (index) => until(`window.labradorBundle.runs[${index}]?.initialized === true &&
 		(window.labradorBundle.runs[${index}].canvas.labradorFrames ?? 0) >= 5`,
 		`instance ${index + 1} did not draw frames`);
+	// Prints the byte length of instance `index`'s WebAssembly memory, which
+	// PRELUDE holds weakly: a record of the heap, which grows, for the web
+	// port's memory question. Nothing compares it, so no browser fails by it.
+	const heap = async (index, when) => {
+		const bytes = await evaluate(`window.labradorBundle.memories[${index}]?.deref()?.buffer.byteLength ?? null`);
+		console.log(`heap - ${state.phase}, instance ${index + 1} ${when}: ` +
+			(bytes === null ? 'no live module heap' : `${bytes} bytes (${(bytes / 1048576).toFixed(2)} MiB)`));
+	};
+	// Instance `index` is loaded; what its heap holds after WARM_UP_FRAMES more.
+	const warmed_heap = async (index) => {
+		await frames(WARM_UP_FRAMES);
+		await heap(index, `after ${WARM_UP_FRAMES} frames`);
+	};
 	const clean_runs = async () => {
 		const errors = await evaluate('window.labradorBundle.runs.flatMap((run) => run.errors)');
 		assert(errors.length === 0, `unexpected onError: ${errors.join(' | ')}`);
@@ -418,6 +435,7 @@ export function steps(page, state) {
 		await click_play();
 		await loaded(0);
 		await clean_runs();
+		await warmed_heap(0);
 		await accessibility_note('canvas');
 		assert(await evaluate("document.activeElement === document.querySelector('canvas')"),
 			'the running canvas did not receive focus');
@@ -453,8 +471,10 @@ export function steps(page, state) {
 		// Tab already blurred the canvas. Quitting without Escape demonstrates
 		// that returning focus and restoring graphics did not resume the match.
 		await quit(0, true);
+		await heap(0, 'at quit');
 		await click_play();
 		await loaded(1);
+		await warmed_heap(1);
 		await accessibility_note('canvas');
 		assert(await evaluate('window.labradorBundle.runs[0].canvas !== window.labradorBundle.runs[1].canvas && ' +
 			'!window.labradorBundle.runs[0].canvas.isConnected && document.querySelectorAll("canvas").length === 1'),
@@ -472,6 +492,7 @@ export function steps(page, state) {
 			delete document.visibilityState;
 		})()`);
 		await quit(1, true);
+		await heap(1, 'at quit');
 		console.log('ok - packaged module draws, restores its context, quits and draws a fresh replay');
 	};
 
@@ -541,6 +562,7 @@ export function steps(page, state) {
 			await click_play();
 			await loaded(round);
 			await quit(round);
+			await heap(round, 'at quit');
 			await frames(2);
 			// Emscripten replaces the canvas's getContext with a closure over its
 			// instance, so this record's canvas would keep the instance alive. The
@@ -623,7 +645,7 @@ export function steps(page, state) {
 
 	return {
 		assert, until, frames, button_visible, button_exposed, accessibility_note,
-		click_play, key, loaded, clean_runs, quit, navigate, canvas_box,
+		click_play, key, loaded, heap, warmed_heap, clean_runs, quit, navigate, canvas_box,
 		desktop_instructions, play_restore_replay, real_loss_and_tab_switch, repeated_play, context_timeout,
 		truncated_and_runtime_failure,
 	};
