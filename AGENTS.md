@@ -301,7 +301,13 @@ pull request already passed. Citation checking skips `website/`.
   [consumer_check/README.md](tools/consumer_check/README.md) for local checks;
   standalone tests cannot prove consumer-relative paths or dependencies. A clean-machine Sandbox check is separate from CI's runtime.
 
-Standalone lint commands (no configure required):
+`python tools/lint_local.py --base origin/master` runs CI's whole `lint` job
+in its order and stops at the first failure: the per-commit golden-review and
+CHANGES.md checks over the range (without `--base`, HEAD alone), the CMake
+lint scripts, the Node flash, pacing and bundle tests, and the Python suite.
+`--list` prints the commands. Its test fails when the lint job's step names,
+order or commands differ from it; the prose lists of steps are not checked.
+The CMake lint scripts alone (no configure required):
 
 ```text
 cmake -DREPO_DIR=C:/Projects/Labrador -P cmake/check_doc_citations.cmake
