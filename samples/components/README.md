@@ -20,8 +20,12 @@ beside it. The gallery shows menu rows and two animation previews on one screen.
 3. Change anything you like. The copy is yours: nothing here promises to stay
    compatible with it, and nothing in the engine knows it exists.
 
-The tests (`*_tests.cpp`, with their in-memory content helpers) come too if you
-want them. Widget and timing cases need no window, device or files. The
+The tests (`*_tests.cpp`, with their in-memory content helpers and
+`test_main.cpp`) come too if you want them, in a test target of the game's that
+links the engine, because the components are built from its widgets. The
+website's *Copy the components into your game* guide does this for the option
+row and the slider as an optional last step, with a `MyGameComponentTests`
+target. Widget and timing cases need no window, device or files. The
 animation reader case reads the delivered DDS/JSON pair; the build stages it
 beside the native test executable or embeds it in the Node module. Native-null
 cases also record what the nine-slice, the bar, the slider and the previews

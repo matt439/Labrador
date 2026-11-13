@@ -16,7 +16,8 @@ label with a value picked from a list, and a **slider**, a label with a bar and 
 puts both at the top of the starter's screen, one choosing the greeting's colour and the other
 how fast it moves, with keys to work them. It goes through every file that changes: four copied
 files, the first line of two of them, the build file, and the starter's `HelloState`. It takes
-about 20 minutes.
+about 20 minutes. A last, optional step copies the two components' tests as well, so that
+`ctest` checks your copies on every build.
 
 Before you start:
 
@@ -57,8 +58,8 @@ cd /d C:\dev\mygame
    `engine/ui/widget.h`, which your game already reaches, and each `.cpp` includes only its own
    header and engine headers. The slider's bar is a small class called `Bar`, and it is inside
    `slider.h` and `slider.cpp`, so it comes with them. The rest of the folder is the sample's
-   own screen, its tests, and two other components, the nine-slice and the animation preview,
-   which this page does not use.
+   own screen, its tests, which [step 7](#copy-the-tests) copies if you want them, and two other
+   components, the nine-slice and the animation preview, which this page does not use.
 
    The `\` at the end of each `copy` line matters. With it, `copy` stops with an error if
    `game\components` is not there. Without it, `copy` would make a *file* called `components`
@@ -420,6 +421,122 @@ cd /d C:\dev\mygame
    the *Really quit?* question, and when you answer no with Escape again, it comes back in the
    colour the row chose.
 
+7. <a id="copy-the-tests"></a>**Optional: copy their tests too.** Each component has tests
+   beside it in the engine's folder. They build the rows with no window and no graphics device
+   and check what they do: that a row steps through its choices and goes round at the ends, that
+   a slider stops at its lowest and highest, that a wrong range stops with a message. Copied
+   into your game, they run with your other tests on every build, so a change to your copy that
+   breaks one of those shows up in `ctest` rather than while you play. The game works without
+   them; skip this step if you do not want them.
+
+   Copy the two test files, `test_content.h`, which makes the stand-in font they measure text
+   with, and `test_main.cpp`, which gives the tests their `main`:
+
+   ```bat
+   copy external\labrador\samples\components\option_row_tests.cpp game\components\
+   copy external\labrador\samples\components\slider_tests.cpp game\components\
+   copy external\labrador\samples\components\test_content.h game\components\
+   copy external\labrador\samples\components\test_main.cpp game\components\
+   ```
+
+   Each `copy` line prints `1 file(s) copied.`, as in step 1. Then run step 2's check again:
+
+   ```bat
+   findstr /s /n "samples/components" game\*.cpp game\*.h
+   ```
+
+   Each test file includes its component and `test_content.h` by their paths in the engine's
+   folder, so it prints four lines:
+
+   ```text title="Output"
+   game\components\option_row_tests.cpp:3:#include "samples/components/option_row.h"
+   game\components\option_row_tests.cpp:4:#include "samples/components/test_content.h"
+   game\components\slider_tests.cpp:3:#include "samples/components/slider.h"
+   game\components\slider_tests.cpp:4:#include "samples/components/test_content.h"
+   ```
+
+   Open each file with `notepad game\components\option_row_tests.cpp` and
+   `notepad game\components\slider_tests.cpp`, change `samples/components/` to
+   `game/components/` in lines 3 and 4, and save. For the same reason as in step 2, the tests
+   build without this change, but they test the engine's copy of the header rather than yours.
+   Run the `findstr` line again; it now prints nothing.
+
+   The tests need a target of their own. The starter's `MyGameTests` links only the engine's
+   maths, so that the rules are tested with nothing else, and the components need the engine's
+   text and widgets. Open the build file:
+
+   ```bat
+   notepad game\CMakeLists.txt
+   ```
+
+   Search for `add_test(NAME MyGameTests COMMAND MyGameTests)`. Click at the end of that line,
+   press **Enter** twice, and paste these lines:
+
+   ```cmake
+   # The components' tests. They build the rows from the engine's text and
+   # widgets, so unlike MyGameTests this links the engine, as MyGame does. It
+   # makes no window and no graphics device.
+   add_executable(MyGameComponentTests
+       components/option_row.cpp
+       components/option_row_tests.cpp
+       components/slider.cpp
+       components/slider_tests.cpp
+       components/test_main.cpp
+   )
+   target_link_libraries(MyGameComponentTests PRIVATE
+       MyGameRules
+       LabradorEngine
+       doctest::doctest
+       labrador_settings
+   )
+   add_test(NAME MyGameComponentTests COMMAND MyGameComponentTests)
+   ```
+
+   It is above `if(EMSCRIPTEN)`, so the Windows and the browser builds both make it, and it is
+   listed once. `option_row.cpp` and `slider.cpp` are in it as well as in the game's lists, so
+   each is compiled once for the game and once for the tests. `MyGameRules` is there for the
+   reason `MyGame` links it: it carries the include root that `game/components/...` include
+   lines are found from. In the browser build the tests run under Node, like `MyGameTests`, so
+   search for `target_link_options(MyGameTests PRIVATE -sENVIRONMENT=node)` and add a line after
+   it, so the two read:
+
+   ```cmake
+       target_link_options(MyGameTests PRIVATE -sENVIRONMENT=node)
+       target_link_options(MyGameComponentTests PRIVATE -sENVIRONMENT=node)
+   ```
+
+   Save and close Notepad, then build and test:
+
+   ```bat
+   cmake --build --preset x64-debug && ctest --preset x64-debug
+   ```
+
+   CMake runs again, with the same 30 or so lines as in step 6, and then ctest runs three tests:
+
+   ```text title="Output"
+   [1/9] Running utility command for game_content
+   [2/9] Checking that no engine file includes a game header
+   [3/9] Building CXX object game\CMakeFiles\MyGameComponentTests.dir\components\option_row.cpp.obj
+   [4/9] Building CXX object game\CMakeFiles\MyGameComponentTests.dir\components\slider.cpp.obj
+   [5/9] Building CXX object game\CMakeFiles\MyGameComponentTests.dir\components\slider_tests.cpp.obj
+   [6/9] Building CXX object game\CMakeFiles\MyGameComponentTests.dir\components\option_row_tests.cpp.obj
+   [7/9] Building CXX object game\CMakeFiles\MyGameComponentTests.dir\components\test_main.cpp.obj
+   [8/9] Linking CXX executable game\MyGameComponentTests.exe
+   Test project C:/dev/mygame/out/build/x64-debug
+       Start 1: MyGameTests
+   1/3 Test #1: MyGameTests ......................   Passed    0.02 sec
+       Start 2: MyGameComponentTests
+   2/3 Test #2: MyGameComponentTests .............   Passed    0.05 sec
+       Start 3: MyGameSmokeTests
+   3/3 Test #3: MyGameSmokeTests .................   Passed    0.84 sec
+
+   100% tests passed, 0 tests failed out of 3
+   ```
+
+   From now on every `ctest` in the guides runs three tests where they show two. The tests are
+   yours, like the components: when you change what a component does on purpose, change the
+   test that checks it, as [A component test fails](#a-component-test-fails) below shows.
+
 </Steps>
 
 ## What the numbers mean
@@ -508,6 +625,8 @@ A mistake in this page's files shows in one of four places:
   tests passed, because the start-up test presses no keys; a key press asked a list for
   something past its end. A test that presses keys, as in
   [Press keys in a test](/docs/guides/testing/#press-keys-in-a-test), can catch it.
+- **A component test fails**, if you did step 7. The game builds and starts, but a change to
+  a component no longer does what its test checks.
 
 Each message is below.
 
@@ -620,13 +739,43 @@ two tests do not catch this, because the start-up test presses no keys; a test t
 four times, as in [Press keys in a test](/docs/guides/testing/#press-keys-in-a-test), can.
 </Aside>
 
+<a id="a-component-test-fails"></a>
+<Aside type="caution" title="MyGameComponentTests ***Failed ... ERROR: CHECK( row.adjust(Direction::right) ) is NOT correct!">
+A component test found that a component no longer does what it checks. Here the row was
+changed so that it stops at its ends unless told otherwise, by changing `bool wrap = true);`
+to `bool wrap = false);` in `game\components\option_row.h`. The game built and ran, but ctest
+printed:
+
+```text title="Output"
+2/3 Test #2: MyGameComponentTests .............***Failed    0.04 sec
+[doctest] doctest version is "2.5.3"
+[doctest] run with "--help" for options
+===============================================================================
+C:\dev\mygame\game\components\option_row_tests.cpp(64):
+TEST CASE:  a wrapping row goes round at both ends
+
+C:\dev\mygame\game\components\option_row_tests.cpp(70): ERROR: CHECK( row.adjust(Direction::right) ) is NOT correct!
+  values: CHECK( false )
+```
+
+Four more `ERROR` lines follow for the same test, then
+`[doctest] test cases:  24 |  23 passed | 1 failed | 0 skipped` and
+`67% tests passed, 1 tests failed out of 3`. The `TEST CASE` line names the test and its file
+and line, and each `ERROR` line the check that failed. If the change was a slip, undo it. If
+it is what you want, the test is yours to change too: this one builds its row with no `wrap`,
+so give it one, by changing `&content.resources);` on the line after the test's `OptionRow row(`
+to `&content.resources, nullptr, true);`, and build and test again.
+</Aside>
+
 ## In the browser build
 
 Both new files must be in the browser list in `game\CMakeLists.txt` as well as the Windows one,
 as step 3 does; nothing else changes. The rows draw the same in a browser page as in the
 Windows game. The components use no content files of their own, so there is no copy line or
 `LINK_DEPENDS` line to add. Tab and F1 to F12 reach the game but the browser acts on them as
-well, which is why the keys on this page are letters.
+well, which is why the keys on this page are letters. With step 7 done, `ctest --preset
+wasm-debug` runs `MyGameTests` and `MyGameComponentTests` under Node; the start-up test is
+Windows only.
 
 ## Where to go next
 
@@ -675,3 +824,14 @@ numbers depend on where the function goes; and the value's colour is amber, not 
 `greeting_colour` list was also changed to spell `labrador::Colour::` like the rest of the file,
 and both `x64-debug` and `wasm-debug` were built again with it, with no warnings and their tests
 passing.
+
+Step 7 was added on 2026-11-13 and checked in a starter project made from a starter ZIP of this
+tree at `C:\dev\k137\mygame`, with the same compiler, quoted output changed to `C:\dev\mygame`
+as above. A script made steps 1 to 5's copies and edits as worded, and step 6's build and two
+tests passed; the script then followed step 7 the same way. The `findstr` line printed the four
+lines shown before the include edits and nothing after them. The `x64-debug` build compiled
+the five files of `MyGameComponentTests` with no warnings, and ctest ran the three tests,
+which passed. `bool wrap = false);` in the copied `option_row.h` failed `MyGameComponentTests`
+with the message shown, and giving that test's row `nullptr, true` passed it again. The
+`wasm-debug` preset then configured, built and ran `MyGameTests` and `MyGameComponentTests`
+under Node, both passing. The game was not run again, since step 7 changes no file it builds.
