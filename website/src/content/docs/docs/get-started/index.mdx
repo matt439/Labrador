@@ -3,7 +3,7 @@ title: Get started
 description: From an empty Windows machine to a game of your own that builds against Labrador.
 ---
 
-import { LinkCard } from '@astrojs/starlight/components';
+import { Aside, LinkCard } from '@astrojs/starlight/components';
 import RepoLink from '~/components/RepoLink.astro';
 import StarterGate from '~/components/StarterGate.astro';
 
@@ -27,6 +27,22 @@ There is no editor to install. A game is C++ you write in your own IDE, its cont
 text editor, and the tools that convert images and fonts run from the command line; if you were
 looking for an editor, read [what Labrador is not](/#what-labrador-is-not) before installing
 anything.
+
+<Aside type="note" title="What it takes">
+
+- **A Windows 11 PC with an x64 processor**, on which you can approve an administrator prompt.
+  These pages have not been tried on Windows 10 or on an Arm PC, and Windows in S mode has to be
+  switched out of first. [Before you install](/docs/get-started/prerequisites/#before-you-install)
+  says how to check, and what to do on a school or work PC.
+- **One large install, Visual Studio Community**, which is free. Its download is several
+  gigabytes. Microsoft says a typical installation needs 20 to 50 GB free; on the desktop these
+  pages were checked on, it took about 16 GB of drive `C:`.
+- **Time, mostly waiting.** On a home connection Visual Studio's install takes from tens of
+  minutes to a couple of hours; it was not timed here. After it, setting up and building the
+  starter project the first time downloads about 400 MB more and took just over two minutes on
+  a fast desktop.
+
+</Aside>
 
 <LinkCard title="1. Install the tools" description="Visual Studio with the C++ workload, and the command prompt every later step runs in." href="/docs/get-started/prerequisites/" />
 <LinkCard title="2. Get the starter project" description="Download a game project with Labrador inside it, extract it, build it and play it." href="/docs/get-started/starter/" />

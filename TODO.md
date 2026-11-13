@@ -252,7 +252,6 @@ ready queue above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#110` | OPEN | should | S | `prerequisites.mdx` step 1 says nothing of the installer's screens before the Workloads tab, nothing marks where a starter reader is finished, and the installer is still unwalked: one clean-machine install settles it. |
-| `REV#111` | OPEN | could | S | No page states a Windows version, Arm, S mode or administrator rights before the install, and the total disk, download and time first appear in step 1 of the second page. |
 | `REV#112` | OPEN | could | S | Unverified: Smart App Control or Defender blocking the reader's own `MyGame.exe` has no page, and `starter.mdx` step 7 would send them to rebuild. Reproduce on such a machine, then write the entry. |
 | `REV#113` | OPEN | could | S | Unverified: on a Windows that is not in English, cmd, vcpkg and the compiler print translated messages no page quotes. Check whether `VSLANG=1033` restores the English text, then say so in `prerequisites.mdx`. |
 | `REV#114` | OPEN | could | S | Unverified: what a build prints after a Visual Studio update is not recorded, and no page says how to remove everything or where vcpkg's cache is. Apply one update to a built starter, then write both. |
