@@ -324,6 +324,11 @@ cut once PHILOSOPHY's settle criterion has run.
    writes the notes once every check passes, quoting PHILOSOPHY and
    SECURITY.md as they stand at `<sha>`; read them before using them. The
    notes hold:
+   - first, a bold line: "**Download `labrador-starter-vX.Y.Z.zip`, then
+     follow [Get the starter project](https://labradorengine.com/docs/get-started/starter/).**"
+     v0.3.0's page lists the documentation archive first and GitHub's own
+     *Source code* links right after the starter ZIP, and neither holds a
+     project;
    - two sentences from *The public face*, word for word: the bold lead,
      "Releases are versioned, and before 1.0 a release promises a record, not
      compatibility.", and the one after it that begins "A 0.x tag promises one
@@ -340,7 +345,10 @@ cut once PHILOSOPHY's settle criterion has run.
    - a link to PHILOSOPHY at the tag;
    - one line saying that `labrador-starter-vX.Y.Z.zip` is the Get Started
      project with this release inside it, built without Git, and linking
-     `https://labradorengine.com/docs/get-started/starter/`.
+     `https://labradorengine.com/docs/get-started/starter/`;
+   - one line saying that `labrador-docs-vX.Y.Z.tar.gz` is the website's
+     frozen copy, published at `https://labradorengine.com/versions/vX.Y.Z/`,
+     and that a reader does not need to download it.
 
    **Attach the starter ZIP**, which Get Started's *Get the starter project*
    sends readers to download, from `v0.3.0` on. Make it on Windows, in an x64

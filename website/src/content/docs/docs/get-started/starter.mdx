@@ -31,9 +31,9 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    The first line makes the folder `C:\dev` if it is not there yet, and prints nothing either
    way. The prompt now ends `C:\dev>`, and `dir /b` lists what is already in the folder, which may
    be nothing, or `File Not Found`. If the list has `mygame` in it, you already have a project
-   called `mygame`: extracting another starter here would overwrite its files with the
-   starter's. Do step 2 to download the ZIP, then follow [A second project](#a-second-project)
-   below in place of steps 3 and 4.
+   called `mygame`, and step 3 refuses to extract over it, since that would put the starter's
+   files back over your changes. Do step 2 to download the ZIP, then follow
+   [A second project](#a-second-project) below in place of steps 3 and 4.
 
    Every box on this page uses `C:\dev` as written, even if you gave a deep folder a drive
    letter in [Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder).
@@ -65,8 +65,13 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    vcpkg.json
    ```
 
-   If `tar` says `Error opening archive: Failed to open`, the ZIP is not in `C:\dev`, or has
-   another name: `dir /b C:\dev\*.zip` lists the ZIP files that are there. If it prints
+   If the box prints `C:\dev\mygame already exists. Nothing was extracted.`, you already have a
+   project called `mygame`, and the box left it as it was: follow
+   [A second project](#a-second-project) in place of this step and the next. If `tar` says
+   `Error opening archive: Failed to open`, the ZIP is not in `C:\dev`, or has another name:
+   `dir /b C:\dev\*.zip` lists the ZIP files that are there. If one is called `Labrador-` and a
+   version, or begins `labrador-docs-`, it is not the starter ZIP:
+   [Not the starter ZIP](/docs/troubleshooting/#not-the-starter-zip). If it prints
    `Can't create '\\?\P:\mygame\...'` for every file, with your drive letter in place of `P:`,
    the ZIP was extracted at the root of a drive made with `subst`, where Windows' `tar` cannot
    create files. Run the box above as written, which extracts in `C:\dev`.
@@ -335,6 +340,12 @@ standing in for `C:\dev`, the ZIP renamed as a release's would be, and the comma
 On 31 October 2026 the failed test in step 7 was made in a fresh starter by moving the build's
 `fonts` folder away, and the file tree's sixteen files in `game` were listed from it; a second
 agent did both again in another fresh starter, and the output and the files matched.
+
+On 13 November 2026 step 3's box was run with a stand-in ZIP, its `if` line passed to `cmd /c`
+so that `%f` is read as at the prompt: into an empty folder it extracted `mygame`, and run
+again after a line had been added to `mygame\game\main.cpp` it printed
+`already exists. Nothing was extracted.` and the added line was still there. Its form that
+finds the ZIP by the start of its name did both the same way.
 
 No release had carried a starter ZIP when this was checked, so the download step was not run
 against a real release, and the **Extract All** dialog itself was not clicked through. CI makes a starter ZIP
