@@ -40,7 +40,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#46` | [A named configure diagnostic for a consumer manifest missing an engine dependency](FINDINGS.md#rev46) | Open |
 | `REV#47` | [Browser builds from a Linux or macOS host are unverified and untested](FINDINGS.md#rev47) | Open |
 | `REV#48` | [An optional starter workflow that builds the browser page and deploys it to GitHub Pages](FINDINGS.md#rev48) | Open |
-| `REV#49` | [No sanitizer configuration on the device-free hosts](FINDINGS.md#rev49) | Open |
+| `REV#49` | [No sanitizer configuration on the device-free hosts](FINDINGS.md#rev49) | Open; the first step is done. One local ASan run of `x64-debug-null` is [recorded](2026-11-13-asan-null-run.md), 2026-11-13. vcpkg's static lodepng fails the link with three STL annotation LNK2038 mismatches (string, vector, optional) until `_DISABLE_STL_ANNOTATION` is defined. With `/RTC1` dropped and `/INCREMENTAL:NO`, all 344 steps build. 21 of 22 entries pass with no AddressSanitizer report. `AudioTests` fails its five `AudioResourcesFailureTests` cases because ASan's runtime bypasses the Debug CRT allocation hook those cases inject through. A scheduled job, the annotation opt-out or a sanitized triplet, and the `SECURITY.md` and inventory amendment are the owner's call. |
 | `REV#50` | [Nothing tallies CI failures by step](FINDINGS.md#rev50) | Open |
 | `REV#51` | [No lint that every source file is enumerated in a CMake file](FINDINGS.md#rev51) | Open. A check on 2026-11-12 matched every tracked `.cpp` under `engine/`, `tests/`, `samples/` and `bench/` to a CMake file up its folder chain and found none unlisted. |
 | `REV#52` | [The configurations CI skips are built only at release](FINDINGS.md#rev52) | Open |
