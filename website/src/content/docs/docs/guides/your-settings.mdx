@@ -658,7 +658,10 @@ the Windows half of `game\CMakeLists.txt`, so the browser build does not look fo
 
 To keep the file after a reload, the page must copy `/save` to the browser's own storage and
 back. [Settings and saves](/docs/guides/settings-and-saves/#restore-browser-storage-before-starting-the-game)
-shows how, with a small JavaScript file and two link options.
+shows how, with a small JavaScript file and two link options. Those restore `/save` when the page
+starts; a file saved with **Space** still needs copying back after each save, which is the
+`Module.flushSave()` call in [Finish the browser sync before saying saved](/docs/guides/settings-and-saves/#finish-the-browser-sync-before-saying-saved).
+Without it, the file is gone after a reload, as before.
 
 ## Where to go next
 
@@ -692,7 +695,10 @@ Escape and Enter, and reached `Module.onQuit` with nothing in the console; a tem
 printed after the save reported `/save/settings.json`. The save check's whole `settings.cpp` in
 place of the one above stopped the browser build with `duplicate symbol: __original_main`, then
 `main` and `__main_void`. A `volume` field added as the last section describes, read only when `root.has("volume")`, built cleanly and read a file saved without it.
-Keeping the browser file after a reload was not tried on this page.
+Keeping the browser file after a reload was not tried on this page. On 2026-11-13 it was, in
+headless Chrome, with the link options from Settings and saves added: the file saved with
+**Space** was gone after a reload until `Module.flushSave()` was called after the save, and then
+the game started where it was saved. That page's *What was checked* has the run.
 
 A second agent then followed the page as worded in a fresh starter at `C:\dev\h7v\mygame`, and
 its builds, tests, window captures, commands and every message above matched. It found that the

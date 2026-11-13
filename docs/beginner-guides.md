@@ -414,7 +414,14 @@ In order of impact on a beginner who wants to play around. Each unit is one
     matching a page to a version are `GUIDE#13`'s. Left open: saving through
     IDBFS from the starter, the page button and exported function, is not
     walked through, and the null draw test still tests a texture rather than
-    the starter's own label. A second agent then followed every new or changed
+    the starter's own label. On 2026-11-13 `OCA-76`'s caller-free slice
+    walked the first half in a fresh starter's `wasm-debug` page in headless
+    Chrome 157: *Save settings in your game*'s steps and *Settings and
+    saves*' `persist.js` copy and link options worked as written, but a
+    **Space** save was gone after a reload until `Module.flushSave()` ran
+    after it, and with `{ autoPersist: true }` on the mount it survived with
+    no call; both pages now say so in *What was checked*. The page button
+    and exported function are still not walked through. A second agent then followed every new or changed
     procedure as worded in another fresh starter, and the pages were corrected
     for what it found: the pasted `add_sound_group` line is a `C2374` build
     error, and only a second call gives `already added`; the label of a row left
