@@ -255,6 +255,10 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 		"The argument checks every backend's Renderer shares, private to the backends; the reference documents the throws a caller sees in renderer.h.",
 	],
 	[
+		'engine/render/dxgi_device_kind.h',
+		"The two Direct3D backends' shared adapter classification, private to them; the reference documents what a caller sees as RenderDeviceKind in renderer.h.",
+	],
+	[
 		'engine/assets/json_object_keys.h',
 		'Fixed-schema validation private to the manifest, sprite-sheet and sound-bank loaders; game code uses JsonValue::keys() for its own dictionaries.',
 	],

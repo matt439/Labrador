@@ -72,6 +72,12 @@ namespace labrador
 	// which records draws and never produces pixels. The distinction is what
 	// lets a measurement refuse WARP or another CPU rasteriser without also
 	// refusing the deliberately headless configuration.
+	//
+	// `software` means the API, or the engine's list of known CPU
+	// rasterisers, says the device is one. `hardware` means neither did,
+	// which is not proof of a GPU. A Direct3D release build refuses only the
+	// adapters DXGI flags as software, so on a machine whose CPU rasteriser
+	// carries no flag it starts and reports `software`.
 	enum class RenderDeviceKind
 	{
 		hardware,

@@ -3,6 +3,7 @@
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/render/dxgi_device_kind.h"
 #include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
@@ -10,6 +11,7 @@
 #include "engine/render/throw_if_failed.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <iterator>
 #include <memory>
@@ -22,6 +24,10 @@ using Microsoft::WRL::ComPtr;
 
 namespace labrador
 {
+	static_assert(dxgi_adapter_flag_software ==
+		static_cast<std::uint32_t>(DXGI_ADAPTER_FLAG_SOFTWARE),
+		"dxgi_device_kind.h's flag value is DXGI's.");
+
 	namespace
 	{
 		// The adapter DeviceResources made the device on, which it recorded
@@ -37,8 +43,8 @@ namespace labrador
 			info.device_name = narrow(description.Description);
 			info.vendor_id = description.VendorId;
 			info.device_id = description.DeviceId;
-			info.kind = (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0
-				? RenderDeviceKind::software : RenderDeviceKind::hardware;
+			info.kind = dxgi_device_kind(description.Flags,
+				description.VendorId, description.DeviceId, info.device_name);
 			return info;
 		}
 

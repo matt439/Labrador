@@ -267,12 +267,13 @@ jobs:
     # #if defined(NDEBUG) and throws "No Direct3D hardware device found"
     # instead. So this runner offers a DXGI adapter that GetHardwareAdapter
     # accepts - one without DXGI_ADAPTER_FLAG_SOFTWARE - and D3D11CreateDevice
-    # succeeds on it. WHICH RASTERISER THAT IS, A LOG CANNOT SAY: the two lines
-    # that would name it are OutputDebugString calls compiled only into _DEBUG
-    # builds, and nothing in ctest's output carries an adapter description. The
-    # checkable shape is what the matrix rests on: Direct3D gets an adapter
-    # from the runner image, and GL and Vulkan get one only from the Mesa and
-    # SwiftShader drivers the steps below provide.
+    # succeeds on it. WHICH RASTERISER THAT IS, THE LOG SAYS: the step
+    # that records the device prints its name and kind for every rasterising
+    # entry, and an unflagged Basic Render Driver is reported as software
+    # (engine/render/dxgi_device_kind.h). Selection still reads the flag
+    # alone. The checkable shape is what the matrix rests on: Direct3D gets
+    # an adapter from the runner image, and GL and Vulkan get one only from
+    # the Mesa and SwiftShader drivers the steps below provide.
     #
     # THE D3D12 PRESET IS THE SAME RASTERISER AS D3D11. Whatever adapter this
     # runner offers, both Direct3D backends take it, so this runner rasterises
@@ -529,13 +530,18 @@ jobs:
 
       # A green above says nothing about what drew. ctest shows a passing
       # test's output to nobody, so this asks RenderPixelTests again, in its
-      # own folder because it loads ./content.
-      - name: Check that the software device drew
-        if: needs.changes.outputs.build == 'true' && matrix.software_device != ''
+      # own folder because it loads ./content. Every rasterising entry prints
+      # the device's name and kind; GL and Vulkan also fail unless the name
+      # is their software_device. The Direct3D entries are not held to a name:
+      # the runner image chooses their adapter, and this line is the record of
+      # which one it chose and how the engine classified it.
+      - name: Record the device that drew
+        if: needs.changes.outputs.build == 'true' && matrix.preset != 'x64-debug-null'
         working-directory: out/build/${{ matrix.preset }}/tests/render
         run: |
           RenderPixelTests.exe -tc="the renderer reports the rasterising device it selected" > device.txt || exit /b 1
           type device.txt
+          if "${{ matrix.software_device }}"=="" exit /b 0
           findstr /C:"Drawing on" device.txt | findstr /C:"${{ matrix.software_device }}" >nul || (echo RenderPixelTests did not draw on ${{ matrix.software_device }}. & exit /b 1)
 
       # A failed golden comparison is the one failure here that cannot be read

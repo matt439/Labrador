@@ -42,6 +42,7 @@ add_library(LabradorEngine STATIC
     render/colour.cpp
     render/dds_file.cpp
     render/draw_object.cpp
+    render/dxgi_device_kind.cpp
     render/font.cpp
     render/label.cpp
     render/png_file.cpp

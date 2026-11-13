@@ -90,6 +90,15 @@ machine owns does not establish which one rendered the measured frame, while a
 pointer to that adapter would undo this section's boundary to answer the same
 question.
 
+`software` in that classification means the API, or the engine's list of known
+CPU rasterisers, says the device is one; `hardware` means neither did, which is
+not proof of a GPU. The two Direct3D backends share one classifier,
+`dxgi_device_kind.h`, which takes plain values so `RenderTests` runs it in
+every configuration: DXGI's software flag, or the Basic Render Driver's vendor
+and device numbers or name, make `software`. Direct3D adapter selection reads
+the flag alone, so a release build starts on an unflagged CPU rasteriser and
+reports it as `software`.
+
 The same record names the configured presentation mode. Direct3D requests
 sync interval one, Vulkan selects FIFO, and OpenGL on its WGL context
 explicitly requests swap interval one through `WGL_EXT_swap_control`. That WGL
