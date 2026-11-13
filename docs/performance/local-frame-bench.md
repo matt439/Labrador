@@ -229,3 +229,9 @@ pairing, about 33 ms, and is read as two populations, as the ratchet document
 advises. One held run on one machine does not establish a cause or that it
 recurs; a low-tier run should look for it before quoting the column.
 D3D12 held showed 16 intervals over 20 ms and no pairing.
+
+## IPO comparison, 2026-11-13
+
+[LineSweeperFrameBench with IPO off and on](2026-11-13-ipo-update-phase.md)
+follows this procedure's run settings and hold in two `x64-release` build
+folders that differ only in `CMAKE_INTERPROCEDURAL_OPTIMIZATION`, for `REV#36`.
