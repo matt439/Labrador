@@ -459,12 +459,116 @@ OpenGL or Vulkan needs a driver. On a machine without the required device,
 instead checks startup with its recording renderer.
 
 It presses no keys, so it checks that the game starts, not that it plays. The
-separate draw test above inspects requests without proving device output.
+separate draw test above inspects requests without proving device output. The next section
+presses keys.
+
+## Press keys in a test
+
+A test in the null build can make the game's own `Application`, hidden, and press keys in it
+with no window in front and nothing on screen. It feeds the keyboard the same key events the
+window would, steps the states itself, and checks what they did. The engine tests its template
+this way, and this section adds the same test to your project: Escape opens the quit question,
+a second Escape closes it, a held Escape does not close the question it opened, and a key that
+goes down and up between two updates is never seen.
+
+It needs the null build from [Inspect draws with the null backend](#inspect-draws-with-the-null-backend):
+do its step 1, the presets file, first. The draw test there is not needed.
+
+**The engine reads the keyboard once per update**, before your state's update, so the test does
+the same: each step calls the keyboard's `poll()`, then the stack's `update()`. A key fed with
+`on_key_down` is held from the next poll on, and `pressed()` is true for that one update;
+[Drive the game with injected keys](#drive-the-game-with-injected-keys) below says more.
+
+The `Application` is made as `main.cpp` makes it, but hidden, and its own loop never runs: the
+test keeps a `StateContext`, the engine's state stack, of its own, and steps it. The
+`Application` supplies what the states read, the keyboard and the fonts from your manifest.
+
+<Steps>
+
+1. **Make the test file.** In the x64 Native Tools Command Prompt, in your project's folder:
+
+   ```bat
+   cd /d C:\dev\mygame
+   if not exist game\tests\state_tests.cpp type nul > game\tests\state_tests.cpp
+   notepad game\tests\state_tests.cpp
+   ```
+
+   Paste this whole file into it. It is the engine's own test of the template:
+
+   <SourceFile path="tests/minimal/state_tests.cpp" />
+
+   Then change its one line naming the template's folder,
+
+   ```cpp
+   #include "samples/minimal/states/hello_state.h"
+   ```
+
+   to your project's folder, and save and close Notepad:
+
+   ```cpp
+   #include "game/states/hello_state.h"
+   ```
+
+2. **Add it to the build.** Open `game\CMakeLists.txt`, search for
+   `add_test(NAME MyGameTests COMMAND MyGameTests)`, and paste this on the line after it, below
+   the draw test's block if you added that:
+
+   ```cmake
+   if(WIN32 AND LABRADOR_RENDER_BACKEND STREQUAL "null"
+       AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
+       add_executable(MyGameStateTests
+           tests/state_tests.cpp
+           states/confirm_state.cpp
+           states/hello_state.cpp
+       )
+       target_link_libraries(MyGameStateTests PRIVATE
+           MyGameRules LabradorEngine doctest::doctest labrador_settings)
+       target_compile_definitions(MyGameStateTests PRIVATE
+           GAME_MANIFEST="${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json")
+       add_test(NAME MyGameStateTests COMMAND MyGameStateTests)
+       set_tests_properties(MyGameStateTests PROPERTIES TIMEOUT 60)
+   endif()
+   ```
+
+   The guard builds it only where the renderer and audio are both null, so it never opens a
+   graphics device or an audio endpoint, and the regular build does not build it. It compiles
+   the states again, because the game's own program is not a library; a state file you add to
+   `MyGame` is added here too. `GAME_MANIFEST` is your source folder's manifest, so the test
+   reads the content you edit rather than the build's copy of it.
+
+3. **Configure, build and run it:**
+
+   ```bat
+   cmake --preset x64-debug-null
+   cmake --build --preset x64-debug-null --target MyGameStateTests
+   ctest --preset x64-debug-null -R "^MyGameStateTests$"
+   ```
+
+   The test ends:
+
+   ```text title="Output"
+   1/1 Test #2: MyGameStateTests .................   Passed    0.22 sec
+
+   100% tests passed, 0 tests failed out of 1
+   ```
+
+   A plain `ctest --preset x64-debug-null` now runs three tests, or four with the draw test. The
+   regular `x64-debug` build does not build it, and still runs two.
+
+</Steps>
+
+When you change what Escape does, change the cases: a test that says Escape opens a question
+fails once Escape does something else, which is the point. A screen of your own is tested the
+same way: make it in `Game`'s constructor in place of `HelloState`, press its keys, and check
+what a key should have changed, the stack's depth or something the state lets a test read.
+LineSweeper's <RepoLink path="tests/linesweeper/focus_pause_tests.cpp">focus tests</RepoLink>
+also tell the stack the window lost the foreground, with `notify_activation(false)`.
 
 ## Drive the game with injected keys
 
-To get past a title screen in a smoke run after moving your pin, inject keys into the running
-game. **The engine reads the keyboard once per update**, before your state's update: each key
+The test above checks what the states do with no window in front. To watch the real window
+instead, or to get past a title screen in a smoke run after moving your pin, inject keys into the
+running game. **The engine reads the keyboard once per update**, before your state's update: each key
 event the window receives is held until that poll, which makes it visible to `held()` and,
 for one update, `pressed()`. A key pressed and released between two polls is never seen, so a
 tap sent faster than an update does nothing. Hold the key across at least one poll and release
@@ -587,6 +691,13 @@ no files added, ran 94 steps in about 4 seconds where the first starter's had ru
 folder was 123 MB where the first's was 143 MB; the page now gives 94 steps and that range. It
 also found that `-Key Escape` shows no question once the quit key is changed, which the page now
 says.
+
+On 13 November 2026, [Press keys in a test](#press-keys-in-a-test) was followed by script in
+a project assembled from this tree as Start your own project builds it: the presets file from
+step 1 of Inspect draws, the test file with its include changed, and the `CMake` block pasted
+after `MyGameTests`. The null configure and the build of `MyGameStateTests` passed, 96 steps,
+its `ctest` run passed with the output shown, and a plain null `ctest` ran and passed three
+tests. The engine's own copy runs in its null builds as `MinimalStateTests`.
 
 A review in a third fresh starter wrote the presets file, the draw test and its `CMake` block
 from this page's text by script. The null configure, build and three tests passed, 96 steps with

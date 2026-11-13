@@ -55,7 +55,7 @@ Web Audio and web input.
 | `x64-debug-d3d12`, `x64-release-d3d12` | D3D12 / XAudio2 | 22; debug permits WARP fallback |
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 21; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 21; SDK and driver |
-| `x64-debug-null`, `x64-release-null` | null / null | 22; no graphics/audio API; no RenderPixelTests |
+| `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
 | `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 34 Debug / 35 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
@@ -149,7 +149,9 @@ paths are planning information; they do not establish a build or test result.
   `CollisionSmokeTests` drives the collision sample's scripted route the same
   way. All three need a device. Under null render `RenderPixelTests` is not
   registered; the two smoke tests and `LocalMultiplayerSmokeTests` record
-  draws instead, and null audio adds `AudioSmokeTests`. CI's GL job draws on Mesa's llvmpipe and its Vulkan job on
+  draws instead, and null audio adds `AudioSmokeTests`. Native null also
+  registers `MinimalStateTests`, the template's states driven by synthetic
+  keys in a hidden Application, which the testing guide shows. CI's GL job draws on Mesa's llvmpipe and its Vulkan job on
   Chrome's SwiftShader, and fails if `RenderPixelTests` names another device;
   neither is a real driver, which `ci_gap_report.py` still covers. A passing
   release Direct3D test does not imply WARP: release has no WARP fallback.
