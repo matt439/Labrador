@@ -52,6 +52,9 @@
 //   cancel a touch. touch_slack is how many client pixels a touch's reported
 //   position may be from the one sent, which is none where the browser
 //   delivers a touch where it was sent.
+// - snaps_device_box: true where the browser's device-pixel-content-box at
+//   the starting ratio of one is the box it snaps the canvas to, so the
+//   fractional-position step must find the snapped size.
 
 const CANVAS = { x: 120, y: 70 };
 const OUTSIDE = { x: 650, y: 400 };
@@ -97,6 +100,7 @@ export function devtools_input(send) {
 	};
 	return {
 		presses_modifiers: false,
+		snaps_device_box: true,
 		cancels_touch: true,
 		touch_slack: 0,
 		prepare: () => send('Emulation.setFocusEmulationEnabled', { enabled: true }),
@@ -310,6 +314,57 @@ export async function drive_window(page, input) {
 	await input.device_pixel_ratio(null);
 	await frames(3);
 	await check('and back', ['size 480 250']);
+
+	// THE BOX THE BROWSER SNAPS TO: a canvas at y = 20.25 CSS pixels and
+	// 302.4 tall covers 20.25 to 322.65, which Chromium snaps to a 303-pixel
+	// box although 302.4 rounds to 302. The buffer is the box the page's own
+	// device-pixel-content-box observer reports while that box is within a
+	// pixel of the CSS size times devicePixelRatio, or the browser resamples
+	// the buffer and it blurs (REV#97); otherwise it is that product rounded.
+	// Firefox under WebDriver BiDi reports a box at its own scale rather than
+	// the ratio of one the viewport is given, so it takes the second branch,
+	// and input.snaps_device_box says which browser must take the first. At
+	// the ratio of one the page starts at, because an emulated ratio in
+	// Chromium changes devicePixelRatio and not the box.
+	await evaluate(`(() => {
+		window.labradorDeviceBox = null;
+		const canvas = document.getElementById('canvas');
+		canvas.style.top = '20.25px';
+		canvas.style.height = '302.4px';
+		new ResizeObserver((entries) => {
+			const sizes = entries[entries.length - 1].devicePixelContentBoxSize;
+			window.labradorDeviceBox = sizes && sizes[0] ?
+				[sizes[0].inlineSize, sizes[0].blockSize] : 'unreported';
+		}).observe(canvas, { box: 'device-pixel-content-box' });
+		return true;
+	})()`);
+	await frames(4);
+	await pass('at a fractional device-pixel position the buffer is the snapped box', async (what) => {
+		const box = await evaluate('JSON.stringify(window.labradorDeviceBox)').then(JSON.parse);
+		const ratio = await evaluate('devicePixelRatio');
+		const sizes = (await take()).filter((entry) => entry.startsWith('size '));
+		const exact = [480 * ratio, 302.4 * ratio];
+		const snapped = Array.isArray(box) &&
+			box.every((side, i) => Math.abs(side - exact[i]) < 1);
+		if (input.snaps_device_box) {
+			expect(`step ${step}, ${what}: the box`, box, [480, 303]);
+		}
+		const expected = snapped ? box : exact.map(Math.round);
+		expect(`step ${step}, ${what} (box ${JSON.stringify(box)}, ratio ${ratio})`,
+			sizes.slice(-1), [`size ${expected[0]} ${expected[1]}`]);
+	});
+	await evaluate(`(() => {
+		const canvas = document.getElementById('canvas');
+		canvas.style.top = '';
+		canvas.style.height = '';
+		return true;
+	})()`);
+	await frames(4);
+	await pass('and back to a whole position', async (what) => {
+		expect(`step ${step}, ${what}`,
+			(await take()).filter((entry) => entry.startsWith('size ')).slice(-1),
+			['size 480 250']);
+	});
 
 	// TOUCH: pointer events with ids, focusing the canvas as a click does,
 	// and never the mouse as well.

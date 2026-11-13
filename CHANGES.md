@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Size the web drawing buffer to the snapped device-pixel box (REV#97)
+
+**Behaviour change.** In the browser, the drawing buffer is the canvas's `device-pixel-content-box` where the browser reports one within a pixel of the CSS size times `devicePixelRatio`. This keeps a canvas at a fractional device-pixel position from being resampled and blurred. `on_window_size_changed` can therefore report one pixel more or less than before. A browser that reports no such box keeps the rounded product.
+
 ### 2026-11-13 - Refuse a 32-bit Windows compiler at configure and add an LNK4272 entry
 
 **Behaviour change.** Configure now stops on a Windows build with a 32-bit compiler, such as one from the plain Developer Command Prompt, with `Labrador needs the 64-bit compiler, and this build folder has a 32-bit one`, naming the x64 Native Tools Command Prompt and the build folder to delete. Before this, a game configured and built as 32-bit without any message, and its next build from the x64 prompt failed to link with `LNK4272`. The check is in Labrador's top-level `CMakeLists.txt`, so a project that adds Labrador gets it with no change of its own. Browser builds are unaffected. (REV#106)
