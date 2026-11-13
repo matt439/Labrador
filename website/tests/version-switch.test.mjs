@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { missingNotice, parseVersionsIndex, stripBase, targetFor } from '../src/lib/version-switch.mjs';
+import { erratumReleasePage, missingNotice, parseVersionsIndex, stripBase, targetFor } from '../src/lib/version-switch.mjs';
 
 const INDEX = {
 	schemaVersion: 1,
@@ -127,4 +127,14 @@ test('the arrival notice repeats a plain route and a real version, and nothing e
 		assert.equal(notice(query), general, query);
 	}
 	assert.match(notice(`version-missing=${'a'.repeat(200)}&from=v0.4.0`), /^The page \/a{200} /);
+});
+
+test('an erratum leads to the release copy of its page only when the release has that page', () => {
+	const { 'v0.3.0': older } = versions();
+	assert.equal(erratumReleasePage('/docs/guides/shared/', older), '/versions/v0.3.0/docs/guides/shared/');
+	assert.equal(erratumReleasePage('/docs/guides/old/#a-heading', older), '/versions/v0.3.0/docs/guides/old/#a-heading');
+	assert.equal(erratumReleasePage('/docs/guides/new/', older), null);
+	assert.equal(erratumReleasePage('/versions/', older), null);
+	assert.equal(erratumReleasePage('//example.com/docs/', older), null);
+	assert.equal(erratumReleasePage('https://github.com/matt439/Labrador/issues/1', older), null);
 });

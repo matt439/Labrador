@@ -8,24 +8,26 @@ sidebar:
 
 import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 
-Each guide takes one job and shows how a sample in the repository does it, quoting the sample's
-code as it is at the revision this site was built from. Where the samples do not cover part of a job,
-the guide says so. The quoted code is in the engine's `samples` folder, not in your game. In a
-starter project that is `C:\dev\mygame\external\labrador\samples`, and
-[Run the samples](/docs/guides/samples/) builds and starts them from there. They assume the model described in [Concepts](/docs/concepts/). When a build fails after you
-change your game, [Read a build error](/docs/get-started/build-errors/) shows how to find the line that matters, and
-[Edit and debug in Visual Studio](/docs/get-started/debug-your-game/) does the same work in Visual Studio, with its debugger.
+There are two kinds of guide. The first kind changes the project you made in
+[Get started](/docs/get-started/), one job at a time, with every command to copy. The second
+kind explains a part of the engine by quoting how one of its samples does it. If you have just
+made a first change, start with the first kind, from the top.
+
+When a build fails after you change your game,
+[Read a build error](/docs/get-started/build-errors/) shows how to find the line that matters.
+
+## Step by step in your starter project
+
+These pages are in a suggested order, and each one says at its top how long it takes and which
+pages it needs done first. Put a picture, Animate a sprite sheet, Fonts and text and the second
+part of Play a sound need [Install the content tools](/docs/guides/content-tools/) first; the
+others need no tools beyond the ones you already installed.
 
 <CardGrid>
 	<LinkCard
 		title="Edit and debug in Visual Studio"
 		description="Open your project in Visual Studio, build and read the Error List, stop at a breakpoint, step, and find the line behind an error box or a crash."
 		href="/docs/get-started/debug-your-game/"
-	/>
-	<LinkCard
-		title="Run the samples"
-		description="Build the engine's six samples from a starter project or a clone, start each one, and quit it."
-		href="/docs/guides/samples/"
 	/>
 	<LinkCard
 		title="Install the content tools"
@@ -68,14 +70,14 @@ change your game, [Read a build error](/docs/get-started/build-errors/) shows ho
 		href="/docs/guides/your-screen/"
 	/>
 	<LinkCard
-		title="Make a title menu"
-		description="Start and Quit rows on the title screen, moved with the keys or a pad and chosen with Enter or A."
-		href="/docs/guides/your-menu/"
-	/>
-	<LinkCard
 		title="Add a second level"
 		description="A goal to reach, the next level when the greeting touches it, and levels read from a file you edit."
 		href="/docs/guides/your-level/"
+	/>
+	<LinkCard
+		title="Make a title menu"
+		description="Start and Quit rows on the title screen, moved with the keys or a pad and chosen with Enter or A."
+		href="/docs/guides/your-menu/"
 	/>
 	<LinkCard
 		title="Add a rule and a test"
@@ -112,10 +114,23 @@ change your game, [Read a build error](/docs/get-started/build-errors/) shows ho
 		description="Change MyGame to your game's name in the build, the window, the error box, the web page and the release."
 		href="/docs/guides/your-name/"
 	/>
+</CardGrid>
+
+## Share your game and keep it safe
+
+Sending the game to a friend, keeping its history in Git and on GitHub, putting it on the web,
+and saying which Labrador you have when you ask for help.
+
+<CardGrid>
 	<LinkCard
 		title="Send your game to a friend"
 		description="Build the Windows release, zip it, and what your friend sees when they extract and start it, SmartScreen included."
 		href="/docs/guides/your-release/"
+	/>
+	<LinkCard
+		title="Save and undo changes with Git"
+		description="See what changed, record it, read the history, undo a broken edit, take back a commit and get an old version of a file."
+		href="/docs/guides/your-git/"
 	/>
 	<LinkCard
 		title="Put your project on GitHub"
@@ -123,9 +138,9 @@ change your game, [Read a build error](/docs/get-started/build-errors/) shows ho
 		href="/docs/guides/your-github/"
 	/>
 	<LinkCard
-		title="Save and undo changes with Git"
-		description="See what changed, record it, read the history, undo a broken edit, take back a commit and get an old version of a file."
-		href="/docs/guides/your-git/"
+		title="Put your project in Git"
+		description="Make a starter project a Git repository with the engine as a submodule, ready for GitHub and CI."
+		href="/docs/guides/starter-to-git/"
 	/>
 	<LinkCard
 		title="Build for the browser"
@@ -146,6 +161,49 @@ change your game, [Read a build error](/docs/get-started/build-errors/) shows ho
 		title="Ask for help"
 		description="What to gather, the log, your engine's commit and your tools, and which GitHub form to open."
 		href="/docs/guides/ask-for-help/"
+	/>
+</CardGrid>
+
+## Take a newer Labrador
+
+When a newer release comes out: one page for a project made from the starter ZIP, one for a
+project that has Labrador as a Git submodule, and the code changes a release asks for.
+
+<CardGrid>
+	<LinkCard
+		title="Move a starter project to a newer Labrador"
+		description="Take a newer release into a project made from the starter ZIP, keeping the old project until the new one works."
+		href="/docs/guides/starter-update/"
+	/>
+	<LinkCard
+		title="Move your engine pin"
+		description="Take a newer Labrador release: read CHANGES.md, compare the manifest, build, test and commit, and run the engine's own tests at your pin."
+		href="/docs/guides/move-pin/"
+	/>
+	<LinkCard
+		title="Update your code for a newer Labrador"
+		description="The renames and removals a newer release asks of your game, as commands to copy, release by release."
+		href="/docs/guides/migrate/"
+	/>
+</CardGrid>
+
+## How the engine's samples do it
+
+Each of these takes one part of the engine and shows how a sample in the repository uses it,
+quoting the sample's code as it is at the revision this site was built from. Where the samples
+do not cover part of a job, the guide says so. The quoted code is in the engine's `samples`
+folder, not in your game. In a starter project that is
+`C:\dev\mygame\external\labrador\samples`, and [Run the samples](/docs/guides/samples/)
+builds and starts them from there. They assume the model described in
+[Concepts](/docs/concepts/). Several share a subject with a step-by-step page above, such as
+Audio and Play a sound in your game: the step-by-step page changes your game, and the one here
+explains the parts behind it.
+
+<CardGrid>
+	<LinkCard
+		title="Run the samples"
+		description="Build the engine's six samples from a starter project or a clone, start each one, and quit it."
+		href="/docs/guides/samples/"
 	/>
 	<LinkCard
 		title="Sprites and text"
@@ -206,25 +264,5 @@ change your game, [Read a build error](/docs/get-started/build-errors/) shows ho
 		title="Put your game on a web host"
 		description="The files to upload and what the server must send: the wasm MIME type, a CSP, compression and caching."
 		href="/docs/guides/web-host/"
-	/>
-	<LinkCard
-		title="Move your engine pin"
-		description="Take a newer Labrador release: read CHANGES.md, compare the manifest, build, test and commit, and run the engine's own tests at your pin."
-		href="/docs/guides/move-pin/"
-	/>
-	<LinkCard
-		title="Update your code for a newer Labrador"
-		description="The renames and removals a newer release asks of your game, as commands to copy, release by release."
-		href="/docs/guides/migrate/"
-	/>
-	<LinkCard
-		title="Move a starter project to a newer Labrador"
-		description="Take a newer release into a project made from the starter ZIP, keeping the old project until the new one works."
-		href="/docs/guides/starter-update/"
-	/>
-	<LinkCard
-		title="Put your project in Git"
-		description="Make a starter project a Git repository with the engine as a submodule, ready for GitHub and CI."
-		href="/docs/guides/starter-to-git/"
 	/>
 </CardGrid>

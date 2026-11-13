@@ -20,3 +20,4 @@ export function targetFor(
 	version: Pick<Version, 'path' | 'pages'>
 ): { href: string; missing: boolean };
 export function missingNotice(params: URLSearchParams, currentLabel: string): string | null;
+export function erratumReleasePage(href: string, version: Pick<Version, 'path' | 'pages'>): string | null;

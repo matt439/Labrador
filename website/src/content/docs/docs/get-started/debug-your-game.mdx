@@ -1,9 +1,12 @@
 ---
 title: Edit and debug in Visual Studio
 description: Open your project in Visual Studio, choose x64-debug and MyGame, edit, build and read the Error List, stop at a breakpoint, step and read variables, and find the line behind an error box or a crash, step by step.
+next:
+  link: /docs/guides/
+  label: Guides
 ---
 
-import { Steps } from '@astrojs/starlight/components';
+import { Aside, Steps } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 
 Everything so far used Notepad and the command prompt. Visual Studio, which you installed in
@@ -21,6 +24,19 @@ with that page's step 1 line. The edits on this page are undone as you go; if on
 The pictures of Visual Studio on this page are in words. Positions are as Visual Studio 2026 lays
 its window out the first time: if you have moved windows around, the menu commands and keys given
 with each one still reach it.
+
+<Aside type="tip" title="In short">
+
+In the prompt, `cd /d C:\dev\mygame` and `devenv .` open the project. Choose **x64-debug** in
+the configuration box and **MyGame.exe (game\MyGame.exe)** as the startup item. Then
+**Ctrl+Shift+B** builds, **Ctrl+F5** runs, **F5** runs under the debugger and **Shift+F5** stops
+it. [The keys on this page](#the-keys-on-this-page) lists the rest.
+
+If you only want Visual Studio as an editor, you can stop after
+[Edit, build and run](#edit-build-and-run). After [Where to go next](#where-to-go-next) the page
+is reference that a beginner can skip.
+
+</Aside>
 
 ## Open the project
 
@@ -360,6 +376,26 @@ behind this page and did not stop the game. After the game has been held at a br
 such as `XAUDIO2: WARNING: Glitch at output sample 870720` can appear too: the sound stopped while
 the game was held, and it is not a fault either.
 
+## The keys on this page
+
+| Key | Menu | What it does |
+| --- | --- | --- |
+| **Ctrl+T** | **Edit > Go To > Go To All...** | Find a file by name |
+| **Ctrl+G** | **Edit > Go To > Go To...** | Go to a line number |
+| **Ctrl+Shift+B**, or **F7** | **Build > Build All** | Save and build |
+| **Ctrl+F5** | **Debug > Start Without Debugging** | Build if needed, then run |
+| **F5** | **Debug > Start Debugging**; **Debug > Continue** while debugging | Build if needed, then run under the debugger |
+| **F9** | **Debug > Toggle Breakpoint** | Set or remove a breakpoint on the cursor's line |
+| **F10** | **Debug > Step Over** | Run the next line |
+| **F11** | **Debug > Step Into** | Go into the next function called |
+| **Shift+F11** | **Debug > Step Out**, while debugging | Run to the end of this function |
+| **Shift+F5** | **Debug > Stop Debugging**, while debugging | End the game |
+| **Ctrl+Shift+F9** | **Debug > Delete All Breakpoints** | Remove every breakpoint |
+| **Alt+4** | **Debug > Windows > Locals**, while debugging | The variables where it stopped |
+| **Ctrl+Alt+C** | **Debug > Windows > Call Stack**, while debugging | Which function called which |
+| **Ctrl+Alt+E** | **Debug > Windows > Exception Settings** | Which errors stop the debugger |
+| **Ctrl+\\**, **E** | **View > Error List** | The build's errors, one per row |
+
 ## When the game shows an error
 
 Most of the problems a game meets while it starts, such as a misspelt picture or font name, stop
@@ -558,7 +594,20 @@ The game is still running, under the debugger or on its own, while something bui
 with **Shift+F5** or quit it, then build again;
 [Troubleshooting](/docs/troubleshooting/#lnk1168-cannot-open-gamemygameexe-for-writing) has more.
 
+## Where to go next
+
+Visual Studio now builds, runs and debugs your game. The [Guides](/docs/guides/) list the next
+things to do to it, step by step, starting with a picture of your own; edit them in Visual Studio
+or in Notepad, as you like. When something goes wrong that this page does not cover,
+[Troubleshooting](/docs/troubleshooting/) lists the messages and what to do about each.
+
+The three sections after this one, and the record of how the page was checked, are reference.
+Nothing in the steps above needs them.
+
 ## Where content comes from
+
+**A beginner can skip this section.** It explains where the game looks for its content, for when
+an error box names a missing file.
 
 The copied `main.cpp` loads the manifest before starting the first state:
 
@@ -622,27 +671,10 @@ release is an explicit build choice to make before shipping; keep the resulting 
 files when you make that choice. The `x64-debug` build used above supplies the debug
 information for this walkthrough.
 
-## The keys on this page
-
-| Key | Menu | What it does |
-| --- | --- | --- |
-| **Ctrl+T** | **Edit > Go To > Go To All...** | Find a file by name |
-| **Ctrl+G** | **Edit > Go To > Go To...** | Go to a line number |
-| **Ctrl+Shift+B**, or **F7** | **Build > Build All** | Save and build |
-| **Ctrl+F5** | **Debug > Start Without Debugging** | Build if needed, then run |
-| **F5** | **Debug > Start Debugging**; **Debug > Continue** while debugging | Build if needed, then run under the debugger |
-| **F9** | **Debug > Toggle Breakpoint** | Set or remove a breakpoint on the cursor's line |
-| **F10** | **Debug > Step Over** | Run the next line |
-| **F11** | **Debug > Step Into** | Go into the next function called |
-| **Shift+F11** | **Debug > Step Out**, while debugging | Run to the end of this function |
-| **Shift+F5** | **Debug > Stop Debugging**, while debugging | End the game |
-| **Ctrl+Shift+F9** | **Debug > Delete All Breakpoints** | Remove every breakpoint |
-| **Alt+4** | **Debug > Windows > Locals**, while debugging | The variables where it stopped |
-| **Ctrl+Alt+C** | **Debug > Windows > Call Stack**, while debugging | Which function called which |
-| **Ctrl+Alt+E** | **Debug > Windows > Exception Settings** | Which errors stop the debugger |
-| **Ctrl+\\**, **E** | **View > Error List** | The build's errors, one per row |
-
 ## What was checked
+
+<details>
+<summary>How every step and quoted line on this page was checked, and what was not</summary>
 
 On 31 October 2026, in a starter project made from a starter ZIP of this tree at
 `C:\dev\g9-author\mygame`, with Visual Studio Community 2026 18.9.2 and its compiler 19.51, every
@@ -735,3 +767,5 @@ there is the engine's own string, read from its source.
 
 No person has followed this page yet: `OCA-18` is that session, someone at Visual Studio
 following the page in a fresh starter project, and it remains open.
+
+</details>

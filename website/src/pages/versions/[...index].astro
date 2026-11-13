@@ -33,7 +33,8 @@ const headings = [
 		Each release has its own copy of the documentation, built from the commit its tag names and
 		never rebuilt. A release's documentation is a record of what that release was, not a promise
 		of support. When a release's documentation turns out to be wrong, the copy stays as it was and
-		a dated erratum below says what was wrong.
+		a dated erratum below says what was wrong. Each erratum links to the development page that
+		has it right and, where the release has that page, to the release's own copy that it corrects.
 	</p>
 	{
 		releases.length === 0 && (
@@ -81,7 +82,7 @@ const headings = [
 								<h3>Errata</h3>
 								<ul class="version-errata">
 									{release.errata.map((erratum) => (
-										<li>
+										<li data-erratum-release={release.tag} data-erratum-href={erratum.href}>
 											{erratum.date}: <a href={erratum.href.startsWith('/') ? sitePath(erratum.href) : erratum.href}>{erratum.title}</a>
 										</li>
 									))}
@@ -94,6 +95,33 @@ const headings = [
 		}
 	</ul>
 </StarlightPage>
+
+<script>
+	// Which pages each release has is known only once the snapshots are mounted,
+	// so the link to the copy an erratum corrects is added from the index every
+	// version's selector reads. Without it, the erratum still links to the
+	// development page.
+	import { erratumReleasePage, parseVersionsIndex } from '../../lib/version-switch.mjs';
+
+	const items = document.querySelectorAll<HTMLLIElement>('[data-erratum-release]');
+	if (items.length > 0) {
+		fetch('/versions/index.json', { cache: 'no-cache' })
+			.then((response) => (response.ok ? response.json() : Promise.reject(new Error(`${response.status}`))))
+			.then((json) => {
+				const versions = parseVersionsIndex(json);
+				for (const item of items) {
+					const version = versions.find((entry) => entry.id === item.dataset.erratumRelease);
+					const href = version && erratumReleasePage(item.dataset.erratumHref ?? '', version);
+					if (!version || !href) continue;
+					const link = document.createElement('a');
+					link.href = href;
+					link.textContent = `the ${version.label} page it corrects`;
+					item.append(' (', link, ')');
+				}
+			})
+			.catch(() => {});
+	}
+</script>
 
 <style>
 	.version-list {
