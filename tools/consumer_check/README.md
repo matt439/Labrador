@@ -30,7 +30,11 @@ download, extract and build without Git. Every entry is under one top folder,
 `mygame/`, so extracting it makes one folder; beside the project it holds
 `README.txt`, which names the Labrador version and commit and points at Get
 Started. Entries are sorted, carry the time of the tree's last commit and
-nothing else of the machine, so the same tree gives the same bytes. With
+nothing else of the machine, so the same tree, checked out with the same line
+endings, gives the same bytes: entries are read from the working tree, so a
+CRLF checkout and an LF one differ
+([the `v0.3.0` rebuild](../../docs/website-versioning.md#rebuild-comparison-2026-11-13)
+matched the release's ZIP from a CRLF checkout). With
 `--release vX.Y.Z` it is named for that release and refuses a tree that is not
 exactly the tag: `vcpkg.json`'s `version-string` must match, `HEAD` must be
 the tag's commit, and nothing may be modified or untracked. Without it, it is

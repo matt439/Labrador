@@ -10,9 +10,10 @@ Labrador it holds and the Get Started page.
 Each release carries one as labrador-starter-vX.Y.Z.zip (CONTRIBUTING.md,
 Cutting a release); --release names the tag and refuses a tree that is not
 exactly that tag. CI's consumer jobs build the project from a ZIP this makes
-from their own checkout. The same tree gives the same bytes: entries are
-sorted, every entry has the time of the tree's last commit, and nothing of the
-machine that made it is recorded.
+from their own checkout. The same tree, checked out with the same line
+endings, gives the same bytes: entries are sorted, every entry has the time of
+the tree's last commit, and nothing of the machine that made it is recorded.
+Files are read from the working tree, so a CRLF checkout and an LF one differ.
 """
 
 from __future__ import annotations
