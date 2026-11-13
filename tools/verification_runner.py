@@ -1,4 +1,4 @@
-"""Explicit render-sweep execution; callers supply the repository planner's checks.
+"""Explicit verification-sweep execution; callers supply the repository planner's checks.
 
 No toolchain activation, retries, cache repair or hardware acceptance is inferred.
 The supported CTest JSON/JUnit subset is documented in docs/verification.md.

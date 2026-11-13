@@ -1,6 +1,7 @@
-# Running a render verification sweep
+# Running a verification sweep
 
-`tools/verify_changes.py` prints the current render verification plan by default.
+`tools/verify_changes.py` prints the verification plan for the render, audio,
+input or app area of the engine.
 Every configure/build/test phase remains `not-run` unless `--execute` is explicit.
 The executor stops at the first failed command or validation and names it.
 The real sweep ran on 2026-10-29 ([qualification](#real-sweep-qualification-2026-10-29));
@@ -14,16 +15,20 @@ python tools/verify_changes.py --area render
 python tools/verify_changes.py --path engine/render/gl/renderer.cpp --format json
 python tools/verify_changes.py --path engine\render\vulkan --preflight
 python tools/verify_changes.py --area render --preflight --browser "C:/Program Files/Chromium/chrome.exe"
+python tools/verify_changes.py --area audio --area input
+python tools/verify_changes.py --path engine/audio/xaudio2 --path engine/app/win32/window.cpp
 ```
 
 From another directory, provide the absolute or relative path to this checkout's
 script. It anchors the checkout to its own location.
 
-`--area render` and repeatable `--path` selectors are mutually exclusive. The
-exact `engine/render` root and its descendants are supported, including deleted
-paths. Windows separators are normalized. Traversal, absolute paths and other
-areas fail explicitly. Audio, documentation, sample and general engine mappings
-are not modeled by this first tool; follow their owners in AGENTS.md.
+Repeatable `--area` and repeatable `--path` selectors are mutually exclusive;
+either repeated forms a union. The areas are `render`, `audio`, `input` and
+`app`. A path selects the area of the exact `engine/render`, `engine/audio`,
+`engine/input` or `engine/app` root it is in, including deleted paths. Windows
+separators are normalized. Traversal, absolute paths and other folders fail
+explicitly. Documentation, sample, website and other engine folders are not
+modeled; follow their owners in AGENTS.md.
 Selectors are lexical: selected files are not opened and symlinks are not
 resolved or checked.
 
@@ -34,7 +39,7 @@ The checkout comes from the script's location, independent of the working
 directory. Environment macros stay symbolic in the plan. Text output prints
 JSON argv arrays and their cwd/effects; these are unambiguous data, including
 paths with spaces, rather than shell-ready command strings. JSON output has
-`schema_version: 1` and stable ordering.
+`schema_version: 2`, a `scope` of the selected `areas` and `paths`, and stable ordering.
 
 ## The seven configurations
 
@@ -47,6 +52,25 @@ paths with spaces, rather than shell-ready command strings. JSON output has
 | x64-debug-null | null / null / xinput | Debug |
 | wasm-debug | gl / webaudio / web | Debug |
 | wasm-release-null, CI override | null / null / web | Release |
+
+Each area plans a subset of these tracks, in this order:
+
+| Area | Tracks | Registrations it adds to each track | Manual obligations it adds |
+| --- | --- | --- | --- |
+| render | all seven | `RenderTests`, `SceneTests`, `AudioTests`; native rasterizing tracks add `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests`, D3D12 adds `D3D12SynchronizationTests` | Vulkan synchronization validation, required for an `engine/render/vulkan` path |
+| audio | x64-debug, x64-debug-null, wasm-debug, wasm-release-null | `AudioTests`, `AudioSampleTests`; native null adds `AudioSmokeTests` | the XAudio2 endpoint smoke and listening (`WEB#3`) |
+| input | the same four | `InputTests` | real pads and touchscreens |
+| app | all seven | `AppTests`; native tracks add `MinimalSmokeTests` and `CollisionSmokeTests`, native null adds `LocalMultiplayerSmokeTests` | Vulkan synchronization validation, conditional |
+
+Audio and input have one backend on each side: XAudio2 or null and XInput
+natively, Web Audio or null and web input in the browser. The default native
+preset, native null (recorded waves, synthetic input with hidden windows) and
+both browser tracks therefore cover them. The window and application loop
+reach every render backend, so app keeps all seven. A union plans every track
+any selected area needs, with the union of their registrations. The browser
+registrations below belong to the track, whichever area selects it. Each
+required registration must be in `tests/ctest_inventory.json` for its track,
+or planning fails and names the entry.
 
 Named selections print preset configure/build/test argv, with build parallelism
 2 and test parallelism 1. The null browser selection preserves CI's existing
@@ -72,7 +96,7 @@ condition `${hostSystemName}` equals `Windows`: all ten native Debug/Release
 presets inherit it, and both wasm presets have no host condition. Booleans,
 null, compound predicates and other condition shapes fail explicitly.
 Default planning validates that condition without inspecting the host and
-still prints all seven tracks; preflight continues to require Windows for the
+still prints every planned track; preflight continues to require Windows for the
 whole sweep. Future includes, condition or inheritance shapes and changed
 source rules can require updating the model. It is not a general CMake
 interpreter and does not activate user toolchain wrappers.
@@ -80,7 +104,8 @@ interpreter and does not activate user toolchain wrappers.
 ## Optional read-only preflight
 
 `--preflight` inspects whitelisted environment values, tool/file paths and
-existing planned CMakeCache.txt files. It executes no version probes, CMake,
+existing planned CMakeCache.txt files. It checks only what the planned tracks
+need: an audio or input plan does not ask for `VULKAN_SDK`. It executes no version probes, CMake,
 CTest, compilers, SDK activation scripts, Node, browser or other subprocess.
 It creates, deletes and changes no cache, build tree, environment or global file.
 
@@ -148,11 +173,13 @@ pixel/context/bundle/pacing entries; the first two come from the inventory's
 rejects zero selected tests and absent required pages, then reports the selection.
 `--no-tests=error` cannot detect a missing page while unrelated tests still exist.
 
-Five native Release configurations and wasm-release GL remain separate unrun
-obligations. Vulkan source paths activate the synchronization-validation reminder
-with validate_sync and shell-visible layer output. Generic render selection
-shows that requirement conditionally. Website/lints, consumer packaging, opt-in
-probe builds and capture review keep their existing owners and remain unrun.
+The Release counterparts of the planned tracks, such as five native Release
+configurations and wasm-release GL for render, remain separate unrun obligations. Vulkan source paths activate the synchronization-validation reminder
+with validate_sync and shell-visible layer output. Generic render or app selection
+shows that requirement conditionally. Audio selections name the XAudio2 endpoint
+smoke and listening; input selections name real pads and touchscreens. Website/lints,
+consumer packaging, opt-in probe builds and capture review keep their existing
+owners and remain unrun.
 
 Source/recording tests do not establish rasterization, listening, physical pads,
 touchscreens, Safari, real-phone memory/layout or display pacing. File detection
@@ -169,7 +196,7 @@ python tools/verify_changes.py --area render --execute
 python tools/verify_changes.py --path engine/render/gl/renderer.cpp --execute --format json --output-dir out/verification/render-change
 ```
 
-Execution uses the same seven configurations and argv selections as the plan.
+Execution uses the same planned configurations and argv selections as the plan.
 It inspects prerequisites for every configuration before running the first
 configure. A late missing SDK therefore prevents an earlier build from starting.
 It does not activate vcvars/emsdk, fix caches, change environment values, probe
