@@ -10,8 +10,8 @@ import { starterRelease } from '../lib/starter';
 import { sitePath } from '../lib/site-path';
 
 interface Props {
-	// download: into C:\dev; extract: tar in C:\dev; second-name: the name of a
-	// second project; second: extracted aside and moved to that name; update:
+	// download: into C:\dev; extract: tar in C:\dev unless C:\dev\mygame exists;
+	// second-name: the name of a second project; second: extracted aside and moved to that name; update:
 	// extracted into C:\dev\new; original: the file %FILE% names, extracted into an
 	// emptied C:\dev\original and copied over the project's with the current time.
 	part: 'download' | 'extract' | 'second-name' | 'second' | 'update' | 'original';
@@ -38,7 +38,11 @@ const fromDownloads = starter
 			`dir /b C:\\dev\\labrador-starter-*.zip`,
 		].join('\n');
 const commands: Record<Exclude<Props['part'], 'download'>, string> = {
-	extract: [`cd /d C:\\dev`, extract()].join('\n'),
+	// Refuses, rather than restore every starter file over an edited mygame.
+	extract: [
+		`cd /d C:\\dev`,
+		`if exist C:\\dev\\mygame (echo C:\\dev\\mygame already exists. Nothing was extracted.) else (${extract()})`,
+	].join('\n'),
 	'second-name': `set "NAME=secondgame"`,
 	second: [
 		`mkdir C:\\dev\\unpack`,
@@ -61,6 +65,7 @@ const installGit = sitePath('/docs/get-started/prerequisites/#install-git');
 const tellGit = sitePath('/docs/get-started/prerequisites/#tell-git-who-you-are');
 const starterToGit = sitePath('/docs/guides/starter-to-git/');
 const movePin = sitePath('/docs/guides/move-pin/');
+const wrongFile = sitePath('/docs/troubleshooting/#not-the-starter-zip');
 ---
 
 {part === 'download' && starter && (
@@ -78,7 +83,10 @@ const movePin = sitePath('/docs/guides/move-pin/');
 		</p>
 		<p>
 			To download it with your browser instead, open <a href={starter.releaseUrl}>Labrador {starter.tag}'s release page</a>,
-			find <code>{starter.asset}</code> in its <strong>Assets</strong> list and click it. Your browser saves it in your{' '}
+			find <code>{starter.asset}</code> in its <strong>Assets</strong> list and click it. The other files there are
+			not the project: a file whose name begins <code>labrador-docs-</code> is a copy of this website, and GitHub's{' '}
+			<strong>Source code</strong> links save the engine alone, as <code>Labrador-</code> and a version, with no{' '}
+			<code>mygame</code> folder (<a href={wrongFile}>Not the starter ZIP</a>). Your browser saves it in your{' '}
 			<strong>Downloads</strong> folder. This moves it to <code>C:\dev</code>:
 		</p>
 		<Code code={fromDownloads} lang="bat" />
@@ -113,7 +121,9 @@ const movePin = sitePath('/docs/guides/move-pin/');
 			</p>
 		)}
 		<p>
-			<strong>If it is there</strong>, click it. Your browser saves it in your <strong>Downloads</strong> folder. This box
+			<strong>If it is there</strong>, click it. A file whose name begins <code>labrador-docs-</code>, and GitHub's{' '}
+			<strong>Source code</strong> links, are not the project (<a href={wrongFile}>Not the starter ZIP</a>). Your
+			browser saves it in your <strong>Downloads</strong> folder. This box
 			moves it to <code>C:\dev</code>. Its first line deletes any starter ZIP already in <code>C:\dev</code> from an
 			earlier download, so that only the new one is there; it says <code>Could Not Find</code> when there is none, which
 			is fine. The last line lists the starter ZIP now in <code>C:\dev</code>:

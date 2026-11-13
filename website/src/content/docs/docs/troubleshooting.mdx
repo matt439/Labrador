@@ -32,6 +32,33 @@ browser instead, as the same step says, from the release page it links.
 on these pages, and the name must match exactly. `dir /b *.zip` lists the ZIP files in the
 current folder. A ZIP your browser saved is in your **Downloads** folder until you move it.
 
+### Not the starter ZIP
+
+A release page on GitHub lists more files than the starter ZIP, and two of them are easy to
+take for it. Neither holds a `mygame` folder:
+
+- A file called `Labrador-` and a version, such as `Labrador-0.3.0.zip` or
+  `Labrador-master.zip`, came from GitHub's **Source code (zip)** link or the repository's
+  **Code** button. It is the engine on its own, not a project.
+- A file whose name begins `labrador-docs-`, such as `labrador-docs-v0.3.0.tar.gz`, is a copy
+  of this website as it was at that release, which the site already serves: its
+  **Documentation version** menu opens it. You do not need it.
+
+Delete the wrong file, then download the file whose name begins `labrador-starter-`, as step 2
+of [Get the starter project](/docs/get-started/starter/) says. If you extracted the wrong file
+already, delete what it made: a `Labrador-` folder from **Source code**, or, from the
+documentation copy, the loose files and folders it unpacked, such as `index.html`, `_astro`,
+`docs` and `pagefind`.
+
+### `C:\dev\mygame already exists. Nothing was extracted.`
+
+Step 3 of [Get the starter project](/docs/get-started/starter/) found a project called `mygame`
+in `C:\dev` already, and left it as it was rather than put the starter's files back over your
+changes. To start another project beside it, follow
+[A second project](/docs/get-started/starter/#a-second-project). To take a newer engine into
+the project you have, follow
+[Move a starter project to a newer Labrador](/docs/guides/starter-update/).
+
 ### `This does not look like a tar archive`
 
 A different `tar` ran, not the one that comes with Windows. Git for Windows can add its own
