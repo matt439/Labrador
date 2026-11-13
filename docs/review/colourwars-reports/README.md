@@ -37,7 +37,8 @@ decision table below have answers, and the client has closed each one. They
 are withdrawn from the public filing queue because those answers already
 exist: the table gives each report's individual disposition and implementation
 or documentation subject. This includes report 19's request for evidence;
-recording that answer does not supply the requested first-frame captures.
+recording that answer did not supply the requested first-frame captures,
+which window.md now records separately.
 No issue is needed to ask for the same answer again.
 
 Two newer drafts were rechecked at
@@ -100,7 +101,7 @@ or files its answer, and say there which commit or issue answered it.
 | [x] | [16](window.md) | Accept | S | A hidden window stays hidden and inactive through `set_fullscreen(true/false)`: it is sized with `SetWindowPos` instead of `ShowWindow`. **Implement first**, because it is a contract break (`window.h`'s `visible`). Done: *Keep a hidden window hidden when it changes full screen*. Its first-size-report case found that a hidden windowed window makes no report before the constructor returns, and a hidden full-screen one reports its requested size; `window.h` now says so. |
 | [x] | [11](window.md) | Accept, narrowed | S | The Win32 window always swallows a bare `SC_KEYMENU` (F10, or Alt alone), with no option. Alt+Space and Alt+F4 are unchanged. A silent behaviour change. Done: *Let F10 and Alt alone be keys, not the system menu*. No live case: a hidden window never enters the menu loop, so it could not fail. |
 | [x] | [17](window.md) | Accept, narrowed | M | A per-monitor-aware process gets the window's own DPI in the frame arithmetic, and a DPI change keeps the client pixel size. No portable DPI API. Needs the owner to set a Windows floor first. Done: *Keep the client size in a per-monitor-aware process*, with the owner's floor of Windows 10 1607 and static imports (G105). |
-| [x] | [19](window.md) | Needs more evidence | — | Answer recorded in `cacf112`; withdrawn from filing as already answered. No `show()` yet. First capture what a visible launch shows before the first present. In the meantime, 16's commit states that a window created hidden is never shown by the engine. |
+| [x] | [19](window.md) | Needs more evidence | — | Answer recorded in `cacf112`; withdrawn from filing as already answered. No `show()` yet. Captured 2026-11-13 on `samples/minimal`: a visible launch shows the white class brush for 225 to 305 ms before the first present on `x64-release`, and on all four rasterising backends; a hidden launch shown natively after the first frames shows none. The engine-side show-after-first-frame shape is the owner's call. Meanwhile 16's commit states that a window created hidden is never shown by the engine. |
 | [x] | [9](loop.md) | Document only | S | No observer hook on `Application`. A root `State` that owns a nested `StateContext` already sees every frame. Document and test that. Capture and routing are declined as game policy. Done: Document the root state that sees every frame |
 | [x] | [10](loop.md) | Document only | S | No capture hook. Document the out-of-band frame (`begin_frame`, draw, `submit`, `read_back_buffer`, no `end_frame`), and state that a frame submitted and never presented is legal. Done: State that a frame submitted and never presented is legal |
 | [x] | [14](loop.md) | Accept, narrowed | M | `Application::frame_timings()` returns the last completed frame's CPU phase times. GPU time, history and an overlay are declined; `REV#10` stays deferred. Done: Publish the last frame's CPU phase times from Application (story PI-19) |
