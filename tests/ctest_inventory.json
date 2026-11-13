@@ -165,6 +165,10 @@
       "x64-debug-null",
       "x64-release-null"
     ],
+    "MinimalStateTests": [
+      "x64-debug-null",
+      "x64-release-null"
+    ],
     "RenderContextLossTests": [
       "wasm-debug",
       "wasm-release"

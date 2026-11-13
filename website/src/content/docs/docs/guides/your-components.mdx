@@ -506,7 +506,8 @@ A mistake in this page's files shows in one of four places:
   titled `Sample - startup failure`, and closes when you click **OK**.
 - **The game stops while you play**, with a `Debug Assertion Failed!` box. The build and the
   tests passed, because the start-up test presses no keys; a key press asked a list for
-  something past its end.
+  something past its end. A test that presses keys, as in
+  [Press keys in a test](/docs/guides/testing/#press-keys-in-a-test), can catch it.
 
 Each message is below.
 
@@ -614,8 +615,9 @@ Expression: vector subscript out of range
 The row has more names than `greeting_colour` has colours, so it asked for a colour past the end
 of its list; here `L"Blue"` was added to the row with no colour beside it, and the fourth L
 stopped the game. Click **Abort**, then add a colour to the list in `greeting_colour` at the
-same place as the new name, or take the name out, and build again. The build and the tests do
-not catch this, because the start-up test presses no keys.
+same place as the new name, or take the name out, and build again. The build and the starter's
+two tests do not catch this, because the start-up test presses no keys; a test that presses L
+four times, as in [Press keys in a test](/docs/guides/testing/#press-keys-in-a-test), can.
 </Aside>
 
 ## In the browser build

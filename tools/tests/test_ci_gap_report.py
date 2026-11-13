@@ -127,14 +127,14 @@ class JunitTests(unittest.TestCase):
     def test_a_whole_preset_must_register_its_inventory_list_exactly(self):
         gaps = {gap.preset: gap for gap in report.GAPS}
         null = gaps["x64-release-null"]
-        self.assertEqual(len(null.expected), 22)
+        self.assertEqual(len(null.expected), 23)
         self.assertIn("LocalMultiplayerSmokeTests", null.expected)
         self.assertNotIn("RenderPixelTests", null.expected)
         everything = list(null.expected)
         result, detail = report.judge(null, report.junit_summary(junit(everything[1:])))
-        self.assertEqual((result, detail), ("failed", f"21/21 passed; not registered: {everything[0]}"))
+        self.assertEqual((result, detail), ("failed", f"22/22 passed; not registered: {everything[0]}"))
         result, detail = report.judge(null, report.junit_summary(junit(everything + ["BrandNewTests"])))
-        self.assertEqual((result, detail), ("failed", "23/23 passed; not in the inventory: BrandNewTests"))
+        self.assertEqual((result, detail), ("failed", "24/24 passed; not in the inventory: BrandNewTests"))
         self.assertEqual(len(gaps["x64-release-d3d12"].expected), 22)
         self.assertIn("D3D12SynchronizationTests", gaps["x64-release-d3d12"].expected)
         for preset in ("x64-release-gl", "x64-release-vulkan"):
