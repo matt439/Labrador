@@ -9,6 +9,7 @@
 #include "samples/linesweeper/presentation/palette.h"
 #include "samples/linesweeper/rules/world.h"
 
+#include <array>
 #include <cstdint>
 #include <string>
 
@@ -78,6 +79,16 @@ namespace linesweeper
 
 		labrador::TextureHandle block_;
 		labrador::FontHandle font_;
+
+		// draw_text takes a std::wstring, so a literal at the call would build
+		// one every frame, which a Debug build's checked string allocates for
+		// even when the text fits in place; these are built once. The numbers are reformatted
+		// into capacity reserved for the widest value, so a changed score
+		// allocates nothing either (PHILOSOPHY, Performance).
+		std::wstring hold_label_ = L"HOLD";
+		std::wstring next_label_ = L"NEXT";
+		std::array<std::wstring, 3> number_labels_ = { L"SCORE", L"LINES",
+			L"LEVEL" };
 
 		std::wstring score_;
 		std::wstring lines_;

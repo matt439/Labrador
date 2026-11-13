@@ -1,5 +1,5 @@
 #include <doctest/doctest.h>
-#include "tests/render/allocation_scope.h"
+#include "tests/allocation_scope.h"
 #include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
@@ -113,12 +113,12 @@ TEST_CASE("D3D12 submit executes only declared views in view order, including em
 }
 
 #if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
-using render_tests::AllocationSample;
-using render_tests::AllocationScope;
+using labrador_tests::AllocationSample;
+using labrador_tests::AllocationScope;
 
 TEST_CASE("D3D12 warmed submit makes no normal-block Debug CRT allocation attempts")
 {
-	render_tests::require_allocation_scope_counts();
+	labrador_tests::require_allocation_scope_counts();
 
 	SubmitFixture fixture;
 	std::vector<unsigned char> pixels;

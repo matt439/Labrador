@@ -1,5 +1,5 @@
 labrador_add_test_suite(SceneTests
-    SOURCES scene_tests.cpp
+    SOURCES scene_tests.cpp tick_allocation_tests.cpp
     LINKS LabradorEngine
 )
 

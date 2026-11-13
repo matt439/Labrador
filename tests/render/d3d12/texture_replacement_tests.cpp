@@ -1,5 +1,5 @@
 #include <doctest/doctest.h>
-#include "tests/render/allocation_scope.h"
+#include "tests/allocation_scope.h"
 #include "tests/render/device_fixture.h"
 #include "tests/render/test_textures.h"
 
@@ -24,8 +24,8 @@
 namespace
 {
 	using namespace labrador;
-	using render_tests::AllocationSample;
-	using render_tests::AllocationScope;
+	using labrador_tests::AllocationSample;
+	using labrador_tests::AllocationScope;
 
 	constexpr int buffer_size = 64;
 

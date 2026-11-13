@@ -1,5 +1,5 @@
 #include <doctest/doctest.h>
-#include "tests/render/allocation_scope.h"
+#include "tests/allocation_scope.h"
 #include "tests/render/test_textures.h"
 #include "tests/render/test_window.h"
 
@@ -96,12 +96,12 @@ TEST_CASE("Vulkan submit preserves vertex bases across skipped, empty and multir
 }
 
 #if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
-using render_tests::AllocationSample;
-using render_tests::AllocationScope;
+using labrador_tests::AllocationSample;
+using labrador_tests::AllocationScope;
 
 TEST_CASE("Vulkan warmed submit makes no normal-block Debug CRT allocation attempts")
 {
-	render_tests::require_allocation_scope_counts();
+	labrador_tests::require_allocation_scope_counts();
 
 	SubmitFixture fixture;
 	const std::vector<unsigned char> expected = expected_pixels();

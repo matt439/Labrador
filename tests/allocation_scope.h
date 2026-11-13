@@ -1,13 +1,15 @@
 #pragma once
 
 // Counts the Debug CRT's normal-block allocation attempts on one thread, for
-// the backends' warmed-submit tests, and can refuse one chosen attempt for
-// their allocation-failure regressions. Only a Debug build against the DLL
-// CRT has the hook; elsewhere this header declares nothing, and the tests
-// that use it compile out with it.
+// the warmed-frame tests that hold per-frame code to no heap allocation
+// (docs/design/PHILOSOPHY.md, Performance), and can refuse one chosen attempt
+// for the backends' allocation-failure regressions. Only a Debug build
+// against the DLL CRT has the hook; elsewhere this header declares nothing,
+// and the tests that use it compile out with it.
 //
-// It cannot observe every driver or system heap, and it says nothing about
-// time.
+// Only the thread that opened the scope is counted: work a pool runs on
+// other threads is not. It cannot observe every driver or system heap, and
+// it says nothing about time.
 
 #if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
 
@@ -20,7 +22,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace render_tests
+namespace labrador_tests
 {
 	struct AllocationSample
 	{
@@ -134,6 +136,22 @@ namespace render_tests
 		AllocationSample& sample_;
 		_CRT_ALLOC_HOOK previous_ = nullptr;
 	};
+
+	// Runs `work` inside one scope and returns what it counted, after
+	// requiring that the hook was this probe's alone and is restored.
+	template <typename Work>
+	AllocationSample count_allocations(Work&& work)
+	{
+		const _CRT_ALLOC_HOOK initial = _CrtGetAllocHook();
+		AllocationSample sample;
+		{
+			AllocationScope scope(sample);
+			work();
+		}
+		REQUIRE_FALSE(sample.hook_conflict);
+		REQUIRE(_CrtGetAllocHook() == initial);
+		return sample;
+	}
 
 	// Proves the probe sees an allocation it should, and leaves the hook as
 	// it found it, before a test trusts it to report zero.

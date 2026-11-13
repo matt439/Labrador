@@ -48,6 +48,12 @@ namespace labrador
 		// Scene::draw is that thread, and it waits before returning. What is
 		// guarded is the other direction - a task's exception, recorded from
 		// whichever worker ran it.
+		//
+		// The pool keeps what it builds for a submission and reuses it after
+		// the wait, so once it has held as many tasks between two waits as it
+		// is given now, add_task allocates nothing for a callable small enough
+		// for std::function to store in place. Scene::draw's are. Each callable
+		// is destroyed no later than the wait that follows its submission.
 		void add_task(std::function<void()> task);
 
 		// Blocks until every submitted task has finished. If any task threw, the

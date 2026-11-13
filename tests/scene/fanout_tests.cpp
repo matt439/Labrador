@@ -12,6 +12,7 @@
 #include "engine/render/renderer.h"
 #include "engine/render/viewport.h"
 #include "engine/scene/scene.h"
+#include "tests/allocation_scope.h"
 #include "tests/render/null_synthetic_harness.h"
 
 #include <memory>
@@ -367,3 +368,53 @@ TEST_CASE("CONTRACT: a throw inside a worker reaches the thread that drew")
 	harness.renderer().begin_frame();
 	CHECK_THROWS_AS(scene->draw(harness.renderer()), std::runtime_error);
 }
+
+#if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
+// PHILOSOPHY's Performance rule that per-frame code performs no heap
+// allocation, held over a warmed four-view frame. The probe counts the thread
+// that opened it: on the serial path that is the whole frame, every view's
+// cull and every draw; on the fanned-out path it is the frame's own thread -
+// the partition, the submissions and the wait - while the workers run the same
+// draw_views the serial case measures. Debug builds against the DLL CRT only,
+// where allocation_scope.h has its hook.
+TEST_CASE("a warmed four-view frame allocates nothing, serial or fanned out")
+{
+	labrador_tests::require_allocation_scope_counts();
+
+	Harness harness(4);
+	ThreadPool pool(1, 4);
+	const Partitioner partitioner;
+
+	for (const bool fanned_out : { false, true })
+	{
+		CAPTURE(fanned_out);
+		const std::unique_ptr<Scene> scene = build_scene(400, 4, harness.quad,
+			fanned_out ? &pool : nullptr, fanned_out ? &partitioner : nullptr);
+		Renderer& renderer = harness.renderer();
+		const auto frame = [&]()
+		{
+			renderer.begin_frame();
+			scene->draw(renderer);
+			renderer.submit();
+		};
+
+		for (int warm = 0; warm < 4; ++warm)
+		{
+			frame();
+		}
+		// A frame that drew nothing would allocate nothing for the wrong
+		// reason.
+		REQUIRE(recorded_sprites(renderer).size() > 400u);
+
+		for (int measured = 0; measured < 8; ++measured)
+		{
+			CAPTURE(measured);
+			const labrador_tests::AllocationSample sample =
+				labrador_tests::count_allocations(frame);
+			INFO("normal-block attempts ", sample.attempts, ", requested bytes ",
+				sample.bytes);
+			CHECK(sample.attempts == 0);
+		}
+	}
+}
+#endif

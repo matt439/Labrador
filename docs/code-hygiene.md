@@ -436,7 +436,7 @@ the handles each path creates and every destruction with its device.
 
 - "Vulkan texture wrapper allocation failure destroys its image, memory and
   view once" locates the `VulkanTexture` allocation in an identical new-name
-  load through the Debug CRT hook in `tests/render/allocation_scope.h`, then
+  load through the Debug CRT hook in `tests/allocation_scope.h`, then
   refuses exactly that attempt. The load throws `std::bad_alloc`; the image,
   its bound memory and its view are each destroyed once through their creating
   device before the exception leaves, nothing is published, and fixture
@@ -502,7 +502,7 @@ are unchanged.
 adds "D3D12 failed same-name replacement wrapper keeps the old texture and
 descriptor" to D3D12 `RenderPixelTests`. It locates the `D3D12Texture`
 allocation in an identical successful same-name reload through the Debug CRT
-hook in `tests/render/allocation_scope.h` (one attempt of that size), then
+hook in `tests/allocation_scope.h` (one attempt of that size), then
 refuses exactly that attempt in a differently coloured reload. The load throws
 `std::bad_alloc`; the registry still holds the same object, resource and slot,
 and a full-target draw reads the old texels through the shader-visible

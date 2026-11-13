@@ -50,6 +50,8 @@ namespace linesweeper
 		labrador::TextureHandle block_;
 		labrador::FontHandle font_;
 
+		// Assigned within capacity the constructor reserves for the longer
+		// message, so a top-out allocates nothing (PHILOSOPHY, Performance).
 		std::wstring text_;
 		labrador::Vector2F text_size_;
 

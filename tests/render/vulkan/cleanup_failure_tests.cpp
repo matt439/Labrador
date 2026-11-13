@@ -1,5 +1,5 @@
 #include <doctest/doctest.h>
-#include "tests/render/allocation_scope.h"
+#include "tests/allocation_scope.h"
 #include "tests/render/device_fixture.h"
 #include "tests/render/test_textures.h"
 #include "tests/render/vulkan/loader_function.h"
@@ -382,8 +382,8 @@ extern "C" VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(VkDevice device,
 TEST_CASE("Vulkan texture wrapper allocation failure destroys its image, memory and view once")
 {
 	using namespace labrador;
-	using render_tests::AllocationSample;
-	using render_tests::AllocationScope;
+	using labrador_tests::AllocationSample;
+	using labrador_tests::AllocationScope;
 
 	CleanupProbe probe;
 	{

@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-13 - Count allocations across warmed frames outside the backends (REV#126)
+
+**Behaviour change.** `ThreadPool` keeps the slot and Win32 work object it builds for each submission and reuses them after `wait_for_tasks_to_complete`. Once a pool has held as many tasks between two waits as it is given now, `add_task` allocates nothing for a callable that `std::function` stores in place, and a warmed fanned-out `Scene::draw` makes no heap allocation. A task's callable, and its captures, are now destroyed by the wait that follows its submission, on the waiting thread. They used to be destroyed on the worker right after the task ran. The pool's work objects stay open until the pool is destroyed.
+
 ### 2026-11-13 - Size the web drawing buffer to the snapped device-pixel box (REV#97)
 
 **Behaviour change.** In the browser, the drawing buffer is the canvas's `device-pixel-content-box` where the browser reports one within a pixel of the CSS size times `devicePixelRatio`. This keeps a canvas at a fractional device-pixel position from being resampled and blurred. `on_window_size_changed` can therefore report one pixel more or less than before. A browser that reports no such box keeps the rounded product.

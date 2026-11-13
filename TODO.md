@@ -266,7 +266,6 @@ ready queue above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#124` | DECISION | should | S | Non-finite and zero/non-finite-scale refusals landed. Left for the owner: is a negative (mirroring) `Camera` scale supported? A hand-built one gives a negative-extent `visible_rectangle`, and Scene's cull (`engine/scene/scene.cpp`) then intersects nothing, so the view goes blank without any signal. |
-| `REV#126` | OPEN | should | M | PHILOSOPHY.md:702 forbids per-frame heap allocation and four headers claim it, but only D3D12 and Vulkan submit tests count allocations. Count across warmed Scene ticks, contacts, the four-view fan-out and LineSweeper's top-out on native null. |
 | `REV#130` | DECISION | could | S | RectangleI's and Vector2I's float conversions are undefined for NaN or out-of-range input, and Vector2I division has no zero or `INT_MIN / -1` guard. Refuse with `invalid_argument` (T2) or state a precondition; SM-71 left it to its own decision. |
 | `REV#133` | DECISION | could | M | The day-two guides teach by about 150 inline C++ blocks nothing compiles; each rests on one dated agent run. Compiling a finished copy per guide in the consumer job is a lasting maintenance and CI cost; REV#44 is one instance. |
 | `REV#134` | OPEN | should | S | `testing.mdx:461` says the start-up test presses no keys and teaches only out-of-process SendInput; `focus_pause_tests.cpp` shows the in-process route with public API. Add a native-null test driving minimal's HelloState and a guide section quoting it. |
