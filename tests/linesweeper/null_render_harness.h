@@ -75,6 +75,9 @@ namespace linesweeper_tests
 
 		labrador::RenderResources& resources() { return this->resources_; }
 
+		// For a test that drives frames itself and reads no copy back.
+		labrador::Renderer& renderer() { return this->renderer_; }
+
 		labrador::TextureHandle white;
 
 	private:

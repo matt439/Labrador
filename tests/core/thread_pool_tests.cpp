@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 #include "engine/core/thread_pool.h"
+#include "tests/allocation_scope.h"
 #include <atomic>
+#include <memory>
 #include <stdexcept>
 #include <string>
 using namespace labrador;
@@ -45,9 +47,9 @@ TEST_SUITE("ThreadPoolTests")
 		pool.wait_for_tasks_to_complete();
 		CHECK(done.load() == 1);
 
-		// The submitted-work list is cleared by the wait, so a second round
-		// waits for its own tasks and not for the closed handles of the
-		// first.
+		// The wait ends its round, so a second round waits for its own
+		// tasks - on whatever the first round left to reuse - and not for
+		// the first round's again.
 		pool.add_task([&done]() { ++done; });
 		pool.add_task([&done]() { ++done; });
 		pool.wait_for_tasks_to_complete();
@@ -167,6 +169,58 @@ TEST_SUITE("ThreadPoolTests")
 			}
 		}
 	}
+
+	TEST_CASE("a task's callable is destroyed no later than the wait after it")
+	{
+		ThreadPool pool(1, 4);
+		const std::shared_ptr<int> held = std::make_shared<int>(7);
+		std::atomic<int> seen{ 0 };
+
+		for (int round = 0; round < 3; ++round)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				pool.add_task([held, &seen]() { seen += *held; });
+			}
+			pool.wait_for_tasks_to_complete();
+			CHECK(held.use_count() == 1);
+		}
+		CHECK(seen.load() == 84);
+	}
+
+#if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
+	// What Scene::draw's fan-out relies on for PHILOSOPHY's Performance rule
+	// that per-frame code performs no heap allocation. The probe counts the
+	// submitting thread, which is the only one the contract speaks for.
+	TEST_CASE("a warmed round of small tasks allocates nothing on the submitting thread")
+	{
+		labrador_tests::require_allocation_scope_counts();
+
+		ThreadPool pool(1, 4);
+		std::atomic<int> done{ 0 };
+		const auto round = [&](int tasks)
+		{
+			for (int i = 0; i < tasks; ++i)
+			{
+				pool.add_task([&done]() { ++done; });
+			}
+			pool.wait_for_tasks_to_complete();
+		};
+
+		// The widest round first, so every narrower one reuses what it built.
+		round(6);
+		for (const int tasks : { 6, 4, 1, 6 })
+		{
+			CAPTURE(tasks);
+			const labrador_tests::AllocationSample sample =
+				labrador_tests::count_allocations([&]() { round(tasks); });
+			INFO("normal-block attempts ", sample.attempts, ", requested bytes ",
+				sample.bytes);
+			CHECK(sample.attempts == 0);
+		}
+		CHECK(done.load() == 23);
+	}
+#endif
 
 	TEST_CASE("equal minimum and maximum are a valid pool")
 	{

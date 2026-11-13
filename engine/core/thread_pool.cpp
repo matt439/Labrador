@@ -4,6 +4,7 @@
 #include <windows.h>
 #endif
 
+#include <cstddef>
 #include <exception>
 #include <memory>
 #include <mutex>
@@ -52,12 +53,17 @@ namespace labrador
 		void add_task(std::function<void()> task);
 		void wait_for_tasks_to_complete();
 
-		// Owns the callable for the lifetime of one submission, plus the back
-		// pointer the callback needs to report a failure.
+		// One submission slot: the callable it is running, the back pointer
+		// the callback needs to report a failure, and the work object that
+		// runs it. Slots outlive their submissions and are reused in order,
+		// so once the pool has held as many tasks between two waits as it is
+		// given now, add_task builds nothing - which is what keeps a warmed
+		// Scene::draw allocation-free (PHILOSOPHY, Performance).
 		struct TaskItem
 		{
 			std::function<void()> task;
 			Impl* pool = nullptr;
+			PTP_WORK work = nullptr;
 		};
 
 		static void CALLBACK work_callback(PTP_CALLBACK_INSTANCE,
@@ -68,7 +74,11 @@ namespace labrador
 		int min_num_threads = -1;
 		int max_num_threads = -1;
 
-		std::vector<PTP_WORK> work_items;
+		// Every slot built so far; the first `submitted` hold this wait's
+		// tasks. Each item's address is its work object's context, so the
+		// items are held by pointer and never move.
+		std::vector<std::unique_ptr<TaskItem>> items;
+		size_t submitted = 0;
 		TP_CALLBACK_ENVIRON callback_environment = {};
 		PTP_POOL pool = nullptr;
 		PTP_CLEANUP_GROUP cleanup_group = nullptr;
@@ -107,6 +117,8 @@ namespace labrador
 
 	ThreadPool::Impl::~Impl()
 	{
+		// Waits for any callback still running and closes every slot's work
+		// object; the slots themselves are freed after this body, with items.
 		CloseThreadpoolCleanupGroupMembers(cleanup_group, FALSE, nullptr);
 		CloseThreadpoolCleanupGroup(cleanup_group);
 		CloseThreadpool(pool);
@@ -115,31 +127,39 @@ namespace labrador
 
 	void ThreadPool::Impl::add_task(std::function<void()> task)
 	{
-		std::unique_ptr<TaskItem> item =
-			std::make_unique<TaskItem>(TaskItem{ std::move(task), this });
-
-		PTP_WORK work = CreateThreadpoolWork(work_callback, item.get(),
-			&callback_environment);
-		if (!work)
+		if (submitted == items.size())
 		{
-			// item is still owned here, so the failure does not leak the callable.
-			throw std::runtime_error("Failed to create thread pool work object.");
+			// Room first, so the push below cannot throw and strand a work
+			// object; a failure before it leaves the pool as it was.
+			items.reserve(items.size() + 1);
+			std::unique_ptr<TaskItem> item = std::make_unique<TaskItem>();
+			item->pool = this;
+			item->work = CreateThreadpoolWork(work_callback, item.get(),
+				&callback_environment);
+			if (!item->work)
+			{
+				throw std::runtime_error("Failed to create thread pool work object.");
+			}
+			items.push_back(std::move(item));
 		}
-		work_items.push_back(work);
 
-		// The callback owns the item from the moment it is submitted.
-		item.release();
-		SubmitThreadpoolWork(work);
+		TaskItem& item = *items[submitted];
+		item.task = std::move(task);
+		++submitted;
+		SubmitThreadpoolWork(item.work);
 	}
 
 	void ThreadPool::Impl::wait_for_tasks_to_complete()
 	{
-		for (PTP_WORK work : work_items)
+		for (size_t index = 0; index < submitted; ++index)
 		{
-			WaitForThreadpoolWorkCallbacks(work, FALSE);
-			CloseThreadpoolWork(work);
+			TaskItem& item = *items[index];
+			WaitForThreadpoolWorkCallbacks(item.work, FALSE);
+			// The callable's captures are released here, as they would be by
+			// a pool that freed each task after running it.
+			item.task = nullptr;
 		}
-		work_items.clear();
+		submitted = 0;
 
 		std::exception_ptr failure;
 		{
@@ -156,9 +176,9 @@ namespace labrador
 	void CALLBACK ThreadPool::Impl::work_callback(PTP_CALLBACK_INSTANCE,
 		PVOID parameter, PTP_WORK)
 	{
-		// unique_ptr rather than a trailing delete: the task must be freed whether
-		// it returns or throws.
-		std::unique_ptr<TaskItem> item(static_cast<TaskItem*>(parameter));
+		// The slot belongs to the pool, which releases the callable at the
+		// wait; the callback only runs it.
+		TaskItem* item = static_cast<TaskItem*>(parameter);
 		try
 		{
 			item->task();

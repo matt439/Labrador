@@ -7,8 +7,10 @@
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 
+#include <algorithm>
 #include <cmath>
 #include <string>
+#include <string_view>
 
 using namespace labrador;
 
@@ -23,6 +25,11 @@ namespace linesweeper
 
 		// The text's top edge: halfway down the well.
 		constexpr float banner_middle = well_origin_y + well_height * 0.5f;
+
+		// A tap anywhere off the controls restarts, which play_state.cpp
+		// decides; this only has to say so.
+		constexpr std::wstring_view touch_message = L"TOPPED OUT - TAP TO RESTART";
+		constexpr std::wstring_view key_message = L"TOPPED OUT - PRESS R OR START";
 	}
 
 	TopOutBanner::TopOutBanner(const World* world,
@@ -32,6 +39,8 @@ namespace linesweeper
 		block_(render_resources->resolve_texture(block_texture_name)),
 		font_(render_resources->resolve_sprite_font(font_name))
 	{
+		this->text_.reserve(std::max(touch_message.size(), key_message.size()));
+
 		// Populate the cache for a first draw that precedes any scene update.
 		this->update(0.0f);
 	}
@@ -50,13 +59,14 @@ namespace linesweeper
 		this->shown_topped_out_ = this->world_->topped_out;
 		this->shown_touch_ = this->touch_;
 
-		// A tap anywhere off the controls restarts, which play_state.cpp
-		// decides; this only has to say so.
-		this->text_ = this->shown_topped_out_ == 0
-			? std::wstring()
-			: this->shown_touch_
-				? std::wstring(L"TOPPED OUT - TAP TO RESTART")
-				: std::wstring(L"TOPPED OUT - PRESS R OR START");
+		if (this->shown_topped_out_ == 0)
+		{
+			this->text_.clear();
+		}
+		else
+		{
+			this->text_.assign(this->shown_touch_ ? touch_message : key_message);
+		}
 
 		this->text_size_ = this->text_.empty()
 			? Vector2F::zero

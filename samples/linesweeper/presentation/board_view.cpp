@@ -8,6 +8,8 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <string>
 
 using namespace labrador;
@@ -49,6 +51,25 @@ namespace linesweeper
 		// Full-strength edge width in board units. Its physical pixel width
 		// follows the arrangement's camera scale.
 		constexpr float shadow_edge_width = 2.0f;
+
+		// The most decimal digits a HUD number has.
+		constexpr std::size_t widest_number =
+			std::numeric_limits<std::uint32_t>::digits10 + 1;
+
+		// `value` in decimal, written over `text` within the capacity the
+		// constructor reserved, where std::to_wstring would build a new string.
+		void format_number(std::wstring& text, std::uint32_t value)
+		{
+			std::array<wchar_t, widest_number> digits{};
+			std::size_t first = digits.size();
+			do
+			{
+				--first;
+				digits[first] = static_cast<wchar_t>(L'0' + value % 10u);
+				value /= 10u;
+			} while (value != 0u);
+			text.assign(digits.data() + first, digits.size() - first);
+		}
 	}
 
 	BoardView::BoardView(const World* world,
@@ -58,6 +79,10 @@ namespace linesweeper
 		block_(render_resources->resolve_texture(block_texture_name)),
 		font_(render_resources->resolve_sprite_font(font_name))
 	{
+		this->score_.reserve(widest_number);
+		this->lines_.reserve(widest_number);
+		this->level_.reserve(widest_number);
+
 		// Populate the cache for a first draw that precedes any scene update.
 		this->update(0.0f);
 	}
@@ -72,13 +97,13 @@ namespace linesweeper
 		if (first || this->world_->score != this->shown_score_)
 		{
 			this->shown_score_ = this->world_->score;
-			this->score_ = std::to_wstring(this->shown_score_);
+			format_number(this->score_, this->shown_score_);
 		}
 
 		if (first || this->world_->lines != this->shown_lines_)
 		{
 			this->shown_lines_ = this->world_->lines;
-			this->lines_ = std::to_wstring(this->shown_lines_);
+			format_number(this->lines_, this->shown_lines_);
 		}
 
 		if (first || this->world_->level != this->shown_level_)
@@ -87,8 +112,8 @@ namespace linesweeper
 			// Levels are stored from zero so that `World{}` is a playable
 			// match, and shown from one because that is what a player counts
 			// (tables.h).
-			this->level_ = std::to_wstring(
-				static_cast<unsigned int>(this->shown_level_) + 1u);
+			format_number(this->level_,
+				static_cast<std::uint32_t>(this->shown_level_) + 1u);
 		}
 
 	}
@@ -324,12 +349,14 @@ namespace linesweeper
 
 	void BoardView::draw_side_panels(DrawList& draw_list) const
 	{
-		draw_list.draw_text(this->font_, L"HOLD", hold_origin + label_offset,
+		draw_list.draw_text(this->font_, this->hold_label_,
+			hold_origin + label_offset,
 			label_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 		this->draw_preview(draw_list,
 			static_cast<Kind>(this->world_->hold_kind), hold_origin);
 
-		draw_list.draw_text(this->font_, L"NEXT", next_origin + label_offset,
+		draw_list.draw_text(this->font_, this->next_label_,
+			next_origin + label_offset,
 			label_colour, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 
 		// take_next refills before consuming a piece, leaving enough dealt
@@ -351,15 +378,13 @@ namespace linesweeper
 	{
 		const std::array<const std::wstring*, 3> values =
 			{ &this->score_, &this->lines_, &this->level_ };
-		const std::array<const wchar_t*, 3> names =
-			{ L"SCORE", L"LINES", L"LEVEL" };
 
 		for (std::size_t index = 0; index < values.size(); ++index)
 		{
 			const float top = hud_origin.y +
 				static_cast<float>(index) * hud_line_height * 2.0f;
 
-			draw_list.draw_text(this->font_, names[index],
+			draw_list.draw_text(this->font_, this->number_labels_[index],
 				Vector2F(hud_origin.x, top), label_colour, 1.0f, 0.0f,
 				Vector2F::zero, 0.0f);
 			draw_list.draw_text(this->font_, *values[index],
