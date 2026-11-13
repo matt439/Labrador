@@ -127,7 +127,7 @@ the player* links, waits on the owner.
 |---|---|---|---|---|
 | `GAP#1` | DECISION | should | L | PlayStation, Switch and generic pads on Windows, and more than four: built on Windows.Gaming.Input or GameInput, or SDL's gamepad layer bought (T9). |
 | `GAP#2` | DECISION | should | L | Streamed, compressed music (Ogg or MP3) on XAudio2, Web Audio and null. `OCA-40` has stated what PCM music costs; the 2026-11-04 recommendation is to defer until a client ships a track. |
-| `GAP#3` | DECISION | could | L | Render to texture: integer-scaled pixel art, transitions, minimaps; five backends and new goldens. |
+| `GAP#3` | DECISION | could | L | Render to texture: integer-scaled pixel art, transitions, minimaps; five backends and new goldens. Scoped with a post stage and a CRT effect in [effects.md](docs/effects.md), whose §12 holds the open decisions. |
 | `GAP#5` | DECISION | could | M | A clip rectangle inside a view, for scrolling lists and panels. |
 | `GAP#6` | DECISION | could | M | Circles, polygons and debug drawing of collision shapes; rectangles and lines already draw from `engine:white`. Its gate, circle collision (`IDEA#7`, OCA-80), has landed; the recommended slice is debug drawing. |
 | `GAP#7` | DECISION | could | M | Let a game make or update a texture from pixels at run time; `resource_factory.h` already has the backend half. |
