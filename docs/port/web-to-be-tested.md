@@ -318,6 +318,40 @@ below predate it.
       Not run against the live deploy, and not on a real GPU's driver reset.
       Firefox's entry plays the bundle page with a forced loss and restore;
       the GPU process crash and the tab switch run in Chromium only.
+
+      **Headed on the desktop's GPU, 2026-11-13 (`REV#157`)**: the same
+      driver, `bundle_input.mjs`, against the `wasm-release` bundle built at
+      `1dc8533c` (`BUILD.json` clean), in a headed Chrome 157.0.8103.78 on
+      Windows 11 build 26300 with an RTX 5080 on NVIDIA driver 616.92. The
+      runner was a scratch copy of `run_page.mjs` that only dropped
+      `--headless=new` and `--enable-unsafe-swiftshader` and fixed its ports;
+      the copied driver logged, around the crash, the game's own context's
+      `WEBGL_debug_renderer_info` strings and `SystemInfo.getProcessInfo`'s
+      GPU process. Before every crash and after every restoration the game's
+      context named `ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02)
+      Direct3D11 vs_5_0 ps_5_0, D3D11)`, never SwiftShader, and the GPU
+      process had a new id afterwards. Six `Browser.crashGpuProcess` crashes
+      across six runs were all heard as `onContextLost` then
+      `onContextRestored` with the page's two texts, and the game drew again;
+      restoration arrived 1.8, 1.9, 2.8, 4.8, 4.8 and 5.8 s after the
+      command, on a desktop where other agents' builds and browsers were
+      running, so those are not a measure of Chrome's restart. With
+      `--disable-features=CalculateNativeWinOcclusion` the whole driver
+      passed three runs out of three (37 to 40 s each). Without it, two runs
+      out of two failed at the tab switch: `Target.activateTarget` left the
+      game's tab `hidden` for 60 s although DevTools reported it in the same
+      window, in the normal state. The window was behind others the run did
+      not own and was never brought to the front, and the same step passed
+      once Chrome stopped computing occlusion, so Chrome hid a covered
+      window's page; that is Chrome's visibility rule, not the page failing.
+      `chrome://gpucrash` was also tried, in a second tab opened over
+      DevTools and as a URL handed to the running browser on its command
+      line: neither crashed the GPU process (the first tab's URL came back
+      empty, the second opened a new-tab page), so it needs the address bar
+      typed into, which this run did not do. This is a real GPU and driver
+      under a GPU process crash, which ANGLE's Direct3D 11 device rebuilds on
+      the same adapter; it is still not a driver reset (a Windows TDR) and
+      not the live deploy, so the item stays open.
 - [x] **Owner decision, 2026-10-27 (`BDP-20`): keep the existing 4.3 MB
       on-demand recording** (4,305,947 bytes); no smaller encode is needed.
       The site's page sets it to `preload="none"` with controls, so it neither
