@@ -203,7 +203,9 @@ It does not activate vcvars/emsdk, fix caches, change environment values, probe
 versions, download tools or retry commands. CMake and build tools can still
 reconfigure and fetch dependencies themselves, as the plan's effects state.
 
-For each configuration, in order, it:
+It first reads the checkout's HEAD and counts the entries `git status
+--porcelain` lists; a checkout Git cannot read stops the sweep there, before
+preflight. For each configuration, in order, it:
 
 1. Configures and requires the resulting cache to exist and agree with the
    planned axes, directories, shader compilers, toolchains and emulator/browser paths.
@@ -214,10 +216,17 @@ For each configuration, in order, it:
    missing required registrations, forbidden null-render registrations and
    disabled selected tests. A selected wasm-null browser requires all its
    conditional page tests; any actually registered pages remain in the full run.
-4. Runs the full CTest selection with parallelism 1, `--stop-on-failure` and a
-   fresh JUnit path. Exit zero is insufficient: the report must cover every registered name
-   exactly once, with no failed, errored, disabled or skipped suite. Missing,
-   malformed or unsupported reports fail validation.
+4. Runs the full CTest selection with parallelism 1, `--stop-on-failure`,
+   `--test-output-size-passed 1048576` and a fresh JUnit path. Exit zero is
+   insufficient: the report must cover every registered name exactly once,
+   with no failed, errored, disabled or skipped suite. Missing, malformed or
+   unsupported reports fail validation.
+5. Reads the device from the JUnit: `RenderPixelTests` prints
+   `MESSAGE: Drawing on <device>`, natively and through the page runner.
+   CTest keeps only 1024 bytes of a passing test's output by default, which
+   can cut that line off, hence the larger limit.
+
+After the last configuration it reads HEAD again and fails if it moved.
 
 The first failure stops the sweep. Later phases remain `not-run`; no automatic
 fallback, exclusion or retry can turn a partial run into a successful sweep.
@@ -226,9 +235,14 @@ this is a unique directory under ignored `out/verification/`; `--output-dir`
 selects a new directory and refuses an existing one. A failed initial preflight
 creates no output directory; `--format json` still prints its complete report
 to stdout. Command output goes to logs so JSON stdout remains usable. The report
-records argv/cwd, exit codes, validation results and actual test names. It does
-not collect a source revision,
-driver or hardware identity and does not establish SM-18's per-change evidence.
+records argv/cwd, exit codes, validation results and actual test names.
+`source_revision` holds the commit and the uncommitted entry count.
+`device_identity` maps each configuration to `collected` with the device names
+its `RenderPixelTests` printed, `not-printed` when that test ran without the
+line, `no-device-test` when the configuration registers no `RenderPixelTests`
+(the null-render ones), or `uncollected` when the sweep stopped before reading
+its JUnit. It does not record a driver version and does not establish SM-18's
+per-change evidence.
 
 Execution exits **0** only when all modeled commands and result checks pass,
 **1** on a prerequisite, command, validation or output failure, and **130** on
@@ -264,8 +278,8 @@ machine's real CTest registration JSON and JUnit: 20, 21, 20, 20, 19, 32 and
 28 test cases. In a shell with vcvars but no Emscripten environment, the same
 `--execute` failed at preflight, naming the missing
 `EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`, and
-wrote no build log. The report records the source revision and device
-identity as `uncollected`.
+wrote no build log. Its reports recorded the source revision and device
+identity as `uncollected`, which the runner then wrote for every run.
 
 The focused tooling tests use synthetic repository/cache/tool paths. They do
 not run a configured build or test binary:
@@ -295,7 +309,8 @@ python tools/ci_gap_report.py --execute --preset wasm-debug --output-dir out/ci-
 ```
 
 The default prints the plan and runs nothing. `--execute` runs configure,
-build and `ctest --output-junit` for each selected preset in turn, writing a
+build and `ctest --test-output-size-passed 1048576 --output-junit` for each
+selected preset in turn, writing a
 log and JUnit per preset to a new directory under ignored `out/ci-gap/`. A
 failed configure or build marks that preset failed and moves on to the next,
 so the record covers every selected preset. Results come from JUnit, because
@@ -318,8 +333,12 @@ made; argument errors also exit 2. The plan exits 0.
 
 Its standard output is the body of the pull request template's
 "Configurations CI cannot run" section. It names the commit and how many
-uncommitted changes the tree had; it does not record a device, so the person
-pasting it names the adapter and driver. It activates no toolchain. Run it
+uncommitted changes the tree had, and lists each run preset's device as its
+`RenderPixelTests` named it, read from the JUnit as the sweep reads it: "not
+reached" where configure or build failed, and "no test here draws on a device"
+for `x64-release-null`. The device line carries no driver version, so the
+person pasting it fills in the template's "Driver:" line. It activates no
+toolchain. Run it
 from a cmd shell with vcvars, and with `emsdk_env.bat` for `wasm-debug`. A
 cmd started from Git Bash inherits `MSYSTEM`, which makes `emsdk_env.bat`
 print bash exports and leave the environment unset; clear it with

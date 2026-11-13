@@ -5,9 +5,9 @@ tests each selected preset in turn, records ctest's JUnit per preset and keeps
 going after a failure so the section covers every selected preset. It activates
 no toolchain: run it from a shell where vcvars (and emsdk_env for wasm-debug)
 are already set. With wasm-debug selected it refuses to start while MSYSTEM
-is set. It records the commit and working-tree state, not which device drew;
-the person running it names the machine. docs/verification.md owns the
-procedure.
+is set. It records the commit, the working-tree state and the device each
+preset's RenderPixelTests says it drew on; the person running it adds the
+driver version. docs/verification.md owns the procedure.
 """
 
 from __future__ import annotations
@@ -17,14 +17,12 @@ from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_ctest_inventory  # noqa: E402
-import git_local  # noqa: E402
 import verification_runner  # noqa: E402
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -80,12 +78,16 @@ class Outcome:
     detail: str = ""
     counts: dict[str, int] = field(default_factory=dict)
     junit_path: str = ""
+    # verification_runner.device_identity's record, or None where the run
+    # never produced a readable JUnit.
+    device: dict | None = None
 
 
 def commands(preset: str, junit: Path) -> list[list[str]]:
     return [["cmake", "--preset", preset],
             ["cmake", "--build", "--preset", preset],
-            ["ctest", "--preset", preset, "--output-junit", str(junit)]]
+            ["ctest", "--preset", preset, *verification_runner.PASSED_OUTPUT_LIMIT,
+             "--output-junit", str(junit)]]
 
 
 def junit_summary(text: str) -> dict[str, list[str]]:
@@ -93,7 +95,10 @@ def junit_summary(text: str) -> dict[str, list[str]]:
 
     verification_runner.junit_cases reads the document, so this report and
     the render sweep accept the same shapes."""
-    cases, _ = verification_runner.junit_cases(text, error=ReportError)
+    return group_cases(verification_runner.junit_cases(text, error=ReportError)[0])
+
+
+def group_cases(cases: list[dict]) -> dict[str, list[str]]:
     groups: dict[str, list[str]] = {"passed": [], "failed": [], "skipped": [], "disabled": []}
     for case in cases:
         name, status = case["name"], case["status"]
@@ -154,16 +159,7 @@ def environment_problem(gaps: list[Gap], environment) -> str:
 
 
 def git_state(root: Path, runner=None) -> tuple[str, int]:
-    run = runner or (lambda argv: git_local.git(root, *argv[1:], text=True, error=ReportError))
-    head = run(["git", "rev-parse", "HEAD"])
-    status = run(["git", "status", "--porcelain", "--untracked-files=normal"])
-    if head.returncode != 0 or status.returncode != 0:
-        raise ReportError("cannot read the checkout's HEAD and status")
-    commit = head.stdout.strip()
-    if not re.fullmatch(r"[0-9a-f]{40}", commit):
-        raise ReportError(f"unexpected HEAD: {commit!r}")
-    changed = [line for line in status.stdout.splitlines() if line.strip()]
-    return commit, len(changed)
+    return verification_runner.source_revision(root, runner, error=ReportError)
 
 
 def run_command(argv: list[str], *, cwd: Path, log) -> int:
@@ -198,7 +194,9 @@ def execute(gaps: list[Gap], root: Path, output_dir: Path, *, runner=None) -> li
                     break
         if not outcome.detail:
             try:
-                groups = junit_summary(junit.read_text(encoding="utf-8"))
+                cases, _ = verification_runner.junit_cases(junit.read_text(encoding="utf-8"), error=ReportError)
+                groups = group_cases(cases)
+                outcome.device = verification_runner.device_identity(cases)
                 outcome.result, outcome.detail = judge(gap, groups)
                 outcome.counts = {key: len(names) for key, names in groups.items()}
                 outcome.junit_path = str(junit)
@@ -210,6 +208,17 @@ def execute(gaps: list[Gap], root: Path, output_dir: Path, *, runner=None) -> li
                 outcome.detail = f"no usable JUnit ({error}); see {log_path.name}"
         outcomes.append(outcome)
     return outcomes
+
+
+def device_text(outcome: Outcome) -> str:
+    device = outcome.device
+    if device is None:
+        return "not reached"
+    if device["result"] == "collected":
+        return "; ".join(device["devices"])
+    if device["result"] == "not-printed":
+        return "RenderPixelTests printed no device line"
+    return "no test here draws on a device"
 
 
 def markdown(outcomes: list[Outcome], *, commit: str, changed: int, executed: bool) -> str:
@@ -229,7 +238,13 @@ def markdown(outcomes: list[Outcome], *, commit: str, changed: int, executed: bo
     for outcome in outcomes:
         result = outcome.result if not outcome.detail else f"{outcome.result}: {outcome.detail}"
         lines.append(f"| `{outcome.preset}` | {scope[outcome.preset]} | {result} |")
-    lines += ["", "Device: <!-- adapter, driver and whether a fallback rasteriser was possible -->", ""]
+    lines.append("")
+    if executed:
+        lines.append("Devices, as each preset's RenderPixelTests named them:")
+        lines += [f"- `{outcome.preset}`: {device_text(outcome)}" for outcome in outcomes
+                  if outcome.result != "not run"]
+        lines.append("")
+    lines += ["Driver: <!-- driver version; the tests do not print it -->", ""]
     return "\n".join(lines)
 
 

@@ -459,8 +459,8 @@ qualifications separately from a printed plan or fake-command test result.
   `wasm-debug`. That is run before a release is tagged (step 3 of *Cutting a
   release*), and on a pull request only when it changes golden images or the
   author has a GPU and has changed `engine/render/` or `engine/app/`. Paste its
-  output under the template's "Configurations CI cannot run", naming the
-  device; [the procedure](docs/verification.md#configurations-ci-cannot-run)
+  output under the template's "Configurations CI cannot run", adding the
+  driver version; [the procedure](docs/verification.md#configurations-ci-cannot-run)
   says what the record does and does not show. Otherwise write "Not run".
 - If you edited a public engine header, a line a website page quotes, or a
   file a design document links to, build the website (`npm ci` then

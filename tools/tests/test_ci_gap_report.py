@@ -31,9 +31,14 @@ CTEST_JUNIT = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-def junit(names: list[str]) -> str:
-    cases = "".join(f'<testcase name="{name}" status="run"/>' for name in names)
-    return f'<testsuite tests="{len(names)}">{cases}</testsuite>'
+def junit(names: list[str], device: str = "") -> str:
+    def case(name):
+        if name == "RenderPixelTests" and device:
+            # ctest's system-out, as a passing RenderPixelTests fills it.
+            return (f'<testcase name="{name}" status="run"><system-out>[doctest] run with "--help"\n'
+                    f'C:\\x\\pixel_tests.cpp(115): MESSAGE: Drawing on {device}\n</system-out></testcase>')
+        return f'<testcase name="{name}" status="run"/>'
+    return f'<testsuite tests="{len(names)}">{"".join(case(name) for name in names)}</testsuite>'
 
 
 def git_runner(heads: list[str], dirty: str = ""):
@@ -188,6 +193,24 @@ class ExecuteTests(unittest.TestCase):
             self.assertEqual(code, -1)
             self.assertIn("cannot start labrador-no-such-tool", log_path.read_text(encoding="utf-8"))
 
+    def test_ctest_keeps_all_of_a_passing_tests_output(self):
+        argv = report.commands("x64-debug-gl", Path("j.xml"))[-1]
+        self.assertEqual(argv[argv.index("--test-output-size-passed") + 1], "1048576")
+        self.assertEqual(argv[-2:], ["--output-junit", "j.xml"])
+
+    def test_each_preset_records_the_device_its_junit_names(self):
+        run, _ = fake_commands(configure_fails={"x64-release-gl"},
+                               documents={"x64-debug-gl": junit(["RenderPixelTests"], "Fixture GPU/PCIe"),
+                                          "x64-debug-vulkan": junit(["RenderPixelTests"]),
+                                          "x64-release-null": junit(["CoreTests"])})
+        gaps = [report.Gap(name) for name in ("x64-debug-gl", "x64-debug-vulkan", "x64-release-gl",
+                                               "x64-release-null")]
+        with tempfile.TemporaryDirectory() as directory:
+            outcomes = report.execute(gaps, Path(directory), Path(directory) / "out", runner=run)
+        self.assertEqual([report.device_text(outcome) for outcome in outcomes],
+                         ["Fixture GPU/PCIe", "RenderPixelTests printed no device line", "not reached",
+                          "no test here draws on a device"])
+
     def test_existing_output_directory_is_refused(self):
         run, calls = fake_commands()
         with tempfile.TemporaryDirectory() as directory, self.assertRaises(FileExistsError):
@@ -214,11 +237,13 @@ class MainTests(unittest.TestCase):
         self.assertIn("| `x64-debug-gl` | RenderPixelTests, MinimalSmokeTests, CollisionSmokeTests on a real driver "
                       "| not run: not selected |", text)
         self.assertEqual(text.count("\n| `"), len(report.GAPS))
+        self.assertNotIn("Devices,", text)
+        self.assertIn("Driver: <!--", text)
 
     def test_execute_records_commit_dirty_tree_and_exit_code(self):
         wasm = next(gap for gap in report.GAPS if gap.preset == "wasm-debug")
         run, _ = fake_commands(documents={"x64-release-null": CTEST_JUNIT,
-                                          "wasm-debug": junit(list(wasm.expected))})
+                                          "wasm-debug": junit(list(wasm.expected), "ANGLE (Fixture)")})
         with tempfile.TemporaryDirectory() as directory:
             code, text, stderr = self.main(
                 ["--execute", "--preset", "wasm-debug", "--preset", "x64-release-null",
@@ -229,6 +254,10 @@ class MainTests(unittest.TestCase):
         self.assertIn("at `" + "b" * 40 + "`, working tree with 2 uncommitted change(s)", text)
         self.assertIn("| `wasm-debug` | whole preset | passed: 42/42 passed; the inventory's entries exactly |", text)
         self.assertIn("| `x64-release-null` | whole preset | failed: 1/6 passed;", text)
+        self.assertIn("\nDevices, as each preset's RenderPixelTests named them:\n"
+                      "- `x64-release-null`: no test here draws on a device\n"
+                      "- `wasm-debug`: ANGLE (Fixture)\n\nDriver: <!--", text)
+        self.assertNotIn("`x64-debug-gl`:", text)
         self.assertIn("Logs and JUnit:", stderr)
 
     def test_head_moving_during_the_run_fails(self):

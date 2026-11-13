@@ -10,9 +10,14 @@ import copy
 import json
 import math
 from pathlib import Path
+import re
 import subprocess
+import sys
 import uuid
 import xml.etree.ElementTree as ElementTree
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import git_local  # noqa: E402
 
 
 class VerificationError(ValueError):
@@ -104,8 +109,9 @@ def junit_cases(text: str, *, error: type[Exception] = VerificationError) -> tup
 
     The shape is one testsuite, optionally inside a single testsuites
     container, holding testcase elements with nonempty unique names. Each case
-    is {"name", "status", "problem"}, where problem is the (tag, reason) of its
-    first failure, error or skipped child, or None. The aggregates are the
+    is {"name", "status", "problem", "output"}, where problem is the (tag,
+    reason) of its first failure, error or skipped child, or None, and output
+    joins its system-out text. The aggregates are the
     elements whose count attributes describe the suite. Anything else raises
     `error`, so both readers here refuse the same unknown shapes."""
     try:
@@ -131,13 +137,17 @@ def junit_cases(text: str, *, error: type[Exception] = VerificationError) -> tup
             raise error(f"empty or duplicate JUnit testcase: {name!r}")
         seen.add(name)
         problem = None
+        output = []
         for child in case:
             if child.tag in JUNIT_PROBLEMS:
                 if problem is None:
                     problem = (child.tag, child.get("message") or (child.text or "").strip())
             elif child.tag not in JUNIT_OUTPUT:
                 raise error(f"unsupported JUnit testcase child: {child.tag}")
-        cases.append({"name": name, "status": case.get("status"), "problem": problem})
+            elif child.tag == "system-out" and child.text:
+                output.append(child.text)
+        cases.append({"name": name, "status": case.get("status"), "problem": problem,
+                      "output": "\n".join(output)})
     return cases, aggregates
 
 
@@ -167,30 +177,86 @@ def junit_results(text: str, names: set[str]) -> list[dict]:
     return results
 
 
+# RenderPixelTests prints the device it drew on as a doctest MESSAGE, natively
+# and through the browser page runner alike (tests/render/pixel_tests.cpp).
+DEVICE_LINE = re.compile(r"MESSAGE: Drawing on (.+)$")
+DEVICE_TEST = "RenderPixelTests"
+# CTest keeps 1024 bytes of a passing test's output by default, which can cut
+# the device line off; JUnit's system-out holds only what CTest kept.
+PASSED_OUTPUT_LIMIT = ["--test-output-size-passed", "1048576"]
+
+
+def device_names(cases: list[dict]) -> list[str]:
+    """The distinct devices the cases' output says they drew on, in order."""
+    names = []
+    for case in cases:
+        for line in case["output"].splitlines():
+            found = DEVICE_LINE.search(line.rstrip())
+            if found and found.group(1).strip() not in names:
+                names.append(found.group(1).strip())
+    return names
+
+
+def device_identity(cases: list[dict]) -> dict:
+    """What a configuration's JUnit says drew: the device names, or why none."""
+    names = device_names(cases)
+    if names:
+        return {"result": "collected", "devices": names}
+    if any(case["name"] == DEVICE_TEST for case in cases):
+        return {"result": "not-printed", "devices": [],
+                "detail": f"{DEVICE_TEST} ran but its output has no 'Drawing on' line"}
+    return {"result": "no-device-test", "devices": [],
+            "detail": f"{DEVICE_TEST} is not registered in this configuration"}
+
+
+def source_revision(root: Path, runner=None, *, error: type[Exception] = VerificationError) -> tuple[str, int]:
+    """The checkout's HEAD and how many entries `git status` lists."""
+    run = runner or (lambda argv: git_local.git(root, *argv[1:], text=True, error=error))
+    head = run(["git", "rev-parse", "HEAD"])
+    status = run(["git", "status", "--porcelain", "--untracked-files=normal"])
+    if head.returncode != 0 or status.returncode != 0:
+        raise error("cannot read the checkout's HEAD and status")
+    commit = head.stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise error(f"unexpected HEAD: {commit!r}")
+    changed = [line for line in status.stdout.splitlines() if line.strip()]
+    return commit, len(changed)
+
+
 def run_command(argv: list[str], *, cwd: str, stdout, stderr) -> int:
     return subprocess.run(argv, cwd=cwd, stdout=stdout, stderr=stderr,
                           shell=False, check=False).returncode
 
 
 def execute_plan(plan: dict, *, inspector, cache_reader, output_dir: str | Path | None = None,
-                 runner=None) -> dict:
-    """Execute generated argv serially; fake runners can supply all command results."""
+                 runner=None, revision_reader=None) -> dict:
+    """Execute generated argv serially; fake runners can supply all command results.
+
+    revision_reader(root) returns (HEAD, uncommitted entry count) and defaults
+    to reading Git. Each configuration's device identity stays "uncollected"
+    until its JUnit has been read."""
     report = copy.deepcopy(plan)
     report.update({"mode": "execute", "result": "not-run", "exit_code": 1,
                    "failure": None, "report_path": None, "output_dir": None,
-                   "source_revision": "uncollected", "device_identity": "uncollected",
+                   "source_revision": {"result": "uncollected"},
+                   "device_identity": {configuration["id"]: {"result": "uncollected", "devices": []}
+                                       for configuration in report["configurations"]},
                    "success_scope": "modeled commands and result checks only; manual acceptance is separate"})
     report["manual_obligations"] = [item for item in report["manual_obligations"]
                                     if item["id"] != "registration-before-future-execution"]
     root = Path(report["configurations"][0]["steps"][0]["cwd"])
     run = runner or run_command
+    read_revision = revision_reader or source_revision
     current = None
     active = None
-    phase = "preflight"
+    phase = "source-revision"
     for configuration in report["configurations"]:
         configuration["validations"] = {name: {"result": "not-run"}
                                          for name in ("cache", "post-build-cache", "registration", "test-results")}
     try:
+        commit, changed = read_revision(root)
+        report["source_revision"] = {"result": "collected", "commit": commit, "uncommitted_changes": changed}
+        phase = "preflight"
         checks = inspector(report)
         report["preflight"] = {"enabled": True, "checks": checks}
         blocking = [item for item in checks if item["blocking"]]
@@ -248,12 +314,20 @@ def execute_plan(plan: dict, *, inspector, cache_reader, output_dir: str | Path 
             names = {item["name"] for item in inventory}
             phase, active = "test", test
             junit = target / (current["id"] + "-junit.xml")
-            test["argv"] += ["--output-junit", str(junit)]
+            test["argv"] += PASSED_OUTPUT_LIMIT + ["--output-junit", str(junit)]
             command(test)
             phase, active = "test-results", current["validations"]["test-results"]
             active.update({"result": "running", "junit_path": str(junit)})
-            active["tests"] = junit_results(junit.read_text(encoding="utf-8"), names)
+            junit_text = junit.read_text(encoding="utf-8")
+            # The device is recorded before the results are judged, so a run
+            # whose JUnit fails validation still says what drew.
+            report["device_identity"][current["id"]] = device_identity(junit_cases(junit_text)[0])
+            active["tests"] = junit_results(junit_text, names)
             active["result"] = "passed"
+        phase, active, current = "source-revision", None, None
+        after, _ = read_revision(root)
+        if after != commit:
+            raise VerificationError(f"HEAD moved from {commit} to {after} during the sweep")
         report.update({"result": "passed", "exit_code": 0})
     except (OSError, UnicodeError, ValueError, KeyboardInterrupt) as error:
         interrupted = isinstance(error, KeyboardInterrupt)

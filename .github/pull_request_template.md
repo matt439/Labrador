@@ -19,7 +19,8 @@ RenderPixelTests, MinimalSmokeTests and CollisionSmokeTests CI runs only on
 software rasterisers),
 the four release presets CI does not build, and wasm-debug. A preset left out
 with --preset stays in the
-table as "not run"; say why. Name the device below; the tool records none.
+table as "not run"; say why. The tool lists each preset's device; fill in
+its "Driver:" line, which no test prints.
 Otherwise write "Not run."
 -->
 
