@@ -16,8 +16,8 @@ there, and nothing in Get Started needs them.
 
 ## Before you install
 
-Visual Studio is a download of several gigabytes and takes about 16 GB of disk on the desktop
-these pages were checked on, so check the machine first. Open **Settings**, then **System**, then
+Visual Studio is a download of about 2.5 GB and takes 10 to 12 GB of disk with what these pages
+need, so check the machine first. Open **Settings**, then **System**, then
 **About**, and look at two lines there:
 
 - **System type**, under *Device specifications*, should say **x64-based processor**. If it
@@ -77,10 +77,25 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
 1. **Install Visual Studio 2022 or newer**, with the **Desktop development with C++**
    workload. The free Community edition is enough.
 
-   Download the installer from [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/),
-   run it, and on its **Workloads** tab tick **Desktop development with C++**. The
-   **Installation details** list on the right then shows what that workload includes. Check that
-   these three are ticked there, and tick any that are not:
+   Open [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/) and,
+   under **Visual Studio Community**, click **Free download**. Your browser saves
+   `VisualStudioSetup.exe`, about 6 MB, in your **Downloads** folder. Open it. Before the
+   installer asks you anything about C++, you see these:
+
+   - Windows asks *Do you want to allow this app to make changes to your device?* Click **Yes**.
+     This is the administrator prompt [Before you install](#before-you-install) mentions.
+   - A small **Visual Studio Installer** window says *Before you get started, we need to set up a
+     few things so that you can configure your installation.* Click **Continue**, which agrees to
+     Microsoft's licence terms.
+   - The same window says *Getting the Visual Studio Installer ready.* above two bars, for a
+     minute or less. Wait.
+   - The installer opens on its **Workloads** tab, with **Individual components**, **Language
+     packs** and **Installation locations** beside it. The list starts with *Web & Cloud*, and the
+     workload you need is not in the first view: scroll the list down to **Desktop & Mobile**.
+
+   Tick **Desktop development with C++**. The **Installation details** list on the right then
+   shows what that workload includes. Check that these three are ticked there, and tick any that
+   are not:
 
    - **C++ CMake tools for Windows**
    - **vcpkg package manager**
@@ -89,23 +104,31 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
    Current versions tick all three by default. That workload brings the compiler, CMake, Ninja,
    vcpkg and the Windows SDK, whose shader compiler the build needs.
 
-   Before you click **Install**, look at the bottom of the installer's window, which shows the
-   space the selection needs on each drive. Microsoft's
+   Before you click **Install**, look at the bottom right of the installer's window: **Total space
+   required** is the space the selection needs. With Visual Studio Community 2026 on a clean
+   Windows 11 it said 11.97 GB once this workload was ticked. Microsoft's
    [system requirements](https://learn.microsoft.com/en-us/visualstudio/releases/2026/vs-system-requirements)
-   say a typical installation needs 20 to 50 GB free. On the desktop these pages were checked
-   on, Visual Studio Community 2026 with this workload and four others takes 9.4 GB in
-   `C:\Program Files\Microsoft Visual Studio\18\Community`, of which one version of the C++
-   compiler is 2.4 GB; the Windows SDK takes 2.1 GB in `C:\Program Files (x86)\Windows Kits\10`;
-   and the installer keeps 4.2 GB of downloaded packages in
-   `C:\ProgramData\Microsoft\VisualStudio\Packages`: about 16 GB on drive `C:` in all. The
-   download is several gigabytes, and on a home connection the install takes from tens of
-   minutes to a couple of hours; how long it took was not measured here. Click **Install** and
-   wait. The installer shows each step's progress, and you can use the computer meanwhile.
+   say a typical installation needs 20 to 50 GB free. An install of just the workload, the
+   compiler and the three items above took 10.5 GB of drive `C:`: 4.8 GB in
+   `C:\Program Files\Microsoft Visual Studio\18\Community`, of which the C++ compiler is 1.7 GB;
+   1.8 GB for the Windows SDK in `C:\Program Files (x86)\Windows Kits\10`; and 1.9 GB of
+   downloaded packages that the installer keeps in `C:\ProgramData\Microsoft\VisualStudio\Packages`.
+   It downloaded 2.4 GB.
+
+   Leave **Install while downloading** as it is, click **Install**, and wait. The window changes
+   to the **Installed** tab, where *Visual Studio Community 2026* shows a **Downloaded** bar and
+   then *Installing: package* with a count, such as `package 32 of 458`, and a percentage. Near
+   the end it stays on one package, `Win11SDK_10.0.26100`, for a long time; that is the Windows
+   SDK installing, and it has not stopped. On a test machine with a slow disk the download took
+   under 4 minutes and the whole install 3 hours 26 minutes, more than 2 hours of it the Windows
+   SDK. A PC with a faster disk should take less, but no ordinary PC was timed. You can use the
+   computer meanwhile.
 
    When it has finished, the installer's **Installed** tab lists your Visual Studio with
    **Modify** and **Launch** buttons beside it, and may first ask you to restart Windows. Restart
    if it asks; you do not need to click **Launch**, as these pages open Visual Studio only when
-   they need it. Close the installer.
+   they need it. If Visual Studio opens by itself and asks you to sign in, close it: signing in is
+   not needed. Close the installer.
 
    If Visual Studio is already installed, open **Visual Studio Installer** from the Start menu,
    click **Modify** beside your Visual Studio, and check the same workload and the same three
@@ -229,6 +252,13 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
    It prints a path such as `C:\Program Files\Git\cmd\git.exe`. `INFO: Could not find "git".`
    means Git is not installed, or was installed after this window opened: do step 2, then open
    a new prompt.
+
+   <StarterGate when="available">
+   **If you are using the starter project, you are finished here.** Go on to
+   [Get the starter project](/docs/get-started/starter/), which makes your projects folder itself.
+   Step 5 and the rest of this page are for the Git route, or for when a check in this step went
+   wrong.
+   </StarterGate>
 
 5. <a id="tell-git-who-you-are"></a>**For the Git route: tell Git who you are.**
    <StarterGate when="available">Skip this step if you are going to use the starter project.</StarterGate>
@@ -382,16 +412,27 @@ dependency that does not come with Visual Studio or Windows.
 
 ## What was checked
 
-On 31 October 2026 the sizes in step 1 were measured on the owner's desktop, which has Visual
-Studio Community 2026 18.9 with the **Desktop development with C++**, **Game development with
-C++**, **Python development**, **.NET desktop development** and core editor workloads, and two
-versions of the C++ compiler. The C++ workload alone needs less than the 16 GB total measured
-there. The installer was not run for these pages: how long a fresh install takes, the finished
-**Installed** tab and the installer's failures are written from Microsoft's
+On 13 November 2026 Visual Studio Community 2026 18.12 was installed in Windows Sandbox, a
+clean Windows 11 with no Visual Studio, Git or Python. The download and the installer's screens
+in step 1, up to the ticked workload and its 11.97 GB, were seen there; the installer was then
+closed and the workload, the compiler and the three items step 1 names were installed unattended
+from a configuration file, which measured the 10.5 GB, the 2.4 GB download and the time. The
+sandbox's disk is slow, and it ran each of the Windows SDK's 66 packages in exactly two minutes,
+so its time is an upper bound. The administrator prompt, which the sandbox does not show, the
+end of an install started from the **Workloads** tab, whether Visual Studio then opens itself,
+and the installer's failures were not seen, and are written from Microsoft's
 [system requirements](https://learn.microsoft.com/en-us/visualstudio/releases/2026/vs-system-requirements)
 and [installation troubleshooting](https://learn.microsoft.com/en-us/troubleshoot/developer/visualstudio/installation/troubleshoot-installation-issues)
-pages. The **x64 Native Tools Command Prompt for VS** shortcut was found in the Start menu
-folder step 3 names. A second agent measured the same three sizes, found the shortcut under
+pages. The install put the **x64 Native Tools Command Prompt for VS** shortcut in the Start menu
+folder step 3 names, and in that prompt step 4's check printed what it shows and
+[Get the starter project](/docs/get-started/starter/) built, tested and ran the `v0.3.0` starter
+in a minute and a half, with neither Git nor Python installed.
+
+On 31 October 2026 the owner's desktop, which has Visual Studio Community 2026 18.9 with the
+**Desktop development with C++**, **Game development with C++**, **Python development**, **.NET
+desktop development** and core editor workloads and two versions of the C++ compiler, was
+measured at about 16 GB on drive `C:`. The **x64 Native Tools Command Prompt for VS** shortcut
+was found in the Start menu folder step 3 names. A second agent measured the same three sizes, found the shortcut under
 `Visual Studio Tools\VC`, and read the same 20 to 50 GB on Microsoft's page; neither agent
 clicked through the Start menu's **All** list.
 
