@@ -8,6 +8,7 @@
 #include "engine/math/vector2f.h"
 
 #include <memory>
+#include <span>
 #include <vector>
 
 using labrador::CollisionLayer;
@@ -94,6 +95,47 @@ namespace
 		CollisionMask mask_ = 0;
 	};
 
+	// A collider that records set_for_deletion, which BenchCollider's
+	// fixed-geometry default does not: what the churn case retires.
+	class ChurnCollider final : public CollisionObject
+	{
+	public:
+		ChurnCollider(const RectangleF& rectangle, CollisionLayer layer,
+			CollisionMask mask) :
+			rectangle_(rectangle), layer_(layer), mask_(mask)
+		{
+		}
+
+		void update(float /*dt*/) override {}
+		void draw(labrador::DrawList& /*list*/) const override {}
+		RectangleF bounds() const override { return this->rectangle_; }
+
+		const labrador::Shape* shape() const override
+		{
+			return &this->rectangle_;
+		}
+		CollisionLayer layer() const override { return this->layer_; }
+		CollisionMask mask() const override { return this->mask_; }
+		CollisionTag tag() const override { return 0; }
+
+		void on_contact(const CollisionObject& /*other*/,
+			const Vector2F& /*normal*/, float /*penetration*/) override
+		{
+		}
+
+		bool for_deletion() const override { return this->for_deletion_; }
+		void set_for_deletion(bool for_deletion) override
+		{
+			this->for_deletion_ = for_deletion;
+		}
+
+	private:
+		RectangleF rectangle_;
+		CollisionLayer layer_ = 0;
+		CollisionMask mask_ = 0;
+		bool for_deletion_ = false;
+	};
+
 	int side_of(int count)
 	{
 		int side = 1;
@@ -148,6 +190,56 @@ namespace
 
 		built.scene->end_tick();
 		return built;
+	}
+
+	// The churn world: `count` colliders on the same grid and with the same
+	// half-and-half layers as build_scene, but each one able to be retired.
+	std::unique_ptr<Scene> build_churn_scene(int count)
+	{
+		std::unique_ptr<Scene> scene = std::make_unique<Scene>(nullptr, nullptr);
+
+		const int side = side_of(count);
+		for (int i = 0; i < count; i++)
+		{
+			const bool mover = (i % 2) == 1;
+			scene->add(std::make_unique<ChurnCollider>(cell_at(i, side),
+				mover ? mover_layer : world_layer,
+				mover ? (world_layer | mover_layer) : mover_layer));
+		}
+
+		scene->end_tick();
+		return scene;
+	}
+
+	// One whole tick of a world whose collidables come and go: the oldest
+	// `retired` are flagged for deletion and as many are spawned in their
+	// places, then the scene runs update, resolve and end_tick.
+	//
+	// Each collidable is one registered object carrying one Shape, so a world
+	// whose collidables churn - projectiles, debris, pickups - spawns and
+	// retires that many objects a tick, where a world of plain values churns
+	// inside one object as LineSweeper's particles do. Retirement through
+	// for_deletion() is the path for it: end_tick's erasure is one pass.
+	// Scene::remove is not, because it walks the scene to check its argument.
+	//
+	// The oldest go because survivors keep their order and spawns join the
+	// end, so the scene is a rolling queue: every tick retires objects the
+	// previous ticks spawned, and the count and the geometry hold steady
+	// across repetitions without a setup step.
+	void churn_tick(Scene& scene, int retired)
+	{
+		const std::span<CollisionObject* const> live = scene.collision_objects();
+		for (int i = 0; i < retired; i++)
+		{
+			CollisionObject* const object = live[static_cast<size_t>(i)];
+			object->set_for_deletion(true);
+			scene.add(std::make_unique<ChurnCollider>(object->bounds(),
+				object->layer(), object->mask()));
+		}
+
+		scene.update(1.0f / 60.0f);
+		scene.resolve();
+		scene.end_tick();
 	}
 
 	// The world units per pixel of a camera at scale 1, which is what
@@ -225,5 +317,14 @@ void run_scene_benchmarks()
 				volatile int drawn = cull_count(built, visible);
 				(void)drawn;
 			}));
+
+		// An eighth of the colliders replaced every tick. The fraction is
+		// fixed so the work per tick grows with the count; what the case
+		// guards is a spawn or a retirement whose cost depends on how many
+		// objects the scene already holds.
+		const std::unique_ptr<Scene> churn = build_churn_scene(count);
+		const int retired = count / 8;
+		bench::record(bench::run("Scene tick (1/8 spawned and retired)", count,
+			[&churn, retired] { churn_tick(*churn, retired); }));
 	}
 }
