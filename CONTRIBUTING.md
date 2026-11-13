@@ -261,6 +261,20 @@ cut once PHILOSOPHY's settle criterion has run.
    [samples/minimal/README.md](samples/minimal/README.md)'s change list that
    lacks one, found with `git log -S` on the entry's text.
 
+   **Check it** with
+   `python tools/release_check.py --release vX.Y.Z --base vPREV --head <rev>`,
+   on the pull request's head and again on the `master` commit in step 3. It
+   reads local Git objects only, and fails naming each mismatch: the
+   `version-string`, a remaining `## Unreleased`, the release heading's date
+   against the head's author date, the heading after it against `vPREV`, a
+   number *The number* does not allow for the batch, a change-list entry
+   without a commit id (with the commit `git log -S` finds), a tag of that
+   name on another commit, and step 1's `check_changes_rule.py` over
+   `vPREV..<rev>`. It lists the commits that change an engine `.cpp` file
+   without touching CHANGES.md, which step 1 reads; the reading itself, and
+   whether an entry is right, stay with the audit. It tags, fetches and
+   uploads nothing.
+
    **For `v0.3.0`, qualify documentation versioning before the tag is cut.**
    It is the first release with a complete immutable snapshot; `v0.1.0` and
    `v0.2.0` are not backfilled. The build, provenance, routing, search and
@@ -295,7 +309,11 @@ cut once PHILOSOPHY's settle criterion has run.
    `gh release create vX.Y.Z --verify-tag --draft --title "Labrador X.Y.Z" --notes-file <notes>`.
    Publish it with `gh release edit vX.Y.Z --draft=false` only after the
    starter ZIP and the documentation asset below are uploaded: an immutable
-   release takes no asset after publication. The notes hold:
+   release takes no asset after publication.
+   `python tools/release_check.py --release vX.Y.Z --base vPREV --head <sha> --notes > <notes>`
+   writes the notes once every check passes, quoting PHILOSOPHY and
+   SECURITY.md as they stand at `<sha>`; read them before using them. The
+   notes hold:
    - two sentences from *The public face*, word for word: the bold lead,
      "Releases are versioned, and before 1.0 a release promises a record, not
      compatibility.", and the one after it that begins "A 0.x tag promises one
