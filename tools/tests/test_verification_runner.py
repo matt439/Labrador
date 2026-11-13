@@ -7,6 +7,7 @@ import copy
 import io
 import json
 from pathlib import Path
+import subprocess
 import unittest
 from unittest import mock
 import xml.etree.ElementTree as ElementTree
@@ -27,6 +28,7 @@ class RunnerTests(unittest.TestCase):
         fixture.write_caches(self.plan, self.environment, self.browser)
         self.trace = []
         self.output = self.root / "reports with spaces" / "run"
+        self.heads = []
         for name in ("run", "Popen"):
             patch = mock.patch.object(sweep.subprocess, name, side_effect=AssertionError("real subprocess forbidden"))
             patch.start()
@@ -48,12 +50,21 @@ class RunnerTests(unittest.TestCase):
                 "tests": [{"name": name, "command": ["C:/fixture tools/test.exe", "argument with spaces"]}
                           for name in self.names(configuration)]}
 
-    def junit(self, names):
+    def junit(self, names, device="Fixture Adapter"):
         document = ElementTree.Element("testsuite", tests=str(len(names)), failures="0", errors="0", skipped="0")
         for name in names:
             case = ElementTree.SubElement(document, "testcase", name=name, status="run")
-            ElementTree.SubElement(case, "system-out").text = "fixture output only"
+            text = "fixture output only"
+            if name == "RenderPixelTests" and device:
+                # As doctest prints it natively: path(line): MESSAGE: text.
+                text = ("[doctest] doctest version is \"2.5.3\"\r\n"
+                        "C:\\fixture\\pixel_tests.cpp(115): MESSAGE: Drawing on " + device + "\r\n")
+            ElementTree.SubElement(case, "system-out").text = text
         return ElementTree.tostring(document, encoding="unicode")
+
+    def read_revision(self, root):
+        self.assertEqual(root, self.root)
+        return (self.heads.pop(0) if self.heads else "a" * 40), 0
 
     def fake_runner(self, argv, *, cwd, stdout, stderr):
         if argv[0] == "cmake":
@@ -82,7 +93,8 @@ class RunnerTests(unittest.TestCase):
 
     def execute(self, runner=None, inspector=None, output=None):
         return sweep.execute_plan(self.plan, inspector=inspector or self.inspect, cache_reader=planner.cache_values,
-                                  runner=runner or self.fake_runner, output_dir=output or self.output)
+                                  runner=runner or self.fake_runner, output_dir=output or self.output,
+                                  revision_reader=self.read_revision)
 
     def assert_failure(self, report, phase, name="x64-debug", commands=None):
         self.assertEqual(report["result"], "failed")
@@ -106,14 +118,23 @@ class RunnerTests(unittest.TestCase):
                 self.assertEqual(argv[argv.index("--parallel") + 1], "2" if phase == "build" else "1")
             if phase == "test":
                 self.assertIn("--stop-on-failure", argv)
+                self.assertEqual(argv[argv.index("--test-output-size-passed") + 1], "1048576")
             if phase == "registration":
                 self.assertEqual(argv[-1], "--show-only=json-v1")
                 self.assertNotIn("--parallel", argv)
             if name == "wasm-release-null" and phase != "configure":
                 self.assertNotIn("--preset", argv)
                 self.assertIn("out/build/wasm-release-null", argv)
-        self.assertEqual(report["source_revision"], "uncollected")
-        self.assertEqual(report["device_identity"], "uncollected")
+        self.assertEqual(report["source_revision"],
+                         {"result": "collected", "commit": "a" * 40, "uncommitted_changes": 0})
+        for configuration in report["configurations"]:
+            identity = report["device_identity"][configuration["id"]]
+            if "RenderPixelTests" in self.names(configuration):
+                self.assertEqual(identity, {"result": "collected", "devices": ["Fixture Adapter"]})
+            else:
+                self.assertEqual((identity["result"], identity["devices"]), ("no-device-test", []))
+        self.assertIn("collected", {item["result"] for item in report["device_identity"].values()})
+        self.assertIn("no-device-test", {item["result"] for item in report["device_identity"].values()})
         self.assertTrue(all(item["status"] == "not-run" for item in report["manual_obligations"]))
         self.assertNotIn("registration-before-future-execution", [item["id"] for item in report["manual_obligations"]])
         self.assertEqual(json.loads(Path(report["report_path"]).read_text()), report)
@@ -156,7 +177,8 @@ class RunnerTests(unittest.TestCase):
 
     def test_default_output_directory_is_unique_under_ignored_out(self):
         reports = [sweep.execute_plan(self.plan, inspector=self.inspect, cache_reader=planner.cache_values,
-                                      runner=self.fake_runner) for _ in range(2)]
+                                      runner=self.fake_runner, revision_reader=self.read_revision)
+                   for _ in range(2)]
         self.assertNotEqual(reports[0]["output_dir"], reports[1]["output_dir"])
         self.assertTrue(all(Path(item["output_dir"]).parent == (self.root / "out/verification").resolve() for item in reports))
 
@@ -175,6 +197,92 @@ class RunnerTests(unittest.TestCase):
                     following = [item for item in report["configurations"]
                                  if planner.CONFIGURATIONS.index(item["id"]) > planner.CONFIGURATIONS.index(target)]
                     self.assertTrue(all(step["result"] == "not-run" for item in following for step in item["steps"]))
+
+    def test_device_identity_is_uncollected_only_where_the_sweep_did_not_read_junit(self):
+        def run(argv, **options):
+            result = self.fake_runner(argv, **options)
+            return 17 if self.trace[-1][:2] == ("x64-debug-gl", "test") else result
+        report = self.execute(runner=run)
+        self.assert_failure(report, "test", "x64-debug-gl")
+        reached = planner.CONFIGURATIONS[:planner.CONFIGURATIONS.index("x64-debug-gl")]
+        for name in planner.CONFIGURATIONS:
+            with self.subTest(name=name):
+                result = report["device_identity"][name]["result"]
+                if name in reached:
+                    self.assertNotEqual(result, "uncollected")
+                else:
+                    self.assertEqual(result, "uncollected")
+        self.assertEqual(report["source_revision"]["commit"], "a" * 40)
+
+    def test_device_identity_is_recorded_when_read_junit_fails_validation(self):
+        def run(argv, **options):
+            result = self.fake_runner(argv, **options)
+            if self.trace[-1][:2] == ("x64-debug", "test"):
+                configuration = self.plan["configurations"][0]
+                Path(argv[argv.index("--output-junit") + 1]).write_text(
+                    self.junit(self.names(configuration) + ["UnexpectedTests"]), encoding="utf-8")
+            return result
+        report = self.execute(runner=run)
+        self.assert_failure(report, "test-results")
+        self.assertEqual(report["device_identity"]["x64-debug"],
+                         {"result": "collected", "devices": ["Fixture Adapter"]})
+
+    def test_device_test_without_its_line_is_recorded_not_guessed(self):
+        def run(argv, **options):
+            result = self.fake_runner(argv, **options)
+            if self.trace[-1][1] == "test":
+                configuration = next(item for item in self.plan["configurations"] if item["id"] == self.trace[-1][0])
+                Path(argv[argv.index("--output-junit") + 1]).write_text(self.junit(self.names(configuration), None))
+            return result
+        report = self.execute(runner=run)
+        self.assertEqual(report["result"], "passed")
+        self.assertEqual(report["device_identity"]["x64-debug"]["result"], "not-printed")
+
+    def test_head_moving_during_the_sweep_fails_it(self):
+        self.heads = ["a" * 40, "b" * 40]
+        report = self.execute()
+        self.assertEqual((report["result"], report["failure"]["phase"]), ("failed", "source-revision"))
+        self.assertIn("HEAD moved from " + "a" * 40 + " to " + "b" * 40, report["failure"]["detail"])
+        self.assertEqual(json.loads(Path(report["report_path"]).read_text())["result"], "failed")
+
+    def test_unreadable_revision_stops_before_preflight_and_commands(self):
+        def unreadable(root):
+            raise sweep.VerificationError("cannot read the checkout's HEAD and status")
+        report = sweep.execute_plan(self.plan, inspector=mock.Mock(side_effect=AssertionError("preflight")),
+                                    cache_reader=planner.cache_values, runner=self.fake_runner,
+                                    output_dir=self.output, revision_reader=unreadable)
+        self.assert_failure(report, "source-revision", None, 0)
+        self.assertEqual(report["source_revision"], {"result": "uncollected"})
+        self.assertFalse(self.output.exists())
+
+    def test_source_revision_reads_head_and_counts_uncommitted_entries(self):
+        def git(output):
+            def run(argv):
+                if argv[1] == "rev-parse":
+                    return subprocess.CompletedProcess(argv, 0, output + "\n", "")
+                return subprocess.CompletedProcess(argv, 0, " M tools/a.py\n?? b.txt\n\n", "")
+            return run
+        self.assertEqual(sweep.source_revision(self.root, git("c" * 40)), ("c" * 40, 2))
+        for head in ("", "HEAD", "C" * 40, "c" * 39):
+            with self.subTest(head=head), self.assertRaisesRegex(sweep.VerificationError, "unexpected HEAD"):
+                sweep.source_revision(self.root, git(head))
+        failing = lambda argv: subprocess.CompletedProcess(argv, 128, "", "not a repository")
+        with self.assertRaisesRegex(sweep.VerificationError, "cannot read"):
+            sweep.source_revision(self.root, failing)
+
+    def test_device_names_are_read_from_native_and_page_output_once_each(self):
+        native = "C:\\x\\pixel_tests.cpp(115): MESSAGE: Drawing on NVIDIA GeForce RTX 5080  \r\nother\r\n"
+        page = "C:/x/pixel_tests.cpp:115: MESSAGE: Drawing on Google Inc. (NVIDIA) / ANGLE (D3D11)\n"
+        cases = [{"name": "RenderPixelTests", "output": native + native},
+                 {"name": "RenderPixelTestsWithoutS3tc", "output": page},
+                 {"name": "Other", "output": "Drawing on nothing, without doctest's prefix"}]
+        self.assertEqual(sweep.device_names(cases),
+                         ["NVIDIA GeForce RTX 5080", "Google Inc. (NVIDIA) / ANGLE (D3D11)"])
+        xml = ('<testsuite><testcase name="RenderPixelTests"><system-out>' + page
+               + '</system-out><system-err>MESSAGE: Drawing on stderr</system-err></testcase></testsuite>')
+        cases, _ = sweep.junit_cases(xml)
+        self.assertEqual(sweep.device_identity(cases),
+                         {"result": "collected", "devices": ["Google Inc. (NVIDIA) / ANGLE (D3D11)"]})
 
     def test_launch_error_is_logged_and_later_phases_remain_unrun(self):
         def run(argv, **options):
