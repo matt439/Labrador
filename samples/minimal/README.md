@@ -41,11 +41,11 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
-- **2026-11-10.** `web/shell.html` names its canvas for a screen reader,
+- **2026-11-10, `64551d1`.** `web/shell.html` names its canvas for a screen reader,
   `aria-label="Minimal sample"`, and gives the status line `role="status"` so
   that a change to it is read out. A copy wants both attributes, with its own
   game's name in the label: it is a placeholder, as the `<title>` is.
-- **2026-11-10.** `web/shell.html` says so when the game's files do not load.
+- **2026-11-10, `74ced6b`.** `web/shell.html` says so when the game's files do not load.
   A `.wasm`, loader script or `.data` file that fails to download left the
   page at `Loading...`, because the engine never runs to call
   `Module.onError`. The page now replaces that line with "The game could not
@@ -53,7 +53,7 @@ carry it.
   lines below the `Module` object (`loading`, `loadFailed` and the two
   listeners), `onAbort: loadFailed` in `Module`, and `loading = false;` at
   the top of `onRuntimeInitialized`. The console still shows the reason.
-- **2026-11-05.** `HelloState` sets a touch marker's text only when its
+- **2026-11-05, `d2c36e5`.** `HelloState` sets a touch marker's text only when its
   finger changes, as `engine/render/label.h` asks of a caller that would
   otherwise re-measure every frame: `touch_marker_ids_` in `hello_state.h`
   holds the id each marker shows, zero for blank, and `update()` compares
@@ -61,12 +61,12 @@ carry it.
   the markers wants the member and the comparison. `tests/motion_tests.cpp`
   now checks the two-pad state before slot 0 is emptied, which a copy can
   take as it is.
-- **2026-11-04.** The engine reads PNG textures and links `lodepng`, so the
+- **2026-11-04, `a6ae08f`.** The engine reads PNG textures and links `lodepng`, so the
   project's `vcpkg.json` names it beside `doctest`. A copy adds `"lodepng"` to
   its `dependencies`, with a comma after the entry before it; without it,
   configure stops at `find_package(lodepng)`. A copy can then use a `.png` in
   place of a converted `.dds`.
-- **2026-11-04.** The pad slot policy is a rule with tests. `combine_pads` in
+- **2026-11-04, `c06ccf3`.** The pad slot policy is a rule with tests. `combine_pads` in
   `rules/motion.h` takes each slot's deadzoned left stick and B edge as a
   `PadReading` and returns the summed stick and whether any slot asked to
   quit; `HelloState::update()` only reads the four slots into it, and
