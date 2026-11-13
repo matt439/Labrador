@@ -455,7 +455,11 @@ Lines other pages added to `LINK_DEPENDS`, such as a sound bank's, stay where th
 before, with `/save` restored from the browser's storage before the game starts. That is the
 storage half. Saving to it from the game, and the page button and exported function below that
 finish a save, are not yet walked through in the starter project step by step; the complete
-working example is the save check under [Check a real reload](#check-a-real-reload).
+working example is the save check under [Check a real reload](#check-a-real-reload). With only
+these two changes, a file the game writes, such as the one **Space** writes in
+[Save settings in your game](/docs/guides/your-settings/), is in `/save` until the page reloads,
+and is then gone: nothing has copied it back to the browser's storage. That copy is
+[the sync below](#finish-the-browser-sync-before-saying-saved).
 
 The browser branch of `settings_directory()` returns `/save`. A file such as
 `/save/settings.json` then uses the same `std::ofstream` writer as Windows. Keep the mount path
@@ -515,6 +519,23 @@ twice, and the missing `focus_` line built and passed its tests. Leaving out the
 keeps it so the file says what it uses. The starter's `persist.js` copy and link options above
 were built with `wasm-debug`, and the page runner from Build for the browser loaded the page in
 Edge and quit it with no errors; a save across a reload was not made in the starter.
+
+On 13 November 2026, in a starter project made from a starter ZIP of this tree, with Emscripten
+6.0.12, an agent did steps 1 to 7 of [Save settings in your game](/docs/guides/your-settings/) and
+the `persist.js` copy and link options above as worded, editing the files with tools. The
+`wasm-debug` build compiled and linked with no warnings, and a change to `persist.js` alone
+relinked the page. Headless Chrome 157 loaded it with a fresh profile, over a local server, and
+the agent moved the greeting with the arrow keys and pressed **Space**: `Saved.` showed and
+`/save/settings.json` held the position. Reloaded straight away or a second later, the page
+started with no file and the greeting in the middle, and IndexedDB held nothing. Calling
+`Module.flushSave()` from the console after **Space** took about 2 ms; after a reload the file
+was restored before the game started, and a screenshot showed the greeting where it was saved.
+The same build with the mount line changed to `FS.mount(IDBFS, { autoPersist: true }, '/save')`
+kept the save across a reload with no `flushSave()` call: Emscripten's own copy back finished
+between 1 and 48 ms after **Space** in three runs, each before the reload. That option is not
+part of this page: it reports no completion and no error to the game. No console error or
+warning appeared in any run. This is a headless Chrome check on one desktop, not a check of
+storage after eviction, of private browsing or of a real phone.
 
 A second agent then followed the section as worded in another fresh starter, after the same two
 pages. Its `init()` was byte for byte the one above, the build and tests passed, and **K K**
