@@ -157,7 +157,12 @@ says so, the build jobs report without building, and `lint` runs the
 citation check, the agent brief check with its offline fixtures, the engine and
 LineSweeper include walls with their offline layer fixtures, offline source
 revision fixtures, the whitespace check, the flash-definition, pacing-analysis
-and bundle-verification tests, and the Python tooling suite.
+and bundle-verification tests, and the Python tooling suite, after the
+per-commit golden-review and CHANGES.md checks every change gets.
+`python tools/lint_local.py --base origin/master` runs that whole job locally,
+in `ci.yml`'s order, and stops at the first failure; its offline test fails
+when the job's step names, order or commands differ from the script's, but
+not when this paragraph's list does.
 
 The Vulkan SDK download and its offline helper tests use Python 3.11 or newer. Its bounded HTTP
 retry helper leaves SHA-256 validation and installation outside the retry;
@@ -486,8 +491,9 @@ qualifications separately from a printed plan or fake-command test result.
   driver version; [the procedure](docs/verification.md#configurations-ci-cannot-run)
   says what the record does and does not show. Otherwise write "Not run".
 - If you edited a public engine header, a line a website page quotes, or a
-  file a design document links to, build the website (`npm ci` then
-  `npm run build` inside `website/`).
+  file a design document links to, run the website's gate (`npm ci` then
+  `npm run gate` inside `website/`: its check, tests and build, as CI runs
+  them).
 - Read [docs/design/PHILOSOPHY.md](docs/design/PHILOSOPHY.md) before arguing
   for a change of direction: its trade-offs, T1 to T12, are the vocabulary
   review uses.
