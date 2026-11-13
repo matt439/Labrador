@@ -599,6 +599,33 @@ missing page under the prefix gets the release's own 404. Get the starter
 project's `curl` line, run as written, downloaded the ZIP with the size and
 hash above.
 
+### Rebuild comparison: 2026-11-13
+
+Both `v0.3.0` assets were rebuilt from the tag and matched the release byte
+for byte. A `git worktree add --detach` of `v0.3.0` (`0f4f503`), outside the
+repository, was made on the owner's Windows desktop with Git's
+`core.autocrlf=true`. In it, `python tools\consumer_check\starter_zip.py
+<out> --release v0.3.0` (Python 3.14.2) wrote 9,265,469 bytes with SHA-256
+`25db98b280e50648831ca896dad5bbd7b51788a8051dd29089ce3faa410f5869`. Then, in
+its `website/` with Node 24.14.0, `npm ci`,
+`npm run snapshot:build -- v0.3.0` (172 pages, links valid) and
+`npm run snapshot:pack -- v0.3.0` wrote 8,853,554 bytes with SHA-256
+`c61377d4f4cb67d9b83d65e160cf14192f75ded07771a252b6a4c02fdab46602`. Both
+equal the digests GitHub computed for the release's assets
+(`gh release view v0.3.0 --json assets`) and the manifest entry above. The
+printed entry differed only in `published`, which is the day the pack ran.
+The worktree was removed afterwards.
+
+The ZIP's bytes depend on the checkout's line endings: `starter_zip.py` reads
+the working tree, and `.gitattributes` gives text files the platform's
+convention. Of the published ZIP's 1,146 entries, 1,059 are text with CRLF
+line endings (the other 87 are 84 binary files and 3 LF-only text files), so a
+checkout with LF working-tree files, such as one on Linux or with
+`core.autocrlf=false`, would give different bytes from the same tag. That LF
+build was not run. Whether the documentation snapshot depends on line endings
+too was not tested. The comparison was made once, by hand. No workflow
+repeats it, and the tag stays unsigned.
+
 ## Work required for v0.3.0
 
 Qualify the versioned build before cutting `v0.3.0`, then publish the first
