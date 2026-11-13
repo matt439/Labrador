@@ -52,6 +52,11 @@ namespace
 		// Linear because of the broad phase's grid; an all-pairs
 		// enumeration would be quadratic.
 		{ "Scene::resolve (broad phase)", false },
+		// A whole tick with a fixed fraction of the colliders spawned and
+		// retired (scene_bench.cpp). Linear because retirement is one stable
+		// erasure and a spawn is an append; a per-object walk of the scene
+		// on either side would make it quadratic.
+		{ "Scene tick (1/8 spawned and retired)", false },
 
 		// The draw path's engine-side arithmetic (render_bench.cpp). Linear
 		// by construction - four corners a sprite, no lookup and no

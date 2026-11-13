@@ -72,7 +72,7 @@ The live ledger for [the review](README.md). Record each resolution here in the 
 | `REV#77` | [draw_text and measure_text take const std::wstring& while the glyph walk takes a view](FINDINGS.md#rev77) | Open |
 | `REV#78` | [Manifest load is one blocking call with no progress, and nothing unloads](FINDINGS.md#rev78) | Open |
 | `REV#79` | [No convex N-gon, capsule or segment collision shape](FINDINGS.md#rev79) | Open |
-| `REV#80` | [The one-object-for-thousands dial has no collidable form](FINDINGS.md#rev80) | Open |
+| `REV#80` | [The one-object-for-thousands dial has no collidable form](FINDINGS.md#rev80) | Partly done. bench/scene_bench.cpp gains "Scene tick (1/8 spawned and retired)". It runs one whole tick (update, resolve, end_tick) on the static case's grid and layer split, retiring the oldest eighth of the colliders through set_for_deletion and spawning as many in their places, so the scene stays a steady rolling queue. bench/main.cpp asserts that the case stays linear. Verified on x64-debug-null: Benchmarks passed, at 712 to 871 ns per object from n=64 to n=4096. Left: whether PHILOSOPHY or scene.h should state that a CollisionObject carries one Shape and that collidable churn means one registered object each. That is the owner's call. |
 | `REV#81` | [A contact carries no contact point](FINDINGS.md#rev81) | Open |
 | `REV#82` | [The ISO extra key has no name; left and right modifiers are one key](FINDINGS.md#rev82) | Open |
 | `REV#83` | [Window policy a game cannot state: fixed size, starting position, monitor, maximised](FINDINGS.md#rev83) | Open |
