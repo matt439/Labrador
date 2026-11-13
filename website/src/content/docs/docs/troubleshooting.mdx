@@ -8,7 +8,8 @@ import RepoLink from '~/components/RepoLink.astro';
 
 This page collects the failures people are most likely to meet, by the message they see. It
 starts from what [Get Started](/docs/get-started/) has already run into and will grow from
-reports. If your problem is not here, [Ask for help](/docs/guides/ask-for-help/) says what to
+reports. The page is long: press **Ctrl+F** and type three or four words from the first line
+that says `error`, not the whole line and not your own folder names, to jump to its entry. If your problem is not here, [Ask for help](/docs/guides/ask-for-help/) says what to
 gather and how to open a report, step by step. The
 [issue tracker](https://github.com/matt439/Labrador/issues/new/choose) is the place to say so:
 it has forms for a bug or build problem, a question, and an engine request, and
@@ -55,16 +56,18 @@ in your **Downloads** folder, then removes the folder named after the ZIP if it 
 and lists the project's files:
 
 ```bat
-for /d %d in ("%USERPROFILE%\Downloads\labrador-starter-*" C:\dev\labrador-starter-*) do if exist "%d\mygame" move "%d\mygame" C:\dev\
+if exist C:\dev\mygame (echo C:\dev\mygame already exists. Nothing was moved.) else (for /d %d in ("%USERPROFILE%\Downloads\labrador-starter-*" C:\dev\labrador-starter-*) do if exist "%d\mygame" move "%d\mygame" C:\dev\)
 for /d %d in ("%USERPROFILE%\Downloads\labrador-starter-*" C:\dev\labrador-starter-*) do rmdir "%d"
 dir /b C:\dev\mygame
 ```
 
 The prompt shows each command as it runs it. `move` prints `1 dir(s) moved.`, and the list
 ends with `vcpkg.json`, as in step 3 of
-[Get the starter project](/docs/get-started/starter/). If `move` says
-`Access is denied.` or `A duplicate file name exists, or the file cannot be found.`,
-`C:\dev\mygame` is there already: see step 1 of that page.
+[Get the starter project](/docs/get-started/starter/). If it prints
+`C:\dev\mygame already exists. Nothing was moved.`, then `The directory is not empty.`, you
+already have a project called `mygame`, and the list is that project's files, left as they
+were. The new copy is still in the folder named after the ZIP: delete that folder in File
+Explorer, then follow [A second project](/docs/get-started/starter/#a-second-project).
 
 ### `A suitable version of git was not found`
 
@@ -222,10 +225,60 @@ prompt is one folder too deep, in `game`; the `cd` line above fixes that too. Fo
 own build, the folder is `C:\dev\Labrador`, or `C:\dev\mygame\external\labrador` as
 [Run the samples](/docs/guides/samples/) shows.
 
+### `The current CMakeCache.txt directory ... is different than the directory ... where CMakeCache.txt was created`
+
+```text title="Output"
+CMake Error: The current CMakeCache.txt directory C:/dev/thirdgame/out/build/x64-debug/CMakeCache.txt is different than the directory c:/dev/mygame/out/build/x64-debug where CMakeCache.txt was created.
+```
+
+The project's folder was moved or renamed after it was built, here from `C:\dev\mygame` to
+`C:\dev\thirdgame`, and the build folder inside it still names the old place. Configuring adds
+`does not match the source ... used to generate cache`; building adds
+`The source directory "C:/dev/mygame" does not appear to contain CMakeLists.txt.` and
+`ninja: error: rebuilding 'build.ninja': subcommand failed`. Do not edit `CMakeCache.txt`.
+From the project's folder in its new place, delete the build folders and configure again, with
+your folder's name in place of `thirdgame`:
+
+```bat
+cd /d C:\dev\thirdgame
+rmdir /s /q out
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+```
+
+A build that failed this way also makes a folder with the old name, holding only empty
+folders. It is not your project;
+[Rename your game](/docs/guides/your-name/#if-something-fails) has a line that deletes it only
+if it has no `game` folder in it.
+
+### `is not a directory`, `build tool execution failed`, `loading 'build.ninja'`, or `No tests were found!!!`
+
+The build and test lines print these when the configure before them did not finish, or was
+never run. Which one the build prints depends on how far configure got:
+
+- `Error: C:/dev/mygame/out/build/x64-debug is not a directory` when there was no configure at
+  all;
+- `no such file or directory`, then
+  `CMake Error: Generator: build tool execution failed, command was:`, when configure failed
+  early, for example with [`VCPKG_ROOT` not set](#could-not-find-toolchain-file-scriptsbuildsystemsvcpkgcmake)
+  or in [a folder far too deep](#vcpkg-was-unable-to-detect-the-active-compilers-information);
+- `ninja: error: loading 'build.ninja': The system cannot find the file specified.` when it
+  failed later, for example with
+  [C1083 in a deep folder](#the-c-compiler--is-not-able-to-compile-a-simple-test-program).
+
+`ctest --preset x64-debug` then prints `Test project C:/dev/mygame` and
+`No tests were found!!!`, and does not count that as a failure. None of these lines is the
+cause, and none says `FAILED`. Run `cmake --preset x64-debug` again in the project's folder and
+read it to the end. If it ends `Configuring incomplete, errors occurred!`, look up its first
+line that says `Error` on this page, then configure, build and test again.
+
 ### `Could not find toolchain file: "/scripts/buildsystems/vcpkg.cmake"`
 
 `VCPKG_ROOT` is not set, so the path to vcpkg's toolchain starts with nothing. The errors about
-Ninja and the compiler that follow are consequences of this one. Check first that the window is
+Ninja and the compiler that follow are consequences of this one. The same Ninja and compiler
+lines also end a configure in
+[a folder far too deep](#vcpkg-was-unable-to-detect-the-active-compilers-information); the
+first error line tells the two apart. Check first that the window is
 the x64 Native Tools Command Prompt, which sets it when Visual Studio's vcpkg component is
 installed ([the wrong command prompt](#the-wrong-command-prompt)). If it is, follow
 [If VCPKG_ROOT is not set](/docs/get-started/prerequisites/#if-vcpkg_root-is-not-set). Then
@@ -238,6 +291,33 @@ cmake --preset x64-debug
 
 In Visual Studio rather than the prompt, the fix is the same `setx` line in that section,
 followed by closing and reopening Visual Studio.
+
+### `error: curl operation failed with error code`
+
+The first configure downloads the engine's libraries and some tools, from `github.com`,
+`nuget.org` and `mirror.msys2.org` among others, and one of the downloads failed. A name that
+could not be looked up, for example, prints:
+
+```text title="Output"
+error: curl operation failed with error code 6 (Could not resolve hostname).
+error: Not a transient network error, won't retry download from ...
+note: If you are using a proxy, please ensure your proxy settings are correct.
+```
+
+A list of `Possible causes` about `HTTPS_PROXY` and proxy programs follows. It is the
+connection, not your setup: unless you know you use a proxy, ignore that list. Check that the
+PC is online, then, from the project's folder, delete the half-configured build folder and
+configure again:
+
+```bat
+rmdir /s /q out\build\x64-debug
+cmake --preset x64-debug
+```
+
+vcpkg keeps what it had already downloaded and built outside the project, so it carries on
+from there. On a school or work
+network that blocks those addresses, configure on another connection once; later configures
+use what vcpkg kept.
 
 ### `No Direct3D shader compiler (fxc)`
 
@@ -252,16 +332,67 @@ new prompt and configure again.
 ### A warning that an object file path exceeds `CMAKE_OBJECT_PATH_MAX`
 
 Configure prints `CMake Warning ... The object file directory ... has N characters. The maximum
-full path to an object file is 250 characters (see CMAKE_OBJECT_PATH_MAX).` The checkout's folder
-is too deep, and the build that follows will stop with
-[C1083](#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument). Do not raise
-`CMAKE_OBJECT_PATH_MAX`: the limit that matters is the compiler's, which is 260 characters for
-the whole path. Move the checkout to a folder whose path is under 100 characters, or reach it
-through a drive letter as in
-[Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder), delete
-`out\build\`, and configure again. In a folder deeper still, configure can fail before this, with
-`vcpkg was unable to detect the active compiler's information`, for the same reason and with the
-same fix.
+full path to an object file is 250 characters (see CMAKE_OBJECT_PATH_MAX).` The project's folder
+is deeper than these pages allow for. Do not raise `CMAKE_OBJECT_PATH_MAX`: the limit that
+matters is the compiler's, which is 260 characters for the whole path. What follows depends on
+how deep the folder is. In a `v0.3.0` starter project:
+
+- with a folder path of 145 characters, configure printed the warning, and the project built
+  and passed its tests;
+- with 150 characters, configure itself failed with
+  [C1083 inside `is not able to compile a simple test program`](#the-c-compiler--is-not-able-to-compile-a-simple-test-program);
+- with 158 characters or more, configure failed earlier, with
+  [`vcpkg was unable to detect the active compiler's information`](#vcpkg-was-unable-to-detect-the-active-compilers-information).
+
+A build that does get going can still stop with
+[C1083](#fatal-error-c1083-cannot-open-compiler-generated-file--invalid-argument) later, when a
+file with a longer name is compiled. The cure is the same in every case: move the project to a
+folder whose path is under 100 characters. For the starter project that is `C:\dev\mygame`:
+move the `mygame` folder there in File Explorer (cut it, open `C:\dev`, paste), then open a new
+x64 Native Tools Command Prompt and run:
+
+```bat
+cd /d C:\dev\mygame
+rmdir /s /q out
+cmake --preset x64-debug
+```
+
+`rmdir` deletes the build folders, which still name the old place, and prints
+`The system cannot find the file specified.` if configure never made them. For a checkout of
+Labrador, move it to `C:\dev\Labrador` and run the same lines from there. A deep folder you must
+keep can be reached through a drive letter instead, as in
+[Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder).
+
+### `vcpkg was unable to detect the active compiler's information`
+
+A configure in a very deep folder stops with lines like these, among others:
+
+```text title="Output"
+error: while detecting compiler information:
+...
+Error code: no such file or directory
+...
+error: vcpkg was unable to detect the active compiler's information.
+```
+
+and ends with the same two lines as when
+[`VCPKG_ROOT` is not set](#could-not-find-toolchain-file-scriptsbuildsystemsvcpkgcmake):
+`CMake Error: CMake was unable to find a build program corresponding to "Ninja".` and
+`CMake Error: CMAKE_CXX_COMPILER not set, after EnableLanguage`. Here they are consequences of
+the folder's depth, not of a missing tool. Move the project as in
+[the warning about `CMAKE_OBJECT_PATH_MAX`](#a-warning-that-an-object-file-path-exceeds-cmake_object_path_max)
+above, and configure again.
+
+### `The C++ compiler ... is not able to compile a simple test program`
+
+Configure tried to compile a one-line program and the compiler refused. When the lines under
+it include `fatal error C1083: Cannot open compiler generated file: '': Invalid argument`, the
+project's folder is too deep: move it as in
+[the warning about `CMAKE_OBJECT_PATH_MAX`](#a-warning-that-an-object-file-path-exceeds-cmake_object_path_max)
+above, which configure will have printed first, and configure again. For any other error under
+it, check that the window is
+[the x64 Native Tools Command Prompt](#the-wrong-command-prompt), then
+[ask for help](/docs/guides/ask-for-help/) with the whole output.
 
 ### A preset fails on `dxc` or the Vulkan SDK
 
@@ -304,12 +435,13 @@ your compiler version, which the first line of `cl` prints.
 ### `fatal error C1083: Cannot open compiler generated file: '': Invalid argument`
 
 The full path of an object file is longer than the compiler accepts, which is 260 characters
-whether or not long paths are enabled in Windows or in Git. The checkout's folder is too deep,
+whether or not long paths are enabled in Windows or in Git. The project's folder is too deep,
 and configure will have warned about
 [`CMAKE_OBJECT_PATH_MAX`](#a-warning-that-an-object-file-path-exceeds-cmake_object_path_max).
-Move the checkout to a folder whose path is under 100 characters, or reach it through a drive
-letter as in [Keeping a deep folder](/docs/get-started/prerequisites/#keeping-a-deep-folder),
-then configure and build again from there.
+It can appear while building, under a `FAILED` line, or during configure, inside
+[`is not able to compile a simple test program`](#the-c-compiler--is-not-able-to-compile-a-simple-test-program).
+Move the project to a folder whose path is under 100 characters, as that warning's entry
+shows, then configure and build again from there.
 
 ### `LNK1168: cannot open game\MyGame.exe for writing`
 
@@ -334,6 +466,24 @@ taskkill /im MyGame.exe
 It prints `SUCCESS: Sent termination signal to the process "MyGame.exe"` and a number, or
 `ERROR: The process "MyGame.exe" not found.` if the game was not running after all. Your code
 was compiled before the link failed, so the build that follows only links.
+
+### The game has not changed after an edit, and the build printed no `Building` line
+
+The build compiles only the files that changed since the last build. When it finds none, it
+prints only its last steps, in a starter project these two:
+
+```text title="Output"
+[1/2] Running utility command for game_content
+[2/2] Checking that no engine file includes a game header
+```
+
+with no `Building` or `Linking` line, and then the tests pass and the game opens as before. The
+edit never reached the file the build reads: it was not saved, or it was made in another file
+of the same name, such as a copy outside `C:\dev\mygame\game`. Open the file from the project's
+`game` folder again, check that your edit is there, press **Ctrl+S**, and run the build again.
+A build that compiles your change prints a line such as
+`[3/4] Building CXX object game\CMakeFiles\MyGame.dir\states\hello_state.cpp.obj` naming the
+file.
 
 ### `labrador_settings` is defined twice
 
@@ -1076,6 +1226,14 @@ clicks **More info**, then **Run anyway**
 
 The game was started without the files beside it, usually from inside the ZIP. Extract the ZIP
 with **Extract All...** and start the game from the extracted folder.
+
+### `The code execution cannot proceed because VCRUNTIME140D.dll was not found.`, or `MSVCP140D.dll` or `ucrtbased.dll`
+
+A file whose name ends in `D` before `.dll`, or `ucrtbased.dll`, is part of Microsoft's debug
+runtime. The friend was sent the debug build: `MyGame.exe` from `out\build\x64-debug\game`, or
+that folder zipped. A debug build runs only on a PC with Visual Studio installed, and Microsoft
+does not let you give its debug runtime away. Make the release build and send that, as
+[Send your game to a friend](/docs/guides/your-release/) shows.
 
 ### `404` and `There isn't a GitHub Pages site here.`
 

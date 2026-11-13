@@ -251,7 +251,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#109` | OPEN | should | S | Troubleshooting lacks entries for messages produced in a v0.3.0 starter: the moved-folder `CMakeCache.txt` error, what follows a failed configure, deep-folder outcomes, a failed download, the debug runtime box and an unsaved edit. |
 | `REV#110` | OPEN | should | S | `prerequisites.mdx` step 1 says nothing of the installer's screens before the Workloads tab, nothing marks where a starter reader is finished, and the installer is still unwalked: one clean-machine install settles it. |
 | `REV#111` | OPEN | could | S | No page states a Windows version, Arm, S mode or administrator rights before the install, and the total disk, download and time first appear in step 1 of the second page. |
 | `REV#112` | OPEN | could | S | Unverified: Smart App Control or Defender blocking the reader's own `MyGame.exe` has no page, and `starter.mdx` step 7 would send them to rebuild. Reproduce on such a machine, then write the entry. |
