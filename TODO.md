@@ -203,7 +203,7 @@ ready queue above.
 | `REV#60` | DECISION | could | S | A read-only reduced-motion fact on Application or the window, read from the browser media query and from Windows' client-area animation setting; LineSweeper's native `main.cpp` ignores the setting today. |
 | `REV#61` | DECISION | could | M | Whether the engine offers a shared fatal-error report (title, message) for `samples/minimal/main.cpp` and `main_web.cpp`, or a run helper; the two-file anatomy is ARCHITECTURE's stated design and would be amended. |
 | `REV#62` | DECISION | could | M | Five guides use features newer than the starter's release with no note at the passage ([run in a v0.3.0 starter](docs/review/2026-11-10-first-run/FINDINGS.md#rev62)); choose a banner or per-passage notes without reopening the 2026-10-27 default. |
-| `REV#63` | OPEN | could | M | Whether the starter carries a `.vsconfig` and one installer command, against the 2026-10-30 'no bundled installer' decision. First step, no call: one Sandbox run installing from a candidate `.vsconfig`, then building the v0.3.0 starter, timed. |
+| `REV#63` | DECISION | could | M | Whether the starter or Install the tools ships the measured .vsconfig and its one installer command (10.5 GB, 2.4 GB download; 2026-11-13 record), against the 2026-10-30 'no bundled installer' decision. |
 | `REV#64` | DECISION | could | M | A copyable touch-control component in `samples/components`: held button rectangles answering a bitset per step and a stick region answering a Vector2F, with headless tests over synthetic TouchPoints. |
 | `REV#65` | DECISION | could | S | Whether to document and test FetchContent, flag the walkthrough repository as a GitHub template, or add install/export or a vcpkg port; `README.md` documents only the submodule and the starter ZIP. |
 | `REV#66` | DECISION | could | M | Releases attach only the docs tarball and the starter ZIP, and only `samples/minimal/CMakeLists.txt` has install rules; whether to ship prebuilt Windows sample binaries is the owner's scope call. |
@@ -249,7 +249,6 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#110` | OPEN | should | S | `prerequisites.mdx` step 1 says nothing of the installer's screens before the Workloads tab, nothing marks where a starter reader is finished, and the installer is still unwalked: one clean-machine install settles it. |
 | `REV#112` | OPEN | could | S | Unverified: Smart App Control or Defender blocking the reader's own `MyGame.exe` has no page, and `starter.mdx` step 7 would send them to rebuild. Reproduce on such a machine, then write the entry. |
 | `REV#113` | OPEN | could | S | Unverified: on a Windows that is not in English, cmd, vcpkg and the compiler print translated messages no page quotes. Check whether `VSLANG=1033` restores the English text, then say so in `prerequisites.mdx`. |
 | `REV#114` | OPEN | could | S | Unverified: what a build prints after a Visual Studio update is not recorded, and no page says how to remove everything or where vcpkg's cache is. Apply one update to a built starter, then write both. |
