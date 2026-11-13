@@ -767,3 +767,61 @@ for. That machine has one enabled GPU (its integrated Radeon is switched off),
 so the result shows only that the term reaches Chrome and changes nothing with
 one adapter. It says nothing about what any value selects on a hybrid laptop,
 which nobody here has measured.
+
+## Throttled desktop rehearsal, 2026-11-13
+
+**Desktop emulation, not phone evidence.** Chrome's DevTools CPU and network
+throttling slowed this desktop to rehearse R6 and the phone's load time
+before a phone is measured ([the method](pacing-method.md#5-throttled-desktop-rehearsal)).
+The throttle slows the page's main thread; the GPU process, display and memory
+stayed the RTX 5080 desktop's. Nothing here fills the R6 or phone-load records
+in [web-to-be-tested.md](web-to-be-tested.md), and none of it predicts a
+phone. Headless Chrome 157.0.8103.78, ANGLE D3D11 on the RTX 5080, a
+`wasm-release` build at `1dc8533c` (clean stamp, development-page wasm
+SHA-256 `d8097ef5...`, bundle as its `BUILD.json`), 720x405 canvas at DPR 1.
+Other agents were loading the machine, so throttled figures move between
+runs; the rates were run as 1x, 4x, 6x with five fresh `topout` triggers
+each, then again as 6x, 1x, 4x with three each.
+
+Every one of the 24 triggers exported `complete` with no observer gaps, and
+its marked burst frame drew 9,600 live particles and none dropped through
+WebGL, so the §4 checks held at every rate. Figures are over the eight
+triggers per rate; "measured" rows are the three seconds after the burst.
+
+| CPU rate | Burst-frame CPU ms (8 triggers) | Measured rows: CPU p99 ms per trigger | Engine interval max ms | Measured frames with 2+ updates / max updates | First WebGL clear after navigation, ms |
+|---|---|---|---|---|---|
+| 1x | 1.7-2.7 | 1.2-1.6 | 18.2 | 0 of 1,448 / 1 | 39-59 |
+| 4x | 6.2-15.9 | 5.3-15.2 | 68.8 | 25 of 1,442 / 4 | 91-168 |
+| 6x | 8.5-55.3 | 9.8-72.1 | 159.2 | 155 of 1,259 / 6 | 97-368 |
+
+At 1x every completed frame ran one fixed update. At 4x the burst frame's
+CPU was three to eight times 1x's and a few frames caught up with two to four
+updates. At 6x the field still drew every burst, but sixteen frames (eight in
+the measured windows) ran six updates, the most the 0.1 s step clamp allows,
+so elapsed time beyond the clamp went unsimulated there; one trigger's burst
+frame took 55.3 ms with a 55.7 ms interval after it, and five of eight
+triggers kept 124 to 156 of the usual 181 rows in their three seconds.
+The burst frame itself ran one update in 23 triggers and two in one. The
+scaling is not linear and the spread at a rate is wide, which is what a
+loaded host and Chrome's sliced throttling give; the rehearsal shows the
+fixture, the export and the catch-up limit behaving under a slow main
+thread, not how long a phone takes.
+
+The packaged page (`web-dist/linesweeper/index.html`), three fresh loads per
+condition, Play clicked through browser input as soon as it showed, timed
+to the first WebGL clear. The local server sends files uncompressed:
+a 487,799-byte module and a 121,144-byte loader.
+
+| Condition | Page loaded, ms | Loader arrived, ms | Module arrived, ms | Click to first frame, ms |
+|---|---|---|---|---|
+| Unthrottled | 15-76 | 41-162 | 48-177 | 50-257 |
+| `slow-4g` (562.5 ms, 180,000 B/s) | 1,286-1,320 | 2,567-2,621 | 5,860-5,934 | 4,571-4,598 |
+| `slow-4g` and 4x CPU | 1,294-1,347 | 2,572-2,668 | 5,869-6,010 | 4,622-4,779 |
+
+Under `slow-4g` the module's request starts only once the loader has
+arrived, so the click waits two latencies and both bodies in series: about
+1.2 s for the loader, then 3.3 s for the module. A 4x CPU throttle on top
+added up to about 0.2 s. The live host sends Brotli (151,122 bytes for this
+module by `BUILD.json`); at the same throughput that is 0.84 s of transfer
+rather than 2.71 s by arithmetic, which was not measured here. A real phone's
+radio, cache, CPU and decompression are not modelled by any row above.

@@ -64,7 +64,7 @@ STEPS: tuple[Step, ...] = (
          (("node", "--test", "tools/flash_check/flash_check.test.mjs"),)),
     Step("Check browser pacing reduction against synthetic runs",
          (("node", "--test", "tools/web_pacing/analyse.test.mjs", "tools/web_pacing/page.test.mjs",
-           "tools/web_pacing/page_input.test.mjs"),)),
+           "tools/web_pacing/page_input.test.mjs", "tools/web_pacing/throttle.test.mjs"),)),
     Step("Check web bundle verification against offline fixtures",
          (("node", "--test", "tools/web_bundle/bundle.test.mjs", "tools/web_bundle/check_live.test.mjs",
            "tests/render/web/bundle_host.test.mjs"),)),

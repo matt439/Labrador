@@ -73,7 +73,7 @@ function requireValue(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
-function check(report, mode, progress) {
+export function check(report, mode, progress) {
 	requireValue(report.schema === 'labrador-web-engine-pacing-v1', 'Missing engine timing receipt.');
 	requireValue(report.status === 'complete', `Pacing capture status was ${report.status}.`);
 	requireValue(report.run.build === 'Release', 'SM-08 runtime acceptance requires wasm-release.');

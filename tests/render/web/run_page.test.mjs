@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { USAGE, UsageError, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
+import { NETWORK_PROFILES, USAGE, UsageError, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
 
 const page = join('build', 'samples', 'minimal', 'MinimalSample.html');
 const sample = ['--browser', 'chrome', '--page', page, '--quit-keys', 'Escape,Enter'];
@@ -39,9 +39,25 @@ test('an unknown or misspelt option is refused rather than ignored', () => {
 	}
 });
 
+test('--cpu-throttle and --network take a factor and a named profile, and refuse anything else', () => {
+	const parsed = parse_arguments([...sample, '--cpu-throttle', '4', '--network', 'slow-4g']);
+	assert.equal(parsed.cpu_rate, 4);
+	assert.deepEqual(parsed.network_conditions, { offline: false, ...NETWORK_PROFILES['slow-4g'] });
+	assert.equal(NETWORK_PROFILES['slow-4g'].latency, 562.5);
+	assert.equal(NETWORK_PROFILES['slow-4g'].downloadThroughput, 180000);
+	assert.equal(parse_arguments(sample).cpu_rate, undefined);
+	assert.equal(parse_arguments(sample).network_conditions, undefined);
+	for (const rate of ['0', '0.5', '21', 'fast', '']) {
+		assert.throws(() => parse_arguments([...sample, '--cpu-throttle', rate]),
+			(error) => error instanceof UsageError && /--cpu-throttle takes/.test(error.message), rate);
+	}
+	assert.throws(() => parse_arguments([...sample, '--network', '4g']),
+		(error) => error instanceof UsageError && /--network takes one of slow-4g/.test(error.message));
+});
+
 test('the usage names the options either form takes', () => {
 	for (const option of ['--emulate-media', '--expect-console', '--root', '--quit-keys', '--input',
-		'--hide-extension', '--sample-input']) {
+		'--hide-extension', '--sample-input', '--cpu-throttle', '--network']) {
 		assert.match(USAGE, new RegExp(option));
 	}
 	assert.match(USAGE, /either form: .*--emulate-media.*--expect-console.*--root/);

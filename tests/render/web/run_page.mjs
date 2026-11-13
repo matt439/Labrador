@@ -13,7 +13,8 @@
 //                     [--sample-input fixed-step]
 //
 // Either form also takes [--emulate-media <feature>=<value>],
-// [--expect-console <text>] and [--root <folder>].
+// [--expect-console <text>], [--root <folder>], [--cpu-throttle <rate>] and
+// [--network <profile>].
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
 // wasm-* presets (tests/render/CMakeLists.txt), for WebWindowTests
@@ -92,6 +93,16 @@
 // exit, in which no console message the page logged contains the text, so a
 // page's own report of what it read is held as well as its exit.
 //
+// --cpu-throttle slows the page's renderer by a factor, through
+// Emulation.setCPUThrottlingRate: 4 makes its main thread, where the wasm
+// runs, take about four times as long. --network shapes every request the
+// page makes, the loopback server's included, through
+// Network.emulateNetworkConditions, to one of NETWORK_PROFILES below. Both
+// hold for the session, across a driver's own navigations. They rehearse a
+// slower machine on this one and the log says so: the GPU process, the
+// compositor and the display are not slowed, and no phone's cores, memory,
+// thermal limits or radio are modelled. Neither is evidence about a device.
+//
 // --root serves a folder that holds the page's, at the server's root, and
 // loads the page at its path inside it. It is for a page that names files
 // outside its own folder: the site's demo page fetches its fonts from
@@ -139,7 +150,20 @@ let timeout_ms;
 // ignored, so a misspelt option reaches the usage message.
 const OPTION_NAMES = new Set(['browser', 'page', 'collect', 'timeout', 'browser-warnings',
 	'hide-extension', 'input', 'quit-keys', 'frames', 'sample-input', 'emulate-media',
-	'expect-console', 'root']);
+	'expect-console', 'root', 'cpu-throttle', 'network']);
+
+// --network's profiles: latency in ms, throughput in bytes per second. The
+// figures are Chrome DevTools' presets of the same names (its
+// NetworkManager.ts), stated here so that a run names what it applied rather
+// than what a later Chrome means by the name.
+export const NETWORK_PROFILES = Object.freeze({
+	'slow-4g': Object.freeze({ latency: 562.5, downloadThroughput: 1.6 * 1000 * 1000 / 8 * 0.9,
+		uploadThroughput: 750 * 1000 / 8 * 0.9 }),
+	'fast-4g': Object.freeze({ latency: 165, downloadThroughput: 9 * 1000 * 1000 / 8 * 0.9,
+		uploadThroughput: 1.5 * 1000 * 1000 / 8 * 0.9 }),
+	'slow-3g': Object.freeze({ latency: 2000, downloadThroughput: 500 * 1000 / 8 * 0.8,
+		uploadThroughput: 500 * 1000 / 8 * 0.8 }),
+});
 
 export const USAGE =
 	'usage: node run_page.mjs --browser <chrome> --page <file.html> ' +
@@ -150,7 +174,7 @@ export const USAGE =
 	'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>] ' +
 	'[--sample-input fixed-step]\n' +
 	'  either form: [--emulate-media <feature>=<value>] [--expect-console <text>] ' +
-	'[--root <folder>]\n';
+	'[--root <folder>] [--cpu-throttle <rate>] [--network <profile>]\n';
 
 // A command line the runner cannot run: it exits 2 with USAGE, before
 // anything is started.
@@ -210,6 +234,18 @@ export function parse_arguments(argv) {
 			fail_usage(`--emulate-media takes <feature>=<value>, not "${parsed['emulate-media']}"`);
 		}
 		parsed.media = { name, value };
+	}
+	if (parsed['cpu-throttle'] !== undefined) {
+		parsed.cpu_rate = Number(parsed['cpu-throttle']);
+		if (!Number.isFinite(parsed.cpu_rate) || parsed.cpu_rate < 1 || parsed.cpu_rate > 20) {
+			fail_usage(`--cpu-throttle takes a slowdown factor from 1 to 20, not "${parsed['cpu-throttle']}"`);
+		}
+	}
+	if (parsed.network !== undefined) {
+		if (!Object.hasOwn(NETWORK_PROFILES, parsed.network)) {
+			fail_usage(`--network takes one of ${Object.keys(NETWORK_PROFILES).join(', ')}, not "${parsed.network}"`);
+		}
+		parsed.network_conditions = { offline: false, ...NETWORK_PROFILES[parsed.network] };
 	}
 	parsed.page_path = resolve(parsed.page);
 	parsed.root_path = parsed.root === undefined ? dirname(parsed.page_path) : resolve(parsed.root);
@@ -649,6 +685,17 @@ async function run() {
 			await setup('Emulation.setEmulatedMedia',
 				{ features: [{ name, value }] }, session);
 			process.stdout.write(`run_page: emulating ${name}: ${value}\n`);
+		}
+		if (options.cpu_rate !== undefined) {
+			await setup('Emulation.setCPUThrottlingRate', { rate: options.cpu_rate }, session);
+			process.stdout.write(`run_page: CPU throttled ${options.cpu_rate}x ` +
+				'(desktop emulation, not a device)\n');
+		}
+		if (options.network_conditions) {
+			await setup('Network.enable', {}, session);
+			await setup('Network.emulateNetworkConditions', options.network_conditions, session);
+			process.stdout.write(`run_page: network ${options.network} ` +
+				`${JSON.stringify(options.network_conditions)} (desktop emulation, not a device)\n`);
 		}
 		if (options['hide-extension']) {
 			await setup('Page.addScriptToEvaluateOnNewDocument', {

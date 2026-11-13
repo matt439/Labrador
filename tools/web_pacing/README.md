@@ -167,3 +167,13 @@ The driver sets real query parameters before the module starts, runs evolving
 and frozen modes, and checks actual WebGL frames, completed ids, CPU phase
 rows and the exact marked counts. No real display or phone evidence is
 supplied by this tool.
+
+## Throttled desktop rehearsal
+
+`throttle_input.mjs` and `bundle_load_input.mjs` are `run_page.mjs --input`
+drivers for [the method's section 5](../../docs/port/pacing-method.md#5-throttled-desktop-rehearsal):
+the first runs fresh `?pacing=topout` triggers under `--cpu-throttle`, the
+second loads the packaged page and clicks Play under `--network`. Both write
+summaries made by `throttle.mjs` to `LABRADOR_THROTTLE_OUT`.
+`throttle.test.mjs` holds those summaries on synthetic exports. Neither driver
+is a ctest entry, and a throttled desktop is not a phone.
