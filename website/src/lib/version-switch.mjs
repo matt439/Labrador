@@ -124,3 +124,18 @@ export function missingNotice(params, currentLabel) {
 	return `The page /${route} that you were reading in ${fromLabel} is not part of ${currentLabel}, `
 		+ `so this is the ${currentLabel} documentation overview.`;
 }
+
+/**
+ * The release's own copy of the page an erratum's development href names, or
+ * null when the href is not a site page or that release has no such page.
+ * An erratum links to the development page that has it right; this is the
+ * frozen page it corrects.
+ */
+export function erratumReleasePage(href, version) {
+	if (typeof href !== 'string' || !href.startsWith('/') || href.startsWith('//')) return null;
+	const [pathname, fragment] = href.split('#', 2);
+	const route = stripBase(pathname, '/');
+	if (route === null || route.startsWith('versions/')) return null;
+	if (!version.pages.includes(route)) return null;
+	return version.path + route + (fragment === undefined ? '' : `#${fragment}`);
+}

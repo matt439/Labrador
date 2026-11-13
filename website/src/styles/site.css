@@ -70,6 +70,13 @@
 	font-size: var(--sl-text-lg);
 }
 
+/* The one sentence under the hero that tells a beginner where to begin. */
+.welcome {
+	max-width: 46rem;
+	margin-bottom: 1.5rem;
+	font-size: var(--sl-text-lg);
+}
+
 /* A grid of equal cells, so the facts never wrap into a ragged second line. */
 .facts {
 	display: grid;

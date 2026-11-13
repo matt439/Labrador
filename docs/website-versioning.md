@@ -425,9 +425,13 @@ change; a breaking change needs a new file name or parameter.
 `/versions/` is a development page listing Development, with its commit, and
 every published release newest first: a "Latest release" badge, the published
 and source dates, links to the release's documentation, home page and source
-tree, its full commit, its archive and SHA-256, and its errata. Until the first
-release it says that no release documentation has been published. It is not
-searchable.
+tree, its full commit, its archive and SHA-256, and its errata. Each erratum
+links to its development page, which has it right. With JavaScript, the page
+reads `/versions/index.json` and, where that release's page list has the
+erratum's site path, adds a link to the release's own copy that it corrects;
+an erratum whose page the release lacks keeps only its development link.
+Until the first release it says that no release documentation has been
+published. It is not searchable.
 
 The selector follows the pages at the foot of the sidebar on desktop and of
 the phone menu, once per page: most readers never change version, so it does
