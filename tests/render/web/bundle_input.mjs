@@ -12,7 +12,7 @@ export const { ready, strict_complaints, expected_complaint, prepare } = bundle_
 export default async function drive(page) {
 	const { evaluate, send } = page;
 	const { assert, until, frames, button_visible, button_exposed, accessibility_note,
-		click_play, key, loaded, quit, navigate, canvas_box, desktop_instructions, play_restore_replay,
+		click_play, key, loaded, heap, warmed_heap, quit, navigate, canvas_box, desktop_instructions, play_restore_replay,
 		real_loss_and_tab_switch, repeated_play, context_timeout,
 		truncated_and_runtime_failure } = steps(page, state);
 	const requests = state.requests;
@@ -72,9 +72,11 @@ export default async function drive(page) {
 	await key('KeyA', 65);
 	await click_play();
 	await loaded(0);
+	await warmed_heap(0);
 	let box = await canvas_box();
 	assert(on_screen(box) && box.height > box.width, `portrait canvas ${JSON.stringify(box)}`);
 	await quit(0);
+	await heap(0, 'at quit');
 	state.phase = 'desktop layout';
 	await send('Emulation.setTouchEmulationEnabled', { enabled: false });
 	await send('Emulation.setDeviceMetricsOverride',

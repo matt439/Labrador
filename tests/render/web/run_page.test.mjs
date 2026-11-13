@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { NETWORK_PROFILES, USAGE, UsageError, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
+import { NETWORK_PROFILES, USAGE, UsageError, heap_line, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
 
 const page = join('build', 'samples', 'minimal', 'MinimalSample.html');
 const sample = ['--browser', 'chrome', '--page', page, '--quit-keys', 'Escape,Enter'];
@@ -72,4 +72,12 @@ test('a context-lost warning is excused only by the page\'s own report of an una
 	assert.deepEqual(unexcused_browser_complaints([lost, lost], [report]), [lost]);
 	assert.deepEqual(unexcused_browser_complaints([other], [report, report]), [other]);
 	assert.deepEqual(unexcused_browser_complaints([lost], [`said: ${report}`]), [lost]);
+});
+
+test('a heap line names each module heap in bytes and MiB, a collected one and none at all', () => {
+	assert.equal(heap_line('after 60 frames', [16777216]),
+		'run_page: wasm heap after 60 frames: 16777216 bytes (16.00 MiB)\n');
+	assert.equal(heap_line('at quit', [17891328, null]),
+		'run_page: wasm heap at quit: 17891328 bytes (17.06 MiB), collected\n');
+	assert.equal(heap_line('at quit', []), 'run_page: wasm heap at quit: no module heap was seen\n');
 });

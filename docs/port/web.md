@@ -1164,7 +1164,9 @@ Four pieces, in order of how much they are unknown. The first is M7a; the rest a
   find on launch day. *Retired for content:* a context without S3TC decodes
   the blocks on the CPU (M7b), so a phone's browser draws the same art and
   text at four to eight times the texture memory. What is left of it is that
-  memory, on a real phone, which nothing has measured.
+  memory, on a real phone, which nothing has measured. The desktop baseline
+  is recorded, not gated: every sample's wasm heap stays at the module's
+  initial 17.1 MiB with S3TC or without it ([as built](web-as-built.md)).
 - **R5 — pacing.** rAF against a fixed 60 Hz step (§4). Measure on a 60 Hz and
   a high-refresh display before M3 is called done.
 - **R6 — the particle field on the low tier.** 9,600 particles a frame,

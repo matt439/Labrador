@@ -685,6 +685,38 @@ error that reached `Module.onError`, and LineSweeper given Escape, Down,
 Enter, which is RESTART, timed out without a quit. With the null renderer,
 as CI's second wasm configure builds it, they pass too.
 
+**Each page's heap is printed, and on desktop Chrome it never grew** (REV#154,
+2026-11-13). Every browser build links with `-sALLOW_MEMORY_GROWTH=1`
+(`cmake/settings.cmake`), so the byte length of the module's
+`WebAssembly.Memory` is the heap the page has asked the browser for. The
+sample pages' runs print it after their warm-up frames and again at quit
+(`run_page: wasm heap ...`), and `LineSweeperBundlePageTests` prints each
+game instance's, held weakly by the hook that already counts live heaps,
+after 60 frames of play and at quit (`heap - ...`). The figures are records,
+not a gate: nothing compares them, and they measure what the heap has grown
+to, not how much of it `malloc` is using. Measured at `wasm-release` in
+headless Chrome 157 on ANGLE over Direct3D 11 on the RTX 5080, each page once
+as built and once with `--hide-extension WEBGL_compressed_texture_s3tc`, which
+sends every texture through the CPU block decoder:
+
+| Page | Declared initial memory | After warm-up | At quit |
+|---|---|---|---|
+| minimal, collision, local_multiplayer, LineSweeper | 274 pages | 17,956,864 bytes (17.13 MiB) | the same |
+| audio | 275 pages | 18,022,400 bytes (17.19 MiB) | the same |
+| components | 274 pages | 17,956,864 bytes | the same; the run then fails locally on full screen "not granted", as it does without this change |
+| LineSweeper, 5,400 frames (90 s) of unattended play | 274 pages | 17,956,864 bytes | the same |
+| LineSweeper's pacing fixtures at 9,600 live particles (`topout`, `topout-frozen`) | 274 pages | 17,956,864 bytes after each capture | |
+| The bundle page: two games around a context restore, the portrait game and five repeated games | 274 pages | 17,956,864 bytes for every instance | the same |
+
+Hiding S3TC changed no figure. So the desktop baseline R4 lacked is that
+LineSweeper and every other sample run inside the memory the module declares
+at instantiation, about 17.1 MiB, whether its textures upload as BC or are
+decoded to r8g8b8a8 first: the decoder's four-to-eight-times cost is not on
+the wasm heap past its initial size, and what it costs in texture memory is
+still unmeasured. Firefox's and Safari's sample runners do not print the
+heap; the bundle page's steps, which their bundle runs share, do, but only
+Chromium's figures are recorded here. No phone has been measured (`SM-13`).
+
 **M5's half in this repository is built, and the demo is live**: its
 done-when is a live URL, the deploy is the owner's, in the site's own
 repository, and it is at <https://mattharding.dev/demo/linesweeper/>,
