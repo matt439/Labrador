@@ -72,7 +72,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(self.plan(paths=["engine/render/"])["scope"]["paths"], ["engine/render"])
 
     def test_outside_traversal_and_unmodeled_paths_are_rejected(self):
-        for path in ("", "engine/rendered/file.cpp", "engine/audio", "/engine/render", "C:\\engine\\render",
+        for path in ("", "engine/rendered/file.cpp", "engine/audios", "engine/scene", "samples/audio", "/engine/render", "C:\\engine\\render",
                      "C:engine/render", "../engine/render", "engine/render/../assets", "\\\\host\\share\\engine\\render"):
             with self.subTest(path=path), self.assertRaises(planner.PlanError):
                 self.plan(paths=[path])
@@ -152,6 +152,98 @@ class PlanTests(unittest.TestCase):
         self.assertNotIn("audio-backend-initialization", plan["configurations"][4]["steps"][2]["effects"])
         self.assertIn("browser-audio-initialization-when-registered", plan["configurations"][-2]["steps"][2]["effects"])
         self.assertNotIn("browser-audio-initialization-when-registered", plan["configurations"][-1]["steps"][2]["effects"])
+
+    def test_each_area_selects_its_tracks_in_sweep_order(self):
+        self.assertEqual(self.plan()["scope"], {"areas": ["render"], "paths": []})
+        for area, tracks in planner.AREAS.items():
+            with self.subTest(area=area):
+                plan = self.plan(areas=[area])
+                self.assertEqual(plan["scope"], {"areas": [area], "paths": []})
+                self.assertEqual([item["id"] for item in plan["configurations"]], list(tracks))
+                self.assertEqual(plan["preflight"]["checks"][0]["configurations"], list(tracks))
+        self.assertEqual([item["id"] for item in self.plan(areas=["audio"])["configurations"]],
+                         ["x64-debug", "x64-debug-null", "wasm-debug", "wasm-release-null"])
+        self.assertEqual([item["id"] for item in self.plan(areas=["app"])["configurations"]], list(planner.CONFIGURATIONS))
+        with self.assertRaises(planner.PlanError):
+            self.plan(areas=["scene"])
+        with self.assertRaises(planner.PlanError):
+            self.plan(areas=["audio"], paths=["engine/audio"])
+
+    def test_paths_select_the_union_of_their_areas(self):
+        plan = self.plan(paths=["engine\\audio\\xaudio2\\deleted.cpp", "engine/input/web", "engine/audio"])
+        self.assertEqual(plan["scope"], {"areas": ["audio", "input"],
+                                         "paths": ["engine/audio", "engine/audio/xaudio2/deleted.cpp", "engine/input/web"]})
+        self.assertEqual([item["id"] for item in plan["configurations"]], list(planner.AUDIO_INPUT_TRACKS))
+        mixed = self.plan(paths=["engine/app/win32/window.cpp", "engine/audio/sound_bank.cpp"])
+        self.assertEqual(mixed["scope"]["areas"], ["app", "audio"])
+        self.assertEqual([item["id"] for item in mixed["configurations"]], list(planner.CONFIGURATIONS))
+        by_area = self.plan(areas=["audio", "app", "audio"])
+        self.assertEqual(by_area["scope"]["areas"], ["app", "audio"])
+        self.assertEqual(mixed["configurations"], by_area["configurations"])
+
+    def test_area_registrations_join_on_shared_tracks(self):
+        def required(plan, name):
+            return next(item for item in plan["configurations"] if item["id"] == name)["required_test_names"]
+        audio = self.plan(areas=["audio"])
+        self.assertEqual(required(audio, "x64-debug"), ["AudioTests", "AudioSampleTests"])
+        self.assertEqual(required(audio, "x64-debug-null"), ["AudioTests", "AudioSampleTests", "AudioSmokeTests"])
+        self.assertIn("AudioPageTests", next(item for item in audio["configurations"]
+                                             if item["id"] == "wasm-debug")["required_browser_test_names"])
+        self.assertEqual(required(self.plan(areas=["input"]), "wasm-release-null"), ["InputTests"])
+        app = self.plan(areas=["app"])
+        self.assertEqual(required(app, "x64-debug-null"),
+                         ["AppTests", "MinimalSmokeTests", "CollisionSmokeTests", "LocalMultiplayerSmokeTests"])
+        self.assertEqual(required(app, "wasm-debug"), ["AppTests"])
+        self.assertNotIn("AppTests", required(self.plan(), "x64-debug"))
+        union = self.plan(areas=["render", "app"])
+        self.assertEqual(required(union, "x64-debug"),
+                         ["AppTests", "MinimalSmokeTests", "CollisionSmokeTests",
+                          "RenderTests", "SceneTests", "AudioTests", "RenderPixelTests"])
+        for item in union["configurations"]:
+            self.assertEqual(len(item["required_test_names"]), len(set(item["required_test_names"])))
+
+    def test_required_tests_must_be_in_the_inventory_for_their_track(self):
+        path = self.root / "tests/ctest_inventory.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["some_configurations"]["AudioSmokeTests"] = ["x64-release-null"]
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaisesRegex(planner.PlanError, "AudioSmokeTests for x64-debug-null"):
+            self.plan(areas=["audio"])
+        self.assertEqual(len(self.plan()["configurations"]), 7)
+
+    def test_area_manual_obligations_name_what_the_sweep_cannot_show(self):
+        def ids(plan):
+            return [item["id"] for item in plan["manual_obligations"]]
+        audio = self.plan(areas=["audio"])
+        self.assertEqual(ids(audio), ["release-configurations", "xaudio2-endpoint-smoke", "listening",
+                                      "registration-before-future-execution", "other-verification"])
+        self.assertEqual(audio["manual_obligations"][0]["detail"], "x64-release, x64-release-null, wasm-release")
+        self.assertIn("WEB#3", audio["manual_obligations"][2]["detail"])
+        self.assertIn("physical-input", ids(self.plan(areas=["input"])))
+        self.assertNotIn("listening", ids(self.plan(areas=["input"])))
+        self.assertEqual(ids(self.plan(areas=["app"])), ids(self.plan()))
+        self.assertTrue(all(item["status"] == "not-run" for item in audio["manual_obligations"]))
+        text = planner.format_text(self.plan(areas=["audio", "input"]))
+        self.assertTrue(text.startswith("Verification plan for audio, input only"))
+
+    def test_preflight_inspects_only_the_planned_tracks(self):
+        environment, tools, browser = self.fake_tooling()
+        environment.pop("VULKAN_SDK")
+        plan = self.plan(areas=["input"], browser=browser)
+        checks = self.inspect(plan, environment, tools)
+        self.assertFalse([check for check in checks if check["blocking"]])
+        self.assertFalse([check for check in checks if "VULKAN_SDK" in check["id"]])
+        planned = set(planner.AUDIO_INPUT_TRACKS)
+        self.assertTrue(all(check["configurations"] and set(check["configurations"]) <= planned for check in checks))
+        self.assertTrue(any(check["blocking"] for check in self.inspect(self.plan(browser=browser), environment, tools)))
+
+    def test_cli_repeats_areas_for_a_union(self):
+        code, output, errors = self.invoke(["--area", "audio", "--area", "input", "--format", "json"])
+        self.assertEqual((code, errors), (0, ""))
+        plan = json.loads(output)
+        self.assertEqual(plan["schema_version"], 2)
+        self.assertEqual(plan["scope"]["areas"], ["audio", "input"])
+        self.assertEqual(len(plan["configurations"]), 4)
 
     def test_missing_parent_cycle_duplicate_and_unsupported_shapes_fail(self):
         mutations = [lambda data: data["configurePresets"][0].update(inherits="missing"),
@@ -507,7 +599,8 @@ class PlanTests(unittest.TestCase):
         self.assertEqual({step["result"] for item in plan["configurations"] for step in item["steps"]}, {"not-run"})
 
     def test_invalid_cli_selector_or_browser_does_not_run_a_preflight(self):
-        for arguments in ([], ["--area", "audio"], ["--area", "render", "--path", "engine/render"]):
+        for arguments in ([], ["--area", "scene"], ["--area", "render", "--path", "engine/render"],
+                          ["--area", "audio", "--path", "engine/audio"]):
             with self.subTest(arguments=arguments), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(planner.main(arguments, root=self.root,
                                              inspector=lambda _: self.fail("preflight called")), 2)

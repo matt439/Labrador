@@ -855,8 +855,9 @@ written.
   Optional preflight reads whitelisted tooling/environment/cache data, detects
   stale axes/compilers/emulators/browser selections, and leaves every phase
   `not-run`. Unsupported source/preset shapes and selectors fail explicitly.
-  The [contract](../verification.md) limits this mapping to render paths;
-  the real sweep and SM-18 remain open.
+  The [contract](../verification.md) then limited this mapping to render paths;
+  audio, input and app areas were added on 2026-11-13 (`REV#139`).
+  The real sweep and SM-18 remain open.
   All 31 focused synthetic tests pass and independent source review has no
   remaining findings. The actual checkout emits seven configurations/21 unrun
   phases. Read-only preflight exits 1 with eight missing current-shell tooling

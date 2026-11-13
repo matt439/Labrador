@@ -121,6 +121,13 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual({item["result"] for item in configuration["validations"].values()}, {"passed"})
             self.assertTrue(all(Path(step["stdout_path"]).is_file() for step in configuration["steps"]))
 
+    def test_an_area_subset_runs_only_its_tracks(self):
+        self.plan = self.fixture.plan(areas=["audio"])
+        report = self.execute()
+        self.assertEqual((report["result"], report["exit_code"], report["failure"]), ("passed", 0, None))
+        self.assertEqual(list(dict.fromkeys(name for name, _, _, _ in self.trace)), list(planner.AUDIO_INPUT_TRACKS))
+        self.assertIn("listening", [item["id"] for item in report["manual_obligations"]])
+
     def test_missing_late_prerequisite_blocks_every_command_before_output_creation(self):
         def inspect(plan, **options):
             return [{"id": "EMSDK", "configurations": ["wasm-debug"], "blocking": True,

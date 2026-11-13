@@ -1,4 +1,4 @@
-"""Plan render verification, or explicitly execute its first-failure sweep.
+"""Plan render, audio, input or app verification, or explicitly execute its first-failure sweep.
 
 Default planning reads repository rules without tooling discovery. --preflight
 explicitly adds read-only tooling-environment, tool-path and cache inspection.
@@ -30,6 +30,13 @@ CONFIGURATIONS = tuple(RENDER_BACKENDS)
 BACKENDS = tuple(RENDER_BACKENDS.values())
 D3D_PRESETS = tuple(name for name, render in RENDER_BACKENDS.items() if render in {"d3d11", "d3d12"})
 WASM_CONFIGURATIONS = tuple(name for name in CONFIGURATIONS if name.startswith("wasm-"))
+# Each modeled area's tracks, in sweep order. Audio and input have one backend
+# per native/browser side, so the default native preset, native null (recorded
+# audio, synthetic input with hidden windows) and both browser tracks cover them.
+# The window and application loop reach every render backend, so app keeps all seven.
+AUDIO_INPUT_TRACKS = ("x64-debug", "x64-debug-null", "wasm-debug", "wasm-release-null")
+AREAS = {"render": CONFIGURATIONS, "audio": AUDIO_INPUT_TRACKS, "input": AUDIO_INPUT_TRACKS, "app": CONFIGURATIONS}
+AREA_ROOTS = {"engine/" + area: area for area in AREAS}
 ENVIRONMENT_KEYS = ("PATH", "PATHEXT", "VCPKG_ROOT", "VULKAN_SDK", "EMSDK", "EMSDK_NODE", "MSYSTEM")
 # A cmd started from Git Bash inherits MSYSTEM; emsdk_env.bat then prints bash
 # exports instead of setting the environment, and emcc is not on PATH.
@@ -52,19 +59,47 @@ class PlanError(ValueError):
     """The current repository/selector is outside the planner's modeled rules."""
 
 
-def render_paths(paths: list[str]) -> list[str]:
+def selected_paths(paths: list[str]) -> tuple[list[str], list[str]]:
+    """The normalized repo-relative selectors and the modeled areas they select, both sorted."""
     normalized = set()
+    areas = set()
     for original in paths:
         value = original.replace("\\", "/")
         parts = PurePosixPath(value).parts
         if (not value or PureWindowsPath(original).drive or value.startswith("/")
                 or ".." in parts):
-            raise PlanError(f"use a repo-relative render path without traversal: {original!r}")
+            raise PlanError(f"use a repo-relative engine path without traversal: {original!r}")
         value = PurePosixPath(value).as_posix()
-        if value != "engine/render" and not value.startswith("engine/render/"):
-            raise PlanError(f"area not modeled: {original!r}; only engine/render and its descendants are supported")
+        area = next((name for prefix, name in AREA_ROOTS.items()
+                     if value == prefix or value.startswith(prefix + "/")), None)
+        if area is None:
+            raise PlanError(f"area not modeled: {original!r}; only " + ", ".join(AREA_ROOTS) +
+                            " and their descendants are supported")
         normalized.add(value)
-    return sorted(normalized)
+        areas.add(area)
+    return sorted(normalized), sorted(areas)
+
+
+def required_tests(area: str, name: str, render: str) -> list[str]:
+    """The registrations an area requires of one planned track."""
+    native = not name.startswith("wasm-")
+    if area == "render":
+        names = ["RenderTests", "SceneTests", "AudioTests"]
+        if native and render != "null":
+            names += ["RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"]
+        if render == "d3d12":
+            names.append("D3D12SynchronizationTests")
+        return names
+    if area == "audio":
+        return ["AudioTests", "AudioSampleTests"] + (["AudioSmokeTests"] if name == "x64-debug-null" else [])
+    if area == "input":
+        return ["InputTests"]
+    names = ["AppTests"]
+    if native:
+        names += ["MinimalSmokeTests", "CollisionSmokeTests"]
+    if name == "x64-debug-null":
+        names.append("LocalMultiplayerSmokeTests")
+    return names
 
 
 def preset_index(document: dict, section: str) -> dict[str, dict]:
@@ -137,7 +172,7 @@ def test_preset_output(index: dict[str, dict], name: str, parents: tuple[str, ..
     return result
 
 
-def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
+def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str], list[str], dict[str, set[str]]]:
     try:
         sources = {name: (root / name).read_text(encoding="utf-8") for name in SOURCE_FILES}
         document = json.loads(sources["CMakePresets.json"])
@@ -192,6 +227,11 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
     if set(pages) - set(chromium) or "LineSweeperBundlePageTests" not in chromium:
         raise PlanError("a CMake sample page is missing from chromium_registered; review required registrations")
     null_chromium = [name for name in chromium if "wasm-release-null" in release[name]]
+    every = inventory.get("every_configuration")
+    if not isinstance(every, list) or any(not isinstance(value, list) for value in release.values()):
+        raise PlanError("tests/ctest_inventory.json's every_configuration/some_configurations shapes changed")
+    registered = {name: set(every) | {test for test, ids in release.items() if name in ids}
+                  for name in CONFIGURATIONS}
     guards = []
     guarded = set()
     for command in re.finditer(r"\b(if|elseif|else|endif|add_test|labrador_page_test)\s*\(([^)]*)\)",
@@ -209,18 +249,27 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str]]:
                 guarded.add(match[1])
     if guarded != {"LineSweeperBundlePageTests", "LineSweeperPacingPageTests"}:
         raise PlanError("null bundle/pacing exclusions changed; review forbidden registrations")
-    return document, index, chromium, null_chromium
+    return document, index, chromium, null_chromium, registered
 
 
-def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | None = None) -> dict:
-    selected = render_paths(paths or [])
+def build_plan(root: Path, *, paths: list[str] | None = None, areas: list[str] | None = None,
+               browser: str | None = None) -> dict:
+    if paths and areas:
+        raise PlanError("select areas or paths, not both")
+    selected, path_areas = selected_paths(paths or [])
+    areas = path_areas if paths else sorted(set(areas or ["render"]))
+    unknown = set(areas) - set(AREAS)
+    if unknown:
+        raise PlanError(f"area not modeled: {sorted(unknown)}; choose from " + ", ".join(AREAS))
+    tracks = [name for name in CONFIGURATIONS if any(name in AREAS[area] for area in areas)]
     if browser is not None:
         browser = browser.replace("\\", "/")
         if not (PureWindowsPath(browser).is_absolute() or PurePosixPath(browser).is_absolute()):
             raise PlanError("--browser must be an explicit absolute path; it is not discovered or launched")
-    _, presets, chromium, null_chromium = read_rules(root)
+    _, presets, chromium, null_chromium, registered = read_rules(root)
     configurations = []
-    for name, render in RENDER_BACKENDS.items():
+    for name in tracks:
+        render = RENDER_BACKENDS[name]
         wasm = name.startswith("wasm-")
         preset_name = "wasm-release" if name == "wasm-release-null" else name
         preset = configure_preset(presets, preset_name)
@@ -271,11 +320,11 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
                      ("build", build, ["build-tree-writes", "automatic-reconfigure",
                                        "possible-dependency-network"] + (["SDK-cache-use"] if wasm else [])),
                      ("test", test, runtime))]
-        required = ["RenderTests", "SceneTests", "AudioTests"]
-        if not wasm and render != "null":
-            required += ["RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"]
-        if render == "d3d12":
-            required.append("D3D12SynchronizationTests")
+        required = list(dict.fromkeys(test for area in areas for test in required_tests(area, name, render)))
+        unregistered = [test for test in required if test not in registered[name]]
+        if unregistered:
+            raise PlanError(f"tests/ctest_inventory.json does not register {', '.join(unregistered)} "
+                            f"for {name}; review this planner's required tests")
         browser_tests = list(chromium) if wasm and render == "gl" else []
         configurations.append({"id": name, "configure_preset": preset_name, "binary_dir": binary_dir,
                                "expected": expected, "toolchain": VCPKG_TOOLCHAIN,
@@ -292,13 +341,32 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
                                    if render == "null" else []})
     vulkan = any(path == "engine/render/vulkan" or path.startswith("engine/render/vulkan/") for path in selected)
     sync = "required" if vulkan else "conditional"
+    release_names = [name.replace("-debug", "-release") for name in tracks if "-debug" in name]
     manual = [
         {"id": "release-configurations", "condition": "supplemental per-change evidence", "status": "not-run",
-         "source": "docs/product/STORIES.md#sm-18",
-         "detail": "x64-release, x64-release-d3d12, x64-release-gl, x64-release-vulkan, x64-release-null, wasm-release"},
-        {"id": "vulkan-synchronization", "condition": sync, "status": "not-run",
-         "source": "docs/review/vulkan/README.md#2-what-was-run-and-what-the-layers-said",
-         "detail": "For Vulkan source changes use validate_sync layer settings and stdout output; device execution is separate."},
+         "source": "docs/product/STORIES.md#sm-18", "detail": ", ".join(release_names)}]
+    if "x64-debug-vulkan" in tracks:
+        manual.append(
+            {"id": "vulkan-synchronization", "condition": sync, "status": "not-run",
+             "source": "docs/review/vulkan/README.md#2-what-was-run-and-what-the-layers-said",
+             "detail": "For Vulkan source changes use validate_sync layer settings and stdout output; device execution is separate."})
+    if "audio" in areas:
+        manual += [
+            {"id": "xaudio2-endpoint-smoke", "condition": "audio changes", "status": "not-run",
+             "source": "samples/audio/README.md",
+             "detail": "XAudio2 AudioTests use SoundBank::silent(); the audio sample's XAudio2 smoke needs an "
+                       "active endpoint and stays a check made by hand."},
+            {"id": "listening", "condition": "audio changes", "status": "not-run",
+             "source": "docs/port/web-to-be-tested.md#needs-ears-web-audio",
+             "detail": "Recorded null waves, Node webaudio_tests and AnalyserNode measurements are not listening "
+                       "evidence; nobody has listened to the output (WEB#3)."}]
+    if "input" in areas:
+        manual.append(
+            {"id": "physical-input", "condition": "input changes", "status": "not-run",
+             "source": "docs/port/web-to-be-tested.md#needs-a-gamepad-m4",
+             "detail": "Null tests use synthetic input and WebWindowTests a synthetic visibility event; real pads "
+                       "and touchscreens are separate, and a pad press does not unlock Web Audio."})
+    manual += [
         {"id": "registration-before-future-execution", "condition": "before any future test execution", "status": "not-run",
          "source": "AGENTS.md",
          "detail": "Reject zero selected tests and missing required/browser registrations; "
@@ -306,12 +374,12 @@ def build_plan(root: Path, *, paths: list[str] | None = None, browser: str | Non
         {"id": "other-verification", "condition": "affected contracts", "status": "not-run", "source": "AGENTS.md",
          "detail": "Website/lints/consumer packaging, opt-in probe builds, captures, listening, "
                    "Safari/pads/touch/phone and display pacing are separate; no hardware evidence is inferred."}]
-    return {"schema_version": 1, "mode": "plan", "scope": {"area": "render", "paths": selected},
+    return {"schema_version": 2, "mode": "plan", "scope": {"areas": list(areas), "paths": selected},
             "source_rules": ["AGENTS.md", "docs/product/STORIES.md#sm-17", "docs/product/STORIES.md#sm-18", *SOURCE_FILES],
             "configurations": configurations, "manual_obligations": manual,
             "not_modeled": ["other areas", "Release sweep execution", "physical acceptance"],
             "preflight": {"enabled": False, "checks": [
-                {"id": "tooling-and-caches", "configurations": list(CONFIGURATIONS), "category": "tooling",
+                {"id": "tooling-and-caches", "configurations": list(tracks), "category": "tooling",
                  "status": "not-checked", "detail": "Use --preflight for read-only inspection; no commands execute.",
                  "blocking": False}]}}
 
@@ -343,9 +411,13 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
     root = Path(plan["configurations"][0]["steps"][0]["cwd"])
     checks = []
     windows = host == "win32"
+    planned = [item["id"] for item in plan["configurations"]]
 
     def add(identifier, ids, category, status, detail, blocking=None):
-        checks.append({"id": identifier, "configurations": list(ids), "category": category,
+        ids = [name for name in planned if name in ids]
+        if not ids:
+            return
+        checks.append({"id": identifier, "configurations": ids, "category": category,
                        "status": status, "detail": detail,
                        "blocking": status in {"missing", "mismatch", "unsupported-host"} if blocking is None else blocking})
 
@@ -455,7 +527,8 @@ def inspect_environment(plan: dict, *, environment: dict[str, str] | None = None
 
 
 def format_text(plan: dict) -> str:
-    lines = ["Render verification plan only; every phase is not-run.", "argv arrays are data, not shell-ready command strings."]
+    lines = ["Verification plan for " + ", ".join(plan["scope"]["areas"]) + " only; every phase is not-run.",
+             "argv arrays are data, not shell-ready command strings."]
     for configuration in plan["configurations"]:
         lines.append(f"\n{configuration['id']}: {json.dumps(configuration['expected'], sort_keys=True)}")
         for step in configuration["steps"]:
@@ -477,13 +550,14 @@ def format_text(plan: dict) -> str:
 def main(arguments: list[str] | None = None, *, root: Path | None = None, inspector=None, executor=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=lambda prog: argparse.HelpFormatter(prog, width=88))
     selection = parser.add_mutually_exclusive_group(required=True)
-    selection.add_argument("--area", choices=["render"])
-    selection.add_argument("--path", action="append", help="repo-relative logical render selector; repeat for a union")
+    selection.add_argument("--area", action="append", choices=list(AREAS), help="modeled area; repeat for a union")
+    selection.add_argument("--path", action="append",
+                           help="repo-relative engine/render, audio, input or app selector; repeat for a union")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     behavior = parser.add_mutually_exclusive_group()
     behavior.add_argument("--preflight", action="store_true", help="inspect tooling environment/paths/caches without running tools")
     parser.add_argument("--browser", help="absolute Chromium path to include in planned wasm configure argv")
-    behavior.add_argument("--execute", action="store_true", help="explicitly run the seven-track sweep; stops on first failure")
+    behavior.add_argument("--execute", action="store_true", help="explicitly run the selected tracks; stops on first failure")
     parser.add_argument("--output-dir", help="new directory for execution logs/report; valid only with --execute")
     try:
         options = parser.parse_args(arguments)
@@ -492,7 +566,8 @@ def main(arguments: list[str] | None = None, *, root: Path | None = None, inspec
     try:
         if options.output_dir is not None and (not options.execute or not options.output_dir.strip()):
             raise PlanError("--output-dir requires --execute and a nonempty new directory")
-        plan = build_plan(root if root is not None else REPOSITORY, paths=options.path, browser=options.browser)
+        plan = build_plan(root if root is not None else REPOSITORY, paths=options.path, areas=options.area,
+                          browser=options.browser)
         if options.execute:
             if executor is None:
                 from verification_runner import execute_plan

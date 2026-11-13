@@ -104,19 +104,24 @@ CI's full matrix remains required. Match focused local checks to the change.
 
 `python tools/verify_changes.py --area render` prints the render verification
 plan; `--path engine/render/gl/renderer.cpp --format json` selects it by path.
+`--area` takes `render`, `audio`, `input` or `app` and repeats for a union;
+`--path` selects the areas of the `engine/` folders it names.
 The optional `--preflight` inspects tooling and caches without running phases.
 Explicit `--execute` runs the sweep only when its mixed runtime is authorized;
 it checks all prerequisites first, validates caches and test registrations,
 and stops at the first command or result failure. [Verification](docs/verification.md)
 owns the command contract, logs and remaining real-sweep qualification.
-The current mapping covers render paths only:
+The current mapping covers four engine folders:
 
 | Changed area | Planned selections and additional obligations |
 |---|---|
 | `engine/render/`, including backend folders | Five native Debug render presets below, `wasm-debug` GL and CI's `wasm-release-null` override; Release and device evidence stay explicit. |
 | `engine/render/gl/` | The same matrix; wasm compiles `web_context.cpp` and shared GL under clang, with pixel/no-S3TC/context page acceptance. |
 | `engine/render/vulkan/` | The same matrix plus the synchronization review's `validate_sync` procedure below. |
-| Other engine folders, samples, website and tooling | Not modeled by the render planner; follow their current owners and affected-configuration checks, including the independent audio rules below. |
+| `engine/audio/` | `x64-debug` (XAudio2, silent bank), `x64-debug-null` (recorded waves, `AudioSmokeTests`), `wasm-debug` (Node `AudioTests`, `AudioSampleTests`, pages) and `wasm-release-null`; the XAudio2 endpoint smoke and listening stay unrun. |
+| `engine/input/` | The same four tracks with `InputTests` and the browser pages; real pads and touchscreens stay unrun. |
+| `engine/app/` | All seven render tracks, with `AppTests`, native `MinimalSmokeTests` and `CollisionSmokeTests` and native-null `LocalMultiplayerSmokeTests`; the window reaches every backend. |
+| Other engine folders, samples, website and tooling | Not modeled by the planner; follow their current owners and affected-configuration checks. |
 
 `python tools/ci_gap_report.py --execute` builds and tests what CI cannot
 (GL/Vulkan pixel and smoke tests on a real driver, four release presets,
@@ -282,7 +287,7 @@ pull request already passed. Citation checking skips `website/`.
   `wasm-debug`, whose list needs a Chromium and a Firefox. Adding,
   removing or renaming an entry changes it in the same commit. It sees entries,
   not the doctest cases inside them. Its `chromium_registered` list names the
-  entries configure adds only with a Chromium, for the render planner.
+  entries configure adds only with a Chromium, for the verification planner.
 - CI's `consumer` makes Get Started's starter ZIP from this checkout
   (`starter_zip.py`, the release asset), extracts it with Windows' `tar`,
   builds it, verifies only
