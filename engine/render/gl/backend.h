@@ -218,6 +218,12 @@ namespace labrador
 		// on a premultiplied blend is visible.
 		bool frame_submitted = false;
 
+		// Between begin_frame and end_frame, for set_post_effects' and
+		// begin_overlay's refusals; and the first overlay view's index this
+		// frame, or -1 before begin_overlay.
+		bool frame_begun = false;
+		int overlay_start = -1;
+
 		// The size the shell last reported, and the only thing
 		// window_size_changed answers against. NOT the size of anything this
 		// backend draws into - see drawable_size below.

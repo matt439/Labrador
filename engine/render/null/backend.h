@@ -8,6 +8,7 @@
 #include "engine/render/render_resources.h"
 #include "engine/render/sprite_vertex.h"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -126,6 +127,17 @@ namespace labrador
 		// rather than handed back by value so that recorded_sprites() can
 		// return a reference and a test can hold it across assertions.
 		std::vector<RecordedSprite> recorded;
+
+		// The post chain set_post_effects last gave, the overlay boundary this
+		// frame (-1 before begin_overlay), and what submit() recorded of it.
+		std::vector<PostEffect> post_effects;
+		std::array<PostValues, post_effect_count> post_values{};
+		int overlay_start = -1;
+		std::vector<RecordedPass> passes;
+
+		// Between begin_frame and end_frame, as Direct3D 11 tracks it, so that
+		// set_post_effects and begin_overlay refuse what they refuse there.
+		bool frame_begun = false;
 
 		const RenderResources* resources = nullptr;
 		labrador::DeviceNotify* notify = nullptr;

@@ -146,6 +146,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 		summary: 'The renderer, draw lists, cameras and viewports, sprites, text, colours, and the files content arrives in.',
 		headers: [
 			['renderer.h', 'Renderer', 'game code'],
+			['post_effect.h', 'Post effects', 'game code'],
 			['render_resources.h', 'RenderResources', 'game code'],
 			['camera.h', 'Camera', 'game code'],
 			['viewport.h', 'Viewport', 'game code'],

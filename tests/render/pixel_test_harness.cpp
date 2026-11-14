@@ -41,6 +41,14 @@ namespace render_tests::pixel
 			buffer_side, 4);
 		this->renderer_.set_resources(&this->resources_);
 
+		// RenderPixelTestsThroughPost runs every case through the identity
+		// post material, against the same golden images (docs/effects.md).
+		if (golden::through_post_stage())
+		{
+			const PostEffect identity[] = { PostEffect::identity };
+			this->renderer_.set_post_effects(identity);
+		}
+
 		// content/ is copied beside the executable by this folder's
 		// CMakeLists, and ctest runs from the build directory.
 		load_texture_asset(this->renderer_, this->resources_,

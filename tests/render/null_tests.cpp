@@ -7,6 +7,7 @@
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
 #include "engine/render/null/recording.h"
+#include "engine/render/post_effect.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
@@ -785,4 +786,114 @@ TEST_CASE("submit is once per frame, and a second one adds nothing")
 
 	REQUIRE(next.size() == 1);
 	CHECK(next[0].corners[0].position.x == doctest::Approx(4.0f));
+}
+
+// --- the post stage (docs/effects.md#13) ------------------------------
+
+TEST_CASE("POST: no chain records no pass")
+{
+	Harness harness;
+	harness.begin(2);
+	std::ignore = harness.end();
+	CHECK(recorded_passes(harness.renderer()).empty());
+}
+
+TEST_CASE("POST: one pass a frame, whatever the view count, after the processed views")
+{
+	Harness harness;
+	const PostEffect chain[] = { PostEffect::identity };
+	harness.renderer().set_post_effects(chain);
+
+	DrawList list = harness.begin(3);
+	list.draw_sprite(harness.quad, Harness::whole(),
+		RectangleF(0.0f, 0.0f, 2.0f, 2.0f), Colour::white, 0.0f,
+		Vector2F::zero, SpriteFlip::none, 0.0f);
+	harness.renderer().begin_overlay();
+	CHECK(harness.renderer().view_count() == 4);
+	std::ignore = harness.end();
+
+	const std::vector<RecordedPass>& passes =
+		recorded_passes(harness.renderer());
+	REQUIRE(passes.size() == 1);
+	CHECK(passes[0].effect == PostEffect::identity);
+	CHECK(passes[0].processed_views == 3);
+	CHECK(passes[0].width == 640);
+	CHECK(passes[0].height == 480);
+
+	// A second submit adds nothing, and the next frame starts empty.
+	harness.renderer().submit();
+	CHECK(recorded_passes(harness.renderer()).size() == 1);
+	harness.renderer().end_frame();
+	harness.renderer().begin_frame();
+	CHECK(recorded_passes(harness.renderer()).empty());
+}
+
+TEST_CASE("POST: with no overlay, every declared view is processed")
+{
+	Harness harness;
+	const PostEffect chain[] = { PostEffect::identity };
+	harness.renderer().set_post_effects(chain);
+	harness.begin(2);
+	std::ignore = harness.end();
+	REQUIRE(recorded_passes(harness.renderer()).size() == 1);
+	CHECK(recorded_passes(harness.renderer())[0].processed_views == 2);
+}
+
+TEST_CASE("POST: the chain and the overlay refuse what they refuse")
+{
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+	const PostEffect chain[] = { PostEffect::identity };
+
+	CHECK_THROWS_AS(renderer.begin_overlay(), std::logic_error);
+
+	harness.begin();
+	CHECK_THROWS_AS(renderer.set_post_effects(chain), std::logic_error);
+	renderer.begin_overlay();
+	CHECK_THROWS_AS(renderer.begin_overlay(), std::logic_error);
+	renderer.submit();
+	renderer.end_frame();
+
+	harness.begin(4);
+	CHECK_THROWS_AS(renderer.begin_overlay(), std::out_of_range);
+	renderer.submit();
+	renderer.end_frame();
+
+	// Legal again between frames.
+	renderer.set_post_effects(chain);
+}
+
+TEST_CASE("POST: a pass records the values set_post_values gave, and refuses an effect not in the chain")
+{
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+	PostValues values;
+	values.values[4] = 0.25f;
+
+	CHECK_THROWS_AS(renderer.set_post_values(PostEffect::identity, values),
+		std::invalid_argument);
+
+	const PostEffect chain[] = { PostEffect::identity };
+	renderer.set_post_effects(chain);
+	harness.begin();
+	renderer.set_post_values(PostEffect::identity, values);
+	std::ignore = harness.end();
+
+	REQUIRE(recorded_passes(renderer).size() == 1);
+	CHECK(recorded_passes(renderer)[0].values.values[4] == 0.25f);
+}
+
+TEST_CASE("POST: a count lowered below the overlay leaves fewer processed views")
+{
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+	const PostEffect chain[] = { PostEffect::identity };
+	renderer.set_post_effects(chain);
+
+	harness.begin(2);
+	renderer.begin_overlay();
+	renderer.set_view_count(1);
+	std::ignore = harness.end();
+	REQUIRE(recorded_passes(renderer).size() == 1);
+	CHECK(recorded_passes(renderer)[0].processed_views == 1);
 }

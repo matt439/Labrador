@@ -116,6 +116,9 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         resource_pixel_tests.cpp
         ../test_main.cpp
     )
+    if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
+        target_sources(RenderPixelTests PRIVATE post_pixel_tests.cpp)
+    endif()
     target_link_libraries(RenderPixelTests PRIVATE
         LabradorEngine
         doctest::doctest
@@ -241,6 +244,16 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         # A device wait has no bound of its own. CI's longest run took 9.43 s
         # (x64-debug-gl on llvmpipe; tests/CMakeLists.txt names the runs).
         set_tests_properties(RenderPixelTests PROPERTIES TIMEOUT 120)
+
+        # The same executable, every case routed through the identity post
+        # material and held to the same goldens (docs/effects.md#10). Only
+        # where the backend has a post stage.
+        if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
+            add_test(NAME RenderPixelTestsThroughPost COMMAND RenderPixelTests)
+            set_tests_properties(RenderPixelTestsThroughPost PROPERTIES
+                TIMEOUT 120
+                ENVIRONMENT "LABRADOR_THROUGH_POST=1")
+        endif()
     else()
         # A PAGE, ITS LOADER AND THE MODULE: RenderPixelTests.html, .js and
         # .wasm, from web/shell.html. The content and the golden set are

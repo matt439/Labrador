@@ -39,4 +39,9 @@ namespace golden
 	// hands it over.
 	void check_frame(int width, int height,
 		const std::vector<unsigned char>& rgba);
+
+	// Whether this run routes every frame through the identity post material
+	// (LABRADOR_THROUGH_POST), holding the post stage's redirect to the same
+	// images the direct path is held to (docs/effects.md#10).
+	bool through_post_stage();
 }

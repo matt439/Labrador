@@ -238,6 +238,10 @@ namespace labrador
 		// even when no command list is currently recording.
 		bool frame_begun = false;
 
+		// The first overlay view's index this frame, or -1 before
+		// begin_overlay.
+		int overlay_start = -1;
+
 		// Whether submit() has already run for this frame. renderer.h makes a
 		// second submit a no-op; this is the whole of what that costs.
 		bool frame_submitted = false;

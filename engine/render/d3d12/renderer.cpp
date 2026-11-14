@@ -1018,6 +1018,7 @@ namespace labrador
 		// with a count already set, which is the whole difference between
 		// starting a frame and restarting one.
 		impl.view_count = 0;
+		impl.overlay_start = -1;
 
 		// SET BEFORE THE CLEAR AND NOT AFTER IT, so that the frame owns
 		// everything open_frame is about to do to the back buffer. From here
@@ -1239,5 +1240,32 @@ namespace labrador
 	void Renderer::set_marker(const wchar_t* name)
 	{
 		std::ignore = name;
+	}
+
+	// --- the post stage (docs/effects.md#13) -----------------------------------
+	//
+	// NOT YET IN THIS BACKEND. A chain is refused, so every frame draws
+	// straight into the back buffer as before, and begin_overlay declares the
+	// overlay view, which with no chain is all it does on any backend.
+
+	void Renderer::set_post_effects(std::span<const PostEffect> effects)
+	{
+		check_post_chain(effects, this->impl_->frame_begun);
+		refuse_post_chain_on("d3d12", effects);
+	}
+
+	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
+	{
+		// The chain is always empty here, so this always refuses.
+		check_post_values({}, effect, values);
+	}
+
+	void Renderer::begin_overlay()
+	{
+		Impl& impl = *this->impl_;
+		check_begin_overlay(impl.frame_begun, impl.overlay_start,
+			impl.view_count, static_cast<int>(impl.views.size()));
+		impl.overlay_start = impl.view_count;
+		this->set_view_count(impl.view_count + 1);
 	}
 }

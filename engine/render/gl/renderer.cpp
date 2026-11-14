@@ -710,10 +710,13 @@ namespace labrador
 		this->impl_->clear_and_reset_views();
 
 		this->impl_->view_count = 0;
+		this->impl_->overlay_start = -1;
+		this->impl_->frame_begun = true;
 	}
 
 	void Renderer::end_frame()
 	{
+		this->impl_->frame_begun = false;
 		this->impl_->present();
 	}
 
@@ -854,5 +857,32 @@ namespace labrador
 	void Renderer::set_marker(const wchar_t* name)
 	{
 		std::ignore = name;
+	}
+
+	// --- the post stage (docs/effects.md#13) -----------------------------------
+	//
+	// NOT YET IN THIS BACKEND. A chain is refused, so every frame draws
+	// straight into the back buffer as before, and begin_overlay declares the
+	// overlay view, which with no chain is all it does on any backend.
+
+	void Renderer::set_post_effects(std::span<const PostEffect> effects)
+	{
+		check_post_chain(effects, this->impl_->frame_begun);
+		refuse_post_chain_on("gl", effects);
+	}
+
+	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
+	{
+		// The chain is always empty here, so this always refuses.
+		check_post_values({}, effect, values);
+	}
+
+	void Renderer::begin_overlay()
+	{
+		Impl& impl = *this->impl_;
+		check_begin_overlay(impl.frame_begun, impl.overlay_start,
+			impl.view_count, static_cast<int>(impl.views.size()));
+		impl.overlay_start = impl.view_count;
+		this->set_view_count(impl.view_count + 1);
 	}
 }

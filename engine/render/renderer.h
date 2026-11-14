@@ -6,11 +6,13 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
+#include "engine/render/post_effect.h"
 #include "engine/render/viewport.h"
 
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -405,6 +407,31 @@ namespace labrador
 		// Called once per frame, between begin_frame and end_frame - AND A SECOND
 		// CALL ADDS NOTHING.
 		void submit();
+
+		// The post chain (docs/effects.md): the materials submit() draws the
+		// processed views through, in order, before any overlay view. Outside
+		// a frame - from begin_frame to end_frame, so a capture that never
+		// presents keeps its frame open until the next begin_frame - and
+		// std::logic_error inside one. An empty span removes the chain and the
+		// frame draws straight into the back buffer again. Throws
+		// std::invalid_argument for more than one effect: a chain is one
+		// material until multi-pass chains exist. A backend with no post stage
+		// yet refuses any chain but an empty one with std::logic_error.
+		void set_post_effects(std::span<const PostEffect> effects);
+
+		// The values a chain's effect draws with, from the next submit() on;
+		// legal inside a frame, from the thread that owns it. Values belong to
+		// the effect, not the chain: they start all zero, and survive the
+		// effect leaving the chain and coming back. Throws std::invalid_argument for an effect not in
+		// the chain, or a value that is not finite.
+		void set_post_values(PostEffect effect, const PostValues& values);
+
+		// Inside a frame, once: declares one new view, the overlay. It and every
+		// view declared after it draw over the chain's output, unprocessed.
+		// With no chain it only declares the view. Throws std::logic_error on a
+		// second call in one frame or outside a frame, and std::out_of_range
+		// when the view capacity has no room for it.
+		void begin_overlay();
 
 		// Back-buffer size in pixels.
 		//

@@ -216,3 +216,24 @@ TEST_CASE("CONTRACT: a marker is legal before there is a device")
 	// the same nothing.
 	CHECK_NOTHROW(renderer.end_marker());
 }
+
+TEST_CASE("CONTRACT: the post stage's refusals are the same on every backend")
+{
+	// Headless, so every backend answers before there is a device; the
+	// frame-dependent half is in post_pixel_tests.cpp and null_tests.cpp.
+	labrador::Renderer renderer;
+
+	CHECK_THROWS_AS(renderer.begin_overlay(), std::logic_error);
+
+	// An effect not in the chain, and the chain is empty.
+	CHECK_THROWS_AS(renderer.set_post_values(labrador::PostEffect::identity,
+		labrador::PostValues{}), std::invalid_argument);
+
+	// A chain is one material until multi-pass chains exist.
+	const labrador::PostEffect two[] = { labrador::PostEffect::identity,
+		labrador::PostEffect::identity };
+	CHECK_THROWS_AS(renderer.set_post_effects(two), std::invalid_argument);
+
+	// An empty chain is always legal outside a frame.
+	CHECK_NOTHROW(renderer.set_post_effects({}));
+}

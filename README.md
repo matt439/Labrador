@@ -289,9 +289,11 @@ ctest --preset x64-debug
 ```
 
 What to check is `ctest`'s last line, `100% tests passed, 0 tests failed out
-of N`. N is 21 on the Direct3D 11, OpenGL and Vulkan presets: eighteen doctest
-targets, the minimal and collision samples' start-up checks and the benchmark.
-The Direct3D 12 presets have 22, with a synchronization test of their own. The
+of N`. N is 21 on the OpenGL and Vulkan presets: eighteen doctest targets,
+the minimal and collision samples' start-up checks and the benchmark. The
+Direct3D 11 presets have 22, with the pixel tests run a second time through the
+post stage. The Direct3D 12 presets have 22, with a synchronization test of
+their own. The
 `-null` presets have 23: the pixel tests need a device and are left out, and
 the local multiplayer and audio samples' start-up checks, which record calls
 instead of drawing or playing, and the minimal sample's states driven by keys
