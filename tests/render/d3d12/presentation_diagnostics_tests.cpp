@@ -192,3 +192,48 @@ TEST_CASE("D3D12 presentation diagnostics cover reuse resize and engine resource
 	// The retained queue keeps the device alive. This is not final device
 	// destruction coverage or proof that work was outstanding at a boundary.
 }
+
+TEST_CASE("D3D12 presentation diagnostics cover the post stage's transitions, resize and removal")
+{
+	Fixture fixture;
+	ComPtr<ID3D12InfoQueue> messages = diagnostic_queue(*fixture.renderer);
+	QueueFilters filters(*messages.Get());
+	const QueueCounts baseline = calibrate(*messages.Get());
+	add_texture_asset(*fixture.renderer, fixture.resources,
+		"presentation_diagnostics_post", render_tests::flat_texture(255, 255, 255));
+	const TextureHandle texture =
+		fixture.resources.resolve_texture("presentation_diagnostics_post");
+
+	// The scene through identity, frames in flight on both slots, with an
+	// overlay view after the pass, an abandoned frame and a zero-view frame.
+	const PostEffect identity[] = { PostEffect::identity };
+	fixture.renderer->set_post_effects(identity);
+	present_frames(*fixture.renderer, texture, 0);
+
+	fixture.renderer->begin_frame();
+	render_tests::record_page_crossing_views(*fixture.renderer, texture, 1);
+	fixture.renderer->begin_frame();
+	fixture.renderer->set_view_count(1);
+	fixture.renderer->begin_overlay();
+	DrawList overlay = fixture.renderer->view(1);
+	overlay.draw_sprite(texture, RectangleI(0, 0, 2, 2),
+		RectangleF(4.0f, 4.0f, 8.0f, 8.0f), Colour::white, 0.0f,
+		Vector2F::zero, SpriteFlip::none, 0.0f);
+	fixture.renderer->submit();
+	fixture.renderer->end_frame();
+
+	fixture.renderer->begin_frame();
+	fixture.renderer->submit();
+	fixture.renderer->end_frame();
+
+	// A resize remakes the scene; removing the chain releases it.
+	REQUIRE(fixture.window.resize(resized_size, resized_size));
+	CHECK(fixture.renderer->window_size_changed(resized_size, resized_size));
+	present_frames(*fixture.renderer, texture, presented_frames);
+	fixture.renderer->set_post_effects({});
+	present_frames(*fixture.renderer, texture, 2 * presented_frames);
+
+	fixture.renderer.reset();
+	fixture.resources.release_device_resources();
+	check_diagnostics(*messages.Get(), baseline);
+}

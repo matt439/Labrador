@@ -69,6 +69,10 @@ namespace labrador
 	const GLenum GL_NUM_EXTENSIONS_ = 0x821D;
 	const GLenum GL_FUNC_ADD_ = 0x8006;
 	const GLenum GL_ONE_MINUS_SRC_ALPHA_ = 0x0303;
+	const GLenum GL_FRAMEBUFFER_ = 0x8D40;
+	const GLenum GL_READ_FRAMEBUFFER_ = 0x8CA8;
+	const GLenum GL_COLOR_ATTACHMENT0_ = 0x8CE0;
+	const GLenum GL_FRAMEBUFFER_COMPLETE_ = 0x8CD5;
 
 #if !defined(__EMSCRIPTEN__)
 	// The context attributes wglCreateContextAttribsARB takes.
@@ -125,6 +129,14 @@ namespace labrador
 	X(void, glBlendFuncSeparate, (GLenum source_rgb, GLenum destination_rgb,   \
 		GLenum source_alpha, GLenum destination_alpha))                        \
 	X(void, glBlendEquation, (GLenum mode))                                    \
+	X(void, glGenFramebuffers, (GLsizei n, GLuint* framebuffers))              \
+	X(void, glBindFramebuffer, (GLenum target, GLuint framebuffer))            \
+	X(void, glFramebufferTexture2D, (GLenum target, GLenum attachment,         \
+		GLenum texture_target, GLuint texture, GLint level))                   \
+	X(GLenum, glCheckFramebufferStatus, (GLenum target))                       \
+	X(void, glDeleteFramebuffers, (GLsizei n, const GLuint* framebuffers))     \
+	X(void, glUniform4fv, (GLint location, GLsizei count,                      \
+		const GLfloat* value))                                                 \
 	X(const GLubyte*, glGetStringi, (GLenum name, GLuint index))
 
 #define LABRADOR_GL_DECLARE(result, name, parameters)                         \

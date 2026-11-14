@@ -4,6 +4,7 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
+#include "engine/render/gl/post_shader.h"
 #include "engine/render/gl/sprite_shader.h"
 #include "engine/render/renderer_checks.h"
 #include "engine/render/sprite_geometry.h"
@@ -14,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <initializer_list>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -30,6 +32,22 @@ namespace labrador
 		const GLuint position_attribute = 0;
 		const GLuint colour_attribute = 1;
 		const GLuint texcoord_attribute = 2;
+
+		// post_shader.h's post_frame uniform, element for element: eleven
+		// vec4s, as post_frame.hlsli's cbuffer has eleven float4s.
+		struct PostFrameConstants
+		{
+			float output_size[4];
+			float scene_size[4];
+			float frame_terms[4];
+			float material_values[8][4];
+		};
+		static_assert(sizeof(PostFrameConstants) == 11 * 4 * sizeof(float),
+			"The post frame is eleven vec4s, as post_shader.h declares");
+		static_assert(sizeof(PostFrameConstants::material_values) ==
+			sizeof(PostValues::values),
+			"PostValues fills the frame's material values exactly");
+		const GLsizei post_frame_vectors = 11;
 
 		std::string driver_string(const Renderer::Impl& impl, GLenum name,
 			const char* what)
@@ -148,15 +166,17 @@ namespace labrador
 		// do is say which stage failed and repeat what the driver said about
 		// it, rather than drawing nothing and leaving somebody to guess.
 		//
-		// Two strings, the context's prelude and the body, which GL joins
-		// before compiling: the #version has to be the first line, and is the
-		// one line the two contexts disagree about.
-		GLuint compile_shader(GLenum stage, const char* prelude,
-			const char* source, const char* what)
+		// Several strings, which GL joins before compiling: the context's
+		// prelude first, because the #version has to be the first line and is
+		// the one line the two contexts disagree about, then the body - one
+		// string for a sprite stage, the frame and its material for a post
+		// one.
+		GLuint compile_shader(GLenum stage,
+			std::initializer_list<const char*> sources, const char* what)
 		{
 			const GLuint shader = glCreateShader(stage);
-			const GLchar* const sources[] = { prelude, source };
-			glShaderSource(shader, 2, sources, nullptr);
+			glShaderSource(shader, static_cast<GLsizei>(sources.size()),
+				sources.begin(), nullptr);
 			glCompileShader(shader);
 
 			GLint compiled = GL_FALSE;
@@ -185,6 +205,25 @@ namespace labrador
 
 			GLuint name = 0;
 		};
+
+		// Links `program`, whose shaders are attached, or deletes it, zeroes
+		// it and throws with the driver's message, naming the pair by `what`.
+		void link_program(GLuint& program, const char* what)
+		{
+			glLinkProgram(program);
+
+			GLint linked = GL_FALSE;
+			glGetProgramiv(program, GL_LINK_STATUS_, &linked);
+			if (linked == GL_FALSE)
+			{
+				const std::string log = info_log(program, glGetProgramiv,
+					glGetProgramInfoLog);
+				glDeleteProgram(program);
+				program = 0;
+				throw std::runtime_error(std::string("The ") + what +
+					" shaders did not link on this driver:\n" + log);
+			}
+		}
 	}
 
 	// --- DrawList::View ------------------------------------------------------
@@ -299,11 +338,24 @@ namespace labrador
 		// A lost context is cleared by nobody: every call would do nothing,
 		// and a browser warns about each one. The views below are still reset,
 		// because the frame is recorded exactly as any other.
+		//
+		// WITH A CHAIN, BOTH ARE CLEARED: the scene because the views draw
+		// into it, and framebuffer 0 so that a frame begun and never
+		// submitted presents black rather than the last frame's post output
+		// (docs/effects.md#4).
 		if (!this->context_lost())
 		{
+			this->update_scene_target();
+
 			glViewport(0, 0, static_cast<GLsizei>(drawable.x),
 				static_cast<GLsizei>(drawable.y));
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			if (this->scene_framebuffer != 0)
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER_, this->scene_framebuffer);
+				glClear(GL_COLOR_BUFFER_BIT);
+				glBindFramebuffer(GL_FRAMEBUFFER_, 0);
+			}
 			glClear(GL_COLOR_BUFFER_BIT);
 		}
 
@@ -319,9 +371,9 @@ namespace labrador
 	void Renderer::Impl::create_gl_resources()
 	{
 		const ShaderOwner vertex_shader(compile_shader(GL_VERTEX_SHADER_,
-			this->shader_prelude, sprite_vertex_shader, "sprite vertex"));
+			{ this->shader_prelude, sprite_vertex_shader }, "sprite vertex"));
 		const ShaderOwner pixel_shader(compile_shader(GL_FRAGMENT_SHADER_,
-			this->shader_prelude, sprite_pixel_shader, "sprite fragment"));
+			{ this->shader_prelude, sprite_pixel_shader }, "sprite fragment"));
 
 		this->program = glCreateProgram();
 		glAttachShader(this->program, vertex_shader.name);
@@ -336,19 +388,7 @@ namespace labrador
 		glBindAttribLocation(this->program, colour_attribute, "colour");
 		glBindAttribLocation(this->program, texcoord_attribute, "texcoord");
 
-		glLinkProgram(this->program);
-
-		GLint linked = GL_FALSE;
-		glGetProgramiv(this->program, GL_LINK_STATUS_, &linked);
-		if (linked == GL_FALSE)
-		{
-			const std::string log = info_log(this->program, glGetProgramiv,
-				glGetProgramInfoLog);
-			glDeleteProgram(this->program);
-			this->program = 0;
-			throw std::runtime_error(
-				"The sprite shaders did not link on this driver:\n" + log);
-		}
+		link_program(this->program, "sprite");
 
 		this->transform_uniform =
 			glGetUniformLocation(this->program, "pixels_to_clip");
@@ -438,6 +478,199 @@ namespace labrador
 		// keeps errors queued, so the next thing to check glGetError blames
 		// itself for it.
 		glActiveTexture(GL_TEXTURE0_);
+
+		// The post stage's program, made whether or not a chain is set, so
+		// set_post_effects is never the first thing to compile a shader. The
+		// fragment stage is the frame with the identity material after it,
+		// as the HLSL material includes the frame.
+		const ShaderOwner post_vertex(compile_shader(GL_VERTEX_SHADER_,
+			{ this->shader_prelude, post_vertex_shader }, "post vertex"));
+		const ShaderOwner post_pixel(compile_shader(GL_FRAGMENT_SHADER_,
+			{ this->shader_prelude, post_frame_pixel_shader,
+				post_identity_material }, "identity post fragment"));
+
+		this->post_program = glCreateProgram();
+		glAttachShader(this->post_program, post_vertex.name);
+		glAttachShader(this->post_program, post_pixel.name);
+		link_program(this->post_program, "identity post");
+
+		this->post_frame_uniform =
+			glGetUniformLocation(this->post_program, "post_frame");
+
+		// Unit 0 holds the scene under the point sampler and unit 1 the same
+		// scene under the linear one (post_shader.h says why two units).
+		glUseProgram(this->post_program);
+		glUniform1i(glGetUniformLocation(this->post_program, "input_0_point"),
+			0);
+		glUniform1i(glGetUniformLocation(this->post_program, "input_0_linear"),
+			1);
+		glUseProgram(this->program);
+
+		// NO ATTRIBUTES, AND STILL A VERTEX ARRAY: the triangle comes from
+		// gl_VertexID alone, and a core profile draws nothing with none
+		// bound. A second one, because the sprite one's element buffer and
+		// attribute pointers are its own.
+		glGenVertexArrays(1, &this->post_vertex_array);
+		glBindVertexArray(this->vertex_array);
+
+		this->update_scene_target();
+	}
+
+	void Renderer::Impl::update_scene_target()
+	{
+		if (this->context == nullptr || this->context_lost())
+		{
+			return;
+		}
+
+		if (this->post_effects.empty())
+		{
+			this->release_scene_target();
+			return;
+		}
+
+		const Vector2I size = this->drawable_size();
+		if (this->scene_framebuffer != 0 && size == this->scene_size)
+		{
+			return;
+		}
+		this->release_scene_target();
+
+		// A drawable with no area - a minimised window - has no scene: the
+		// frame draws straight into framebuffer 0, which shows nothing either,
+		// until the next frame start finds an area again.
+		if (size.x <= 0 || size.y <= 0)
+		{
+			return;
+		}
+
+		// THE BACK BUFFER'S FORMAT, so the identity material writes back the
+		// byte it read and every golden survives the redirect. One level,
+		// stated, for the completeness reason texture_factory.cpp gives.
+		glGenTextures(1, &this->scene_texture);
+		glBindTexture(GL_TEXTURE_2D, this->scene_texture);
+		glTexParameteri(GL_TEXTURE_2D,
+			static_cast<GLenum>(GL_TEXTURE_BASE_LEVEL_), 0);
+		glTexParameteri(GL_TEXTURE_2D,
+			static_cast<GLenum>(GL_TEXTURE_MAX_LEVEL_), 0);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+			static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		glGenFramebuffers(1, &this->scene_framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER_, this->scene_framebuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER_, GL_COLOR_ATTACHMENT0_,
+			GL_TEXTURE_2D, this->scene_texture, 0);
+		const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER_);
+
+		// Black, as every frame start clears it, so a target remade between
+		// a frame's start and its submit holds nothing from before.
+		if (status == GL_FRAMEBUFFER_COMPLETE_)
+		{
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER_, 0);
+
+		if (status != GL_FRAMEBUFFER_COMPLETE_)
+		{
+			// A context lost mid-way answers incomplete for everything, and
+			// restore_device makes the target again; anything else is a
+			// driver refusing an RGBA8 colour attachment, which both GL 3.3
+			// and WebGL2 require it to take.
+			this->release_scene_target();
+			if (this->context_lost())
+			{
+				return;
+			}
+			throw std::runtime_error("The post stage's scene target is not a "
+				"complete framebuffer on this driver.");
+		}
+
+		this->scene_size = size;
+	}
+
+	void Renderer::Impl::release_scene_target()
+	{
+		if (!this->context_lost())
+		{
+			if (this->scene_framebuffer != 0)
+			{
+				glDeleteFramebuffers(1, &this->scene_framebuffer);
+			}
+			if (this->scene_texture != 0)
+			{
+				glDeleteTextures(1, &this->scene_texture);
+			}
+		}
+		this->scene_framebuffer = 0;
+		this->scene_texture = 0;
+		this->scene_size = Vector2I();
+	}
+
+	void Renderer::Impl::draw_post(Vector2I output)
+	{
+		const float output_width = static_cast<float>(output.x);
+		const float output_height = static_cast<float>(output.y);
+		const float scene_width = static_cast<float>(this->scene_size.x);
+		const float scene_height = static_cast<float>(this->scene_size.y);
+
+		PostFrameConstants constants = {};
+		constants.output_size[0] = output_width;
+		constants.output_size[1] = output_height;
+		constants.output_size[2] = 1.0f / output_width;
+		constants.output_size[3] = 1.0f / output_height;
+		constants.scene_size[0] = scene_width;
+		constants.scene_size[1] = scene_height;
+		constants.scene_size[2] = 1.0f / scene_width;
+		constants.scene_size[3] = 1.0f / scene_height;
+		// THE SCENE IS BOTTOM ROW FIRST, being drawn as framebuffer 0 is, so
+		// the frame's input_uv turns v over.
+		constants.frame_terms[2] = -1.0f;
+
+		// One material a chain until multi-pass chains exist
+		// (docs/effects.md#13), so the chain's one effect is the pass.
+		const PostEffect effect = this->post_effects.front();
+		const PostValues& values =
+			this->post_values[static_cast<std::size_t>(effect)];
+		std::memcpy(constants.material_values, values.values.data(),
+			sizeof(constants.material_values));
+
+		glBindFramebuffer(GL_FRAMEBUFFER_, 0);
+		glViewport(0, 0, static_cast<GLsizei>(output.x),
+			static_cast<GLsizei>(output.y));
+
+		glUseProgram(this->post_program);
+		glUniform4fv(this->post_frame_uniform, post_frame_vectors,
+			reinterpret_cast<const GLfloat*>(&constants));
+
+		glActiveTexture(GL_TEXTURE0_ + 1);
+		glBindTexture(GL_TEXTURE_2D, this->scene_texture);
+		glBindSampler(1, this->linear_sampler);
+		glActiveTexture(GL_TEXTURE0_);
+		glBindTexture(GL_TEXTURE_2D, this->scene_texture);
+		glBindSampler(0, this->point_sampler);
+
+		// A FULL-SCREEN PASS REPLACES; only draw lists blend
+		// (docs/effects.md#5).
+		glDisable(GL_BLEND);
+		glBindVertexArray(this->post_vertex_array);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glEnable(GL_BLEND);
+
+		// UNBOUND BEFORE THE SCENE'S FRAMEBUFFER IS BOUND AGAIN: a texture
+		// sampled while it is the bound attachment is a feedback loop, which
+		// WebGL2 refuses at the draw.
+		glActiveTexture(GL_TEXTURE0_ + 1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindSampler(1, 0);
+		glActiveTexture(GL_TEXTURE0_);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		glUseProgram(this->program);
+		glBindVertexArray(this->vertex_array);
+		glBindBuffer(GL_ARRAY_BUFFER_, this->vertex_buffer);
 	}
 
 	void Renderer::Impl::restore_device()
@@ -455,6 +688,12 @@ namespace labrador
 		this->index_buffer = 0;
 		this->point_sampler = 0;
 		this->linear_sampler = 0;
+		this->post_program = 0;
+		this->post_frame_uniform = -1;
+		this->post_vertex_array = 0;
+		this->scene_texture = 0;
+		this->scene_framebuffer = 0;
+		this->scene_size = Vector2I();
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
 			view->reset();
@@ -765,16 +1004,50 @@ namespace labrador
 		// Once, for the whole frame. Asking the window per view would let two
 		// panes of one picture be placed against two different heights if the
 		// window changed size between them.
-		const int drawable_height = this->impl_->drawable_size().y;
+		Impl& impl = *this->impl_;
+		const Vector2I drawable = impl.drawable_size();
+		const int drawable_height = drawable.y;
+
+		// The scene follows the drawable, in case it changed since the frame
+		// started; a target remade here is black, and nothing has drawn into
+		// the old one yet, because views replay only below.
+		impl.update_scene_target();
+
+		// WITH A CHAIN, THE POST PASS RUNS BETWEEN THE LAST PROCESSED VIEW AND
+		// THE FIRST OVERLAY ONE - or after every view, with no overlay - and
+		// runs even when no view was declared, so the frame presents the chain
+		// over a black scene rather than whatever framebuffer 0 held. The
+		// processed views draw into the scene exactly as they would into
+		// framebuffer 0, against the same flip height.
+		const bool chain = impl.scene_framebuffer != 0;
+		const int post_at = impl.overlay_start >= 0
+			? impl.overlay_start
+			: impl.view_count;
+		bool post_drawn = false;
+		if (chain)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER_, impl.scene_framebuffer);
+		}
 
 		// In view order, which is the only ordering guarantee the seam makes -
 		// and here it is the only ordering there is, because a view's recording
 		// is a vector rather than a command list.
-		for (int i = 0; i < this->impl_->view_count; i++)
+		for (int i = 0; i < impl.view_count; i++)
 		{
-			DrawList::View& view = *this->impl_->views[static_cast<std::size_t>(i)];
+			if (chain && !post_drawn && i == post_at)
+			{
+				impl.draw_post(drawable);
+				post_drawn = true;
+			}
+
+			DrawList::View& view = *impl.views[static_cast<std::size_t>(i)];
 			view.close_run();
-			this->impl_->replay(view, drawable_height);
+			impl.replay(view, drawable_height);
+		}
+
+		if (chain && !post_drawn)
+		{
+			impl.draw_post(drawable);
 		}
 	}
 
@@ -812,6 +1085,9 @@ namespace labrador
 		const std::size_t height = static_cast<std::size_t>(drawable.y);
 		pixels.resize(width * height * 4);
 
+		// Framebuffer 0, which holds the post output when a chain is set, and
+		// which GL_BACK names only while it is the bound read framebuffer.
+		glBindFramebuffer(GL_READ_FRAMEBUFFER_, 0);
 		glReadBuffer(GL_BACK);
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -859,22 +1135,20 @@ namespace labrador
 		std::ignore = name;
 	}
 
-	// --- the post stage (docs/effects.md#13) -----------------------------------
-	//
-	// NOT YET IN THIS BACKEND. A chain is refused, so every frame draws
-	// straight into the back buffer as before, and begin_overlay declares the
-	// overlay view, which with no chain is all it does on any backend.
+	// --- the post stage (docs/effects.md#5) ------------------------------------
 
 	void Renderer::set_post_effects(std::span<const PostEffect> effects)
 	{
 		check_post_chain(effects, this->impl_->frame_begun);
-		refuse_post_chain_on("gl", effects);
+
+		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->update_scene_target();
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
-		// The chain is always empty here, so this always refuses.
-		check_post_values({}, effect, values);
+		check_post_values(this->impl_->post_effects, effect, values);
+		this->impl_->post_values[static_cast<std::size_t>(effect)] = values;
 	}
 
 	void Renderer::begin_overlay()
@@ -882,7 +1156,25 @@ namespace labrador
 		Impl& impl = *this->impl_;
 		check_begin_overlay(impl.frame_begun, impl.overlay_start,
 			impl.view_count, static_cast<int>(impl.views.size()));
-		impl.overlay_start = impl.view_count;
-		this->set_view_count(impl.view_count + 1);
+		const int overlay = impl.view_count;
+
+		// EVERY VIEW FROM THE OVERLAY UP STARTS EMPTY, as begin_frame left it.
+		// A view drawn into earlier this frame and then dropped by a lowered
+		// count still holds that recording; a view's target is decided at
+		// submit here, so nothing else needs undoing. The same reset the
+		// other backends make, so a client sees one behaviour.
+		const Vector2I drawable = impl.drawable_size();
+		for (std::size_t i = static_cast<std::size_t>(overlay);
+			i < impl.views.size(); i++)
+		{
+			DrawList::View& view = *impl.views[i];
+			view.reset();
+			view.viewport = Viewport(0.0f, 0.0f,
+				static_cast<float>(drawable.x),
+				static_cast<float>(drawable.y));
+		}
+
+		impl.overlay_start = overlay;
+		this->set_view_count(overlay + 1);
 	}
 }

@@ -415,8 +415,7 @@ namespace labrador
 		// std::logic_error inside one. An empty span removes the chain and the
 		// frame draws straight into the back buffer again. Throws
 		// std::invalid_argument for more than one effect: a chain is one
-		// material until multi-pass chains exist. A backend with no post stage
-		// yet refuses any chain but an empty one with std::logic_error.
+		// material until multi-pass chains exist.
 		void set_post_effects(std::span<const PostEffect> effects);
 
 		// The values a chain's effect draws with, from the next submit() on;

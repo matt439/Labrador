@@ -110,15 +110,13 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         pixel_test_harness.cpp
         pixel_test_harness.h
         pixel_tests.cpp
+        post_pixel_tests.cpp
         sprite_pixel_tests.cpp
         text_pixel_tests.cpp
         view_pixel_tests.cpp
         resource_pixel_tests.cpp
         ../test_main.cpp
     )
-    if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
-        target_sources(RenderPixelTests PRIVATE post_pixel_tests.cpp)
-    endif()
     target_link_libraries(RenderPixelTests PRIVATE
         LabradorEngine
         doctest::doctest
@@ -246,14 +244,12 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         set_tests_properties(RenderPixelTests PROPERTIES TIMEOUT 120)
 
         # The same executable, every case routed through the identity post
-        # material and held to the same goldens (docs/effects.md#10). Only
-        # where the backend has a post stage.
-        if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
-            add_test(NAME RenderPixelTestsThroughPost COMMAND RenderPixelTests)
-            set_tests_properties(RenderPixelTestsThroughPost PROPERTIES
-                TIMEOUT 120
-                ENVIRONMENT "LABRADOR_THROUGH_POST=1")
-        endif()
+        # material and held to the same goldens (docs/effects.md#10), on
+        # every rasterising backend.
+        add_test(NAME RenderPixelTestsThroughPost COMMAND RenderPixelTests)
+        set_tests_properties(RenderPixelTestsThroughPost PROPERTIES
+            TIMEOUT 120
+            ENVIRONMENT "LABRADOR_THROUGH_POST=1")
     else()
         # A PAGE, ITS LOADER AND THE MODULE: RenderPixelTests.html, .js and
         # .wasm, from web/shell.html. The content and the golden set are

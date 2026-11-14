@@ -92,6 +92,41 @@ namespace labrador
 			transform[2] = values.x_offset;
 			transform[3] = values.y_offset;
 		}
+
+		// post_frame.hlsli's cbuffer, field for field: eleven float4s, set as
+		// the post root signature's root constants.
+		struct PostFrameConstants
+		{
+			float output_size[4];
+			float scene_size[4];
+			float frame_terms[4];
+			float material_values[8][4];
+		};
+		static_assert(sizeof(PostFrameConstants) ==
+			PostPipeline::frame_constants * sizeof(float),
+			"The post frame is eleven float4s, as post_frame.hlsli declares");
+		static_assert(sizeof(PostFrameConstants::material_values) ==
+			sizeof(PostValues::values),
+			"PostValues fills the frame's material_values exactly");
+
+		// Opaque black, spelt out - the clear colour is a term
+		// RenderPixelTests pins, so it is worth being able to read it here.
+		// The scene texture's optimised clear value is the same four floats.
+		constexpr float clear_black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		D3D12_RESOURCE_BARRIER transition(ID3D12Resource* resource,
+			D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
+		{
+			D3D12_RESOURCE_BARRIER barrier = {};
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource = resource;
+			barrier.Transition.StateBefore = before;
+			barrier.Transition.StateAfter = after;
+			barrier.Transition.Subresource =
+				D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			return barrier;
+		}
 	}
 
 	// --- Buffers both translation units create -----------------------------
@@ -552,13 +587,22 @@ namespace labrador
 
 		this->transition_back_buffer(D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		// Opaque black, spelt out - the clear colour is a term
-		// RenderPixelTests pins, so it is worth being able to read it here.
-		const float black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		const D3D12_CPU_DESCRIPTOR_HANDLE render_target =
+		// WITH A CHAIN, BOTH ARE CLEARED: the scene because the processed
+		// views draw into it, and the back buffer so that a frame begun and
+		// never submitted presents black rather than the last frame's post
+		// output (docs/effects.md#4).
+		ID3D12GraphicsCommandList* list = this->open_frame_list();
+		// A statement of its own: bench/d3d12_descriptor_count_renderer.cpp
+		// instruments this call and supports no nesting.
+		const D3D12_CPU_DESCRIPTOR_HANDLE back_buffer =
 			this->device_resources.back_buffer_view();
-		this->open_frame_list()->ClearRenderTargetView(render_target, black, 0,
-			nullptr);
+		list->ClearRenderTargetView(back_buffer, clear_black, 0, nullptr);
+		if (this->scene_texture != nullptr)
+		{
+			list->ClearRenderTargetView(
+				this->post_target_heap->GetCPUDescriptorHandleForHeapStart(),
+				clear_black, 0, nullptr);
+		}
 		this->execute_frame_list();
 
 		// Nothing while the frame has not said how many views it has yet -
@@ -568,7 +612,7 @@ namespace labrador
 			this->device_resources.screen_viewport();
 		for (int i = 0; i < this->view_count; i++)
 		{
-			this->views[static_cast<size_t>(i)]->begin(render_target,
+			this->views[static_cast<size_t>(i)]->begin(this->view_target(i),
 				viewport);
 		}
 	}
@@ -614,17 +658,148 @@ namespace labrador
 			return;
 		}
 
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = this->device_resources.back_buffer();
-		barrier.Transition.StateBefore = current;
-		barrier.Transition.StateAfter = state;
-		barrier.Transition.Subresource =
-			D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
+		const D3D12_RESOURCE_BARRIER barrier = transition(
+			this->device_resources.back_buffer(), current, state);
 		this->open_frame_list()->ResourceBarrier(1, &barrier);
 		this->device_resources.set_back_buffer_state(state);
+	}
+
+	void Renderer::Impl::create_scene_target()
+	{
+		// A QUEUED FRAME MAY STILL READ THE OLD ONE, through both its RTV and
+		// its SRV, and the descriptors below are rewritten in place. A resize
+		// has drained the queue already; set_post_effects has not.
+		if (this->scene_texture != nullptr)
+		{
+			this->device_resources.wait_for_gpu();
+			this->scene_texture.Reset();
+		}
+
+		if (this->post_effects.empty() || this->post_target_heap == nullptr)
+		{
+			return;
+		}
+
+		// The back buffer's own size and format, so the identity material
+		// writes back the byte it read and every golden survives the redirect.
+		const RECT size = this->device_resources.output_size();
+
+		D3D12_RESOURCE_DESC description = {};
+		description.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		description.Alignment = 0;
+		description.Width = static_cast<UINT64>(size.right - size.left);
+		description.Height = static_cast<UINT>(size.bottom - size.top);
+		description.DepthOrArraySize = 1;
+		description.MipLevels = 1;
+		description.Format = DeviceResources::back_buffer_format;
+		description.SampleDesc.Count = 1;
+		description.SampleDesc.Quality = 0;
+		description.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		description.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+		D3D12_CLEAR_VALUE clear = {};
+		clear.Format = DeviceResources::back_buffer_format;
+		std::memcpy(clear.Color, clear_black, sizeof(clear.Color));
+
+		ID3D12Device* device = this->device_resources.device();
+		const D3D12_HEAP_PROPERTIES properties =
+			heap_properties(D3D12_HEAP_TYPE_DEFAULT);
+		ThrowIfFailed(device->CreateCommittedResource(&properties,
+			D3D12_HEAP_FLAG_NONE, &description,
+			D3D12_RESOURCE_STATE_RENDER_TARGET, &clear,
+			IID_PPV_ARGS(this->scene_texture.ReleaseAndGetAddressOf())),
+			"The post stage's scene target could not be created");
+
+		D3D12_CPU_DESCRIPTOR_HANDLE target =
+			this->post_target_heap->GetCPUDescriptorHandleForHeapStart();
+		target.ptr += static_cast<SIZE_T>(scene_target_slot) *
+			this->post_target_descriptor_size;
+		device->CreateRenderTargetView(this->scene_texture.Get(), nullptr,
+			target);
+		device->CreateShaderResourceView(this->scene_texture.Get(), nullptr,
+			this->texture_slot_cpu(scene_view_slot));
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE Renderer::Impl::view_target(int index) const
+	{
+		const bool overlay = this->overlay_start >= 0 &&
+			index >= this->overlay_start;
+		if (overlay || this->scene_texture == nullptr)
+		{
+			// Assigned, not returned directly, for the same probe's macro.
+			const D3D12_CPU_DESCRIPTOR_HANDLE back_buffer =
+				this->device_resources.back_buffer_view();
+			return back_buffer;
+		}
+
+		D3D12_CPU_DESCRIPTOR_HANDLE target =
+			this->post_target_heap->GetCPUDescriptorHandleForHeapStart();
+		target.ptr += static_cast<SIZE_T>(scene_target_slot) *
+			this->post_target_descriptor_size;
+		return target;
+	}
+
+	void Renderer::Impl::record_post()
+	{
+		const D3D12_VIEWPORT viewport = this->device_resources.screen_viewport();
+
+		PostFrameConstants constants = {};
+		constants.output_size[0] = viewport.Width;
+		constants.output_size[1] = viewport.Height;
+		constants.output_size[2] = 1.0f / viewport.Width;
+		constants.output_size[3] = 1.0f / viewport.Height;
+		constants.scene_size[0] = viewport.Width;
+		constants.scene_size[1] = viewport.Height;
+		constants.scene_size[2] = 1.0f / viewport.Width;
+		constants.scene_size[3] = 1.0f / viewport.Height;
+		// Direct3D stores every target top row first: no flip.
+		constants.frame_terms[2] = 1.0f;
+
+		// One material a chain until multi-pass chains exist
+		// (docs/effects.md#13), so the chain's one effect is the pass.
+		const PostEffect effect = this->post_effects.front();
+		const PostValues& values =
+			this->post_values[static_cast<size_t>(effect)];
+		std::memcpy(constants.material_values, values.values.data(),
+			sizeof(constants.material_values));
+		ID3D12PipelineState* material_state =
+			this->post_pipeline.identity_state();
+
+		// The back buffer is a render target from open_frame on; asked
+		// rather than assumed, as read_back_buffer asks.
+		this->transition_back_buffer(D3D12_RESOURCE_STATE_RENDER_TARGET);
+		ID3D12GraphicsCommandList* list = this->open_frame_list();
+
+		const D3D12_RESOURCE_BARRIER to_read = transition(
+			this->scene_texture.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		list->ResourceBarrier(1, &to_read);
+
+		ID3D12DescriptorHeap* heaps[] = { this->texture_heap.Get() };
+		list->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+		list->SetGraphicsRootSignature(this->post_pipeline.root_signature());
+		list->SetPipelineState(material_state);
+		list->SetGraphicsRoot32BitConstants(PostPipeline::frame_parameter,
+			PostPipeline::frame_constants, &constants, 0);
+		list->SetGraphicsRootDescriptorTable(PostPipeline::input_parameter,
+			this->texture_slot_gpu(scene_view_slot));
+
+		const D3D12_CPU_DESCRIPTOR_HANDLE back_buffer =
+			this->device_resources.back_buffer_view();
+		const D3D12_RECT scissor = to_scissor(viewport);
+		list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		list->OMSetRenderTargets(1, &back_buffer, FALSE, nullptr);
+		list->RSSetViewports(1, &viewport);
+		list->RSSetScissorRects(1, &scissor);
+
+		list->DrawInstanced(3, 1, 0, 0);
+
+		// Back to where open_frame clears it and the views draw into it.
+		const D3D12_RESOURCE_BARRIER to_target = transition(
+			this->scene_texture.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_RENDER_TARGET);
+		list->ResourceBarrier(1, &to_target);
 	}
 
 	void Renderer::Impl::create_device_dependent_resources()
@@ -633,13 +808,19 @@ namespace labrador
 
 		this->sprite_pipeline.create(device,
 			DeviceResources::back_buffer_format);
+		// Made whether or not a chain is set: it is small, and making it here
+		// keeps set_post_effects from being the first thing to build a
+		// pipeline state.
+		this->post_pipeline.create(device,
+			DeviceResources::back_buffer_format);
 
 		// --- The descriptor heaps -------------------------------------------
 
 		D3D12_DESCRIPTOR_HEAP_DESC texture_heap_description = {};
 		texture_heap_description.Type =
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		texture_heap_description.NumDescriptors = texture_capacity;
+		texture_heap_description.NumDescriptors =
+			texture_capacity + reserved_view_slots;
 		texture_heap_description.Flags =
 			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		ThrowIfFailed(device->CreateDescriptorHeap(&texture_heap_description,
@@ -661,6 +842,18 @@ namespace labrador
 		this->sampler_descriptor_size =
 			device->GetDescriptorHandleIncrementSize(
 				D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+		D3D12_DESCRIPTOR_HEAP_DESC post_target_heap_description = {};
+		post_target_heap_description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		post_target_heap_description.NumDescriptors = post_target_capacity;
+		post_target_heap_description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		ThrowIfFailed(device->CreateDescriptorHeap(
+			&post_target_heap_description,
+			IID_PPV_ARGS(this->post_target_heap.ReleaseAndGetAddressOf())),
+			"The post target descriptor heap could not be created");
+		this->post_target_descriptor_size =
+			device->GetDescriptorHandleIncrementSize(
+				D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 		// The heap is new, so every slot in it is free - and the table that
 		// named them has been emptied by the client's device-lost handler
@@ -844,6 +1037,11 @@ namespace labrador
 		this->sampler_heap.Reset();
 		this->next_texture_slot = 0;
 
+		// The chain itself is kept; on_device_restored remakes its target.
+		this->post_pipeline.reset();
+		this->scene_texture.Reset();
+		this->post_target_heap.Reset();
+
 		if (this->notify != nullptr)
 		{
 			this->notify->on_device_lost();
@@ -852,7 +1050,10 @@ namespace labrador
 
 	void Renderer::Impl::on_device_restored()
 	{
+		// After the swap chain, which handle_device_lost has already rebuilt,
+		// so the scene takes the back buffer's size.
 		this->create_device_dependent_resources();
+		this->create_scene_target();
 		this->device_info = selected_device(
 			this->device_resources.adapter_description(), this->vsync);
 
@@ -893,6 +1094,7 @@ namespace labrador
 
 		this->impl_->create_device_dependent_resources();
 		this->impl_->device_resources.create_window_size_dependent_resources();
+		this->impl_->create_scene_target();
 		this->impl_->device_info = selected_device(
 			this->impl_->device_resources.adapter_description(),
 			this->impl_->vsync);
@@ -969,6 +1171,12 @@ namespace labrador
 
 		const bool rebuilt =
 			impl.device_resources.window_size_changed(width, height);
+
+		if (rebuilt)
+		{
+			// The scene follows the back buffer's size.
+			impl.create_scene_target();
+		}
 
 		if (rebuilt && restart)
 		{
@@ -1053,15 +1261,13 @@ namespace labrador
 		// Open what the frame is going to draw into, and nothing else. Views
 		// already recording are left alone, so declaring the count twice is
 		// free and does not overwrite a viewport set_viewport has since chosen.
-		const D3D12_CPU_DESCRIPTOR_HANDLE render_target =
-			this->impl_->device_resources.back_buffer_view();
 		const D3D12_VIEWPORT viewport =
 			this->impl_->device_resources.screen_viewport();
 
 		for (int i = 0; i < count; i++)
 		{
-			this->impl_->views[static_cast<size_t>(i)]->begin(render_target,
-				viewport);
+			this->impl_->views[static_cast<size_t>(i)]->begin(
+				this->impl_->view_target(i), viewport);
 		}
 	}
 
@@ -1096,23 +1302,57 @@ namespace labrador
 		// past a view that was opened and not drawn into is legal -
 		// set_view_count rejects only the ones that were drawn into - and a
 		// list left open cannot have its allocator reset next frame.
-		std::vector<ID3D12CommandList*>& lists = this->impl_->submission_lists;
+		//
+		// WITH A CHAIN, THE FRAME LIST CARRYING THE POST PASS GOES BETWEEN THE
+		// LAST PROCESSED VIEW AND THE FIRST OVERLAY ONE - or after every view,
+		// with no overlay - and goes even when no view was declared, so the
+		// frame presents the chain over a black scene rather than whatever the
+		// back buffer held. One ExecuteCommandLists runs the three in order,
+		// and the one signal after it covers all of them.
+		Impl& impl = *this->impl_;
+		std::vector<ID3D12CommandList*>& lists = impl.submission_lists;
 		lists.clear();
 
-		const int capacity = static_cast<int>(this->impl_->views.size());
+		const bool chain = impl.scene_texture != nullptr;
+		const int post_at = impl.overlay_start >= 0
+			? impl.overlay_start
+			: impl.view_count;
+		bool post_recorded = false;
+
+		const auto add_post = [&impl, &lists]()
+		{
+			impl.record_post();
+			ThrowIfFailed(impl.frame_list->Close(),
+				"The frame command list could not be closed");
+			impl.frame_list_open = false;
+			lists.push_back(impl.frame_list.Get());
+		};
+
+		const int capacity = static_cast<int>(impl.views.size());
 		for (int i = 0; i < capacity; i++)
 		{
-			DrawList::View& view = *this->impl_->views[static_cast<size_t>(i)];
+			if (chain && !post_recorded && i == post_at)
+			{
+				add_post();
+				post_recorded = true;
+			}
+
+			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
 			if (!view.recording)
 			{
 				continue;
 			}
 
 			view.close();
-			if (i < this->impl_->view_count)
+			if (i < impl.view_count)
 			{
 				lists.push_back(view.list.Get());
 			}
+		}
+
+		if (chain && !post_recorded)
+		{
+			add_post();
 		}
 
 		if (lists.empty())
@@ -1120,10 +1360,10 @@ namespace labrador
 			return;
 		}
 
-		this->impl_->device_resources.command_queue()->ExecuteCommandLists(
+		impl.device_resources.command_queue()->ExecuteCommandLists(
 			static_cast<UINT>(lists.size()), lists.data());
 		lists.clear();
-		this->impl_->device_resources.signal_frame();
+		impl.device_resources.signal_frame();
 	}
 
 	Vector2F Renderer::back_buffer_size() const
@@ -1242,22 +1482,20 @@ namespace labrador
 		std::ignore = name;
 	}
 
-	// --- the post stage (docs/effects.md#13) -----------------------------------
-	//
-	// NOT YET IN THIS BACKEND. A chain is refused, so every frame draws
-	// straight into the back buffer as before, and begin_overlay declares the
-	// overlay view, which with no chain is all it does on any backend.
+	// --- the post stage (docs/effects.md#5) ------------------------------------
 
 	void Renderer::set_post_effects(std::span<const PostEffect> effects)
 	{
 		check_post_chain(effects, this->impl_->frame_begun);
-		refuse_post_chain_on("d3d12", effects);
+
+		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->create_scene_target();
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
-		// The chain is always empty here, so this always refuses.
-		check_post_values({}, effect, values);
+		check_post_values(this->impl_->post_effects, effect, values);
+		this->impl_->post_values[static_cast<size_t>(effect)] = values;
 	}
 
 	void Renderer::begin_overlay()
@@ -1265,7 +1503,28 @@ namespace labrador
 		Impl& impl = *this->impl_;
 		check_begin_overlay(impl.frame_begun, impl.overlay_start,
 			impl.view_count, static_cast<int>(impl.views.size()));
-		impl.overlay_start = impl.view_count;
-		this->set_view_count(impl.view_count + 1);
+		const int overlay = impl.view_count;
+
+		// A VIEW OPENED EARLIER THIS FRAME, AND THEN DROPPED BY A LOWERED
+		// COUNT, IS STILL RECORDING AGAINST THE SCENE TARGET - and so may
+		// every view above it. All of them are closed unexecuted, so whichever
+		// the frame declares from here on is opened against the back buffer
+		// instead of being skipped as already recording. Nothing was drawn
+		// into them: set_view_count refuses to drop a view that was.
+		const int capacity = static_cast<int>(impl.views.size());
+		for (int i = overlay; i < capacity; i++)
+		{
+			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
+			if (view.recording)
+			{
+				ThrowIfFailed(view.list->Close(),
+					"A view's command list could not be closed");
+				view.recording = false;
+			}
+			view.reset();
+		}
+
+		impl.overlay_start = overlay;
+		this->set_view_count(overlay + 1);
 	}
 }

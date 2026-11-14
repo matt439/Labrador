@@ -215,6 +215,19 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         ps_5_1 pixel_main sprite_pixel_shader
         "engine/render/d3d12/sprite_pixel_shader.h")
+
+    # The post stage (docs/effects.md): the frame's full-screen triangle and
+    # the identity material, at the sprite shader's 5_1.
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
+        vs_5_1 post_vertex_main post_vertex_bytecode
+        "engine/render/d3d12/post_vertex_shader.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
+        ps_5_1 post_pixel_main post_identity_bytecode
+        "engine/render/d3d12/post_identity_pixel_shader.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     target_sources(LabradorEngine PRIVATE
         render/gl/render_resources.cpp
@@ -250,7 +263,9 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     # at device creation - by the driver on Windows, by the browser in a page -
     # which that file explains at length, because it is the one place a backend
     # genuinely differs in kind rather than in spelling from the two that
-    # compile HLSL above.
+    # compile HLSL above. The post stage's GLSL, transliterated from
+    # render/post_frame.hlsli and render/materials/identity.hlsl, ships the
+    # same way in render/gl/post_shader.h.
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     target_sources(LabradorEngine PRIVATE
         render/vulkan/device_resources.cpp
@@ -292,6 +307,22 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         ps_6_0 pixel_main sprite_pixel_shader
         "engine/render/vulkan/sprite_pixel_shader.h")
+
+    # The post stage (docs/effects.md): the frame's full-screen triangle and
+    # the identity material, under the post frame's own binding shifts
+    # (docs/effects.md#6.3), so its t0 does not land on the sprite's s0.
+    compile_hlsl_to_spirv(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
+        vs_6_0 post_vertex_main post_vertex_bytecode
+        "engine/render/vulkan/post_vertex_shader.h"
+        B_SHIFT 0 T_SHIFT 1 S_SHIFT 5
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
+    compile_hlsl_to_spirv(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
+        ps_6_0 post_pixel_main post_identity_bytecode
+        "engine/render/vulkan/post_identity_pixel_shader.h"
+        B_SHIFT 0 T_SHIFT 1 S_SHIFT 5
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(LabradorEngine PRIVATE
         render/null/render_resources.cpp

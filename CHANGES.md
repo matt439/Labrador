@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-14 - Port the post stage to Direct3D 12, OpenGL and Vulkan
+
+**Behaviour change.** Direct3D 12, OpenGL and Vulkan implement the post stage and no longer refuse a non-empty chain: with the identity chain set, the processed views draw into an engine-owned scene target the size and format of the back buffer (on Vulkan, of the output image present copies), rebuilt on resize and on device or context loss, and `submit()` draws it through the material before any overlay view, also with no views. Every backend now behaves as Direct3D 11 does, and with no chain nothing changes.
+
 ### 2026-11-14 - Add a post stage: an identity chain and an overlay boundary
 
 **New API.** `Renderer::set_post_effects(std::span<const PostEffect>)` sets, outside a frame, the materials `submit()` draws the frame's processed views through before any overlay view; `Renderer::begin_overlay()` declares, inside a frame, the first view drawn over that output unprocessed; `Renderer::set_post_values(PostEffect, const PostValues&)` sets an effect's values. `engine/render/post_effect.h` declares `PostEffect`, whose one value is `identity`, and `PostValues`. A chain is at most one effect. Direct3D 11 and null implement it; Direct3D 12, OpenGL and Vulkan refuse a non-empty chain with `std::logic_error` until they do, and all five implement `begin_overlay`, which with no chain only declares a view. `begin_overlay` needs one view of capacity beyond the frame's own. With no chain, nothing a game draws changes. [docs/effects.md](docs/effects.md) is the design.

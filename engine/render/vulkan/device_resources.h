@@ -262,7 +262,9 @@ namespace labrador
 			// whole frame's buffer in one place (renderer.cpp, submit).
 			VulkanBuffer vertices;
 
-			// One padded float4 per run, which is what the shader reads at b0.
+			// One padded float4 per run, which is what the sprite shader reads
+			// at b0, then - with a post chain - the post frame's cbuffer after
+			// the last run's slot (renderer.cpp, submit).
 			VulkanBuffer transforms;
 
 			// Descriptor sets are allocated per run and thrown away with the
@@ -423,10 +425,38 @@ namespace labrador
 
 		const VulkanDevice& owner() const { return *this->owner_; }
 
+		// The pass every view draws in: one colour attachment that it loads.
 		VkRenderPass render_pass() const { return this->render_pass_; }
-		VkFramebuffer framebuffer() const { return this->framebuffer_; }
-		VkImage colour_target() const { return this->colour_image_; }
+
+		// The post stage's pass on the colour target, which differs from the
+		// one above only in discarding what it finds, so it takes the same
+		// framebuffer and the same pipelines.
+		VkRenderPass output_render_pass() const
+		{
+			return this->output_render_pass_;
+		}
+
+		VkFramebuffer framebuffer() const { return this->colour_.framebuffer; }
+		VkImage colour_target() const { return this->colour_.image; }
 		VkExtent2D colour_extent() const { return this->colour_extent_; }
+
+		// THE POST STAGE'S SCENE TARGET (docs/effects.md#4.5): the colour
+		// target's size and format, made while a chain wants it and remade
+		// with the colour target on a resize and a device loss. With it, the
+		// processed views draw here and the post pass samples it into the
+		// colour target, which stays what present copies and read-back reads.
+		// Called outside a frame; releasing it waits for the GPU.
+		void set_scene_target(bool wanted);
+		bool has_scene_target() const
+		{
+			return this->scene_.image != VK_NULL_HANDLE;
+		}
+		VkImage scene_target() const { return this->scene_.image; }
+		VkImageView scene_view() const { return this->scene_.view; }
+		VkFramebuffer scene_framebuffer() const
+		{
+			return this->scene_.framebuffer;
+		}
 
 		Frame& frame()
 		{
@@ -450,13 +480,20 @@ namespace labrador
 		// and torn on another, and there is one place here to get it right.
 		void transition_colour(VkImageLayout layout);
 
-		VkImageLayout colour_layout() const { return this->colour_layout_; }
+		VkImageLayout colour_layout() const { return this->colour_.layout; }
 
 		// The colour target has just been left in `layout` by a render pass
 		// whose finalLayout says so, without a barrier this class recorded.
 		void set_colour_layout(VkImageLayout layout)
 		{
-			this->colour_layout_ = layout;
+			this->colour_.layout = layout;
+		}
+
+		// The same two, for the scene target.
+		void transition_scene(VkImageLayout layout);
+		void set_scene_layout(VkImageLayout layout)
+		{
+			this->scene_.layout = layout;
 		}
 
 		// Room for `bytes` in this frame's vertex or transform buffer, taking a
@@ -478,6 +515,24 @@ namespace labrador
 		void end_upload(VkCommandBuffer commands);
 
 	private:
+		// An engine-owned image the frame draws into, and where its layout
+		// stands. `layout` is where the recorded commands will have left it;
+		// `layout_submitted` is where the executed ones have left it already.
+		// They differ for exactly as long as a command buffer is open, and
+		// abandon_commands is the function that has to tell them apart - a
+		// frame thrown away takes its transitions with it and leaves the
+		// second, whatever else it recorded first. execute() and
+		// abandon_commands commit or reset EVERY tracked image.
+		struct TrackedImage
+		{
+			VkImage image = VK_NULL_HANDLE;
+			VkDeviceMemory memory = VK_NULL_HANDLE;
+			VkImageView view = VK_NULL_HANDLE;
+			VkFramebuffer framebuffer = VK_NULL_HANDLE;
+			VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+			VkImageLayout layout_submitted = VK_IMAGE_LAYOUT_UNDEFINED;
+		};
+
 		// Blocks until the timeline reaches `value`, answering the wait's
 		// VkResult. wait_for_frame, wait_for_gpu and try_wait_for_gpu each
 		// decide what to wait for and what a failure means.
@@ -487,8 +542,22 @@ namespace labrador
 		void select_physical_device();
 		void create_logical_device();
 		void create_frames();
-		void create_render_pass();
+		VkRenderPass create_render_pass(VkAttachmentLoadOp load) const;
+
+		// The colour target, and the scene target with it when a chain wants
+		// one.
 		void create_colour_target();
+		void create_scene_image();
+
+		// An image of colour_extent_ and colour_format_, its memory, its view
+		// and a framebuffer against render_pass_. `what` names it in a throw.
+		// A throw leaves what was made in `target` for destroy_tracked_image.
+		void create_tracked_image(TrackedImage& target,
+			VkImageUsageFlags usage, const char* what);
+		void destroy_tracked_image(TrackedImage& target);
+
+		// The one barrier transition_colour and transition_scene record.
+		void transition(TrackedImage& target, VkImageLayout layout);
 
 		// ANSWERS FALSE WHEN THE DEVICE WAS LOST, for the same reason execute()
 		// does and only where there was a swapchain to replace. A minimised
@@ -555,21 +624,14 @@ namespace labrador
 
 		// The image the frame is drawn into, which is not a swapchain image.
 		// See the top of this file.
-		VkImage colour_image_ = VK_NULL_HANDLE;
-		VkDeviceMemory colour_memory_ = VK_NULL_HANDLE;
-		VkImageView colour_view_ = VK_NULL_HANDLE;
-		VkFramebuffer framebuffer_ = VK_NULL_HANDLE;
+		TrackedImage colour_;
 		VkExtent2D colour_extent_ = { 0, 0 };
-		VkImageLayout colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		// THE SAME THING AS OF THE LAST SUBMIT, WHICH IS THE ONLY ONE THAT IS
-		// TRUE OF THE IMAGE. The member above is where the recorded commands
-		// will have left it once they run; this one is where the executed ones
-		// have left it already. They differ for exactly as long as a command
-		// buffer is open, and abandon_commands is the function that has to tell
-		// them apart - a frame thrown away takes its transitions with it and
-		// leaves this, whatever else it recorded first.
-		VkImageLayout colour_layout_submitted_ = VK_IMAGE_LAYOUT_UNDEFINED;
+		// The post stage's scene target, the same extent and format, and
+		// whether a chain wants it. The flag outlives the image, so a resize
+		// and a device loss remake it.
+		TrackedImage scene_;
+		bool scene_wanted_ = false;
 
 		// B8G8R8A8_UNORM, which is what both Direct3D backends' back buffers
 		// are and what a Win32 surface always offers. Matching them costs
@@ -578,6 +640,7 @@ namespace labrador
 		VkFormat colour_format_ = VK_FORMAT_B8G8R8A8_UNORM;
 
 		VkRenderPass render_pass_ = VK_NULL_HANDLE;
+		VkRenderPass output_render_pass_ = VK_NULL_HANDLE;
 
 		VkCommandPool upload_pool_ = VK_NULL_HANDLE;
 

@@ -46,11 +46,6 @@ namespace labrador
 	void check_begin_overlay(bool frame_begun, int overlay_start,
 		int view_count, int capacity);
 
-	// What a backend without a post stage answers a chain with
-	// (docs/effects.md#13): nothing for an empty one, a refusal naming the
-	// backend for any other.
-	void refuse_post_chain_on(const char* backend,
-		std::span<const PostEffect> effects);
 
 	// Renderer::set_view_count's two checks. `views` holds the capacity
 	// create_device made and `current_count` is the count before this call.
