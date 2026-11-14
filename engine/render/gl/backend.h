@@ -254,12 +254,14 @@ namespace labrador
 		// Each effect's values, by PostEffect, as set_post_values last gave.
 		std::array<PostValues, post_effect_count> post_values{};
 
-		// The full-screen pass: the identity material's program, the
-		// location of its eleven-vec4 frame, and the attribute-less vertex
-		// array a core profile needs to draw at all. Made whether or not a
-		// chain is set, with the sprite program.
+		// The full-screen pass: the identity material's program and the
+		// CRT material's, the location of each one's eleven-vec4 frame, and
+		// the attribute-less vertex array a core profile needs to draw at
+		// all. Made whether or not a chain is set, with the sprite program.
 		GLuint post_program = 0;
 		GLint post_frame_uniform = -1;
+		GLuint post_crt_program = 0;
+		GLint post_crt_frame_uniform = -1;
 		GLuint post_vertex_array = 0;
 
 		// The scene: a GL_RGBA8 texture at the drawable's size, the colour

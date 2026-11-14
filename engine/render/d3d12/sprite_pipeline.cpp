@@ -6,8 +6,11 @@
 // The shaders, as bytes this build compiled (cmake/compile_shaders.cmake) from
 // engine/render/sprite.hlsl - the same source the D3D11 backend compiles, at a
 // different profile. That file says why it is one file and not two. The post
-// pair comes from engine/render/materials/identity.hlsl and the frame it
-// includes, engine/render/post_frame.hlsli.
+// vertex shader and identity material come from
+// engine/render/materials/identity.hlsl, the CRT material from
+// engine/render/materials/crt.hlsl, and both include the frame,
+// engine/render/post_frame.hlsli.
+#include "engine/render/d3d12/post_crt_pixel_shader.h"
 #include "engine/render/d3d12/post_identity_pixel_shader.h"
 #include "engine/render/d3d12/post_vertex_shader.h"
 #include "engine/render/d3d12/sprite_pixel_shader.h"
@@ -296,7 +299,10 @@ namespace labrador
 			IID_PPV_ARGS(this->root_signature_.ReleaseAndGetAddressOf())),
 			"The post root signature could not be created");
 
-		// --- The identity pipeline state ------------------------------------
+		// --- The material pipeline states -----------------------------------
+		//
+		// Every field but the pixel shader is shared, so the description is
+		// filled once and only PS changes between the two creates.
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline = {};
 		pipeline.pRootSignature = this->root_signature_.Get();
 		pipeline.VS = { post_vertex_bytecode, sizeof(post_vertex_bytecode) };
@@ -334,10 +340,16 @@ namespace labrador
 		ThrowIfFailed(device->CreateGraphicsPipelineState(&pipeline,
 			IID_PPV_ARGS(this->identity_state_.ReleaseAndGetAddressOf())),
 			"The identity post pipeline state could not be created");
+
+		pipeline.PS = { post_crt_bytecode, sizeof(post_crt_bytecode) };
+		ThrowIfFailed(device->CreateGraphicsPipelineState(&pipeline,
+			IID_PPV_ARGS(this->crt_state_.ReleaseAndGetAddressOf())),
+			"The CRT post pipeline state could not be created");
 	}
 
 	void PostPipeline::reset()
 	{
+		this->crt_state_.Reset();
 		this->identity_state_.Reset();
 		this->root_signature_.Reset();
 	}

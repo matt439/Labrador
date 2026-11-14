@@ -14,6 +14,7 @@ labrador_add_test_suite(RenderTests
         font_tests.cpp
         label_tests.cpp
         png_file_tests.cpp
+        post_effect_tests.cpp
         render_resources_tests.cpp
         renderer_seam_tests.cpp
         resolution_manager_tests.cpp

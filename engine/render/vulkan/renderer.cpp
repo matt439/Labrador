@@ -13,6 +13,7 @@
 // file says why it is one file and not three, and compile_shaders.cmake says
 // what reaching SPIR-V from HLSL cost and which of the two dxc.exe on a Windows
 // developer's machine can do it.
+#include "engine/render/vulkan/post_crt_pixel_shader.h"
 #include "engine/render/vulkan/post_identity_pixel_shader.h"
 #include "engine/render/vulkan/post_vertex_shader.h"
 #include "engine/render/vulkan/sprite_pixel_shader.h"
@@ -675,31 +676,49 @@ namespace labrador
 		VkShaderModule vertex_shader = create_shader(device,
 			post_vertex_bytecode, sizeof(post_vertex_bytecode),
 			"The post vertex shader could not be created");
-		VkShaderModule pixel_shader = VK_NULL_HANDLE;
+		VkShaderModule identity_shader = VK_NULL_HANDLE;
+		VkShaderModule crt_shader = VK_NULL_HANDLE;
 		try
 		{
-			pixel_shader = create_shader(device,
+			identity_shader = create_shader(device,
 				post_identity_bytecode, sizeof(post_identity_bytecode),
 				"The identity post shader could not be created");
+			crt_shader = create_shader(device,
+				post_crt_bytecode, sizeof(post_crt_bytecode),
+				"The CRT post shader could not be created");
 		}
 		catch (...)
 		{
+			if (identity_shader != VK_NULL_HANDLE)
+			{
+				vkDestroyShaderModule(device, identity_shader, nullptr);
+			}
 			vkDestroyShaderModule(device, vertex_shader, nullptr);
 			throw;
 		}
 
-		VkPipelineShaderStageCreateInfo stages[2] = {};
-		stages[0].sType =
-			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-		stages[0].module = vertex_shader;
-		stages[0].pName = "post_vertex_main";
+		// ONE VERTEX STAGE, ONE FRAGMENT STAGE PER MATERIAL: identity, then
+		// the CRT. Every other state below is the frame's, shared by both.
+		VkPipelineShaderStageCreateInfo stages[2][2] = {};
+		const VkShaderModule material_shaders[2] =
+		{
+			identity_shader,
+			crt_shader,
+		};
+		for (size_t material = 0; material < 2; ++material)
+		{
+			stages[material][0].sType =
+				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			stages[material][0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+			stages[material][0].module = vertex_shader;
+			stages[material][0].pName = "post_vertex_main";
 
-		stages[1].sType =
-			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		stages[1].module = pixel_shader;
-		stages[1].pName = "post_pixel_main";
+			stages[material][1].sType =
+				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			stages[material][1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+			stages[material][1].module = material_shaders[material];
+			stages[material][1].pName = "post_pixel_main";
+		}
 
 		// NO VERTEX INPUT: the triangle comes from the vertex index alone.
 		VkPipelineVertexInputStateCreateInfo vertex_input = {};
@@ -760,32 +779,47 @@ namespace labrador
 
 		// Against the loading pass, with which the output pass is compatible
 		// (device_resources.h, output_render_pass).
-		VkGraphicsPipelineCreateInfo description = {};
-		description.sType =
-			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		description.stageCount = 2;
-		description.pStages = stages;
-		description.pVertexInputState = &vertex_input;
-		description.pInputAssemblyState = &assembly;
-		description.pViewportState = &viewport_state;
-		description.pRasterizationState = &rasteriser;
-		description.pMultisampleState = &multisample;
-		description.pDepthStencilState = nullptr;
-		description.pColorBlendState = &blending;
-		description.pDynamicState = &dynamic;
-		description.layout = this->post_pipeline_layout;
-		description.renderPass = this->device_resources.render_pass();
-		description.subpass = 0;
+		VkGraphicsPipelineCreateInfo descriptions[2] = {};
+		for (size_t material = 0; material < 2; ++material)
+		{
+			VkGraphicsPipelineCreateInfo& description = descriptions[material];
+			description.sType =
+				VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+			description.stageCount = 2;
+			description.pStages = stages[material];
+			description.pVertexInputState = &vertex_input;
+			description.pInputAssemblyState = &assembly;
+			description.pViewportState = &viewport_state;
+			description.pRasterizationState = &rasteriser;
+			description.pMultisampleState = &multisample;
+			description.pDepthStencilState = nullptr;
+			description.pColorBlendState = &blending;
+			description.pDynamicState = &dynamic;
+			description.layout = this->post_pipeline_layout;
+			description.renderPass = this->device_resources.render_pass();
+			description.subpass = 0;
+		}
 
-		VkPipeline made_pipeline = VK_NULL_HANDLE;
-		const VkResult built = vkCreateGraphicsPipelines(device,
-			VK_NULL_HANDLE, 1, &description, nullptr, &made_pipeline);
+		// One call each, without a pipeline cache: a call for several asks
+		// for one. Each pipeline is kept as it is made, so a failure leaves
+		// destroy_device_dependent_resources whatever already exists.
+		VkPipeline made_identity = VK_NULL_HANDLE;
+		VkResult built = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
+			&descriptions[0], nullptr, &made_identity);
+		this->post_identity_pipeline = made_identity;
+		if (built == VK_SUCCESS)
+		{
+			VkPipeline made_crt = VK_NULL_HANDLE;
+			built = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
+				&descriptions[1], nullptr, &made_crt);
+			this->post_crt_pipeline = made_crt;
+		}
 
 		vkDestroyShaderModule(device, vertex_shader, nullptr);
-		vkDestroyShaderModule(device, pixel_shader, nullptr);
+		vkDestroyShaderModule(device, identity_shader, nullptr);
+		vkDestroyShaderModule(device, crt_shader, nullptr);
 
-		check_vk(built, "The identity post pipeline could not be created");
-		this->post_identity_pipeline = made_pipeline;
+		check_vk(built, "The post pipelines could not be created");
 	}
 
 	void Renderer::Impl::destroy_device_dependent_resources()
@@ -800,6 +834,7 @@ namespace labrador
 			this->point_sampler = VK_NULL_HANDLE;
 			this->linear_sampler = VK_NULL_HANDLE;
 			this->post_identity_pipeline = VK_NULL_HANDLE;
+			this->post_crt_pipeline = VK_NULL_HANDLE;
 			this->post_pipeline_layout = VK_NULL_HANDLE;
 			this->post_set_layout = VK_NULL_HANDLE;
 			return;
@@ -836,6 +871,11 @@ namespace labrador
 		{
 			vkDestroyPipeline(device, this->post_identity_pipeline, nullptr);
 			this->post_identity_pipeline = VK_NULL_HANDLE;
+		}
+		if (this->post_crt_pipeline != VK_NULL_HANDLE)
+		{
+			vkDestroyPipeline(device, this->post_crt_pipeline, nullptr);
+			this->post_crt_pipeline = VK_NULL_HANDLE;
 		}
 		if (this->post_pipeline_layout != VK_NULL_HANDLE)
 		{
@@ -1551,7 +1591,16 @@ namespace labrador
 			this->post_values[static_cast<size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
+
+		// A CRT WITH EVERY TERM OFF DRAWS IDENTITY IN ITS PLACE. The views
+		// have already drawn into the scene, so the pass cannot be skipped,
+		// and resampling through the CRT's arithmetic is not exact on every
+		// device (docs/effects.md#7).
 		VkPipeline material_pipeline = this->post_identity_pipeline;
+		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		{
+			material_pipeline = this->post_crt_pipeline;
+		}
 
 		std::memcpy(static_cast<unsigned char*>(frame.transforms.mapped) +
 			frame_offset, &constants, sizeof(constants));

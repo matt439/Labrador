@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 #include "engine/render/d3d12/backend.h"
+#include "engine/render/post_effect.h"
 #include "engine/render/resource_factory.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/throw_if_failed.h"
@@ -226,12 +227,30 @@ TEST_CASE("D3D12 presentation diagnostics cover the post stage's transitions, re
 	fixture.renderer->submit();
 	fixture.renderer->end_frame();
 
-	// A resize remakes the scene; removing the chain releases it.
+	// A resize remakes the scene, and the CRT draws through its own
+	// pipeline state on the same root signature; removing the chain
+	// releases the scene.
 	REQUIRE(fixture.window.resize(resized_size, resized_size));
 	CHECK(fixture.renderer->window_size_changed(resized_size, resized_size));
 	present_frames(*fixture.renderer, texture, presented_frames);
-	fixture.renderer->set_post_effects({});
+	const PostEffect crt[] = { PostEffect::crt };
+	fixture.renderer->set_post_effects(crt);
+	CrtSettings settings;
+	settings.screen = RectangleF(0.0f, 0.0f,
+		static_cast<float>(resized_size), static_cast<float>(resized_size));
+	settings.curvature = 0.2f;
+	settings.scanline_count = 8.0f;
+	settings.scanline_strength = 0.5f;
+	settings.mask_strength = 0.5f;
+	settings.vignette = 0.5f;
+	settings.aberration = 1.0f;
+	const PostValues crt_terms = crt_values(settings, Vector2F(
+		static_cast<float>(resized_size), static_cast<float>(resized_size)));
+	REQUIRE_FALSE(crt_values_are_neutral(crt_terms));
+	fixture.renderer->set_post_values(PostEffect::crt, crt_terms);
 	present_frames(*fixture.renderer, texture, 2 * presented_frames);
+	fixture.renderer->set_post_effects({});
+	present_frames(*fixture.renderer, texture, 3 * presented_frames);
 
 	fixture.renderer.reset();
 	fixture.resources.release_device_resources();

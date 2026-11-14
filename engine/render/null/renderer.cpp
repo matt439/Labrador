@@ -337,7 +337,13 @@ namespace labrador
 		{
 			const PostValues& values =
 				this->impl_->post_values[static_cast<size_t>(effect)];
-			this->impl_->passes.push_back(RecordedPass{ effect, values,
+			// The material a device backend draws: identity for a CRT with
+			// every term off.
+			const PostEffect drawn =
+				effect == PostEffect::crt && crt_values_are_neutral(values)
+					? PostEffect::identity
+					: effect;
+			this->impl_->passes.push_back(RecordedPass{ drawn, values,
 				processed, this->impl_->width, this->impl_->height });
 		}
 	}

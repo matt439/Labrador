@@ -206,10 +206,11 @@ namespace labrador
 		VkDescriptorSetLayout post_set_layout = VK_NULL_HANDLE;
 		VkPipelineLayout post_pipeline_layout = VK_NULL_HANDLE;
 		VkPipeline post_identity_pipeline = VK_NULL_HANDLE;
+		VkPipeline post_crt_pipeline = VK_NULL_HANDLE;
 
 		VkSampler sampler(TextureFilter filter) const;
 
-		// The post stage's layouts and pipeline; part of
+		// The post stage's layouts and pipelines; part of
 		// create_device_dependent_resources.
 		void create_post_resources();
 

@@ -762,8 +762,17 @@ namespace labrador
 			this->post_values[static_cast<size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
+
+		// A CRT WITH EVERY TERM OFF DRAWS IDENTITY IN ITS PLACE. The views
+		// have already drawn into the scene, so the pass cannot be skipped,
+		// and resampling through the CRT's arithmetic is not exact on every
+		// device (docs/effects.md#7).
 		ID3D12PipelineState* material_state =
 			this->post_pipeline.identity_state();
+		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		{
+			material_state = this->post_pipeline.crt_state();
+		}
 
 		// The back buffer is a render target from open_frame on; asked
 		// rather than assumed, as read_back_buffer asks.
