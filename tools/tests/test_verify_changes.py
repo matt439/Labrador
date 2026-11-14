@@ -198,7 +198,8 @@ class PlanTests(unittest.TestCase):
         union = self.plan(areas=["render", "app"])
         self.assertEqual(required(union, "x64-debug"),
                          ["AppTests", "MinimalSmokeTests", "CollisionSmokeTests",
-                          "RenderTests", "SceneTests", "AudioTests", "RenderPixelTests"])
+                          "RenderTests", "SceneTests", "AudioTests", "RenderPixelTests",
+                          "RenderPixelTestsThroughPost"])
         for item in union["configurations"]:
             self.assertEqual(len(item["required_test_names"]), len(set(item["required_test_names"])))
 

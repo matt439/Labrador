@@ -173,6 +173,10 @@
       "wasm-debug",
       "wasm-release"
     ],
+    "RenderContextLossWithPostTests": [
+      "wasm-debug",
+      "wasm-release"
+    ],
     "RenderPixelTests": [
       "x64-debug",
       "x64-release",
@@ -193,7 +197,9 @@
       "x64-debug-gl",
       "x64-release-gl",
       "x64-debug-vulkan",
-      "x64-release-vulkan"
+      "x64-release-vulkan",
+      "wasm-debug",
+      "wasm-release"
     ],
     "RenderPixelTestsWithoutS3tc": [
       "wasm-debug",
@@ -207,8 +213,10 @@
   },
   "chromium_registered": [
     "RenderPixelTests",
+    "RenderPixelTestsThroughPost",
     "RenderPixelTestsWithoutS3tc",
     "RenderContextLossTests",
+    "RenderContextLossWithPostTests",
     "WebWindowTests",
     "MinimalPageTests",
     "MinimalLoadFailurePageTests",

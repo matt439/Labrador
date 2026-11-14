@@ -154,9 +154,12 @@ being load-bearing.
 │   ├── render/             the Renderer, cameras, viewports, colours, fonts,
 │   │   │                   the file readers and the quad arithmetic — every
 │   │   │                   decision that shows on screen
-│   │   ├── sprite.hlsl     the only shader, compiled at build time by fxc for
-│   │   │                   the two Direct3D backends and by dxc for Vulkan —
-│   │   │                   three backends, two compilers, a profile each
+│   │   ├── sprite.hlsl     the sprite shader, compiled at build time by fxc
+│   │   │                   for the two Direct3D backends and by dxc for
+│   │   │                   Vulkan — three backends, two compilers, a profile
+│   │   │                   each
+│   │   ├── post_frame.hlsli the post stage's frame, compiled the same way
+│   │   ├── materials/      post materials, one function each in that frame
 │   │   ├── d3d11/          the D3D11 backend: a device, buffers, five states
 │   │   ├── d3d12/          the D3D12 backend: a device, a queue, a fence and
 │   │   │                   frames in flight — with engine-owned
@@ -457,7 +460,9 @@ different intermediate for one unchanged source. A backend owns the profile it
 asks for and the binding it gives the shader's `b0` — a constant buffer, four
 root constants, a uniform buffer at a shifted descriptor binding — and it does
 not own the arithmetic, which is the same rule as everything else on this
-page.
+page. The post stage's `render/post_frame.hlsli` and its materials are compiled
+by the same three backends under the same rule, and GL carries both shaders as
+hand transliterations beside each other in its folder.
 
 **There are five backends**: `render/d3d11/`, `render/d3d12/`, `render/gl/`,
 `render/vulkan/` and `render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at

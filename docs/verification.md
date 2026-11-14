@@ -57,7 +57,7 @@ Each area plans a subset of these tracks, in this order:
 
 | Area | Tracks | Registrations it adds to each track | Manual obligations it adds |
 | --- | --- | --- | --- |
-| render | all seven | `RenderTests`, `SceneTests`, `AudioTests`; native rasterizing tracks add `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests`, D3D12 adds `D3D12SynchronizationTests` | Vulkan synchronization validation, required for an `engine/render/vulkan` path |
+| render | all seven | `RenderTests`, `SceneTests`, `AudioTests`; native rasterizing tracks add `RenderPixelTests`, `RenderPixelTestsThroughPost`, `MinimalSmokeTests` and `CollisionSmokeTests`, D3D12 adds `D3D12SynchronizationTests` | Vulkan synchronization validation, required for an `engine/render/vulkan` path |
 | audio | x64-debug, x64-debug-null, wasm-debug, wasm-release-null | `AudioTests`, `AudioSampleTests`; native null adds `AudioSmokeTests` | the XAudio2 endpoint smoke and listening (`WEB#3`) |
 | input | the same four | `InputTests` | real pads and touchscreens |
 | app | all seven | `AppTests`; native tracks add `MinimalSmokeTests` and `CollisionSmokeTests`, native null adds `LocalMultiplayerSmokeTests` | Vulkan synchronization validation, conditional |
