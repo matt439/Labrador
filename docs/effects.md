@@ -172,16 +172,15 @@ pipeline)" under *Not now*, "Each waits for a client that needs it (T1)"
 a client asks" (`docs/2026-11-04-decision-recommendations.md:386-392`); TODO
 holds it as a DECISION (`TODO.md:130`).
 
-**Whether the trigger has fired is itself a decision (E16).** Nothing in the
-client asks for a CRT, curvature, bloom or a post stage. The backstory's
-"probably a beige CRT" (ColourWars `docs/backstory.md:43`) is an art brief for
-a sprite casing, no engine report was filed, and the colourwars-reports table
-has no row for one. The request comes from the engine's owner, who is also
-the client's author. The parked colour-transform ask above is the one client
-demand on record, and it is stronger T1 evidence than the look. Those dated
-records are **not edited** ("The comparison as written, not updated as items
-land", `docs/survey/2026-10-27.md:5`); whatever E16 decides is recorded in
-TODO and BACKLOG (§15). T8's objection is answered in §5.3.
+**The trigger has fired (E16, answered 2026-11-14).** ColourWars has one
+developer, who is also the engine's owner, and wants the CRT look for it; that
+is the client in hand T1 asks for. No client document asked first, and none
+needs to: a client's documents record its author's decisions, they do not
+outrank them. The parked colour-transform ask above is a second use for the
+same stage. The dated records that deferred this are **not edited** ("The
+comparison as written, not updated as items land",
+`docs/survey/2026-10-27.md:5`); the answer is recorded in TODO and BACKLOG
+(§15). T8's objection is answered in §5.3.
 
 ---
 
@@ -1085,7 +1084,9 @@ would decide:
 3. **The other paths.** The reveal (`match_opening.cpp:343-347`) and the
    countdown front list (`match_opening.cpp:348-356`) also need placing on
    one side of the overlay boundary, which the sketch does not show.
-4. **Whether the CRT stays on in gameplay** is E9's open question.
+4. **The CRT stays on in gameplay, subtler** (E9 (d)): the settings lerp from
+   the opening's look to gameplay's across the 0.8 s push, and the region
+   grows with the picture until it is the window or the panes (§8.3).
 
 ### 8.3 Keeping the HUD flat in gameplay
 
@@ -1094,8 +1095,17 @@ ColourWars draws its HUD into the same per-pane views as the world (ColourWars
 HUD, at no cost, or after `scene.draw` it calls `begin_overlay()` and declares
 one view per pane for the HUD: 4 + 1 + 3 = 8 views in four-player, of which
 the overlay's first is the one `set_post_effects` reserves, with pointer hits
-mapped through `crt_source_position`. This section only applies if E9's
-answer keeps the CRT on during gameplay.
+mapped through `crt_source_position`. E9 (d) keeps a subtler CRT on in
+gameplay, so this applies, but how much of it does depends on the experiment:
+gameplay terms that do not move pixels (scanlines, mask, vignette, a slight
+fringe with no curvature) leave a HUD drawn in the panes where it was, and
+only curvature makes the overlay views and pointer mapping necessary.
+
+**The experiment needs fast iteration.** The client reads its strengths from
+data (T7), so trying a look is editing values, not rebuilding. The gameplay
+starting point to try first is zero curvature, light scanlines and mask, a
+faint vignette and fringe, and brightness compensation to keep paint colours
+readable; the opening's look is the same terms turned up with curvature.
 
 ### 8.4 Game render targets (GAP#3)
 
@@ -1294,14 +1304,14 @@ before the milestone that depends on it.
 | **E6** | Where a game target lives, and who recreates it after a loss | (a) `RenderResources` keeps each target's description, and a factory call that `Application::on_device_restored` makes beside `add_white_texture` recreates them empty; (b) owned by the Renderer, with `draw_sprite` resolving them some other way | **(a)**: `draw_sprite` resolves it like any texture. The renderer holds only `const RenderResources*` (`renderer.h:364`), so the restore belongs to Application, whose replay already adds what no manifest names (`application.cpp:695-713`). Each recreated target costs a D3D12 descriptor slot (`render_resources.h:96-110`) | | `resource_factory.h`, `render_resources.h`, `application.cpp` restore and its comment |
 | **E7** | Target format, and banding | (a) 8-bit UNORM only, with ordered dither on bloom's pyramid writes; (b) 8-bit UNORM, banding accepted; (c) optional float for bloom | **(a)**: identity stays byte-identical, half the memory, no WebGL extension, and the dither answers re-quantisation | | SEAM §5 |
 | **E8** | Material parameter block | count of `float4`s: 8, 16 | **8**: the CRT needs 3. Doubling later is a frame change, not an API break, but at 16 the frame is 76 DWORDs and D3D12 moves from root constants to a root CBV (§5.4) | | `post_frame.hlsli`; D3D12's `PostPipeline` under 16 |
-| **E9** | Whether the CRT stays on in gameplay, and its regions | (a) off in gameplay, faded during the push; (b) on per pane, several regions per material; (c) on across the whole window, one region | **Open, the client's author's to answer** before any region design is fixed. Curving four panes as one tube bears on the client's exit condition that aim sweeps stay "stable and readable" (ColourWars `docs/polish-plan.md:314-316`), and "pushes through the glass" (ColourWars `docs/backstory.md:65`) reads as well as leaving the tube behind | | `CrtSettings`; §8.3 |
+| **E9** | Whether the CRT stays on in gameplay, and its regions | (a) off in gameplay, faded during the push; (b) on per pane, several regions per material; (c) on across the whole window, one region; (d) on in both, pronounced in the opening and subtle in gameplay, the gameplay look found by experiment | Curving four panes as one tube bears on the client's exit condition that aim sweeps stay "stable and readable" (ColourWars `docs/polish-plan.md:314-316`) | **(d)**, 2026-11-14, by the client's author. The opening is the pronounced look; gameplay gets subtler filters whose terms and regions are tuned by trying them (§8.3). Consequences: every term is independently zero-able and read from data, the settings lerp from the opening's to gameplay's across the push, and whether gameplay curves per pane, across the window, or not at all is left to the experiment, so v1 must allow one region per material either way | `CrtSettings`; §8.3 |
 | **E10** | D3D11 post profile | (a) `vs/ps_4_0` for post only; (b) a vertex buffer to stay at 9_1 | **(a)**: the 10_0 floor already allows it, and 9_1 limits would not hold the CRT | | `windows-release.mdx:289-290`; ARCHITECTURE shared-shader paragraph |
 | **E11** | `/WX` on material compiles | (a) off, as `compile_hlsl` today; (b) on | **(a)**: `ps_5_1` alone warns on the early-return idiom | | `compile_shaders.cmake` |
 | **E12** | How effect frames are compared | (a) analytic `end_not_comparable` cases only; (b) a second comparator with a measured allowance | **(a)** | | `golden_image.cpp:385-388` only under (b) |
 | **E13** | Reduced internal resolution | (a) scene target always back-buffer sized; (b) a cap, for phones and pixel art | **(a)** for v1; (b) with GAP#3's integer scaling | | SEAM §6 `back_buffer_size`; `pixel_tests.cpp:255-298` reasoning |
 | **E14** | Citing the client here | (a) by path and line, as this draft does, pinned to a ColourWars revision; (b) generically, as the colourwars-reports folder does | the owner's; this draft uses (a) because the client is public | | this file |
 | **E15** | Where the work is tracked | (a) under `GAP#3`; (b) a new row family for the post stage, CRT, bloom and lighting | **(b)**, with GAP#3 re-pointed here: they are separate yeses. Waits on E16 | | `TODO.md:130`, BACKLOG.md |
-| **E16** | Has T1's trigger fired | (a) the engine owner's request, made as ColourWars' author, is enough under T1; (b) it needs a ColourWars report through the colourwars-reports process; (c) the trigger is the parked colour-transform ask (ColourWars `TODO.md:89`, `docs/review/gap-audit.md:391`), making the first built-in material a colour matrix rather than a look | the owner's. No client document asks for a CRT or a post stage (§2.3); (c) is the stronger T1 evidence on record | | TODO.md, BACKLOG.md; `docs/review/colourwars-reports/README.md` under (b) |
+| **E16** | Has T1's trigger fired | (a) the engine owner's request, made as ColourWars' author, is enough under T1; (b) it needs a ColourWars report through the colourwars-reports process; (c) the trigger is the parked colour-transform ask (ColourWars `TODO.md:89`, `docs/review/gap-audit.md:391`), making the first built-in material a colour matrix rather than a look | the owner's | **(a)**, 2026-11-14. ColourWars' sole developer wants the look; what that developer says is the client's demand, and its documents count for little beside it. No report is filed | TODO.md, BACKLOG.md |
 | **E17** | Colour encoding of post maths | (a) gamma-space maths on the stored sRGB-encoded values, chosen deliberately as part of the look; (b) decode to linear in the frame's helpers and re-encode before the write, a few ALU ops a tap | **(b)** for bloom's blur at least, where gamma-space halos darken and fringe **[GK]**; the CRT's terms decided by looking at X2. Separate from §14's out-of-scope sRGB output format | | `post_frame.hlsli`; SEAM §5 |
 | **E18** | The frame's size | (a) the minimum the CRT needs: one input, one sampler, the header and three material `float4`s; (b) reserved headroom: four inputs, two samplers, eight `float4`s, an intermediate pool | the owner's. T1 rules out speculative frameworks ("generalise only as far as real clients demand", `PHILOSOPHY.md:45-47`); growing the frame later is an internal change, as E8 argues for the parameter count. §5.4 sketches (b) | | `post_frame.hlsli` |
 | **E19** | Sequencing the CRT against the toolchain | (a) the CRT with hand-written GLSL in P2, moving X3, E2 and the toolchain to P6 with game materials; (b) a D3D11-and-null preview the client can try from a work-branch pin after X1 and X2, other backends refusing a chain with a T6 message until P1, against AGENTS' rule that every render change is checked on five backends; (c) as first drafted, the CRT cross-compiled in P2 | **(a)**. Calendar time to the first frame ColourWars can show: about 7-9 weeks to a release tag under (a); about 2 weeks to a work-branch pin under (b), not landable on master until P1; about 8-10 weeks under (c). Each adds the client's pin move | | §13; AGENTS verification boundaries under (b) |
@@ -1322,7 +1332,9 @@ here as a new row before it is built.
   desktop GPU, and §10.3's null cases pass on `x64-debug-null`.
 - **X2 - the CRT on D3D11.** *Days.* §7.1's material through fxc, the region,
   `crt_source_position` and §10.2's analytic cases. Looked at on screen in a
-  throwaway build of the opening's shape (a bezel sprite, a picture, a push),
+  throwaway build of the opening's shape (a bezel sprite, a picture, a push
+  that lerps from the pronounced look to a subtle gameplay one, E9 (d)), with
+  the strengths read from a file so looks can be tried without rebuilding;
   not in ColourWars.
 - **X3 - the cross-compile path.** *Days.* `post_frame.hlsli` and the CRT
   through vcpkg `directx-dxc` and `spirv-cross` under `x64-debug-gl` and
@@ -1401,7 +1413,6 @@ it. **None is made in advance.**
 | `windows-release.mdx`, `prerequisites.mdx`, `troubleshooting.mdx`, `sprites-and-text.mdx` | Post profile; tools; blend scope | P2, P6 |
 | `samples/minimal/README.md` change list | Only if the template builds materials | P6 |
 | `TODO.md:130`, BACKLOG.md | GAP#3 re-pointed here; new rows per E15; stories before work (`TODO.md:124`) | the owner's yes |
-| `docs/review/colourwars-reports/README.md` | A decision file and table row, only if the client files a report (E16 (b)) | when filed |
 | PHILOSOPHY, UI section's components paragraph, and T1 | Whether a tuned look ships in the engine before clients copy it unchanged (E3) | P2, under E3 (a) or (d) |
 | `docs/port/web.md` | "`compile_shaders.cmake` is never reached on `gl`" (`docs/port/web.md:539`) and the WebGL2 shader-path decisions around it | P6 under E19 (a); P2 under (c) |
 | `docs/verification.md` | The planner contract `tools/verify_changes.py` implements: the new entries and GL page acceptance | P1 |
