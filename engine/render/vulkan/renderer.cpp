@@ -13,6 +13,8 @@
 // file says why it is one file and not three, and compile_shaders.cmake says
 // what reaching SPIR-V from HLSL cost and which of the two dxc.exe on a Windows
 // developer's machine can do it.
+#include "engine/render/vulkan/post_identity_pixel_shader.h"
+#include "engine/render/vulkan/post_vertex_shader.h"
 #include "engine/render/vulkan/sprite_pixel_shader.h"
 #include "engine/render/vulkan/sprite_vertex_shader.h"
 
@@ -91,6 +93,29 @@ namespace labrador
 			transform[2] = values.x_offset;
 			transform[3] = values.y_offset;
 		}
+
+		// post_frame.hlsli's cbuffer, field for field: eleven float4s, 176
+		// bytes - past the 128-byte minimum push-constant size, so it is a
+		// uniform buffer (docs/effects.md#4.5).
+		struct PostFrameConstants
+		{
+			float output_size[4];
+			float scene_size[4];
+			float frame_terms[4];
+			float material_values[8][4];
+		};
+		static_assert(sizeof(PostFrameConstants) == 11 * 4 * sizeof(float),
+			"The post frame is eleven float4s, as post_frame.hlsli declares");
+		static_assert(sizeof(PostFrameConstants::material_values) ==
+			sizeof(PostValues::values),
+			"PostValues fills the frame's material_values exactly");
+
+		// The post frame's registers under its binding shifts, b+0, t+1 and
+		// s+5 (engine/CMakeLists.txt; docs/effects.md#6.3).
+		const uint32_t post_frame_binding = 0;
+		const uint32_t post_input_0_binding = 1;
+		const uint32_t post_point_sampler_binding = 5;
+		const uint32_t post_linear_sampler_binding = 6;
 
 		// A shader module from a byte array this build produced.
 		//
@@ -592,6 +617,175 @@ namespace labrador
 			&to_index, 0, nullptr);
 
 		this->device_resources.end_upload(upload);
+
+		this->create_post_resources();
+	}
+
+	void Renderer::Impl::create_post_resources()
+	{
+		VkDevice device = this->device_resources.device();
+
+		// THE FRAME'S REGISTERS, NOT A MATERIAL'S. post_frame.hlsli declares
+		// every one, so this layout serves every material.
+		VkDescriptorSetLayoutBinding bindings[4] = {};
+		bindings[0].binding = post_frame_binding;
+		bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		bindings[0].descriptorCount = 1;
+		bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		bindings[1].binding = post_input_0_binding;
+		bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		bindings[1].descriptorCount = 1;
+		bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		bindings[2].binding = post_point_sampler_binding;
+		bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+		bindings[2].descriptorCount = 1;
+		bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		bindings[3].binding = post_linear_sampler_binding;
+		bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+		bindings[3].descriptorCount = 1;
+		bindings[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		VkDescriptorSetLayoutCreateInfo set_description = {};
+		set_description.sType =
+			VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		set_description.bindingCount = 4;
+		set_description.pBindings = bindings;
+
+		VkDescriptorSetLayout made_set_layout = VK_NULL_HANDLE;
+		check_vk(vkCreateDescriptorSetLayout(device, &set_description, nullptr,
+			&made_set_layout),
+			"The post descriptor set layout could not be created");
+		this->post_set_layout = made_set_layout;
+
+		VkPipelineLayoutCreateInfo layout_description = {};
+		layout_description.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		layout_description.setLayoutCount = 1;
+		layout_description.pSetLayouts = &this->post_set_layout;
+
+		VkPipelineLayout made_pipeline_layout = VK_NULL_HANDLE;
+		check_vk(vkCreatePipelineLayout(device, &layout_description, nullptr,
+			&made_pipeline_layout),
+			"The post pipeline layout could not be created");
+		this->post_pipeline_layout = made_pipeline_layout;
+
+		VkShaderModule vertex_shader = create_shader(device,
+			post_vertex_bytecode, sizeof(post_vertex_bytecode),
+			"The post vertex shader could not be created");
+		VkShaderModule pixel_shader = VK_NULL_HANDLE;
+		try
+		{
+			pixel_shader = create_shader(device,
+				post_identity_bytecode, sizeof(post_identity_bytecode),
+				"The identity post shader could not be created");
+		}
+		catch (...)
+		{
+			vkDestroyShaderModule(device, vertex_shader, nullptr);
+			throw;
+		}
+
+		VkPipelineShaderStageCreateInfo stages[2] = {};
+		stages[0].sType =
+			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+		stages[0].module = vertex_shader;
+		stages[0].pName = "post_vertex_main";
+
+		stages[1].sType =
+			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		stages[1].module = pixel_shader;
+		stages[1].pName = "post_pixel_main";
+
+		// NO VERTEX INPUT: the triangle comes from the vertex index alone.
+		VkPipelineVertexInputStateCreateInfo vertex_input = {};
+		vertex_input.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+		VkPipelineInputAssemblyStateCreateInfo assembly = {};
+		assembly.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+		VkPipelineViewportStateCreateInfo viewport_state = {};
+		viewport_state.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewport_state.viewportCount = 1;
+		viewport_state.scissorCount = 1;
+
+		const VkDynamicState dynamic_states[] =
+		{
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR,
+		};
+
+		VkPipelineDynamicStateCreateInfo dynamic = {};
+		dynamic.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamic.dynamicStateCount = 2;
+		dynamic.pDynamicStates = dynamic_states;
+
+		// No culling, for the sprite pipeline's reason: the negative viewport
+		// reverses the winding.
+		VkPipelineRasterizationStateCreateInfo rasteriser = {};
+		rasteriser.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasteriser.polygonMode = VK_POLYGON_MODE_FILL;
+		rasteriser.cullMode = VK_CULL_MODE_NONE;
+		rasteriser.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasteriser.lineWidth = 1.0f;
+
+		VkPipelineMultisampleStateCreateInfo multisample = {};
+		multisample.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+		// A FULL-SCREEN PASS REPLACES; only draw lists blend
+		// (docs/effects.md#5.3).
+		VkPipelineColorBlendAttachmentState blend = {};
+		blend.blendEnable = VK_FALSE;
+		blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+			VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+			VK_COLOR_COMPONENT_A_BIT;
+
+		VkPipelineColorBlendStateCreateInfo blending = {};
+		blending.sType =
+			VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		blending.attachmentCount = 1;
+		blending.pAttachments = &blend;
+
+		// Against the loading pass, with which the output pass is compatible
+		// (device_resources.h, output_render_pass).
+		VkGraphicsPipelineCreateInfo description = {};
+		description.sType =
+			VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		description.stageCount = 2;
+		description.pStages = stages;
+		description.pVertexInputState = &vertex_input;
+		description.pInputAssemblyState = &assembly;
+		description.pViewportState = &viewport_state;
+		description.pRasterizationState = &rasteriser;
+		description.pMultisampleState = &multisample;
+		description.pDepthStencilState = nullptr;
+		description.pColorBlendState = &blending;
+		description.pDynamicState = &dynamic;
+		description.layout = this->post_pipeline_layout;
+		description.renderPass = this->device_resources.render_pass();
+		description.subpass = 0;
+
+		VkPipeline made_pipeline = VK_NULL_HANDLE;
+		const VkResult built = vkCreateGraphicsPipelines(device,
+			VK_NULL_HANDLE, 1, &description, nullptr, &made_pipeline);
+
+		vkDestroyShaderModule(device, vertex_shader, nullptr);
+		vkDestroyShaderModule(device, pixel_shader, nullptr);
+
+		check_vk(built, "The identity post pipeline could not be created");
+		this->post_identity_pipeline = made_pipeline;
 	}
 
 	void Renderer::Impl::destroy_device_dependent_resources()
@@ -605,6 +799,9 @@ namespace labrador
 			this->set_layout = VK_NULL_HANDLE;
 			this->point_sampler = VK_NULL_HANDLE;
 			this->linear_sampler = VK_NULL_HANDLE;
+			this->post_identity_pipeline = VK_NULL_HANDLE;
+			this->post_pipeline_layout = VK_NULL_HANDLE;
+			this->post_set_layout = VK_NULL_HANDLE;
 			return;
 		}
 
@@ -634,6 +831,23 @@ namespace labrador
 		{
 			vkDestroySampler(device, this->linear_sampler, nullptr);
 			this->linear_sampler = VK_NULL_HANDLE;
+		}
+		if (this->post_identity_pipeline != VK_NULL_HANDLE)
+		{
+			vkDestroyPipeline(device, this->post_identity_pipeline, nullptr);
+			this->post_identity_pipeline = VK_NULL_HANDLE;
+		}
+		if (this->post_pipeline_layout != VK_NULL_HANDLE)
+		{
+			vkDestroyPipelineLayout(device, this->post_pipeline_layout,
+				nullptr);
+			this->post_pipeline_layout = VK_NULL_HANDLE;
+		}
+		if (this->post_set_layout != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(device, this->post_set_layout,
+				nullptr);
+			this->post_set_layout = VK_NULL_HANDLE;
 		}
 	}
 
@@ -666,8 +880,20 @@ namespace labrador
 		// the caller makes before submit(), including the ones the seam allows
 		// to throw. This costs two image barriers a frame and buys a render
 		// pass whose whole life is inside submit().
+		//
+		// WITH A CHAIN, BOTH ARE CLEARED: the scene because the processed
+		// views draw into it, and the colour target so that a frame begun and
+		// never submitted presents black rather than the last frame's post
+		// output (docs/effects.md#4.1).
+		const bool scene = this->device_resources.has_scene_target();
+
 		this->device_resources.transition_colour(
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		if (scene)
+		{
+			this->device_resources.transition_scene(
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		}
 
 		// Opaque black, spelt out - the clear colour is a term RenderPixelTests
 		// pins, so it is worth being able to read it here.
@@ -685,9 +911,20 @@ namespace labrador
 		vkCmdClearColorImage(this->device_resources.commands(),
 			this->device_resources.colour_target(),
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &black, 1, &range);
+		if (scene)
+		{
+			vkCmdClearColorImage(this->device_resources.commands(),
+				this->device_resources.scene_target(),
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &black, 1, &range);
+		}
 
 		this->device_resources.transition_colour(
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		if (scene)
+		{
+			this->device_resources.transition_scene(
+				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		}
 
 		// The views the frame will draw into, against the buffer that now
 		// exists. view_count is deliberately not touched: begin_frame sets it
@@ -949,7 +1186,12 @@ namespace labrador
 			total_runs += view.runs.size();
 		}
 
-		if (total_runs == 0)
+		// WITHOUT A CHAIN, A FRAME WITH NOTHING TO DRAW RECORDS NOTHING: the
+		// clear open_frame recorded is the whole frame. With one, the post pass
+		// runs anyway, so a frame with no views presents the chain over a
+		// black scene rather than whatever the colour target held.
+		const bool chain = device_resources.has_scene_target();
+		if (total_runs == 0 && !chain)
 		{
 			return;
 		}
@@ -957,10 +1199,24 @@ namespace labrador
 		const VkDeviceSize transform_stride =
 			device_resources.owner().uniform_alignment;
 
+		// THE POST FRAME RIDES IN THE TRANSFORM BUFFER, after the last run's
+		// slot: the stride is a multiple of the device's uniform offset
+		// alignment, so the offset is a legal one, and the buffer is already
+		// per frame in flight and remade with the device.
+		const VkDeviceSize post_frame_offset =
+			static_cast<VkDeviceSize>(total_runs) * transform_stride;
+		VkDeviceSize post_frame_bytes = 0;
+		if (chain)
+		{
+			const VkDeviceSize constants = sizeof(PostFrameConstants);
+			post_frame_bytes = (constants + transform_stride - 1) /
+				transform_stride * transform_stride;
+		}
+
 		device_resources.reserve_vertices(
 			static_cast<VkDeviceSize>(total_vertices) * sizeof(SpriteVertex));
 		device_resources.reserve_transforms(
-			static_cast<VkDeviceSize>(total_runs) * transform_stride);
+			post_frame_offset + post_frame_bytes);
 
 		DeviceResources::Frame& frame = device_resources.frame();
 
@@ -971,8 +1227,6 @@ namespace labrador
 		// here as a parameter of the draw rather than as three calls per run.
 		unsigned char* vertex_bytes =
 			static_cast<unsigned char*>(frame.vertices.mapped);
-		unsigned char* transform_bytes =
-			static_cast<unsigned char*>(frame.transforms.mapped);
 
 		size_t vertex_base = 0;
 
@@ -992,177 +1246,75 @@ namespace labrador
 		}
 
 		VkCommandBuffer commands = device_resources.commands();
-
-		// A no-op in every ordinary frame - open_frame left it a colour
-		// attachment. It is here for the frame that reaches submit() without
-		// one, which the seam does not forbid, and it is what makes the render
-		// pass' initialLayout true rather than hoped for.
-		device_resources.transition_colour(
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
 		const VkExtent2D extent = device_resources.colour_extent();
 
 		VkRenderPassBeginInfo pass = {};
 		pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		pass.renderPass = device_resources.render_pass();
-		pass.framebuffer = device_resources.framebuffer();
 		pass.renderArea.offset = { 0, 0 };
 		pass.renderArea.extent = extent;
 
+		size_t transform_slot = 0;
+		vertex_base = 0;
+
+		if (!chain)
+		{
+			// A no-op in every ordinary frame - open_frame left it a colour
+			// attachment. It is here for the frame that reaches submit()
+			// without one, which the seam does not forbid, and it is what
+			// makes the render pass' initialLayout true rather than hoped for.
+			device_resources.transition_colour(
+				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+			pass.renderPass = device_resources.render_pass();
+			pass.framebuffer = device_resources.framebuffer();
+			vkCmdBeginRenderPass(commands, &pass, VK_SUBPASS_CONTENTS_INLINE);
+
+			try
+			{
+				impl.record_views(commands, 0, impl.view_count, transform_slot,
+					vertex_base);
+			}
+			catch (...)
+			{
+				vkCmdEndRenderPass(commands);
+				throw;
+			}
+
+			vkCmdEndRenderPass(commands);
+
+			// The pass' finalLayout says where it left the image, and nothing
+			// this class recorded put it there - so the tracking is told
+			// rather than asked. It is the same layout it went in as, which is
+			// what would make a second pass in one frame legal here - and
+			// renderer.h decides that a second submit does nothing on any
+			// backend, so what this line actually buys is the read-back path,
+			// which reopens the command buffer after this and needs the layout
+			// to be true.
+			device_resources.set_colour_layout(
+				VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+			return;
+		}
+
+		// WITH A CHAIN, TWO PASSES. The processed views - every view before
+		// begin_overlay's, or every view without one - draw into the scene
+		// target; then one pass on the colour target draws the scene through
+		// the chain and the overlay views over it, in the same subpass, so
+		// the overlay needs no dependency of its own (docs/effects.md#4.5).
+		const int post_at = impl.overlay_start >= 0
+			? std::min(impl.overlay_start, impl.view_count)
+			: impl.view_count;
+
+		device_resources.transition_scene(
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+		pass.renderPass = device_resources.render_pass();
+		pass.framebuffer = device_resources.scene_framebuffer();
 		vkCmdBeginRenderPass(commands, &pass, VK_SUBPASS_CONTENTS_INLINE);
 
 		try
 		{
-			vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				impl.pipeline);
-
-			const VkDeviceSize vertex_offset = 0;
-			vkCmdBindVertexBuffers(commands, 0, 1, &frame.vertices.buffer,
-				&vertex_offset);
-			vkCmdBindIndexBuffer(commands, impl.indices.buffer, 0,
-				VK_INDEX_TYPE_UINT16);
-
-			size_t transform_slot = 0;
-			vertex_base = 0;
-
-			// In view order, which is the only ordering guarantee the seam makes -
-			// and here it is the only ordering there is, because a view's recording
-			// is a vector rather than a command list.
-			for (int i = 0; i < impl.view_count; i++)
-			{
-				const DrawList::View& view = *impl.views[static_cast<size_t>(i)];
-				const size_t view_vertex_base = vertex_base;
-				vertex_base += view.vertices.size();
-
-				for (const DrawList::View::Run& run : view.runs)
-				{
-					// ONE RECTANGLE, AND EVERYTHING BELOW READS IT. Vulkan takes a
-					// float viewport, so this backend could skip pixel_rect - and
-					// must not: viewport.h says it is the only conversion to whole
-					// pixels any backend may make, and the point of that rule is
-					// that all of them make the same one.
-					const RectangleI pixels = run.viewport.pixel_rect();
-
-					if (pixels.width <= 0 || pixels.height <= 0)
-					{
-						// An empty pane draws nothing on every backend. Here it
-						// would also be a zero-height viewport, which this API does
-						// not define, so it is skipped rather than submitted.
-						continue;
-					}
-
-					// THE NEGATIVE HEIGHT IS THE Y FLIP, AND IT IS THIS BACKEND'S
-					// WHOLE SHARE OF THE ONE TERM renderer.h SAYS A BACKEND STILL
-					// DECIDES. Vulkan's clip space runs y down where Direct3D's and
-					// GL's run up, so the shader those two share - which is this
-					// one, unchanged - would put the top of every pane at the
-					// bottom. Handing the rasteriser a viewport whose origin is the
-					// pane's BOTTOM edge and whose height is negative inverts y
-					// once, in the one place a backend is allowed to. The GL
-					// backend answers the mirror image of this question by
-					// subtracting from the framebuffer height, and says so there.
-					VkViewport pane = {};
-					pane.x = static_cast<float>(pixels.x);
-					pane.y = static_cast<float>(pixels.y + pixels.height);
-					pane.width = static_cast<float>(pixels.width);
-					pane.height = -static_cast<float>(pixels.height);
-					pane.minDepth = run.viewport.minDepth;
-					pane.maxDepth = run.viewport.maxDepth;
-					vkCmdSetViewport(commands, 0, 1, &pane);
-
-					// The scissor is not optional and is not the viewport: this API
-					// clips to both, and a scissor offset may not be negative. The
-					// clamp removes negative near edges without moving the pane.
-					// Its far edges retain the pane extent; the render area's extent
-					// and the colour target bound the visible output. An oversized
-					// pane keeps its local pixel scale and is cropped to that output.
-					const int scissor_x = std::max(0, pixels.x);
-					const int scissor_y = std::max(0, pixels.y);
-
-					VkRect2D scissor = {};
-					scissor.offset = { scissor_x, scissor_y };
-					scissor.extent.width = static_cast<uint32_t>(std::max(0,
-						pixels.x + pixels.width - scissor_x));
-					scissor.extent.height = static_cast<uint32_t>(std::max(0,
-						pixels.y + pixels.height - scissor_y));
-					vkCmdSetScissor(commands, 0, 1, &scissor);
-
-					const VkDeviceSize transform_offset =
-						static_cast<VkDeviceSize>(transform_slot) *
-						transform_stride;
-
-					float transform[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-					fill_transform(transform, pixels);
-					std::memcpy(transform_bytes + transform_offset, transform,
-						sizeof(transform));
-					transform_slot++;
-
-					// A DESCRIPTOR SET PER RUN, THROWN AWAY WITH THE FRAME. D3D12
-					// keeps one shader-visible heap and gives every texture a slot
-					// in it for the life of the process, which is a fixed capacity
-					// and a re-load rule (its render_resources.cpp carries both).
-					// This is the other answer: the pool is the frame's, resetting
-					// it frees every set at once, and a texture holds no descriptor
-					// state at all. What it costs is one allocate and one update
-					// per run per frame, on a path that already touches the driver
-					// once per run.
-					VkDescriptorSet set = device_resources.allocate_descriptor_set(
-						impl.set_layout);
-
-					VkDescriptorBufferInfo transform_binding = {};
-					transform_binding.buffer = frame.transforms.buffer;
-					transform_binding.offset = transform_offset;
-					transform_binding.range = sizeof(transform);
-
-					VkDescriptorImageInfo texture_binding = {};
-					texture_binding.imageView = run.texture->view();
-					texture_binding.imageLayout =
-						VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-					VkDescriptorImageInfo sampler_binding = {};
-					sampler_binding.sampler = impl.sampler(run.filter);
-
-					VkWriteDescriptorSet writes[3] = {};
-					writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					writes[0].dstSet = set;
-					writes[0].dstBinding = 0;
-					writes[0].descriptorCount = 1;
-					writes[0].descriptorType =
-						VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-					writes[0].pBufferInfo = &transform_binding;
-
-					writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					writes[1].dstSet = set;
-					writes[1].dstBinding = 1;
-					writes[1].descriptorCount = 1;
-					writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-					writes[1].pImageInfo = &texture_binding;
-
-					writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					writes[2].dstSet = set;
-					writes[2].dstBinding = 2;
-					writes[2].descriptorCount = 1;
-					writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-					writes[2].pImageInfo = &sampler_binding;
-
-					vkUpdateDescriptorSets(device_resources.device(), 3, writes, 0,
-						nullptr);
-
-					vkCmdBindDescriptorSets(commands,
-						VK_PIPELINE_BIND_POINT_GRAPHICS, impl.pipeline_layout, 0,
-						1, &set, 0, nullptr);
-
-					const int32_t base_vertex = static_cast<int32_t>(
-						view_vertex_base +
-						static_cast<size_t>(run.first_sprite) *
-							vertices_per_sprite);
-
-					vkCmdDrawIndexed(commands,
-						static_cast<uint32_t>(run.sprites * indices_per_sprite), 1,
-						0, base_vertex, 0);
-				}
-			}
-
+			impl.record_views(commands, 0, post_at, transform_slot,
+				vertex_base);
 		}
 		catch (...)
 		{
@@ -1171,16 +1323,314 @@ namespace labrador
 		}
 
 		vkCmdEndRenderPass(commands);
+		device_resources.set_scene_layout(
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-		// The pass' finalLayout says where it left the image, and nothing this
-		// class recorded put it there - so the tracking is told rather than
-		// asked. It is the same layout it went in as, which is what would make
-		// a second pass in one frame legal here - and renderer.h decides
-		// that a second submit does nothing on any backend, so what
-		// this line actually buys is the read-back path, which reopens the
-		// command buffer after this and needs the layout to be true.
+		// THE PRODUCER CARRIES THE DEPENDENCY. The pass' own outgoing
+		// dependency is to a transfer read, which is what the colour target
+		// needs; the scene is read by the post pass' fragment shader, and
+		// this barrier - colour attachment writes to shader reads - is what
+		// makes the views' output visible to it.
+		device_resources.transition_scene(
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		device_resources.transition_colour(
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+		pass.renderPass = device_resources.output_render_pass();
+		pass.framebuffer = device_resources.framebuffer();
+		vkCmdBeginRenderPass(commands, &pass, VK_SUBPASS_CONTENTS_INLINE);
+
+		try
+		{
+			impl.draw_post(commands, post_frame_offset);
+			impl.record_views(commands, post_at, impl.view_count,
+				transform_slot, vertex_base);
+		}
+		catch (...)
+		{
+			vkCmdEndRenderPass(commands);
+			throw;
+		}
+
+		vkCmdEndRenderPass(commands);
 		device_resources.set_colour_layout(
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	}
+
+	void Renderer::Impl::record_views(VkCommandBuffer commands, int first,
+		int last, size_t& transform_slot, size_t& vertex_base)
+	{
+		DeviceResources::Frame& frame = this->device_resources.frame();
+		const VkDeviceSize transform_stride =
+			this->device_resources.owner().uniform_alignment;
+		unsigned char* transform_bytes =
+			static_cast<unsigned char*>(frame.transforms.mapped);
+
+		// Bound at the first run rather than up front: a range with no run
+		// may come before any vertex buffer exists, and the post pass binds a
+		// pipeline of its own in the same command buffer.
+		bool bound = false;
+
+		// In view order, which is the only ordering guarantee the seam makes -
+		// and here it is the only ordering there is, because a view's recording
+		// is a vector rather than a command list.
+		for (int i = first; i < last; i++)
+		{
+			const DrawList::View& view = *this->views[static_cast<size_t>(i)];
+			const size_t view_vertex_base = vertex_base;
+			vertex_base += view.vertices.size();
+
+			for (const DrawList::View::Run& run : view.runs)
+			{
+				// ONE RECTANGLE, AND EVERYTHING BELOW READS IT. Vulkan takes a
+				// float viewport, so this backend could skip pixel_rect - and
+				// must not: viewport.h says it is the only conversion to whole
+				// pixels any backend may make, and the point of that rule is
+				// that all of them make the same one.
+				const RectangleI pixels = run.viewport.pixel_rect();
+
+				if (pixels.width <= 0 || pixels.height <= 0)
+				{
+					// An empty pane draws nothing on every backend. Here it
+					// would also be a zero-height viewport, which this API does
+					// not define, so it is skipped rather than submitted.
+					continue;
+				}
+
+				if (!bound)
+				{
+					vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+						this->pipeline);
+
+					const VkDeviceSize vertex_offset = 0;
+					vkCmdBindVertexBuffers(commands, 0, 1,
+						&frame.vertices.buffer, &vertex_offset);
+					vkCmdBindIndexBuffer(commands, this->indices.buffer, 0,
+						VK_INDEX_TYPE_UINT16);
+					bound = true;
+				}
+
+				// THE NEGATIVE HEIGHT IS THE Y FLIP, AND IT IS THIS BACKEND'S
+				// WHOLE SHARE OF THE ONE TERM renderer.h SAYS A BACKEND STILL
+				// DECIDES. Vulkan's clip space runs y down where Direct3D's and
+				// GL's run up, so the shader those two share - which is this
+				// one, unchanged - would put the top of every pane at the
+				// bottom. Handing the rasteriser a viewport whose origin is the
+				// pane's BOTTOM edge and whose height is negative inverts y
+				// once, in the one place a backend is allowed to. The GL
+				// backend answers the mirror image of this question by
+				// subtracting from the framebuffer height, and says so there.
+				VkViewport pane = {};
+				pane.x = static_cast<float>(pixels.x);
+				pane.y = static_cast<float>(pixels.y + pixels.height);
+				pane.width = static_cast<float>(pixels.width);
+				pane.height = -static_cast<float>(pixels.height);
+				pane.minDepth = run.viewport.minDepth;
+				pane.maxDepth = run.viewport.maxDepth;
+				vkCmdSetViewport(commands, 0, 1, &pane);
+
+				// The scissor is not optional and is not the viewport: this API
+				// clips to both, and a scissor offset may not be negative. The
+				// clamp removes negative near edges without moving the pane.
+				// Its far edges retain the pane extent; the render area's extent
+				// and the colour target bound the visible output. An oversized
+				// pane keeps its local pixel scale and is cropped to that output.
+				const int scissor_x = std::max(0, pixels.x);
+				const int scissor_y = std::max(0, pixels.y);
+
+				VkRect2D scissor = {};
+				scissor.offset = { scissor_x, scissor_y };
+				scissor.extent.width = static_cast<uint32_t>(std::max(0,
+					pixels.x + pixels.width - scissor_x));
+				scissor.extent.height = static_cast<uint32_t>(std::max(0,
+					pixels.y + pixels.height - scissor_y));
+				vkCmdSetScissor(commands, 0, 1, &scissor);
+
+				const VkDeviceSize transform_offset =
+					static_cast<VkDeviceSize>(transform_slot) *
+					transform_stride;
+
+				float transform[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				fill_transform(transform, pixels);
+				std::memcpy(transform_bytes + transform_offset, transform,
+					sizeof(transform));
+				transform_slot++;
+
+				// A DESCRIPTOR SET PER RUN, THROWN AWAY WITH THE FRAME. D3D12
+				// keeps one shader-visible heap and gives every texture a slot
+				// in it for the life of the process, which is a fixed capacity
+				// and a re-load rule (its render_resources.cpp carries both).
+				// This is the other answer: the pool is the frame's, resetting
+				// it frees every set at once, and a texture holds no descriptor
+				// state at all. What it costs is one allocate and one update
+				// per run per frame, on a path that already touches the driver
+				// once per run.
+				VkDescriptorSet set =
+					this->device_resources.allocate_descriptor_set(
+						this->set_layout);
+
+				VkDescriptorBufferInfo transform_binding = {};
+				transform_binding.buffer = frame.transforms.buffer;
+				transform_binding.offset = transform_offset;
+				transform_binding.range = sizeof(transform);
+
+				VkDescriptorImageInfo texture_binding = {};
+				texture_binding.imageView = run.texture->view();
+				texture_binding.imageLayout =
+					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+				VkDescriptorImageInfo sampler_binding = {};
+				sampler_binding.sampler = this->sampler(run.filter);
+
+				VkWriteDescriptorSet writes[3] = {};
+				writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writes[0].dstSet = set;
+				writes[0].dstBinding = 0;
+				writes[0].descriptorCount = 1;
+				writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				writes[0].pBufferInfo = &transform_binding;
+
+				writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writes[1].dstSet = set;
+				writes[1].dstBinding = 1;
+				writes[1].descriptorCount = 1;
+				writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				writes[1].pImageInfo = &texture_binding;
+
+				writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writes[2].dstSet = set;
+				writes[2].dstBinding = 2;
+				writes[2].descriptorCount = 1;
+				writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+				writes[2].pImageInfo = &sampler_binding;
+
+				vkUpdateDescriptorSets(this->device_resources.device(), 3,
+					writes, 0, nullptr);
+
+				vkCmdBindDescriptorSets(commands,
+					VK_PIPELINE_BIND_POINT_GRAPHICS, this->pipeline_layout, 0,
+					1, &set, 0, nullptr);
+
+				const int32_t base_vertex = static_cast<int32_t>(
+					view_vertex_base +
+					static_cast<size_t>(run.first_sprite) *
+						vertices_per_sprite);
+
+				vkCmdDrawIndexed(commands,
+					static_cast<uint32_t>(run.sprites * indices_per_sprite), 1,
+					0, base_vertex, 0);
+			}
+		}
+	}
+
+	void Renderer::Impl::draw_post(VkCommandBuffer commands,
+		VkDeviceSize frame_offset)
+	{
+		DeviceResources::Frame& frame = this->device_resources.frame();
+		const VkExtent2D extent = this->device_resources.colour_extent();
+		const float width = static_cast<float>(extent.width);
+		const float height = static_cast<float>(extent.height);
+
+		PostFrameConstants constants = {};
+		constants.output_size[0] = width;
+		constants.output_size[1] = height;
+		constants.output_size[2] = 1.0f / width;
+		constants.output_size[3] = 1.0f / height;
+		constants.scene_size[0] = width;
+		constants.scene_size[1] = height;
+		constants.scene_size[2] = 1.0f / width;
+		constants.scene_size[3] = 1.0f / height;
+		// Every image here is stored top row first: no flip.
+		constants.frame_terms[2] = 1.0f;
+
+		// One material a chain until multi-pass chains exist
+		// (docs/effects.md#13), so the chain's one effect is the pass.
+		const PostEffect effect = this->post_effects.front();
+		const PostValues& values =
+			this->post_values[static_cast<size_t>(effect)];
+		std::memcpy(constants.material_values, values.values.data(),
+			sizeof(constants.material_values));
+		VkPipeline material_pipeline = this->post_identity_pipeline;
+
+		std::memcpy(static_cast<unsigned char*>(frame.transforms.mapped) +
+			frame_offset, &constants, sizeof(constants));
+
+		vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			material_pipeline);
+
+		// THE SAME NEGATIVE-HEIGHT VIEWPORT THE SPRITES USE, over the whole
+		// output: the post vertex entry emits Direct3D-convention clip y
+		// (docs/effects.md#5.4), and this is where every pass inverts it.
+		VkViewport whole = {};
+		whole.x = 0.0f;
+		whole.y = height;
+		whole.width = width;
+		whole.height = -height;
+		whole.minDepth = 0.0f;
+		whole.maxDepth = 1.0f;
+		vkCmdSetViewport(commands, 0, 1, &whole);
+
+		VkRect2D scissor = {};
+		scissor.offset = { 0, 0 };
+		scissor.extent = extent;
+		vkCmdSetScissor(commands, 0, 1, &scissor);
+
+		VkDescriptorSet set = this->device_resources.allocate_descriptor_set(
+			this->post_set_layout);
+
+		VkDescriptorBufferInfo frame_binding = {};
+		frame_binding.buffer = frame.transforms.buffer;
+		frame_binding.offset = frame_offset;
+		frame_binding.range = sizeof(constants);
+
+		VkDescriptorImageInfo scene_binding = {};
+		scene_binding.imageView = this->device_resources.scene_view();
+		scene_binding.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		VkDescriptorImageInfo point_binding = {};
+		point_binding.sampler = this->point_sampler;
+
+		VkDescriptorImageInfo linear_binding = {};
+		linear_binding.sampler = this->linear_sampler;
+
+		VkWriteDescriptorSet writes[4] = {};
+		writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writes[0].dstSet = set;
+		writes[0].dstBinding = post_frame_binding;
+		writes[0].descriptorCount = 1;
+		writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].pBufferInfo = &frame_binding;
+
+		writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writes[1].dstSet = set;
+		writes[1].dstBinding = post_input_0_binding;
+		writes[1].descriptorCount = 1;
+		writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[1].pImageInfo = &scene_binding;
+
+		writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writes[2].dstSet = set;
+		writes[2].dstBinding = post_point_sampler_binding;
+		writes[2].descriptorCount = 1;
+		writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+		writes[2].pImageInfo = &point_binding;
+
+		writes[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writes[3].dstSet = set;
+		writes[3].dstBinding = post_linear_sampler_binding;
+		writes[3].descriptorCount = 1;
+		writes[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+		writes[3].pImageInfo = &linear_binding;
+
+		vkUpdateDescriptorSets(this->device_resources.device(), 4, writes, 0,
+			nullptr);
+
+		vkCmdBindDescriptorSets(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			this->post_pipeline_layout, 0, 1, &set, 0, nullptr);
+
+		// One triangle from the vertex index alone; no vertex buffer.
+		vkCmdDraw(commands, 3, 1, 0, 0);
 	}
 
 	Vector2F Renderer::back_buffer_size() const
@@ -1346,22 +1796,21 @@ namespace labrador
 		std::ignore = name;
 	}
 
-	// --- the post stage (docs/effects.md#13) -----------------------------------
-	//
-	// NOT YET IN THIS BACKEND. A chain is refused, so every frame draws
-	// straight into the back buffer as before, and begin_overlay declares the
-	// overlay view, which with no chain is all it does on any backend.
+	// --- the post stage (docs/effects.md) ------------------------------------
 
 	void Renderer::set_post_effects(std::span<const PostEffect> effects)
 	{
 		check_post_chain(effects, this->impl_->frame_begun);
-		refuse_post_chain_on("vulkan", effects);
+
+		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->device_resources.set_scene_target(
+			!this->impl_->post_effects.empty());
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
-		// The chain is always empty here, so this always refuses.
-		check_post_values({}, effect, values);
+		check_post_values(this->impl_->post_effects, effect, values);
+		this->impl_->post_values[static_cast<size_t>(effect)] = values;
 	}
 
 	void Renderer::begin_overlay()
@@ -1369,7 +1818,25 @@ namespace labrador
 		Impl& impl = *this->impl_;
 		check_begin_overlay(impl.frame_begun, impl.overlay_start,
 			impl.view_count, static_cast<int>(impl.views.size()));
-		impl.overlay_start = impl.view_count;
-		this->set_view_count(impl.view_count + 1);
+		const int overlay = impl.view_count;
+
+		// EVERY VIEW FROM THE OVERLAY UP STARTS AFRESH, as on the other
+		// backends, where one bound earlier this frame still holds the scene
+		// target. Here a view records memory and submit() decides its pass by
+		// index, so what this drops is any camera, filter or viewport a view
+		// declared earlier in the frame and then dropped by a lowered count.
+		const VkExtent2D extent = impl.device_resources.colour_extent();
+		const int capacity = static_cast<int>(impl.views.size());
+		for (int i = overlay; i < capacity; i++)
+		{
+			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
+			view.reset();
+			view.viewport = Viewport(0.0f, 0.0f,
+				static_cast<float>(extent.width),
+				static_cast<float>(extent.height));
+		}
+
+		impl.overlay_start = overlay;
+		this->set_view_count(overlay + 1);
 	}
 }

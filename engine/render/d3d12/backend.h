@@ -12,6 +12,7 @@
 
 #include <wrl/client.h>
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,7 +26,8 @@
 // not a list of filenames, so a new backend header is covered automatically.
 //
 // Each view records its own ID3D12GraphicsCommandList; submit() queues the
-// finished lists in view order. Each view has an allocator and vertex pages
+// finished lists in view order, with a set post chain's pass between the
+// processed and the overlay views (docs/effects.md#5). Each view has an allocator and vertex pages
 // per frame slot, reusable only after that slot's fence target is reached.
 // DeviceResources owns these synchronization boundaries below the neutral seam
 // in engine/render/renderer.h.
@@ -266,8 +268,9 @@ namespace labrador
 		UINT sampler_descriptor_size = 0;
 		int next_texture_slot = 0;
 
-		// Renderer-owned commands: clear, back-buffer transitions, read-back,
-		// texture uploads and index upload/barrier during device creation.
+		// Renderer-owned commands: clears, back-buffer transitions, the post
+		// pass, read-back, texture uploads and index upload/barrier during
+		// device creation.
 		// View lists may record concurrently and there may be no declared views,
 		// so commands shared by the frame cannot belong to an arbitrary view.
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> frame_list;
@@ -277,6 +280,59 @@ namespace labrador
 
 		const RenderResources* resources = nullptr;
 		labrador::DeviceNotify* notify = nullptr;
+
+		// THE POST STAGE (docs/effects.md). With a chain set, the processed
+		// views draw into scene_texture instead of the back buffer, and
+		// submit() records the pass that draws the scene through the chain
+		// into the back buffer into the frame list, executed after the
+		// processed views and before the overlay views. With none, no scene
+		// texture is made and every view binds the back buffer as it always
+		// has.
+		std::vector<PostEffect> post_effects;
+
+		// Each effect's values, by PostEffect, as set_post_values last gave.
+		std::array<PostValues, post_effect_count> post_values{};
+
+		PostPipeline post_pipeline;
+
+		// RESTS IN RENDER_TARGET between command lists: open_frame clears it
+		// there, views draw into it there, and the post pass transitions it
+		// to PIXEL_SHADER_RESOURCE and back within the frame list. One
+		// texture serves both frames in flight: there is one queue, and its
+		// barriers order each frame's reads before the next frame's writes.
+		Microsoft::WRL::ComPtr<ID3D12Resource> scene_texture;
+
+		// Non shader-visible, like the swap chain's: its one RTV is the
+		// scene's. Fixed capacity, made with the device and rewritten in
+		// place whenever the scene is remade.
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> post_target_heap;
+		static constexpr UINT post_target_capacity = 1;
+		static constexpr UINT scene_target_slot = 0;
+		UINT post_target_descriptor_size = 0;
+
+		// The scene's SRV takes the slot past the last texture slot in
+		// texture_heap, which is made one larger than texture_capacity for it.
+		// allocate_texture_slot never reaches it, and remaking the scene on
+		// a resize rewrites it in place rather than taking another.
+		static constexpr int scene_view_slot = texture_capacity;
+		static constexpr int reserved_view_slots = 1;
+
+		// Made, remade or released to match the chain and the back buffer's
+		// size. Re-entrant: a resize, a restore and set_post_effects all call
+		// it. Waits for the GPU before releasing a scene a queued frame may
+		// still read; not called inside a frame except by a resize, which
+		// has already drained the queue.
+		void create_scene_target();
+
+		// What view `index` draws into this frame: the scene below the overlay
+		// while a chain is set, else the back buffer.
+		D3D12_CPU_DESCRIPTOR_HANDLE view_target(int index) const;
+
+		// Records the chain into the frame list: the scene to a shader
+		// resource, the full-screen pass into the back buffer, and the scene
+		// back to a render target. Leaves the list open for submit() to
+		// close and execute in order.
+		void record_post();
 
 		D3D12_GPU_DESCRIPTOR_HANDLE sampler(TextureFilter filter) const;
 

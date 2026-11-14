@@ -52,9 +52,9 @@ Web Audio and web input.
 | Preset pair | Render / audio | ctest entries and device requirements |
 |---|---|---|
 | `x64-debug`, `x64-release` | D3D11 / XAudio2 | 22; debug permits WARP fallback |
-| `x64-debug-d3d12`, `x64-release-d3d12` | D3D12 / XAudio2 | 22; debug permits WARP fallback |
-| `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 21; real GL driver |
-| `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 21; SDK and driver |
+| `x64-debug-d3d12`, `x64-release-d3d12` | D3D12 / XAudio2 | 23; debug permits WARP fallback |
+| `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 22; real GL driver |
+| `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
 | `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 34 Debug / 35 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
 

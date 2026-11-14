@@ -114,15 +114,4 @@ namespace labrador
 		}
 	}
 
-	void refuse_post_chain_on(const char* backend,
-		std::span<const PostEffect> effects)
-	{
-		if (!effects.empty())
-		{
-			throw std::logic_error(std::string("The ") + backend +
-				" renderer has no post stage yet, so set_post_effects accepts "
-				"only an empty chain here. Build the d3d11 or null backend for "
-				"post effects.");
-		}
-	}
 }

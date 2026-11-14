@@ -77,7 +77,8 @@ function(compile_hlsl target source profile entry symbol output)
     labrador_add_generated_shader(${target} "${generated_file}")
 endfunction()
 
-# compile_hlsl_to_spirv(<target> <source> <profile> <entry> <symbol> <output>)
+# compile_hlsl_to_spirv(<target> <source> <profile> <entry> <symbol> <output>
+#     [B_SHIFT <n>] [T_SHIFT <n>] [S_SHIFT <n>] [DEPENDS <include>...])
 #
 # dxc emits SPIR-V from the same engine/render/sprite.hlsl used by Direct3D;
 # no Vulkan-specific copy of the source is needed. engine/CMakeLists.txt owns
@@ -88,10 +89,25 @@ endfunction()
 # advertising the flags; the error names the required SDK (T6).
 #
 # HLSL has separate b, t and s register namespaces; Vulkan descriptor-set
-# bindings share one namespace. The shifts map b0, t0 and s0 to set 0 bindings
-# 0, 1 and 2, matching the transform, texture and sampler layout in
-# engine/render/vulkan/renderer.cpp. Binding policy stays out of the shader.
+# bindings share one namespace. The default shifts map b0, t0 and s0 to set 0
+# bindings 0, 1 and 2, matching the sprite layout in
+# engine/render/vulkan/renderer.cpp. The post frame passes 0, 1 and 5, giving
+# b0 = 0, t0..t3 = 1..4 and s0..s1 = 5..6 (docs/effects.md#6.3), which the
+# post layout there matches. Binding policy stays out of the shader. DEPENDS
+# names files the source includes, so editing one recompiles it.
 function(compile_hlsl_to_spirv target source profile entry symbol output)
+    cmake_parse_arguments(PARSE_ARGV 6 SPIRV "" "B_SHIFT;T_SHIFT;S_SHIFT"
+        "DEPENDS")
+    if(NOT DEFINED SPIRV_B_SHIFT)
+        set(SPIRV_B_SHIFT 0)
+    endif()
+    if(NOT DEFINED SPIRV_T_SHIFT)
+        set(SPIRV_T_SHIFT 1)
+    endif()
+    if(NOT DEFINED SPIRV_S_SHIFT)
+        set(SPIRV_S_SHIFT 2)
+    endif()
+
     # Find the SPIR-V compiler only when requested, so other backends do not
     # require a Vulkan SDK merely to include this module.
     find_program(DXC_SPIRV_EXECUTABLE
@@ -119,13 +135,13 @@ function(compile_hlsl_to_spirv target source profile entry symbol output)
             -spirv
             -T ${profile}
             -E ${entry}
-            -fvk-b-shift 0 0
-            -fvk-t-shift 1 0
-            -fvk-s-shift 2 0
+            -fvk-b-shift ${SPIRV_B_SHIFT} 0
+            -fvk-t-shift ${SPIRV_T_SHIFT} 0
+            -fvk-s-shift ${SPIRV_S_SHIFT} 0
             -Fh "${generated_file}"
             -Vn ${symbol}
             "${source}"
-        DEPENDS "${source}"
+        DEPENDS "${source}" ${SPIRV_DEPENDS}
         COMMENT "Compiling ${entry} (${profile}, SPIR-V) from ${source}"
         VERBATIM
     )

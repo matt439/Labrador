@@ -4,6 +4,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/font.h"
+#include "engine/render/post_effect.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/sprite_geometry.h"
@@ -11,6 +12,7 @@
 #include "engine/render/viewport.h"
 #include "engine/render/vulkan/device_resources.h"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -188,7 +190,40 @@ namespace labrador
 		const RenderResources* resources = nullptr;
 		labrador::DeviceNotify* notify = nullptr;
 
+		// THE POST STAGE (docs/effects.md). With a chain set, DeviceResources
+		// holds a scene target, the processed views draw into it, and submit()
+		// draws it through the chain into the colour target in a second pass
+		// that the overlay views then draw in. With none, there is no scene
+		// target and submit() is the one pass it always was.
+		std::vector<PostEffect> post_effects;
+
+		// Each effect's values, by PostEffect, as set_post_values last gave.
+		std::array<PostValues, post_effect_count> post_values{};
+
+		// The post frame's layout: b0, t0, s0 and s1 at bindings 0, 1, 5 and
+		// 6 (docs/effects.md#6.3), and one pipeline per material, made with
+		// the device whether or not a chain is set.
+		VkDescriptorSetLayout post_set_layout = VK_NULL_HANDLE;
+		VkPipelineLayout post_pipeline_layout = VK_NULL_HANDLE;
+		VkPipeline post_identity_pipeline = VK_NULL_HANDLE;
+
 		VkSampler sampler(TextureFilter filter) const;
+
+		// The post stage's layouts and pipeline; part of
+		// create_device_dependent_resources.
+		void create_post_resources();
+
+		// Views [first, last) into whichever pass is open, in order.
+		// `transform_slot` and `vertex_base` carry on from the views before
+		// `first`, so two calls over adjacent ranges address the frame's
+		// buffers exactly as one call over both would.
+		void record_views(VkCommandBuffer commands, int first, int last,
+			size_t& transform_slot, size_t& vertex_base);
+
+		// The chain's one pass, into the open output pass: the post frame
+		// written at `frame_offset` in this frame's transform buffer, the
+		// scene sampled, one triangle.
+		void draw_post(VkCommandBuffer commands, VkDeviceSize frame_offset);
 
 		// Everything above that belongs to the device, remade with it.
 		void create_device_dependent_resources();

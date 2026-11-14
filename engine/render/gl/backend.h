@@ -10,6 +10,7 @@
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -20,9 +21,9 @@
 // renderer.h promises that reaching for the device is "a deliberate include of
 // engine/render/<backend>/ and not something a game file can do by accident".
 // This is that include. Every client of it is in this folder - every .cpp
-// beside it, the context files included, and nothing else. sprite_shader.h is
-// not one: it includes nothing, being two raw-string GLSL constants under a
-// #pragma once, and renderer.cpp includes both headers. And
+// beside it, the context files included, and nothing else. sprite_shader.h and
+// post_shader.h are not: they include nothing, being raw-string GLSL constants
+// under a #pragma once, and renderer.cpp includes all three headers. And
 // cmake/check_engine_includes.cmake fails the build for any engine file outside
 // the folder that names any header in it.
 //
@@ -59,7 +60,8 @@
 // device creation rather than at build time (engine/CMakeLists.txt); a resize
 // rebuilds nothing, because a default framebuffer follows its window or its
 // canvas (Renderer::window_size_changed, and Impl::drawable_size is what that
-// costs); a lost context is reported only once it is back, as the lost and
+// costs), and the post stage's scene target is resized when a frame starts
+// rather than by a resize hook (Impl::update_scene_target); a lost context is reported only once it is back, as the lost and
 // the restored call together (Renderer::Impl below); block
 // compression is an extension that has to be asked for and a format this
 // backend will not take is refused by name (texture_factory.cpp); the vertex
@@ -147,8 +149,9 @@ namespace labrador
 	// is recorded as usual and replayed into nothing (submit, and the canvas
 	// stays blank), read_back_buffer throws rather than hand back an empty
 	// frame, and when the browser restores the context begin_frame forgets
-	// every name the old one held, rebuilds the program, the buffers and the
-	// samplers, reads the device's strings from the restored context, and only
+	// every name the old one held, rebuilds the programs, the buffers, the
+	// samplers and any scene target, reads the device's strings from the
+	// restored context, and only
 	// then tells the shell both halves at once. restore_device is that
 	// sequence, and says what happens when the context goes again mid-way.
 	//
@@ -241,6 +244,50 @@ namespace labrador
 		GLuint point_sampler = 0;
 		GLuint linear_sampler = 0;
 
+		// THE POST STAGE (docs/effects.md#4). With a chain set, the processed
+		// views draw into scene_framebuffer instead of framebuffer 0, and
+		// submit() draws the scene through the chain into framebuffer 0
+		// before any overlay view replays. With none, no scene target exists
+		// and every view draws into framebuffer 0 as it always has.
+		std::vector<PostEffect> post_effects;
+
+		// Each effect's values, by PostEffect, as set_post_values last gave.
+		std::array<PostValues, post_effect_count> post_values{};
+
+		// The full-screen pass: the identity material's program, the
+		// location of its eleven-vec4 frame, and the attribute-less vertex
+		// array a core profile needs to draw at all. Made whether or not a
+		// chain is set, with the sprite program.
+		GLuint post_program = 0;
+		GLint post_frame_uniform = -1;
+		GLuint post_vertex_array = 0;
+
+		// The scene: a GL_RGBA8 texture at the drawable's size, the colour
+		// attachment of scene_framebuffer. Drawn exactly as framebuffer 0 is
+		// drawn - the same viewport flip and the same transform - so it holds
+		// the frame bottom row first, and the post pass reads it with a v
+		// sign of -1. Zero while no chain is set, or while the drawable has
+		// no area.
+		GLuint scene_texture = 0;
+		GLuint scene_framebuffer = 0;
+		Vector2I scene_size;
+
+		// Makes, remakes or releases the scene target to match the chain and
+		// the drawable's size now, and clears a new one to opaque black. GL
+		// has no resize hook, so every frame start asks, and submit() asks
+		// again in case the drawable changed in between. Does nothing while
+		// the context is lost.
+		void update_scene_target();
+
+		// Deletes the scene target's names, unless the context is lost, when
+		// they died with it and are only forgotten.
+		void release_scene_target();
+
+		// The chain, from the scene into framebuffer 0, `output` pixels in
+		// size. Leaves framebuffer 0 bound and the sprite program's state as
+		// submit() set it, so overlay views replay as any view does.
+		void draw_post(Vector2I output);
+
 		const RenderResources* resources = nullptr;
 		labrador::DeviceNotify* notify = nullptr;
 
@@ -301,12 +348,15 @@ namespace labrador
 		void restore_device();
 
 		// The start of a frame, for begin_frame and for a resize that
-		// restarts one: clears the drawable to opaque black unless the
-		// context is lost, and resets every view to hold nothing, with the
-		// default camera and the whole drawable as its viewport.
+		// restarts one: unless the context is lost, brings the scene target
+		// to the drawable's size and clears it and the drawable to opaque
+		// black - both, with a chain, so a frame begun and never submitted
+		// presents black rather than the last frame's post output - and
+		// resets every view to hold nothing, with the default camera and the
+		// whole drawable as its viewport.
 		void clear_and_reset_views();
 
-		// The program, the buffers and the samplers.
+		// The programs, the buffers, the samplers and the scene target.
 		void create_gl_resources();
 
 		// Issues one view's runs. Called from submit(), on the thread that owns

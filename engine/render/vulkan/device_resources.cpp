@@ -48,6 +48,10 @@ namespace labrador
 		// kilobytes that are never touched.
 		const uint32_t sets_per_pool = 64;
 
+		// The most samplers one set takes: the post frame's point and linear
+		// samplers (engine/render/post_frame.hlsli). A sprite run takes one.
+		const uint32_t samplers_per_set = 2;
+
 		// A surface's currentExtent width when the surface leaves the size to
 		// the swapchain rather than following the window.
 		const uint32_t extent_chosen_by_swapchain = UINT32_MAX;
@@ -448,6 +452,12 @@ namespace labrador
 			{
 				vkDestroyRenderPass(device, this->render_pass_, nullptr);
 				this->render_pass_ = VK_NULL_HANDLE;
+			}
+			if (this->output_render_pass_ != VK_NULL_HANDLE)
+			{
+				vkDestroyRenderPass(device, this->output_render_pass_,
+					nullptr);
+				this->output_render_pass_ = VK_NULL_HANDLE;
 			}
 			if (this->upload_pool_ != VK_NULL_HANDLE)
 			{
@@ -860,7 +870,8 @@ namespace labrador
 		this->submitted_ = false;
 	}
 
-	void DeviceResources::create_render_pass()
+	VkRenderPass DeviceResources::create_render_pass(
+		VkAttachmentLoadOp load) const
 	{
 		// ONE ATTACHMENT, ONE SUBPASS, AND loadOp IS LOAD RATHER THAN CLEAR.
 		//
@@ -878,10 +889,14 @@ namespace labrador
 		// costs two image transitions around the clear, to TRANSFER_DST and
 		// back to COLOR_ATTACHMENT, and buys a render pass whose whole life is
 		// inside submit().
+		//
+		// `load` is LOAD for that pass. The post stage's pass on the colour
+		// target is the same description with DONT_CARE, which keeps the two
+		// compatible: one framebuffer and one set of pipelines serve both.
 		VkAttachmentDescription colour = {};
 		colour.format = this->colour_format_;
 		colour.samples = VK_SAMPLE_COUNT_1_BIT;
-		colour.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		colour.loadOp = load;
 		colour.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		colour.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		colour.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -935,8 +950,10 @@ namespace labrador
 		VkRenderPass made_render_pass = VK_NULL_HANDLE;
 		check_vk(vkCreateRenderPass(this->owner_->device, &description, nullptr,
 			&made_render_pass),
-			"The sprite render pass could not be created");
-		this->render_pass_ = made_render_pass;
+			load == VK_ATTACHMENT_LOAD_OP_LOAD
+				? "The sprite render pass could not be created"
+				: "The post render pass could not be created");
+		return made_render_pass;
 	}
 
 	void DeviceResources::create_device_resources()
@@ -982,13 +999,18 @@ namespace labrador
 		this->timeline_value_ = 0;
 
 		this->create_frames();
-		this->create_render_pass();
+		this->render_pass_ = this->create_render_pass(
+			VK_ATTACHMENT_LOAD_OP_LOAD);
+
+		// THE POST PASS DISCARDS WHAT IT FINDS, because its first draw - the
+		// post triangle - writes every pixel before an overlay view blends
+		// over it in the same subpass (docs/effects.md#4.5).
+		this->output_render_pass_ = this->create_render_pass(
+			VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 	}
 
 	void DeviceResources::create_colour_target()
 	{
-		VkDevice device = this->owner_->device;
-
 		const uint32_t width = std::max<uint32_t>(static_cast<uint32_t>(
 			this->output_size_.right - this->output_size_.left), 1u);
 		const uint32_t height = std::max<uint32_t>(static_cast<uint32_t>(
@@ -1001,48 +1023,87 @@ namespace labrador
 		// the seam and says both Direct3D backends answer the size they were
 		// told; this is how this backend answers the same, on an API whose
 		// surface reports minImageExtent == maxImageExtent == the window.
+		//
+		// NOT SAMPLED: it is what present copies and read-back reads, and
+		// nothing draws it as a texture.
+		this->create_tracked_image(this->colour_,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+			VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			"The colour target");
+
+		if (this->scene_wanted_)
+		{
+			this->create_scene_image();
+		}
+	}
+
+	void DeviceResources::create_scene_image()
+	{
+		// THE COLOUR TARGET'S SIZE AND FORMAT, so the identity material writes
+		// back the byte it read and every golden survives the redirect
+		// (docs/effects.md#4). Sampled by the post pass, cleared by a
+		// transfer, drawn into by the processed views.
+		try
+		{
+			this->create_tracked_image(this->scene_,
+				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+				VK_IMAGE_USAGE_SAMPLED_BIT |
+				VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+				"The post stage's scene target");
+		}
+		catch (...)
+		{
+			this->destroy_tracked_image(this->scene_);
+			throw;
+		}
+	}
+
+	void DeviceResources::create_tracked_image(TrackedImage& target,
+		VkImageUsageFlags usage, const char* what)
+	{
+		VkDevice device = this->owner_->device;
+		const std::string name(what);
+
 		VkImageCreateInfo description = {};
 		description.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		description.imageType = VK_IMAGE_TYPE_2D;
 		description.format = this->colour_format_;
-		description.extent = { width, height, 1 };
+		description.extent = { this->colour_extent_.width,
+			this->colour_extent_.height, 1 };
 		description.mipLevels = 1;
 		description.arrayLayers = 1;
 		description.samples = VK_SAMPLE_COUNT_1_BIT;
 		description.tiling = VK_IMAGE_TILING_OPTIMAL;
-		description.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		description.usage = usage;
 		description.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		VkImage image = VK_NULL_HANDLE;
 		check_vk(vkCreateImage(device, &description, nullptr, &image),
-			"The colour target could not be created");
-		this->colour_image_ = image;
+			(name + " could not be created").c_str());
+		target.image = image;
 
 		VkMemoryRequirements requirements = {};
-		vkGetImageMemoryRequirements(device, this->colour_image_,
-			&requirements);
+		vkGetImageMemoryRequirements(device, target.image, &requirements);
 
 		VkMemoryAllocateInfo allocation = {};
 		allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocation.allocationSize = requirements.size;
 		allocation.memoryTypeIndex = this->owner_->memory_type(
 			requirements.memoryTypeBits,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "The colour target");
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, what);
 
 		VkDeviceMemory memory = VK_NULL_HANDLE;
 		check_vk(vkAllocateMemory(device, &allocation, nullptr, &memory),
-			"The colour target's memory could not be allocated");
-		this->colour_memory_ = memory;
-		check_vk(vkBindImageMemory(device, this->colour_image_,
-			this->colour_memory_, 0),
-			"The colour target's memory could not be bound");
+			(name + "'s memory could not be allocated").c_str());
+		target.memory = memory;
+		check_vk(vkBindImageMemory(device, target.image, target.memory, 0),
+			(name + "'s memory could not be bound").c_str());
 
 		VkImageViewCreateInfo view = {};
 		view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		view.image = this->colour_image_;
+		view.image = target.image;
 		view.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		view.format = this->colour_format_;
 		view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1051,31 +1112,34 @@ namespace labrador
 
 		VkImageView image_view = VK_NULL_HANDLE;
 		check_vk(vkCreateImageView(device, &view, nullptr, &image_view),
-			"The colour target's view could not be created");
-		this->colour_view_ = image_view;
+			(name + "'s view could not be created").c_str());
+		target.view = image_view;
 
+		// Against the loading pass. The post pass on the colour target differs
+		// from it only in its load operation, so the two are compatible and
+		// this one framebuffer serves both.
 		VkFramebufferCreateInfo framebuffer = {};
 		framebuffer.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebuffer.renderPass = this->render_pass_;
 		framebuffer.attachmentCount = 1;
-		framebuffer.pAttachments = &this->colour_view_;
-		framebuffer.width = width;
-		framebuffer.height = height;
+		framebuffer.pAttachments = &target.view;
+		framebuffer.width = this->colour_extent_.width;
+		framebuffer.height = this->colour_extent_.height;
 		framebuffer.layers = 1;
 
 		VkFramebuffer made_framebuffer = VK_NULL_HANDLE;
 		check_vk(vkCreateFramebuffer(device, &framebuffer, nullptr,
 			&made_framebuffer),
-			"The colour target's framebuffer could not be created");
-		this->framebuffer_ = made_framebuffer;
+			(name + "'s framebuffer could not be created").c_str());
+		target.framebuffer = made_framebuffer;
 
 		// A fresh image is in no layout at all, which is what UNDEFINED means -
 		// and the first barrier out of it is free, because the contents it
 		// discards are contents nothing has written. BOTH MEMBERS, because there
 		// is no submitted state to fall back to either: this image has never been
 		// in a command buffer.
-		this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
-		this->colour_layout_submitted_ = VK_IMAGE_LAYOUT_UNDEFINED;
+		target.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		target.layout_submitted = VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
 	void DeviceResources::destroy_colour_target()
@@ -1085,33 +1149,70 @@ namespace labrador
 			return;
 		}
 
+		this->destroy_tracked_image(this->scene_);
+		this->destroy_tracked_image(this->colour_);
+		this->colour_extent_ = { 0, 0 };
+	}
+
+	void DeviceResources::destroy_tracked_image(TrackedImage& target)
+	{
+		if (!this->owner_ || this->owner_->device == VK_NULL_HANDLE)
+		{
+			return;
+		}
+
 		VkDevice device = this->owner_->device;
 
-		if (this->framebuffer_ != VK_NULL_HANDLE)
+		if (target.framebuffer != VK_NULL_HANDLE)
 		{
-			vkDestroyFramebuffer(device, this->framebuffer_, nullptr);
-			this->framebuffer_ = VK_NULL_HANDLE;
+			vkDestroyFramebuffer(device, target.framebuffer, nullptr);
+			target.framebuffer = VK_NULL_HANDLE;
 		}
-		if (this->colour_view_ != VK_NULL_HANDLE)
+		if (target.view != VK_NULL_HANDLE)
 		{
-			vkDestroyImageView(device, this->colour_view_, nullptr);
-			this->colour_view_ = VK_NULL_HANDLE;
+			vkDestroyImageView(device, target.view, nullptr);
+			target.view = VK_NULL_HANDLE;
 		}
-		if (this->colour_image_ != VK_NULL_HANDLE)
+		if (target.image != VK_NULL_HANDLE)
 		{
-			vkDestroyImage(device, this->colour_image_, nullptr);
-			this->colour_image_ = VK_NULL_HANDLE;
+			vkDestroyImage(device, target.image, nullptr);
+			target.image = VK_NULL_HANDLE;
 		}
-		if (this->colour_memory_ != VK_NULL_HANDLE)
+		if (target.memory != VK_NULL_HANDLE)
 		{
-			vkFreeMemory(device, this->colour_memory_, nullptr);
-			this->colour_memory_ = VK_NULL_HANDLE;
+			vkFreeMemory(device, target.memory, nullptr);
+			target.memory = VK_NULL_HANDLE;
 		}
 
 		// The image is gone, so nothing is true of it in either sense.
-		this->colour_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
-		this->colour_layout_submitted_ = VK_IMAGE_LAYOUT_UNDEFINED;
-		this->colour_extent_ = { 0, 0 };
+		target.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		target.layout_submitted = VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+
+	void DeviceResources::set_scene_target(bool wanted)
+	{
+		this->scene_wanted_ = wanted;
+
+		// Before a colour target, the flag is all there is: the colour
+		// target's creation makes the scene with it.
+		if (this->device() == VK_NULL_HANDLE ||
+			this->colour_.image == VK_NULL_HANDLE ||
+			wanted == this->has_scene_target())
+		{
+			return;
+		}
+
+		if (wanted)
+		{
+			this->create_scene_image();
+			return;
+		}
+
+		// Called outside a frame, so every command that names the scene has
+		// gone to the queue; what may still be reading it is a frame in
+		// flight.
+		this->wait_for_gpu();
+		this->destroy_tracked_image(this->scene_);
 	}
 
 	bool DeviceResources::create_swapchain()
@@ -1647,8 +1748,10 @@ namespace labrador
 		// what makes the tracked layout true rather than pending. Written here
 		// and nowhere else: a transition is recorded by transition_colour and
 		// by a render pass's finalLayout, and neither of those has happened
-		// until this line runs.
-		this->colour_layout_submitted_ = this->colour_layout_;
+		// until this line runs. EVERY TRACKED IMAGE: the scene's transitions
+		// ride in the same buffer as the colour target's.
+		this->colour_.layout_submitted = this->colour_.layout;
+		this->scene_.layout_submitted = this->scene_.layout;
 
 		// WHICH FRAME'S WORK THIS WAS, RECORDED FOR THE PASS THAT REUSES IT.
 		// Written after every submit rather than only at a present, for the
@@ -1746,7 +1849,12 @@ namespace labrador
 		// back_buffer_state is true the moment it is written. This backend
 		// records the whole frame into one command buffer and submits once,
 		// which is cheaper and puts the burden here.
-		this->colour_layout_ = this->colour_layout_submitted_;
+		//
+		// AND THE SCENE TARGET THE SAME, for the same reason: a frame's clear
+		// and its views' pass move it too, and missing it here is the hazard
+		// above for the post stage's input.
+		this->colour_.layout = this->colour_.layout_submitted;
+		this->scene_.layout = this->scene_.layout_submitted;
 	}
 
 	// --- Presentation ---------------------------------------------------------
@@ -1901,7 +2009,7 @@ namespace labrador
 			copy.extent = { this->colour_extent_.width,
 				this->colour_extent_.height, 1 };
 
-			vkCmdCopyImage(commands, this->colour_image_,
+			vkCmdCopyImage(commands, this->colour_.image,
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 		}
@@ -1917,7 +2025,7 @@ namespace labrador
 				static_cast<int32_t>(this->swapchain_extent_.width),
 				static_cast<int32_t>(this->swapchain_extent_.height), 1 };
 
-			vkCmdBlitImage(commands, this->colour_image_,
+			vkCmdBlitImage(commands, this->colour_.image,
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
 				VK_FILTER_LINEAR);
@@ -2035,18 +2143,29 @@ namespace labrador
 
 	void DeviceResources::transition_colour(VkImageLayout layout)
 	{
-		if (this->colour_layout_ == layout)
+		this->transition(this->colour_, layout);
+	}
+
+	void DeviceResources::transition_scene(VkImageLayout layout)
+	{
+		this->transition(this->scene_, layout);
+	}
+
+	void DeviceResources::transition(TrackedImage& target,
+		VkImageLayout layout)
+	{
+		if (target.layout == layout)
 		{
 			return;
 		}
 
-		const VkImageMemoryBarrier barrier = image_barrier(this->colour_image_,
-			this->colour_layout_, layout);
+		const VkImageMemoryBarrier barrier = image_barrier(target.image,
+			target.layout, layout);
 
-		vkCmdPipelineBarrier(this->commands(), stage_of(this->colour_layout_),
+		vkCmdPipelineBarrier(this->commands(), stage_of(target.layout),
 			stage_of(layout), 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-		this->colour_layout_ = layout;
+		target.layout = layout;
 	}
 
 	// --- The frame's buffers --------------------------------------------------
@@ -2112,10 +2231,11 @@ namespace labrador
 	{
 		Frame& frame = this->frame();
 
-		// A FULL POOL IS COUNTED, NOT DISCOVERED. Every set this asks for has
-		// the same layout - one uniform buffer, one image, one sampler - so how
-		// many a pool holds is a number this file chose, and the pool is done
-		// when that many have come out of it. Asking and reacting to
+		// A FULL POOL IS COUNTED, NOT DISCOVERED. Every set this asks for takes
+		// one uniform buffer, one image and at most samplers_per_set samplers -
+		// a sprite run one, the post pass two - so how many a pool holds is a
+		// number this file chose, and the pool is done when that many have
+		// come out of it. Asking and reacting to
 		// VK_ERROR_OUT_OF_POOL_MEMORY is the other way to write this and is
 		// worse in the direction that matters: a driver refusing for any other
 		// reason turns the retry into a spin.
@@ -2136,7 +2256,7 @@ namespace labrador
 			{
 				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, sets_per_pool },
 				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sets_per_pool },
-				{ VK_DESCRIPTOR_TYPE_SAMPLER, sets_per_pool },
+				{ VK_DESCRIPTOR_TYPE_SAMPLER, sets_per_pool * samplers_per_set },
 			};
 
 			VkDescriptorPoolCreateInfo description = {};

@@ -187,7 +187,13 @@
     ],
     "RenderPixelTestsThroughPost": [
       "x64-debug",
-      "x64-release"
+      "x64-release",
+      "x64-debug-d3d12",
+      "x64-release-d3d12",
+      "x64-debug-gl",
+      "x64-release-gl",
+      "x64-debug-vulkan",
+      "x64-release-vulkan"
     ],
     "RenderPixelTestsWithoutS3tc": [
       "wasm-debug",
