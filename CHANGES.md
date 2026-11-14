@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-14 - Add a built-in CRT post effect on every backend
+
+**New API.** `PostEffect::crt` draws the frame's processed views through a CRT monitor inside one screen rectangle: barrel curvature, scanlines that thin on dark rows, an aperture-grille mask, a vignette and red/blue fringing, each off at zero. `CrtSettings` names the terms; `crt_values(settings, back_buffer_size)` packs and validates them for `Renderer::set_post_values` and throws `std::invalid_argument` for a NaN, a negative value, a 0..1 strength above 1, a screen or back buffer with no area, or, with scanlines on, fewer than `min_pixels_per_scanline` (4) output pixels a line; `crt_values_are_neutral` says whether every term is off, and a backend then draws identity, so a neutral CRT is the direct frame byte for byte; `crt_source_position` maps a point on the curved screen to the flat picture's, for pointer hits. `post_effect_count` is 2. All five backends implement it; OpenGL and WebGL2 carry a hand transliteration of `engine/render/materials/crt.hlsl`. [docs/effects.md](docs/effects.md) section 7 is the design.
+
 ### 2026-11-14 - Port the post stage to Direct3D 12, OpenGL and Vulkan
 
 **Behaviour change.** Direct3D 12, OpenGL and Vulkan implement the post stage and no longer refuse a non-empty chain: with the identity chain set, the processed views draw into an engine-owned scene target the size and format of the back buffer (on Vulkan, of the output image present copies), rebuilt on resize and on device or context loss, and `submit()` draws it through the material before any overlay view, also with no views. Every backend now behaves as Direct3D 11 does, and with no chain nothing changes.

@@ -8,6 +8,9 @@
 #include "engine/render/viewport.h"
 #include "tests/render/pixel_test_harness.h"
 
+#include <algorithm>
+#include <cstdlib>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -235,4 +238,414 @@ TEST_CASE("POST: an overlay view above a count lowered earlier still draws over 
 
 	CHECK(harness.at(6, 6) == white_pixel);
 	CHECK(harness.at(40, 40) == red_pixel);
+}
+
+// --- the CRT (docs/effects.md#7) --------------------------------------
+//
+// ASSERTED ANALYTICALLY, NOT BY GOLDEN: linear filtering and exp() differ by
+// device, so each case states the property it holds (docs/effects.md#10).
+
+namespace
+{
+	const PostEffect crt_chain[] = { PostEffect::crt };
+
+	const Vector2F buffer_size(static_cast<float>(buffer_side),
+		static_cast<float>(buffer_side));
+
+	CrtSettings full_screen()
+	{
+		CrtSettings settings;
+		settings.screen = RectangleF(0.0f, 0.0f, buffer_size.x, buffer_size.y);
+		return settings;
+	}
+
+	// The whole buffer one colour, through the CRT with these settings.
+	void draw_flat_through_crt(Harness& harness, const Colour& colour,
+		const CrtSettings& settings)
+	{
+		harness.renderer().set_post_values(PostEffect::crt,
+			crt_values(settings, buffer_size));
+		DrawList list = harness.begin();
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(0.0f, 0.0f, buffer_size.x, buffer_size.y), colour, 0.0f,
+			Vector2F::zero, SpriteFlip::none, 0.0f);
+		harness.end_not_comparable();
+		harness.renderer().end_frame();
+	}
+
+	int channel_distance(const Pixel& a, const Pixel& b)
+	{
+		return std::max({ std::abs(a.r - b.r), std::abs(a.g - b.g),
+			std::abs(a.b - b.b), std::abs(a.a - b.a) });
+	}
+}
+
+TEST_CASE("CRT: with every term off it is the direct frame, byte for byte")
+{
+	Harness harness;
+	draw_busy_frame(harness);
+	harness.end_not_comparable();
+	const std::vector<Pixel> direct = harness.snapshot();
+	harness.renderer().end_frame();
+
+	harness.renderer().set_post_effects(crt_chain);
+	harness.renderer().set_post_values(PostEffect::crt,
+		crt_values(full_screen(), buffer_size));
+	draw_busy_frame(harness);
+	harness.end_not_comparable();
+	CHECK(harness.snapshot() == direct);
+}
+
+TEST_CASE("CRT: outside the screen every pixel is the direct frame's")
+{
+	Harness harness;
+	draw_busy_frame(harness);
+	harness.end_not_comparable();
+	const std::vector<Pixel> direct = harness.snapshot();
+	harness.renderer().end_frame();
+
+	CrtSettings settings;
+	settings.screen = RectangleF(16.0f, 16.0f, 32.0f, 32.0f);
+	settings.curvature = 0.2f;
+	settings.scanline_count = 4.0f;
+	settings.scanline_strength = 0.5f;
+	settings.mask_strength = 0.5f;
+	settings.vignette = 0.5f;
+	settings.aberration = 3.0f;
+	settings.brightness = 1.2f;
+
+	harness.renderer().set_post_effects(crt_chain);
+	harness.renderer().set_post_values(PostEffect::crt,
+		crt_values(settings, buffer_size));
+	draw_busy_frame(harness);
+	harness.end_not_comparable();
+
+	int inside_changed = 0;
+	for (int y = 0; y < buffer_side; ++y)
+	{
+		for (int x = 0; x < buffer_side; ++x)
+		{
+			const Pixel before =
+				direct[static_cast<size_t>(y * buffer_side + x)];
+			const bool inside = x >= 16 && x < 48 && y >= 16 && y < 48;
+			if (inside)
+			{
+				inside_changed += before == harness.at(x, y) ? 0 : 1;
+				continue;
+			}
+			CHECK_MESSAGE(harness.at(x, y) == before,
+				"pixel (", x, ", ", y, ") outside the screen changed");
+		}
+	}
+	// And the CRT did something inside it.
+	CHECK(inside_changed > 100);
+}
+
+TEST_CASE("CRT: curvature blacks out what crt_source_position calls past the tube")
+{
+	Harness harness;
+	harness.renderer().set_post_effects(crt_chain);
+	CrtSettings settings = full_screen();
+	settings.curvature = 0.3f;
+	draw_flat_through_crt(harness, Colour::white, settings);
+
+	CHECK(harness.at(0, 0) == black_pixel);
+	CHECK(harness.at(63, 0) == black_pixel);
+	CHECK(harness.at(0, 63) == black_pixel);
+	CHECK(harness.at(63, 63) == black_pixel);
+	CHECK(harness.at(31, 31) == white_pixel);
+	CHECK(harness.at(32, 32) == white_pixel);
+
+	// The CPU twin and the device agree on every pixel but those whose
+	// centre lands on the tube's edge within float rounding.
+	int disagreeing = 0;
+	int black = 0;
+	for (int y = 0; y < buffer_side; ++y)
+	{
+		for (int x = 0; x < buffer_side; ++x)
+		{
+			const bool past_tube = !crt_source_position(settings,
+				Vector2F(static_cast<float>(x) + 0.5f,
+					static_cast<float>(y) + 0.5f)).has_value();
+			const Pixel pixel = harness.at(x, y);
+			black += pixel == black_pixel ? 1 : 0;
+			const Pixel expected = past_tube ? black_pixel : white_pixel;
+			disagreeing += pixel == expected ? 0 : 1;
+		}
+	}
+	CHECK(black > 0);
+	CHECK_MESSAGE(disagreeing <= 4, disagreeing,
+		" pixels disagree with crt_source_position");
+}
+
+TEST_CASE("CRT: the mask repeats every three columns, each phase one channel")
+{
+	Harness harness;
+	harness.renderer().set_post_effects(crt_chain);
+	CrtSettings settings = full_screen();
+	settings.mask_strength = 1.0f;
+	draw_flat_through_crt(harness, Colour::white, settings);
+
+	for (int x = 0; x + 3 < buffer_side; ++x)
+	{
+		CAPTURE(x);
+		CHECK(harness.at(x, 20) == harness.at(x + 3, 20));
+		const Pixel pixel = harness.at(x, 20);
+		const int phase = x % 3;
+		if (phase == 0)
+		{
+			CHECK(pixel.r > pixel.g);
+			CHECK(pixel.r > pixel.b);
+		}
+		else if (phase == 1)
+		{
+			CHECK(pixel.g > pixel.r);
+			CHECK(pixel.g > pixel.b);
+		}
+		else
+		{
+			CHECK(pixel.b > pixel.r);
+			CHECK(pixel.b > pixel.g);
+		}
+	}
+}
+
+TEST_CASE("CRT: scanlines repeat with their period, and thin more on dark rows")
+{
+	// 64 rows / 8 scanlines = 8 pixels a line.
+	CrtSettings settings = full_screen();
+	settings.scanline_count = 8.0f;
+	settings.scanline_strength = 1.0f;
+
+	float contrast_dark = 0.0f;
+	float contrast_bright = 0.0f;
+	for (const float level : { 0.3f, 0.8f })
+	{
+		CAPTURE(level);
+		Harness harness;
+		harness.renderer().set_post_effects(crt_chain);
+		draw_flat_through_crt(harness, Colour(level, level, level, 1.0f),
+			settings);
+
+		int darkest = 255;
+		int brightest = 0;
+		for (int y = 0; y < buffer_side; ++y)
+		{
+			if (y + 8 < buffer_side)
+			{
+				CHECK(channel_distance(harness.at(32, y),
+					harness.at(32, y + 8)) <= 1);
+			}
+			darkest = std::min(darkest, static_cast<int>(harness.at(32, y).g));
+			brightest = std::max(brightest,
+				static_cast<int>(harness.at(32, y).g));
+		}
+		REQUIRE(brightest > 0);
+		const float contrast = static_cast<float>(darkest) /
+			static_cast<float>(brightest);
+		if (level < 0.5f)
+		{
+			contrast_dark = contrast;
+		}
+		else
+		{
+			contrast_bright = contrast;
+		}
+	}
+	// A narrower beam leaves darker gaps: the dark band's ratio is lower.
+	CHECK(contrast_dark < contrast_bright);
+}
+
+TEST_CASE("CRT: the vignette peaks in the centre and mirrors left to right")
+{
+	Harness harness;
+	harness.renderer().set_post_effects(crt_chain);
+	CrtSettings settings = full_screen();
+	settings.vignette = 1.0f;
+	draw_flat_through_crt(harness, Colour::white, settings);
+
+	const int centre = harness.at(31, 31).r;
+	for (int y = 0; y < buffer_side; ++y)
+	{
+		for (int x = 0; x < buffer_side; ++x)
+		{
+			CHECK(harness.at(x, y).r <= centre + 1);
+			CHECK(channel_distance(harness.at(x, y),
+				harness.at(buffer_side - 1 - x, y)) <= 1);
+		}
+	}
+	CHECK(harness.at(0, 0).r < centre);
+	for (int i = 0; i < 31; ++i)
+	{
+		CHECK(harness.at(i, i).r <= harness.at(i + 1, i + 1).r + 1);
+	}
+}
+
+TEST_CASE("CRT: aberration is radial: none at the centre, mirrored per channel, split off it")
+{
+	Harness harness;
+	harness.renderer().set_post_effects(crt_chain);
+	CrtSettings settings = full_screen();
+	settings.aberration = 4.0f;
+	harness.renderer().set_post_values(PostEffect::crt,
+		crt_values(settings, buffer_size));
+
+	// A wide white band down the centre, and a thin column a quarter in from
+	// each side.
+	DrawList list = harness.begin();
+	const RectangleF columns[] = { RectangleF(15.0f, 0.0f, 2.0f, 64.0f),
+		RectangleF(29.0f, 0.0f, 6.0f, 64.0f),
+		RectangleF(47.0f, 0.0f, 2.0f, 64.0f) };
+	for (const RectangleF& column : columns)
+	{
+		list.draw_sprite(harness.quad, Harness::white_texel(), column,
+			Colour::white, 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+	}
+	harness.end_not_comparable();
+
+	// Inside the band at the centre the fringe is a fraction of a pixel and
+	// every tap reads white.
+	CHECK(harness.at(31, 32) == white_pixel);
+	CHECK(harness.at(32, 32) == white_pixel);
+
+	// RED IS PULLED OUTWARD AND BLUE INWARD ON BOTH SIDES, so the mirror of a
+	// pixel matches it channel for channel - and off the centre a thin
+	// column's edge shows red and blue apart.
+	bool split = false;
+	float red_x = 0.0f;
+	float red_weight = 0.0f;
+	float blue_x = 0.0f;
+	float blue_weight = 0.0f;
+	for (int x = 8; x < 24; ++x)
+	{
+		CAPTURE(x);
+		const Pixel left = harness.at(x, 32);
+		const Pixel right = harness.at(buffer_side - 1 - x, 32);
+		split = split || left.r != left.b;
+		CHECK(channel_distance(left, right) <= 1);
+		red_x += static_cast<float>(x * left.r);
+		red_weight += static_cast<float>(left.r);
+		blue_x += static_cast<float>(x * left.b);
+		blue_weight += static_cast<float>(left.b);
+	}
+	CHECK(split);
+
+	// AND WHICH WAY: on the left of the centre the red image of the column
+	// sits nearer the centre than the blue one (crt.hlsl samples red from
+	// further out). Swapping the fringe's sign would mirror this.
+	REQUIRE(red_weight > 0.0f);
+	REQUIRE(blue_weight > 0.0f);
+	CHECK(red_x / red_weight > blue_x / blue_weight);
+}
+
+TEST_CASE("CRT: every sampled position is crt_source_position's, on an offset screen")
+{
+	Harness harness;
+	harness.renderer().set_post_effects(crt_chain);
+	CrtSettings settings;
+	settings.screen = RectangleF(8.0f, 8.0f, 48.0f, 48.0f);
+	settings.curvature = 0.15f;
+	harness.renderer().set_post_values(PostEffect::crt,
+		crt_values(settings, buffer_size));
+
+	// THE SCENE ENCODES ITS OWN COORDINATES: red is 4 * column and green
+	// 4 * row, added under the premultiplied blend by tints with zero alpha.
+	// A linear tap at pixel position q then reads 4 * (q - 0.5), so every
+	// output pixel says where the CRT sampled it from.
+	DrawList list = harness.begin();
+	for (int i = 0; i < buffer_side; ++i)
+	{
+		const float level = static_cast<float>(4 * i) / 255.0f;
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(static_cast<float>(i), 0.0f, 1.0f, buffer_size.y),
+			Colour(level, 0.0f, 0.0f, 0.0f), 0.0f, Vector2F::zero,
+			SpriteFlip::none, 0.0f);
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(0.0f, static_cast<float>(i), buffer_size.x, 1.0f),
+			Colour(0.0f, level, 0.0f, 0.0f), 0.0f, Vector2F::zero,
+			SpriteFlip::none, 0.0f);
+	}
+	harness.end_not_comparable();
+
+	int compared = 0;
+	for (int y = 8; y < 56; ++y)
+	{
+		for (int x = 8; x < 56; ++x)
+		{
+			const std::optional<Vector2F> source = crt_source_position(
+				settings, Vector2F(static_cast<float>(x) + 0.5f,
+					static_cast<float>(y) + 0.5f));
+			if (!source.has_value())
+			{
+				continue;
+			}
+			const Pixel pixel = harness.at(x, y);
+			const float sampled_x = static_cast<float>(pixel.r) / 4.0f + 0.5f;
+			const float sampled_y = static_cast<float>(pixel.g) / 4.0f + 0.5f;
+			CAPTURE(x);
+			CAPTURE(y);
+			// Within a pixel: quantisation is a quarter, and the clamp to the
+			// screen's texel centres moves an edge tap by at most a half.
+			CHECK(std::abs(sampled_x - source->x) <= 1.0f);
+			CHECK(std::abs(sampled_y - source->y) <= 1.0f);
+			++compared;
+		}
+	}
+	CHECK(compared > 1500);
+}
+
+TEST_CASE("CRT: every sampled position is crt_source_position's, on an offset screen")
+{
+	Harness harness;
+	harness.renderer().set_post_effects(crt_chain);
+	CrtSettings settings;
+	settings.screen = RectangleF(8.0f, 8.0f, 48.0f, 48.0f);
+	settings.curvature = 0.15f;
+	harness.renderer().set_post_values(PostEffect::crt,
+		crt_values(settings, buffer_size));
+
+	// THE SCENE ENCODES ITS OWN COORDINATES: red is 4 * column and green
+	// 4 * row, added under the premultiplied blend by tints with zero alpha.
+	// A linear tap at pixel position q then reads 4 * (q - 0.5), so every
+	// output pixel says where the CRT sampled it from.
+	DrawList list = harness.begin();
+	for (int i = 0; i < buffer_side; ++i)
+	{
+		const float level = static_cast<float>(4 * i) / 255.0f;
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(static_cast<float>(i), 0.0f, 1.0f, buffer_size.y),
+			Colour(level, 0.0f, 0.0f, 0.0f), 0.0f, Vector2F::zero,
+			SpriteFlip::none, 0.0f);
+		list.draw_sprite(harness.quad, Harness::white_texel(),
+			RectangleF(0.0f, static_cast<float>(i), buffer_size.x, 1.0f),
+			Colour(0.0f, level, 0.0f, 0.0f), 0.0f, Vector2F::zero,
+			SpriteFlip::none, 0.0f);
+	}
+	harness.end_not_comparable();
+
+	int compared = 0;
+	for (int y = 8; y < 56; ++y)
+	{
+		for (int x = 8; x < 56; ++x)
+		{
+			const std::optional<Vector2F> source = crt_source_position(
+				settings, Vector2F(static_cast<float>(x) + 0.5f,
+					static_cast<float>(y) + 0.5f));
+			if (!source.has_value())
+			{
+				continue;
+			}
+			const Pixel pixel = harness.at(x, y);
+			const float sampled_x = static_cast<float>(pixel.r) / 4.0f + 0.5f;
+			const float sampled_y = static_cast<float>(pixel.g) / 4.0f + 0.5f;
+			CAPTURE(x);
+			CAPTURE(y);
+			// Within a pixel: quantisation is a quarter, and the clamp to the
+			// screen's texel centres moves an edge tap by at most a half.
+			CHECK(std::abs(sampled_x - source->x) <= 1.0f);
+			CHECK(std::abs(sampled_y - source->y) <= 1.0f);
+			++compared;
+		}
+	}
+	CHECK(compared > 1500);
 }

@@ -224,6 +224,24 @@ namespace labrador
 					" shaders did not link on this driver:\n" + log);
 			}
 		}
+
+		// Links a post program from the shared vertex shader and one
+		// material's fragment shader, and points its two samplers at their
+		// units: unit 0 holds the scene under the point sampler and unit 1
+		// the same scene under the linear one (post_shader.h says why two
+		// units). Leaves the new program current.
+		GLuint link_post_program(GLuint vertex, GLuint pixel, const char* what)
+		{
+			GLuint program = glCreateProgram();
+			glAttachShader(program, vertex);
+			glAttachShader(program, pixel);
+			link_program(program, what);
+
+			glUseProgram(program);
+			glUniform1i(glGetUniformLocation(program, "input_0_point"), 0);
+			glUniform1i(glGetUniformLocation(program, "input_0_linear"), 1);
+			return program;
+		}
 	}
 
 	// --- DrawList::View ------------------------------------------------------
@@ -479,31 +497,28 @@ namespace labrador
 		// itself for it.
 		glActiveTexture(GL_TEXTURE0_);
 
-		// The post stage's program, made whether or not a chain is set, so
-		// set_post_effects is never the first thing to compile a shader. The
-		// fragment stage is the frame with the identity material after it,
-		// as the HLSL material includes the frame.
+		// The post stage's programs, one a material, made whether or not a
+		// chain is set, so set_post_effects is never the first thing to
+		// compile a shader. Each fragment stage is the frame with its
+		// material after it, as the HLSL material includes the frame.
 		const ShaderOwner post_vertex(compile_shader(GL_VERTEX_SHADER_,
 			{ this->shader_prelude, post_vertex_shader }, "post vertex"));
-		const ShaderOwner post_pixel(compile_shader(GL_FRAGMENT_SHADER_,
+		const ShaderOwner post_identity_pixel(compile_shader(
+			GL_FRAGMENT_SHADER_, { this->shader_prelude,
+				post_frame_pixel_shader, post_identity_material },
+			"identity post fragment"));
+		const ShaderOwner post_crt_pixel(compile_shader(GL_FRAGMENT_SHADER_,
 			{ this->shader_prelude, post_frame_pixel_shader,
-				post_identity_material }, "identity post fragment"));
+				post_crt_material }, "CRT post fragment"));
 
-		this->post_program = glCreateProgram();
-		glAttachShader(this->post_program, post_vertex.name);
-		glAttachShader(this->post_program, post_pixel.name);
-		link_program(this->post_program, "identity post");
-
+		this->post_program = link_post_program(post_vertex.name,
+			post_identity_pixel.name, "identity post");
 		this->post_frame_uniform =
 			glGetUniformLocation(this->post_program, "post_frame");
-
-		// Unit 0 holds the scene under the point sampler and unit 1 the same
-		// scene under the linear one (post_shader.h says why two units).
-		glUseProgram(this->post_program);
-		glUniform1i(glGetUniformLocation(this->post_program, "input_0_point"),
-			0);
-		glUniform1i(glGetUniformLocation(this->post_program, "input_0_linear"),
-			1);
+		this->post_crt_program = link_post_program(post_vertex.name,
+			post_crt_pixel.name, "CRT post");
+		this->post_crt_frame_uniform =
+			glGetUniformLocation(this->post_crt_program, "post_frame");
 		glUseProgram(this->program);
 
 		// NO ATTRIBUTES, AND STILL A VERTEX ARRAY: the triangle comes from
@@ -641,8 +656,20 @@ namespace labrador
 		glViewport(0, 0, static_cast<GLsizei>(output.x),
 			static_cast<GLsizei>(output.y));
 
-		glUseProgram(this->post_program);
-		glUniform4fv(this->post_frame_uniform, post_frame_vectors,
+		// A CRT WITH EVERY TERM OFF DRAWS IDENTITY IN ITS PLACE. The views
+		// have already drawn into the scene, so the pass cannot be skipped,
+		// and resampling through the CRT's arithmetic is not exact on every
+		// device (docs/effects.md#7).
+		GLuint material_program = this->post_program;
+		GLint frame_uniform = this->post_frame_uniform;
+		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		{
+			material_program = this->post_crt_program;
+			frame_uniform = this->post_crt_frame_uniform;
+		}
+
+		glUseProgram(material_program);
+		glUniform4fv(frame_uniform, post_frame_vectors,
 			reinterpret_cast<const GLfloat*>(&constants));
 
 		glActiveTexture(GL_TEXTURE0_ + 1);
@@ -690,6 +717,8 @@ namespace labrador
 		this->linear_sampler = 0;
 		this->post_program = 0;
 		this->post_frame_uniform = -1;
+		this->post_crt_program = 0;
+		this->post_crt_frame_uniform = -1;
 		this->post_vertex_array = 0;
 		this->scene_texture = 0;
 		this->scene_framebuffer = 0;

@@ -43,10 +43,11 @@ namespace labrador
 	const std::vector<RecordedSprite>& recorded_sprites(
 		const Renderer& renderer);
 
-	// One post pass, as a device backend draws it: which material, with the
-	// values set for it, at what size, and how many views it drew over - the
-	// processed views, which precede it in submit(). Views from
-	// processed_views on are overlay views, drawn after it.
+	// One post pass, as a device backend draws it: which material - identity
+	// for a CRT whose values turn every term off (crt_values_are_neutral) -
+	// with the values set for the chain's effect, at what size, and how many
+	// views it drew over: the processed views, which precede it in submit().
+	// Views from processed_views on are overlay views, drawn after it.
 	struct RecordedPass
 	{
 		PostEffect effect = PostEffect::identity;

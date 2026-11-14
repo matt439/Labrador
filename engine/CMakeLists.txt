@@ -46,6 +46,7 @@ add_library(LabradorEngine STATIC
     render/font.cpp
     render/label.cpp
     render/png_file.cpp
+    render/post_effect.cpp
     render/render_resources.cpp
     render/renderer_checks.cpp
     render/resolution_manager.cpp
@@ -191,6 +192,11 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
         ps_4_0 post_pixel_main post_identity_bytecode
         "engine/render/d3d11/post_identity_pixel_shader.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/crt.hlsl"
+        ps_4_0 post_pixel_main post_crt_bytecode
+        "engine/render/d3d11/post_crt_pixel_shader.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
     target_sources(LabradorEngine PRIVATE
         render/d3d12/device_resources.cpp
@@ -217,7 +223,7 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         "engine/render/d3d12/sprite_pixel_shader.h")
 
     # The post stage (docs/effects.md): the frame's full-screen triangle and
-    # the identity material, at the sprite shader's 5_1.
+    # the identity and CRT materials, at the sprite shader's 5_1.
     compile_hlsl(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
         vs_5_1 post_vertex_main post_vertex_bytecode
@@ -227,6 +233,11 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
         ps_5_1 post_pixel_main post_identity_bytecode
         "engine/render/d3d12/post_identity_pixel_shader.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/crt.hlsl"
+        ps_5_1 post_pixel_main post_crt_bytecode
+        "engine/render/d3d12/post_crt_pixel_shader.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     target_sources(LabradorEngine PRIVATE
@@ -264,8 +275,8 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
     # which that file explains at length, because it is the one place a backend
     # genuinely differs in kind rather than in spelling from the two that
     # compile HLSL above. The post stage's GLSL, transliterated from
-    # render/post_frame.hlsli and render/materials/identity.hlsl, ships the
-    # same way in render/gl/post_shader.h.
+    # render/post_frame.hlsli and each material in render/materials/, ships
+    # the same way in render/gl/post_shader.h.
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
     target_sources(LabradorEngine PRIVATE
         render/vulkan/device_resources.cpp
@@ -309,8 +320,8 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         "engine/render/vulkan/sprite_pixel_shader.h")
 
     # The post stage (docs/effects.md): the frame's full-screen triangle and
-    # the identity material, under the post frame's own binding shifts
-    # (docs/effects.md#6.3), so its t0 does not land on the sprite's s0.
+    # the identity and CRT materials, under the post frame's own binding
+    # shifts (docs/effects.md#6.3), so its t0 does not land on the sprite's s0.
     compile_hlsl_to_spirv(LabradorEngine
         "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
         vs_6_0 post_vertex_main post_vertex_bytecode
@@ -321,6 +332,12 @@ elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
         ps_6_0 post_pixel_main post_identity_bytecode
         "engine/render/vulkan/post_identity_pixel_shader.h"
+        B_SHIFT 0 T_SHIFT 1 S_SHIFT 5
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
+    compile_hlsl_to_spirv(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/crt.hlsl"
+        ps_6_0 post_pixel_main post_crt_bytecode
+        "engine/render/vulkan/post_crt_pixel_shader.h"
         B_SHIFT 0 T_SHIFT 1 S_SHIFT 5
         DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "null")

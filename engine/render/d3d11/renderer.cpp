@@ -14,6 +14,7 @@
 // The shaders, as bytes this build compiled (cmake/compile_shaders.cmake).
 // Nothing is read from disk at run time and nothing is deployed beside the
 // executable.
+#include "engine/render/d3d11/post_crt_pixel_shader.h"
 #include "engine/render/d3d11/post_identity_pixel_shader.h"
 #include "engine/render/d3d11/post_vertex_shader.h"
 #include "engine/render/d3d11/sprite_pixel_shader.h"
@@ -446,6 +447,10 @@ namespace labrador
 			sizeof(post_identity_bytecode), nullptr,
 			this->post_identity_shader.ReleaseAndGetAddressOf()),
 			"The identity post shader could not be created");
+		ThrowIfFailed(device->CreatePixelShader(post_crt_bytecode,
+			sizeof(post_crt_bytecode), nullptr,
+			this->post_crt_shader.ReleaseAndGetAddressOf()),
+			"The CRT post shader could not be created");
 
 		D3D11_BUFFER_DESC post_constants_description = {};
 		post_constants_description.ByteWidth = sizeof(PostFrameConstants);
@@ -654,6 +659,7 @@ namespace labrador
 
 		this->post_vertex_shader.Reset();
 		this->post_identity_shader.Reset();
+		this->post_crt_shader.Reset();
 		this->post_constants.Reset();
 		this->scene_view.Reset();
 		this->scene_target.Reset();
@@ -753,7 +759,16 @@ namespace labrador
 			this->post_values[static_cast<size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
+
+		// A CRT WITH EVERY TERM OFF DRAWS IDENTITY IN ITS PLACE. The views
+		// have already drawn into the scene, so the pass cannot be skipped,
+		// and resampling through the CRT's arithmetic is not exact on every
+		// device (docs/effects.md#7).
 		ID3D11PixelShader* material_shader = this->post_identity_shader.Get();
+		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		{
+			material_shader = this->post_crt_shader.Get();
+		}
 
 		D3D11_MAPPED_SUBRESOURCE mapped = {};
 		ThrowIfFailed(immediate->Map(this->post_constants.Get(), 0,

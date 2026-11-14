@@ -57,10 +57,11 @@ namespace labrador
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state_;
 	};
 
-	// The post stage's root signature and the identity material's pipeline
-	// state (docs/effects.md#5): one full-screen triangle from the vertex
-	// index, no input layout, and blending off, because a full-screen pass
-	// replaces what it covers.
+	// The post stage's root signature and one pipeline state a material
+	// (docs/effects.md#5): identity and the CRT. Each is one full-screen
+	// triangle from the vertex index, no input layout, and blending off,
+	// because a full-screen pass replaces what it covers. Both materials
+	// include post_frame.hlsli, so both run against the one root signature.
 	//
 	// Backend-private and held by value beside SpritePipeline, under the same
 	// terms: it borrows the device and the target format for create and keeps
@@ -80,11 +81,11 @@ namespace labrador
 		// How many 32-bit values the frame is: eleven float4s.
 		static constexpr UINT frame_constants = 44;
 
-		// Builds the root signature, then the identity pipeline state against
-		// it, with the same failure terms as SpritePipeline::create.
+		// Builds the root signature, then each material's pipeline state
+		// against it, with the same failure terms as SpritePipeline::create.
 		void create(ID3D12Device* device, DXGI_FORMAT target_format);
 
-		// Releases the pipeline state, then the root signature.
+		// Releases the pipeline states, then the root signature.
 		void reset();
 
 		ID3D12RootSignature* root_signature() const
@@ -97,8 +98,14 @@ namespace labrador
 			return this->identity_state_.Get();
 		}
 
+		ID3D12PipelineState* crt_state() const
+		{
+			return this->crt_state_.Get();
+		}
+
 	private:
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature_;
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> identity_state_;
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> crt_state_;
 	};
 }

@@ -307,6 +307,7 @@ namespace labrador
 
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> post_vertex_shader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> post_identity_shader;
+		Microsoft::WRL::ComPtr<ID3D11PixelShader> post_crt_shader;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> post_constants;
 
 		// Made, remade or released to match the chain and the back buffer's

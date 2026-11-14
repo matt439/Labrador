@@ -897,3 +897,34 @@ TEST_CASE("POST: a count lowered below the overlay leaves fewer processed views"
 	REQUIRE(recorded_passes(renderer).size() == 1);
 	CHECK(recorded_passes(renderer)[0].processed_views == 1);
 }
+
+TEST_CASE("POST: a neutral CRT is recorded as the identity a device draws")
+{
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+	const PostEffect chain[] = { PostEffect::crt };
+	renderer.set_post_effects(chain);
+
+	// Never set: no screen, so neutral.
+	harness.begin();
+	std::ignore = harness.end();
+	REQUIRE(recorded_passes(renderer).size() == 1);
+	CHECK(recorded_passes(renderer)[0].effect == PostEffect::identity);
+	renderer.end_frame();
+
+	CrtSettings settings;
+	settings.screen = RectangleF(0.0f, 0.0f, 640.0f, 480.0f);
+	renderer.set_post_values(PostEffect::crt,
+		crt_values(settings, Vector2F(640.0f, 480.0f)));
+	harness.begin();
+	std::ignore = harness.end();
+	CHECK(recorded_passes(renderer)[0].effect == PostEffect::identity);
+	renderer.end_frame();
+
+	settings.vignette = 0.5f;
+	renderer.set_post_values(PostEffect::crt,
+		crt_values(settings, Vector2F(640.0f, 480.0f)));
+	harness.begin();
+	std::ignore = harness.end();
+	CHECK(recorded_passes(renderer)[0].effect == PostEffect::crt);
+}
