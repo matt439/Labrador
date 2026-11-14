@@ -109,10 +109,10 @@ class JunitTests(unittest.TestCase):
         self.assertEqual((result, detail),
                          ("passed", "4/4 passed; RenderPixelTests, MinimalSmokeTests and "
                                     "CollisionSmokeTests passed"))
-        # Without a browser, configure registers 19 of wasm-debug's 42 entries.
+        # Without a browser, configure registers 19 of wasm-debug's 44 entries.
         wasm = report.GAPS[-1]
         self.assertEqual(wasm.preset, "wasm-debug")
-        self.assertEqual(len(wasm.expected), 42)
+        self.assertEqual(len(wasm.expected), 44)
         headless = [name for name in wasm.expected if name not in report.INVENTORY["chromium_registered"]
                     and not name.startswith("Firefox")]
         self.assertEqual(len(headless), 19)
@@ -122,7 +122,7 @@ class JunitTests(unittest.TestCase):
         self.assertIn("RenderPixelTests", detail)
         self.assertIn("FirefoxWebWindowTests", detail)
         result, detail = report.judge(wasm, report.junit_summary(junit(list(wasm.expected))))
-        self.assertEqual((result, detail), ("passed", "42/42 passed; the inventory's entries exactly"))
+        self.assertEqual((result, detail), ("passed", "44/44 passed; the inventory's entries exactly"))
 
     def test_a_whole_preset_must_register_its_inventory_list_exactly(self):
         gaps = {gap.preset: gap for gap in report.GAPS}
@@ -135,10 +135,10 @@ class JunitTests(unittest.TestCase):
         self.assertEqual((result, detail), ("failed", f"22/22 passed; not registered: {everything[0]}"))
         result, detail = report.judge(null, report.junit_summary(junit(everything + ["BrandNewTests"])))
         self.assertEqual((result, detail), ("failed", "24/24 passed; not in the inventory: BrandNewTests"))
-        self.assertEqual(len(gaps["x64-release-d3d12"].expected), 22)
+        self.assertEqual(len(gaps["x64-release-d3d12"].expected), 23)
         self.assertIn("D3D12SynchronizationTests", gaps["x64-release-d3d12"].expected)
         for preset in ("x64-release-gl", "x64-release-vulkan"):
-            self.assertEqual(len(gaps[preset].expected), 21, preset)
+            self.assertEqual(len(gaps[preset].expected), 22, preset)
         self.assertNotIn("LineSweeperPacingPageTests", gaps["wasm-debug"].expected)
 
     def test_a_failed_test_is_reported_once_and_not_as_unregistered(self):
@@ -252,7 +252,7 @@ class MainTests(unittest.TestCase):
             self.assertTrue((Path(directory) / "evidence/wasm-debug.log").is_file())
         self.assertEqual(code, 1)
         self.assertIn("at `" + "b" * 40 + "`, working tree with 2 uncommitted change(s)", text)
-        self.assertIn("| `wasm-debug` | whole preset | passed: 42/42 passed; the inventory's entries exactly |", text)
+        self.assertIn("| `wasm-debug` | whole preset | passed: 44/44 passed; the inventory's entries exactly |", text)
         self.assertIn("| `x64-release-null` | whole preset | failed: 1/6 passed;", text)
         self.assertIn("\nDevices, as each preset's RenderPixelTests named them:\n"
                       "- `x64-release-null`: no test here draws on a device\n"

@@ -189,6 +189,16 @@ attributes by number rather than by semantic. Two of the three go through `fxc`
 into DXBC and one through the Vulkan SDK's `dxc` into SPIR-V — a second compiler
 for one unchanged source, not a second source.
 
+**The post stage's frame is the second shared source, by the same rule.**
+`engine/render/post_frame.hlsli` declares every register a material may use,
+the full-screen triangle and both entry points; a material in
+`engine/render/materials/` is one function in it. The same three backends
+compile it — at `4_0` on D3D11, whose sprite profile has no `SV_VertexID`,
+`5_1` on D3D12 and `6_0` on Vulkan, where its own descriptor shifts put `b0`,
+`t0`, `s0` and `s1` at bindings 0, 1, 5 and 6 — and GL carries a hand
+transliteration in `gl/post_shader.h` under the same by-eye rule as the sprite
+pair. [docs/effects.md](../../docs/effects.md) is the design.
+
 ## 5. What is on which side of the line
 
 **Nothing a backend does decides where a pixel goes.** Every decision that shows
@@ -199,7 +209,12 @@ land and what they sample ([`sprite_geometry.h`](sprite_geometry.h)).
 
 What a backend supplies is a device, a texture from bytes, a vertex buffer, a
 shader that multiplies each vertex by one constant, and the states that make the
-blend premultiplied. That is what lets the four backends with a rasteriser pass
+blend premultiplied. **The premultiplied blend governs draw lists; a post pass
+replaces.** With a chain set, a backend also supplies a scene target the size
+and format of the back buffer and one full-screen pass with blending off — and
+where that pass samples is still the engine's: a material reads only through the
+frame's helpers, and the one backend term that reaches them, GL storing its
+scene bottom row first, arrives as a sign in `frame_terms`. That is what lets the four backends with a rasteriser pass
 the same assertions — and what makes the file asserting them say "the renderer",
 never "this renderer".
 
@@ -260,6 +275,20 @@ buffer, `Viewport(0, 0, width, height)`. `gl/`, `null/` and `vulkan/` reset the
 stored `Viewport` beside the camera; `d3d11/` and `d3d12/` write it when a view
 is bound, from the screen viewport they bind it with, which has the same
 extent and depth range.
+
+### What a post chain adds to a frame
+
+With a chain set, `begin_frame` and a resize that restarts a frame clear the
+scene target as well as the back buffer, so a frame begun and never submitted
+still contributes nothing to the next. The views declared before
+`begin_overlay` draw into the scene; `submit` executes them, draws the pass into
+the back buffer — even with no views — and then executes the overlay views, so
+`read_back_buffer` reads the chain's output. Each backend keeps that order in
+its own terms: D3D11 between command-list executions on the immediate
+context, D3D12 in the frame list between the processed and overlay lists,
+Vulkan in a render pass on the output image that present copies, GL between
+the scene's framebuffer and framebuffer 0. With no chain, none of it exists
+and every view draws into the back buffer as before.
 
 ### What `submit` costs
 

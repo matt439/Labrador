@@ -650,7 +650,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -j 4 -E "RenderPixelTests|RenderContextLossTests|WebWindowTests|PageTests"
+          ctest --preset wasm-release -j 4 -E "RenderPixelTests|RenderContextLoss|WebWindowTests|PageTests"
 
       # THE PIXEL CONTRACT IN A BROWSER, as a step of its own so that a failure
       # here names itself rather than reading as the second compiler's.
@@ -659,9 +659,11 @@ jobs:
       # no Chrome from passing this step by running nothing. A frame it rejects
       # is in golden-actual/ beside the page, where the job above looks for the
       # desktop's. The context-loss page runs here too, because it needs the
-      # same browser, and so does RenderPixelTestsWithoutS3tc, which the -R
+      # same browser, and so do RenderPixelTestsWithoutS3tc, which the -R
       # pattern matches: the pixel page again with the S3TC extension hidden,
-      # holding gl/'s CPU decode of block-compressed textures to the same set.
+      # holding gl/'s CPU decode of block-compressed textures to the same set,
+      # and the pixel and context-loss pages again through the post stage
+      # (RenderPixelTestsThroughPost, RenderContextLossWithPostTests).
       #
       # WHAT THE RUNNER'S CHROME DRAWS WITH IS SWIFTSHADER, and the log says so:
       # "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)
@@ -677,7 +679,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -j 3 -R "RenderPixelTests|RenderContextLossTests" --no-tests=error -V
+          ctest --preset wasm-release -j 3 -R "RenderPixelTests|RenderContextLoss" --no-tests=error -V
 
       # THE WEB WINDOW, DRIVEN: WebWindowTests is a page in the same Chrome,
       # which tests/app/web/window_input.mjs clicks, types into, resizes and

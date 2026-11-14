@@ -57,7 +57,7 @@ test('--cpu-throttle and --network take a factor and a named profile, and refuse
 
 test('the usage names the options either form takes', () => {
 	for (const option of ['--emulate-media', '--expect-console', '--root', '--quit-keys', '--input',
-		'--hide-extension', '--sample-input', '--cpu-throttle', '--network']) {
+		'--hide-extension', '--sample-input', '--cpu-throttle', '--network', '--query']) {
 		assert.match(USAGE, new RegExp(option));
 	}
 	assert.match(USAGE, /either form: .*--emulate-media.*--expect-console.*--root/);
@@ -80,4 +80,15 @@ test('a heap line names each module heap in bytes and MiB, a collected one and n
 	assert.equal(heap_line('at quit', [17891328, null]),
 		'run_page: wasm heap at quit: 17891328 bytes (17.06 MiB), collected\n');
 	assert.equal(heap_line('at quit', []), 'run_page: wasm heap at quit: no module heap was seen\n');
+});
+
+test('--query is appended to the page address, and only a plain query is taken', () => {
+	const page = ['--browser', 'chrome', '--page', 'build/Page.html'];
+	assert.equal(parse_arguments(page).page_query, '');
+	assert.equal(parse_arguments([...page, '--query', 'through_post']).page_query, '?through_post');
+	assert.equal(parse_arguments([...page, '--query', 'a=1&b-2']).page_query, '?a=1&b-2');
+	for (const query of ['a b', '"x"', 'a/b', '']) {
+		assert.throws(() => parse_arguments([...page, '--query', query]),
+			(error) => error instanceof UsageError && /--query takes/.test(error.message), query);
+	}
 });

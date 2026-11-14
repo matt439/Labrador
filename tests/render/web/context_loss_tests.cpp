@@ -48,6 +48,12 @@
 //     run_page.mjs --browser-warnings fail, and a warning or an error the
 //     browser logs fails the run.
 //
+// THE SAME SEQUENCE THROUGH THE POST STAGE when the page's address carries
+// through_post (RenderContextLossWithPostTests): every frame then draws
+// through the identity chain, so the red read-back after the restore also
+// pins that the scene target, its framebuffer and the post program were
+// rebuilt with the context (docs/effects.md#10).
+//
 // NOT PINNED: that the device's strings are read again after the restore. On
 // one GPU the restored context describes itself exactly as the lost one did,
 // so no check here could tell a fresh read from a stale one.
@@ -437,6 +443,14 @@ int main()
 		run.renderer.create_device(run.window.handle(), buffer_side,
 			buffer_side, 1);
 		run.renderer.set_resources(&run.resources);
+		if (emscripten_run_script_int(
+			"new URLSearchParams(location.search).has('through_post') ? 1 : 0") != 0)
+		{
+			const labrador::PostEffect identity[] = {
+				labrador::PostEffect::identity };
+			run.renderer.set_post_effects(identity);
+			std::printf("ok: every frame draws through the identity chain\n");
+		}
 		run.shell = std::make_unique<RecordingShell>(run.renderer,
 			run.resources);
 		run.renderer.set_device_notify(run.shell.get());

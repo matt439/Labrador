@@ -9,6 +9,10 @@
 #include <unistd.h>
 #endif
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
+
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -393,6 +397,10 @@ bool golden::through_post_stage()
 {
 #if defined(_WIN32)
 	return GetEnvironmentVariableW(L"LABRADOR_THROUGH_POST", nullptr, 0) != 0;
+#elif defined(__EMSCRIPTEN__)
+	// A page has no environment: run_page.mjs --query through_post.
+	return emscripten_run_script_int(
+		"new URLSearchParams(location.search).has('through_post') ? 1 : 0") != 0;
 #else
 	return false;
 #endif

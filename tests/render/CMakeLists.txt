@@ -328,6 +328,18 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
                     --collect /golden-actual
                     --hide-extension WEBGL_compressed_texture_s3tc
             )
+
+            # AND THROUGH THE POST STAGE, as RenderPixelTestsThroughPost does
+            # natively: the same page told by its address to set the identity
+            # chain, against the same golden set (docs/effects.md#10).
+            add_test(NAME RenderPixelTestsThroughPost
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "$<TARGET_FILE:RenderPixelTests>"
+                    --collect /golden-actual
+                    --query through_post
+            )
         endif()
 
         # RenderContextLossTests - what a lost WebGL2 context does to the
@@ -367,6 +379,18 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
                     --page "$<TARGET_FILE:RenderContextLossTests>"
                     --timeout 60
                     --browser-warnings fail
+            )
+
+            # And the same loss and restore with the identity chain set, so
+            # the post stage's GL resources are held to the same rebuild.
+            add_test(NAME RenderContextLossWithPostTests
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/web/run_page.mjs"
+                    --browser "${LABRADOR_TEST_BROWSER}"
+                    --page "$<TARGET_FILE:RenderContextLossTests>"
+                    --timeout 60
+                    --browser-warnings fail
+                    --query through_post
             )
         endif()
     endif()

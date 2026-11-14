@@ -32,8 +32,9 @@ puts CMake, Ninja and the Windows SDK tools on PATH. `VCPKG_ROOT` is required.
 Direct3D also requires `fxc` on PATH. Vulkan requires `VULKAN_SDK`: its headers,
 import library and **its own** `Bin/dxc.exe` with SPIR-V support, not the Windows
 SDK's identically named compiler. [compile_shaders.cmake](cmake/compile_shaders.cmake)
-explains the lookup and errors. The three APIs compile one `sprite.hlsl` at
-three profiles; GL compiles GLSL at device creation.
+explains the lookup and errors. The three APIs compile one `sprite.hlsl`, and
+the post stage's `post_frame.hlsli` with its materials, at their profiles; GL
+compiles hand-written GLSL for both at device creation.
 
 The browser presets require Emscripten and `EMSDK`; on this machine it is
 `C:\Tools\emsdk`, version 6.0.12, matching CI. Run `emsdk_env.bat` as well as
@@ -56,12 +57,14 @@ Web Audio and web input.
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 22; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 34 Debug / 35 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 36 Debug / 37 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
-`RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderContextLossTests`,
-`WebWindowTests`, all six sample `*PageTests`, `LineSweeperReducedMotionPageTests`,
-`LineSweeperPalettePageTests`, `ComponentsPointerPageTests`,
+`RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderPixelTestsThroughPost`,
+`RenderContextLossTests`, `RenderContextLossWithPostTests`, `WebWindowTests`,
+all six sample `*PageTests`,
+`LineSweeperReducedMotionPageTests`, `LineSweeperPalettePageTests`,
+`ComponentsPointerPageTests`,
 `MinimalLoadFailurePageTests` and
 `LineSweeperBundlePageTests` registered. `MinimalLoadFailurePageTests` answers
 the template page's `.wasm` with 404 and asserts its failure line and the

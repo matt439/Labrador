@@ -13,8 +13,8 @@
 //                     [--sample-input fixed-step]
 //
 // Either form also takes [--emulate-media <feature>=<value>],
-// [--expect-console <text>], [--root <folder>], [--cpu-throttle <rate>] and
-// [--network <profile>].
+// [--expect-console <text>], [--root <folder>], [--cpu-throttle <rate>],
+// [--network <profile>] and [--query <name=value&...>].
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
 // wasm-* presets (tests/render/CMakeLists.txt), for WebWindowTests
@@ -89,6 +89,11 @@
 // offer. The run fails if a context made after the page finished still sees
 // the extension, so a hide that did not take cannot pass for one that did.
 //
+// --query appends a query string to the page's address, which the page reads
+// from location.search: RenderPixelTestsThroughPost passes through_post, so
+// one page runs the pixel contract either way, as the native executable does
+// from LABRADOR_THROUGH_POST. Letters, digits, '_', '-', '=' and '&' only.
+//
 // --emulate-media sets one CSS media feature for the page before it loads,
 // through Emulation.setEmulatedMedia: prefers-reduced-motion=reduce is how
 // LineSweeperReducedMotionPageTests stands in for a player who has asked
@@ -153,7 +158,7 @@ let timeout_ms;
 // ignored, so a misspelt option reaches the usage message.
 const OPTION_NAMES = new Set(['browser', 'page', 'collect', 'timeout', 'browser-warnings',
 	'hide-extension', 'input', 'quit-keys', 'frames', 'sample-input', 'emulate-media',
-	'expect-console', 'root', 'cpu-throttle', 'network']);
+	'expect-console', 'root', 'cpu-throttle', 'network', 'query']);
 
 // --network's profiles: latency in ms, throughput in bytes per second. The
 // figures are Chrome DevTools' presets of the same names (its
@@ -177,7 +182,8 @@ export const USAGE =
 	'--quit-keys <code,...> [--frames <n>] [--timeout <seconds>] ' +
 	'[--sample-input fixed-step]\n' +
 	'  either form: [--emulate-media <feature>=<value>] [--expect-console <text>] ' +
-	'[--root <folder>] [--cpu-throttle <rate>] [--network <profile>]\n';
+	'[--root <folder>] [--cpu-throttle <rate>] [--network <profile>] ' +
+	'[--query <name=value&...>]\n';
 
 // A command line the runner cannot run: it exits 2 with USAGE, before
 // anything is started.
@@ -250,6 +256,10 @@ export function parse_arguments(argv) {
 		}
 		parsed.network_conditions = { offline: false, ...NETWORK_PROFILES[parsed.network] };
 	}
+	if (parsed.query !== undefined && !/^[A-Za-z0-9_=&-]+$/.test(parsed.query)) {
+		fail_usage(`--query takes letters, digits, _, -, = and & only, not "${parsed.query}"`);
+	}
+	parsed.page_query = parsed.query === undefined ? '' : `?${parsed.query}`;
 	parsed.page_path = resolve(parsed.page);
 	parsed.root_path = parsed.root === undefined ? dirname(parsed.page_path) : resolve(parsed.root);
 	if (!parsed.page_path.startsWith(parsed.root_path + sep)) {
@@ -907,5 +917,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 		process.exit(2);
 	}
 	({ root_path: root, page_name, timeout_ms } = options);
+	page_name += options.page_query;
 	process.exit(await run());
 }

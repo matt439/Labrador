@@ -86,7 +86,7 @@ def required_tests(area: str, name: str, render: str) -> list[str]:
     if area == "render":
         names = ["RenderTests", "SceneTests", "AudioTests"]
         if native and render != "null":
-            names += ["RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"]
+            names += ["RenderPixelTests", "RenderPixelTestsThroughPost", "MinimalSmokeTests", "CollisionSmokeTests"]
         if render == "d3d12":
             names.append("D3D12SynchronizationTests")
         return names
@@ -336,7 +336,8 @@ def build_plan(root: Path, *, paths: list[str] | None = None, areas: list[str] |
                                "conditional_browser_test_names":
                                    list(null_chromium) if wasm and render == "null" else [],
                                "forbidden_test_names":
-                                   ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests",
+                                   ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderPixelTestsThroughPost", "RenderContextLossTests",
+                                    "RenderContextLossWithPostTests",
                                     "LineSweeperBundlePageTests", "LineSweeperPacingPageTests"]
                                    if render == "null" else []})
     vulkan = any(path == "engine/render/vulkan" or path.startswith("engine/render/vulkan/") for path in selected)
