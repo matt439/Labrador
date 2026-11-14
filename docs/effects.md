@@ -1449,6 +1449,23 @@ root signature has an SRV table of `t0` alone and its scene is untracked
 frame's existing uniform buffer and moves the scene to shader-read by a
 barrier, not by the pass's dependency.
 
+**P2, where it stands (2026-11-14).** Built in `5744334d`: `PostEffect::crt`,
+`CrtSettings`, `crt_values`, `crt_values_are_neutral` and
+`crt_source_position` as §8.1 sketches, on all five backends, OpenGL and
+WebGL2 by a hand transliteration (E19 (a)). Every §10.2 case except the
+never-submitted and split-screen-curvature rows passes on `x64-debug`,
+`x64-debug-d3d12`, `x64-debug-gl`, `x64-debug-vulkan` and in Chrome on
+`wasm-debug`, together with a position case that decodes where the GPU sampled
+every pixel and holds it within a pixel of `crt_source_position`. The D3D12
+debug layer and Vulkan `validate_sync` are clean with a non-neutral CRT. The
+default scanline count is 120, not §8.1's 240, because the four-pixel floor
+refuses 240 below 960 pixels of screen. **Looked at** on D3D11, OpenGL and
+Vulkan through a throwaway copy of the spike scene (opening, mid-push and
+gameplay, each with the CRT on and off): the three are indistinguishable by eye.
+**Owed:** the scene in Chrome (only the pixel page's cases have drawn the CRT
+there), the whole 0.8 s push watched for moiré rather than one mid-push frame,
+the Release presets, CI's software rasterisers, and the low-tier timing of §11.
+
 ### Risks, in the order to retire them
 
 1. **An incomplete redirect** (a bind, clear or restore path): X1's run.
