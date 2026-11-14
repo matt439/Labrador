@@ -1361,6 +1361,49 @@ here as a new row before it is built.
   that lerps from the pronounced look to a subtle gameplay one, E9 (d)), with
   the strengths read from a file so looks can be tried without rebuilding;
   not in ColourWars.
+
+  **Result, 2026-11-14, on branch `spike-post-x1` (`4cb58b65`, review fixes
+  `8557e3df`; not for master).** §7.1's material compiles at `ps_4_0`
+  restructured to one return, which also clears fxc's X4000. E3's
+  `set_post_values` with `crt_values`, and `crt_source_position`, are as
+  §8.1 sketches. Seven analytic cases pass on the RTX 5080: a neutral CRT
+  equals the direct frame byte for byte; every pixel outside the screen is
+  untouched; curvature blacks out what `crt_source_position` calls past the
+  tube; the mask's period; scanline period, with dark rows thinning more;
+  the vignette; aberration's radial direction. A position case decodes, from
+  a scene that encodes its own coordinates, where the GPU sampled every
+  pixel of an offset screen, and holds it within a pixel of
+  `crt_source_position`. Headless cases cover the packing, refusals and CPU
+  curvature in every configuration. `x64-debug` 22/22, `x64-debug-null`
+  23/23. `samples/crt_spike` was looked at at the opening, mid-push and in
+  gameplay, each with the CRT on and off.
+
+  Learned, to carry into P1 and P2:
+
+  1. **The 4-pixel scanline floor caps the count hard.** The opening's
+     glass is 475 pixels tall at 720p, so at most about 118 lines; 240 is
+     out until about 1440p. Curvature packs lines up to `1 + 4 *
+     curvature` closer at the corners, which the floor, measured at the
+     centre, does not count. The spike's looks use 100 on the glass and
+     180 full screen.
+  2. **A brightness gain above 1 washes greys out** in the subtle gameplay
+     look. 1.12 lifted the canvas grey visibly against the CRT-off frame;
+     gameplay probably wants 1.0 and less mask.
+  3. **The adversarial review** (three lenses, each finding put to a
+     skeptic) confirmed fourteen findings and refuted four. Fixed on the
+     branch: `begin_overlay` must drain every view from the overlay up, not
+     one (a new case fails without it); the region clamp must stop at
+     texel centres inside the screen, or bilinear taps cross a fractional
+     edge; a CRT whose values were never set must be neutral, and null must
+     record the identity a device draws for a neutral CRT; strengths
+     documented as 0..1 must refuse values above 1. Owed at landing:
+     `post_effect.h` in `website/src/lib/published.ts`, which fails the
+     site build otherwise, and renderer.h's note that a capture which never
+     presents keeps its frame open, so `set_post_effects` refuses until the
+     next `begin_frame`.
+  4. **A window without focus ignores posted keys**, so the scene reads
+     `view.push` and `view.crt` from its file to be captured without
+     injecting input.
 - **X3 - the cross-compile path.** *Days.* `post_frame.hlsli` and the CRT
   through vcpkg `directx-dxc` and `spirv-cross` under `x64-debug-gl` and
   `wasm-debug`; the embed script's renames and highp rewrite; whether the
