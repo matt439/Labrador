@@ -42,4 +42,22 @@ namespace labrador
 	// the next frame.
 	const std::vector<RecordedSprite>& recorded_sprites(
 		const Renderer& renderer);
+
+	// One post pass, as a device backend draws it: which material, with the
+	// values set for it, at what size, and how many views it drew over - the
+	// processed views, which precede it in submit(). Views from
+	// processed_views on are overlay views, drawn after it.
+	struct RecordedPass
+	{
+		PostEffect effect = PostEffect::identity;
+		PostValues values;
+		int processed_views = 0;
+		int width = 0;
+		int height = 0;
+	};
+
+	// The chain's passes this frame, in order, under the same validity rules
+	// as recorded_sprites: filled by submit(), cleared by begin_frame(). Empty
+	// when no chain is set.
+	const std::vector<RecordedPass>& recorded_passes(const Renderer& renderer);
 }

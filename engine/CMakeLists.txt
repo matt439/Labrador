@@ -176,6 +176,21 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
         "${CMAKE_CURRENT_SOURCE_DIR}/render/sprite.hlsl"
         ps_4_0_level_9_1 pixel_main sprite_pixel_shader
         "engine/render/d3d11/sprite_pixel_shader.h")
+
+    # The post stage (docs/effects.md): the frame's full-screen triangle and
+    # the identity material. vs_4_0 rather than the sprite shader's 9_1,
+    # which has no SV_VertexID; the backend's 10_0 feature-level floor
+    # allows it.
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
+        vs_4_0 post_vertex_main post_vertex_bytecode
+        "engine/render/d3d11/post_vertex_shader.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
+    compile_hlsl(LabradorEngine
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/materials/identity.hlsl"
+        ps_4_0 post_pixel_main post_identity_bytecode
+        "engine/render/d3d11/post_identity_pixel_shader.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/render/post_frame.hlsli")
 elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
     target_sources(LabradorEngine PRIVATE
         render/d3d12/device_resources.cpp

@@ -14,6 +14,8 @@
 // The shaders, as bytes this build compiled (cmake/compile_shaders.cmake).
 // Nothing is read from disk at run time and nothing is deployed beside the
 // executable.
+#include "engine/render/d3d11/post_identity_pixel_shader.h"
+#include "engine/render/d3d11/post_vertex_shader.h"
 #include "engine/render/d3d11/sprite_pixel_shader.h"
 #include "engine/render/d3d11/sprite_vertex_shader.h"
 
@@ -103,6 +105,21 @@ namespace labrador
 		// to be.
 		static_assert(sizeof(PixelsToClip) == 4 * sizeof(float),
 			"The transform constant buffer is four floats");
+
+		// post_frame.hlsli's cbuffer, field for field: eleven float4s.
+		struct PostFrameConstants
+		{
+			float output_size[4];
+			float scene_size[4];
+			float frame_terms[4];
+			float material_values[8][4];
+		};
+		static_assert(sizeof(PostFrameConstants) == 11 * 4 * sizeof(float),
+			"The post frame is eleven float4s, as post_frame.hlsli declares");
+		static_assert(sizeof(PostFrameConstants::material_values) ==
+			sizeof(PostValues::values),
+			"PostValues fills the frame's material_values exactly");
+
 	}
 
 	// --- DrawList::View ------------------------------------------------------
@@ -418,6 +435,27 @@ namespace labrador
 			this->pixel_shader.ReleaseAndGetAddressOf()),
 			"The sprite pixel shader could not be created");
 
+		// The post stage's shaders and its one constant buffer, made whether
+		// or not a chain is set: they are small, and making them here keeps
+		// set_post_effects from being the first thing to create a shader.
+		ThrowIfFailed(device->CreateVertexShader(post_vertex_bytecode,
+			sizeof(post_vertex_bytecode), nullptr,
+			this->post_vertex_shader.ReleaseAndGetAddressOf()),
+			"The post vertex shader could not be created");
+		ThrowIfFailed(device->CreatePixelShader(post_identity_bytecode,
+			sizeof(post_identity_bytecode), nullptr,
+			this->post_identity_shader.ReleaseAndGetAddressOf()),
+			"The identity post shader could not be created");
+
+		D3D11_BUFFER_DESC post_constants_description = {};
+		post_constants_description.ByteWidth = sizeof(PostFrameConstants);
+		post_constants_description.Usage = D3D11_USAGE_DYNAMIC;
+		post_constants_description.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		post_constants_description.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ThrowIfFailed(device->CreateBuffer(&post_constants_description, nullptr,
+			this->post_constants.ReleaseAndGetAddressOf()),
+			"The post constant buffer could not be created");
+
 		// The three fields of SpriteVertex, located by offsetof rather than by
 		// position, which is why sprite_vertex.h is free to declare them in any
 		// order it likes.
@@ -614,6 +652,13 @@ namespace labrador
 		this->point_sampler.Reset();
 		this->linear_sampler.Reset();
 
+		this->post_vertex_shader.Reset();
+		this->post_identity_shader.Reset();
+		this->post_constants.Reset();
+		this->scene_view.Reset();
+		this->scene_target.Reset();
+		this->scene_texture.Reset();
+
 		if (this->notify != nullptr)
 		{
 			this->notify->on_device_lost();
@@ -623,6 +668,7 @@ namespace labrador
 	void Renderer::Impl::OnDeviceRestored()
 	{
 		this->create_device_dependent_resources();
+		this->create_scene_target();
 		this->device_info = selected_device(
 			this->device_resources.GetD3DDevice(), this->vsync);
 
@@ -630,6 +676,122 @@ namespace labrador
 		{
 			this->notify->on_device_restored();
 		}
+	}
+
+	void Renderer::Impl::create_scene_target()
+	{
+		this->scene_view.Reset();
+		this->scene_target.Reset();
+		this->scene_texture.Reset();
+
+		if (this->post_effects.empty() || !this->has_device())
+		{
+			return;
+		}
+
+		// The back buffer's own size, read from it rather than from what the
+		// shell last said, for the reason back_buffer_size() gives.
+		const RECT size = this->device_resources.GetOutputSize();
+
+		// THE BACK BUFFER'S FORMAT, so the identity material writes back the
+		// byte it read and every golden survives the redirect.
+		D3D11_TEXTURE2D_DESC description = {};
+		description.Width = static_cast<UINT>(size.right - size.left);
+		description.Height = static_cast<UINT>(size.bottom - size.top);
+		description.MipLevels = 1;
+		description.ArraySize = 1;
+		description.Format = back_buffer_format;
+		description.SampleDesc.Count = 1;
+		description.Usage = D3D11_USAGE_DEFAULT;
+		description.BindFlags =
+			D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+		ID3D11Device1* device = this->device_resources.GetD3DDevice();
+		ThrowIfFailed(device->CreateTexture2D(&description, nullptr,
+			this->scene_texture.ReleaseAndGetAddressOf()),
+			"The post stage's scene target could not be created");
+		ThrowIfFailed(device->CreateRenderTargetView(this->scene_texture.Get(),
+			nullptr, this->scene_target.ReleaseAndGetAddressOf()),
+			"The post stage's scene target view could not be created");
+		ThrowIfFailed(device->CreateShaderResourceView(
+			this->scene_texture.Get(), nullptr,
+			this->scene_view.ReleaseAndGetAddressOf()),
+			"The post stage's scene texture view could not be created");
+	}
+
+	ID3D11RenderTargetView* Renderer::Impl::view_target(int index)
+	{
+		const bool overlay = this->overlay_start >= 0 &&
+			index >= this->overlay_start;
+		if (overlay || this->scene_target == nullptr)
+		{
+			return this->device_resources.GetRenderTargetView();
+		}
+		return this->scene_target.Get();
+	}
+
+	void Renderer::Impl::draw_post(ID3D11DeviceContext1* immediate)
+	{
+		const D3D11_VIEWPORT viewport = this->device_resources.GetScreenViewport();
+
+		PostFrameConstants constants = {};
+		constants.output_size[0] = viewport.Width;
+		constants.output_size[1] = viewport.Height;
+		constants.output_size[2] = 1.0f / viewport.Width;
+		constants.output_size[3] = 1.0f / viewport.Height;
+		constants.scene_size[0] = viewport.Width;
+		constants.scene_size[1] = viewport.Height;
+		constants.scene_size[2] = 1.0f / viewport.Width;
+		constants.scene_size[3] = 1.0f / viewport.Height;
+		// Direct3D stores every target top row first: no flip.
+		constants.frame_terms[2] = 1.0f;
+
+		// One material a chain until multi-pass chains exist
+		// (docs/effects.md#13), so the chain's one effect is the pass.
+		const PostEffect effect = this->post_effects.front();
+		const PostValues& values =
+			this->post_values[static_cast<size_t>(effect)];
+		std::memcpy(constants.material_values, values.values.data(),
+			sizeof(constants.material_values));
+		ID3D11PixelShader* material_shader = this->post_identity_shader.Get();
+
+		D3D11_MAPPED_SUBRESOURCE mapped = {};
+		ThrowIfFailed(immediate->Map(this->post_constants.Get(), 0,
+			D3D11_MAP_WRITE_DISCARD, 0, &mapped),
+			"The post constant buffer could not be mapped");
+		std::memcpy(mapped.pData, &constants, sizeof(constants));
+		immediate->Unmap(this->post_constants.Get(), 0);
+
+		// EVERYTHING IS SET, because ExecuteCommandList(..., FALSE) leaves the
+		// immediate context in its default state after each view's list.
+		ID3D11RenderTargetView* back_buffer =
+			this->device_resources.GetRenderTargetView();
+		ID3D11Buffer* constant_buffer = this->post_constants.Get();
+		ID3D11ShaderResourceView* scene = this->scene_view.Get();
+		ID3D11SamplerState* samplers[2] = {
+			this->point_sampler.Get(), this->linear_sampler.Get() };
+
+		immediate->OMSetRenderTargets(1, &back_buffer, nullptr);
+		immediate->RSSetViewports(1, &viewport);
+		immediate->RSSetState(this->rasterizer.Get());
+		immediate->IASetInputLayout(nullptr);
+		immediate->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		immediate->VSSetShader(this->post_vertex_shader.Get(), nullptr, 0);
+		immediate->VSSetConstantBuffers(0, 1, &constant_buffer);
+		immediate->PSSetShader(material_shader, nullptr, 0);
+		immediate->PSSetConstantBuffers(0, 1, &constant_buffer);
+		immediate->PSSetShaderResources(0, 1, &scene);
+		immediate->PSSetSamplers(0, 2, samplers);
+		// A FULL-SCREEN PASS REPLACES; only draw lists blend (docs/effects.md).
+		immediate->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFFu);
+		immediate->OMSetDepthStencilState(this->depth.Get(), 0);
+
+		immediate->Draw(3, 0);
+
+		// Unbound before the scene is a render target again next frame, which
+		// would otherwise null this binding with a debug-layer warning.
+		ID3D11ShaderResourceView* none = nullptr;
+		immediate->PSSetShaderResources(0, 1, &none);
 	}
 
 	// --- Renderer ------------------------------------------------------------
@@ -661,6 +823,7 @@ namespace labrador
 
 		this->impl_->create_device_dependent_resources();
 		this->impl_->device_resources.CreateWindowSizeDependentResources();
+		this->impl_->create_scene_target();
 		this->impl_->device_info = selected_device(
 			this->impl_->device_resources.GetD3DDevice(), this->impl_->vsync);
 	}
@@ -747,6 +910,12 @@ namespace labrador
 		const bool rebuilt =
 			impl.device_resources.WindowSizeChanged(width, height);
 
+		if (rebuilt)
+		{
+			// The scene follows the back buffer's size.
+			impl.create_scene_target();
+		}
+
 		if (rebuilt && restart)
 		{
 			// Cleared and rebound against the buffer that now exists, so a
@@ -759,6 +928,11 @@ namespace labrador
 			const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
 			context->ClearRenderTargetView(render_target, clear_colour);
+			if (impl.scene_target != nullptr)
+			{
+				context->ClearRenderTargetView(impl.scene_target.Get(),
+					clear_colour);
+			}
 			context->OMSetRenderTargets(1, &render_target, nullptr);
 			context->RSSetViewports(1, &viewport);
 
@@ -767,7 +941,7 @@ namespace labrador
 			// that is exactly what the frame is owed at that point.
 			for (int i = 0; i < impl.view_count; i++)
 			{
-				impl.views[static_cast<size_t>(i)]->bind(render_target,
+				impl.views[static_cast<size_t>(i)]->bind(impl.view_target(i),
 					viewport);
 			}
 		}
@@ -793,9 +967,19 @@ namespace labrador
 		ID3D11RenderTargetView* render_target = device.GetRenderTargetView();
 		const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
+		// WITH A CHAIN, BOTH ARE CLEARED: the scene because the views draw into
+		// it, and the back buffer so that a frame begun and never submitted
+		// presents black rather than the last frame's post output
+		// (docs/effects.md#4).
 		context->ClearRenderTargetView(render_target, clear_colour);
+		if (this->impl_->scene_target != nullptr)
+		{
+			context->ClearRenderTargetView(this->impl_->scene_target.Get(),
+				clear_colour);
+		}
 		context->OMSetRenderTargets(1, &render_target, nullptr);
 		context->RSSetViewports(1, &viewport);
+		this->impl_->overlay_start = -1;
 
 		// Every view records into its own deferred context, so each needs the
 		// same target and viewport bound before it is drawn into - and needs it
@@ -859,14 +1043,51 @@ namespace labrador
 		// is free and does not overwrite a viewport set_viewport has since
 		// chosen. See DrawList::View::bound.
 		DeviceResources& device = this->impl_->device_resources;
-		ID3D11RenderTargetView* render_target = device.GetRenderTargetView();
 		const D3D11_VIEWPORT viewport = device.GetScreenViewport();
 
 		for (int i = 0; i < count; i++)
 		{
-			this->impl_->views[static_cast<size_t>(i)]->bind(render_target,
-				viewport);
+			this->impl_->views[static_cast<size_t>(i)]->bind(
+				this->impl_->view_target(i), viewport);
 		}
+	}
+
+	void Renderer::set_post_effects(std::span<const PostEffect> effects)
+	{
+		check_post_chain(effects, this->impl_->frame_begun);
+
+		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->create_scene_target();
+	}
+
+	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
+	{
+		check_post_values(this->impl_->post_effects, effect, values);
+		this->impl_->post_values[static_cast<size_t>(effect)] = values;
+	}
+
+	void Renderer::begin_overlay()
+	{
+		Impl& impl = *this->impl_;
+		check_begin_overlay(impl.frame_begun, impl.overlay_start,
+			impl.view_count, static_cast<int>(impl.views.size()));
+		const int overlay = impl.view_count;
+
+		// A VIEW BOUND EARLIER THIS FRAME, AND THEN DROPPED BY A LOWERED
+		// COUNT, STILL HOLDS THE SCENE TARGET IN ITS CONTEXT - and so may
+		// every view above it. All of them are drained, so whichever the frame
+		// declares from here on binds the back buffer instead of being skipped
+		// as already bound.
+		const int capacity = static_cast<int>(impl.views.size());
+		for (int i = overlay; i < capacity; i++)
+		{
+			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
+			view.discard();
+			view.reset();
+		}
+
+		impl.overlay_start = overlay;
+		this->set_view_count(overlay + 1);
 	}
 
 	int Renderer::view_count() const
@@ -903,21 +1124,44 @@ namespace labrador
 		// is holding the bind. Finishing without executing is how a context is
 		// drained; skipping it is how commands accumulate for the life of the
 		// process.
-		const int capacity = static_cast<int>(this->impl_->views.size());
+		//
+		// WITH A CHAIN, THE POST PASS RUNS BETWEEN THE LAST PROCESSED VIEW AND
+		// THE FIRST OVERLAY ONE - or after every view, with no overlay - and
+		// runs even when no view was declared, so the frame presents the chain
+		// over a black scene rather than whatever the back buffer held.
+		Impl& impl = *this->impl_;
+		const bool chain = impl.scene_target != nullptr;
+		const int post_at = impl.overlay_start >= 0
+			? impl.overlay_start
+			: impl.view_count;
+		bool post_drawn = false;
+
+		const int capacity = static_cast<int>(impl.views.size());
 		for (int i = 0; i < capacity; i++)
 		{
-			DrawList::View& view = *this->impl_->views[static_cast<size_t>(i)];
+			if (chain && !post_drawn && i == post_at)
+			{
+				impl.draw_post(immediate);
+				post_drawn = true;
+			}
+
+			DrawList::View& view = *impl.views[static_cast<size_t>(i)];
 			if (!view.bound)
 			{
 				continue;
 			}
 
 			ID3D11CommandList* commands = view.finish();
-			if (i < this->impl_->view_count)
+			if (i < impl.view_count)
 			{
 				immediate->ExecuteCommandList(commands, FALSE);
 			}
 			commands->Release();
+		}
+
+		if (chain && !post_drawn)
+		{
+			impl.draw_post(immediate);
 		}
 	}
 

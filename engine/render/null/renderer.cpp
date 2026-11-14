@@ -8,6 +8,7 @@
 #include "engine/render/sprite_geometry.h"
 #include "engine/render/sprite_vertex.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -261,8 +262,11 @@ namespace labrador
 	void Renderer::begin_frame()
 	{
 		this->impl_->frame_submitted = false;
+		this->impl_->frame_begun = true;
+		this->impl_->overlay_start = -1;
 
 		this->impl_->recorded.clear();
+		this->impl_->passes.clear();
 
 		this->impl_->reset_views();
 
@@ -275,6 +279,7 @@ namespace labrador
 		// so a caller that reads it after this rather than before gets the same
 		// answer - which the other four backends cannot offer, because
 		// presenting discards what they drew.
+		this->impl_->frame_begun = false;
 	}
 
 	void Renderer::set_view_count(int count)
@@ -319,6 +324,50 @@ namespace labrador
 				this->impl_->recorded.push_back(sprite);
 			}
 		}
+
+		// One pass per material per frame, whatever the view count, between
+		// the processed views and the overlay ones.
+		this->impl_->passes.clear();
+		// A count lowered below the overlay after begin_overlay leaves fewer
+		// processed views than the boundary says, as a device backend draws.
+		const int processed = this->impl_->overlay_start >= 0
+			? std::min(this->impl_->overlay_start, this->impl_->view_count)
+			: this->impl_->view_count;
+		for (const PostEffect effect : this->impl_->post_effects)
+		{
+			const PostValues& values =
+				this->impl_->post_values[static_cast<size_t>(effect)];
+			this->impl_->passes.push_back(RecordedPass{ effect, values,
+				processed, this->impl_->width, this->impl_->height });
+		}
+	}
+
+	void Renderer::set_post_effects(std::span<const PostEffect> effects)
+	{
+		check_post_chain(effects, this->impl_->frame_begun);
+		this->impl_->post_effects.assign(effects.begin(), effects.end());
+	}
+
+	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
+	{
+		check_post_values(this->impl_->post_effects, effect, values);
+		this->impl_->post_values[static_cast<size_t>(effect)] = values;
+	}
+
+	void Renderer::begin_overlay()
+	{
+		Impl& impl = *this->impl_;
+		check_begin_overlay(impl.frame_begun, impl.overlay_start,
+			impl.view_count, static_cast<int>(impl.views.size()));
+		const int overlay = impl.view_count;
+
+		for (std::size_t i = static_cast<std::size_t>(overlay);
+			i < impl.views.size(); i++)
+		{
+			impl.views[i]->reset();
+		}
+		impl.overlay_start = overlay;
+		this->set_view_count(overlay + 1);
 	}
 
 	Vector2F Renderer::back_buffer_size() const
@@ -356,5 +405,10 @@ namespace labrador
 		const Renderer& renderer)
 	{
 		return renderer.impl()->recorded;
+	}
+
+	const std::vector<RecordedPass>& recorded_passes(const Renderer& renderer)
+	{
+		return renderer.impl()->passes;
 	}
 }

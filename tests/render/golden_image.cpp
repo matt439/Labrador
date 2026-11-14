@@ -389,6 +389,15 @@ namespace
 	constexpr int allowed_channel_drift = 1;
 }
 
+bool golden::through_post_stage()
+{
+#if defined(_WIN32)
+	return GetEnvironmentVariableW(L"LABRADOR_THROUGH_POST", nullptr, 0) != 0;
+#else
+	return false;
+#endif
+}
+
 void golden::check_frame(int width, int height,
 	const std::vector<unsigned char>& rgba)
 {

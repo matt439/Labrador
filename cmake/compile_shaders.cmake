@@ -26,7 +26,10 @@ function(labrador_add_generated_shader target generated_file)
     target_include_directories(${target} PRIVATE "${LABRADOR_GENERATED_ROOT}")
 endfunction()
 
-# compile_hlsl(<target> <source> <profile> <entry> <symbol> <output>)
+# compile_hlsl(<target> <source> <profile> <entry> <symbol> <output> [<include>...])
+#
+# Any arguments after `output` are files the source includes, so editing one
+# recompiles it; fxc writes no dependency file of its own.
 #
 # `symbol` is the name of the byte array in the generated header, and `output`
 # is that header's path relative to the generated include root - so a backend
@@ -66,7 +69,7 @@ function(compile_hlsl target source profile entry symbol output)
             /Fh "${generated_file}"
             /Vn ${symbol}
             "${source}"
-        DEPENDS "${source}"
+        DEPENDS "${source}" ${ARGN}
         COMMENT "Compiling ${entry} (${profile}) from ${source}"
         VERBATIM
     )

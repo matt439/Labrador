@@ -185,6 +185,10 @@
       "wasm-debug",
       "wasm-release"
     ],
+    "RenderPixelTestsThroughPost": [
+      "x64-debug",
+      "x64-release"
+    ],
     "RenderPixelTestsWithoutS3tc": [
       "wasm-debug",
       "wasm-release"

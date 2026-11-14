@@ -1,7 +1,10 @@
 #pragma once
 
+#include "engine/render/post_effect.h"
+
 #include <cstddef>
 #include <memory>
+#include <span>
 #include <vector>
 
 // The argument checks renderer.h states for create_device, device_info,
@@ -30,6 +33,24 @@ namespace labrador
 	// Throws std::logic_error saying that lowering the count to `count` would
 	// drop view `dropped`, which has been drawn into this frame.
 	[[noreturn]] void refuse_dropped_view(int count, int dropped);
+
+	// set_post_effects' and set_post_values' refusals (renderer.h), the same
+	// on every backend.
+	void check_post_chain(std::span<const PostEffect> effects,
+		bool frame_begun);
+	void check_post_values(const std::vector<PostEffect>& chain,
+		PostEffect effect, const PostValues& values);
+
+	// begin_overlay's refusals: outside a frame, a second call, and no view
+	// left in the capacity for the overlay.
+	void check_begin_overlay(bool frame_begun, int overlay_start,
+		int view_count, int capacity);
+
+	// What a backend without a post stage answers a chain with
+	// (docs/effects.md#13): nothing for an empty one, a refusal naming the
+	// backend for any other.
+	void refuse_post_chain_on(const char* backend,
+		std::span<const PostEffect> effects);
 
 	// Renderer::set_view_count's two checks. `views` holds the capacity
 	// create_device made and `current_count` is the count before this call.

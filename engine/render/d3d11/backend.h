@@ -10,6 +10,7 @@
 
 #include <wrl/client.h>
 
+#include <array>
 #include <memory>
 #include <string>
 #include <utility>
@@ -285,6 +286,39 @@ namespace labrador
 
 		const RenderResources* resources = nullptr;
 		labrador::DeviceNotify* notify = nullptr;
+
+		// THE POST STAGE (docs/effects.md). With a chain set, the processed
+		// views draw into scene_target instead of the back buffer, and submit()
+		// draws the scene through the chain into the back buffer before any
+		// overlay view executes. With none, nothing below is made and every
+		// view binds the back buffer as it always has.
+		std::vector<PostEffect> post_effects;
+
+		// Each effect's values, by PostEffect, as set_post_values last gave.
+		std::array<PostValues, post_effect_count> post_values{};
+
+		// The first overlay view's index this frame, or -1 before
+		// begin_overlay. Views from it on bind the back buffer.
+		int overlay_start = -1;
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> scene_texture;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> scene_target;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scene_view;
+
+		Microsoft::WRL::ComPtr<ID3D11VertexShader> post_vertex_shader;
+		Microsoft::WRL::ComPtr<ID3D11PixelShader> post_identity_shader;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> post_constants;
+
+		// Made, remade or released to match the chain and the back buffer's
+		// size. Re-entrant: a resize, a restore and set_post_effects all call
+		// it, and a call with nothing to change remakes the same thing.
+		void create_scene_target();
+
+		// What view `index` draws into this frame.
+		ID3D11RenderTargetView* view_target(int index);
+
+		// The chain, into the back buffer, on the immediate context.
+		void draw_post(ID3D11DeviceContext1* immediate);
 
 		ID3D11SamplerState* sampler(TextureFilter filter) const;
 

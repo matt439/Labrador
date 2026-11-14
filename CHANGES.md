@@ -80,6 +80,10 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-14 - Add a post stage: an identity chain and an overlay boundary
+
+**New API.** `Renderer::set_post_effects(std::span<const PostEffect>)` sets, outside a frame, the materials `submit()` draws the frame's processed views through before any overlay view; `Renderer::begin_overlay()` declares, inside a frame, the first view drawn over that output unprocessed; `Renderer::set_post_values(PostEffect, const PostValues&)` sets an effect's values. `engine/render/post_effect.h` declares `PostEffect`, whose one value is `identity`, and `PostValues`. A chain is at most one effect. Direct3D 11 and null implement it; Direct3D 12, OpenGL and Vulkan refuse a non-empty chain with `std::logic_error` until they do, and all five implement `begin_overlay`, which with no chain only declares a view. `begin_overlay` needs one view of capacity beyond the frame's own. With no chain, nothing a game draws changes. [docs/effects.md](docs/effects.md) is the design.
+
 ### 2026-11-13 - Classify an unflagged Basic Render Driver as a software device
 
 **Behaviour change.** The Direct3D 11 and 12 backends' `Renderer::device_info().kind` is `RenderDeviceKind::software` for an adapter DXGI does not flag as software when its vendor and device numbers (`0x1414`, `0x8c`) or its name identify the Microsoft Basic Render Driver; it was `hardware` there. Adapter selection is unchanged, so a release build still starts on such an adapter and now reports it as `software`. ([#125](https://github.com/matt439/Labrador/issues/125))
