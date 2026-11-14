@@ -982,9 +982,14 @@ enum class PostEffect
 	crt
 };
 
-// Validated when set (std::invalid_argument on a negative strength, a NaN, a
-// scanline count giving fewer than 4 output pixels a line, or an empty
-// screen). Every strength defaults to zero, and zero turns that term off.
+// The frame's material_values (§5.4) as the caller fills them: eight groups
+// of four floats, read by the material as material_value(0) to (7).
+struct PostValues
+{
+	std::array<float, 32> values{};
+};
+
+// Every strength defaults to zero, and zero turns that term off.
 struct CrtSettings
 {
 	RectangleF screen;              // back-buffer pixels; outside it, pixels pass through
@@ -996,6 +1001,12 @@ struct CrtSettings
 	float aberration = 0.0f;        // back-buffer pixels of red/blue split at the edge
 	float brightness = 1.0f;        // gain restoring what the mask and beam take; 1 is none
 };
+
+// Packs settings into the CRT material's layout (§7.1), dividing the screen
+// by the back-buffer size. Throws std::invalid_argument on a negative
+// strength, a NaN, a scanline count giving fewer than 4 output pixels a line,
+// or an empty screen.
+PostValues crt_values(const CrtSettings& settings, const Vector2F& back_buffer_size);
 
 // Where the pixel at output_pixel was taken from: the CRT's curvature on the CPU.
 Vector2F crt_source_position(const CrtSettings& settings, const Vector2F& output_pixel);
@@ -1010,8 +1021,9 @@ Vector2F crt_source_position(const CrtSettings& settings, const Vector2F& output
 	// From the thread that owns the frame, outside any Scene::draw callback;
 	// the value current at submit() is drawn. Views can draw concurrently, so
 	// a call from inside the fan-out would be a data race, and is refused with
-	// std::logic_error where the renderer can tell.
-	void set_crt_settings(const CrtSettings& settings);
+	// std::logic_error where the renderer can tell. An effect not in the chain
+	// is refused with std::invalid_argument; a NaN in values likewise.
+	void set_post_values(PostEffect effect, const PostValues& values);
 
 	// Inside a frame, once: declares one new view. It and every view declared
 	// after it draw over the chain's output, unprocessed. With no chain it only
@@ -1025,15 +1037,14 @@ counts only the game's own views, and a frame that would exceed capacity
 throws a T6 message naming the fix. The null seam tests assert the
 off-thread refusal.
 
-**The alternative to one setter per look (E3).** `set_crt_settings` makes
-the concrete renderer seam carry one effect's settings type, and bloom or a
-colour matrix would each add another method. A generic
-`void set_post_values(PostEffect effect, const PostValues& values)`, with
-`PostValues` a plain struct of named `float` fields in groups of four (not
-`std::array<Colour, 8>`, which would put non-colours in a colour type), and
-`CrtSettings` packed into it by a free function or by component code, keeps
-the seam at one method. A four-component vector in `engine/math` is the other
-route, and the owner's to approve.
+**One setter for every material (E3 (d)).** A per-look method such as
+`set_crt_settings` would make the concrete renderer seam carry each effect's
+settings type, and bloom or a colour matrix would each add another.
+`set_post_values` keeps the seam at one method; each built-in look ships a
+packing function, as `crt_values` does, and game materials (P6) pass their
+own `PostValues`. `PostValues` is plain floats, not `std::array<Colour, 8>`,
+which would put non-colours in a colour type; a four-component vector in
+`engine/math` remains an option for later, not needed by this API.
 
 ### 8.2 Monitor glass: the ColourWars opening
 
@@ -1054,7 +1065,7 @@ if (reduce_effects)
 	crt = presentation.crt_reduced_effects;          // also data, the game's policy
 	crt.screen = this->monitor_->picture(screen);
 }
-renderer.set_crt_settings(crt);
+renderer.set_post_values(PostEffect::crt, crt_values(crt, back_buffer_size));
 
 draw_behind(renderer);          // the casing: outside the screen, so untouched
 draw_arena_panes(renderer);     // the arena, on the glass: curved
@@ -1296,10 +1307,10 @@ before the milestone that depends on it.
 
 | | Decision | Options | Recommendation | Answer | What it amends |
 |---|---|---|---|---|---|
-| **E1** | Who writes post shaders, and how T10 and T12 read | (a) engine-written built-ins only; (b) built-ins first, game materials later; (c) game materials from the start | **(b).** The first tranche ships only engine materials, which keeps T10, T12, the teachability bar and the starter's tools out of the first decision. At the game-material milestone the owner also answers whether game HLSL is presentation data under T10, and whether `compile_shaders.cmake`'s generated headers scope T12 or T12 is amended (§6.5) | | PHILOSOPHY T10 and *Non-goals* (scripting layer), T12, the introductory series' scope, only at the game-material milestone |
+| **E1** | Who writes post shaders, and how T10 and T12 read | (a) engine-written built-ins only; (b) built-ins first, game materials later; (c) game materials from the start | **(b).** The first tranche ships only engine materials, which keeps T10, T12, the teachability bar and the starter's tools out of the first decision. At the game-material milestone the owner also answers whether game HLSL is presentation data under T10, and whether `compile_shaders.cmake`'s generated headers scope T12 or T12 is amended (§6.5) | **(b)**, 2026-11-14. Built-ins first; game materials are a committed later milestone (P6), not a maybe: the owner wants users to write custom shaders. So the frame (§5.4) is designed from the start as the surface game materials will use, and T10, T12 and the introductory series are answered at P6, before it lands, not whether it lands | PHILOSOPHY T10 and *Non-goals* (scripting layer), T12, the introductory series' scope, at P6 |
 | **E2** | How GL and wasm get dxc and spirv-cross | (a) vcpkg host ports; (b) Vulkan SDK required; (c) checked-in GLSL for engine materials, hand-written fallback (§6.6) | **(a)**, after a spike shows both ports exist at the baseline, the release dxc emits SPIR-V and the tools are reachable under Emscripten; (c)-style hand-written GLSL for the CRT if the spike fails. Needed before game materials, and before the CRT only if E19 says so | | `vcpkg.json`, `ReleaseNotices.astro`, `NOTICE`, AGENTS build section, ARCHITECTURE *The build*, `prerequisites.mdx`, `troubleshooting.mdx`, the starter's files (§15), CHANGES.md |
-| **E3** | Is the CRT engine-owned, and how the seam carries its values | (a) an engine material, every term off by default, with `set_crt_settings`; (b) sample code a game copies, like `samples/components`; (c) client-owned once game materials exist; (d) an engine material whose values travel through a generic `set_post_values(effect, PostValues)`, with `CrtSettings` packed by a free function or component code (§8.1) | **(d)**: the CRT proves the frame on five backends, but its tuned look is policy (T1), and PHILOSOPHY moves a compound into the engine only once every client copies it unchanged; one generic setter keeps the concrete seam from growing one method per look | | PHILOSOPHY's UI components paragraph (`PHILOSOPHY.md:634-642`) and T1 under (a) or (d); ARCHITECTURE *The tree*; published.ts |
-| **E4** | Where the post pass runs | (a) inside `submit()`, between processed and overlay views; (b) `end_frame()` | **(a)**: read-back, captures and pixel tests see the frame that is presented | | `renderer.h` submit and read-back comments; SEAM §6 |
+| **E3** | Is the CRT engine-owned, and how the seam carries its values | (a) an engine material, every term off by default, with `set_crt_settings`; (b) sample code a game copies, like `samples/components`; (c) client-owned once game materials exist; (d) an engine material whose values travel through a generic `set_post_values(effect, PostValues)`, with `CrtSettings` packed by a free function or component code (§8.1) | **(d)**: the CRT proves the frame on five backends, but its tuned look is policy (T1), and PHILOSOPHY moves a compound into the engine only once every client copies it unchanged; one generic setter keeps the concrete seam from growing one method per look | **(d)**, 2026-11-14. One generic setter, `set_post_values` (§8.1); `crt_values` packs and validates `CrtSettings`. The same setter carries game materials' values at P6 | PHILOSOPHY's UI components paragraph (`PHILOSOPHY.md:634-642`) and T1; ARCHITECTURE *The tree*; published.ts |
+| **E4** | Where the post pass runs | (a) inside `submit()`, between processed and overlay views; (b) `end_frame()` | **(a)**: read-back, captures and pixel tests see the frame that is presented | **(a)**, 2026-11-14 | `renderer.h` submit and read-back comments; SEAM §6 |
 | **E5** | Game target contents across frames | (a) cleared every frame it is bound; (b) a "not cleared" mode, lossy on device loss | **(a)** for v1; (b) when a paint layer needs it | | `renderer.h`; SEAM §6 |
 | **E6** | Where a game target lives, and who recreates it after a loss | (a) `RenderResources` keeps each target's description, and a factory call that `Application::on_device_restored` makes beside `add_white_texture` recreates them empty; (b) owned by the Renderer, with `draw_sprite` resolving them some other way | **(a)**: `draw_sprite` resolves it like any texture. The renderer holds only `const RenderResources*` (`renderer.h:364`), so the restore belongs to Application, whose replay already adds what no manifest names (`application.cpp:695-713`). Each recreated target costs a D3D12 descriptor slot (`render_resources.h:96-110`) | | `resource_factory.h`, `render_resources.h`, `application.cpp` restore and its comment |
 | **E7** | Target format, and banding | (a) 8-bit UNORM only, with ordered dither on bloom's pyramid writes; (b) 8-bit UNORM, banding accepted; (c) optional float for bloom | **(a)**: identity stays byte-identical, half the memory, no WebGL extension, and the dither answers re-quantisation | | SEAM §5 |
@@ -1403,7 +1414,7 @@ it. **None is made in advance.**
 | ARCHITECTURE, *The tree* and the shared-shader paragraph | `sprite.hlsl` stops being "the only shader"; `post_frame.hlsli` and materials; the profiles and bindings per backend | P1, P2 |
 | ARCHITECTURE, backend translation units and *The build* | `PostPipeline` in D3D12's `sprite_pipeline.cpp`; vcpkg host tools | P1, P2 |
 | `engine/render/SEAM.md` §4, §5, §6, §7 | Second shader; full-screen passes replace while draw lists blend; GL's top-row-first targets; what `begin_frame` resets; read-back is post-post; analytic comparison for effects | P1, P2 |
-| `engine/render/renderer.h` | `set_post_effects`, `set_crt_settings` or `set_post_values` (E3), `begin_overlay`; the one-blend comment scoped to draw lists; submit's and read-back's comments | P1 |
+| `engine/render/renderer.h` | `set_post_effects`, `set_post_values` (E3), `begin_overlay`; the one-blend comment scoped to draw lists; submit's and read-back's comments | P1 |
 | `engine/render/post_effect.h`, `resource_factory.h` | New public names | P1, P4 |
 | `cmake/compile_shaders.cmake` | Shifts as arguments; GLSL output; the generated root as a global property; `labrador_add_material` | P1, P2, P6 |
 | AGENTS.md | "one `sprite.hlsl` at three profiles; GL compiles GLSL at device creation"; tools per preset; backend TU list; preset counts; pixel-test exception list | each milestone |
