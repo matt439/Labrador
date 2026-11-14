@@ -1431,6 +1431,24 @@ GL and Vulkan are the larger shares. P2 is about 2 weeks; P0-P3 roughly 8-10
 weeks; P0-P7 roughly 4 months. In TODO's scale P0-P3 is **XL**; GAP#3 alone
 stays **L**.
 
+**P1, where it stands (2026-11-14).** Built on the work branch in three
+commits: `dcc551c7` (the contract, the frame, D3D11 and null), `7bcd9e40`
+(D3D12, OpenGL and Vulkan) and `854ddefb` (the browser twins, the counts and
+the SEAM, ARCHITECTURE and PHILOSOPHY amendments). Measured on the RTX 5080:
+every golden byte-identical through identity on `x64-debug`,
+`x64-debug-d3d12`, `x64-debug-gl` and `x64-debug-vulkan`, and in Chrome on
+`wasm-debug`, with `RenderContextLossWithPostTests` passing; Vulkan
+`validate_sync` reported no error and no hazard; the D3D12 debug layer stored
+nothing at warning or above. **Owed before P1 is done:** the four Release
+presets and `wasm-release` (CI's own matrix and `ci_gap_report.py`), CI's
+llvmpipe and SwiftShader runs, WARP, and a device-loss case with a chain set on
+the native backends, which no test forces yet. Differences from this record
+that the ports chose and §4 should absorb when P2 touches them: D3D12's post
+root signature has an SRV table of `t0` alone and its scene is untracked
+(it rests in render-target state); Vulkan carries the frame's 176 bytes in the
+frame's existing uniform buffer and moves the scene to shader-read by a
+barrier, not by the pass's dependency.
+
 ### Risks, in the order to retire them
 
 1. **An incomplete redirect** (a bind, clear or restore path): X1's run.
