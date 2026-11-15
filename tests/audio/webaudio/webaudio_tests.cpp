@@ -88,6 +88,7 @@ EM_JS(void, test_install_fake_web_audio, (), {
 		}
 		resume() {
 			this.state = "running";
+			return Promise.resolve();
 		}
 		close() {
 			this.state = "closed";

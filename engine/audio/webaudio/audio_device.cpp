@@ -194,7 +194,32 @@ EM_JS(void, labrador_audio_install, (), {
 		source.start(0, voice.offset);
 	}
 
+	function resume_context(device) {
+		if (device.closing || device.resume_pending || device.context.state === "running") {
+			return;
+		}
+		const context = device.context;
+		// Keep the observed promise, not an optimistic running flag. A second
+		// trusted gesture while the browser is resuming shares this request.
+		device.resume_pending = context.resume().then(() => {
+			device.resume_pending = null;
+		}, (error) => {
+			device.resume_pending = null;
+			// Firefox rejects an outstanding resume when our own teardown
+			// closes it. Do not hide other InvalidStateErrors or device errors.
+			if (device.closing && context.state === "closed" &&
+				error?.name === "InvalidStateError" &&
+				error.message === "Closed before resume completed") {
+				return;
+			}
+			throw error;
+		});
+	}
+
 	function unlock(device) {
+		if (device.closing) {
+			return;
+		}
 		if (device.banks.length === 0) {
 			return;
 		}
@@ -209,7 +234,7 @@ EM_JS(void, labrador_audio_install, (), {
 		if (device.suspended) {
 			device.context.suspend();
 		} else if (device.context.state !== "running") {
-			device.context.resume();
+			resume_context(device);
 		}
 	}
 
@@ -219,6 +244,8 @@ EM_JS(void, labrador_audio_install, (), {
 		open() {
 			const device = {
 				context: null,
+				resume_pending: null,
+				closing: false,
 				suspended: false,
 				banks: [],
 				voices: [],
@@ -240,6 +267,7 @@ EM_JS(void, labrador_audio_install, (), {
 
 		close(id) {
 			const device = this.devices[id];
+			device.closing = true;
 			if (device.listener) {
 				for (const name of gestures) {
 					window.removeEventListener(name, device.listener, true);
@@ -432,7 +460,7 @@ EM_JS(void, labrador_audio_install, (), {
 			const device = this.devices[id];
 			device.suspended = false;
 			if (device.context) {
-				device.context.resume();
+				resume_context(device);
 			}
 		},
 	};
