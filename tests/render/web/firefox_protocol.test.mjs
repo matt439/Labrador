@@ -784,3 +784,67 @@ test('pixel page rejects a missing exit protocol and releases its listener', asy
 	await assert.rejects(drive_pixels(protocol, 'tab', 'http://fixture', {log() {}}), /Missing labradorExit/);
 	assert.equal(released, true);
 });
+
+
+import { initial_context, terminate_owned_firefox, OWNED_FIREFOX_CLEANUP } from './run_firefox.mjs';
+
+test('reuse only the sole owned startup blank context, never create an extra tab', async () => {
+	const calls = [];
+	const protocol = { send: async (method, params) => {
+		calls.push({method, params}); return {contexts: [{context: 'owned-blank', url: 'about:blank'}]};
+	} };
+	assert.equal(await initial_context(protocol), 'owned-blank');
+	assert.deepEqual(calls, [{method: 'browsingContext.getTree', params: {maxDepth: 0}}]);
+	for (const contexts of [[], [{context: 'one', url: 'https://example.com'}],
+		[{context: 'one', url: 'about:blank'}, {context: 'two', url: 'about:blank'}], null]) {
+		await assert.rejects(initial_context({send: async () => ({contexts})}), /exactly one about:blank/);
+	}
+});
+
+test('forced Windows cleanup scopes PID tree to verified executable, profile and unchanged creation time', async () => {
+	const calls = [];
+	const spawn_process = (...args) => {
+		calls.push(args);
+		const proc = new EventEmitter();
+		proc.stdout = new EventEmitter(); proc.stderr = new EventEmitter();
+		queueMicrotask(() => proc.emit('exit', 0));
+		return proc;
+	};
+	await terminate_owned_firefox({pid: 123, exitCode: null, signalCode: null}, 'firefox.exe', 'owned-profile',
+		{platform: 'win32', spawn_process});
+	assert.equal(calls.length, 1);
+	const [, args, options] = calls[0];
+	assert.equal(args.at(-1), OWNED_FIREFOX_CLEANUP);
+	assert.equal(options.windowsHide, true);
+	assert.equal(options.env.LABRADOR_OWNED_FIREFOX_PID, '123');
+	assert.ok(options.env.LABRADOR_OWNED_FIREFOX_PROFILE.endsWith('owned-profile'));
+	assert.match(OWNED_FIREFOX_CLEANUP, /CommandLine.Contains\(\$profile\)/);
+	assert.match(OWNED_FIREFOX_CLEANUP, /ExecutablePath/);
+	assert.match(OWNED_FIREFOX_CLEANUP, /CreationDate -ne \$root.CreationDate/);
+	assert.ok(OWNED_FIREFOX_CLEANUP.includes('System32\\taskkill.exe'));
+	assert.match(OWNED_FIREFOX_CLEANUP, /\/PID \$id \/T \/F/);
+	assert.doesNotMatch(OWNED_FIREFOX_CLEANUP, /\/IM/);
+	await terminate_owned_firefox({pid: 123, exitCode: 0, signalCode: null}, 'firefox.exe', 'owned-profile',
+		{platform: 'win32', spawn_process});
+	assert.equal(calls.length, 1);
+});
+
+test('forced cleanup errors remain failures rather than reporting browser exit', async () => {
+	const spawn_process = () => {
+		const proc = new EventEmitter();
+		proc.stdout = new EventEmitter(); proc.stderr = new EventEmitter();
+		queueMicrotask(() => { proc.stderr.emit('data', 'ownership refused'); proc.emit('exit', 1); });
+		return proc;
+	};
+	await assert.rejects(terminate_owned_firefox({pid: 123, exitCode: null, signalCode: null},
+		'firefox.exe', 'owned-profile', {platform: 'win32', spawn_process}), /ownership refused/);
+});
+
+
+import { assert_owned_session } from './run_firefox.mjs';
+test('startup session must identify our canonical unique profile before control', () => {
+	const options = {canonical: (path) => path, platform: 'win32'};
+	assert.doesNotThrow(() => assert_owned_session({browserName: 'firefox', 'moz:profile': 'OWNED'}, 'owned', options));
+	assert.throws(() => assert_owned_session({browserName: 'firefox', 'moz:profile': 'other'}, 'owned', options), /different profile/);
+	assert.throws(() => assert_owned_session({}, 'owned', options), /no owned profile/);
+});

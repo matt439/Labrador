@@ -713,3 +713,30 @@ these were not delivered as BiDi console complaints. The runner preserves
 that stderr and this result does not claim warning-free browser execution.
 S3TC masking and through-post variants remain unimplemented for Firefox;
 this mode has not been registered in CTest or CI. REV#151 remains open.
+
+
+### Hosted Firefox follow-up, 2026-11-15
+
+PR #136's first hosted run (43691323294) exposed two pending audio resumes
+rejected during fast quit, plus a Minimal tab subprocess launch failure.
+The next run (43692612875) coalesced the audio error to one, but showed that
+checking the context state immediately was premature: Firefox can reject a
+resume before its asynchronous close completes (Mozilla bug 2070740).
+The backend now awaits its own close promise before accepting only that exact
+cancellation, and preserves both errors if close also fails. Eight deferred
+production-body fixtures and fresh wasm-debug AudioTests, AudioSampleTests
+and the trusted S-to-Escape Firefox audio flow pass locally. This does not
+establish the hosted result or listening acceptance.
+
+The second hosted run also timed out while creating extra tabs for Minimal
+and Collision. Both failed graceful shutdown; the launcher PID differed
+from the actual browser PID, so launcher-only termination did not establish
+child cleanup. The runner now reuses the sole initial about:blank context
+of its newly owned session, verifying its canonical profile before controlling
+it and refusing an unexpected startup context inventory.
+On Windows, forced cleanup checks the live launcher's executable, unique
+profile and unchanged creation time before terminating only that PID's tree.
+A local forced-cleanup check verified the distinct launcher/browser and their
+children were terminated. No sandbox preference, timeout, page assertion,
+required test or failure verdict was relaxed. Local evidence is Firefox 160;
+these changes still need hosted Firefox 159 verification.
