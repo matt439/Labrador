@@ -672,3 +672,19 @@ passing drift records, rejected-frame extraction, and the full WebWindow input
 sequence remain unverified or unimplemented. REV#151 remains open.
 The week-long REV#159 stability observation is unchanged. This branch stacks
 on the Firefox software-WebGL wiring; neither is a hosted result until pushed.
+
+
+### Pixel failure diagnostics (2026-11-15, local fixtures only)
+
+The stacked `work/pixel-evidence` tooling change reuses `golden_image.cpp`'s
+existing mismatch text. Safari's test-page runner emits a one-line JSON
+`pixel diagnostics` record before checking complaints and the exit result,
+while retaining the raw console lines. Each parsed failing frame carries the
+pixel count, differing and out-of-tolerance counts, allowance, worst channel
+delta and first failing coordinate. Repeated frames remain separate records;
+truncated mismatch records are counted as unparsed rather than discarded.
+An empty list is not a passing run or a claim of zero drift. Passing-frame
+statistics are still not emitted by the comparator, and the exit protocol
+and complaints remain the suite verdict. The parser is browser-neutral and
+fixture-tested; this change does not run Safari, Firefox, WebKit emulation,
+a renderer, or any stability observation. It adds no GPU acceptance evidence.
