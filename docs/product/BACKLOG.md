@@ -317,10 +317,23 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   recorded as not run, since no Radeon GPU is available (owner fact
   2026-11-03), which the criterion allows; it no longer waits on SM-01. The
   pad match is informal play in OCA-48's session. Under the 2026-10-26
-  decision the run and its record are ColourWars', and the sandbox run was at
-  `v0.2.0` while `v0.3.0` is now cut. Whether Labrador closes PI-14 as
-  delegated or keeps it as an outside event, met when ColourWars records a run
-  at its `v0.3.0` pin, is the owner's call.
+  decision the run and its record are ColourWars'. **Evidence reconciled
+  2026-11-15:** ColourWars now records a 2026-11-13 Sandbox run of candidate
+  `c61cb219af7d872c23b621567a320bb69aad3c60`, whose engine gitlink is
+  `e7fc50e3bfc114979bcbb1841dca89401c860551` (`v0.3.0` plus nine commits).
+  [REL#1 and REL#2](https://github.com/matt439/ColourWars/blob/f7b2652d3ebbed96278e4e30d10f96f5f5869f16/docs/releasing.md#sandbox-run-of-the-candidate-rel2)
+  record the candidate ZIP's SHA256
+  `736086e2d97b554242e904aec380df3ae078711e6181ed4200f5d8efb84c6534`,
+  its match inside the guest, the opened game window, created save and
+  `WM_CLOSE` exit 0. This supersedes the missing `v0.3.0`-era candidate-run
+  evidence, not the public-tag ZIP or current-master acceptance: later code
+  or content changes require a new candidate. The
+  [ROAD#37 record](https://github.com/matt439/ColourWars/blob/f7b2652d3ebbed96278e4e30d10f96f5f5869f16/docs/feature-roadmap.md#windows-sandbox-run-of-the-release-zip-road37)
+  supplies the preceding run's environment and limits, not another claim of
+  physical-pad, audio, target-GPU or Radeon acceptance. No new Sandbox run
+  was made for this reconciliation. PI-14 stays open; whether Labrador closes
+  it as delegated remains the owner's call. Listable checks stay automated;
+  physical-pad acceptance remains informal play in OCA-48's session.
 - [x] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside Adopter: Know which controllers work on Windows and how slots are assigned
 - [ ] **[OCA-45](STORIES.md#oca-45)** Should · S · The Outside Adopter: A one-player game that accepts the pad in whatever slot it is in — after OCA-44
   *Amended 2026-11-03 by the persona re-review:* the open criterion, a dated
