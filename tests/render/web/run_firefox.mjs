@@ -10,6 +10,9 @@
 //   --build-dir out/build/wasm-release --test WebWindowTests [--timeout 60]
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --bundle out/build/wasm-release/web-dist/linesweeper [--timeout 120]
+// --test RenderPixelTests runs the existing baseline golden/readback page.
+// It collects rejected PNGs into firefox-golden-actual beside that page.
+// No S3TC masking or through-post query is implemented in this runner yet.
 // Any of these takes --software-webgl, with no value.
 //
 // --software-webgl writes SOFTWARE_WEBGL_PREFERENCES below into the fresh
@@ -38,12 +41,13 @@
 // https://w3c.github.io/webdriver-bidi/#command-browsingContext-setViewport
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { lstatSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drive_window, expected_complaint as window_expected_complaint } from '../../app/web/window_input.mjs';
 import { BUNDLE_FILES, BUNDLE_KEYS, PRELUDE, READY, bundle_state, bundle_substitute, steps } from './bundle_page.mjs';
+import { pixel_diagnostics } from './pixel_diagnostics.mjs';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
 import { SAMPLES, WEBDRIVER_CONTROL, close_server, deadline_after, exited, frames_expression, key_actions,
 	key_table, module_hook, serve_files } from './page_harness.mjs';
@@ -70,12 +74,12 @@ export function parse_options(arguments_) {
 	const named = ['sample', 'test', 'bundle'].filter((name) => options[name] !== undefined);
 	const page_named = named.length === 1 && (
 		named[0] === 'sample' ? Object.hasOwn(SAMPLES, options.sample) && options['build-dir'] !== undefined :
-		named[0] === 'test' ? options.test === 'WebWindowTests' && options['build-dir'] !== undefined &&
+		named[0] === 'test' ? ['WebWindowTests', 'RenderPixelTests'].includes(options.test) && options['build-dir'] !== undefined &&
 			options.frames === undefined :
 		options.bundle !== '' && options['build-dir'] === undefined && options.frames === undefined);
 	if (!options.browser || !page_named) {
 		throw new Error('--browser and one of: --build-dir with --sample ' +
-			`(${Object.keys(SAMPLES).join('/')}) or --test WebWindowTests (without --frames); ` +
+			`(${Object.keys(SAMPLES).join('/')}) or --test WebWindowTests/RenderPixelTests (without --frames); ` +
 			'or --bundle <web-dist/linesweeper folder> (without --build-dir or --frames).');
 	}
 	options.timeout_ms = Number(options.timeout ?? 60) * 1000;
@@ -444,10 +448,79 @@ export async function drive_bundle(protocol, context, url,
 	}
 }
 
+
+// Capture contexts used by the test itself, not a separate probe canvas.
+export const PIXEL_HOOK = `() => {
+	window.labradorPixelDevices = [];
+	const get = HTMLCanvasElement.prototype.getContext;
+	HTMLCanvasElement.prototype.getContext = function (...args) {
+		const context = get.apply(this, args);
+		if (args[0] === 'webgl2' && context) {
+			window.labradorPixelDevices.push({ api: context.getParameter(context.VERSION),
+				renderer: context.getParameter(context.RENDERER) });
+		}
+		return context;
+	};
+}`;
+
+export const PIXEL_FILES = `JSON.stringify((() => {
+	const fs = Module.FS;
+	if (!fs) throw new Error('Missing pixel-test filesystem');
+	if (!fs.readdir('/').includes('golden-actual')) return {};
+	const out = {};
+	for (const name of fs.readdir('/golden-actual')) {
+		if (name === '.' || name === '..') continue;
+		const bytes = fs.readFile('/golden-actual/' + name);
+		let text = '';
+		for (let i = 0; i < bytes.length; i += 0x8000)
+			text += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+		out[name] = btoa(text);
+	}
+	return out;
+})())`;
+
+export function save_pixel_files(files, output_dir) {
+	for (const [name, data] of Object.entries(files)) {
+		if (!/^[A-Za-z0-9_.-]+\.png$/.test(name) || name.includes('..') || typeof data !== 'string')
+			throw new Error(`Invalid pixel artifact name or data: ${name}`);
+		mkdirSync(output_dir, { recursive: true });
+		writeFileSync(join(output_dir, name), Buffer.from(data, 'base64'));
+	}
+}
+
+export async function drive_pixels(protocol, context, url, { timeout_ms = 120000,
+	log = console.log, software_webgl = false, output_dir, save = save_pixel_files } = {}) {
+	const lines = [];
+	const { assert_healthy, unsubscribe } = watched_context(protocol, context,
+		{ timeout_ms, log: (line) => { lines.push(line.replace(/^Firefox [^:]+: /, '')); log(line); }, what: 'pixels' });
+	const remaining = deadline_after(timeout_ms, 'Firefox pixels', timeout_ms);
+	const evaluate = (expression) => protocol.evaluate(context, expression, remaining());
+	try {
+		await open_page(protocol, context, url, PIXEL_HOOK);
+		const result = JSON.parse(await evaluate(`(async () => {
+			if (!window.labradorExit || typeof window.labradorExit.then !== 'function')
+				throw new Error('Missing labradorExit test protocol');
+			return JSON.stringify(await window.labradorExit);
+		})()`));
+		const devices = JSON.parse(await evaluate('JSON.stringify(window.labradorPixelDevices)'));
+		log('Firefox pixel devices: ' + JSON.stringify(devices));
+		const files = JSON.parse(await evaluate(PIXEL_FILES));
+		save(files, output_dir);
+		log('Firefox pixel artifacts: ' + Object.keys(files).length + '; output=' + output_dir);
+		log('Firefox pixel diagnostics: ' + JSON.stringify(pixel_diagnostics(lines)));
+		if (!Array.isArray(devices) || devices.length === 0) throw new Error('No pixel-test WebGL2 device observed');
+		for (const device of devices) assert_software_renderer(device.renderer, software_webgl);
+		if (result?.abort !== undefined || result?.code !== 0)
+			throw new Error('Firefox pixel exit: ' + JSON.stringify(result));
+		assert_healthy();
+		return result;
+	} finally { unsubscribe(); }
+}
+
 function artifact_files(options) {
 	if (options.bundle !== undefined) return BUNDLE_FILES.map((name) => join(resolve(options.bundle), name));
 	const [directory, target] = options.test !== undefined ?
-		[resolve(options['build-dir'], 'tests', 'app'), options.test] :
+		[resolve(options['build-dir'], 'tests', options.test === 'RenderPixelTests' ? 'render' : 'app'), options.test] :
 		[resolve(options['build-dir'], 'samples', options.sample), SAMPLES[options.sample].target];
 	return ['html', 'js', 'wasm'].map((extension) => join(directory, `${target}.${extension}`));
 }
@@ -553,7 +626,9 @@ export async function main(options) {
 		console.log(`Firefox session ${session.sessionId}: ${JSON.stringify(session.capabilities)}`);
 		const { context } = await protocol.send('browsingContext.create', { type: 'tab', background: false });
 		if (typeof context !== 'string') throw new Error('Firefox created no browsing context.');
-		const driven = options.bundle !== undefined ?
+		const driven = options.test === 'RenderPixelTests' ?
+			drive_pixels(protocol, context, service.url, { ...options,
+				output_dir: join(dirname(files[0]), 'firefox-golden-actual') }) : options.bundle !== undefined ?
 			drive_bundle(protocol, context, service.url, options) :
 			options.test !== undefined ?
 				drive_window_page(protocol, context, service.url, drive_window,
@@ -561,7 +636,7 @@ export async function main(options) {
 				drive_sample(protocol, context, service.url, SAMPLES[options.sample], options);
 		await bounded(Promise.race([service.failed, driven]),
 			options.timeout_ms, 'Firefox page timed out.', () => protocol.fail('Firefox page deadline expired'));
-		console.log(options.bundle !== undefined ?
+		console.log(options.test === 'RenderPixelTests' ? 'Firefox RenderPixelTests: baseline exit protocol passed.' : options.bundle !== undefined ?
 			'Firefox bundle: page protocol passed. No listening or physical-device acceptance.' :
 			options.test !== undefined ?
 				'Firefox WebWindowTests: input sequence passed. No real visibility change, touch cancellation or physical-device acceptance.' :

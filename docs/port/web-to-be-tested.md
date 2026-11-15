@@ -688,3 +688,28 @@ statistics are still not emitted by the comparator, and the exit protocol
 and complaints remain the suite verdict. The parser is browser-neutral and
 fixture-tested; this change does not run Safari, Firefox, WebKit emulation,
 a renderer, or any stability observation. It adds no GPU acceptance evidence.
+
+
+### Firefox baseline readback, local 2026-11-15
+
+The BiDi runner now accepts `--build-dir <build> --test RenderPixelTests`
+with optional `--software-webgl`. It waits for the existing page's
+`labradorExit`, records the WebGL2 contexts created by the test itself,
+checks their WARP renderer in software mode, and collects rejected PNGs
+into `firefox-golden-actual` beside the page before rejecting failed exits.
+It uses the shared mismatch diagnostic parser; absent mismatch records do
+not substitute for the page exit verdict. No golden or tolerance changed.
+
+The already-built wasm Release artifacts from the local LAB-1 build
+(base `d44101a0`, harness commit `4179d934`) were reused without compiling.
+Firefox 160.0 build 20261104181552 passed all 71 cases and 76,276 assertions
+on Microsoft's Direct3D11 Basic Render Driver. No rejected PNG was emitted.
+The raw run log, including artifact SHA-256s, is retained locally as
+`labrador-firefox-pixels.log` in the task's temporary log directory.
+
+This is baseline local WARP evidence, not physical GPU or hosted CI evidence.
+Firefox's native stderr reported repeated `WebGL context was lost` warnings;
+these were not delivered as BiDi console complaints. The runner preserves
+that stderr and this result does not claim warning-free browser execution.
+S3TC masking and through-post variants remain unimplemented for Firefox;
+this mode has not been registered in CTest or CI. REV#151 remains open.
