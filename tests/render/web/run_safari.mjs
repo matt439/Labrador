@@ -36,6 +36,7 @@
 // hardening made there for the acceptance suite's Safari and iOS runs reaches
 // this runner too.
 import { createHash } from 'node:crypto';
+import { pixel_diagnostics } from './pixel_diagnostics.mjs';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -526,6 +527,8 @@ export async function drive_test(session, url, { timeout_ms = 120000, log = cons
 	})()`);
 	const lines = await evaluate('window.labradorTestLog || []');
 	for (const line of lines) log(label + ' test: ' + line);
+	// Emit before complaints/exit validation so failed readbacks retain diagnostics.
+	log(label + ' pixel diagnostics: ' + JSON.stringify(pixel_diagnostics(lines)));
 	await complaints_of(evaluate);
 	assert_test_exit(result);
 	log(label + ' test page exited zero; no physical-device acceptance.');

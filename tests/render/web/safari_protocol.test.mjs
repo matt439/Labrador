@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { pixel_diagnostics } from './pixel_diagnostics.mjs';
 import { PRELUDE } from './bundle_page.mjs';
 import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
 	assert_test_exit, drive_test, TEST_LOG_HOOK, capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
@@ -476,4 +477,39 @@ test('test page driver waits on exit, emits output and refuses complaints', asyn
 		else await run;
 		assert.ok(lines.some(line => line.includes('pixel case passed')));
 	}
+});
+
+const mismatch_fixture = 'golden mismatch: alpha\n  2 of 64 pixels differ by more than 1 (3 differ at all), worst channel by 9\n  first at (2, 4): golden rgba(0, 0, 0, 255), frame rgba(9, 0, 0, 255)';
+
+test('pixel diagnostics preserve measured mismatch fields, duplicates and CRLF', () => {
+	const parsed = pixel_diagnostics([mismatch_fixture, mismatch_fixture.replaceAll('\n', '\r\n')]);
+	assert.deepEqual(parsed.frames, Array(2).fill({frame: 'alpha', pixels: 64,
+		differing: 3, beyond: 2, allowance: 1, worst: 9, first: {x: 2, y: 4}}));
+	assert.equal(parsed.unparsed_mismatches, 0);
+});
+
+test('empty, malformed and unrelated diagnostics never claim passing frames', () => {
+	for (const lines of [[], ['doctest: all passed'], ['golden mismatch: truncated']]) {
+		const parsed = pixel_diagnostics(lines);
+		assert.deepEqual(parsed.frames, []);
+		assert.equal(parsed.passing_frame_details, 'not emitted by comparator');
+		assert.equal(parsed.suite_verdict, 'use exit protocol and page complaints');
+	}
+	assert.equal(pixel_diagnostics(['golden mismatch: truncated']).unparsed_mismatches, 1);
+});
+
+test('failed test exit emits machine-readable pixel evidence before rejecting', async () => {
+	const lines = [];
+	const session = {
+		navigate: async () => {},
+		set_timeouts: async () => {},
+		execute_async: async (script, [expression]) => JSON.stringify({value:
+			expression.includes('labradorExit') ? {code: 1} :
+			expression.includes('labradorTestLog') ? [mismatch_fixture] : []}),
+	};
+	await assert.rejects(drive_test(session, 'http://fixture', {log: line => lines.push(line)}),
+		/Test page failed/);
+	const evidence = lines.find(line => line.startsWith('Safari pixel diagnostics: '));
+	assert.equal(JSON.parse(evidence.slice('Safari pixel diagnostics: '.length)).frames[0].worst, 9);
+	assert.ok(lines.some(line => line.includes(mismatch_fixture)));
 });
