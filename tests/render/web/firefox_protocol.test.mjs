@@ -366,6 +366,7 @@ class SampleControl {
 		return {};
 	}
 	async evaluate(context, expression) {
+		if (expression === 'document.hasFocus()') return true;
 		assert.equal(context, 'synthetic-tab');
 		if (expression.startsWith('JSON.stringify')) {
 			++this.reads;
@@ -558,6 +559,7 @@ class WindowControl {
 	fail(reason) { this.failed = reason; }
 	async send(method, params) { this.calls.push({ method, params }); return {}; }
 	async evaluate(context, expression, timeout_ms, options) {
+		if (expression === 'document.hasFocus()') return true;
 		assert.equal(context, 'synthetic-tab');
 		assert.ok(timeout_ms > 0 && timeout_ms <= 10000);
 		this.evaluations.push({ expression, options });
@@ -576,7 +578,7 @@ test('window control loads the page at a ratio of one, drives it and releases it
 			await page.wait(1);
 		}, { pause: async () => {}, log: () => {} });
 	assert.deepEqual(protocol.calls.map((call) => call.method), ['session.subscribe', 'script.addPreloadScript',
-		'browsingContext.activate', 'browsingContext.setViewport', 'browsingContext.navigate', 'input.releaseActions']);
+		'browsingContext.activate', 'browsingContext.setViewport', 'browsingContext.navigate', 'browsingContext.activate', 'input.releaseActions']);
 	assert.deepEqual(protocol.calls[3].params, { context: 'synthetic-tab', devicePixelRatio: 1 });
 	assert.equal(protocol.calls[1].params.functionDeclaration, WINDOW_HOOK);
 	assert.equal(typeof handed.touch, 'function');
@@ -613,7 +615,8 @@ test('window control fails on the page ending, a complaint the tab logs, or a fa
 
 test('bundle input sends the DevTools steps as BiDi actions and refuses any other method', async () => {
 	const sent = [];
-	const protocol = { send: async (method, params) => { sent.push({ method, params }); return {}; } };
+	const protocol = { send: async (method, params) => { sent.push({ method, params }); return {}; },
+		evaluate: async () => true };
 	const evaluated = [];
 	const page = bundle_input(protocol, 'synthetic-tab', async (expression) => {
 		evaluated.push(expression);
@@ -625,7 +628,7 @@ test('bundle input sends the DevTools steps as BiDi actions and refuses any othe
 	await page.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'ArrowDown', key: 'ArrowDown' });
 	await page.send('Page.navigate', { url: 'http://127.0.0.1:1/index.html?bundle-case=desktop' });
 	assert.deepEqual(sent.map(({ method }) => method), ['input.performActions', 'input.performActions',
-		'input.performActions', 'input.performActions', 'browsingContext.navigate']);
+		'input.performActions', 'input.performActions', 'browsingContext.navigate', 'browsingContext.activate']);
 	assert.deepEqual(sent[0].params.actions[0].actions,
 		[{ type: 'pointerMove', x: 10, y: 21 }, { type: 'pointerDown', button: 0 }]);
 	assert.equal(sent[1].params.actions[0].actions[1].type, 'pointerUp');
@@ -637,7 +640,7 @@ test('bundle input sends the DevTools steps as BiDi actions and refuses any othe
 		['Input.dispatchKeyEvent', { type: 'keyDown', code: 'KeyQ' }]]) {
 		await assert.rejects(page.send(method, params));
 	}
-	assert.equal(sent.length, 5);
+	assert.equal(sent.length, 6);
 	assert.deepEqual(await page.evaluate('window.labradorBundle'), { x: 1.5, list: [true] });
 	assert.match(evaluated[0], /JSON\.stringify\(\{ value: await \(window\.labradorBundle\) \}\)/);
 	const undefined_value = bundle_input(protocol, 'synthetic-tab', async () => JSON.stringify({}));
@@ -662,7 +665,8 @@ test('bundle control installs the prelude, loads the page and fails on a complai
 		on(value) { listener = value; return () => { listener = null; }; },
 		async send(method, params) { calls.push({ method, params }); return {}; },
 		fail() {},
-		async evaluate() {
+		async evaluate(_context, expression) {
+			if (expression === 'document.hasFocus()') return true;
 			listener({ method: 'log.entryAdded', params: { level: 'warn', text: 'synthetic bundle warning' } });
 			return JSON.stringify({ value: false });
 		},
@@ -671,7 +675,7 @@ test('bundle control installs the prelude, loads the page and fails on a complai
 		{ pause: async () => {}, log: () => {} }), /synthetic bundle warning/);
 	assert.equal(listener, null);
 	assert.deepEqual(calls.map(({ method }) => method), ['session.subscribe', 'script.addPreloadScript',
-		'browsingContext.activate', 'browsingContext.navigate']);
+		'browsingContext.activate', 'browsingContext.navigate', 'browsingContext.activate']);
 	assert.equal(calls[1].params.functionDeclaration, `() => ${PRELUDE}`);
 	assert.deepEqual(calls[3].params, { context: 'synthetic-tab', url: 'http://127.0.0.1:1/index.html', wait: 'complete' });
 	const context = vm.createContext({ location: { search: '' }, HTMLCanvasElement: class { getContext() {} },
@@ -747,6 +751,7 @@ test('pixel driver accepts baseline, preserves files and rejects failed exit/bac
 					listener({method: 'log.entryAdded', params: {level: 'error', text: complaint}});
 			},
 			async evaluate(_context, expression) {
+			if (expression === 'document.hasFocus()') return true;
 				if (expression.includes('await window.labradorExit')) return JSON.stringify(result);
 				if (expression.includes('labradorPixelDevices')) return JSON.stringify([{renderer}]);
 				assert.equal(expression, PIXEL_FILES);
@@ -778,6 +783,7 @@ test('pixel page rejects a missing exit protocol and releases its listener', asy
 		on() { return () => { released = true; }; },
 		async send() {},
 		async evaluate(_context, expression) {
+			if (expression === 'document.hasFocus()') return true;
 			return vm.runInNewContext(expression, {window: {}});
 		},
 	};
@@ -810,7 +816,7 @@ test('forced Windows cleanup scopes PID tree to verified executable, profile and
 		queueMicrotask(() => proc.emit('exit', 0));
 		return proc;
 	};
-	await terminate_owned_firefox({pid: 123, exitCode: null, signalCode: null}, 'firefox.exe', 'owned-profile',
+	await terminate_owned_firefox(Object.assign(new EventEmitter(), {pid: 123, exitCode: null, signalCode: null}), 'firefox.exe', 'owned-profile',
 		{platform: 'win32', spawn_process});
 	assert.equal(calls.length, 1);
 	const [, args, options] = calls[0];
@@ -836,7 +842,7 @@ test('forced cleanup errors remain failures rather than reporting browser exit',
 		queueMicrotask(() => { proc.stderr.emit('data', 'ownership refused'); proc.emit('exit', 1); });
 		return proc;
 	};
-	await assert.rejects(terminate_owned_firefox({pid: 123, exitCode: null, signalCode: null},
+	await assert.rejects(terminate_owned_firefox(Object.assign(new EventEmitter(), {pid: 123, exitCode: null, signalCode: null}),
 		'firefox.exe', 'owned-profile', {platform: 'win32', spawn_process}), /ownership refused/);
 });
 
@@ -847,4 +853,52 @@ test('startup session must identify our canonical unique profile before control'
 	assert.doesNotThrow(() => assert_owned_session({browserName: 'firefox', 'moz:profile': 'OWNED'}, 'owned', options));
 	assert.throws(() => assert_owned_session({browserName: 'firefox', 'moz:profile': 'other'}, 'owned', options), /different profile/);
 	assert.throws(() => assert_owned_session({}, 'owned', options), /no owned profile/);
+});
+
+
+import { activate_document } from './run_firefox.mjs';
+test('activation waits for actual cross-process document focus and refuses persistent loss', async () => {
+	const calls = [];
+	let reads = 0;
+	await activate_document({
+		send: async (method) => { calls.push(method); },
+		evaluate: async (_context, expression) => { assert.equal(expression, 'document.hasFocus()'); return ++reads === 3; },
+	}, 'owned', {pause: async () => {}});
+	assert.deepEqual(calls, ['browsingContext.activate']);
+	assert.equal(reads, 3);
+	await assert.rejects(activate_document({send: async () => {}, evaluate: async () => false},
+		'owned', {timeout_ms: 2, pause: async () => {}}), /focus deadline expired/);
+});
+
+test('natural graceful exit cancels a slow ownership query without reporting failure', async () => {
+	const child = Object.assign(new EventEmitter(), {pid: 123, exitCode: null, signalCode: null});
+	let killed = false;
+	const spawn_process = () => {
+		const cleanup = new EventEmitter();
+		cleanup.stdout = new EventEmitter(); cleanup.stderr = new EventEmitter();
+		cleanup.kill = () => { killed = true; cleanup.emit('exit', 1); };
+		queueMicrotask(() => { child.exitCode = 0; child.emit('exit', 0, null); });
+		return cleanup;
+	};
+	await terminate_owned_firefox(child, 'firefox.exe', 'owned-profile', {platform: 'win32', spawn_process});
+	assert.equal(killed, true);
+	assert.equal(child.listenerCount('exit'), 0);
+});
+
+
+import { create_test_context } from './run_firefox.mjs';
+test('a genuinely foreground test tab replaces the unfocused startup tab', async () => {
+	const calls = [];
+	const protocol = {send: async (method, params) => {
+		calls.push({method, params});
+		if (method === 'browsingContext.getTree') return {contexts:[{context:'startup',url:'about:blank'}]};
+		if (method === 'browsingContext.create') return {context:'test'};
+		return {};
+	}};
+	assert.equal(await create_test_context(protocol), 'test');
+	assert.deepEqual(calls, [
+		{method:'browsingContext.getTree',params:{maxDepth:0}},
+		{method:'browsingContext.create',params:{type:'tab',background:false}},
+		{method:'browsingContext.close',params:{context:'startup'}},
+	]);
 });
