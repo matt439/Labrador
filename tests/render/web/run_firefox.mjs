@@ -193,6 +193,17 @@ function watched_context(protocol, context, { timeout_ms, log, what, expected_co
 	return { remaining, assert_healthy, unsubscribe };
 }
 
+// Activation can complete before document focus propagates across Firefox
+// processes. Observe the real condition after navigation; never synthesize it.
+export async function activate_document(protocol, context,
+	{ timeout_ms = 10000, pause = wait } = {}) {
+	const remaining = deadline_after(timeout_ms, 'Firefox document focus', timeout_ms);
+	await protocol.send('browsingContext.activate', { context });
+	while (await protocol.evaluate(context, 'document.hasFocus()', remaining()) !== true) {
+		await pause(25);
+	}
+}
+
 // Subscribes to the tab's log and its destruction, installs `preload` to run
 // before the page's own scripts, brings the tab forward, sets its device
 // pixel ratio when one is given, and loads `url`.
@@ -204,6 +215,7 @@ async function open_page(protocol, context, url, preload, { device_pixel_ratio }
 		await protocol.send('browsingContext.setViewport', { context, devicePixelRatio: device_pixel_ratio });
 	}
 	await protocol.send('browsingContext.navigate', { context, url, wait: 'complete' });
+	await activate_document(protocol, context);
 }
 
 // Exported for offline control fixtures; this never launches a browser itself.
@@ -407,7 +419,9 @@ export function bundle_input(protocol, context, evaluate_primitive, pause = wait
 		}
 		if (method === 'Input.dispatchKeyEvent' && params.type === 'keyUp') return key('keyUp', params.code);
 		if (method === 'Page.navigate') {
-			return protocol.send('browsingContext.navigate', { context, url: params.url, wait: 'complete' });
+			await protocol.send('browsingContext.navigate', { context, url: params.url, wait: 'complete' });
+			await activate_document(protocol, context);
+			return;
 		}
 		throw new Error(`${method} has no BiDi translation in the Firefox bundle run.`);
 	};
@@ -604,8 +618,7 @@ export function assert_owned_session(capabilities, profile,
 	}
 }
 
-// The process starts on about:blank. Reuse that one owned top-level context
-// rather than creating a second content process before every page test.
+// Identify the single startup tab of this newly verified owned session.
 export async function initial_context(protocol) {
 	const { contexts } = await protocol.send('browsingContext.getTree', { maxDepth: 0 });
 	if (!Array.isArray(contexts) || contexts.length !== 1 ||
@@ -613,6 +626,19 @@ export async function initial_context(protocol) {
 		throw new Error('Owned Firefox must start with exactly one about:blank context');
 	}
 	return contexts[0].context;
+}
+
+// Firefox's startup tab can remain unfocused even after activate/window.focus
+// in headless mode. A protocol-created foreground tab has real document focus.
+// Close the unused startup tab so each test still owns only one live tab.
+export async function create_test_context(protocol) {
+	const startup = await initial_context(protocol);
+	const { context } = await protocol.send('browsingContext.create', { type: 'tab', background: false });
+	if (typeof context !== 'string' || context === startup) {
+		throw new Error('Firefox did not create a distinct test context');
+	}
+	await protocol.send('browsingContext.close', { context: startup });
+	return context;
 }
 
 // A Windows launcher PID is not Firefox's browser PID. A forced launcher-only
@@ -650,12 +676,32 @@ export async function terminate_owned_firefox(child, browser, profile,
 	let output = '';
 	for (const stream of [cleanup.stdout, cleanup.stderr]) stream.on('data', (chunk) => { output += String(chunk); });
 	await new Promise((done, refused) => {
-		const timer = setTimeout(() => { cleanup.kill(); refused(new Error('Owned Firefox cleanup timed out')); }, 10000);
-		cleanup.once('error', (error) => { clearTimeout(timer); refused(error); });
-		cleanup.once('exit', (code) => {
+		let finished = false;
+		const finish = (error) => {
+			if (finished) return;
+			finished = true;
 			clearTimeout(timer);
-			if (code === 0) done(); else refused(new Error('Owned Firefox cleanup refused: ' + output));
+			child.off('exit', natural_exit);
+			if (error) refused(error); else done();
+		};
+		const natural_exit = (code, signal) => {
+			if (code === 0 && signal === null) {
+				output += 'Graceful Firefox exit completed while cleanup was checking ownership.';
+				finish();
+				cleanup.kill();
+			}
+		};
+		const timer = setTimeout(() => {
+			cleanup.kill();
+			finish(new Error('Owned Firefox cleanup timed out; diagnostics: ' + output));
+		}, 10000);
+		child.on('exit', natural_exit);
+		cleanup.once('error', finish);
+		cleanup.once('exit', (code) => {
+			if (code === 0) finish(); else finish(new Error('Owned Firefox cleanup refused: ' + output));
 		});
+		// Close the check/listener race without polling or extending the limit.
+		if (child.exitCode === 0 && child.signalCode === null) natural_exit(0, null);
 	});
 	console.log('Owned Firefox tree cleanup: ' + output.trim());
 }
@@ -695,8 +741,8 @@ export async function main(options) {
 		assert_owned_session(session.capabilities, profile);
 		connected = true;
 		console.log(`Firefox session ${session.sessionId}: ${JSON.stringify(session.capabilities)}`);
-		const context = await initial_context(protocol);
-		console.log(`Firefox initial about:blank context reused: ${context}`);
+		const context = await create_test_context(protocol);
+		console.log(`Firefox foreground test context created and startup tab closed: ${context}`);
 		const driven = options.test === 'RenderPixelTests' ?
 			drive_pixels(protocol, context, service.url, { ...options,
 				output_dir: join(dirname(files[0]), 'firefox-golden-actual') }) : options.bundle !== undefined ?

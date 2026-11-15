@@ -740,3 +740,27 @@ A local forced-cleanup check verified the distinct launcher/browser and their
 children were terminated. No sandbox preference, timeout, page assertion,
 required test or failure verdict was relaxed. Local evidence is Firefox 160;
 these changes still need hosted Firefox 159 verification.
+
+
+The third hosted run (43694319140) passed the audio page and both Minimal and
+Collision page protocols. Those latter entries then failed cleanup: their
+launchers exited normally while the ownership-query helper was still running,
+but the runner waited for that helper and reported its timeout. Cleanup now
+observes a graceful launcher exit during the query and cancels only the helper.
+Its bounded deadline, ownership checks and failure propagation remain intact.
+
+That run also exposed missing real document focus in the bundle, Components
+and WebWindow sequences. Initial-tab activation before navigation was not proof
+that the resulting document was focused. The harness activates after each
+navigation (including bundle reloads), then waits for actual document.hasFocus
+within its existing bounded execution. It never overrides that property or
+dispatches synthetic focus. Fixtures cover delayed focus propagation and a
+persistent-focus failure. These corrections still require hosted verification.
+
+
+A follow-up local focus experiment rejected startup-tab reuse as a solution:
+the initial tab stayed unfocused after activate, navigation and native
+window.focus, while a newly created foreground tab had real document focus.
+The runner therefore creates a foreground test tab and closes the unused
+startup tab, still verifying the owned profile and actual focus. No test uses
+an unfocused startup document merely because rendering happened to work.
