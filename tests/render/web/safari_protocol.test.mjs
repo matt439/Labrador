@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { PRELUDE } from './bundle_page.mjs';
 import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
-	capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
+	assert_test_exit, drive_test, TEST_LOG_HOOK, capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
 	safari_tabs_to_links, session_commands, substitute, webdriver_command } from './run_safari.mjs';
 
 test('the options name one mode and refuse every other combination', () => {
@@ -440,4 +440,40 @@ test('the audio and components samples\' keys go as one action list, every other
 	await drive_sample(minimal.session, 'u', SAMPLES.minimal, { pause: async () => {}, log: () => {} });
 	assert.deepEqual(minimal.log.filter(([kind]) => kind === 'perform'),
 		Array(SAMPLES.minimal.keys.length * 2).fill(['perform', 1]));
+});
+
+test('test-page mode is exclusive and requires a named html page', () => {
+	const options = parse_options(['--test-page', 'RenderPixelTests.html']);
+	assert.deepEqual(page_scripts(options), [COMPLAINT_HOOK, TEST_LOG_HOOK]);
+	assert.equal(artifact_files(options).length, 3);
+	for (const args of [
+		['--test-page', 'p.js'], ['--test-page', 'p.html', '--renderer'],
+		['--test-page', 'p.html', '--bundle', 'b'],
+		['--test-page', 'p.html', '--pages', 'p'],
+		['--test-page', 'p.html', '--frames', '5'],
+	]) assert.throws(() => parse_options(args));
+});
+test('test exit requires integer zero with no abort', () => {
+	assert_test_exit({ code: 0 });
+	for (const value of [null, {}, {code: '0'}, {code: 1}, {code: 0, abort: 'bad'}]) {
+		assert.throws(() => assert_test_exit(value), /Test page failed/);
+	}
+});
+test('test page driver waits on exit, emits output and refuses complaints', async () => {
+	for (const complaints of [[], ['error: broken']]) {
+		const lines = [];
+		const session = {
+			navigate: async () => {},
+			set_timeouts: async ({script}) => assert.ok(Number.isFinite(script)),
+			execute_async: async (script, [expression]) => {
+				let value = expression.includes('labradorExit') ? {code: 0} :
+					expression.includes('labradorTestLog') ? ['pixel case passed'] : complaints;
+				return JSON.stringify({ value });
+			},
+		};
+		const run = drive_test(session, 'http://fixture', {log: line => lines.push(line)});
+		if (complaints.length) await assert.rejects(run);
+		else await run;
+		assert.ok(lines.some(line => line.includes('pixel case passed')));
+	}
 });

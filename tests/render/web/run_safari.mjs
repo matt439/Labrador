@@ -7,6 +7,7 @@
 // node tests/render/web/run_safari.mjs --pages <build>/samples --sample minimal
 //   [--timeout 60] [--frames 60]
 // node tests/render/web/run_safari.mjs --bundle <build>/web-dist/linesweeper [--timeout 120]
+// node tests/render/web/run_safari.mjs --test-page <build>/tests/render/RenderPixelTests.html
 // node tests/render/web/run_safari.mjs --renderer
 //
 // --pages names a folder holding <sample>/<Target>.{html,js,wasm}: a build's
@@ -53,7 +54,7 @@ const KEY_VALUES = key_table(['Escape', 'Enter', 'Tab', 'KeyS', 'KeyR', 'KeyA',
 
 export function parse_options(arguments_) {
 	const options = {};
-	const valued = new Set(['pages', 'sample', 'bundle', 'timeout', 'frames', 'driver', 'browser-name']);
+	const valued = new Set(['pages', 'sample', 'bundle', 'timeout', 'frames', 'driver', 'browser-name', 'test-page']);
 	for (let index = 0; index < arguments_.length; index++) {
 		const name = arguments_[index].replace(/^--/, '');
 		if (!arguments_[index].startsWith('--') || Object.hasOwn(options, name)) {
@@ -65,8 +66,9 @@ export function parse_options(arguments_) {
 		}
 		options[name] = arguments_[++index];
 	}
-	const modes = [options.sample !== undefined, options.bundle !== undefined, options.renderer === true];
+	const modes = [options.sample !== undefined, options.bundle !== undefined, options.renderer === true, options['test-page'] !== undefined];
 	const valid = modes.filter(Boolean).length === 1 && (
+		options['test-page'] !== undefined ? /\.html$/.test(options['test-page']) && options.pages === undefined && options.frames === undefined :
 		options.sample !== undefined ? Object.hasOwn(SAMPLES, options.sample) && options.pages !== undefined :
 		options.bundle !== undefined ? options.bundle !== '' && options.pages === undefined && options.frames === undefined :
 		options.pages === undefined && options.frames === undefined);
@@ -74,6 +76,7 @@ export function parse_options(arguments_) {
 	if (!valid || !['safari', 'firefox'].includes(browser_name)) {
 		throw new Error(`One of: --pages <samples folder> with --sample (${Object.keys(SAMPLES).join('/')}); ` +
 			'--bundle <web-dist/linesweeper folder> (without --pages or --frames); or --renderer. ' +
+			'--test-page <RenderPixelTests.html> without --pages or --frames is also supported. ' +
 			'--browser-name is safari (the default) or firefox.');
 	}
 	options.browser_name = browser_name;
@@ -494,6 +497,41 @@ export async function drive_bundle(session, url,
 		'a real GPU loss, a real tab switch and repeated-play memory, which Chromium runs.');
 }
 
+// Retain all test output, unlike the short sample diagnostics ring. Pixel
+// comparisons print through Emscripten's default console, including failures.
+export const TEST_LOG_HOOK = `(() => {
+	window.labradorTestLog = [];
+	const original = console.log;
+	console.log = function (...args) {
+		window.labradorTestLog.push(args.map(String).join(' '));
+		return original.apply(this, args);
+	};
+})();`;
+
+export function assert_test_exit(result) {
+	if (!result || !Number.isInteger(result.code) || result.code !== 0 || result.abort !== undefined) {
+		throw new Error('Test page failed: ' + JSON.stringify(result));
+	}
+}
+
+export async function drive_test(session, url, { timeout_ms = 120000, log = console.log,
+	label = 'Safari' } = {}) {
+	const evaluate = evaluator(session, deadline_after(timeout_ms, label + ' test', timeout_ms));
+	await session.navigate(url);
+	// An unrecognised page must fail rather than appear to pass.
+	const result = await evaluate(`(async () => {
+		if (!window.labradorExit || typeof window.labradorExit.then !== 'function')
+			throw new Error('Missing labradorExit test protocol');
+		return await window.labradorExit;
+	})()`);
+	const lines = await evaluate('window.labradorTestLog || []');
+	for (const line of lines) log(label + ' test: ' + line);
+	await complaints_of(evaluate);
+	assert_test_exit(result);
+	log(label + ' test page exited zero; no physical-device acceptance.');
+	return result;
+}
+
 export const RENDERER_EXPRESSION = `(() => {
 	const gl = document.createElement('canvas').getContext('webgl2');
 	if (!gl) { return { webgl2: false }; }
@@ -519,6 +557,10 @@ export async function report_renderer(session, url, { timeout_ms = 60000, log = 
 
 export function artifact_files(options) {
 	if (options.renderer) return [];
+	if (options['test-page'] !== undefined) {
+		const stem = resolve(options['test-page']).slice(0, -5);
+		return ['html', 'js', 'wasm'].map((extension) => stem + '.' + extension);
+	}
 	if (options.bundle !== undefined) return BUNDLE_FILES.map((name) => join(resolve(options.bundle), name));
 	const directory = resolve(options.pages, options.sample);
 	const target = SAMPLES[options.sample].target;
@@ -527,6 +569,7 @@ export function artifact_files(options) {
 
 // The page's hooks, per mode.
 export function page_scripts(options) {
+	if (options['test-page'] !== undefined) return [COMPLAINT_HOOK, TEST_LOG_HOOK];
 	return options.bundle !== undefined ? [COMPLAINT_HOOK, PRELUDE + ';'] : [COMPLAINT_HOOK, SAMPLE_HOOK];
 }
 
@@ -595,8 +638,9 @@ export async function main(options) {
 		session = opened.session;
 		const { browserName, browserVersion, platformName } = opened.created.capabilities ?? {};
 		console.log(`Session ${session.id}: ${browserName} ${browserVersion} on ${platformName}`);
-		const option_tab = options.browser_name === 'safari' && !(await safari_tabs_to_links());
+		const option_tab = options['test-page'] === undefined && options.browser_name === 'safari' && !(await safari_tabs_to_links());
 		const driven = options.renderer ? report_renderer(session, service.url, options) :
+			options['test-page'] !== undefined ? drive_test(session, service.url, options) :
 			options.bundle !== undefined ? drive_bundle(session, service.url, { ...options, option_tab }) :
 				drive_sample(session, service.url, SAMPLES[options.sample], { ...options, progress });
 		let timer;
@@ -607,6 +651,7 @@ export async function main(options) {
 		} finally { clearTimeout(timer); }
 		const { label } = options;
 		console.log(options.renderer ? `${label} renderer: reported.` :
+			options['test-page'] !== undefined ? `${label} test: exit protocol passed.` :
 			options.bundle !== undefined ? `${label} bundle: page protocol passed. No listening or physical-device acceptance.` :
 				`${label} ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
 	} catch (error) {

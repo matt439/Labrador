@@ -656,3 +656,19 @@ Record the build's source identity and each actual outcome before ticking a
 box. Old generated outputs are not evidence of the current checkout.
 LineSweeper's earlier Firefox run remains the separate M3 entry in
 [web-as-built.md](web-as-built.md).
+
+
+### Safari pixel exit-protocol wiring (2026-11-15)
+
+The staged `work/safari-readback` change adds `run_safari.mjs --test-page`
+for the existing `RenderPixelTests.html` page and carries that page, loader
+and embedded-data wasm from the Windows build to the Safari job. The runner
+requires the page's `labradorExit` promise to settle to integer zero without
+an abort, emits the test's console output, and rejects page complaints.
+
+Local verification is the runner's Node fixtures on Windows, not Safari,
+WebKit emulation or an Apple GPU measurement. Actual Safari readback, per-case
+passing drift records, rejected-frame extraction, and the full WebWindow input
+sequence remain unverified or unimplemented. REV#151 remains open.
+The week-long REV#159 stability observation is unchanged. This branch stacks
+on the Firefox software-WebGL wiring; neither is a hosted result until pushed.
