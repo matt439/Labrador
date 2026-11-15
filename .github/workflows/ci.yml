@@ -550,18 +550,6 @@ jobs:
       # every frame it rejected beside itself, so this carries them out of the
       # runner. Only on failure, because on a green run the directory is empty
       # and an empty artifact is a line in a log nobody reads.
-      # Standalone readback page for the macOS Safari job.
-      - name: Keep the pixel test page
-        uses: actions/upload-artifact@v4
-        with:
-          name: wasm-pixel-page
-          path: |
-            out/build/wasm-release/tests/render/RenderPixelTests.html
-            out/build/wasm-release/tests/render/RenderPixelTests.js
-            out/build/wasm-release/tests/render/RenderPixelTests.wasm
-          if-no-files-found: error
-          retention-days: 3
-
       - name: Keep the frames a golden check rejected
         if: failure()
         uses: actions/upload-artifact@v4
@@ -753,6 +741,18 @@ jobs:
             out/build/wasm-release/samples/audio/AudioSample.*
             out/build/wasm-release/samples/local_multiplayer/LocalMultiplayerSample.*
             out/build/wasm-release/samples/components/ComponentsGallery.*
+          if-no-files-found: error
+          retention-days: 3
+
+      # Standalone readback page for the macOS Safari job.
+      - name: Keep the pixel test page
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-pixel-page
+          path: |
+            out/build/wasm-release/tests/render/RenderPixelTests.html
+            out/build/wasm-release/tests/render/RenderPixelTests.js
+            out/build/wasm-release/tests/render/RenderPixelTests.wasm
           if-no-files-found: error
           retention-days: 3
 
