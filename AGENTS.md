@@ -87,11 +87,13 @@ teardown to fake WebSockets under Node, with no browser or device.
 render backend rasterizes, eight `Firefox*` entries run the six sample pages,
 `WebWindowTests`' sequence and the bundle page's desktop play, forced context
 loss, quit and replay over WebDriver BiDi
-([run_firefox.mjs](tests/render/web/run_firefox.mjs)). CI's image has a
-Firefox but no WebGL2 in it (no GPU, and no software WebGL by default), so CI
-runs only `FirefoxWebWindowTests`. The drawing entries need a GPU, or
-`-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON`, which puts Firefox on WARP and which
-CI does not yet pass ([web-to-be-tested.md](docs/port/web-to-be-tested.md)).
+([run_firefox.mjs](tests/render/web/run_firefox.mjs)). CI opts into
+`-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` and runs all eight entries.
+The option puts Firefox on ANGLE/WARP in a disposable profile; each sample
+refuses a renderer other than Microsoft's Direct3D11 Basic Render Driver.
+Verbose CI output retains the browser/device evidence. Hosted execution of
+this configuration remains to be verified after publication; local WARP is
+not physical-GPU or audible-audio acceptance.
 CI's `safari` job, on macos-latest, runs the six sample pages and the bundle
 page from the `wasm` job's artifacts in desktop Safari through
 [run_safari.mjs](tests/render/web/run_safari.mjs) and safaridriver; it is not

@@ -627,7 +627,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          cmake --preset wasm-release
+          cmake --preset wasm-release -DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON
 
       # The statistics are the evidence the cache is doing its job: a warm run
       # on a change that touches no widely included header is nearly all hits.
@@ -704,22 +704,15 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release -j 3 -R "PageTests" -E "^Firefox" --no-tests=error --output-on-failure
 
-      # THE WEB WINDOW IN FIREFOX, which the runner image carries: the
-      # window's input sequence over WebDriver BiDi, by
-      # tests/render/web/run_firefox.mjs. Only that entry, because the
-      # image's Firefox gives a page no WebGL2 context: the runner has no GPU,
-      # and Firefox, unlike Chrome with SwiftShader, has no software WebGL
-      # without preferences the runner does not set. Every drawing entry
-      # failed at startup on that ("Failed to create WebGL context", run
-      # 41944047596). Configure still registers them, and they run where a
-      # Firefox has a GPU (docs/port/web-to-be-tested.md). --no-tests=error,
-      # so an image without Firefox fails here rather than passing by
-      # running nothing.
-      - name: Drive the web window in headless Firefox
+      # All eight Firefox pages use a disposable profile and ANGLE/WARP.
+      # Verbose output preserves browser capabilities and renderer evidence;
+      # sample runs refuse a different renderer when software mode is requested.
+      # This is software coverage, not physical GPU or audible-audio acceptance.
+      - name: Run all Firefox pages on software WebGL
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -R "^FirefoxWebWindowTests$" --no-tests=error --output-on-failure
+          ctest --preset wasm-release -R "^Firefox" --no-tests=error -V
 
       # WHAT A HOST SERVES: the build writes LineSweeper's bundle to
       # web-dist/linesweeper/ - the module, its example page, the notices for
