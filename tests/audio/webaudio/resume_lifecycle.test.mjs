@@ -112,3 +112,48 @@ test('an attempted close that did not close the context cannot swallow rejection
 	f.context.reject(closed_error());
 	await assert.rejects(pending, /Closed before resume completed/);
 });
+
+
+test('resume cancellation waits for asynchronous own close before accepting it', async () => {
+	const f = fixture();
+	let finish_close;
+	f.context.close = () => new Promise((resolve) => {
+		finish_close = () => { f.context.state = 'closed'; resolve(); };
+	});
+	const pending = f.device.resume_pending;
+	f.api.close(f.id);
+	f.context.reject(closed_error());
+	let settled = false;
+	pending.then(() => { settled = true; });
+	await Promise.resolve();
+	await Promise.resolve();
+	assert.equal(settled, false);
+	assert.equal(f.context.state, 'suspended');
+	finish_close();
+	await pending;
+	assert.equal(settled, true);
+});
+
+test('asynchronous close failure preserves both errors instead of accepting cancellation', async () => {
+	const f = fixture();
+	let reject_close;
+	f.context.close = () => new Promise((resolve, reject) => { reject_close = reject; });
+	const pending = f.device.resume_pending;
+	f.api.close(f.id);
+	const resume_error = closed_error();
+	f.context.reject(resume_error);
+	await Promise.resolve();
+	const close_error = new Error('close graph failed');
+	reject_close(close_error);
+	await assert.rejects(pending, (error) =>
+		error.errors[0] === resume_error && error.errors[1] === close_error);
+});
+
+test('close resolution without a closed context still rejects resume cancellation', async () => {
+	const f = fixture();
+	f.context.close = () => Promise.resolve();
+	const pending = f.device.resume_pending;
+	f.api.close(f.id);
+	f.context.reject(closed_error());
+	await assert.rejects(pending, /Closed before resume completed/);
+});

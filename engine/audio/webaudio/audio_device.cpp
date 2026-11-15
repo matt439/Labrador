@@ -203,14 +203,24 @@ EM_JS(void, labrador_audio_install, (), {
 		// trusted gesture while the browser is resuming shares this request.
 		device.resume_pending = context.resume().then(() => {
 			device.resume_pending = null;
-		}, (error) => {
+		}, async (error) => {
 			device.resume_pending = null;
 			// Firefox rejects an outstanding resume when our own teardown
 			// closes it. Do not hide other InvalidStateErrors or device errors.
-			if (device.closing && context.state === "closed" &&
+			if (device.closing && device.close_pending &&
 				error?.name === "InvalidStateError" &&
 				error.message === "Closed before resume completed") {
-				return;
+				// Firefox can reject resume before the graph-thread close has
+				// changed state (Mozilla bug 2070740). Confirm our own close,
+				// rather than treating a closing flag as completed teardown.
+				try {
+					await device.close_pending;
+				} catch (close_error) {
+					throw new AggregateError([error, close_error], "Web Audio resume and close failed");
+				}
+				if (context.state === "closed") {
+					return;
+				}
 			}
 			throw error;
 		});
@@ -245,6 +255,7 @@ EM_JS(void, labrador_audio_install, (), {
 			const device = {
 				context: null,
 				resume_pending: null,
+				close_pending: null,
 				closing: false,
 				suspended: false,
 				banks: [],
@@ -283,7 +294,7 @@ EM_JS(void, labrador_audio_install, (), {
 				}
 			}
 			if (device.context) {
-				device.context.close();
+				device.close_pending = device.context.close();
 			}
 			this.devices[id] = null;
 		},
