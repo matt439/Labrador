@@ -590,6 +590,76 @@ export function remove_stale_profiles(directory, { now = Date.now(), max_age_ms 
 	return removed;
 }
 
+export function assert_owned_session(capabilities, profile,
+	{ canonical = realpathSync, platform = process.platform } = {}) {
+	if (capabilities?.browserName !== 'firefox' || typeof capabilities['moz:profile'] !== 'string') {
+		throw new Error('Firefox session supplied no owned profile identity');
+	}
+	const normalize = (path) => {
+		const absolute = canonical(path);
+		return platform === 'win32' ? absolute.toLowerCase() : absolute;
+	};
+	if (normalize(capabilities['moz:profile']) !== normalize(profile)) {
+		throw new Error('Refusing Firefox session from a different profile');
+	}
+}
+
+// The process starts on about:blank. Reuse that one owned top-level context
+// rather than creating a second content process before every page test.
+export async function initial_context(protocol) {
+	const { contexts } = await protocol.send('browsingContext.getTree', { maxDepth: 0 });
+	if (!Array.isArray(contexts) || contexts.length !== 1 ||
+		typeof contexts[0].context !== 'string' || contexts[0].url !== 'about:blank') {
+		throw new Error('Owned Firefox must start with exactly one about:blank context');
+	}
+	return contexts[0].context;
+}
+
+// A Windows launcher PID is not Firefox's browser PID. A forced launcher-only
+// kill can leave its children behind. Verify the live launcher's executable and
+// unique profile before asking Windows to terminate that owned tree, never /IM.
+export const OWNED_FIREFOX_CLEANUP = String.raw`
+$ErrorActionPreference = 'Stop'
+$id = [int]$env:LABRADOR_OWNED_FIREFOX_PID
+$profile = $env:LABRADOR_OWNED_FIREFOX_PROFILE
+$browser = $env:LABRADOR_OWNED_FIREFOX_BROWSER
+$root = Get-CimInstance Win32_Process -Filter "ProcessId=$id"
+if (!$root -or !$root.CommandLine.Contains($profile) -or
+	![string]::Equals($root.ExecutablePath, $browser, [StringComparison]::OrdinalIgnoreCase)) {
+	throw 'Refusing termination: launcher executable/profile ownership is not verified'
+}
+$again = Get-CimInstance Win32_Process -Filter "ProcessId=$id"
+if (!$again -or $again.CreationDate -ne $root.CreationDate -or $again.CommandLine -ne $root.CommandLine) {
+	throw 'Refusing termination: launcher identity changed'
+}
+& "$env:SystemRoot\System32\taskkill.exe" /PID $id /T /F
+if ($LASTEXITCODE -ne 0) { throw "Owned Firefox tree termination failed: $LASTEXITCODE" }
+`;
+
+export async function terminate_owned_firefox(child, browser, profile,
+	{ platform = process.platform, spawn_process = spawn } = {}) {
+	if (child.exitCode !== null || child.signalCode !== null) return;
+	if (!Number.isInteger(child.pid) || child.pid <= 0) throw new Error('No owned Firefox PID');
+	if (platform !== 'win32') { child.kill(); return; }
+	const command = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+	const cleanup = spawn_process(command, ['-NoProfile', '-NonInteractive', '-Command', OWNED_FIREFOX_CLEANUP], {
+		windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+		env: { ...process.env, LABRADOR_OWNED_FIREFOX_PID: String(child.pid),
+			LABRADOR_OWNED_FIREFOX_PROFILE: resolve(profile), LABRADOR_OWNED_FIREFOX_BROWSER: resolve(browser) },
+	});
+	let output = '';
+	for (const stream of [cleanup.stdout, cleanup.stderr]) stream.on('data', (chunk) => { output += String(chunk); });
+	await new Promise((done, refused) => {
+		const timer = setTimeout(() => { cleanup.kill(); refused(new Error('Owned Firefox cleanup timed out')); }, 10000);
+		cleanup.once('error', (error) => { clearTimeout(timer); refused(error); });
+		cleanup.once('exit', (code) => {
+			clearTimeout(timer);
+			if (code === 0) done(); else refused(new Error('Owned Firefox cleanup refused: ' + output));
+		});
+	});
+	console.log('Owned Firefox tree cleanup: ' + output.trim());
+}
+
 export async function main(options) {
 	const files = artifact_files(options);
 	// These reads occur only on an explicit CLI run, never on module import.
@@ -622,10 +692,11 @@ export async function main(options) {
 		launched.bind(protocol);
 		await protocol.opened();
 		const session = await protocol.send('session.new', { capabilities: {} });
+		assert_owned_session(session.capabilities, profile);
 		connected = true;
 		console.log(`Firefox session ${session.sessionId}: ${JSON.stringify(session.capabilities)}`);
-		const { context } = await protocol.send('browsingContext.create', { type: 'tab', background: false });
-		if (typeof context !== 'string') throw new Error('Firefox created no browsing context.');
+		const context = await initial_context(protocol);
+		console.log(`Firefox initial about:blank context reused: ${context}`);
 		const driven = options.test === 'RenderPixelTests' ?
 			drive_pixels(protocol, context, service.url, { ...options,
 				output_dir: join(dirname(files[0]), 'firefox-golden-actual') }) : options.bundle !== undefined ?
@@ -646,15 +717,20 @@ export async function main(options) {
 	} finally {
 		launched?.stop();
 		if (protocol) {
-			try { await bounded(protocol.send('browser.close'), 3000, 'Firefox close timed out.'); }
-			catch (error) { console.error(`Firefox close: ${error.message}`); }
+			if (connected) {
+				try { await bounded(protocol.send('browser.close'), 3000, 'Firefox close timed out.'); }
+				catch (error) { console.error(`Firefox close: ${error.message}`); }
+			}
 			protocol.close();
 		}
 		let closed = !launched;
 		if (launched) {
 			closed = launched.spawn_failed() || await exited(launched.child, 3000);
 			if (!closed) {
-				try { launched.child.kill(); closed = await exited(launched.child, 5000); }
+				try {
+					await terminate_owned_firefox(launched.child, options.browser, profile);
+					closed = await exited(launched.child, 5000);
+				}
 				catch (error) {
 					const refused = new Error(`terminate owned Firefox pid ${launched.child.pid}: ${error.code}: ${error.message}`);
 					console.error(refused.message);
