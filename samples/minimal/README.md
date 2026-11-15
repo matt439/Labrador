@@ -41,6 +41,10 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-15.** Web Audio now owns pending resume requests during fast quit.
+  A browser game moving its engine pin needs no template changes; concurrent
+  activation gestures share a request, and intentional close handles only
+  Firefox's known resume-cancellation error. Other audio errors remain visible.
 - **2026-11-10, `64551d1`.** `web/shell.html` names its canvas for a screen reader,
   `aria-label="Minimal sample"`, and gives the status line `role="status"` so
   that a change to it is read out. A copy wants both attributes, with its own

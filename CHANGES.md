@@ -80,6 +80,13 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-15 - Own pending Web Audio resume during fast quit
+
+**Behaviour change.** Web Audio coalesces concurrent resume requests and handles
+Firefox's specific pending-resume rejection when the device's own teardown
+closes its context. Other resume failures remain observable; no running state
+is assumed before the browser reports it. No caller API changes.
+
 ### 2026-11-14 - Add a built-in CRT post effect on every backend
 
 **New API.** `PostEffect::crt` draws the frame's processed views through a CRT monitor inside one screen rectangle: barrel curvature, scanlines that thin on dark rows, an aperture-grille mask, a vignette and red/blue fringing, each off at zero. `CrtSettings` names the terms; `crt_values(settings, back_buffer_size)` packs and validates them for `Renderer::set_post_values` and throws `std::invalid_argument` for a NaN, a negative value, a 0..1 strength above 1, a screen or back buffer with no area, or, with scanlines on, fewer than `min_pixels_per_scanline` (4) output pixels a line; `crt_values_are_neutral` says whether every term is off, and a backend then draws identity, so a neutral CRT is the direct frame byte for byte; `crt_source_position` maps a point on the curved screen to the flat picture's, for pointer hits. `post_effect_count` is 2. All five backends implement it; OpenGL and WebGL2 carry a hand transliteration of `engine/render/materials/crt.hlsl`. [docs/effects.md](docs/effects.md) section 7 is the design.
