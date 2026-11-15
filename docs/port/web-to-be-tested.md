@@ -544,13 +544,13 @@ Configure registers eight entries where it finds a Firefox
 `FirefoxCollisionPageTests`, `FirefoxAudioPageTests`,
 `FirefoxLocalMultiplayerPageTests`, `FirefoxComponentsPageTests`,
 `FirefoxWebWindowTests` and `FirefoxLineSweeperBundlePageTests`. CI's wasm
-job runs only `FirefoxWebWindowTests`. The runner image's Firefox gives a page
-no WebGL2 context: the runner has no GPU, and Firefox's driver blocklist
+job now opts into software WebGL and selects all eight entries. Without that
+option, the runner image's Firefox gives a page no WebGL2 context: the runner has no GPU, and Firefox's driver blocklist
 refuses the software adapter it has, so on 2026-11-05 (run 41944047596) each
 drawing entry failed at startup with "Failed to create WebGL context" while
 the window's entry passed. The drawing entries run wherever configure finds a
-Firefox on a machine with a GPU, which is a release-time check like
-`ci_gap_report.py`'s, not a per-pull-request one.
+Firefox on a machine with a GPU, which remains a separate hardware check
+from CI's software coverage.
 
 Configuring with `-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` passes the runner's
 opt-in `--software-webgl` to all eight entries. It writes three preferences
@@ -583,9 +583,25 @@ Firefox 160 and `wasm-release` at `1dc8533c`:
   with the option, all eight `Firefox*` entries passed through ctest there.
 
 WARP is not the device a player's Firefox uses, and a submission count on it
-proves no more than one on a GPU. CI does not yet pass the option: its wasm
-job would configure with it and run `-R "^Firefox"` in place of
-`-R "^FirefoxWebWindowTests$"`. To run them, or one page by hand (either
+proves no more than one on a GPU. CI now passes the option and selects
+`-R "^Firefox"` with verbose output.
+The sample runner refuses a non-WARP renderer in this mode. This change has
+not yet been published, so a hosted-run result and the Sandbox audio race's
+behaviour on that host are still outstanding.
+
+**Local integration check, 2026-11-15:** a fresh isolated `wasm-release` build
+based on `d44101a0`, with the CI/runner changes in this work branch, registered
+all 45 expected tests. All eight Firefox entries passed (41.11 s) on MattPC,
+Firefox 160.0 build 20261104181552. Each of the six samples logged ANGLE's
+Microsoft Basic Render Driver (0x0000008C), Direct3D11, and passed the new
+fail-closed renderer check. Five additional consecutive FirefoxAudioPageTests
+runs passed (22.69 s total); this did not reproduce the Sandbox resume race
+and does not establish its absence on the hosted runner. No engine source or
+shader changed. These are
+local software-renderer results, not hosted CI, pixel, listening or device
+acceptance.
+
+To run them, or one page by hand (either
 runner command also takes `--software-webgl`):
 
 ```text

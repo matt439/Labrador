@@ -11,7 +11,7 @@ import { FirefoxProtocol } from './firefox_protocol.mjs';
 import { FACTORY_WRAPPER, PRELUDE } from './bundle_page.mjs';
 import { SAMPLES, SAMPLE_HOOK, SOFTWARE_WEBGL_PREFERENCES, WINDOW_HOOK, bidi_endpoint, bundle_input,
 	bundle_substitute, drive_bundle, drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox,
-	parse_options, remove_stale_profiles, user_js, window_input } from './run_firefox.mjs';
+	assert_software_renderer, parse_options, remove_stale_profiles, user_js, window_input } from './run_firefox.mjs';
 
 class FixtureSocket extends EventTarget {
 	constructor(url) {
@@ -718,4 +718,20 @@ test('a retained profile older than a day is removed when a later run starts, an
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
+});
+
+test('software renderer evidence requires WARP and never accepts a GPU or missing evidence', () => {
+	assert_software_renderer('ANGLE (Microsoft, Microsoft Basic Render Driver (0x0000008C) Direct3D11 vs_5_0 ps_5_0)', true);
+	for (const renderer of [null, undefined, '', 'NVIDIA', 'Microsoft Basic Render Driver OpenGL']) {
+		assert.throws(() => assert_software_renderer(renderer, true), /requested WARP/);
+	}
+	assert_software_renderer('NVIDIA', false);
+});
+
+test('sample software mode checks observed renderer before accepting input or completion', async () => {
+	const protocol = new SampleControl();
+	await assert.rejects(drive_sample(protocol, 'synthetic-tab', 'http://127.0.0.1:1/test.html', SAMPLES.minimal,
+		{ software_webgl: true, pause: async () => {}, log: () => {} }), /requested WARP/);
+	assert.equal(protocol.input, false);
+	assert.equal(protocol.removed, true);
 });

@@ -152,6 +152,14 @@ export const SAMPLE_HOOK = `() => {
 	};
 }`;
 
+// Fail closed rather than treating preferences as proof of the selected device.
+export function assert_software_renderer(renderer, software_webgl) {
+	if (software_webgl && (typeof renderer !== 'string' ||
+		!renderer.includes('Microsoft Basic Render Driver') || !renderer.includes('Direct3D11'))) {
+		throw new Error(`Software WebGL requested WARP; observed renderer=${renderer}`);
+	}
+}
+
 const wait = (milliseconds) => new Promise((done) => setTimeout(done, milliseconds));
 
 // What each drive below keeps while it runs one page in `context`: its
@@ -196,7 +204,7 @@ async function open_page(protocol, context, url, preload, { device_pixel_ratio }
 
 // Exported for offline control fixtures; this never launches a browser itself.
 export async function drive_sample(protocol, context, url, sample,
-	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log } = {}) {
+	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, software_webgl = false } = {}) {
 	const { remaining, assert_healthy, unsubscribe } = watched_context(protocol, context, { timeout_ms, log, what: 'sample' });
 	const evaluate = (expression) => protocol.evaluate(context, expression, remaining());
 	const state = async () => {
@@ -214,6 +222,7 @@ export async function drive_sample(protocol, context, url, sample,
 		while (!(heard.draw_calls > 0 && heard.elements > 0 && heard.clears > 0)) {
 			await pause(25); heard = await state();
 		}
+		assert_software_renderer(heard.raw_renderer, software_webgl);
 		const first = heard;
 		await evaluate(frames_expression(frames));
 		heard = await state();
