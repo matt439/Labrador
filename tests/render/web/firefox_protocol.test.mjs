@@ -256,7 +256,7 @@ test('Firefox CLI accepts six samples, WebWindowTests or the bundle and uses a f
 	const window_options = parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', '--test', 'WebWindowTests']);
 	assert.equal(window_options.test, 'WebWindowTests');
 	assert.equal(window_options.sample, undefined);
-	for (const extra of [['--test', 'RenderPixelTests'], ['--test', 'WebWindowTests', '--sample', 'minimal'],
+	for (const extra of [['--test', 'UnknownTests'], ['--test', 'WebWindowTests', '--sample', 'minimal'],
 		['--test', 'WebWindowTests', '--frames', '10'], ['--test', '__proto__']]) {
 		assert.throws(() => parse_options(['--browser', 'firefox.exe', '--build-dir', 'build', ...extra]));
 	}
@@ -734,4 +734,53 @@ test('sample software mode checks observed renderer before accepting input or co
 		{ software_webgl: true, pause: async () => {}, log: () => {} }), /requested WARP/);
 	assert.equal(protocol.input, false);
 	assert.equal(protocol.removed, true);
+});
+import { drive_pixels, PIXEL_FILES, save_pixel_files } from './run_firefox.mjs';
+
+test('pixel driver accepts baseline, preserves files and rejects failed exit/backend/complaints', async () => {
+	async function run({ result = {code: 0}, renderer = 'Microsoft Basic Render Driver Direct3D11', complaint } = {}) {
+		let listener, unsubscribed = false, saved;
+		const protocol = {
+			on(fn) { listener = fn; return () => { unsubscribed = true; }; },
+			async send(method) {
+				if (method === 'browsingContext.navigate' && complaint)
+					listener({method: 'log.entryAdded', params: {level: 'error', text: complaint}});
+			},
+			async evaluate(_context, expression) {
+				if (expression.includes('await window.labradorExit')) return JSON.stringify(result);
+				if (expression.includes('labradorPixelDevices')) return JSON.stringify([{renderer}]);
+				assert.equal(expression, PIXEL_FILES);
+				return JSON.stringify({'failed.png': 'eA=='});
+			},
+		};
+		try {
+			await drive_pixels(protocol, 'tab', 'http://fixture', {software_webgl: true, log() {},
+				save(files) { saved = files; }});
+		} finally {
+			assert.equal(unsubscribed, true);
+			assert.deepEqual(saved, {'failed.png': 'eA=='});
+		}
+	}
+	await run();
+	await assert.rejects(run({result: {code: 1}}), /pixel exit/);
+	await assert.rejects(run({result: {abort: 'failed'}}), /pixel exit/);
+	await assert.rejects(run({result: {code: '0'}}), /pixel exit/);
+	await assert.rejects(run({renderer: 'NVIDIA'}), /requested WARP/);
+	await assert.rejects(run({complaint: 'WebGL failure'}), /complaints/);
+	assert.throws(() => save_pixel_files({'../escape.png': 'eA=='}, 'unused'), /Invalid pixel artifact/);
+	assert.equal(parse_options(['--browser', 'firefox', '--build-dir', 'build', '--test', 'RenderPixelTests']).test,
+		'RenderPixelTests');
+});
+
+test('pixel page rejects a missing exit protocol and releases its listener', async () => {
+	let released = false;
+	const protocol = {
+		on() { return () => { released = true; }; },
+		async send() {},
+		async evaluate(_context, expression) {
+			return vm.runInNewContext(expression, {window: {}});
+		},
+	};
+	await assert.rejects(drive_pixels(protocol, 'tab', 'http://fixture', {log() {}}), /Missing labradorExit/);
+	assert.equal(released, true);
 });
