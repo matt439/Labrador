@@ -95,7 +95,7 @@ Verbose CI output retains the browser/device evidence. Hosted execution of
 this configuration remains to be verified after publication; local WARP is
 not physical-GPU or audible-audio acceptance.
 CI's `safari` job, on macos-latest, runs the six sample pages and the bundle
-page from the `wasm` job's artifacts in desktop Safari through
+page plus the pixel readback exit protocol from the `wasm` job's artifacts in desktop Safari through
 [run_safari.mjs](tests/render/web/run_safari.mjs) and safaridriver; it is not
 a ctest entry. Locally, `--driver geckodriver --browser-name firefox` checks
 the runner, not Safari.

@@ -550,6 +550,18 @@ jobs:
       # every frame it rejected beside itself, so this carries them out of the
       # runner. Only on failure, because on a green run the directory is empty
       # and an empty artifact is a line in a log nobody reads.
+      # Standalone readback page for the macOS Safari job.
+      - name: Keep the pixel test page
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-pixel-page
+          path: |
+            out/build/wasm-release/tests/render/RenderPixelTests.html
+            out/build/wasm-release/tests/render/RenderPixelTests.js
+            out/build/wasm-release/tests/render/RenderPixelTests.wasm
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Keep the frames a golden check rejected
         if: failure()
         uses: actions/upload-artifact@v4
@@ -782,10 +794,16 @@ jobs:
         with:
           name: linesweeper-web
           path: ${{ runner.temp }}/linesweeper
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasm-pixel-page
+          path: ${{ runner.temp }}/pixel
       - name: Enable safaridriver
         run: sudo safaridriver --enable
       - name: Safari's WebGL2 renderer
         run: node tests/render/web/run_safari.mjs --renderer
+      - name: Pixel readback in Safari
+        run: node tests/render/web/run_safari.mjs --test-page "$RUNNER_TEMP/pixel/RenderPixelTests.html" --timeout 180
       - name: Sample pages in Safari
         run: |
           for sample in linesweeper minimal collision audio local_multiplayer components; do
