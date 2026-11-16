@@ -2,10 +2,47 @@
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { NETWORK_PROFILES, USAGE, UsageError, heap_line, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
+import { NETWORK_PROFILES, USAGE, UsageError, activate_page, heap_line, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
 
 const page = join('build', 'samples', 'minimal', 'MinimalSample.html');
 const sample = ['--browser', 'chrome', '--page', page, '--quit-keys', 'Escape,Enter'];
+
+test('page activation waits for Page.enable and its own reply before navigation', async () => {
+	const commands = [];
+	let enabled;
+	let activated;
+	const enable_reply = new Promise((resolve) => { enabled = resolve; });
+	const activate_reply = new Promise((resolve) => { activated = resolve; });
+	const send = async (method, params, session) => {
+		commands.push({ method, params, session });
+		if (method === 'Page.enable') await enable_reply;
+		if (method === 'Page.bringToFront') await activate_reply;
+	};
+	const prepared = (async () => {
+		await activate_page(send, 'page-session');
+		await send('Page.navigate', { url: 'http://127.0.0.1/test.html' }, 'page-session');
+	})();
+	assert.deepEqual(commands, [{ method: 'Page.enable', params: {}, session: 'page-session' }]);
+	enabled({});
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.deepEqual(commands.map((command) => command.method), ['Page.enable', 'Page.bringToFront']);
+	assert.deepEqual(commands[1], { method: 'Page.bringToFront', params: {}, session: 'page-session' });
+	activated({});
+	await prepared;
+	assert.deepEqual(commands[2], { method: 'Page.navigate',
+		params: { url: 'http://127.0.0.1/test.html' }, session: 'page-session' });
+});
+
+test('a browser activation refusal propagates instead of navigating an inactive view', async () => {
+	const commands = [];
+	const refused = new Error('Page.bringToFront: target disappeared');
+	const send = async (method) => {
+		commands.push(method);
+		if (method === 'Page.bringToFront') throw refused;
+	};
+	await assert.rejects(activate_page(send, 'page-session'), (error) => error === refused);
+	assert.deepEqual(commands, ['Page.enable', 'Page.bringToFront']);
+});
 
 test('a sample\'s command line gives its keys, media, paths and deadline', () => {
 	const parsed = parse_arguments([...sample, '--emulate-media', 'prefers-reduced-motion=reduce',

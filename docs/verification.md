@@ -289,6 +289,34 @@ python -m unittest discover -s tools/tests -p test_verify_changes.py
 python -m unittest discover -s tools/tests -p test_verification_runner.py
 ```
 
+## Chromium page activation (2026-11-17)
+
+The page runner enables the DevTools Page domain and waits for
+`Page.bringToFront` before navigation and input-driver preparation. This
+activates the browser's view as well as the DOM focus emulation used by input
+checks. Chromium's browser process separately checks the view's focus when
+admitting a fullscreen request; see the
+[Chrome 157 source at the measured revision](https://chromium.googlesource.com/chromium/src/+/4b3d0dabb8250b6f152d2d85d79e7706e309d087/content/browser/renderer_host/render_frame_host_impl.cc#9550).
+
+On this Windows machine, Chrome `157.0.8103.78` (revision
+`4b3d0dabb8250b6f152d2d85d79e7706e309d087`) rejected a bare canvas request
+with `TypeError: not granted` in a fresh headless profile even when
+`document.fullscreenEnabled`, the fullscreen permissions policy and transient
+user activation were true. DOM focus emulation made `document.hasFocus()` true
+and still received the refusal. Activating the target with `Page.bringToFront`
+granted the same request; a trusted dispatched click also granted it after
+activation. The probe had no engine or wasm module.
+
+With only the runner change against the `5cff44b9` browser artifacts,
+`WebWindowTests` passed all 53 steps, including granted fullscreen, leaving,
+and a handled refusal. `ComponentsPageTests` passed its existing key sequence
+through requesting fullscreen, leaving and `Module.onQuit`. Both named ANGLE
+on the NVIDIA GeForce RTX 5080 through Direct3D11. The offline
+`BrowserProtocolTests` command passed 146 tests under Emscripten's Node
+`24.19.0`; its activation fixtures hold the two command replies before
+navigation and propagate activation failure. Full browser sweeps and hosted
+CI retain their own per-run results.
+
 ## Configurations CI cannot run
 
 CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on
