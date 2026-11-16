@@ -1,5 +1,9 @@
 # Running a verification sweep
 
+The [November 17 integration checkpoint](verification/2026-11-17-overnight-checkpoint.md)
+records the first completed overnight cohort, including source-specific native,
+browser, Release, sanitizer and website results and retained initial failures.
+
 The separate opt-in [native-null AddressSanitizer qualification](verification-asan.md)
 uses `x64-debug-null-asan`, its own dependency triplet and a full configured
 suite with a deterministic detection probe. It is not an additional render

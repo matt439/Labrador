@@ -193,6 +193,40 @@ events, which carry no request identity. Page-owned requests keep their own reje
 other page errors and `Module.onError` remain visible. Games moving their
 engine pin need no API or template changes.
 
+### 2026-11-17 - Enable qualified standalone native MSVC Release IPO
+
+**Build default.** Fresh standalone native MSVC Release configurations now
+enable capability-checked IPO (`/GL` and `/LTCG`), preserving `/fp:precise`.
+The five native Release backends, complete and incremental builds, ordinary
+and IPO consumer links and installed game startup were qualified on the named
+Windows desktop. Compile/link costs and executable sizes vary; the measured
+record includes the larger test executable and longer one-file rebuild.
+`-DLABRADOR_NATIVE_RELEASE_IPO=OFF` retains ordinary compilation when no
+separate CMake IPO override is set. Existing cache selections persist. Debug,
+browser, other compiler and consumer-parent defaults are unchanged; games
+choose their own IPO policy. See [the policy and evidence](docs/performance/native-release-ipo.md).
+
+### 2026-11-17 - Explain missing consumer dependencies at configure
+
+**Configure diagnostics.** Missing selected config packages now name the
+consumer's manifest obligation and the engine manifest to compare, retaining
+CMake's package-failure reason, considered configurations/versions and
+directory hints. If the consumer already
+declares the port, the advice points to toolchain, triplet, feature and
+installed-package discovery instead of adding a duplicate or replacing a
+working baseline. Package declarations are inspected best-effort; no manifest
+or dependency installation is changed.
+
+The native DirectXTK/XAudio2 packages remain conditional on their selected
+backends. Missing optional material tools name host dependency objects;
+built-in-only projects gain no new tool requirement. The minimal template
+and starter use `labrador_find_package(doctest)` for the same advice on their
+rules-test dependency. A failed package lookup is never retried: a partial
+import cannot turn the failed configuration into a success. Existing
+`find_package(doctest CONFIG REQUIRED)` calls
+remain valid; a copy can opt into the additional diagnostic by replacing that
+line after moving its engine pin.
+
 ### 2026-11-16 - Refuse non-finite collider data at scene and contact boundaries
 
 **Behaviour change.** `find_contacts` now throws `std::invalid_argument`
@@ -217,19 +251,6 @@ not rolled back if a callback corrupts geometry. Games that intentionally
 used NaN/infinity to disable a collider must instead change its collision mask
 with finite geometry, or retire/remove it.
 
-### 2026-11-17 - Enable qualified standalone native MSVC Release IPO
-
-**Build default.** Fresh standalone native MSVC Release configurations now
-enable capability-checked IPO (`/GL` and `/LTCG`), preserving `/fp:precise`.
-The five native Release backends, complete and incremental builds, ordinary
-and IPO consumer links and installed game startup were qualified on the named
-Windows desktop. Compile/link costs and executable sizes vary; the measured
-record includes the larger test executable and longer one-file rebuild.
-`-DLABRADOR_NATIVE_RELEASE_IPO=OFF` retains ordinary compilation when no
-separate CMake IPO override is set. Existing cache selections persist. Debug,
-browser, other compiler and consumer-parent defaults are unchanged; games
-choose their own IPO policy. See [the policy and evidence](docs/performance/native-release-ipo.md).
-
 ### 2026-11-16 - Add explicit native MSVC Release IPO selection
 
 **Build option.** `-DLABRADOR_NATIVE_RELEASE_IPO=ON` enables checked
@@ -240,27 +261,6 @@ not set a consumer game's own target properties or global IPO policy.
 Configure `OFF` to opt out of this selection; a separately supplied CMake IPO
 override remains the caller's responsibility. See
 [the policy and consumer recipe](docs/performance/native-release-ipo.md).
-
-### 2026-11-17 - Explain missing consumer dependencies at configure
-
-**Configure diagnostics.** Missing selected config packages now name the
-consumer's manifest obligation and the engine manifest to compare, retaining
-CMake's package-failure reason, considered configurations/versions and
-directory hints. If the consumer already
-declares the port, the advice points to toolchain, triplet, feature and
-installed-package discovery instead of adding a duplicate or replacing a
-working baseline. Package declarations are inspected best-effort; no manifest
-or dependency installation is changed.
-
-The native DirectXTK/XAudio2 packages remain conditional on their selected
-backends. Missing optional material tools name host dependency objects;
-built-in-only projects gain no new tool requirement. The minimal template
-and starter use `labrador_find_package(doctest)` for the same advice on their
-rules-test dependency. A failed package lookup is never retried: a partial
-import cannot turn the failed configuration into a success. Existing
-`find_package(doctest CONFIG REQUIRED)` calls
-remain valid; a copy can opt into the additional diagnostic by replacing that
-line after moving its engine pin.
 
 ### 2026-11-16 - Publish release and development version identity
 

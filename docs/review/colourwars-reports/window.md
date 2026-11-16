@@ -842,3 +842,11 @@ compositor frame; the framebuffer images are explicitly unpresented redraws.
 Neither supplies scan-out, pacing or a claim excluding sub-snapshot transients.
 This closes the dated all-native-rasteriser/full-screen visual qualification;
 OCA-87 still owes the remaining browser/app-matrix and final website checks.
+
+### Combined qualification, 2026-11-17
+
+The [combined checkpoint](../../verification/2026-11-17-overnight-checkpoint.md)
+records the remaining app/browser matrix and website checks, all passing.
+OCA-87 is closed. The dated native visual evidence above and its snapshot
+limits remain the evidence for appearance; automated page tests do not extend
+that physical observation or qualify a client build.
