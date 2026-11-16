@@ -5,6 +5,7 @@
 #include "engine/app/content_root.h"
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/math/rectanglei.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/dds_file.h"
 #include "engine/render/render_resources.h"
@@ -34,7 +35,7 @@ TEST_CASE("the original animation atlas and JSON load through the shared readers
 	REQUIRE(atlas.levels.size() == 1);
 	CHECK(atlas.pixels.size() == 64 * 16 * 4);
 	std::unique_ptr<SpriteSheet> sheet = read_sprite_sheet(
-		json_path.c_str(), TextureHandle());
+		json_path.c_str(), TextureHandle(), Vector2I(atlas.width, atlas.height));
 	const AnimationStrip& loop = sheet->animation_strip(
 		sheet->resolve_animation_strip("pulse_loop"));
 	CHECK(loop.frame_count() == 4);

@@ -3,17 +3,43 @@
 #include "engine/assets/json_object_keys.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/texture_data.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace labrador
 {
 	namespace
 	{
-		NameTable<SpriteFrame> decode_sprite_frames(const JsonValue& json)
+		void validate_rectangle(const RectangleI& rectangle,
+			const Vector2I& texture_size, const std::string& context)
+		{
+			const int64_t x = rectangle.x;
+			const int64_t y = rectangle.y;
+			const int64_t end_x = x + static_cast<int64_t>(rectangle.width);
+			const int64_t end_y = y + static_cast<int64_t>(rectangle.height);
+			if (std::min(x, end_x) < 0 || std::min(y, end_y) < 0 ||
+				std::max(x, end_x) > texture_size.x ||
+				std::max(y, end_y) > texture_size.y)
+			{
+				throw std::runtime_error(context + " samples rectangle (" +
+					std::to_string(rectangle.x) + ", " +
+					std::to_string(rectangle.y) + ", " +
+					std::to_string(rectangle.width) + ", " +
+					std::to_string(rectangle.height) + ") outside its atlas of " +
+					std::to_string(texture_size.x) + " by " +
+					std::to_string(texture_size.y) + " texels.");
+			}
+		}
+
+		NameTable<SpriteFrame> decode_sprite_frames(const JsonValue& json,
+			const Vector2I& texture_size)
 		{
 			NameTable<SpriteFrame> sprite_frames("sprite frame");
 			for (size_t index = 0; index < json.size(); ++index)
@@ -81,12 +107,15 @@ namespace labrador
 						"Repack the sheet with rotation off.");
 				}
 
+				validate_rectangle(source_rectangle, texture_size,
+					frame.where() + " ('" + name + "')");
 				sprite_frames.add(name, SpriteFrame(source_rectangle, origin));
 			}
 			return sprite_frames;
 		}
 
-		NameTable<AnimationStrip> decode_animation_strips(const JsonValue& json)
+		NameTable<AnimationStrip> decode_animation_strips(const JsonValue& json,
+			const Vector2I& texture_size)
 		{
 			NameTable<AnimationStrip> animation_strips("animation strip");
 			for (size_t index = 0; index < json.size(); ++index)
@@ -138,11 +167,18 @@ namespace labrador
 
 				try
 				{
-					animation_strips.add(name, AnimationStrip(
+					AnimationStrip animation(
 						first_frame,
 						frame_count,
 						strip.number("frame_time"),
-						strip.boolean("looping")));
+						strip.boolean("looping"));
+					for (int frame_index = 0; frame_index < frame_count; ++frame_index)
+					{
+						validate_rectangle(animation.frame_rect(frame_index),
+							texture_size, strip.where() + " ('" + name +
+							"') frame " + std::to_string(frame_index));
+					}
+					animation_strips.add(name, std::move(animation));
 				}
 				catch (const std::out_of_range& error)
 				{
@@ -155,14 +191,19 @@ namespace labrador
 	}
 
 	std::unique_ptr<SpriteSheet> read_sprite_sheet(const char* json_path,
-		TextureHandle texture)
+		TextureHandle texture, const Vector2I& texture_size)
 	{
+		if (texture_size.x <= 0 || texture_size.y <= 0)
+		{
+			throw std::invalid_argument(std::string(json_path) +
+				": sprite-sheet atlas dimensions must be positive.");
+		}
 		const JsonDocument document = read_json_file(json_path);
 		const JsonValue root = document.root();
 		detail::reject_unknown_keys(root, { "sprite_frames", "animation_strips" });
 
 		return std::make_unique<SpriteSheet>(texture,
-			decode_sprite_frames(root.array("sprite_frames")),
-			decode_animation_strips(root.array("animation_strips")));
+			decode_sprite_frames(root.array("sprite_frames"), texture_size),
+			decode_animation_strips(root.array("animation_strips"), texture_size));
 	}
 }

@@ -134,10 +134,11 @@ namespace labrador
 		// The sheet's texture is loaded under the sheet's own name: they are one
 		// asset with two files, and the manifest names it once.
 		this->load_texture(directory, name);
+		const TextureHandle texture = this->render_resources_->resolve_texture(name);
 
 		this->render_resources_->add_sprite_sheet(name,
 			read_sprite_sheet((directory + name + ".json").c_str(),
-				this->render_resources_->resolve_texture(name)));
+				texture, this->render_resources_->texture_size(texture)));
 	}
 
 	void ResourceLoader::load_sound_bank(bool optional,

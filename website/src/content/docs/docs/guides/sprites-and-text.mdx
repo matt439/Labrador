@@ -326,6 +326,36 @@ objects, so `orgin` is an error instead of silently choosing a zero origin.
 Correct misspellings and remove unsupported fields from these fixed definitions;
 your game's own metadata can use its own JSON reader.
 
+The loader also checks the rectangles against the loaded atlas dimensions.
+For each axis, both endpoints (`x` and `x + w`, or `y` and `y + h`) must be
+between zero and the atlas dimension, including its outer edge. Negative
+widths and heights remain valid: a frame such as `x: 32, w: -16` samples the
+texels between 16 and 32 in reverse order. Every expanded animation-strip
+frame must fit too. An out-of-atlas definition stops loading with the sheet
+path and offending frame or strip; move or resize that region, or supply the
+intended larger atlas. The loader does not clamp or wrap the definition.
+
+Individual zero-area frames remain accepted when their endpoints fit. A
+nonempty animation strip still refuses zero width or height; a strip with
+`frame_count: 0` remains empty and its unused first-frame rectangle is not
+checked against the atlas. Origins remain pivots and may lie outside a frame.
+
+If you call the reader directly rather than loading a manifest, pass the
+atlas dimensions as its third argument:
+
+```cpp
+const labrador::TextureHandle texture = resources.resolve_texture("hero");
+std::unique_ptr<labrador::SpriteSheet> sheet = labrador::read_sprite_sheet(
+    "textures/hero.json", texture, resources.texture_size(texture));
+```
+
+The declaration is in `engine/assets/sprite_sheet_loader.h`. A tool that has
+decoded an atlas without a renderer can instead pass
+`labrador::Vector2I(atlas.width, atlas.height)` from its `TextureData`.
+Device restoration reloads texture storage while retaining sheet definitions;
+a replacement atlas must still contain every retained frame and strip. This
+path does not reparse or revalidate the definitions.
+
 `TextureObject` draws one named frame from a sheet, and is designed to be **inherited alongside
 `GameObject`**, so your own class gets its drawing and keeps its own update. Its constructor
 takes the sheet name and the frame name. It has `draw(draw_list, destination_rectangle)` and
