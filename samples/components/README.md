@@ -3,7 +3,7 @@
 Small pieces a game copies into its own tree, rather than links. Each is a
 header and a source file, small enough to read in one sitting, with its tests
 beside it. The gallery shows menu rows, two animation previews and a desktop
-name field on one screen.
+name field and a keyboard binding row on one screen.
 
 | Component | Files | What it is |
 | --- | --- | --- |
@@ -11,6 +11,7 @@ name field on one screen.
 | Slider | `slider.h`, `slider.cpp` | A label, a bar and a number for an integer in a range: a volume, a sensitivity. Clamps, never wraps. A pointer's x maps to a value for dragging. |
 | Text field | `text_field.h`, `text_field.cpp` | A single-line UTF-8 value with an end caret, append/code-point backspace, transactional input batches and explicit confirm/cancel. The page owns focus and keys. |
 | Pointer capture | `pointer_capture.h`, `pointer_capture.cpp` | One contact at a time, from the mouse or one finger, followed from press to release or cancellation, and a hit test over a page's targets. |
+| Binding capture row | `binding_row.h`, `binding_row.cpp` | A label/value row that emits one physical-key candidate from page-supplied snapshots, waits for held keys to release and cancels on lost keyboard focus. |
 | Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 | Animation preview | `animation_preview.h`, `animation_preview.cpp` | Game-owned elapsed time, looping, one-shot completion and restart over a named animation strip. Drawing reads the current frame without advancing it. |
 
@@ -33,9 +34,9 @@ beside the native test executable or embeds it in the Node module. Native-null
 cases also record what the nine-slice, the bar, the slider and the previews
 draw, and load the actual manifest's sprite-sheet entry, without creating a
 window or graphics/audio API device.
-When both native render and audio backends are null, two gallery integration
-cases use a hidden window and synthetic input: one checks the real overlay
-and R restart binding, the other the pointer rules. They run no Application
+When both native render and audio backends are null, gallery integration
+cases use a hidden window and synthetic input for the real overlay,
+shortcuts, pointer rules, text editing and rebinding. They run no Application
 loop or API device.
 The text field's portable cases use a small in-memory font with ASCII, a
 two-byte accent and a three-byte punctuation glyph. Native-null recording
@@ -58,12 +59,14 @@ game's styling taken out.
 
 ## How a page uses them
 
-A component does not read input. Which keys mean left is a binding, and
+A component does not poll input. Which keys mean left is a binding, and
 bindings belong to the page. For menu rows, a page:
 
 - adds each row to a `FocusGroup`, which treats it as one target because an
   option row or slider is a `UiContainer`;
-- moves the cursor with up and down through `FocusGroup::move`;
+- moves the cursor with up and down through the page's row order, using
+  `FocusGroup::set_focused`; the bottom Binding and Name rows share a vertical
+  band in separate columns, so this gallery chooses reading order explicitly;
 - sends left and right to whichever component is focused, through its
   `adjust()`. The gallery finds that component by comparing pointers
   (`GalleryState::adjust_focused`), because the page built every row and
@@ -160,6 +163,40 @@ values, steps them once in `update()` and draws them through the scene's const
 view overlay, which already has the fitted camera and viewport. They take no
 focus and do not change the settings row order.
 
+## Capturing a keyboard binding
+
+The gallery owns two keyboard actions in `gallery_bindings.h/.cpp`:
+restart the animation previews (default token `r`) and reset the example
+difficulty (default `d`). It accepts letters and number-row positions only;
+menu navigation, confirmation, cancellation, reset and every other key stay
+protected. A duplicate is refused without moving either binding. The gamepad
+X restart and ordinary menu/quit controls keep their fixed meanings.
+
+`BindingRow` receives current/previous `KeyboardState` values from the page.
+It does not poll a keyboard or choose any action, allowed-key set, duplicate
+policy or saved-file format. `begin_capture()` waits for an entirely released
+snapshot before accepting an edge, so the opener and keys already held cannot
+become the new binding. Several new edges in one snapshot are ambiguous and
+produce no candidate; every candidate or refusal waits for release again.
+The row stays in capture until the page accepts or cancels it, and loses
+capture when the supplied keyboard snapshot loses focus.
+
+The page validates candidates through `GalleryBindings::try_bind`, updates
+the displayed value only after acceptance, and gives each refusal a status
+message. Escape or pad B cancels instead of quitting while capture owns input;
+clicking another row cancels before choosing it. A capture-exit tick drops
+pending pointer completion and action dispatch, so the key that commits a
+binding does not also run it or reopen capture. Name editing owns its input
+separately and suppresses the rebound actions while text is being edited.
+
+`tokens()` and `load_tokens()` use the existing exact `key_name`/
+`key_from_name` identities. Loading validates the complete pair before
+changing anything; a valid pair may swap its two distinct keys. These tokens
+are the displayed fallback here, not a claim about the active keyboard
+layout. The example saves nothing. A game copies the row and edits the
+two-action table and protected-key policy to suit its own screen; none of
+these are an engine action map or a controller-rebinding framework.
+
 ## Playing an animation strip
 
 Resolve a paired sheet/strip handle with
@@ -229,8 +266,13 @@ ctest --preset x64-debug -R "^ComponentsTests$"
 | Typed text / new Backspace press while editing | Append / remove one end code point |
 | Enter/A while editing | Save the accepted draft |
 | Escape/B while editing | Cancel and retain the committed value |
-| R or gamepad X outside editing | Restart both animation previews |
-| Escape or gamepad B outside editing | Quit |
+| Left/Right on Rebind key | Choose Restart or Reset difficulty |
+| Enter, Space, gamepad A or click/tap on Rebind key | Capture a new keyboard position after all held keys release |
+| Escape/B during capture | Cancel without changing the binding table |
+| Backspace on the idle Rebind key row | Restore R/D defaults |
+| Assigned Restart key (default R) or gamepad X outside editing/capture | Restart both animation previews |
+| Assigned Reset difficulty key (default D) outside editing/capture | Set the difficulty example to Normal |
+| Escape or gamepad B outside editing/capture | Quit |
 
 The Window row offers **Windowed** and **Full screen**, the two modes
 Application can request. On Windows, full screen is already borderless; it is
@@ -284,6 +326,13 @@ touch is not a touchscreen: a real phone's tap is an open check.
 canvas key/focus events, including save/cancel, missing-glyph and length refusal,
 outside presses and focus loss. The [2026-11-17 desktop record](../../docs/verification/desktop-text-field/2026-11-17/README.md)
 retains native/browser appearance images, commands and font/input limits.
+
+`ComponentsRebindingPageTests` checks capture through real canvas keyboard and
+pointer events: held opener, duplicate/protected refusal, valid rebinding,
+cancel/reset, actual canvas blur, and Name's ownership of letters. The native
+null gallery cases use synthetic keys and a hidden real window, with no device
+or Application loop. Neither route claims a physical keyboard-layout check,
+gamepad capture, touchscreen acceptance or saved settings.
 
 ## What a component is not
 

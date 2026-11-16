@@ -127,6 +127,11 @@ its heading here.
 
 ## Unreleased
 
+- The components sample now includes a copyable keyboard capture row and a
+  game-owned two-action table. The gallery refuses duplicate or protected
+  keys, waits for held keys to release, supports cancel/reset and uses stable
+  key tokens for data; the new rebinding guide shows the page-owned policy.
+
 ### 2026-11-17 - Report defined native process memory and startup endpoints
 
 **Additive timing API and optional reports.** `FrameTimings::first_completed_frame_utc`

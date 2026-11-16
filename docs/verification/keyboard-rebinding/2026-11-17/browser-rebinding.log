@@ -1,0 +1,30 @@
+Components: Window mode applies; difficulty and volume sliders are examples.
+Components: Binding capture: release held keys; Esc/B cancels.
+Components: Binding capture cancelled.
+Components: Binding capture: release held keys; Esc/B cancels.
+Components: Binding rejected: duplicate d; choose another key.
+Components: Binding rejected: protected key; use a letter or number.
+Components: Binding saved: restart_previews=t
+ok - held opener, duplicate and protected keys preserve capture and action policy
+Components: Both animation previews restarted.
+Components: Binding action: reset_difficulty
+Components: Binding capture: release held keys; Esc/B cancels.
+Components: Binding capture cancelled.
+Components: Bindings reset: restart_previews=r, reset_difficulty=d.
+Components: Both animation previews restarted.
+ok - valid rebinding, cancellation and reset keep the original quit route
+Components: Binding capture: release held keys; Esc/B cancels.
+Components: Binding capture cancelled: focus lost.
+Components: Name editing: Player
+Components: Name editing: Playerr
+Components: Name editing: Playerrd
+Components: Name kept: Player
+Components: Binding capture: release held keys; Esc/B cancels.
+Components: Binding capture cancelled.
+ok - canvas focus loss cancels and Name editing owns the rebound action keys
+Components: Binding capture: release held keys; Esc/B cancels.
+Components: Binding capture cancelled: another row.
+Components: Difficulty is now Hard
+ok - changing rows cancels capture and original pointer navigation/quit still work
+run_page: browser: Chrome/157.0.8103.78 (DevTools 1.3, revision @4b3d0dabb8250b6f152d2d85d79e7706e309d087)
+run_page: WebGL2 renderer: ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)
