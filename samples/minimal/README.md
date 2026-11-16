@@ -41,6 +41,15 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** Optional native smoke-process reporting is enabled by
+  `-DLABRADOR_SAMPLE_PROCESS_OBSERVATIONS=ON`, off by default. Its copied
+  `native_process_report.h` reports the Application's first published UTC
+  endpoint and Windows memory counters before Application destruction.
+  Copies may take the optional target definitions and helper; ordinary
+  builds retain the same startup, output and dependencies. The
+  [procedure](../../docs/performance/native-process-observations.md) defines
+  the measurements and their limits.
+
 - **2026-11-17.** The optional
   [Release-symbols recipe](https://labradorengine.com/docs/guides/release-symbols/)
   adds full native MSVC Release PDBs without changing optimization, runtime

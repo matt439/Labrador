@@ -2,6 +2,7 @@
 
 #include "engine/app/window_display_info.h"
 #include "engine/render/renderer.h"
+#include "tools/native_process_observation.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -29,6 +30,7 @@ namespace linesweeper_frame_bench
 		int sample = 3600;
 		int refresh = 60;
 		PacingMode pacing = PacingMode::software;
+		bool process_observations = false;
 	};
 
 	struct FrameSample
@@ -52,6 +54,8 @@ namespace linesweeper_frame_bench
 		std::string measurement_class;
 		std::string started_utc;
 		std::string finished_utc;
+		std::string source_revision = "unknown";
+		native_process_observation::Observation process_observations;
 	};
 
 	Options parse_options(int argc, wchar_t* argv[]);

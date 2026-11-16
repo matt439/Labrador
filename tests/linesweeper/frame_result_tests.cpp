@@ -84,6 +84,15 @@ TEST_SUITE("LineSweeper frame result")
 		CHECK(options.sample == 345);
 		CHECK(options.refresh == 60);
 		CHECK(options.pacing == PacingMode::software);
+		CHECK_FALSE(options.process_observations);
+		values.push_back(L"--process-observations");
+		values.push_back(L"on");
+		argv = arguments(values);
+		CHECK(parse_options(static_cast<int>(argv.size()), argv.data()).process_observations);
+		values.back() = L"sometimes";
+		argv = arguments(values);
+		CHECK_THROWS_WITH_AS(parse_options(static_cast<int>(argv.size()), argv.data()),
+			"--process-observations must be on or off.", std::invalid_argument);
 	}
 
 	TEST_CASE("a refused run identifier names the rule it broke")
@@ -207,6 +216,9 @@ TEST_SUITE("LineSweeper frame result")
 		CHECK(document["render_device"]["requested_swap_interval"].GetInt() == 1);
 		CHECK(document["render_device"]["reported_swap_interval"].IsNull());
 		CHECK_FALSE(document.HasMember("device"));
+		CHECK_FALSE(document["process_observations"]["requested"].GetBool());
+		CHECK(document["process_observations"]["peak_working_set_bytes"].IsNull());
+		CHECK(document["build"]["source_revision"].GetString() == std::string("unknown"));
 
 		result.device.backend = "gl";
 		result.device.present_mode = "wgl_swap_interval";
@@ -215,6 +227,41 @@ TEST_SUITE("LineSweeper frame result")
 		document.Parse(gl_json.c_str());
 		REQUIRE_FALSE(document.HasParseError());
 		CHECK(document["render_device"]["reported_swap_interval"].GetInt() == 0);
+	}
+
+	TEST_CASE("process observations preserve independent memory endpoints and failed startup")
+	{
+		Options options;
+		options.process_observations = true;
+		Result result;
+		result.samples.push_back(FrameSample{ 1, 2, 3, 4, 10, 16, 6, 2 });
+		result.source_revision = "fixture-dirty";
+		result.process_observations.requested = true;
+		result.process_observations.memory_status = "observed";
+		result.process_observations.memory_endpoint = "after_loop_before_destruction";
+		result.process_observations.peak_working_set_bytes = 8000;
+		result.process_observations.private_bytes_at_exit_endpoint = 6000;
+		result.process_observations.process_creation_utc_100ns = 100;
+		result.process_observations.first_completed_frame_utc_100ns = 125;
+		native_process_observation::resolve_startup(result.process_observations);
+		rapidjson::Document document;
+		document.Parse(result_json(options, result).c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		CHECK(document["process_observations"]["peak_working_set_bytes"].GetUint64() == 8000);
+		CHECK(document["process_observations"]["private_bytes_at_exit_endpoint"].GetUint64() == 6000);
+		CHECK(document["process_observations"]["process_start_to_first_completed_frame_100ns"].GetUint64() == 25);
+		CHECK(document["build"]["source_revision"].GetString() == std::string("fixture-dirty"));
+		result.process_observations.first_completed_frame_utc_100ns.reset();
+		result.process_observations.memory_status = "GetProcessMemoryInfo_failed";
+		result.process_observations.peak_working_set_bytes.reset();
+		result.process_observations.private_bytes_at_exit_endpoint.reset();
+		result.process_observations.memory_error = 5;
+		native_process_observation::resolve_startup(result.process_observations);
+		document.Parse(result_json(options, result).c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		CHECK(document["process_observations"]["process_start_to_first_completed_frame_100ns"].IsNull());
+		CHECK(document["process_observations"]["private_bytes_at_exit_endpoint"].IsNull());
+		CHECK(document["process_observations"]["memory_error"].GetUint() == 5);
 	}
 
 	TEST_CASE("atomic publication refuses to overwrite evidence")

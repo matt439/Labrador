@@ -636,6 +636,39 @@ def _window_display_context(observations: list[dict[str, Any]]) -> dict[str, Any
         "different_snapshot_repetitions": sorted(different),
     }}
 
+def _process_observation_metadata(result: dict[str, Any]) -> dict[str, Any] | None:
+    """Retain optional process reports without pooling them or changing pacing verdicts."""
+    observation = result.get("process_observations")
+    if observation is None:
+        return None
+    if not isinstance(observation, dict) or not isinstance(observation.get("requested"), bool):
+        raise TypeError("process observation must be an object with a requested boolean")
+    fields = ("peak_working_set_bytes", "private_bytes_at_exit_endpoint",
+              "memory_sample_utc_100ns", "process_creation_utc_100ns",
+              "first_completed_frame_utc_100ns", "process_start_to_first_completed_frame_100ns")
+    for field in fields:
+        value = observation.get(field)
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int)
+                                  or not 0 <= value <= 2**64 - 1):
+            raise ValueError(f"process observation {field} must be an unsigned integer or null")
+    for field in ("memory_status", "startup_status"):
+        if not isinstance(observation.get(field), str) or not observation[field]:
+            raise ValueError(f"process observation {field} is missing")
+    if not observation["requested"] and any(observation.get(field) is not None for field in fields):
+        raise ValueError("unrequested process observations must not contain measured values")
+    if observation["memory_status"] == "observed" and any(
+            observation.get(field) is None for field in fields[:2]):
+        raise ValueError("observed process memory requires both defined counters")
+    elapsed = observation.get("process_start_to_first_completed_frame_100ns")
+    if observation["startup_status"] == "observed":
+        created = observation.get("process_creation_utc_100ns")
+        completed = observation.get("first_completed_frame_utc_100ns")
+        if created is None or completed is None or elapsed is None or completed - created != elapsed:
+            raise ValueError("observed process startup endpoints disagree")
+    elif elapsed is not None:
+        raise ValueError("unavailable process startup must not contain an elapsed value")
+    return observation
+
 
 def _observation(repetition: int, source: str, result: dict[str, Any],
                  phases: dict[str, list[int]], target_frame_ns: int,
@@ -648,6 +681,9 @@ def _observation(repetition: int, source: str, result: dict[str, Any],
         "sample_count": len(phases["whole_frame_ns"]),
         "render_device": result["render_device"],
         **({"window_display": result["window_display"]} if "window_display" in result else {}),
+
+        "build": result["build"],
+        "process_observations": _process_observation_metadata(result),
         "pacing_measurement": "recorded" if recorded[0] else "unrecorded_legacy",
         "presentation_measurement": "recorded" if recorded[1] else "unrecorded_legacy",
         "timing": {key: value for key, value in result["timing"].items()

@@ -1,0 +1,247 @@
+{
+  "receipt": {
+    "process_exit_code": 0,
+    "launcher_creation_utc_100ns": 134393281510084074,
+    "creation_matches": true,
+    "minimal_sha256": "7c0006ee03c1f8263b8ccb506f12bbd8569d276b70bb70f77a08582c7d99321e",
+    "source_base": "5cff44b9c6da777479229832abb40bfc0fc6e65c",
+    "os": "Microsoft Windows NT 10.0.26300.0",
+    "context": "loaded desktop; bounded instrumentation collection; no performance verdict",
+    "compiler": "MSVC 19.51.36231 x64",
+    "compile_flags": "/O2 /Ob2 /DNDEBUG -std:c++20 -MD /W4 /WX /permissive- /sdl /utf-8 /fp:precise; no /GL in this measured base",
+    "sample_process_observations": "ON",
+    "cpu": "AMD Ryzen 9 9950X3D; 16 cores / 32 logical processors; no affinity hold",
+    "gpu_driver_windows": "32.0.16.1692",
+    "controller_reported_display_mode": "2560x1440, 59 integer Hz from Win32_VideoController; not a window-specific mode or pacing measurement",
+    "minimal_arguments": [
+      "--smoke-test"
+    ],
+    "benchmark_arguments": [
+      "--output",
+      "out/observations/bench-final.json",
+      "--run",
+      "sm87-d3d11-endpoints-20261117-final",
+      "--release-hash",
+      "49a9ce44ae569f56c00c0e6d216c056e82ca57cc0f713757d73d8df277e53a4b",
+      "--warmup",
+      "1",
+      "--sample",
+      "1",
+      "--pacing",
+      "presentation",
+      "--process-observations",
+      "on"
+    ],
+    "source_lf_sha256": {
+      "tools/native_process_observation.h": "665a521cfdd9ff83261f7a292dec791598e61b735bacd0f176b48345dc907efb",
+      "samples/minimal/native_process_report.h": "19a7b61dade4f0c7ebdf01a7fea77b85d24fee809cdab69c987d4532dd0cc522",
+      "samples/minimal/main.cpp": "18b670ab5d373d819f2dc7de54bba2855d4eee0cffc2fb04b7a37bb9bd1ad652",
+      "samples/minimal/CMakeLists.txt": "5a2198ba47d2a7754aa19ea5afe064a82d3ceb88bc51508de563b32d27931d66",
+      "engine/app/application.cpp": "392e8a987a4250280201b3928322c2cd2ead79ba7cf22a742878c4f53c2f725a",
+      "engine/app/application.h": "de98ac5184dd7b1b7923bddcc3d233851dbf8f95c79942a7f1e4bca5599f1b30",
+      "engine/app/frame_timer.cpp": "ed1bae0830a2a24f3a77ed74e485a7b60c627430071e6b137ad59dfd0caf994b",
+      "engine/app/frame_timer.h": "d0f82c0e4485c0380a26e7a595c8b61934257d615920cfc5ad8eceda208282db",
+      "bench/CMakeLists.txt": "c725417e811978f71524cee77e33fde834335970af1e096a7c56f92663467c01",
+      "bench/linesweeper_frame_bench.cpp": "502c681c12a3933934e45e87509bf6de7da7ff8dad3ab3f70bad6cf1abd219a1",
+      "bench/linesweeper_frame_result.cpp": "e5a284471faa7de51744fcf056d58248466b0f58b338c1bf258265b1d1f0bf0c",
+      "bench/linesweeper_frame_result.h": "c6e2eb9e31dc85c47d0c999aca423df9cd44bb41f90ab3d32a0dc1806118b3fa"
+    },
+    "notes": [
+      "Base 5cff44b9 plus the SM-87 code whose LF-normalized hashes are recorded; later integration/IPO/display-metadata changes are not qualified by these figures.",
+      "Final normal hidden smoke, missing-manifest startup failure (restored immediately), and two-frame shown benchmark followed synthetic/compatibility fixes. Earlier local collection rehearsals were not used as a performance baseline.",
+      "Process creation in normal smoke exactly matched the independently launched Process.StartTime converted to FILETIME.",
+      "Private commit and resident working-set peak are different counters at the named live-process endpoints; not a leak or GPU-memory verdict."
+    ]
+  },
+  "minimal_smoke": {
+    "scope": "minimal_smoke_process_observation",
+    "status": "run_returned",
+    "source_revision": "5cff44b9c6da777479229832abb40bfc0fc6e65c-dirty",
+    "configuration": "release",
+    "completed_frames": 30,
+    "render_backend": "d3d11",
+    "device_name": "NVIDIA GeForce RTX 5080",
+    "device_api": "Direct3D 11",
+    "process_observations": {
+      "requested": true,
+      "memory_status": "observed",
+      "startup_status": "observed",
+      "memory_endpoint": "after_application_run_before_application_destruction_and_report_assembly",
+      "peak_working_set_bytes": 49741824,
+      "private_bytes_at_exit_endpoint": 63832064,
+      "memory_sample_utc_100ns": 134393281516281724,
+      "process_creation_utc_100ns": 134393281510084074,
+      "first_completed_frame_utc_100ns": 134393281511816575,
+      "process_start_to_first_completed_frame_100ns": 1732501,
+      "memory_error": 0,
+      "process_times_error": 0,
+      "process_id": 53984,
+      "startup_clock": "UTC wall clock; subject to clock adjustment",
+      "startup_origin": "GetProcessTimes process creation, not entry point",
+      "frame_endpoint": "after first successful end_frame, retained only for an accepted frame; not scan-out"
+    }
+  },
+  "benchmark": {
+    "schema_version": 1,
+    "scope": "linesweeper_frame_benchmark",
+    "status": "complete",
+    "run": "sm87-d3d11-endpoints-20261117-final",
+    "release_sha256": "49a9ce44ae569f56c00c0e6d216c056e82ca57cc0f713757d73d8df277e53a4b",
+    "started_utc": "2026-11-16T18:42:32Z",
+    "finished_utc": "2026-11-16T18:42:32Z",
+    "build": {
+      "configuration": "release",
+      "render_backend": "d3d11",
+      "source_revision": "5cff44b9c6da777479229832abb40bfc0fc6e65c-dirty"
+    },
+    "process_observations": {
+      "requested": true,
+      "memory_status": "observed",
+      "startup_status": "observed",
+      "memory_endpoint": "after_frame_loop_before_benchmark_destruction_and_result_assembly",
+      "peak_working_set_bytes": 48857088,
+      "private_bytes_at_exit_endpoint": 65830912,
+      "memory_sample_utc_100ns": 134393281522498565,
+      "process_creation_utc_100ns": 134393281520825190,
+      "first_completed_frame_utc_100ns": 134393281522347824,
+      "process_start_to_first_completed_frame_100ns": 1522634,
+      "memory_error": 0,
+      "process_times_error": 0,
+      "process_id": 6548,
+      "startup_clock": "UTC wall clock; subject to clock adjustment",
+      "startup_origin": "GetProcessTimes process creation, not entry point",
+      "frame_endpoint": "after first successful end_frame, retained only for an accepted frame; not scan-out"
+    },
+    "measurement_class": "hardware_raster",
+    "render_device": {
+      "device_name": "NVIDIA GeForce RTX 5080",
+      "vendor_id": 4318,
+      "device_id": 11266,
+      "kind": "hardware",
+      "api": "Direct3D 11",
+      "present_mode": "dxgi_sync_interval",
+      "requested_swap_interval": 1,
+      "reported_swap_interval": null
+    },
+    "workload": {
+      "name": "full_well_top_out",
+      "resolution": {
+        "width": 1280,
+        "height": 720
+      },
+      "refresh_hz": 60,
+      "warmup_frames": 1,
+      "sample_frames": 1,
+      "live_particles": 9600,
+      "target_frame_ns": 16666667,
+      "frame_order": [
+        "BoardView",
+        "ParticleField",
+        "TopOutBanner",
+        "keyboard Label",
+        "pad Label"
+      ]
+    },
+    "timing": {
+      "clock": "std::chrono::steady_clock",
+      "unit": "nanoseconds",
+      "summary_method": "nearest-rank",
+      "interval_scope": "presentation-driven frame-start interval; not display scan-out",
+      "pacer": "presentation_driven",
+      "deadline_policy": "none",
+      "sample_count": 1,
+      "scheduled_interval_ns": [
+        3203500
+      ]
+    },
+    "samples": [
+      {
+        "ordinal": 0,
+        "update_ns": 132400,
+        "begin_ns": 1500,
+        "record_submit_ns": 992900,
+        "present_ns": 328400,
+        "whole_frame_ns": 1455200,
+        "scheduled_interval_ns": 3203500
+      }
+    ],
+    "summary": {
+      "update_ns": {
+        "count": 1,
+        "min": 132400,
+        "p50": 132400,
+        "p95": 132400,
+        "p99": 132400,
+        "max": 132400
+      },
+      "begin_ns": {
+        "count": 1,
+        "min": 1500,
+        "p50": 1500,
+        "p95": 1500,
+        "p99": 1500,
+        "max": 1500
+      },
+      "record_submit_ns": {
+        "count": 1,
+        "min": 992900,
+        "p50": 992900,
+        "p95": 992900,
+        "p99": 992900,
+        "max": 992900
+      },
+      "present_ns": {
+        "count": 1,
+        "min": 328400,
+        "p50": 328400,
+        "p95": 328400,
+        "p99": 328400,
+        "max": 328400
+      },
+      "whole_frame_ns": {
+        "count": 1,
+        "min": 1455200,
+        "p50": 1455200,
+        "p95": 1455200,
+        "p99": 1455200,
+        "max": 1455200
+      },
+      "scheduled_interval_ns": {
+        "count": 1,
+        "min": 3203500,
+        "p50": 3203500,
+        "p95": 3203500,
+        "p99": 3203500,
+        "max": 3203500
+      }
+    }
+  },
+  "minimal_missing_manifest": {
+    "scope": "minimal_smoke_process_observation",
+    "status": "startup_or_run_failed",
+    "source_revision": "5cff44b9c6da777479229832abb40bfc0fc6e65c-dirty",
+    "configuration": "release",
+    "completed_frames": 0,
+    "render_backend": null,
+    "device_name": null,
+    "device_api": null,
+    "process_observations": {
+      "requested": true,
+      "memory_status": "observed",
+      "startup_status": "first_completed_frame_unavailable",
+      "memory_endpoint": "exception_unwind_before_application_destruction_and_report_assembly",
+      "peak_working_set_bytes": 45150208,
+      "private_bytes_at_exit_endpoint": 60727296,
+      "memory_sample_utc_100ns": 134393281519486863,
+      "process_creation_utc_100ns": 134393281517757926,
+      "first_completed_frame_utc_100ns": null,
+      "process_start_to_first_completed_frame_100ns": null,
+      "memory_error": 0,
+      "process_times_error": 0,
+      "process_id": 43388,
+      "startup_clock": "UTC wall clock; subject to clock adjustment",
+      "startup_origin": "GetProcessTimes process creation, not entry point",
+      "frame_endpoint": "after first successful end_frame, retained only for an accepted frame; not scan-out"
+    }
+  }
+}

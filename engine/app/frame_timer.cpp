@@ -33,6 +33,8 @@ namespace labrador
 		frame.draw_time = marks.drawn - marks.frame_begun;
 		frame.submit_time = marks.submitted - marks.drawn;
 		frame.end_frame_time = marks.frame_ended - marks.submitted;
+		frame.first_completed_frame_utc = timings.frame == 0 ?
+			marks.first_completed_frame_utc : timings.first_completed_frame_utc;
 
 		// A start a discontinuity arrived after is no baseline: the time
 		// between it and the next tick holds whatever was not the game's.

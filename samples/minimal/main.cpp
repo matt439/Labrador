@@ -11,6 +11,10 @@
 #include "engine/core/state.h"
 #include "samples/minimal/states/hello_state.h"
 
+#if defined(LABRADOR_SAMPLE_PROCESS_OBSERVATIONS)
+#include "samples/minimal/native_process_report.h"
+#endif
+
 #include <Windows.h>
 
 #include <cstddef>
@@ -123,6 +127,10 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		options.view_capacity = 1;
 
 		Application app(std::move(options));
+#if defined(LABRADOR_SAMPLE_PROCESS_OBSERVATIONS)
+		minimal_observation::ProcessReport process_report(&app, smoke_test,
+			LABRADOR_OBSERVATION_SOURCE_REVISION);
+#endif
 		app.initialize();
 
 		// Everything this sample draws, named in content/manifest.json. A game

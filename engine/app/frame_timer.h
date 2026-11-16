@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <optional>
 
 namespace labrador
 {
@@ -17,6 +18,9 @@ namespace labrador
 		std::chrono::steady_clock::time_point drawn;
 		std::chrono::steady_clock::time_point submitted;
 		std::chrono::steady_clock::time_point frame_ended;
+		// An optional UTC endpoint supplied after the first end_frame. Only
+		// the first publication can retain it; later marks cannot replace it.
+		std::optional<std::chrono::system_clock::time_point> first_completed_frame_utc = std::nullopt;
 	};
 
 	// Turns the time points Application takes in tick() and render() into the
