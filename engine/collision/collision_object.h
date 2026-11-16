@@ -24,9 +24,10 @@ namespace labrador
 	public:
 		~CollisionObject() override = default;
 
-		// The geometry collision measures. The broad phase and the bounding-box
-		// filter both index this shape's bounding_box(); collision never reads
-		// GameObject::bounds(). Never null.
+		// One Shape per collision object. The broad phase and bounding-box
+		// filter index its bounding_box(); collision never reads GameObject::bounds().
+		// The returned pointer is borrowed, never null, and its geometry must
+		// remain valid for the collision queries using it.
 		virtual const Shape* shape() const = 0;
 
 		// Throws std::invalid_argument when shape() is null, has no supported

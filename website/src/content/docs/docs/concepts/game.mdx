@@ -63,6 +63,13 @@ with as deep a class hierarchy as its author likes, or one object that stands fo
 values updated in a tight loop. The engine treats both the same: interface granularity is the
 dial you turn for performance.
 
+That batching choice applies to ordinary values updated and drawn by a
+`GameObject`. Each `CollisionObject` supplies **one `Shape`**. For the scene to
+sweep independent geometry, register a separate collision object for each
+shape. A container of rectangles inside one game object is not automatically
+registered for collision, and Scene has no compound or batched-collider
+registration API.
+
 LineSweeper turns it both ways in the same scene. Its board, its particle field and its game-over
 banner are one object each, and the particle field is ten thousand particles in one flat array,
 which costs three virtual calls a frame however many are alive. Beside them are two ordinary
@@ -91,9 +98,18 @@ says which side owns what:
 - **The scene owns what you add to it.** [`Scene::add`](/docs/reference/scene/scene/#add) takes a
   `std::unique_ptr` and returns a plain pointer of the object's own type, for the things your
   game still needs to speak to. The minimal sample keeps the greeting this way, to move it each
-  frame.
+  frame. The pointer is a loan, valid while pending and after admission until
+  that particular object is removed, retired or destroyed with the scene.
+  Keeping it, including in a callback, does not extend the object's lifetime.
+  Independently registered colliders transfer ownership this same way; there
+  is no borrowed-registration overload for elements in another owner's vector.
 - **States are owned by the stack.** You construct one with `std::make_unique` and hand it over;
   the stack destroys it when it pops or is replaced.
+
+The `Scene::collision_objects()` span is also borrowed: the next `end_tick`
+rebuilds it. Copied object pointers retain only their individual loans above.
+Contacts have a shorter inspection window: their span and copied participant
+pointers expire at the next `resolve`, `end_tick` or scene destruction.
 
 This is not a promise that Labrador avoids the heap or virtual calls. The interfaces above are
 virtual, and containers own heap memory. The rule is about ownership, not about allocation.

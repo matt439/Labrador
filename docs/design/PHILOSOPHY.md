@@ -486,14 +486,20 @@ stranger's — would need to edit it, it is game code.
   for thousands of values updated in a tight loop. A paint-tile grid is
   one `GameObject`, not ten thousand. Interface granularity is the user's
   performance dial.
+- A registered `CollisionObject` supplies one `Shape`. A `GameObject` may
+  batch ordinary values for updating and drawing; independently swept
+  geometry uses separately registered collision objects. The scene does not
+  discover shapes inside another object's container or offer a compound
+  collision registration.
 - The engine's own internals, and everything it ships — the sample game
   in `samples/`, the tutorials — are value-first (T11): concrete types,
   contiguous storage, interfaces implemented at batch granularity where N
   is large. The paint-shooter is a client rather than shipped code and is
   bound by none of it; see T11's "Not a licence for".
 - There is no garbage collector and no ambient object graph. Ownership is
-  explicit and lexical (T11); whether the scene owns a registered object
-  or borrows it is stated in the API, never assumed.
+  explicit and lexical (T11). `Scene::add` takes unique ownership of each
+  registered object. Returned pointers borrow it until removal, retirement
+  or scene destruction; keeping a pointer does not retain the object.
 - No reflection. With one language (T10) and no editor, there is nothing
   for it to serve; spawning from data goes through the factory registry
   (see Content and assets).

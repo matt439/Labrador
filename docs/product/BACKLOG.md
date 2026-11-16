@@ -1414,7 +1414,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
 - [x] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
 - [x] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
-- [ ] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
+- [x] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
 - [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
 - [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
 - [ ] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
@@ -2456,6 +2456,13 @@ Selected from [`REV#80`](../review/2026-11-10/FINDINGS.md#rev80).
 **Boundaries and verification:** no new collision batching or benchmark run.
 Check the wording against current signatures and sample use, update quoting
 reference pages in the same change, and run local lint and the website gate.
+
+**Documented, 2026-11-17:** the design, public collision/scene contracts,
+game concept and collision guide state the one-shape registration boundary,
+Scene ownership and the distinct span, object-pointer and contact lifetimes.
+The generated reference pages publish the clarified header comments.
+The existing churn benchmark and its historical 712–871 ns/object record
+are retained; this clarification adds no API or benchmark run.
 
 <a id="oca-100"></a>
 ### OCA-100. Name and translate the ISO extra keyboard key
