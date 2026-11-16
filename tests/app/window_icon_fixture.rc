@@ -1,0 +1,3 @@
+// A one-pixel file-format fixture, not a game's branding.
+WINDOW_TEST_ICON ICON WINDOW_ICON_FIXTURE_FILE
+IDI_ICON ICON WINDOW_ICON_FIXTURE_FILE

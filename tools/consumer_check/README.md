@@ -312,6 +312,18 @@ is in. `assemble.py`'s folder must be new or empty; delete it to assemble
 again. `tar` overwrites the files of a `C:\dev\mygame` that is there already
 but deletes none, so delete the folder before extracting a ZIP again.
 
+**Optional native icon.** After the default release and rename checks, the
+existing `consumer` job copies the test-only one-pixel ICO into its assembled
+copy with `icon_fixture.py`. It configures Release with `GAME_ICON_FILE` and
+`CMAKE_EXPORT_COMPILE_COMMANDS=ON`, verifies that the native entry actually has
+`GAME_HAS_ICON_RESOURCE`, and builds through the normal native retry wrapper.
+The install goes to a separate folder: `check_release.py --icon-resource
+GAME_ICON` checks its unchanged file list and DPI manifest plus the named
+RT_GROUP_ICON and referenced RT_ICON data. Its installed `--smoke-test`
+then exercises the real runtime lookup. No new ctest entry or shipped icon
+artwork is added; the default starter keeps an empty icon choice. These
+checks do not qualify Explorer/taskbar appearance or physical scaling.
+
 **Scripted pad input.** After those baseline checks (and, natively, the rename/release checks), the
 existing `consumer` and `wasm-consumer` jobs opt their assembled copy into
 `scripted_pad_fixture.py`. Its one `ScriptedPadConsumerTests` target links the

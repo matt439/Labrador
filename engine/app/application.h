@@ -115,6 +115,11 @@ namespace labrador
 		// must have no other reader while this application is initialized.
 		ScriptedGamepadSource* scripted_gamepad_source = nullptr;
 
+		// Explicit optional icon in the process executable. Same lookup,
+		// ownership and failure contract as WindowOptions::window_icon_resource;
+		// a browser ignores it and leaves the host's favicon alone.
+		std::optional<std::wstring> window_icon_resource = std::nullopt;
+
 		// Throws std::invalid_argument naming the field, rather than letting
 		// a bad number reach the code that divides by it. Application calls
 		// this before it opens a window. max_threads and target_fps are
@@ -205,6 +210,8 @@ namespace labrador
 		// Creates the window, device and services. A native window stays hidden
 		// until run() completes its first frame; visible=false keeps it hidden.
 		// Throws std::runtime_error naming the step that failed (T6).
+		// Native construction throws std::invalid_argument for a NUL title
+		// or an empty/NUL explicit icon name, before registering the window.
 		void initialize();
 
 		// Loads everything the manifest names. Register any game-specific kinds
@@ -292,6 +299,13 @@ namespace labrador
 		// with Escape, and a page in a frame may refuse - and this follows
 		// what it decided, so an options menu reading it shows the truth.
 		bool fullscreen() const;
+
+		// Updates the native caption through Window::set_title, on the application
+		// thread. Before initialize(), keeps the title for the window's startup.
+		// Native startup validates that deferred text when it creates the window.
+		// The requested option changes only after a live window accepts the call.
+		// Browser pages keep their own title; calling this does not change it.
+		void set_window_title(const std::wstring& title);
 
 		// Whether the pointer is drawn over the window. A game played with a
 		// pad hides it; the mouse is still read, so a hidden pointer still

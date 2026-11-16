@@ -54,6 +54,14 @@ EM_JS(void, web_window_test_queue_other_activation, (), {
 	JSEvents.deferCall(() => { ++Module.labradorOtherActivationCalls; }, 1, []);
 });
 
+EM_JS(void, web_window_test_remember_host_metadata, (), {
+	Module.labradorWindowHostMetadata = {
+		title: document.title,
+		icons: Array.from(document.querySelectorAll('link[rel~="icon"]'),
+			(node) => node.outerHTML),
+	};
+});
+
 namespace
 {
 	const char* button_name(labrador::MouseButton button)
@@ -246,6 +254,8 @@ namespace
 	labrador::WindowOptions window_options()
 	{
 		labrador::WindowOptions options;
+		options.window_title = L"Native option must not replace the host title";
+		options.window_icon_resource = L"MISSING_NATIVE_ICON_IGNORED_BY_BROWSER";
 		// Smaller than the box the page gives the canvas, so the first report
 		// is visibly the measured box rather than the size asked for.
 		options.client_size = labrador::Vector2I(320, 200);
@@ -284,6 +294,15 @@ extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_reopen()
 	window->pump_until_quit();
 }
 
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_set_title()
+{
+	if (window)
+	{
+		window->set_title(L"Native runtime title must not replace the host title");
+		window->set_title(std::wstring(L"ignored\0suffix", 14));
+	}
+}
+
 // Closes the window from the page, as a game's quit would, so that the input
 // script can show that nothing reaches the owner afterwards.
 extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_close()
@@ -306,6 +325,7 @@ int main()
 {
 	try
 	{
+		web_window_test_remember_host_metadata();
 		window = std::make_unique<labrador::Window>(window_options(), &recorder);
 		const labrador::WindowDisplayInfo display = window->display_info();
 		if (!display.monitor_id.empty() || display.nominal_refresh_hz.has_value())

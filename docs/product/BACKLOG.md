@@ -2871,6 +2871,49 @@ state the limits, and the combined app matrix remains an integration gate.
 Selected from
 [`IDEA#16`](../feature-candidates.md#idea16-window-title-at-run-time-and-a-diagnosed-window-icon).
 
+**Implementation and focused verification, 2026-11-17.**
+`Window::set_title` and `Application::set_window_title` update native text;
+the app keeps pre-initialization text for startup. Native startup and runtime
+updates refuse embedded NUL, while empty captions remain valid. App/window
+options append a defaulted `window_icon_resource` without moving the prior
+aggregate fields, including the scripted pad source. Explicit executable
+resource lookup fails by name before class registration; class icons borrow
+shared LoadIconW handles, which the window does not destroy. Unset keeps the
+optional `IDI_ICON` lookup. Browser operations preserve the host title/favicon.
+
+Hidden native tests cover title readback, Unicode/empty/invalid text, unchanged
+visibility and size, explicit/default/missing icons, duplicate-class and
+later constructor-failure cleanup, shared-handle liveness and app forwarding.
+Native-null AppTests/MinimalSmokeTests and wasm GL AppTests/MinimalPageTests
+passed. The dedicated browser metadata fixture passed through the actual wasm
+constructor and setter, with an unavailable native icon and NUL text ignored.
+
+The template's opt-in `GAME_ICON_FILE` recipe embeds artwork supplied by its
+owner; no branding is supplied by default. The test-only one-pixel fixture
+proved spaced/multi-dot paths, missing-file diagnostics and installed lookup.
+An assembled Release game was configured with the opt-in flag on its actual
+native entry, built, passed both tests and installed exactly the existing
+twenty-file list. Its named icon group and referenced data passed the portable
+PE check, and its hidden installed startup exited zero from outside the source
+tree while the original ICO was unavailable. The existing consumer CI job
+automates that separate opt-in build/install/metadata/startup path; it adds no
+job or required-check name. All seven native build invocations use the existing
+retry wrapper.
+
+Compiler-free recipe checks and icon/DPI/release/rename fixtures passed.
+The website gate passed check, 200 tests, build, links and release assembly.
+Local lint passed all twelve steps, with 414 Python tests and one skip.
+The starter counts distinguish the 16-file released copy from the 17-file
+development copy, and the rename guide keeps release/history count 27 while
+checking development count 29. [Window icons](../window-icons.md) owns the
+optional build/install contract.
+
+**Remaining qualification:** the combined seven-track app sweep after the
+current app-seam batch. Explorer/taskbar appearance with user artwork and
+display scaling were not observed; these automated resource checks do not
+claim physical scaling acceptance or introduce an additional owner-DPI gate.
+The existing OCA-66 observation remains separate.
+
 **Acceptance**
 
 - A game can update its native window title through the app/window seam.
