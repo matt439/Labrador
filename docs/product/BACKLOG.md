@@ -35,6 +35,8 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-16, third batch: defer nine proposals and decline speculative easing, a tilemap/Tiled subsystem and a runtime font subsystem. The [feature candidates](../feature-candidates.md) and [engine comparison's current ledger](../survey/2026-10-27.md) retain the individual reasons and revisit triggers; existing post-processing and authored materials remain implemented. | GAP#2, GAP#3, GAP#5, GAP#7 to GAP#13; IDEA#8, IDEA#18 |
 | Decided 2026-11-16, fourth batch: select the twelve bounded stories in L106 to L117. Layout labels follow the selected rebinding example; extra weekly configurations wait for native Release qualification. Reporting and release collection are explicitly invoked, and rebuild comparison neither publishes nor replaces assets. Selection is not implementation or execution. | OCA-109 to OCA-115, SM-87 to SM-91 |
 | Decided 2026-11-16, fourth batch: retain the wide renderer text API and the existing UTF-8 conversion boundary; defer contact edges, named-frame animation, an unfocused render cap, small math helpers, texture repeat, pad identity and a shared fatal-error helper under their live owner records. | REV#56; IDEA#9, IDEA#12, IDEA#14, IDEA#19, REV#55, REV#59, REV#61 |
+| Decided 2026-11-16, fifth batch: select the eleven bounded stories in L118 to L128. Starter browser build/test automation follows OCA-79; deployment automation waits for hosting, repository-visibility and credential choices. Factual agent-use disclosure comes from the owner, account/settings work begins with current read-only state, and browser/Simulator observations retain their qualification limits. SM-96 has an independent release-preparation lane for the actual candidate. | OCA-116 to OCA-119, SRL-25, SM-92 to SM-97 |
+| Decided 2026-11-16, fifth batch: release verified batches without a fixed calendar or new per-module stability badges; retain Windows/browser scope rather than a whole-SDL window/audio port, and retain the explicit default WebGL hint. REV#156 still owns its factual wording repair. Defer the six remaining speculative or unqualified scopes under their live review records. | REV#74, REV#90, REV#156; REV#37, REV#71, REV#75, REV#77, REV#79, REV#83 |
 
 `SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
 its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
@@ -589,6 +591,27 @@ boxes stay unticked, and the earlier forty stories and their order remain
 unchanged. No collector, workflow, account query, release rebuild or publication
 runs as part of this planning selection.
 
+**Fifth decision triage amendment, 2026-11-16:** L118 to L128 follow the
+eleven selected scopes under the same ready-work rule. OCA-116 waits for
+OCA-79's starter repository proof and selects browser build/test automation,
+with deployment automation deferred until its hosting, visibility and
+credential choices are made. SM-95 waits for owner-supplied factual public
+wording rather than invented assurances or a new contributor AI policy.
+Settings changes, action updates,
+iframe regression, image metadata and Simulator work keep the bounded scopes
+below; selection starts none of their runtime, account or publication actions.
+The three retained policies and six deferrals are recorded in
+[the live review ledgers](../review/INDEX.md), with the factual WebGL wording
+follow-up still open as REV#156. All eleven story boxes remain unticked, and
+the earlier fifty-two implementation stories and their order remain unchanged.
+
+**Independent release-preparation lane:** SM-96 may prepare and qualify the
+actual selected v0.4.0 candidate without waiting for the unimplemented stories
+in L66 to L128. Its position in the list below records this selection rather
+than making those stories release prerequisites. Preserve the existing first
+six product priorities; release preparation has its own bounded evidence and
+owner-cut handoff, and does not tag or publish as part of this record.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -613,6 +636,9 @@ runs as part of this planning selection.
 - Copied typed entry, keyboard rebinding and save recovery preserve game-owned policy, stable binding tokens and existing data; best-effort key labels follow the rebinding example without changing saved identities
 - Native/canvas cursor choices and copyable touch controls have explicit page ownership, with real-device evidence separated from deterministic interaction tests; selected-device texture limits improve oversized-upload diagnostics
 - Native memory/startup and manually requested CI reports state their measurement limits, extra weekly configurations follow native Release qualification, release counters are collected only when invoked, and tag-named rebuilds compare recorded assets without publishing or replacing them
+- A verified starter can opt into documented browser build/test automation while source-repository visibility and public output remain separate choices; deployment automation waits for its hosting, visibility and credential decisions. Selected dependency alerts/action updates are qualified from current state, and a cross-origin iframe regression checks the supported embedding contract without selecting a hosting account or compression rollout
+- Existing captures supply repository/link-preview images, a generated quick reference points to exact contracts, unverified external-platform routes are labelled honestly, browser Escape behaviour is recorded, and contribution/agent-use copy reflects the bounded owner decisions
+- The actual v0.4.0 candidate has refreshed release evidence independent of newly queued stories, and an explicitly invoked iOS Simulator pilot records only its own results while the real-phone gate remains open
 
 **Lands as**
 
@@ -733,6 +759,17 @@ runs as part of this planning selection.
 115. L115 Extend weekly non-required configurations after native Release qualification: SM-89 (`REV#52`, after SM-81)
 116. L116 Record aggregate release counters only when the owner invokes collection: SM-90 (`REV#54`)
 117. L117 Compare a tag-named release rebuild without publishing assets: SM-91 (`REV#70`)
+118. L118 Offer an opt-in starter browser build/test workflow: OCA-116 (`REV#48`, after OCA-79)
+119. L119 Audit dependency alerts and qualify selected action-runtime updates: SM-92 (`REV#69`)
+120. L120 Exercise cross-origin iframe embedding as a regression: SM-93 (`REV#72`)
+121. L121 Reuse existing captures for repository and link-preview images: OCA-117 (`REV#73`)
+122. L122 Generate a curated common-task API quick reference: SRL-25 (`REV#88`)
+123. L123 State the unverified external-platform boundary: OCA-118 (`REV#89`)
+124. L124 Observe actual Escape behaviour in browser full screen: OCA-119 (`REV#93`)
+125. L125 State a bounded outside-contribution policy: SM-94 (`REV#94`)
+126. L126 Publish owner-supplied agent-use wording: SM-95 (`REV#76`, blocked on wording)
+127. L127 Refresh the actual v0.4.0 candidate's release preparation: SM-96 (`REV#149`, independent release-preparation lane)
+128. L128 Record a manually invoked iOS Simulator game pilot: SM-97 (`REV#152`)
 
 **Stories**
 
@@ -1327,6 +1364,18 @@ runs as part of this planning selection.
 - [ ] **[SM-89](#sm-89)** Could · M · The Sole Owner-Maintainer: Exercise five extra configurations weekly as non-required checks — after SM-81
 - [ ] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
 - [ ] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
+
+- [ ] **[OCA-116](#oca-116)** Could · M · The Outside Adopter: Opt into a verified starter browser build/test workflow — after OCA-79
+- [ ] **[SM-92](#sm-92)** Should · M · The Sole Owner-Maintainer: Audit current dependency alerts and qualify selected action-runtime updates
+- [ ] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
+- [ ] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
+- [ ] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
+- [ ] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
+- [ ] **[OCA-119](#oca-119)** Could · S · The Outside Adopter: Know what Escape does when the browser owns full screen
+- [ ] **[SM-94](#sm-94)** Could · XS · The Sole Owner-Maintainer: State the scope of welcome contributions without promising a response time
+- [ ] **[SM-95](#sm-95)** Could · XS · The Sole Owner-Maintainer: Publish accurate owner-supplied agent-use wording — blocked until the wording is provided
+- [ ] **[SM-96](#sm-96)** Should · M · The Sole Owner-Maintainer: Refresh preparation for the actual v0.4.0 candidate independently of queued feature stories
+- [ ] **[SM-97](#sm-97)** Could · M · The Sole Owner-Maintainer: Invoke an iOS Simulator game pilot without adding a recurring acceptance lane
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
@@ -2530,6 +2579,269 @@ creation, signing, attestation, key management or automatic scheduling.
 Offline fixtures prove match, mismatch and missing-input handling; qualify
 an explicitly requested tag rebuild separately. Update the release/rebuild
 guide and run affected tooling, lint and the website gate.
+
+The following eleven stories are the fifth decision batch selected on
+2026-11-16. Implementation and qualification remain open; OCA-116 and SM-95
+also wait for their named prerequisites. SM-96 uses the independent
+release-preparation lane above rather than waiting for the product queue.
+
+<a id="oca-116"></a>
+### OCA-116. Offer an opt-in starter browser build/test workflow
+
+Selected from [`REV#48`](../review/2026-11-10/FINDINGS.md#rev48), after OCA-79.
+
+**Prerequisite:** OCA-79's current-release starter repository has completed its
+first-push/CI proof. This story remains blocked until that evidence exists.
+
+**Acceptance**
+
+- Provide an optional copyable workflow that builds the assembled starter's
+  wasm output and runs its browser smoke/quit checks, with the runtime files,
+  artifact paths and necessary CI permissions stated.
+- Preserve the ordinary starter's native workflow and manual publication
+  guide. Keep source-repository visibility and publicly hosted output as
+  separate choices; build/test automation must not imply that source has
+  to become public.
+- Qualify the assembled consumer project, packaged runtime files and browser
+  test protocol, updating guide excerpts and starter change notes together.
+
+**Boundaries and verification:** deployment automation is deferred until the
+hosting destination, repository visibility and credential choices are made.
+This story adds no deploy job, credentials, account settings or publication.
+Offline workflow and packaging fixtures cover paths, permissions and missing
+output; the consumer browser check loads the built output, draws and quits
+through its bounded protocol, preserving loader and runtime failures. Run
+affected consumer/tooling checks, lint and the website gate.
+
+<a id="sm-92"></a>
+### SM-92. Audit dependency alerts and qualify action-runtime updates
+
+Selected from [`REV#69`](../review/2026-11-10/FINDINGS.md#rev69).
+
+**Acceptance**
+
+- Read the repository's current dependency-alert/settings state and the
+  selected actions' runtime/update requirements before proposing changes.
+  Preserve the recorded rapidjson source identity and update inventory.
+- Enable the selected dependency alerts as alerts-only where needed; do not
+  add automatic dependency-update pull requests or automatic merging.
+- Qualify deliberately selected action-version/runtime updates against their
+  actual workflow behaviour and required checks, recording changed pins,
+  dependencies and validation limits rather than assuming every old runtime
+  label can be replaced mechanically.
+
+**Boundaries and verification:** no account mutation or action update is
+executed by this planning record. Fixture tests cover any settings-audit or
+inventory tooling; read workflow diffs as changes to checks, retain fresh CI
+evidence after an implemented update, and amend dependency/security guidance
+where needed. Run local lint and the website gate.
+
+<a id="sm-93"></a>
+### SM-93. Exercise cross-origin iframe embedding as a regression
+
+Selected as the bounded regression part of
+[`REV#72`](../review/2026-11-10/FINDINGS.md#rev72).
+
+**Acceptance**
+
+- Extend the existing bundle/page harness with a cross-origin iframe case
+  that exercises click-to-start, focus transfer, play/quit/replay and the
+  documented permission-dependent full-screen behaviour.
+- Assert the iframe and host's observable states and failures through the
+  real bundle route; preserve the earlier one-off evidence as dated evidence,
+  not a promise that every browser or external host behaves identically.
+- Keep the embed contract and regression registration/inventory in agreement,
+  with unsupported or unrun paths named rather than silently omitted.
+
+**Boundaries and verification:** this selects the iframe regression only.
+An itch.io account/guide and precompressed .br output remain deferred; no
+external-host publication or account setup is included. Use independent
+loopback origins for the regression, preserve storage/focus boundaries, and
+record browser/device evidence under the web owners. Run runner fixtures,
+affected browser checks, lint and the website gate.
+
+<a id="oca-117"></a>
+### OCA-117. Reuse existing captures for repository and link-preview images
+
+Selected as the image/metadata part of
+[`REV#73`](../review/2026-11-10/FINDINGS.md#rev73).
+
+**Acceptance**
+
+- Choose an existing reviewed LineSweeper capture for the repository README
+  and site link-preview metadata, with meaningful alternative text, stable
+  asset paths and dimensions appropriate to each published use.
+- Keep the image's actual game/revision context and existing licences intact;
+  use the existing asset pipeline rather than inventing new game presentation
+  or generating an unrelated promotional image.
+- Verify the built metadata resolves to the intended image and the README's
+  public link/path is valid.
+
+**Boundaries and verification:** announcements, project listings and outreach
+remain deferred. This story selects repository/site assets only, with no
+messages to third parties or live publication in this planning record.
+Review any derived crop or resize visually and run website checks, link/asset
+tests, lint and the full website gate.
+
+<a id="srl-25"></a>
+### SRL-25. Generate a curated common-task API quick reference
+
+Selected from [`REV#88`](../review/2026-11-10/FINDINGS.md#rev88).
+
+**Acceptance**
+
+- Add one curated common-task reference page covering the game-facing
+  operations an adopter uses first, with declarations generated from the
+  existing header reader or maintained compiled sample excerpts.
+- Link every entry to its full contract and relevant example/guide. Curate
+  the task/name selection, not a separate hand-written copy of signatures
+  or default values that can drift from the published headers.
+- Keep audience, version identity and the distinction between a quick lookup
+  and a complete contract clear; the page does not replace existing module
+  and header reference navigation.
+
+**Boundaries and verification:** no second API parser or exhaustive compressed
+reference. Website fixtures verify selected names, generated declarations,
+source drift and destinations; inspect the emitted page and keyboard links,
+then run local lint and the website gate.
+
+<a id="oca-118"></a>
+### OCA-118. State the unverified external-platform support boundary
+
+Selected from [`REV#89`](../review/2026-11-10/FINDINGS.md#rev89).
+
+**Acceptance**
+
+- Add a brief support-boundary note for Proton, Steam Deck and game/store
+  streaming features such as Remote Play Together, identifying them as
+  external routes that this engine has not qualified.
+- Preserve the current Windows/browser support statement and distinguish
+  a game's distribution/service choice from engine online-play support.
+  Avoid implying a tested route, automatic compatibility or a native port.
+
+**Boundaries and verification:** no Steam account integration, store setup,
+Deck/Linux test run or platform-support expansion. Check any factual external
+description against its primary source before publishing the note, verify
+its placement/links and run local lint and the website gate.
+
+<a id="oca-119"></a>
+### OCA-119. Observe actual Escape behaviour in browser full screen
+
+Selected from [`REV#93`](../review/2026-11-10/FINDINGS.md#rev93).
+
+**Acceptance**
+
+- Observe a real browser-owned full-screen session where Escape is also a
+  game pause/quit binding, recording both actual full-screen exit and whether
+  the game receives the key. Use a headed trusted-key route only after
+  qualifying that it reproduces the browser action being tested.
+- Attempt to retain a bounded automated regression for that qualified route;
+  if synthetic/headless dispatch cannot reproduce the action, keep the
+  remaining informal human-browser observation explicit.
+- Update the guide with the observed behaviour and its browser/version scope,
+  preserving existing tests of the full-screen flag and explicit exit calls.
+
+**Boundaries and verification:** `document.exitFullscreen` or a dispatched DOM
+event is not evidence of physical Escape behaviour. No Keyboard Lock or new
+engine binding policy is selected. Retain the actual observation/driver
+evidence, run any runner fixtures and qualified page test, and finish with
+lint and the website gate; this planning record observes no browser session.
+
+<a id="sm-94"></a>
+### SM-94. State a bounded outside-contribution policy
+
+Selected from [`REV#94`](../review/2026-11-10/FINDINGS.md#rev94).
+
+**Acceptance**
+
+- State in CONTRIBUTING that scoped bug fixes, documentation corrections
+  and tests are welcome, while larger API/features and design changes should
+  be discussed before substantial implementation.
+- Keep the existing review, validation and landing rules, with no promised
+  response time, support service level or compatibility promise added.
+
+**Boundaries and verification:** no new community settings, Discussions,
+funding configuration or separately invented policy document. Check the
+wording against existing contribution/intake rules and the design trade-offs,
+then run local lint and the website gate.
+
+<a id="sm-95"></a>
+### SM-95. Publish owner-supplied agent-use wording
+
+Selected from [`REV#76`](../review/2026-11-10/FINDINGS.md#rev76).
+
+**Prerequisite:** the owner supplies the factual public AI-use disclosure and
+any personal assurances they intend to make. This story remains blocked until
+that text is available.
+
+**Acceptance**
+
+- Place only the owner's supplied factual description of agent use in the
+  chosen public entry points, preserving the intended scope and voice.
+- Check its factual statements against the owner-approved process. Do not
+  invent personal-review, provenance, quality or authorship assurances on
+  the owner's behalf.
+
+**Boundaries and verification:** this selects no additional contributor AI
+policy, ban or acceptance rule; those require a separate choice. This record
+supplies no public statement. Review the final text with its source wording,
+check links and consistency across entry points, and run local lint and the
+website gate.
+
+<a id="sm-96"></a>
+### SM-96. Refresh preparation for the actual v0.4.0 candidate
+
+Selected from [`REV#149`](../review/2026-11-12-work-audit/FINDINGS.md#rev149).
+
+**Scheduling:** this is an independent release-preparation lane. It may run on
+the actual selected candidate while product stories remain unimplemented;
+L66 to L128 are not collective prerequisites for cutting the release.
+
+**Acceptance**
+
+- Identify the actual candidate revision and refresh its release checks,
+  source/change-list audit and required qualification, including the authored
+  material changes introduced at `2b0116cd`. The older November 13 gap report
+  remains historical evidence rather than qualifying that newer source.
+- Retain exact source/build/device identities, passed results, failures and
+  unrun acceptance separately. Reconcile the current test inventory, consumer
+  material paths, documentation snapshot and release-note claims with the
+  selected candidate and the current release procedure.
+- Prepare the reviewable version/change-list/release-note updates and the
+  evidence handoff up to the owner-cut release steps. Do not turn every newly
+  queued feature into a release blocker or claim that unimplemented stories
+  are part of the candidate.
+
+**Boundaries and verification:** the owner still cuts the release commit/tag
+and publishes it separately; no tag, asset upload, deployment or release
+execution occurs in this planning selection. Use the release checker,
+ci_gap_report and required candidate checks under their execution contracts,
+keeping real-driver, browser, full-screen and human acceptance limits clear.
+Run relevant tooling/lint and the website gate and retain the refreshed packet
+against the exact final candidate.
+
+<a id="sm-97"></a>
+### SM-97. Invoke an iOS Simulator game pilot
+
+Selected from [`REV#152`](../review/2026-11-12-work-audit/FINDINGS.md#rev152).
+
+**Acceptance**
+
+- Provide an explicitly invoked pilot that loads and plays the game in the
+  iOS Simulator's Safari, using a bounded route and recording simulator,
+  browser, build and source identity with the actual results.
+- Exercise the selected startup/play/quit and lifecycle checks that the
+  simulator can support, preserving useful failure logs and naming omitted
+  input, layout, audio or memory observations rather than assuming coverage.
+- Keep the pilot distinct from the website's existing Simulator acceptance
+  and from SM-13's real-iPhone qualification. A passing Simulator does not
+  lift the phone gate or establish physical-device acceptance.
+
+**Boundaries and verification:** no recurring/required CI lane or schedule is
+selected. Verify the pilot's protocol through fixtures and an explicitly
+invoked Simulator run, retain the evidence and integration limits, and run
+affected tooling, lint and the website gate. No Simulator session starts as
+part of this planning record.
 
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game

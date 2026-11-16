@@ -57,14 +57,20 @@ are deferred. `REV#56` is settled: retain the wide rendering API and use the
 existing UTF-8 conversion boundary. Every current `GAP#` and `IDEA#` selection
 call is now recorded; deferred scopes retain their own revisit triggers.
 
-**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; and `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before this selection.
+The [fifth batch](#fifth-accepted-decision-batch-of-2026-11-16) adds eleven
+scopes in BACKLOG's L118 to L128. `OCA-116` waits for `OCA-79`'s hosted starter
+proof, and `SM-95` waits for owner-supplied public disclosure wording.
+`SM-96` refreshes release preparation for the selected candidate independently
+of the new feature queue; the November 13 report does not qualify later
+shader/material changes. Six proposals are deferred and three policies are
+settled. `REV#156` retains only its bounded hint-wording correction as open work.
+
+**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs), and `REV#156`'s hint wording. The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
 - Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `SM-30` (set Cloudflare's build command to `npm ci && npm run gate` and delete its `NODE_VERSION` variable).
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy), `SITE#4` (search on the iPhone after the next deploy).
-- Review of 2026-11-10: every remaining `DECISION` row of [that section](#review-of-2026-11-10), 17 between `REV#37` and `REV#94`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md. Two of them (`REV#37`, `REV#72`) had their measurement or brief done on 2026-11-13.
-- Work audit of 2026-11-12: `REV#149` (the v0.4.0 release commit and tag; everything before them is prepared), `REV#152` and `REV#156` in [that section](#work-audit-of-2026-11-12).
 - Client reports: `REV#105`, the verdicts on issues #122 to #124, and `REV#104`, the fix for issue #125, in [the reports table](docs/review/colourwars-reports/README.md).
 
 ## Accepted decision batch of 2026-11-16
@@ -158,6 +164,28 @@ decision to keep the current rendering-text API. Implementation is open.
 | `SM-89` | BLOCKED | could | M | Add five weekly non-required configurations after `SM-81`'s Release qualification; keep real-driver checks (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
 | `SM-90` | OPEN | should | XS | Add an owner-invoked release-time aggregate counter snapshot with reporting-window limits (`REV#54`). [Scope](docs/product/BACKLOG.md#sm-90). |
 | `SM-91` | OPEN | could | M | Manually rebuild an explicit release tag and compare immutable-asset hashes; signing remains deferred (`REV#70`). [Scope](docs/product/BACKLOG.md#sm-91). |
+
+## Fifth accepted decision batch of 2026-11-16
+
+**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L118 to L128, owns
+the eleven selected scopes. The [review ledger](docs/review/2026-11-10/STATUS.md)
+and [work-audit ledger](docs/review/2026-11-12-work-audit/STATUS.md) retain the
+six deferrals, policy decisions and bounded follow-ups. Selection records
+scope; it does not publish a release, change settings or claim acceptance.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-116` | BLOCKED | could | M | Optional starter browser build/test CI after `OCA-79`; deployment waits for hosting, visibility and credentials (`REV#48`). [Scope](docs/product/BACKLOG.md#oca-116). |
+| `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
+| `SM-93` | OPEN | could | M | Add cross-origin iframe focus/input/permission regressions; host-specific guide and precompression stay deferred (`REV#72`). [Scope](docs/product/BACKLOG.md#sm-93). |
+| `OCA-117` | OPEN | could | S | Add README and link-preview images from reviewed captures; announcements remain a separate owner choice (`REV#73`). [Scope](docs/product/BACKLOG.md#oca-117). |
+| `SRL-25` | OPEN | could | M | Generate a curated common-task API quick reference from maintained declarations and excerpts (`REV#88`). [Scope](docs/product/BACKLOG.md#srl-25). |
+| `OCA-118` | OPEN | could | XS | State the unverified support boundary for Proton, Steam Deck and Remote Play without compatibility promises (`REV#89`). [Scope](docs/product/BACKLOG.md#oca-118). |
+| `OCA-119` | OPEN | could | S | Observe actual browser Escape/fullscreen routing; automate only a faithful interaction and document the result (`REV#93`). [Scope](docs/product/BACKLOG.md#oca-119). |
+| `SM-94` | OPEN | could | XS | Welcome scoped fixes/docs/tests, discuss larger changes first and promise no review time; leave community settings unchanged (`REV#94`). [Scope](docs/product/BACKLOG.md#sm-94). |
+| `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
+| `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |
+| `SM-97` | OPEN | could | M | Pilot LineSweeper on iOS Simulator by explicit invocation, measuring reliability before recurring coverage (`REV#152`). [Scope](docs/product/BACKLOG.md#sm-97). |
 
 ## Input, menus, settings and saves
 
@@ -278,9 +306,8 @@ implementation scopes are stories in the batches above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#35` | DEFERRED | should | S | Owner deferred 2026-11-16 until a real math-only rules caller needs Random; no speculative move, shuffle or derived streams. [Decision](docs/review/2026-11-10/STATUS.md). |
-| `REV#37` | DECISION | should | S | No display-sleep hold while a game is shown (`win32/window.cpp`, `web/window.cpp`). No-input run and headless Chrome wake-lock check recorded 2026-11-13: no display request either way. Left: a pad-only run with the owner's pad, then whether to add a hold. |
+| `REV#37` | DEFERRED | should | S | Until pad-only play reproduces a display-sleep symptom; fold the observation into OCA-48's session before selecting a hold. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#43` | DEFERRED | could | S | Owner deferred 2026-11-16 until a real game needs a recurring diagnostic panel; Label and frame timings remain available. [Decision](docs/review/2026-11-10/STATUS.md). |
-| `REV#48` | DECISION | could | M | `website/src/walkthrough/ci.yml` has no wasm or Pages job; `your-web-page.mdx` publishes by hand into a second repository. A copyable deploy workflow would follow OCA-79 and state the public-repository trade. |
 | `REV#53` | DEFERRED | should | S | Owner deferred 2026-11-16 until a measured download/startup target or demonstrated size regression justifies a hard budget; keep reporting sizes. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#55` | DEFERRED | could | M | Until a whole-texture tiling caller needs repeat addressing; repeating an atlas frame remains a separate problem. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#59` | DEFERRED | could | M | After OCA-108 has physical evidence and reliable mapping facts, with an unknown fallback; browser IDs alone do not qualify family prompts. [Decision](docs/review/2026-11-10/STATUS.md). |
@@ -290,27 +317,17 @@ implementation scopes are stories in the batches above.
 | `REV#66` | DEFERRED | could | M | Owner deferred 2026-11-16 until a concrete Windows evaluation or distribution need cannot be met by the browser route. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#67` | DEFERRED | could | M | Reassess after SM-82's ASan qualification, when a concrete parser-coverage need justifies fuzzing and corpus maintenance; no security-policy change selected. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#68` | DEFERRED | could | S | Owner deferred 2026-11-16 until an analyzer demonstrates useful findings with manageable upkeep, or a recurring defect class warrants one. [Decision](docs/review/2026-11-10/STATUS.md). |
-| `REV#69` | DECISION | should | S | Record fix landed (rapidjson commit named in its README and in `docs/dependency-updates.md`). Left: the owner's call on Dependabot alerts and the Node 20 action tags. |
-| `REV#71` | DECISION | could | L | Owner call: a race check of `engine/core/thread_pool.cpp`'s fan-out needs a `std::thread` pool and a Linux clang ThreadSanitizer build, which NMS-04's refusal of non-Windows hosts rules out today; no race is recorded. |
-| `REV#72` | DECISION | could | M | The bundle ran in a cross-origin iframe in headless Chrome 157 on 2026-11-13 with nothing failing (keys after a click, full screen only with allow, partitioned storage; see the record). Still owner calls: an iframe page test, an itch.io guide (needs the owner's account) and .br output. |
-| `REV#73` | DECISION | could | S | `README.md` has no image and the site sets no `og:image`, though LineSweeper captures exist; whether to add both, and whether to announce or list the project, is the owner's call. |
-| `REV#74` | DECISION | could | S | No document states a release rhythm beyond `SM-36`'s pin cadence, and the website reference marks nothing stable or provisional; PHILOSOPHY promises a record, not compatibility, before 1.0. |
-| `REV#75` | DECISION | could | S | `why.mdx` publishes no frame-time figure while `SM-07` is blocked; whether to publish a labelled desktop figure from the frame bench's records in the meantime is the owner's call. |
-| `REV#76` | DECISION | could | XS | `README.md`, the site's home page and `why.mdx` say nothing about agent use, though public history and `AGENTS.md` show it; the statement and any contributor policy are the owner's to write. |
-| `REV#77` | DECISION | could | S | `DrawList::draw_text`, `RenderResources::measure_text` and `record_text` take `const std::wstring&` while `Font` and `wrap_text` take `std::wstring_view`; a source change on five backends with no measured cost. |
+| `REV#71` | DEFERRED | could | L | Until a concrete race investigation or selected native port justifies a Linux/TSan path; ASan is not race-freedom evidence. [Decision](docs/review/2026-11-10/STATUS.md). |
+| `REV#75` | DEFERRED | could | S | A promotional performance number waits for low-tier evidence or an explicitly scoped qualified comparison; dated technical records remain available. [Decision](docs/review/2026-11-10/STATUS.md). |
+| `REV#77` | DEFERRED | could | S | Until a borrowed-slice caller or measured allocation cost justifies public text-parameter changes; retain current callers meanwhile. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#78` | DEFERRED | could | M | `ResourceLoader::load_manifest` loads everything in one blocking call with no progress report, and no resource type has an unload verb; waits for a client with a long load or level-scoped content. |
-| `REV#79` | DECISION | could | M | engine/math/shape_type.h has no convex N-gon, capsule or segment shape; no client or sample asks for one, and a variable-size shape meets the no-allocation rule. |
+| `REV#79` | DEFERRED | could | M | Until a client needs a specific additional collision shape with concrete geometry, allocation and lifetime requirements. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#81` | DEFERRED | could | S | Manifold, Contact and on_contact carry a normal and a penetration but no contact point; no client has asked. Revisit only if #124 breaks on_contact's signature. |
-| `REV#83` | DECISION | could | M | `ApplicationOptions` has no option for a fixed-size window, a starting position, a monitor or a maximised start, and no monitor query is exposed; no client asks for any. If one is taken it rides `IDEA#16`. |
+| `REV#83` | DEFERRED | could | M | Select individual window options only for a caller's need; title/icon work does not select size, position, monitor or maximised-start policy. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#84` | DEFERRED | could | S | No query for the player's preferred language on Win32 or in the browser shell under `engine/app/`; nothing in the tree ships two languages, so it waits for a localised sample or client. |
 | `REV#85` | DEFERRED | could | M | `AudioDevice` has no verb to close a wave bank or destroy a voice, so a game that replaces banks grows both lists until the device is destroyed; waits for a client that swaps banks. |
 | `REV#86` | DEFERRED | could | M | The audio backends set no voice ceiling, limiter or master gain, and ungrouped sounds in `AudioResources` play at full level; inferred, nobody has heard clipping. Follows `WEB#3`'s listening and a client. |
 | `REV#87` | DEFERRED | could | M | `AudioDevice` and `SoundBank` expose no playback position, wave duration or start offset; the XAudio2 cost is unmeasured. Waits for a client that times something to audio, and would ride `GAP#2`. |
-| `REV#88` | DECISION | could | S | The website has no one-page quick reference of the game-facing API; if wanted, it is generated from the header reader or from sample excerpts, never hand-written. |
-| `REV#89` | DECISION | could | S | `why.mdx` and the local-multiplayer guide say nothing of Proton, Steam Deck or Remote Play Together; a sentence would name each as outside the engine and unverified. No Deck or Linux machine is to hand. |
-| `REV#90` | DECISION | could | M | `docs/2026-11-04-decision-recommendations.md` GAP#1 option B does not note that SDL would also reach other platforms; at most one paragraph there. No Linux or macOS plan exists, by recorded decision. |
-| `REV#93` | DECISION | could | XS | What a player sees on Escape in browser full screen is unobserved (web-as-built.md lines 81-83; your-window.mdx lines 448, 687, 700); observe it in the owner's informal browser play, then one sentence in the guides. |
-| `REV#94` | DECISION | could | S | `CONTRIBUTING.md` has no sentence on whether outside pull requests are wanted; a code of conduct, the wiki, Discussions and FUNDING are repository settings and policy only the owner sets. |
 | `REV#95` | DEFERRED | could | S | bench/scene_bench.cpp has no touching-tile case, and layers_collide runs after BroadPhase has emitted the pair; a bench case or change waits for a client with a tile world and a profile. |
 | `REV#96` | DEFERRED | could | S | `engine/app/web/window.cpp`'s `measure` has no upper bound on device pixel ratio; a cap is a contingent answer to R6, deferred until `SM-13`'s phone measurement shows a frame over budget. |
 | `REV#98` | DEFERRED | could | XS | `.github/actions/emscripten/action.yml:80-85` saves a ccache per run and attempt; re-measured 2026-11-12 at 37 caches, 2.84 GB, 27 of them ccache. Deferred until an expensive cache is seen evicted, since restore-only changes documented reuse. |
@@ -335,11 +352,9 @@ implementation scopes are stories in the batches above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#149` | DECISION | should | S | v0.4.0 is prepared ([record](docs/review/2026-11-12-work-audit/2026-11-13-v0.4.0-preparation.md)): gap report green bar two local full-screen entries, change-list ids and four CHANGES entries added. Left: the owner's release commit and tag. |
 | `REV#150` | OPEN | should | S | CI configuration now enables software WebGL and selects all eight Firefox entries with renderer evidence. Left: verify the published CI run reaches WARP and whether audio's "Closed before resume completed" flakes there. Local evidence is in docs/port/web-to-be-tested.md. |
 | `REV#151` | OPEN | could | M | Safari and Firefox runs prove drawing and keys but read back nothing; `RenderPixelTests` and `WebWindowTests` run only in Chromium. Pixel page exit-protocol CI wiring is staged locally; hosted Safari readback, per-case drift and WebWindow input remain open. Firefox follows REV#150 (see web-to-be-tested.md). |
-| `REV#152` | DECISION | could | M | Every phone check of the game is Chrome emulation; the website already drives Safari on the iOS Simulator, but the game does not. A second Simulator lane adds the flakiness CI already retries around, so it is the owner's call. |
-| `REV#156` | DECISION | could | XS | powerPreference is now stated as "default", and web-as-built.md records that Chrome picks the same GPU under every value on this one-GPU desktop. Left: the owner's choice of value, and a measurement on a hybrid laptop. |
+| `REV#156` | OPEN | could | XS | Keep explicit default; correct remaining source/record wording to describe an advisory GPU hint rather than guaranteed selection. [Decision](docs/review/2026-11-12-work-audit/STATUS.md). |
 | `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. Pages whose keys start Web Audio or full screen now get one action list, the others one confirmed key at a time, each the form that passed there; failures print the page's keys and focus. Close after a week clean. |
 
 ## Ports
