@@ -5,8 +5,8 @@
 [public issue](https://github.com/matt439/Labrador/issues/122) requires a
 consumer's tests to script Gamepads while linking the same configured engine
 library as the game. The earlier configured-null scope alone does not meet
-that requirement. Implementation and qualification remain open; this record
-does not post a tracker response or close the issue.
+that requirement. The additive construction API implements that seam; this
+record does not post a tracker response or close the issue.
 
 ## The accepted pad scope
 
@@ -27,12 +27,27 @@ does not post a tracker response or close the issue.
   relationship to the same-library source; merely building a second engine
   with null input does not answer this request.
 
-The current [GamepadReader](../../../engine/input/gamepad_reader.h) is concrete
-with one configured implementation, while
-[Gamepads](../../../engine/input/gamepads.h) borrows that concrete reader.
-That is the missing construction seam. The real client need justifies a
-bounded change to that seam; it selects no game action map, global override,
-replay file format or per-sprite indirection.
+The concrete [GamepadReader](../../../engine/input/gamepad_reader.h) uses its
+configured implementation by default, or borrows an explicit
+[ScriptedGamepadSource](../../../engine/input/scripted_gamepad_source.h).
+[Gamepads](../../../engine/input/gamepads.h) borrows the concrete reader in
+either case. `ApplicationOptions::scripted_gamepad_source` selects the same
+source for the shell. Scripted construction allocates no platform reader and
+performs no physical polling or output; no game action map, global override,
+replay file format or per-sprite indirection is added.
+
+The immovable source owns the next snapshots by value and freezes their
+sampled copies until the reader samples again. A disconnected sample is
+neutral, and a script samples disconnection before reusing a slot. The source
+must outlive its one borrowing reader, including moves and teardown, and the
+Application when selected there. Moving a reader transfers the source loan;
+existing Gamepads borrows still name the old reader object and must be rebuilt.
+
+The script supplies finite, nondecreasing clock seconds, so expiry needs no
+sleep. Records use a buffer reserved at source construction; a full buffer
+sets `records_overflowed()` while the input/output lifecycle continues.
+Fixtures must assert that flag is false before trusting a complete record.
+This keeps sampling, suspension and teardown free of recording allocation.
 
 ## Verification and migration
 
@@ -44,9 +59,41 @@ input/output transports are untouched. Document the replacement for the
 link-order workaround and the source lifetime; update public contracts,
 CHANGES.md and the affected input/app/consumer checks together.
 
-These are planned checks. Scripted results do not qualify real controller
-mapping or rumble; the physical-pad acceptance remains separately owned.
+The [testing guide](../../../website/src/content/docs/docs/guides/testing.mdx#script-pad-input)
+shows the replacement for link-order member substitution. Scripted results
+do not qualify real controller mapping or rumble; the physical-pad acceptance
+remains separately owned.
 
+### Local qualification, 2026-11-16
+
+`x64-debug-null` built and passed `InputTests` and `AppTests` with the
+configured XInput input source still present. The scripted cases cover copied
+samples, button/connection edges, independent sources, coexistence with a
+normal reader, duplicate-borrow refusal, moves, controlled expiry, output
+refusal, explicit stop, disconnect, suspension, bounded-record overflow and
+teardown. A hidden native-null Application runs its real loop and receives
+Win32 activation messages while its scripted source records polling, expiry,
+suspension/resume and final stops.
+
+`wasm-debug` built and passed the same two portable suites under Emscripten
+6.0.12's Node. The web-specific trap makes `navigator.getGamepads` throw if it
+is touched: scripted sampling, output, suspension, expiry and destruction
+complete with zero calls. Existing web mapping/vibration tests remain in the
+same InputTests executable.
+
+A separate assembled consumer at `C:\dev\pad78` built and passed
+`ScriptedPadConsumerTests` once with native `x64-debug` (normal XInput,
+D3D11/XAudio2) and once with `wasm-debug` (normal web input, WebGL2/Web Audio).
+The fixture links the consumer's one ordinary LabradorEngine and constructs
+its shipping reader beside the script. No backend symbols are replaced.
+`scripted_pad_fixture.py` adds the same optional proof to CI's existing native
+and browser consumer jobs after their baseline checks; the shipped starter
+and repository ctest inventory retain their existing entries.
+
+The fixture's two offline preparation/refusal tests and the CMake citation,
+include-wall and whitespace checks pass locally. The combined engine/browser
+matrix, website gate and hosted CI are separate integration gates. No
+physical-pad qualification or public tracker response is claimed here.
 ## Registry rider
 
 **Decline name forgetting and slot recycling in the current Registry.** A

@@ -117,6 +117,23 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Construct scripted pad input beside the configured backend
+
+**Additive fixture API.** `ScriptedGamepadSource` supplies copied slot
+snapshots, a controlled clock and bounded lifecycle/vibration records to
+`GamepadReader(source)`, in the same engine library as the ordinary configured
+reader. `ApplicationOptions::scripted_gamepad_source` selects it for the
+Application's real input path; its default remains the configured backend.
+Scripted readers never poll or vibrate physical pads. The immovable source
+is borrowed by one reader and must outlive it, including moves and teardown.
+
+This answers the pad portion of [issue #122](https://github.com/matt439/Labrador/issues/122):
+fixtures can remove their link-order replacement of GamepadReader members.
+The Registry name-removal rider is declined under its retained-slot contract.
+The [testing guide](website/src/content/docs/docs/guides/testing.mdx#script-pad-input)
+shows the construction and lifetime. Scripted results do not qualify physical
+controller mapping or rumble.
+
 ### 2026-11-16 - Expose the platform reduced-motion preference
 
 **New API and sample behaviour.** `engine/app/motion_preference.h` supplies

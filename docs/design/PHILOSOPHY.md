@@ -868,6 +868,12 @@ engine API to depend on.
   needs no device, because a seam with only the platform's own implementation
   behind it still requires the platform in order to construct anything. A
   seam ships with its headless implementation, or it has not shipped.
+- Pad fixtures can select a scripted source while linking the game's normal
+  engine library. The source owns snapshots and output records; its lifetime
+  is explicit and its selection is per reader, never a global override.
+  The configured platform reader remains the default. This is the bounded
+  mechanism a consumer needs to exercise its real input path (T1), without
+  a game action map or replay system.
 - A new public primitive ships with behavioural tests in the same commit.
 - Warnings are errors with zero suppressions; the language standard is
   current; `const`, `noexcept` and `[[nodiscard]]` carry information the

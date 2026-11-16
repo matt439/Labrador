@@ -359,16 +359,27 @@ requires the device to have been live on both frames. That last rule is
 lost the foreground produce the identical phantom press, and a client
 should not have to learn two spellings to suppress one bug.
 
-Those interfaces are **concrete classes with one implementation selected
-at build time, not abstract bases with vtables.** `Renderer` is declared
+Those interfaces are **concrete classes, not abstract bases with vtables.**
+The platform implementation is selected at build time. `Renderer` is declared
 once in `engine/render/renderer.h`; a backend folder defines it. The two
 things the seam exists for — headless tests and an eventual second
-platform — are both served by build-time selection, and neither needs two
-backends live in one process. A virtual call per sprite is a tax on the
+platform — are served by build-time selection for rendering and audio.
+A virtual call per sprite is a tax on the
 frame loop that T8 does not permit, and a compile-time choice fails at
 link rather than at run time (T5). Promoting a concrete class to an
 interface later is mechanical and changes no call site, so that option is
 held, not spent — the same escalation as promoting a folder to a library.
+
+`GamepadReader` also accepts a `ScriptedGamepadSource` explicitly at
+construction. A consumer's fixture needs chosen snapshots and observable
+output while linking the same engine library as its game, so this source is
+available beside the configured XInput or web implementation. It constructs
+and calls no platform pad backend. The source owns copied snapshots, a
+controlled clock and bounded records; the reader borrows it, and
+`ApplicationOptions::scripted_gamepad_source` selects that same path for the
+shell. Ordinary construction retains the configured backend. This bounded
+construction choice adds no action map, replay format or process-global
+override, and changes no module dependency.
 
 ## Modules
 

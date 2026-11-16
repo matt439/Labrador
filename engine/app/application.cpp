@@ -165,7 +165,9 @@ namespace labrador
 
 		this->create_services();
 
-		this->gamepad_reader_ = std::make_unique<GamepadReader>();
+		this->gamepad_reader_ = this->options_.scripted_gamepad_source ?
+			std::make_unique<GamepadReader>(*this->options_.scripted_gamepad_source) :
+			std::make_unique<GamepadReader>();
 		this->gamepads_ = std::make_unique<Gamepads>(this->gamepad_reader_.get());
 
 		// No reader to give either of these: the window feeds them. They exist

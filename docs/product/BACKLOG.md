@@ -1394,7 +1394,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
 - [x] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
 - [ ] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
-- [ ] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Construct scripted pad input alongside configured shipping input in the same engine library
+- [x] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Construct scripted pad input alongside configured shipping input in the same engine library
 - [ ] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
 - [ ] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
 - [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
@@ -1725,8 +1725,8 @@ other native renderers or a browser page run.
 
 Selected from [`REV#40`](../review/2026-11-10/FINDINGS.md#rev40) and amended
 2026-11-16 to answer [issue #122](../review/colourwars-reports/scripted-pad.md).
-This supersedes the earlier build-selected-null-only sketch; implementation
-and qualification remain open.
+This supersedes the earlier build-selected-null-only sketch. The constructed
+source and local qualification are recorded in the client ledger.
 
 **Acceptance**
 

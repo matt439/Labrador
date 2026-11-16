@@ -5,6 +5,7 @@ labrador_add_test_suite(InputTests
         gamepad_tests.cpp
         keyboard_tests.cpp
         mouse_tests.cpp
+        scripted_gamepad_source_tests.cpp
         touch_tests.cpp
         vibration_tests.cpp
     LINKS LabradorEngine
@@ -17,6 +18,7 @@ labrador_add_test_suite(InputTests
 if(LABRADOR_INPUT_BACKEND STREQUAL "web")
     target_sources(InputTests PRIVATE
         web/standard_gamepad_tests.cpp
+        web/scripted_no_api_tests.cpp
         web/web_vibration_tests.cpp)
 endif()
 

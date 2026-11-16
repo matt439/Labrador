@@ -47,6 +47,7 @@ if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
         application_loop_tests.cpp
         application_reveal_tests.cpp
         application_resize_tests.cpp
+        application_scripted_pad_tests.cpp
     )
     add_executable(ApplicationStartupChild WIN32 startup_child.cpp)
     target_link_libraries(ApplicationStartupChild PRIVATE

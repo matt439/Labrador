@@ -1,5 +1,6 @@
 #include "engine/input/gamepad_reader.h"
 #include "engine/input/gamepads.h"
+#include "engine/input/scripted_gamepad_source.h"
 #include "engine/input/vibration_output.h"
 #include "engine/input/web/standard_gamepad.h"
 
@@ -7,6 +8,7 @@
 #include <emscripten/html5.h>
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 // Global rather than in labrador::, because EM_JS declares a C function, and
@@ -130,12 +132,48 @@ namespace labrador
 	{
 	}
 
-	GamepadReader::~GamepadReader() = default;
-	GamepadReader::GamepadReader(GamepadReader&&) noexcept = default;
-	GamepadReader& GamepadReader::operator=(GamepadReader&&) noexcept = default;
+	GamepadReader::GamepadReader(ScriptedGamepadSource& source) :
+		scripted_(&source)
+	{
+		source.attach();
+	}
+
+	GamepadReader::~GamepadReader()
+	{
+		if (this->scripted_)
+		{
+			this->scripted_->detach();
+		}
+	}
+
+	GamepadReader::GamepadReader(GamepadReader&& other) noexcept :
+		impl_(std::move(other.impl_)),
+		scripted_(std::exchange(other.scripted_, nullptr))
+	{
+	}
+
+	GamepadReader& GamepadReader::operator=(GamepadReader&& other) noexcept
+	{
+		if (this != &other)
+		{
+			if (this->scripted_)
+			{
+				this->scripted_->detach();
+			}
+			this->impl_ = std::move(other.impl_);
+			this->scripted_ = std::exchange(other.scripted_, nullptr);
+		}
+		return *this;
+	}
 
 	void GamepadReader::sample()
 	{
+		if (this->scripted_)
+		{
+			this->scripted_->sample();
+			return;
+		}
+
 		Impl& impl = *this->impl_;
 		for (GamepadState& state : impl.states)
 		{
@@ -196,6 +234,11 @@ namespace labrador
 
 	GamepadState GamepadReader::read(int slot) const
 	{
+		if (this->scripted_)
+		{
+			return this->scripted_->read(slot);
+		}
+
 		if (slot < 0 || slot >= Gamepads::max_count)
 		{
 			return GamepadState();
@@ -205,24 +248,47 @@ namespace labrador
 
 	void GamepadReader::suspend()
 	{
+		if (this->scripted_)
+		{
+			this->scripted_->suspend();
+			return;
+		}
+
 		this->impl_->vibration.suspend();
 		this->impl_->suspended = true;
 	}
 
 	void GamepadReader::resume()
 	{
+		if (this->scripted_)
+		{
+			this->scripted_->resume();
+			return;
+		}
+
 		this->impl_->suspended = false;
 		this->impl_->vibration.resume();
 	}
 
 	bool GamepadReader::vibrate(int slot, const Vibration& vibration)
 	{
+		if (this->scripted_)
+		{
+			return this->scripted_->vibrate(slot, vibration);
+		}
+
 		return this->impl_->vibration.start(slot, vibration,
 			vibration_clock_seconds());
 	}
 
 	void GamepadReader::stop_vibration(int slot)
 	{
+		if (this->scripted_)
+		{
+			this->scripted_->stop_vibration(slot);
+			return;
+		}
+
 		this->impl_->vibration.stop(slot);
 	}
 }

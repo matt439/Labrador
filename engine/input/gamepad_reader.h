@@ -6,20 +6,26 @@
 
 namespace labrador
 {
+	class ScriptedGamepadSource;
+
 	// The input backend seam: a snapshot, and the slots read out of it.
 	//
-	// A concrete class with one implementation chosen at build time, for the
-	// reasons engine/render/SEAM.md#2 gives for the renderer: asking for a
-	// backend that was not built is a missing symbol rather than a run-time
-	// answer (T5), a vtable on the frame path is a tax nothing has asked to
-	// pay (T8), and promoting a concrete class to an interface later is
-	// mechanical and changes no call site. The DirectXTK/XInput implementation
-	// is engine/input/xinput/, the browser Gamepad API's is engine/input/web/,
-	// and nothing outside those two folders names a pad API.
+	// The configured platform implementation is chosen at build time, for the
+	// reasons engine/render/SEAM.md#2 gives for the renderer. Construction may
+	// instead select a ScriptedGamepadSource from the same library; that reader
+	// constructs and calls no platform backend. Neither path needs a vtable.
+	// The DirectXTK/XInput implementation is engine/input/xinput/, the browser
+	// Gamepad API's is engine/input/web/, and only those folders name a pad API.
 	class GamepadReader
 	{
 	public:
 		GamepadReader();
+		// Borrows an immovable source that must outlive this reader, including
+		// moves and destruction. A source already borrowed by another reader
+		// throws std::logic_error. This path never constructs or calls the
+		// configured platform backend. A moved reader invalidates Gamepads
+		// borrowing the old reader object; rebind those fixtures explicitly.
+		explicit GamepadReader(ScriptedGamepadSource& source);
 		~GamepadReader();
 
 		GamepadReader(GamepadReader&&) noexcept;
@@ -82,5 +88,6 @@ namespace labrador
 	private:
 		struct Impl;
 		std::unique_ptr<Impl> impl_;
+		ScriptedGamepadSource* scripted_ = nullptr;
 	};
 }

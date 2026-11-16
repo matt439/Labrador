@@ -986,6 +986,16 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
 
+      - name: Script pads beside the shipping browser input library
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\scripted_pad_fixture.py" . || exit /b 1
+          cmake --preset wasm-release || exit /b 1
+          cmake --build --preset wasm-release --target ScriptedPadConsumerTests || exit /b 1
+          ctest --preset wasm-release -R "^ScriptedPadConsumerTests$" --no-tests=error --output-on-failure
+
       # The starter above builds with no shader authoring tools. This second
       # pass opts its assembled copy into a game-owned HLSL post material.
       - name: Add and build the game's post material
@@ -1180,6 +1190,15 @@ jobs:
         run: |
           call "%VCVARS%"
           python tools\consumer_check\rename_check.py C:\dev\hopper --from C:\dev\mygame
+
+      - name: Script pads beside the shipping native input library
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\scripted_pad_fixture.py" . || exit /b 1
+          cmake --preset x64-debug || exit /b 1
+          cmake --build --preset x64-debug --target ScriptedPadConsumerTests || exit /b 1
+          ctest --preset x64-debug -R "^ScriptedPadConsumerTests$" --no-tests=error --output-on-failure
 
       - name: Build and draw the game's own post material
         working-directory: C:\dev\mygame
