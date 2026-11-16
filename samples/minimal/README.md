@@ -41,6 +41,13 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** Starter assembly gives `game/README.md` project instructions
+  and adapts copy-specific comments to `MyGame` targets and `game/` paths.
+  This source folder keeps its original comments and change list. A manual
+  copy still has this README until its owner rewrites it; assembled projects
+  link to the full original at `external/labrador/samples/minimal/README.md`.
+  Executable code and display-name placeholders are unchanged.
+
 - **2026-11-17.** A browser fullscreen refusal leaves the game playing in
   the page and reports the actual mode; Window-owned rejected requests are
   handled. Moving the engine pin takes the fix without template edits.

@@ -5,7 +5,9 @@ does its steps 3 to 6 to an empty folder, taking everything from one engine
 tree, which it copies to external/labrador where step 2 adds a submodule:
 samples/minimal copied to game/, every include the page lists edited, the
 files in website/src/walkthrough/ put where its README says, and the
-vcpkg.json the page derives from the engine's own. It does not run git
+vcpkg.json the page derives from the engine's own. The assembled copy also
+gets game-owned README/comments; the page's manual copy keeps the template's
+until the reader changes them. Executable game code is the same. It does not run git
 init or git submodule add, and it builds nothing; README.md beside this says
 what to run next. starter_zip.py beside this writes the same project, engine
 included, to the starter ZIP a release carries.
@@ -37,6 +39,7 @@ WALKTHROUGH = PurePosixPath("website/src/walkthrough")
 PLACED = {
     "root-CMakeLists.txt": "CMakeLists.txt",
     "game-CMakeLists.txt": "game/CMakeLists.txt",
+    "game-README.md": "game/README.md",
     "CMakePresets.json": "CMakePresets.json",
     "gitignore.txt": ".gitignore",
     "ci.yml": ".github/workflows/ci.yml",
@@ -88,6 +91,30 @@ def edited_includes(source: bytes) -> tuple[bytes, list[str]]:
     return "".join(edited).encode("utf-8"), changes
 
 
+def edited_comments(source: bytes, replacements: dict[str, str], *, html: bool = False) -> bytes:
+    """Adapt only standalone C++ or HTML comment lines, keeping indentation and line endings."""
+    lines = io.StringIO(source.decode("utf-8"), newline="").readlines()
+    edited = []
+    inside_html = False
+    for line in lines:
+        body = line.lstrip(" \t").rstrip("\r\n")
+        prefix = line[:len(line) - len(line.lstrip(" \t"))]
+        ending = line[len(prefix) + len(body):]
+        if html and body.startswith("<!--"):
+            inside_html = True
+        if (inside_html if html else body.startswith("//")) and body in replacements:
+            replacement = replacements[body]
+            if ("\n" in replacement or "\r" in replacement
+                    or (not html and (not replacement.startswith("//") or replacement.endswith("\\")))
+                    or (html and ("<!--" in replacement or "-->" in replacement))):
+                raise Refusal("An assembled comment replacement must remain one comment line.")
+            line = prefix + replacement + ending
+        edited.append(line)
+        if html and "-->" in body:
+            inside_html = False
+    return "".join(edited).encode("utf-8")
+
+
 def derived_manifest(engine_manifest: Path) -> dict:
     """The game's vcpkg.json: every dependency the engine's vcpkg.json names, unchanged, at its baseline."""
     engine = json.loads(engine_manifest.read_text(encoding="utf-8"))
@@ -100,16 +127,17 @@ def derived_manifest(engine_manifest: Path) -> dict:
 
 
 def project_files(engine: Path, files: list[Path] | None = None) -> dict[str, bytes]:
-    """Every file of the page's project except the engine, by its path in the project.
+    """Every file of the assembled project except the engine, by its path in the project.
 
     The page's steps 3 to 6: the template under game/ with its includes edited,
-    the walkthrough files where the page puts them, and the derived vcpkg.json.
+    adapted game comments/README, the walkthrough build files and derived vcpkg.json.
     Each path is relative to the project's root and spelt with forward slashes.
     files is the engine tree's listing, tree_files(engine) when not given.
     """
     if files is None:
         files = tree_files(engine)
     project: dict[str, bytes] = {}
+    comments = json.loads((engine / WALKTHROUGH / "game-comments.json").read_text(encoding="utf-8"))
     changed = 0
     for relative in files:
         posix = PurePosixPath(relative.as_posix())
@@ -122,6 +150,9 @@ def project_files(engine: Path, files: list[Path] | None = None) -> dict[str, by
             changed += len(changes)
             for change in changes:
                 print(f"include: {placed}: {change}")
+        if posix.suffix in {".h", ".cpp", ".html"}:
+            content = edited_comments(content, comments.get(posix.relative_to(SAMPLE).as_posix(), {}),
+                                      html=posix.suffix == ".html")
         project[placed] = content
     if changed == 0:
         raise SystemExit(f"No line in {SAMPLE.as_posix()} starts with {INCLUDE_FROM}; the Get Started page needs rewriting.")

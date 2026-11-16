@@ -38,9 +38,12 @@ FIXTURE = {
     "samples/minimal/states/hello.h": b'#pragma once\n#include "samples/minimal/rules/motion.h"\n',
     "samples/minimal/rules/motion.h": b"#pragma once\n",
     "samples/minimal/CMakeLists.txt": b"the sample's own build\n",
+    "samples/minimal/README.md": b"# Minimal sample\nThe original template change list.\n",
     "samples/minimal/content/greeting.json": b'{"text": "samples/minimal/"}\n',
     "website/src/walkthrough/root-CMakeLists.txt": b"root\n",
     "website/src/walkthrough/game-CMakeLists.txt": b"game\n",
+    "website/src/walkthrough/game-README.md": b"# MyGame\nEdit game/.\n",
+    "website/src/walkthrough/game-comments.json": b"{}\n",
     "website/src/walkthrough/CMakePresets.json": b"{}\n",
     "website/src/walkthrough/gitignore.txt": b"out/\n",
     "website/src/walkthrough/ci.yml": b"name: ci\n",
@@ -88,10 +91,11 @@ class StarterZipTests(unittest.TestCase):
         files = self.quietly(assemble.project_files, self.engine)
         self.assertEqual(sorted(files), [
             ".github/workflows/ci.yml", ".gitignore", "CMakeLists.txt", "CMakePresets.json",
-            "game/CMakeLists.txt", "game/content/greeting.json", "game/main.cpp",
+            "game/CMakeLists.txt", "game/README.md", "game/content/greeting.json", "game/main.cpp",
             "game/rules/motion.h", "game/states/hello.h", "vcpkg.json",
         ])
         self.assertEqual(files["game/CMakeLists.txt"], b"game\n")
+        self.assertEqual(files["game/README.md"], FIXTURE["website/src/walkthrough/game-README.md"])
         self.assertEqual(files["CMakeLists.txt"], b"root\n")
 
     def test_includes_are_edited_and_line_endings_kept(self):
@@ -109,6 +113,19 @@ class StarterZipTests(unittest.TestCase):
         (self.engine / "samples/minimal/states/hello.h").write_bytes(b"#pragma once\n")
         with self.assertRaises(SystemExit):
             self.quietly(assemble.project_files, self.engine)
+
+    def test_comment_edits_keep_code_strings_indentation_and_line_endings(self):
+        before = b'\t// MinimalRules\r\nconst char* title = "MinimalRules";\r\n// unlisted\r\n'
+        after = assemble.edited_comments(before, {"// MinimalRules": "// MyGameRules"})
+        self.assertEqual(after, b'\t// MyGameRules\r\nconst char* title = "MinimalRules";\r\n// unlisted\r\n')
+        html = b'<!--\n  MinimalSample.html\n-->\n<script>"MinimalSample.html"</script>\n'
+        self.assertEqual(assemble.edited_comments(html, {"MinimalSample.html": "MyGame.html"}, html=True),
+                         b'<!--\n  MyGame.html\n-->\n<script>"MinimalSample.html"</script>\n')
+        for replacement in ('code();', '// comment\ncode();', '// continuation\\'):
+            with self.subTest(replacement=replacement), self.assertRaises(assemble.Refusal):
+                assemble.edited_comments(b'// old\n', {"// old": replacement})
+        with self.assertRaises(assemble.Refusal):
+            assemble.edited_comments(b'<!--\nold\n-->\n', {"old": "--> <script>"}, html=True)
 
     def test_manifest_carries_every_engine_package(self):
         manifest = json.loads(self.quietly(assemble.project_files, self.engine)["vcpkg.json"])
@@ -131,6 +148,10 @@ class StarterZipTests(unittest.TestCase):
             self.assertEqual(archive.read("mygame/game/main.cpp").splitlines()[0], b'#include "game/states/hello.h"')
             self.assertEqual(archive.read("mygame/external/labrador/samples/minimal/main.cpp"),
                              FIXTURE["samples/minimal/main.cpp"])
+            self.assertEqual(archive.read("mygame/external/labrador/samples/minimal/README.md"),
+                             FIXTURE["samples/minimal/README.md"])
+            self.assertEqual(archive.read("mygame/game/README.md"),
+                             FIXTURE["website/src/walkthrough/game-README.md"])
             self.assertEqual(json.loads(archive.read("mygame/vcpkg.json"))["name"], "mygame")
             self.assertEqual(names, sorted(names))
 
@@ -146,6 +167,8 @@ class StarterZipTests(unittest.TestCase):
         with zipfile.ZipFile(self.write("release.zip", "v0.3.0")) as archive:
             text = archive.read("mygame/README.txt").decode("ascii")
         self.assertIn("Labrador version: v0.3.0\r\n", text)
+        self.assertIn(r"game\states\hello_state.cpp", text)
+        self.assertIn(r"external\labrador\samples\minimal\README.md", text)
         self.assertIn("    https://labradorengine.com/versions/v0.3.0/docs/get-started/\r\n", text)
         self.assertLess(text.index("/versions/v0.3.0/"), text.index(f"    {starter_zip.GET_STARTED}\r\n"))
         self.assertTrue(all(len(line) <= 80 for line in text.splitlines() if not line.startswith("Labrador ")))
@@ -197,6 +220,47 @@ class StarterZipTests(unittest.TestCase):
             for name in on_disk:
                 self.assertEqual((project / name).read_bytes(), archive.read("mygame/" + name), name)
         self.assertEqual(sorted(on_disk + ["README.txt"]), zipped)
+
+
+@unittest.skipUnless(shutil.which("git"), "git is required to list the actual checkout")
+class AssembledSourceTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls.project = assemble.project_files(REPOSITORY)
+
+    def test_every_comment_rule_matches_the_current_template(self):
+        rules = json.loads((REPOSITORY / assemble.WALKTHROUGH / "game-comments.json").read_text(encoding="utf-8"))
+        for relative, replacements in rules.items():
+            original = (REPOSITORY / "samples/minimal" / relative).read_text(encoding="utf-8")
+            lines = [line.lstrip(" \t") for line in original.splitlines()]
+            edited = self.project["game/" + relative].decode("utf-8")
+            edited_lines = [line.lstrip(" \t") for line in edited.splitlines()]
+            for before, after in replacements.items():
+                with self.subTest(file=relative, comment=before):
+                    self.assertEqual(lines.count(before), 1)
+                    self.assertNotIn(before, edited_lines)
+                    self.assertIn(after, edited_lines)
+
+    def test_game_owned_comments_name_the_assembled_targets_and_paths(self):
+        self.assertIn("game/CMakeLists.txt, MyGameSmokeTests", self.project["game/main.cpp"].decode("utf-8"))
+        self.assertIn("MyGameRules", self.project["game/rules/motion.h"].decode("utf-8"))
+        self.assertIn("game/CMakeLists.txt, MyGameTests", self.project["game/tests/motion_tests.cpp"].decode("utf-8"))
+        self.assertIn("MyGame.html beside MyGame.js and MyGame.wasm", self.project["game/web/shell.html"].decode("utf-8"))
+        self.assertEqual(self.project["game/README.md"],
+                         (REPOSITORY / assemble.WALKTHROUGH / "game-README.md").read_bytes())
+
+    @unittest.skipUnless(shutil.which("node"), "Node is required to compare the website's source model")
+    def test_guide_anchor_sources_match_the_real_assembled_project(self):
+        helper = (REPOSITORY / "website/tests/helpers/starter-sources.mjs").as_uri()
+        script = f'import {{ starterSources }} from {json.dumps(helper)}; process.stdout.write(JSON.stringify([...starterSources(process.argv[1])]));'
+        result = subprocess.run(["node", "--input-type=module", "-e", script, str(REPOSITORY)],
+                                capture_output=True, text=True, encoding="utf-8", check=True)
+        modeled = dict(json.loads(result.stdout))
+        expected = {name: data.decode("utf-8").replace("\r\n", "\n") for name, data in self.project.items()
+                    if Path(name).suffix in {".h", ".cpp", ".html", ".json", ".md", ".txt", ".manifest", ".yml"}
+                    or name == ".gitignore" or name.endswith("CMakeLists.txt")}
+        self.assertEqual(modeled, expected)
 
 
 @unittest.skipUnless(shutil.which("git"), "git is required to ask which paths it ignores")

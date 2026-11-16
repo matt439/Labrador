@@ -59,6 +59,14 @@ in a browser, which [Build for the browser](/docs/guides/browser/) adds to this 
 never will, delete both, the `if(EMSCRIPTEN)` block in `game/CMakeLists.txt` and every `wasm`
 preset in `CMakePresets.json` with them.
 
+Work in `game/`, for example `game/states/hello_state.cpp`. The look-alike
+`external/labrador/samples/minimal/` remains the engine's original template.
+This page's manual copy keeps its template README and comments until you change them.
+New starter assemblies from the development engine provide a concise project README and
+adapt copy-specific comments to `MyGame` targets; the executable game code is the same.
+The original template's full README and change list stay in
+`external/labrador/samples/minimal/README.md`.
+
 <Steps>
 
 1. **Make the repository.** In the x64 Native Tools Command Prompt:

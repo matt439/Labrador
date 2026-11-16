@@ -1,7 +1,8 @@
 """Write the starter ZIP: Get Started's project, with the engine inside it.
 
 The ZIP holds one folder, mygame/, which is the project assemble.py makes:
-the template under game/ with its includes edited, the walkthrough's build
+the template under game/ with its includes and copy-specific comments edited,
+its own game README, the walkthrough's build
 files, the derived vcpkg.json, and at external/labrador every file of the
 engine tree that assemble.py copies. A reader who extracts it can configure,
 build, test and play without running Git. It adds README.txt, naming the
@@ -97,6 +98,11 @@ def readme(engine: Path, release: str | None) -> bytes:
         "",
         "A game project of your own, made from Labrador's minimal sample,",
         r"with the engine inside it in external\labrador.",
+        r"Edit game\, for example game\states\hello_state.cpp. The look-alike",
+        r"external\labrador\samples\minimal\ is the engine's original template.",
+        r"game\README.md describes this game's files, targets and guide links.",
+        r"The original template README and change list stay at",
+        r"external\labrador\samples\minimal\README.md.",
         "",
         f"Labrador version: {version}",
         f"Labrador commit: {commit}",

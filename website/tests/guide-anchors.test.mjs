@@ -9,6 +9,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { starterSources } from './helpers/starter-sources.mjs';
 
 const repository = fileURLToPath(new URL('../../', import.meta.url));
 const docs = join(repository, 'website/src/content/docs');
@@ -24,14 +25,9 @@ function read(path) {
 	return readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
 }
 
-// What the starter's project holds before any guide: samples/minimal as
-// game/, with its includes edited as tools/consumer_check/assemble.py edits
-// them, and the walkthrough's build files.
-const starter = [
-	...files(join(repository, 'samples/minimal')).map((path) =>
-		read(path).replaceAll('#include "samples/minimal/', '#include "game/')),
-	...files(join(repository, 'website/src/walkthrough')).map(read),
-];
+// Actual placed sources, including adapted game comments and README. Raw
+// rewrite rules and the engine template's original README are not anchors.
+const starter = [...starterSources(repository).values()];
 
 // The components 'Copy the components into your game' copies into game/components.
 const components = ['option_row.h', 'option_row.cpp', 'slider.h', 'slider.cpp']

@@ -86,6 +86,14 @@ ctest --preset x64-debug
 `python tools\consumer_check\assemble.py C:\dev\mygame` makes the same folder
 without the ZIP or its `README.txt`.
 
+Both assembly routes place the maintained `website/src/walkthrough/game-README.md`
+at `game/README.md` and adapt standalone comments through `game-comments.json`.
+The root ZIP instructions distinguish `game/` from the engine's look-alike
+`external/labrador/samples/minimal/`. The latter keeps the full original
+source, README and change list; assembly changes no engine files. Offline
+fixtures check comments, code-string preservation, line endings and ZIP
+contents, and compare the website's source-anchor model with real assembly.
+
 The listing must end `Total Tests: 2` and name `MyGameTests` and
 `MyGameSmokeTests`, and the last command must pass both.
 
