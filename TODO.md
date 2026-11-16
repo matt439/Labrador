@@ -69,8 +69,8 @@ settled. `REV#156` is closed with its bounded advisory-hint wording correction.
 calls are recorded. There is no unresolved `DECISION` row. Approved physical
 acceptance is `BLOCKED` on owner attendance or hardware; deploy-dependent
 checks are `WAITING`. Those statuses preserve the required evidence and do
-not tick acceptance boxes. `SM-30` is ready for its bounded approved work,
-with live-state inspection before any write.
+not tick acceptance boxes. `SM-30`'s live-settings read is blocked on
+access, as its owner records.
 
 `PI-14` is closed here as delegated coordination, not as new ColourWars
 qualification. Client changes are selected in BACKLOG's L129 to L131;
@@ -96,8 +96,9 @@ use and the observations that only that use can supply.
 
 **External events:** `SITE#4` waits for the documentation-site deployment;
 `WEB#12` waits for the separately hosted demo's deployment and its verifier
-receipt. `SM-30` reads and reconciles current documentation-site settings,
-then closes on a normal production log; it does not force a deployment.
+receipt. `SM-30` needs access to read the documentation-site build settings
+before reconciliation; it closes on a normal production log without forcing
+a deployment.
 
 ## Accepted decision batch of 2026-11-16
 
@@ -240,7 +241,7 @@ owner. These verdicts are planned work, not implementation or remote issue closu
 |---|---|---|---|---|
 | `SITE#4` | WAITING | should | S | After the documentation-site deploy, retain real-iPhone search observation with deployed revision/browser/date; the source fix and Simulator alone do not close it. |
 | `WEB#12` | WAITING | could | S | After the separately hosted demo deploy, run check_live.mjs for the intended commit and retain dated output/failures; loopback evidence is separate. [Scope](docs/port/web-to-be-tested.md). |
-| `SM-30` | OPEN | could | S | Reconcile current documentation-site Cloudflare settings to the approved gate/Node-file policy; close on a normal production log, with no forced deploy. [Scope](docs/product/BACKLOG.md#later). |
+| `SM-30` | BLOCKED | could | S | Workers Builds read is denied to the saved OAuth credential; dashboard access is unavailable. Reconcile after access, then wait for a normal production log. [Evidence](website/README.md#sm-30-access-check-2026-11-16). |
 
 ## Performance
 

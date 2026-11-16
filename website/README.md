@@ -325,14 +325,35 @@ decide. The earlier settings record used
 `npm ci && npm run check && npm test && npm run build` with `NODE_VERSION=24`;
 that record is not a current dashboard query.
 
-**Approved 2026-11-16 (`SM-30`):** this is `OPEN` reconciliation work, not a
-pending policy choice. Read the current settings for this documentation site
+**Approved 2026-11-16 (`SM-30`):** this is reconciliation work with its scope
+settled. Read the current settings for this documentation site
 before writing, then change only differences from the table: the one gate
 command, Node from `.node-version`, and no `NODE_VERSION` override. Retain a
 dated result, including an already-correct configuration if no change is
 needed. The next normal production build's log must show Node 24 and the
 gate before the story closes. No forced deploy is needed for this settings
 action; this planning amendment changes no dashboard setting or deployment.
+
+### SM-30 access check, 2026-11-16
+
+The existing Wrangler OAuth session identifies the `labrador` Worker through
+`GET /accounts/{account_id}/workers/scripts`. The documented settings read,
+`GET /accounts/{account_id}/builds/workers/{worker_tag}`, returns HTTP 403 and
+Cloudflare error 10000, `Authentication error`, with that credential.
+[Cloudflare's Builds API reference](https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/)
+requires a user-scoped token with Workers Builds Configuration access for
+these settings; working Worker access alone does not establish it.
+
+The available Edge window is blocked by its browser-settings modal, so the
+dashboard was not reached and no UI input was made. Neither the production
+build command nor the presence of a `NODE_VERSION` override is verified.
+No build setting or deployment was changed, and no new credential was created.
+
+`SM-30` is blocked on an accessible authenticated settings route. Once access
+is available, read the configuration before changing only differences from
+the table above. Then retain the next normal production build log showing
+file-selected Node 24 and `npm run gate`; a forced build is outside this
+action, and the story remains open until that log exists.
 
 These build settings live in Cloudflare's dashboard. The separate
 `.github/workflows/website.yml` checks, builds and retains an artifact for each pull request;

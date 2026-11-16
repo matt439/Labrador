@@ -1212,6 +1212,15 @@ No new removal API or stale-handle guarantee is implied.
   override, so Node 24 comes from the tracked file. Do not force a deployment
   or alter unrelated settings. The next normal production build's log showing
   the file-selected Node and gate steps closes the remaining acceptance.
+  **Access check, 2026-11-16:** the saved Wrangler OAuth credential can read
+  the `labrador` Worker but the documented Workers Builds settings GET returns
+  HTTP 403 with authentication error code 10000. The available browser is
+  blocked by a browser-settings modal; no UI input was made. The actual build
+  settings and production logs remain unread. Reconciliation is blocked on
+  access, not on approval. No build setting or deployment was changed, and
+  no new credential was created;
+  [the operational record](../../website/README.md#sm-30-access-check-2026-11-16)
+  retains the next step. This story remains unticked.
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
 - [x] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
   Source added 2026-10-29. Why links the existing Android scoping record and
