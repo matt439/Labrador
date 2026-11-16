@@ -41,6 +41,11 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-16.** A native game stays hidden until its first completed frame,
+  including content loading and the first draw. The engine reveals a normally
+  visible window itself; no platform show call is needed. Explicit hidden smoke
+  startup stays hidden, including when the launcher requests a visible window.
+
 - **2026-11-16.** Native X, Alt+F4 and system-menu Close ask the same quit
   question as Escape or B. `HelloState::on_close_requested()` opens it and
   `ConfirmState` declines repeat close requests; answering yes still calls

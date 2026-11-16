@@ -57,7 +57,10 @@ namespace labrador
 		std::optional<Vector2I> client_size;
 		bool fullscreen = false;
 
-		// Whether the window is shown. A smoke test or a capture tool says
+		// Whether the native window is shown after its first completed frame.
+		// Initialization, content loading and the first draw remain hidden;
+		// failure before end_frame succeeds never reveals the window.
+		// A smoke test or a capture tool says
 		// false and gets the whole shell - window, device, services - with
 		// nothing on screen and no focus taken, set_fullscreen included. The
 		// engine never shows a window created hidden; a window shown by other
@@ -187,8 +190,9 @@ namespace labrador
 		Application(const Application&) = delete;
 		Application& operator=(const Application&) = delete;
 
-		// Opens the window, creates the device, and builds the services. Throws
-		// std::runtime_error naming the step that failed (T6).
+		// Creates the window, device and services. A native window stays hidden
+		// until run() completes its first frame; visible=false keeps it hidden.
+		// Throws std::runtime_error naming the step that failed (T6).
 		void initialize();
 
 		// Loads everything the manifest names. Register any game-specific kinds

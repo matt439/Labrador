@@ -139,6 +139,51 @@ namespace labrador
 			return info.rcMonitor;
 		}
 
+		int launcher_show_command()
+		{
+			STARTUPINFOW startup = {};
+			startup.cb = sizeof(STARTUPINFOW);
+			GetStartupInfoW(&startup);
+			return (startup.dwFlags & STARTF_USESHOWWINDOW) != 0 ?
+				startup.wShowWindow : SW_SHOWDEFAULT;
+		}
+
+		// Establish maximized geometry without a show. Keep the ordinary
+		// placement so a subsequent restore returns to the requested size.
+		void prepare_maximized(HWND handle)
+		{
+			MONITORINFO monitor = {};
+			monitor.cbSize = sizeof(MONITORINFO);
+			WINDOWPLACEMENT placement = {};
+			placement.length = sizeof(WINDOWPLACEMENT);
+			if (GetMonitorInfoW(MonitorFromWindow(handle,
+				MONITOR_DEFAULTTONEAREST), &monitor) == FALSE ||
+				GetWindowPlacement(handle, &placement) == FALSE)
+			{
+				throw std::runtime_error("Could not prepare maximized window placement.");
+			}
+			const UINT dpi = frame_dpi(handle);
+			const int border_x = GetSystemMetricsForDpi(SM_CXSIZEFRAME, dpi) +
+				GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+			const int border_y = GetSystemMetricsForDpi(SM_CYSIZEFRAME, dpi) +
+				GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+			SetWindowLongPtrW(handle, GWL_STYLE,
+				GetWindowLongPtrW(handle, GWL_STYLE) | WS_MAXIMIZE);
+			if (SetWindowPos(handle, nullptr, monitor.rcWork.left - border_x,
+				monitor.rcWork.top - border_y,
+				monitor.rcWork.right - monitor.rcWork.left + 2 * border_x,
+				monitor.rcWork.bottom - monitor.rcWork.top + 2 * border_y,
+				SWP_NOACTIVATE | SWP_NOZORDER | SWP_FRAMECHANGED) == FALSE)
+			{
+				throw std::runtime_error("Could not size the hidden maximized window.");
+			}
+			placement.showCmd = SW_HIDE;
+			if (SetWindowPlacement(handle, &placement) == FALSE)
+			{
+				throw std::runtime_error("Could not retain the window's restore placement.");
+			}
+		}
+
 		// WM_PAINT with nothing to draw: validating the update region is what
 		// stops Windows sending the message again.
 		LRESULT paint_nothing(HWND window, UINT message, WPARAM w_param,
@@ -233,7 +278,8 @@ namespace labrador
 	// window's user data points at it from WM_CREATE to WM_NCDESTROY.
 	struct Window::Impl
 	{
-		Impl(const WindowOptions& options, WindowNotify* window_notify);
+		Impl(const WindowOptions& options, WindowNotify* window_notify,
+			bool defer_show);
 		~Impl();
 
 		Impl(const Impl&) = delete;
@@ -296,9 +342,8 @@ namespace labrador
 		LRESULT dispatch(HWND window, UINT message, WPARAM w_param,
 			LPARAM l_param);
 
-		// The constructor's half after CreateWindowExW: the frame measured
-		// again at the window's own DPI, and the first show.
-		void show(const WindowOptions& options);
+		// Measure at the window's own DPI, then show or prepare deferred reveal.
+		void show(const WindowOptions& options, bool defer_show);
 
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE, for the reason
 		// the constructor gives: messages arrive while it is still running, so
@@ -310,6 +355,8 @@ namespace labrador
 		bool in_suspend = false;
 		bool minimized = false;
 		bool power_suspended = false;
+		bool show_on_frame = false;
+		int show_command = SW_SHOWDEFAULT;
 
 		// The pointer. `active` is the last WM_ACTIVATEAPP, and `clipping` is
 		// whether the clip in force is this window's, so that releasing it
@@ -371,8 +418,10 @@ namespace labrador
 	};
 
 	Window::Impl::Impl(const WindowOptions& options,
-		WindowNotify* window_notify) :
+		WindowNotify* window_notify, bool defer_show) :
 		notify(window_notify),
+		show_on_frame(defer_show && options.visible),
+		show_command(launcher_show_command()),
 		cursor_hidden(!options.cursor_visible),
 		cursor_confined(options.cursor_confined),
 		min_width(options.min_window_width),
@@ -386,7 +435,9 @@ namespace labrador
 		window_class.hInstance = this->instance;
 		window_class.hIcon = LoadIconW(this->instance, L"IDI_ICON");
 		window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-		window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+		// The renderer owns the client pixels, including after a resize. A
+		// system brush can erase a completed frame during the first reveal.
+		window_class.hbrBackground = nullptr;
 		window_class.lpszClassName = options.window_class_name.c_str();
 		window_class.hIconSm = LoadIconW(this->instance, L"IDI_ICON");
 
@@ -450,44 +501,25 @@ namespace labrador
 		// a handler that throws there is kept by fail() and rethrown by it.
 		try
 		{
-			this->show(options);
+			this->show(options, defer_show);
 		}
 		catch (...)
 		{
 			this->take_down();
 			UnregisterClassW(this->class_name.c_str(), this->instance);
+			if (this->failure)
+			{
+				std::rethrow_exception(this->failure);
+			}
 			throw;
 		}
 	}
 
-	void Window::Impl::show(const WindowOptions& options)
+	void Window::Impl::show(const WindowOptions& options, bool defer_show)
 	{
-		// AND THE WM_SIZE THIS PRODUCES IS WORTH SOMETHING. It arrives before
-		// the device exists, so the renderer half of on_window_size_changed
-		// still does nothing - Renderer::window_size_changed rebuilds nothing
-		// before create_device and answers false (renderer.h). The
-		// resolution-manager half does not, so by the
-		// time the caller reads its resolution back for create_device, that is
-		// the client size the window really got. It matters most for the
-		// full-screen branch, where SW_SHOWMAXIMIZED decides the size and
-		// nothing here knows it. Without that read-back the back buffer is
-		// created at the saved preset and then scaled non-uniformly to the
-		// monitor, which is the form of this a shipped sample hits.
-		//
-		// A window created hidden is the exception. Windowed, it gets no such
-		// report, because the system sends an overlapped window its first
-		// WM_SIZE at its first show; full screen, the report is the requested
-		// size, because it is never maximised onto the monitor. Either way the
-		// caller's resolution stays the requested size, which is the client
-		// it got unless that is below the smallest window the system allows.
-		//
-		// SW_SHOWDEFAULT is what wWinMain's own show command would have said:
-		// it asks for whatever the process that started this one put in its
-		// STARTUPINFO, which is where that argument comes from.
-		//
-		// Before it, a per-monitor-v2 window created on a monitor whose DPI
-		// is not the system's has its frame measured again, at its own DPI,
-		// so the size report the show fires is already the size asked for.
+		// The layout needs the real client size before device creation. Match
+		// the frame's DPI before either ShowWindow's ordinary size report or
+		// the deferred Application's explicit read-back below.
 		if (frame_dpi(this->handle) != GetDpiForSystem())
 		{
 			const Vector2I corrected = this->outer_size(
@@ -496,9 +528,43 @@ namespace labrador
 				SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 		}
 
-		ShowWindow(this->handle,
-			!options.visible ? SW_HIDE :
-			options.fullscreen ? SW_SHOWMAXIMIZED : SW_SHOWDEFAULT);
+		if (defer_show)
+		{
+			// Even SW_HIDE can be overridden by STARTUPINFO on the first call.
+			// Do not call ShowWindow at all until a visible Application has a
+			// completed frame, and never call it for an explicitly hidden one.
+			if (options.visible)
+			{
+				if (options.fullscreen)
+				{
+					const RECT monitor = monitor_rect(this->handle);
+					SetWindowPos(this->handle, nullptr, monitor.left, monitor.top,
+						monitor.right - monitor.left, monitor.bottom - monitor.top,
+						SWP_NOZORDER | SWP_NOACTIVATE);
+				}
+				else if (this->show_command == SW_SHOWMAXIMIZED)
+				{
+					prepare_maximized(this->handle);
+				}
+				if (this->failure)
+				{
+					std::rethrow_exception(this->failure);
+				}
+				RECT client = {};
+				if (GetClientRect(this->handle, &client) == FALSE)
+				{
+					throw std::runtime_error("Could not read the window's client size.");
+				}
+				this->notify->on_window_size_changed(client.right - client.left,
+					client.bottom - client.top);
+			}
+		}
+		else
+		{
+			ShowWindow(this->handle,
+				!options.visible ? SW_HIDE :
+				options.fullscreen ? SW_SHOWMAXIMIZED : SW_SHOWDEFAULT);
+		}
 
 		if (this->failure)
 		{
@@ -569,8 +635,60 @@ namespace labrador
 	}
 
 	Window::Window(const WindowOptions& options, WindowNotify* notify) :
-		impl_(std::make_unique<Impl>(options, notify))
+		Window(options, notify, false)
 	{
+	}
+
+	Window::Window(const WindowOptions& options, WindowNotify* notify,
+		bool defer_show) : impl_(std::make_unique<Impl>(options, notify, defer_show))
+	{
+	}
+
+	void Window::prepare_frame()
+	{
+		if (this->impl_->show_on_frame && this->impl_->handle != nullptr &&
+			this->impl_->show_command == SW_SHOWMAXIMIZED &&
+			(GetWindowLongPtrW(this->impl_->handle, GWL_STYLE) & WS_POPUP) == 0)
+		{
+			// The first state's init/update may have changed full screen or
+			// resolution since the constructor prepared the initial geometry.
+			try
+			{
+				prepare_maximized(this->impl_->handle);
+			}
+			catch (...)
+			{
+				if (this->impl_->failure)
+				{
+					std::rethrow_exception(this->impl_->failure);
+				}
+				throw;
+			}
+			if (this->impl_->failure)
+			{
+				std::rethrow_exception(this->impl_->failure);
+			}
+		}
+	}
+
+	void Window::frame_completed()
+	{
+		if (!this->impl_->show_on_frame || this->impl_->handle == nullptr)
+		{
+			return;
+		}
+		this->impl_->show_on_frame = false;
+		const bool fullscreen = (GetWindowLongPtrW(this->impl_->handle,
+			GWL_STYLE) & WS_POPUP) != 0;
+		// Placement preparation can consume Windows' initial show handling.
+		// Use the command captured before it so the launcher keeps its say.
+		const int command = fullscreen && this->impl_->show_command == SW_SHOWDEFAULT ?
+			SW_SHOWMAXIMIZED : this->impl_->show_command;
+		ShowWindow(this->impl_->handle, command);
+		if (this->impl_->failure)
+		{
+			std::rethrow_exception(this->impl_->failure);
+		}
 	}
 
 	Window::~Window() = default;

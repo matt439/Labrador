@@ -381,6 +381,15 @@ namespace labrador
 		void set_cursor_confined(bool confined) const;
 
 	private:
+		friend class Application;
+
+		// Application keeps a native window hidden until end_frame succeeds.
+		// Direct Window owners retain the constructor's immediate-show contract;
+		// browser visibility belongs to the page in either case.
+		Window(const WindowOptions& options, WindowNotify* notify, bool defer_show);
+		void prepare_frame();
+		void frame_completed();
+
 		// Declared here and defined once per platform, so the platform's
 		// types stay in the translation unit that calls them. The platform
 		// holds Impl's address for the window's whole life - as the window's
