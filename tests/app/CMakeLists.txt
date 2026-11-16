@@ -44,7 +44,20 @@ if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
     AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(AppTests PRIVATE
         application_loop_tests.cpp
+        application_reveal_tests.cpp
         application_resize_tests.cpp
+    )
+    add_executable(ApplicationStartupChild WIN32 startup_child.cpp)
+    target_link_libraries(ApplicationStartupChild PRIVATE
+        LabradorEngine
+        labrador_settings
+    )
+    target_compile_definitions(ApplicationStartupChild PRIVATE
+        LABRADOR_STARTUP_APPLICATION=1
+    )
+    add_dependencies(AppTests ApplicationStartupChild)
+    target_compile_definitions(AppTests PRIVATE
+        LABRADOR_APPLICATION_STARTUP_CHILD="$<TARGET_FILE:ApplicationStartupChild>"
     )
 endif()
 

@@ -1593,6 +1593,21 @@ qualify first reveal, activation and full screen on all four native
 rasterisers, retaining dated visual evidence separately from automated
 results. Follow the app verification plan and required website checks.
 
+**Implementation, 2026-11-16:** the shell defers the native initial show until
+the first successful `end_frame`, sizes requested full screen while hidden,
+and leaves explicitly hidden startup untouched. No public show API is added.
+Native-null AppTests pass the lifecycle, first-draw failure, early-quit and
+STARTUPINFO hide/normal/maximized/minimized cases, including a launcher's
+visible request overridden by `visible=false`. The startup child also requires
+the first drawn back-buffer dimensions to survive reveal, and a maximized
+window to restore to the requested size. Maximized geometry is prepared while
+hidden, with the launcher's command captured before placement preparation.
+Initial-state full-screen transitions also retain the first draw's dimensions
+through reveal; pending maximized geometry is settled before drawing.
+The story remains unticked:
+the combined app matrix, website gate and dated visual qualification on every
+native rasteriser remain separate acceptance work.
+
 <a id="oca-88"></a>
 ### OCA-88. Query the dimensions of a loaded texture
 

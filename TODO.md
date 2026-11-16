@@ -109,7 +109,7 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-87` | OPEN | should | M | Reveal a normally visible native window after its first completed frame; qualify every native renderer and full screen (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
+| `OCA-87` | OPEN | should | M | Qualify the implemented first-frame reveal through the app matrix, website and dated native-rasteriser/full-screen visual evidence (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
 | `OCA-88` | OPEN | should | S | API, guide and regressions implemented; finish the remaining render-matrix and website qualification (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
 | `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
 | `OCA-90` | OPEN | should | M | Native request hooks and template confirmation pass native/wasm focused checks; combined app-matrix and browser lifecycle qualification remain. [Scope](docs/product/BACKLOG.md#oca-90). |

@@ -176,17 +176,9 @@ namespace labrador
 		this->mouse_ = std::make_unique<Mouse>();
 		this->touch_ = std::make_unique<Touch>();
 
-		// The window is already up by the time services are built, and a
-		// window that was given the foreground on creation gets no
-		// WM_ACTIVATEAPP to say so - it was already active when the handler
-		// that would have heard it did not exist. Without this the first key
-		// press after launch lands on an unfocused device and is discarded,
-		// and the player's first input in the process is silently the one that
-		// does nothing.
-		//
-		// What a canvas that does not have the keyboard said in the window's
-		// constructor is kept in has_keyboard_ and applied here, so the same
-		// line covers both.
+		// Apply any focus report made before the input services existed. Native
+		// activation arrives on the first-frame reveal; a canvas may already
+		// have reported that the page's keyboard belongs to another element.
 		this->set_input_focus(this->foreground_ && this->shown_ &&
 			this->has_keyboard_);
 		this->touch_->set_focused(this->foreground_ && this->shown_);
@@ -201,15 +193,10 @@ namespace labrador
 		const WindowOptions window_options = window_options_for(this->options_,
 			this->resolution_manager_->resolution_ivec());
 
-		// `this` is handed over in the constructor, not after it: the window's
-		// first size report arrives before this call returns, and it is what
-		// corrects resolution_manager_ to the client size the window really
-		// got before create_device reads it back. A window created hidden on
-		// Windows makes no report when windowed and reports the requested
-		// size when full screen; either way resolution_manager_ keeps the
-		// requested size, which is the client size it got unless that is
-		// below the smallest window the system allows.
-		this->window_ = std::make_unique<Window>(window_options, this);
+		// Size reports must reach the layout before create_device reads it.
+		// Application alone owns deferred reveal, through Window's private
+		// constructor; no game-side platform show call is required.
+		this->window_.reset(new Window(window_options, this, true));
 	}
 
 	void Application::create_services()
@@ -498,6 +485,7 @@ namespace labrador
 		// declares its views and fills them; recording, executing and releasing
 		// the per-view command lists is submit()'s business, in one copy,
 		// behind the seam.
+		this->window_->prepare_frame();
 		this->renderer_->begin_frame();
 		marks.frame_begun = std::chrono::steady_clock::now();
 
@@ -510,6 +498,7 @@ namespace labrador
 
 		this->renderer_->end_frame();
 		marks.frame_ended = std::chrono::steady_clock::now();
+		this->window_->frame_completed();
 
 		// Last, so a frame that threw anywhere above publishes nothing.
 		this->frame_timer_.publish(marks, this->frame_timings_);

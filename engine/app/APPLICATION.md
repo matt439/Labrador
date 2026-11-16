@@ -51,6 +51,20 @@ preset has `ViewportManager` lay out every viewport and divider for 1280x720
 inside a 1440p back buffer, and the game renders into the top-left corner of its
 own window with the rest cleared black. A dragged window edge is the same door.
 
+Application creates a native window without showing it. A requested full-screen
+window is sized to its monitor while hidden, and the actual client size reaches
+the layout before device creation. A launcher-requested maximized window is
+also sized while hidden, retaining its ordinary restore placement. Its captured
+startup command is applied explicitly at reveal, because preparing placement
+can consume the platform's initial show handling. Pending maximized geometry
+is checked again before the first draw, after any initial-state full-screen or
+resolution changes. After the first successful `end_frame`, the
+window performs its initial show with the normal STARTUPINFO contract. An
+explicitly hidden window never makes that call, even if the launcher requested
+a visible window. The class has no background brush to erase rendered content
+during reveal or subsequent sizing. Direct owners of `Window` retain its public
+constructor's immediate-show contract; deferred reveal is private to the shell.
+
 ## 3. Why the state stack is drained first
 
 The services are borrowed by the states, and `application.h` says the

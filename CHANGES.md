@@ -117,6 +117,19 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 — Reveal application windows after the first completed frame
+
+**Behaviour change.** A normally visible native `Application` stays hidden
+through initialization, content loading and its first draw, then shows after
+`Renderer::end_frame` succeeds. Requested full screen and launcher-requested
+maximized geometry are sized before device creation, with the ordinary restore
+placement retained. A startup failure before that frame reveals no window, and the
+window class no longer paints a system background brush over rendered content.
+`visible=false` remains hidden even when the process launcher requests a visible
+window. STARTUPINFO still controls the first show of a normally visible game.
+A game needs no native show call; remove any workaround that reveals the window
+before the engine's first frame. Browser visibility remains page-owned.
+
 ### 2026-11-16 - Let states answer native window-close requests
 
 **New API and template behaviour.** Native X, Alt+F4 and system-menu Close now

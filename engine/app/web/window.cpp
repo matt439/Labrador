@@ -904,6 +904,19 @@ namespace labrador
 	{
 	}
 
+	Window::Window(const WindowOptions& options, WindowNotify* notify,
+		[[maybe_unused]] bool defer_show) : Window(options, notify)
+	{
+	}
+
+	void Window::prepare_frame()
+	{
+	}
+
+	void Window::frame_completed()
+	{
+	}
+
 	Window::~Window() = default;
 
 	void* Window::handle() const

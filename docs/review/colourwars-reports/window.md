@@ -796,3 +796,31 @@ answered by this selection. Hidden presentation on D3D12, Vulkan and GL,
 full-screen startup and the eventual implementation's first-frame ordering
 remain to be qualified. No source change, build or new capture accompanies
 the selection.
+
+### Implementation and remaining qualification, 2026-11-16
+
+Application keeps native startup hidden through its first successful
+`Renderer::end_frame`, then performs the initial show itself. Full-screen
+geometry is established while hidden before device creation, and the window
+class has no system background brush. Explicitly hidden Applications make no
+ShowWindow call, including when a launcher requests normal or maximized startup.
+Launcher-requested maximized geometry is also prepared while hidden, preserving
+the ordinary restore placement and captured startup command. The deferred
+constructor and completed-frame notification are private to the
+shell, so no public show API or game-side platform call is introduced.
+
+Native-null AppTests cover first-draw invisibility, visibility after a completed
+frame, hidden and visible full-screen startup, first-draw failure and quitting
+before drawing. A child process also checks STARTUPINFO hide, normal, maximized
+and minimized commands, and explicitly hidden startup under visible launcher
+commands. The child also checks that reveal does not resize the first drawn buffer and
+that maximized startup retains the requested restore size, including after
+initial-state full-screen transitions. The previous
+maximized path failed that new buffer-size assertion before hidden maximized
+preparation was added. Those tests pass. These are automated geometry results,
+not screen captures.
+
+The November 13 captures remain historical evidence;
+the new implementation still needs the app matrix, website gate and dated
+first-reveal, activation and full-screen visual qualification on each native
+rasteriser. [OCA-87](../../product/BACKLOG.md#oca-87) remains open for that work.
