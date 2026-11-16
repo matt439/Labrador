@@ -118,3 +118,10 @@ the qualification checkout. No live public or private
 account collection was invoked for implementation; account-read qualification
 occurs only with an explicit later owner invocation. The combined website
 gate remains part of integration.
+
+## Combined qualification, 2026-11-17
+
+The combined website gate and complete local lint passed at `fadd1a63`,
+closing SM-90. [The PR record](verification/2026-11-17-pr-current.md) retains
+the source and logs. No live public/private counter collection was invoked;
+that qualification remains conditional on an explicit owner invocation.

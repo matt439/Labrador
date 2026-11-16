@@ -4,6 +4,11 @@ The [November 17 integration checkpoint](verification/2026-11-17-overnight-check
 records the first completed overnight cohort, including source-specific native,
 browser, Release, sanitizer and website results and retained initial failures.
 
+The later [current PR qualification](verification/2026-11-17-pr-current.md)
+records the complete seven-track sweep and Vulkan synchronization at
+`fadd1a63`, with local lint/site receipts and explicit Release/ASan/consumer
+and physical limits.
+
 The separate opt-in [native-null AddressSanitizer qualification](verification-asan.md)
 uses `x64-debug-null-asan`, its own dependency triplet and a full configured
 suite with a deterministic detection probe. It is not an additional render

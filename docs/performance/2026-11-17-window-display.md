@@ -89,3 +89,11 @@ The [pacing method](../port/pacing-method.md) and
 [native collection procedure](local-frame-bench.md) retain the operator's
 physical-display and mode record. The combined app verification matrix,
 website gate and lint remain the branch's ordinary integration gates.
+
+## Combined qualification, 2026-11-17
+
+The combined seven-track app sweep, local lint and website gate subsequently
+passed at `fadd1a63`, closing SM-86. [The PR record](../verification/2026-11-17-pr-current.md)
+retains that integration evidence. The native mode observations above retain
+their earlier source and do not become measured pacing or physical
+monitor-transfer/mode-change acceptance.

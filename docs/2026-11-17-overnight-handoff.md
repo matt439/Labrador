@@ -4,6 +4,17 @@ The owner cleared the autonomous goal. Further implementation and integration
 are stopped. Work is local on `work/overnight-todo-2026-11-16`; nothing from
 this Labrador branch was pushed, published or opened as a PR.
 
+## PR verification follow-up
+
+The owner later requested a PR for the already integrated branch. At
+`fadd1a63`, the complete seven-track sweep, current Vulkan synchronization,
+local lint and website gate passed; [the PR qualification record](verification/2026-11-17-pr-current.md)
+closes seven integration-only story gates. It preserves the source-specific
+failure and earlier receipts below. This bounded PR work does not resume
+the cleared autonomous goal or integrate any isolated scope listed here.
+Current native Release/ASan, final-consumer and owner-cut release qualification
+remain separate from these results.
+
 ## Integrated source and evidence
 
 The implementation checkpoint before this handoff is
@@ -62,7 +73,7 @@ found no remaining matching build/test processes or task listeners.
 
 Important integration checks: derive browser/weekly counts from the current
 inventory; preserve all page registrations; preserve both display and process
-metadata; the consumer workflow currently has eight direct native build
+metadata; the CI workflow currently has eight direct native build
 commands, all wrapped. SM-98 adds a ninth. Keep the icon option before cursor
 in the aggregate options. Recheck collision captures after contact changes.
 

@@ -92,3 +92,11 @@ In the standalone engine sample, the equivalent native option is the same
 `GAME_ICON_FILE`; run the preset from the repository root and select your own
 absolute path. The test resource under `tests/app/` is only a one-pixel
 file-format fixture and is not the starter's artwork.
+
+## Combined qualification, 2026-11-17
+
+The combined seven-track app sweep, local lint and website gate passed at
+`fadd1a63`, closing OCA-107's remaining integration gate.
+[The PR record](verification/2026-11-17-pr-current.md) retains those results.
+The earlier installed-resource proof and the unobserved artwork/scaling
+appearance remain distinct; OCA-66's physical observation is still separate.

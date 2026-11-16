@@ -136,8 +136,6 @@ their owners hold completed results.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-86` | OPEN | could | M | Query and report implemented; finish combined app-matrix qualification (`IDEA#15`). [Scope](docs/product/BACKLOG.md#sm-86). |
-| `OCA-107` | OPEN | should | M | Runtime titles, named icons and optional install recipe implemented; qualify the combined app sweep (`IDEA#16`). [Scope and focused evidence](docs/product/BACKLOG.md#oca-107). |
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend on real non-Xbox pads; keep four slots. Waits for hardware access (`GAP#1`). [Scope](docs/product/BACKLOG.md#oca-108). |
 
 ## Fourth accepted decision batch of 2026-11-16
@@ -150,12 +148,8 @@ decision to keep the current rendering-text API. Implementation is open.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-111` | OPEN | could | M | Add best-effort layout labels distinct from stable binding tokens to `OCA-110`'s completed example (`REV#58`). [Scope](docs/product/BACKLOG.md#oca-111). |
-| `OCA-113` | OPEN | could | M | Run combined app verification for implemented native/CSS cursor shapes; native/wasm-null, CSS lifecycle and gallery page checks pass (`IDEA#17`). [Scope](docs/product/BACKLOG.md#oca-113). |
 | `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
-| `OCA-115` | OPEN | could | S | Selected-device texture-size query and oversized diagnostics implemented; combined render runtime and full lint qualification remain (`REV#33`). [Scope and focused checks](docs/product/BACKLOG.md#oca-115). |
-| `SM-87` | OPEN | could | S | Observations and focused native/wasm checks implemented; finish the combined app matrix and website qualification (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
 | `SM-89` | WAITING | could | M | Five non-required weekly selections and exact-inventory checks are staged; retain the first hosted results after owner publication (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
-| `SM-90` | OPEN | should | XS | Manual collector, privacy boundaries and offline API/replay checks pass; close after the website gate (`REV#54`). Live reads stay explicitly owner-invoked. [Scope](docs/product/BACKLOG.md#sm-90). |
 
 ## Fifth accepted decision batch of 2026-11-16
 
@@ -168,7 +162,6 @@ scope; it does not publish a release, change settings or claim acceptance.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
-| `SM-93` | OPEN | could | M | Cross-site bundle focus, fullscreen-policy, quit/replay and loader-failure regression passes Chromium and protocol/site checks; finish combined-root lint (`REV#72`). [Scope and evidence](docs/product/BACKLOG.md#sm-93). |
 | `OCA-119` | BLOCKED | could | S | Await a qualified trusted-key or informal human browser observation. Computer Use stopped before any trusted input; no Escape behaviour is claimed. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |
