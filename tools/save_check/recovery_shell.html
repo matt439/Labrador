@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Recoverable settings example</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body { font: 1rem system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; }
+        button, input { font: inherit; padding: .5rem; margin: .25rem; }
+        #message { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Recoverable settings</h1>
+    <p>This example keeps the last acknowledged generation while a new save is pending.</p>
+    <p id="current">Loading browser storage…</p>
+    <fieldset id="actions" disabled>
+        <legend>Effects volume</legend>
+        <label>Volume from 0 to 100 <input id="volume" type="number" min="0" max="100" step="1" value="37"></label>
+        <button id="apply">Apply and save</button>
+        <button id="retry">Retry pending save</button>
+        <button id="previous">Create fresh copy from previous valid settings</button>
+        <button id="defaults">Create fresh copy with defaults</button>
+    </fieldset>
+    <p id="message" role="status">Restoring before the game reads its settings.</p>
+    <p>Recovery leaves the originals intact. A failed browser sync is reported; it does not promise rollback or power-loss durability.</p>
+    <script>
+        let settle;
+        window.labradorExit = new Promise((resolve) => { settle = resolve; });
+        let busy = false;
+        var Module = {
+            onAbort: (reason) => { document.getElementById('message').textContent = String(reason); settle({abort:String(reason)}); },
+            onError: (reason) => { document.getElementById('message').textContent = String(reason); settle({abort:String(reason)}); },
+            renderSettings: () => {
+                const state = Module.settingsState;
+                document.getElementById('actions').disabled = busy || !Module.settingsReady;
+                if (!state) return;
+                document.getElementById('current').textContent = `Retained settings volume: ${state.volume}. Profile: ${state.profile}.`;
+                document.getElementById('apply').disabled = !state.canSave;
+                document.getElementById('retry').disabled = !state.retryAvailable;
+                document.getElementById('previous').disabled = !state.recoveryAvailable;
+                document.getElementById('message').textContent = state.message;
+            },
+        };
+        async function action(operation) {
+            busy = true;
+            Module.renderSettings();
+            const result = await operation();
+            busy = false;
+            Module.renderSettings();
+            document.getElementById('message').textContent = `${result.status}: ${result.message}`;
+        }
+        document.getElementById('apply').onclick = () => action(() => Module.saveVolume(Number(document.getElementById('volume').value)));
+        document.getElementById('retry').onclick = () => action(() => Module.retrySave());
+        document.getElementById('previous').onclick = () => action(() => Module.recoverPrevious());
+        document.getElementById('defaults').onclick = () => action(() => Module.recoverDefaults());
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

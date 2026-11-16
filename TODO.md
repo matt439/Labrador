@@ -147,7 +147,6 @@ decision to keep the current rendering-text API. Implementation is open.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-111` | OPEN | could | M | Add best-effort layout labels distinct from stable binding tokens to `OCA-110`'s completed example (`REV#58`). [Scope](docs/product/BACKLOG.md#oca-111). |
-| `OCA-112` | OPEN | could | M | Provide a game-owned save/recovery example preserving prior valid and unrecognised data, with platform durability limits (`IDEA#3`). [Scope](docs/product/BACKLOG.md#oca-112). |
 | `OCA-113` | OPEN | could | M | Add native/CSS cursor shapes with gallery pointer use, preserving visibility and confinement (`IDEA#17`). [Scope](docs/product/BACKLOG.md#oca-113). |
 | `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
 | `OCA-115` | OPEN | could | S | Report the selected device's texture-size limit and include it in oversized-upload diagnostics (`REV#33`). [Scope](docs/product/BACKLOG.md#oca-115). |

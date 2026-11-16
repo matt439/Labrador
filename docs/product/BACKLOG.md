@@ -1432,7 +1432,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
 - [x] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
 - [ ] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
-- [ ] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
+- [x] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
 - [ ] **[OCA-113](#oca-113)** Could · M · The Outside Adopter: Choose a native or canvas cursor shape for the current page interaction
 - [ ] **[OCA-114](#oca-114)** Could · M · The Outside Adopter: Copy held touch buttons and a virtual-stick region without adopting a game action map
 - [ ] **[OCA-115](#oca-115)** Could · S · The Outside Adopter: Read the selected device's texture limit and understand an oversized-texture refusal
@@ -3090,6 +3090,32 @@ data, interrupted and failed writes and retry. Browser reload checks exercise
 both sync success and failure in an isolated profile; tests use disposable
 directories rather than real user saves. Follow the guide in an assembled
 project and run affected tooling, lint and the website gate.
+
+**Closed, 2026-11-17:** [Recover a failed save](../../website/src/content/docs/docs/guides/save-recovery.mdx)
+copies a separate game-owned store into an assembled starter. Version 1
+migrates in memory only; version 2 alternates two complete generations via
+an exclusive draft. Checked native writes/flush/close and inactive
+ReplaceFileW/MoveFileExW publication retain the acknowledged slot. Explicit
+browser flush failure keeps that slot and the pending attempt; retry does
+not rotate the previous-copy role. Rejected sync may have persisted new
+bytes and is not promised to roll back. Unknown/duplicate keys, bad kinds,
+range errors, partial drafts, future versions and conflicting generations
+block ordinary saving. Fresh-copy recovery chooses validated previous
+values or defaults without changing any originals. One writer per directory
+is required; no power-loss, eviction or universal transaction guarantee.
+
+MSVC native-null assembled tests passed (save, ordinary rules and smoke,
+3/3); Emscripten 6.0.12 compiled and passed the same save rules under Node.
+Real Windows locks denied draft-flush and inactive replacement operations;
+both retained the valid generation and succeeded on explicit retry after
+unlocking. Chrome 157.0.8103.78 in an isolated profile passed acknowledged
+reload, a real aborted IndexedDB write transaction with old-value reload,
+retry/new-value reload, future-data refusal and fresh-profile recovery with
+original bytes retained. The page checks that abort case, not every storage
+failure. Existing consumer jobs now retain optional compiled checks after
+baseline/material checks, without changing ordinary starter test counts.
+Offline fixture/JavaScript tests and the website gate passed. No live saves
+or storage settings changed.
 
 <a id="oca-113"></a>
 ### OCA-113. Select native and canvas cursor shapes through the app seam

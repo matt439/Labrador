@@ -1,0 +1,182 @@
+---
+title: Recover a failed save
+description: Copy a game-owned versioned settings example that keeps prior and unrecognised data, reports failed saves, and retries explicitly.
+sidebar:
+  order: 4.5
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+
+[Settings and saves](/docs/guides/settings-and-saves/) introduces a location and a small
+writer. Its writer truncates a file. This optional example adds a stricter policy for a
+game that needs to retain its previous settings when a write fails. Copy it into a
+**development starter made from this checkout**; the released v0.3.0 starter predates it.
+It changes no ordinary starter files until you explicitly run the fixture below.
+
+The format, migration, writer and recovery choices belong to your game. Labrador supplies
+the checked JSON reader. This example serializes only fixed integer fields; it adds no
+engine JSON writer. It assumes **one writer per save directory**, including one browser
+tab. Byte checks detect observed external edits, but are not a concurrency lock.
+
+## Add the example to your project
+
+Install [the tools](/docs/get-started/prerequisites/) and get the source checkout as in
+[Build Labrador](/docs/get-started/build-labrador/). From that engine checkout in an
+x64 Native Tools Command Prompt, assemble a new project on a short path:
+
+```bat
+python tools\consumer_check\assemble.py C:\dev\save-game
+cd /d C:\dev\save-game
+```
+
+The destination must be new or empty. Then, from the new project's folder:
+
+```bat
+python external\labrador\tools\consumer_check\save_fixture.py .
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target MyGameSaveTests
+ctest --preset x64-debug -R "^MyGameSaveTests$" --no-tests=error --output-on-failure
+```
+
+The command copies <RepoLink path="tools/save_check/recovery_settings.h">the store</RepoLink>,
+its implementation, tests and browser page into `game/save_example/`, and adds optional
+CMake targets at the project root. It refuses existing files. Your ordinary game and its
+two tests stay as they were; this extra test owns disposable directories and opens no
+real player's settings. The source files under `game/save_example/` are now your code.
+
+## Understand what is retained
+
+The only migration reads `settings.json` with `{"version":1,"volume":37}` and turns
+`volume` into `effects_volume` **in memory**. Loading writes nothing. An explicit save
+writes version 2, for example:
+
+```json
+{"version":2,"generation":1,"effects_volume":37}
+```
+
+`settings-a.json` and `settings-b.json` hold alternating generations. A save exclusively
+creates `settings-pending.json`, then publishes it to the inactive slot. The currently
+acknowledged slot and any legacy `settings.json` remain untouched. The highest validated
+complete generation is selected on load. Two conflicting values at the same highest
+generation require recovery rather than an arbitrary choice.
+
+| Load outcome | What the game can do |
+| --- | --- |
+| `missing` | Use defaults in memory; create files only after an explicit save. |
+| `current` | Use the validated version 2 settings. |
+| `migrated` | Use validated version 1 values in memory; retain the original bytes. |
+| `recovery_required` | Show the reported reason. Retry a validated pending attempt, or choose a fresh recovery directory. |
+
+Malformed JSON, unsupported versions, duplicate or unknown fields, wrong kinds and
+out-of-range values block ordinary saves. This includes an unrecognised inactive file,
+even if another slot is valid. A partial draft is preserved. A complete draft whose
+generation follows the loaded one can be retried explicitly. The example never deletes
+these files as an automatic repair.
+
+`loaded()` returns the last loaded or acknowledged values and the available actions.
+`prepare()` returning `prepared` means publication succeeded; it does **not** mean that
+the caller may show “saved”.
+
+<SourceFile path="tools/save_check/recovery_settings.h" from="enum class LoadStatus" to="enum class RecoveryChoice" />
+
+## Acknowledge a native save
+
+Choose your game's per-user directory as in
+[Choose a per-user folder on Windows](/docs/guides/settings-and-saves/#choose-a-per-user-folder-on-windows).
+Keep a store alive for that directory. Apply a setting in memory separately from reporting
+that it was saved:
+
+```cpp
+save_example::SettingsStore settings(directory);
+const save_example::SaveReport result = settings.prepare(37);
+if (result.status == save_example::SaveStatus::prepared)
+{
+    const save_example::SaveReport saved = settings.complete(true);
+    // Show saved.message and check saved.status before acknowledging success.
+}
+else
+{
+    // Show result.message; offer only the actions in settings.loaded().
+}
+```
+
+The Windows implementation uses `CreateFileW(CREATE_NEW)`, checked writes,
+`FlushFileBuffers` and a checked close for the draft. It uses `ReplaceFileW` for an
+existing inactive slot, or `MoveFileExW` without replacement for a missing one. A failed
+replacement can alter the inactive pathname; retry rescans it, without promoting it to
+the acknowledged role. Once the checked publication succeeds, this native example can
+call `complete(true)`.
+
+These calls do not establish a universal filesystem transaction or power-loss durability.
+Storage hardware, filesystem behavior and directory metadata still matter. The retention
+policy protects a separate previous file during this example's reported operations; it
+is not a backup service. Keep valuable saves backed up under a policy you choose.
+
+## Report browser flush failures
+
+In an Emscripten environment, from the same project:
+
+```bat
+cmake --preset wasm-debug
+cmake --build --preset wasm-debug --target MyGameSaveTests MyGameSavePage
+ctest --preset wasm-debug -R "^MyGameSaveTests$" --no-tests=error --output-on-failure
+```
+
+Serve `out/build/wasm-debug/` over HTTP as in
+[Build for the browser](/docs/guides/browser/), then open `MyGameSavePage.html`. The page
+offers Apply, Retry and explicit fresh-copy recovery. It is a standalone settings demo;
+it does not change the game's entry point or apply a sound volume.
+
+<RepoLink path="tools/save_check/recovery_persist.js">The page's JavaScript</RepoLink>
+mounts `/save` with IDBFS and waits for `FS.syncfs(true)` before C++ main reads anything.
+A restore failure stops startup, so defaults cannot silently overwrite unrestored data.
+`Module.saveVolume(37)`, `Module.retrySave()`, `Module.recoverPrevious()` and
+`Module.recoverDefaults()` return promises with an explicit `status` and `message`.
+The wrapper serializes requests. It calls `complete(true)` only after `FS.syncfs(false)`
+reports success. A rejected flush calls `complete(false)`, retains the pending attempt
+and previous acknowledged values, and returns `flush_failed`.
+
+Retry uses the same pending generation; it does not rotate the previous slot. A failed
+sync is **not proof of rollback**: some new bytes may already have reached browser
+storage. After reload, a complete newer generation may be selected. The old valid
+generation remains available, but the page cannot promise which attempt persisted from
+the rejected callback alone. Successful sync proves the tested reload behavior, not
+retention after eviction, cleared site data, private-session closure or power loss.
+Save while the page is running; do not rely on `beforeunload` completing async work.
+
+## Recover without replacing the originals
+
+Show the player's recovery choice instead of silently repairing an unknown format.
+`recovery_copy(fresh_directory, RecoveryChoice::previous_valid)` chooses the validated
+previous values, when available; `RecoveryChoice::defaults` chooses the game's defaults.
+The destination must not exist. The returned store holds those values in memory only;
+an explicit `prepare()` and acknowledgement are still required. Every original stays
+at its original path, including future or malformed data that another game version may
+understand. Inspect or export that directory before choosing any later cleanup policy.
+
+The browser demo offers one fresh directory, `/save/recovered`. Its URL changes to
+`?profile=recovered` only after an acknowledged save, so reload selects that copy. It
+refuses to overwrite an existing recovered directory. A game with more profiles needs
+its own selection and naming UI; this example is not a profile manager.
+
+## What was checked
+
+On 2026-11-17, an assembled development starter compiled and passed `MyGameSaveTests`
+with MSVC and with Emscripten 6.0.12 under Node. Native tests exercised an exclusive-open
+collision and a real Windows sharing lock that denied replacement, then retried after
+the lock was released. Fixtures covered missing/current/old/future versions, invalid
+fields, partial and complete interrupted drafts, external edits, migration refusal and
+fresh-copy recovery. All paths belonged to disposable test directories.
+
+Chrome 157.0.8103.78, in the page runner's isolated profile, acknowledged volume 37 and
+read it back after reload. The driver then aborted the real next IndexedDB read/write
+transaction: the page reported failure, retained the old slot and reloaded 37. A repeated
+failure followed by explicit retry reloaded 52. A future-version file blocked ordinary
+saving, and explicit recovery to a fresh profile reloaded the validated value while
+retaining all original bytes. This checks that transaction-abort case; it does not
+simulate every quota, disk or browser shutdown failure.
+
+<RepoLink path="tools/save_check/README.md">The retained check commands</RepoLink> run the
+same compiled page and real reload driver. No live user save or system storage setting
+was changed.

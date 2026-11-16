@@ -1025,6 +1025,17 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           python "%GITHUB_WORKSPACE%\tools\consumer_check\material_fixture.py" . --check-invalid-shader out\build\wasm-release
 
+      - name: Check game-owned save recovery and real browser reload
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\save_fixture.py" . || exit /b 1
+          cmake --preset wasm-release || exit /b 1
+          cmake --build --preset wasm-release --target MyGameSaveTests MyGameSavePage || exit /b 1
+          ctest --preset wasm-release -R "^MyGameSaveTests$" --no-tests=error --output-on-failure || exit /b 1
+          "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\MyGameSavePage.html --input "%GITHUB_WORKSPACE%\tools\save_check\recovery_reload.mjs" --timeout 60
+
   # THE PROJECT GET STARTED TEACHES, BUILT AGAINST THIS CHANGE'S ENGINE. Every
   # job above builds Labrador as the top-level project, where CMAKE_SOURCE_DIR
   # is the engine's root, all the tests' packages are in the manifest, and the
@@ -1256,3 +1267,12 @@ jobs:
         run: |
           call "%VCVARS%"
           python "%GITHUB_WORKSPACE%\tools\consumer_check\material_fixture.py" . --check-invalid-shader out\build\x64-debug
+
+      - name: Check game-owned save recovery beside the shipping engine
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\save_fixture.py" . || exit /b 1
+          cmake --preset x64-debug || exit /b 1
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset x64-debug --target MyGameSaveTests || exit /b 1
+          ctest --preset x64-debug -R "^MyGameSaveTests$" --no-tests=error --output-on-failure
