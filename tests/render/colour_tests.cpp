@@ -41,18 +41,23 @@ TEST_SUITE("Colour")
 
 	TEST_CASE("a NaN channel clamps to 0, so 0/0 stays in [0, 1]")
 	{
+		// Supply zero at runtime: IPO can otherwise diagnose the deliberate
+		// constant-zero division before the colour's IEEE result is clamped.
+		volatile float runtime_zero = 0.0f;
+		const float zero = runtime_zero;
+		const Colour black(zero, zero, zero);
 		// Black's colour channels are 0, so dividing by black is 0/0 in each.
-		const Colour divided = Colour::black / Colour::black;
+		const Colour divided = Colour::black / black;
 		CHECK(divided.r == 0.0f);
 		CHECK(divided.g == 0.0f);
 		CHECK(divided.b == 0.0f);
 		CHECK(divided.a == 1.0f);
 
 		Colour assigned = Colour::black;
-		assigned /= Colour::black;
+		assigned /= black;
 		CHECK(assigned == divided);
 
-		const Colour by_zero = Colour::black / 0.0f;
+		const Colour by_zero = Colour::black / zero;
 		CHECK(by_zero.r == 0.0f);
 		CHECK(by_zero.a == 1.0f);
 
