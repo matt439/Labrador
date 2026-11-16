@@ -37,12 +37,13 @@ the owner's informal iPhone search. `WEB#12` waits for the next
 These are different deploy events. Neither deployment is performed or newly
 scheduled by this record, and the existing dated results below remain intact.
 
-`OCA-79` is approved `OPEN` work for one bounded current-release starter
-proof: plain engine files in a dedicated public test repository, its first
-push and a green copied workflow recorded in the guides. Read current account
-and repository state before that action. This approval does not extend to
-pushing the Labrador work branch, deploying a site or creating a recurring
-publication bot. No push or hosted result accompanies this planning record.
+`OCA-79` closed on 2026-11-16: the unchanged current-release `v0.3.0` starter,
+with plain engine files, passed its
+[first push's workflow](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329)
+in the dedicated public repository after account, target and payload review.
+The guides retain that result and the remaining browser-form/sign-in limits.
+This proof pushed no Labrador work branch, deployed no site and created no
+recurring publication bot; [BACKLOG.md](../product/BACKLOG.md#oca-79) owns its receipt.
 
 `SM-30` is approved `OPEN` work to read the current Labrador documentation
 site's Cloudflare settings and reconcile only differences from

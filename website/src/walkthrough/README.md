@@ -51,7 +51,12 @@ are the job's own, which is what the guide says. `ci.yml` itself ran
 on 26 October 2026, with the steps it has now, in
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), the
 walkthrough project at `v0.2.0`, twice and green, the second run restoring the
-first's vcpkg cache; *Check your game in CI* links both runs. CI's `wasm-consumer` job extracts a ZIP of the
+first's vcpkg cache; *Check your game in CI* links both runs. On 16 November
+2026 the unchanged `v0.3.0` starter ZIP, committed as plain engine files in
+[matt439/labrador-starter-proof](https://github.com/matt439/labrador-starter-proof),
+also passed its [first push's workflow](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329),
+both game tests and the cache save. The ZIP's `ci.yml` is byte-for-byte this
+file. CI's `wasm-consumer` job extracts a ZIP of the
 same project and builds its `wasm-release` preset with Emscripten, runs
 `MyGameTests` under Node, and loads `MyGame.html` in headless Chrome with
 `tests/render/web/run_page.mjs`, which presses Escape and Enter and passes when

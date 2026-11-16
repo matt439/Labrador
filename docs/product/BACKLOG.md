@@ -650,8 +650,9 @@ The shared acceptance groups are:
   only after that readiness; enumeration or RTX/software results do not
   substitute for the selected adapter.
 
-OCA-79 and SM-30 are ready approved work in their existing Later positions,
-within the scope below; this planning change performs neither action.
+This planning amendment made OCA-79 and SM-30 ready approved work in their
+existing Later positions, within the scope below; it performed neither action.
+OCA-79's later [hosted proof](#oca-79) is recorded with its result.
 SITE#4 waits for the next documentation-site deployment before its informal
 iPhone search, while WEB#12 waits for the next demo deployment before the live
 automated bundle check. Neither waiting row authorises a deployment.
@@ -1358,7 +1359,7 @@ No new removal API or stale-handle guarantee is implied.
 
 - [x] **[OCA-78](#oca-78)** Must - M - The Outside Adopter: Start my own game from a release download, without Git
 
-- [ ] **[OCA-79](#oca-79)** Should - S - The Outside Adopter: My approved dedicated public starter project's first push runs green on GitHub — after OCA-78
+- [x] **[OCA-79](#oca-79)** Should - S - The Outside Adopter: My approved dedicated public starter project's first push runs green on GitHub — after OCA-78
 
 - [x] **[OCA-80](#oca-80)** Should - S - The Outside Adopter: Collide a round body without the narrow phase throwing
 
@@ -2699,7 +2700,8 @@ release-preparation lane above rather than waiting for the product queue.
 Selected from [`REV#48`](../review/2026-11-10/FINDINGS.md#rev48), after OCA-79.
 
 **Prerequisite:** OCA-79's current-release starter repository has completed its
-first-push/CI proof. This story remains blocked until that evidence exists.
+first-push/CI proof, met by the
+[2026-11-16 run](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329).
 
 **Acceptance**
 
@@ -3283,6 +3285,37 @@ authorises neither this Labrador work branch's push nor publication of new
 engine changes, unrelated repositories or recurring starter-push automation.
 The current-release payload and the selected account/target are reviewed
 before writing; this planning record creates or pushes nothing.
+
+**Closed 2026-11-16:** the live account was `matt439`, and the selected
+dedicated public target, `matt439/labrador-starter-proof`, did not yet exist.
+The latest release was `v0.3.0`; its 9,265,469-byte starter ZIP matched the
+published SHA-256
+`25db98b280e50648831ca896dad5bbd7b51788a8051dd29089ce3faa410f5869`.
+The outgoing payload was reviewed before repository creation and first push:
+1,145 unchanged release files, engine included as plain files, no gitlinks,
+build folders, credentials or machine-local files. Its copied workflow is
+byte-for-byte today's walkthrough file. The new root commit,
+`9d004a4ce2d6cda8d402e94752ed23d8c4aca488`, uses the account's public
+GitHub noreply address. The guide's `git init`, add, commit, branch, remote
+and first-push commands completed in its order with a clean tree; GitHub CLI
+supplied step 4's empty repository.
+
+The push-triggered [run 43874327329](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329)
+passed on `windows-latest` (Windows Server 2025, MSVC 19.51.36260). The
+`windows` job took 108 seconds, with configure 71 seconds and build 20
+seconds; both `MyGameTests` and `MyGameSmokeTests` passed. It found no cache,
+restored zero packages and saved the new vcpkg cache. The repository and
+public Actions summary were read directly, and `gh run view` supplied the
+job steps, complete logs and final success. The CI and GitHub guides and
+GUIDE#8's limitation now retain this real hosted evidence.
+
+This proof used existing credentials: account sign-up, the browser's
+new-repository form, Credential Manager's sign-in window, interactive Actions
+controls and private billing remain unverified. Browser automation was
+unavailable; these limits remain explicit rather than becoming UI acceptance.
+Recurring release-push automation remains deferred: no secret, release bot,
+deployment or Labrador work-branch push was added, and the separate
+walkthrough repository's pin did not move.
 
 <a id="oca-78"></a>
 ### OCA-78. Start a project from a release ZIP without Git
@@ -4613,7 +4646,7 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | SRL-18 | G88: run LineSweeper's rules tests knowing what is needed. |
 | SRL-06 | G91: LineSweeper's design notes give reasons without internal records. |
 | OCA-78 | No registered gap: the 2026-10-13 record took a C++ developer with Git as the floor. The owner's 2026-10-30 decision lowered it and required a Git-free start; the Get Started pages were made exhaustive for that reader in the commit that added this story. |
-| OCA-79 | No registered gap: found by the persona re-review of 2026-11-03. The near-beginner's ZIP-to-GitHub route has never run its CI on GitHub; the account-bound steps are the owner's, so it is marked owner. |
+| OCA-79 | No registered gap: found by the persona re-review of 2026-11-03. Closed 2026-11-16 by the released starter's [first plain-file push and green CI](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329); browser-form and sign-in limits remain explicit in the guides. |
 | SM-11 | G70. Moved from Won't this time on 2026-11-03 by the owner, graded Should as `WEB#10` is. Both reasons for holding it were overtaken: the BiDi runner exists (`tests/render/web/run_firefox.mjs`, its protocol held by `BrowserProtocolTests`) and has run five sample pages, and the 2026-11-03 decision withdrew BDP-06's manual fallback. Its remaining work is `WEB#10`; placed last in Later because it waits on nothing. |
 | SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. Implemented in this tree 2026-10-27 by *Spell constants in snake_case*: engine, samples, tests and benches, with platform-API restatements kept as CONVENTIONS now allows and the public renames in CHANGES.md. The ColourWars migration and the counted caller record remain. |
 

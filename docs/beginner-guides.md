@@ -597,15 +597,20 @@ rather than uninstalled. `GUIDE#4` and `GUIDE#7` can rely on this route.
   `curl` fallback were not tried, and Ctrl+C in the server's window was not
   pressed.
 - Private-repository CI minutes beyond GitHub's billing page. `GUIDE#8`
-  found renaming the page to `index.html` safe, and wrote these
-  account-bound steps from GitHub's documentation without running them: the
-  sign-up, creating a repository, the first push and Git Credential
-  Manager's sign-in window (its labels read from its source), `Repository
-  not found`, the Actions pages, re-running a run, billing, turning on Pages,
+  found renaming the page to `index.html` safe. OCA-79's
+  [first hosted starter run](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329)
+  on 2026-11-16 passed both tests from the unchanged `v0.3.0` release ZIP,
+  with the engine committed as plain files. Its first push, public Actions
+  summary and job logs replace the earlier stand-in evidence in the guides.
+  The repository was created through GitHub CLI with the existing owner
+  account; sign-up, the browser repository form, Git Credential Manager's
+  sign-in window (its labels read from its source), `Repository not found`,
+  the interactive Actions controls, re-running a run, billing, turning on Pages,
   the *pages build and deployment* run, the **Visit site** button, the
-  visibility setting, and the game served from GitHub Pages. Pushes went to
-  a local stand-in repository; what GitHub Pages sends was read from a public
-  Pages site with `curl`. SmartScreen and the ZIP dialogs were seen on the
+  visibility setting, and the game served from GitHub Pages remain unverified.
+  The original audit's pushes went to a local stand-in repository; what
+  GitHub Pages sends was read from a public Pages site with `curl`.
+  SmartScreen and the ZIP dialogs were seen on the
   owner's desktop with a set `Zone.Identifier`, not a real download, and not
   on a clean machine or with Smart App Control on; their buttons were pressed
   by script, not by hand, and the second agent pressed none. Explorer's
