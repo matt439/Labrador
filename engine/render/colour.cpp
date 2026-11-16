@@ -14,7 +14,7 @@ namespace
 		return -1;
 	}
 
-	bool all_hex_digits(const std::string& hex)
+	bool all_hex_digits(std::string_view hex)
 	{
 		return std::all_of(hex.begin(), hex.end(),
 			[](char c) { return hex_digit(c) >= 0; });
@@ -22,7 +22,7 @@ namespace
 
 	// The two digits at `index`, as a channel in [0, 1]. Only called once the
 	// string is known to be all hex digits and long enough.
-	float byte_at(const std::string& hex, size_t index)
+	float byte_at(std::string_view hex, size_t index)
 	{
 		const int value =
 			hex_digit(hex[index]) * 16 + hex_digit(hex[index + 1]);
@@ -103,21 +103,7 @@ namespace labrador
 	}
 	void Colour::set_from_hex(const std::string& hex)
 	{
-		// Every digit is checked before any is read, so a malformed string of
-		// the right length - "nonsense" is eight characters - becomes opaque
-		// black like any other, and nothing here throws.
-		const size_t length = hex.length();
-		const bool has_alpha = length == 8;
-		if ((length != 6 && !has_alpha) || !all_hex_digits(hex))
-		{
-			*this = Colour::black;
-			return;
-		}
-
-		this->r = byte_at(hex, 0);
-		this->g = byte_at(hex, 2);
-		this->b = byte_at(hex, 4);
-		this->a = has_alpha ? byte_at(hex, 6) : 1.0f;
+		*this = colour_from_hex(hex).value_or(Colour::black);
 	}
 	void Colour::clamp_colours()
 	{
@@ -485,5 +471,18 @@ namespace labrador
 			return std::nullopt;
 		}
 		return found->colour;
+	}
+
+	std::optional<Colour> colour_from_hex(std::string_view hex)
+	{
+		const size_t length = hex.length();
+		const bool has_alpha = length == 8;
+		if ((length != 6 && !has_alpha) || !all_hex_digits(hex))
+		{
+			return std::nullopt;
+		}
+
+		return Colour(byte_at(hex, 0), byte_at(hex, 2), byte_at(hex, 4),
+			has_alpha ? byte_at(hex, 6) : 1.0f);
 	}
 }

@@ -112,7 +112,7 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-87` | OPEN | should | M | Reveal a normally visible native window after its first completed frame; qualify every native renderer and full screen (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
 | `OCA-88` | OPEN | should | S | API, guide and regressions implemented; finish the remaining render-matrix and website qualification (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
 | `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
-| `OCA-89` | OPEN | could | XS | Add an explicit-failure hex-colour parser while preserving the existing constructor's black fallback (`REV#34`). [Scope](docs/product/BACKLOG.md#oca-89). |
+| `OCA-89` | OPEN | could | XS | Parser and native/wasm regressions pass; close after the combined website gate (`REV#34`). [Scope](docs/product/BACKLOG.md#oca-89). |
 | `OCA-90` | OPEN | should | M | Let games answer native close requests, defaulting to immediate close; browser tab closure has a separate limit (`REV#39`). [Scope](docs/product/BACKLOG.md#oca-90). |
 | `SM-78` | OPEN | should | M | Provide a construction-time scripted/recording pad source beside the configured shipping backend in the same library (`REV#40`, issue #122). [Scope](docs/product/BACKLOG.md#sm-78). |
 | `OCA-91` | OPEN | should | S | Offer a small replaceable diagnostic callback with stderr default and defined threading/lifetime (`REV#41`). [Scope](docs/product/BACKLOG.md#oca-91). |

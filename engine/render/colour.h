@@ -42,6 +42,7 @@ namespace labrador
 				static_cast<float>(g) / 255.0f,
 				static_cast<float>(b) / 255.0f,
 				static_cast<float>(a) / 255.0f) {}
+		// Uses set_from_hex's syntax and opaque-black fallback.
 		explicit Colour(const std::string& hex);
 
 		Colour& operator=(const Colour&) = default;
@@ -235,4 +236,11 @@ namespace labrador
 	// Returns nothing for a name that is not one of them; the caller decides
 	// whether that is a default or an error.
 	std::optional<Colour> colour_from_name(std::string_view name);
+
+	// Parses exactly RRGGBB or RRGGBBAA using hex digits of either case.
+	// No '#', '0x', whitespace or shortened forms are accepted. Six digits
+	// are opaque; the final pair of eight digits is straight alpha (00 is
+	// transparent, ff opaque). Channels are byte values divided by 255.
+	// Returns nothing for malformed input, including an embedded null.
+	std::optional<Colour> colour_from_hex(std::string_view hex);
 }
