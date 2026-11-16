@@ -1,6 +1,7 @@
 #pragma once
 
 #include "samples/collision/arena.h"
+#include "samples/components/shape_outline.h"
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
@@ -25,7 +26,8 @@ namespace collision
 	public:
 		// A smoke test replaces the player's input with a fixed route into the
 		// wall and around it to the trigger, which verify_smoke_test() checks.
-		CollisionState(labrador::Application* app, bool smoke_test);
+		CollisionState(labrador::Application* app, bool smoke_test,
+			bool show_outlines = false);
 
 		void init() override;
 		void update(float dt) override;
@@ -37,10 +39,13 @@ namespace collision
 
 	private:
 		void refresh_view();
+		void draw_outlines(labrador::DrawList& draw_list) const;
 
 		// The application owns this state during normal play and outlives it.
 		labrador::Application* app_;
 		bool smoke_test_;
+		bool show_outlines_;
+		components::ShapeOutline outlines_;
 		std::unique_ptr<Arena> arena_;
 		labrador::FontHandle font_;
 		std::wstring status_ = L"Contacts this tick: 0    Trigger entries: 0    Entry markers: 0";

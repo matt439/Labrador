@@ -1420,7 +1420,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
 - [x] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
 
-- [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
+- [x] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
 - [x] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
 - [x] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
 - [x] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
@@ -2652,6 +2652,23 @@ primitive or automatic engine debug overlay. Headless geometry and null-draw
 tests cover each supported shape, segment counts, degenerate inputs and
 submitted quads; verify the sample natively and in its browser page, state
 visual acceptance separately, and run the website gate.
+
+Closed 2026-11-17: the copyable `shape_outline` source and tests cover the
+five collision shape types, explicit 3..1024 circle chords, finite degenerate
+boundaries, checked failure before drawing, and const independent-view draws
+using fixed geometry storage and existing white-texture quads. The collision
+sample owns an O toggle, off by default, and an outline-enabled smoke option;
+its guide quotes the compiled caller and documents copying the source/tests.
+Native-null component/model/smoke entries and the wasm Node/Chrome page route
+pass 3/3 each, including the real native-null toggle binding. An outline-enabled
+D3D11 smoke capture on RTX 5080 was inspected and is included in the guide.
+Integration regenerated it with the Release sample after composing SRL-23: the
+375-tick check still passes, capture occurs at route tick315, and the inspected
+image includes one entry marker and its HUD count. Its SHA-256 is
+`9df07550df7a8afe3962b1ddb16527985dcdfc01f660c1d44d06a7b02adf3639`.
+That visual observation covers the sample's rectangle scene; other shapes
+and devices retain separate visual acceptance. No engine primitive, filled
+non-quad path or collision-state mutation is introduced.
 
 <a id="oca-103"></a>
 ### OCA-103. Follow a player through a bounded dead-zone camera component

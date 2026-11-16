@@ -6,7 +6,7 @@
 # ComponentsExample.
 add_library(ComponentsExample STATIC
     animation_preview.cpp nine_slice.cpp option_row.cpp pointer_capture.cpp
-    slider.cpp text_field.cpp binding_row.cpp gallery_bindings.cpp)
+    shape_outline.cpp slider.cpp text_field.cpp binding_row.cpp gallery_bindings.cpp)
 target_link_libraries(ComponentsExample PUBLIC LabradorEngine labrador_settings)
 
 set(components_texture_files
@@ -69,6 +69,7 @@ add_executable(ComponentsTests
     nine_slice_tests.cpp
     option_row_tests.cpp
     pointer_capture_tests.cpp
+    shape_outline_tests.cpp
     slider_tests.cpp
     text_field_tests.cpp
     binding_row_tests.cpp
@@ -77,6 +78,9 @@ add_executable(ComponentsTests
 )
 target_link_libraries(ComponentsTests PRIVATE
     ComponentsExample doctest::doctest labrador_settings)
+if(LABRADOR_RENDER_BACKEND STREQUAL "null")
+    target_sources(ComponentsTests PRIVATE shape_outline_null_tests.cpp)
+endif()
 if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(ComponentsTests PRIVATE animation_preview_null_tests.cpp
         text_field_null_tests.cpp widget_draw_null_tests.cpp)

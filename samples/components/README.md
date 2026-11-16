@@ -14,6 +14,7 @@ name field and a keyboard binding row on one screen.
 | Binding capture row | `binding_row.h`, `binding_row.cpp` | A label/value row that emits one physical-key candidate from page-supplied snapshots, waits for held keys to release and cancels on lost keyboard focus. |
 | Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 | Animation preview | `animation_preview.h`, `animation_preview.cpp` | Game-owned elapsed time, looping, one-shot completion and restart over a named animation strip. Drawing reads the current frame without advancing it. |
+| Shape outline | `shape_outline.h`, `shape_outline.cpp` | Collision boundaries drawn as ordinary white-texture sprite quads. The collision sample chooses when and which shapes to show. |
 
 ## Taking one
 
@@ -25,13 +26,13 @@ name field and a keyboard binding row on one screen.
 
 The tests (`*_tests.cpp`, with their in-memory content helpers and
 `test_main.cpp`) come too if you want them, in a test target of the game's that
-links the engine, because the components are built from its widgets. The
+links the engine, because the components use its widgets and drawing types. The
 website's *Copy the components into your game* guide does this for the option
 row and the slider as an optional last step, with a `MyGameComponentTests`
 target. Widget and timing cases need no window, device or files. The
 animation reader case reads the delivered DDS/JSON pair; the build stages it
 beside the native test executable or embeds it in the Node module. Native-null
-cases also record what the nine-slice, the bar, the slider and the previews
+cases also record what the nine-slice, the bar, the slider, the previews and outlines
 draw, and load the actual manifest's sprite-sheet entry, without creating a
 window or graphics/audio API device.
 When both native render and audio backends are null, gallery integration
@@ -196,6 +197,36 @@ are the displayed fallback here, not a claim about the active keyboard
 layout. The example saves nothing. A game copies the row and edits the
 two-action table and protected-key policy to suit its own screen; none of
 these are an engine action map or a controller-rebinding framework.
+
+## Drawing collision-shape outlines
+
+`ShapeOutline` draws `RectangleF`, `RectangleRotated`, `Triangle`, `Quad` and
+`Circle` boundaries using a resolved 1x1 white texture. The collision sample
+resolves `white_texture_name` once and toggles its overlay with O. Which
+objects to show, their colour, thickness and circle quality stay with the game.
+Nothing in the engine starts an overlay or changes the collision state.
+
+Copy `shape_outline.h`, `shape_outline.cpp` and `shape_outline_tests.cpp`,
+along with `test_main.cpp` if the game's engine-linked test target has no
+doctest main. Repoint the `samples/components/` includes and namespace, and
+list the sources in the game's CMake files. `shape_outline_null_tests.cpp`
+also comes over when that test target selects the null render backend; it
+records actual quads with an in-memory white texel, without a device or files.
+The game does not link this folder's `ComponentsExample` target.
+
+The `outline_edges` helper writes into caller-owned storage and retains the
+shape's finite boundary order. A circle uses the caller's explicit 3..1024
+straight chords; its zero radius has no edges. Finite collinear or coincident
+polygon points are useful debugging input, so no interior is invented for
+them. Drawing skips zero-length edges and checks all derived stroke geometry
+before the first draw. A bad tag, nonfinite geometry, invalid radius/count or
+nonpositive/nonfinite thickness fails explicitly.
+
+Thickness is in world units. Strokes use butt ends and can overlap at corners;
+they inherit the sprite path's whole-pixel destination quantization before
+rotation. A camera can make a thin or short stroke disappear. There is no
+anti-aliasing, special line join, filled-shape renderer or constant-screen-width
+promise. Null recording checks geometry, not rasterization or visual quality.
 
 ## Playing an animation strip
 

@@ -46,6 +46,7 @@ under Node there instead.
 | --- | --- |
 | WASD, arrows or any pad's left stick | Move |
 | R or gamepad Y | Reset position and counters |
+| O | Show or hide shape outlines |
 | Escape or gamepad B | Quit |
 
 Walk right through the purple rectangle: its zero mask vetoes collision even
@@ -78,6 +79,14 @@ the drawn rectangle, so moving it cannot leave an old collider behind.
 walls themselves ignore callbacks. The engine supplies measurements, not an
 automatic rigid-body solver.
 
+O toggles a game-owned outline overlay, off by default. It walks the scene's
+current collision objects, including mask-zero decoration, and hands their
+unchanged shapes to the copyable `ShapeOutline`. The sample chooses yellow,
+two world units of thickness and 32 circle segments. These are ordinary white
+sprite quads; thickness scales with the camera and can quantize on small views.
+There is no engine debug service or new renderer primitive. The component's
+source and tests are documented in [Components](../components/README.md#drawing-collision-shape-outlines).
+
 The sample uses the application's 60 Hz fixed step and a speed of 240 world
 units per second (four units per step), a 32-unit player and walls at least
 24 units thick. The tests exercise wall sliding, mask rejection, trigger
@@ -95,7 +104,9 @@ or B from any of them.
 `CollisionSampleTests` runs the same `Arena`, `Body` and `EntryMarker`, and the pad
 combination, without a window, graphics device or loaded content. It runs on
 every backend. Null render adds a recording check: no marker before admission,
-one after admission and none after retirement. To exercise the
+one after admission and none after retirement. Native-null render/audio also
+creates a hidden shell, loads sample content and records the O binding and
+const overlay. To exercise the
 application, manifest and drawing too, launch `CollisionSample.exe --smoke-test`.
 It runs hidden for 375 fixed steps: the original 315-step route into the wall
 and around it to the trigger, then 60 stationary steps. It checks the route,
@@ -106,6 +117,8 @@ Use a rasterising preset to inspect pixels.
 Add `--capture path.png` after `--smoke-test` to write the route's final frame,
 before the stationary retirement wait, through the existing PNG writer.
 Capture is available on rasterising presets only.
+Add `--outlines` immediately after `--smoke-test` to run that same checked
+route with outlines enabled, before an optional `--capture path.png`.
 
 ## What it borrows from outside this folder
 
@@ -117,6 +130,10 @@ repository has these to deal with:
   `.spritefont` in its own `content/fonts/` and points the three lines of
   `CMakeLists.txt` that reach into it there, or brings its own font and
   renames it in `content/manifest.json` and the state that resolves it.
+- `../components/shape_outline.h` and `shape_outline.cpp`, compiled directly
+  into the sample's library. A copy takes those files and their tests as the
+  components README describes, repoints the includes/source line, or removes
+  the overlay and O binding. It does not link `ComponentsExample`.
 - `../minimal/dpi_aware.manifest`, the template's per-monitor DPI awareness
   declaration, compiled into the Windows executable by the `elseif(WIN32)`
   `add_executable` in `CMakeLists.txt`. A copy takes the file into its own
