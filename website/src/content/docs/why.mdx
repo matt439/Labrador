@@ -282,3 +282,14 @@ An additional native platform is called supported when all five conditions hold:
 - A run on a real device is recorded.
 - A performance p99 is measured with its workload, device and configuration stated.
 - There is a path to package the game for players.
+
+### External platforms and streaming
+
+Labrador has not qualified Proton, Steam Deck or game-streaming services such as
+Steam Remote Play Together. They are outside current engine support.
+[Proton runs Windows games on Linux through a compatibility layer](https://partner.steamgames.com/doc/store/application/platforms/linux/proton);
+it does not make Labrador a native Linux port.
+[Remote Play Together streams a local multiplayer game to remote players](https://partner.steamgames.com/doc/features/remoteplay).
+A game's distribution and streaming-service choices need their own qualification.
+They do not add netcode, replication or rollback to Labrador, whose online-play
+support remains permanently out of scope.

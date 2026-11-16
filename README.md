@@ -4,6 +4,10 @@ A 2D game engine in C++20, for Windows and a desktop browser through WebGL2.
 It is a library your game links, built from source with CMake and vcpkg: the
 game is ordinary C++ and its content is JSON and standard file formats.
 
+Proton, Steam Deck and Steam Remote Play Together are outside the engine's
+verified support; [the support boundary](https://labradorengine.com/why/#external-platforms-and-streaming)
+explains what that means for a game's platform and service choices.
+
 No editor, no scripting language, no hot reload, 2D only and local play
 only: [why](https://labradorengine.com/why/), and
 [what Labrador is not](https://labradorengine.com/#what-labrador-is-not).
