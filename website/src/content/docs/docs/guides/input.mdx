@@ -8,6 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 The application owns four input devices and lends them to your states: `app->keyboard()`,
 `app->gamepads()`, `app->mouse()` and `app->touch()`. All four are read once at the start of
@@ -275,6 +276,8 @@ Reading only slot 0 can ignore the player's only controller: Windows can leave i
 slot after another pad is unplugged. The minimal sample reads all four slots' B edges and left
 sticks, alongside Escape, with no connected guard:
 
+<GuideVersionNote kind="template" feature="the starter's tested combine_pads helper and these source excerpts" releaseGuide="docs/guides/input/" />
+
 <SourceFile
 	path="samples/minimal/states/hello_state.cpp"
 	from="bool quit_requested = keyboard.pressed(Key::escape);"
@@ -415,6 +418,8 @@ before the menu is on screen. The [Menus guide](/docs/guides/menus/) continues f
 and `x2`, and also reports `position()` in window pixels, `motion()` since the last step, and
 `wheel()` and `wheel_horizontal()` in notches. While a button is held the mouse keeps reporting
 movement outside the window, so a drag is one gesture.
+
+<GuideVersionNote feature="retention of mouse clicks that begin and end between updates" releaseGuide="docs/guides/input/" />
 
 A click pressed and released between fixed updates reports both edges on the next update,
 while `held` still says the button is up. Several clicks in that interval coalesce: the edges

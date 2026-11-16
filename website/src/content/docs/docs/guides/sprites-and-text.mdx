@@ -7,6 +7,7 @@ sidebar:
 
 import RepoLink from '~/components/RepoLink.astro';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 Everything Labrador draws is a textured rectangle: a sprite. Text is sprites cut from a font's
 glyph atlas, and a solid rectangle is a sprite from a texture one pixel across. This guide covers
@@ -25,6 +26,8 @@ behind them. If a build fails after you change your drawing code,
 | Texture | `.dds` or `.png` | A PNG from any paint program, as it is; or any tool that writes DDS, such as `texconv` from Microsoft's DirectXTex (below). |
 | Font | `.spritefont` | `MakeSpriteFont` from Microsoft's DirectX Tool Kit, which renders an installed font into an atlas (below). |
 | Sprite sheet | `.dds` or `.png`, and `.json`, with the same name | A texture, plus a JSON file naming rectangles in it (below). |
+
+<GuideVersionNote feature="PNG texture loading" releaseGuide="docs/guides/sprites-and-text/" />
 
 A PNG is read in whatever colour type it was saved, decoded to 32-bit colour and premultiplied
 as it loads. Its gamma and colour-profile chunks are not applied. It costs four bytes a pixel on
@@ -325,6 +328,8 @@ file, object/index and key. This includes position, size, origin and first-frame
 objects, so `orgin` is an error instead of silently choosing a zero origin.
 Correct misspellings and remove unsupported fields from these fixed definitions;
 your game's own metadata can use its own JSON reader.
+
+<GuideVersionNote feature="atlas-bound validation, RenderResources::texture_size and the three-argument read_sprite_sheet reader" releaseGuide="docs/guides/sprites-and-text/" />
 
 The loader also checks the rectangles against the loaded atlas dimensions.
 For each axis, both endpoints (`x` and `x + w`, or `y` and `y + h`) must be

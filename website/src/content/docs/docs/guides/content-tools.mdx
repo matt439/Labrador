@@ -6,12 +6,17 @@ sidebar:
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 Labrador does not load font files or WAV sounds directly: it loads files made from them. The
 picture guides likewise load a `.dds` texture made from a PNG. The engine reads a PNG as it is
 too, so for a picture the conversion is a choice:
 [Put a picture in your game](/docs/guides/your-picture/) says how to keep the PNG and what that
-costs. The conversions are done by three free command-line programs from Microsoft:
+costs.
+
+<GuideVersionNote feature="PNG texture loading" releaseGuide="docs/guides/content-tools/" />
+
+The conversions are done by three free command-line programs from Microsoft:
 
 | Program | Turns | Into | Used by |
 | --- | --- | --- | --- |

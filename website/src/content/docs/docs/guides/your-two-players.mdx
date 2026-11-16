@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 The starter game has one greeting, which the arrow keys, WASD and every pad move together. This
 page gives it a second greeting for a second player: player 1 moves the first with **WASD** or
@@ -159,6 +160,12 @@ cd /d C:\dev\mygame
 4. **Give each player a pad.** In `update()`, search for `A single-player game accepts`. These
    lines, a comment and then the code it describes, read every pad:
 
+   <GuideVersionNote kind="template" feature="the starter's combine_pads helper and the source block shown here" releaseGuide="docs/guides/your-two-players/" />
+
+   In `v0.3.0` the code under that comment uses an inline loop instead. The replacement has
+   the same endpoints in both versions: begin at the comment and stop immediately before
+   `if (quit_requested)`, leaving that `if` and its body in place.
+
    <SourceFile
    	path="samples/minimal/states/hello_state.cpp"
    	from="// A single-player game accepts every slot"
@@ -167,8 +174,8 @@ cd /d C:\dev\mygame
 
    The starter adds every pad's stick together, so that one player's pad works in whichever slot
    Windows put it. With two players, each needs a pad of their own, and the comment is no longer
-   true. Replace those lines, from the comment's first line down to and including the
-   `stick_direction` line, with:
+   true. Replace from the comment's first line through all the pad-reading code before
+   `if (quit_requested)` with:
 
    ```cpp
    	bool quit_requested = keyboard.pressed(Key::escape);
@@ -383,6 +390,10 @@ line in `hello_state.h`.
 </Aside>
 
 <Aside type="caution" title="hello_state.cpp(184): error C2065: 'stick_direction': undeclared identifier">
+With a `v0.3.0` starter, first check step 4's replacement: an old pad-reading loop left below
+the new code still uses the deleted `stick_direction`. Remove the complete old block up to
+`if (quit_requested)`, preserving that `if` and its body.
+
 The `step_motion` lines from step 5 were not changed: they still use the starter's
 `stick_direction`, which step 4 replaced. The next line is
 `hello_state.cpp(185): error C3861: 'keyboard_direction': identifier not found`, for the old

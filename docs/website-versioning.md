@@ -13,6 +13,22 @@ when [the published-release manifest](#published-release-manifest) lists it.
 the release index at `/versions/` and the version selector offer it beside
 Development.
 
+## Version notes inside development guides
+
+`GuideVersionNote.astro` marks a passage using an engine feature or copied
+template change absent from the `v0.3.0` starter. It links the related guide
+from that immutable snapshot and the existing update procedures, while the
+default site remains development documentation. Template notes state that
+moving the engine pin does not update a game's copied files.
+
+An omitted `firstRelease` means an explicitly development-only requirement;
+it names no future tag. Once a release actually supplies the change, check
+its source/starter and set `firstRelease` at the affected passages when that
+release is listed in the published manifest. The component refuses an
+unpublished first-release claim. A release snapshot hides these comparison
+notes: its excerpts and engine already come from its own tagged tree. This
+does not rewrite an existing snapshot or change the default version.
+
 ## First documentation snapshot: v0.3.0
 
 On 27 October 2026 the owner chose `v0.3.0` as the first release with a

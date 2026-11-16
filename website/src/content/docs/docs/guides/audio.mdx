@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 import RepoLink from '~/components/RepoLink.astro';
 
 The <RepoLink path="samples/audio">audio sample</RepoLink> is a playable sound board:
@@ -81,6 +82,11 @@ path in the error. `optional: true` is only for content a game can run without:
 it reports the reason through the [diagnostic callback](/docs/reference/core/diagnostic/)
 (standard error by default), substitutes a silent bank and cannot demonstrate playback. A required bank
 with a misspelt wave also fails during loading.
+
+<GuideVersionNote feature="the replaceable diagnostic callback" releaseGuide="docs/guides/audio/" />
+
+An optional-bank warning already goes to standard error in `v0.3.0`; replacing that destination
+through this callback requires the newer API.
 
 The definition lists waves and persistent effect instances:
 

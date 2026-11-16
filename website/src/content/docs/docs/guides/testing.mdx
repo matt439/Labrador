@@ -7,6 +7,7 @@ sidebar:
 
 import { Aside, Steps } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 import RepoLink from '~/components/RepoLink.astro';
 import Capture from '~/components/Capture.astro';
 import holdBefore from '~/assets/captures/minimal-hold-before.png';
@@ -665,9 +666,7 @@ through the page's shell:
 
 ## Script pad input
 
-This section uses the development API added after `v0.3.0`. A released starter
-needs an engine update before using it; follow
-[Move a starter project to a newer Labrador](/docs/guides/starter-update/).
+<GuideVersionNote feature="ScriptedGamepadSource and the construction-time scripted pad API" releaseGuide="docs/guides/testing/" />
 
 A pad fixture can link the same `LabradorEngine` as its game. Add a test file
 to an engine-linked test target, such as the draw or state tests above, and

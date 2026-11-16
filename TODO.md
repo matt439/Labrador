@@ -127,7 +127,6 @@ five deferred review rows below keep their individual revisit triggers.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-93` | OPEN | should | S | Mark guide passages that exceed the released starter and link the release/update route (`REV#62`). [Scope](docs/product/BACKLOG.md#oca-93). |
 | `OCA-94` | OPEN | should | M | Explain the starter's three files at the agreed beginner floor and add a focused setup glossary (`REV#119`). [Scope](docs/product/BACKLOG.md#oca-94). |
 | `OCA-96` | OPEN | could | M | Offer optional .vsconfig setup and explain expected first-configure downloads while retaining vcpkg defaults (`REV#63`, `REV#121`). [Scope](docs/product/BACKLOG.md#oca-96). |
 | `OCA-97` | OPEN | could | M | Provide optional build/test/play helpers sharing Visual Studio discovery and the documented commands (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |

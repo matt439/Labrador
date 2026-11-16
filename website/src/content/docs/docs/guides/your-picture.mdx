@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 This page puts a picture into the game from [Get the starter project](/docs/get-started/starter/)
 and makes it follow the greeting around the window. It goes through every file that changes:
@@ -15,16 +16,13 @@ that draws it, and the lines in `HelloState` that use that class. It takes about
 
 Before you start:
 
-- This version uses `RenderResources::texture_size` from the development
-  engine after `v0.3.0`. A `v0.3.0` starter does not have it. Use a source
-  checkout containing the method, or wait for the release that carries it;
-  [updating a starter](/docs/guides/starter-update/) and
-  [moving a submodule pin](/docs/guides/move-pin/) explain the two update routes.
 - Do [Make a first change](/docs/get-started/first-change/), so that you know the edit, build
   and run loop and have a copy of your game to go back to. Make a fresh copy now with that
   page's step 1 line.
 - [Install the content tools](/docs/guides/content-tools/), which puts `texconv.exe` in
   `C:\dev\tools`.
+
+<GuideVersionNote feature="RenderResources::texture_size, used by this page's Picture class" releaseGuide="docs/guides/your-picture/" />
 
 Every command runs in the x64 Native Tools Command Prompt, in your project's folder:
 
@@ -99,6 +97,8 @@ cd /d C:\dev\mygame
 
    `mkdir` says `A subdirectory or file game\content\textures already exists.` if you run it
    again, which is harmless.
+
+   <GuideVersionNote feature="PNG texture loading" releaseGuide="docs/guides/your-picture/" />
 
    <Aside title="Or keep it a PNG">
    The engine reads a PNG too, so the `texconv` line can be left out: after the `mkdir` line,
@@ -512,7 +512,14 @@ way, renamed from a PNG, or converted to a format the engine does not read.
 
 <Aside type="caution" title="startup failure: No file at C:\dev\mygame\out\build\x64-debug\game\.\./textures/hero.dds or C:\dev\mygame\out\build\x64-debug\game\.\./textures/hero.png.">
 The manifest names a picture the game cannot find beside itself, as either a `.dds` or a
-`.png`. Read the end of the first path:
+`.png`.
+
+The `v0.3.0` engine reads only DDS textures and names only `hero.dds` in this message.
+With that starter, follow the `texconv` route in its released picture guide; keeping a PNG
+does not load it. The PNG alternative above requires the newer engine.
+
+Read the end of the first path:
+
 - If the name is misspelt, such as `heroo.dds`, fix the name in `manifest.json`.
 - If the folder is, such as `texture/hero.dds`, fix `"directory": "./textures/"` in
   `manifest.json`.

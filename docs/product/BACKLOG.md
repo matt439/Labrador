@@ -1405,7 +1405,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
 - [x] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
 
-- [ ] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
+- [x] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
 - [ ] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
 - [x] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
 - [ ] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
@@ -2084,6 +2084,44 @@ Selected from [`REV#62`](../review/2026-11-10/FINDINGS.md#rev62) and the
 rewrite. Check the notes against actual API availability and follow the
 affected passages with the named starter/version; run focused website
 checks and the website gate. Record any procedure not executed explicitly.
+
+**Closed 2026-11-17:** twenty-one point-of-use `GuideVersionNote` instances cover
+the five original mismatch themes and the accepted camera, mouse, atlas,
+motion-preference, scripted-pad, native-close and diagnostic changes present
+in the worktree based on `5cff44b9`. Each identifies the absent `v0.3.0`
+feature, explicitly requires development source while no released starter
+contains it, and links a related page in the actual immutable `v0.3.0`
+snapshot plus the existing release update routes. Template notes distinguish
+copied game files from an engine pin. `firstRelease` remains unset rather
+than predicting a tag; the component refuses an unpublished first-release
+claim, and the versioning owner explains its update after publication.
+The current release was re-read from GitHub as `v0.3.0` during qualification.
+
+The same published starter ZIP used by OCA-79 was freshly extracted to
+`C:\dev\oca93-release\mygame`. Its initial native build and both ctest
+entries passed. These checks used that release's engine throughout:
+
+| Original mismatch | Current correction and observed release result |
+|---|---|
+| PNG and missing-file wording | The guides name PNG as newer and retain the DDS route. A manifest texture with only `hero.png` failed with one `hero.dds` path; the supported checked-in DDS loaded and the startup smoke passed. The full picture/texconv procedure was not repeated. |
+| Arbitrary client size | The note precedes `ApplicationOptions::client_size` and keeps the four presets available. Adding its documented line to the release's main.cpp produced C2039; the original source was restored. No physical window-size judgment is claimed. |
+| Pad-combination source | Both source forms now replace the comment through the block immediately before `if (quit_requested)`. Following the first seven two-player steps from the actual code blocks built, passed both native entries, built under `wasm-debug`, passed its Node entry and drew/quit after 60 Chrome frames. No pad was required or qualified. |
+| Rule test totals | The current example retains 6/27 and gives release totals 5/19, with relative +3-case/+10-assertion checks. The rule's three files, CMake additions and state call were applied to the release: both entries passed at 5/19; the deliberate wrong check gave one failure at 5/19, and the one-case filter reported four skipped. |
+| Browser shell | Instructions allow adding missing canvas/status attributes and explain the old loading line. A real release page with `.wasm` answered 404 stayed at `Loading...` and retained the loader's `Aborted` console report. Adding the documented attributes and current loader handlers, without changing its engine, rebuilt and passed DOM attribute checks and the current 404/failure-line protocol. |
+
+Browser checks used Emscripten 6.0.12 and Chrome 157.0.8103.78,
+ANGLE/D3D11/RTX 5080. These are automated page and source-compatibility checks,
+not spoken screen-reader, listening, real-pad, phone or informal-play evidence.
+New API examples were compared against actual released headers; their runtime
+qualification remains with their implementation owners. The current window
+guide's sky `Picture` call was also repaired to match the development picture
+class's three-argument constructor, with the older five-argument class explained.
+
+The website gate passed with 200 tests, 180 pages and valid internal links.
+All twenty-one archive links resolved to actual output files from the frozen
+release asset. The default version, published manifest and immutable snapshot
+were unchanged. The component hides comparison notes for a tagged snapshot;
+no future tag or new release snapshot was created to claim that qualification.
 
 <a id="oca-94"></a>
 ### OCA-94. Explain the starter's source and setup vocabulary for beginners

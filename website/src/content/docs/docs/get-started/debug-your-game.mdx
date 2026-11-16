@@ -8,6 +8,7 @@ next:
 
 import { Aside, Steps } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 Everything so far used Notepad and the command prompt. Visual Studio, which you installed in
 [Install the tools](/docs/get-started/prerequisites/), can do the same edit, build and run in one
@@ -632,6 +633,13 @@ rules in `game\CMakeLists.txt` if they are absent. The
 
 ## Direct3D diagnostics
 
+<GuideVersionNote feature="standard-error routing of the Direct3D debug-device notice" releaseGuide="docs/get-started/debug-your-game/" />
+
+With `v0.3.0`, that notice goes to Visual Studio's **Output** window through
+`OutputDebugStringA`, so the `2>` redirection below does not capture it. Its optional-bank
+warnings already use standard error. The Graphics Tools installation remains optional in
+either version.
+
 Windows' optional **Graphics Tools** feature supplies the Direct3D debug layers, which check
 every call the renderer makes and say in the Output window when one is wrong. Nothing on this
 page needs them, and a beginner can leave them out. Labrador's Debug Direct3D builds use them
@@ -666,11 +674,7 @@ Debug layer and can make stepping harder because the compiler optimizes the code
 
 ## Capture engine notices
 
-<Aside type="note">
-This API is in the development engine. If your starter has no
-`engine/core/diagnostic.h`, [update your starter](/docs/guides/starter-update/) or
-[move your engine pin](/docs/guides/move-pin/) before using it.
-</Aside>
+<GuideVersionNote feature="engine/core/diagnostic.h and replaceable engine-notice callbacks" releaseGuide="docs/get-started/debug-your-game/" />
 
 An optional sound bank that cannot be opened, an engine graphics-backend notice and an
 exception from a browser owner's final `on_closed` callback are non-fatal diagnostics.

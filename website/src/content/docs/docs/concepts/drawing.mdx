@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 Everything in Labrador is drawn **into a view**: a rectangle of the window, and a camera looking
 at the world through it. A game with one screen has one view covering the window. A split-screen
@@ -51,6 +52,9 @@ position in the pane = (position in the world - camera.translation) × camera.sc
 ```
 
 so `translation` is the world point shown at the pane's top-left corner, and `scale` is the zoom.
+
+<GuideVersionNote feature="consistent rejection of invalid camera scales at every transform and culling boundary" releaseGuide="docs/concepts/drawing/" />
+
 The scale must be finite and greater than zero. Camera transforms, including those used by
 drawing and scene culling, throw `std::invalid_argument` when they consume a zero, negative or
 non-finite scale, even if it was assigned directly after construction. A negative scale does
