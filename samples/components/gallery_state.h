@@ -67,6 +67,10 @@ namespace components
 		// under it and starts dragging a slider; a release completes a click
 		// or a tap only on the row it began on (pointer_capture.h).
 		void update_pointer();
+
+		// The page owns hover/capture cues; components read no pointer device
+		// and choose no system cursor for their callers.
+		void update_cursor();
 		void begin_name_edit();
 		void cancel_name_edit();
 		void update_name_edit();

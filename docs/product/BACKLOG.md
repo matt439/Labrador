@@ -3156,6 +3156,26 @@ hide/show and gallery transitions; distinguish platform read-back from
 visual inspection. Follow the app verification plan, preserve browser focus
 behaviour, and run affected samples, lint and the website gate.
 
+**Implemented 2026-11-17:** the window/application seam now exposes six
+`CursorShape` choices with optional requested-state read-back. No explicit
+choice retains the native arrow or authored canvas CSS, and visibility and
+confinement remain independent. Win32 borrows the predefined
+[shared system handles](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-destroycursor);
+the browser temporarily leases only the canvas cursor value/priority using
+[CSS cursor keywords](https://www.w3.org/TR/css-ui-4/#cursor). Reset and
+teardown restore a still-owned override without overwriting a later page
+value/priority change. The gallery chooses hover/captured-drag cues without
+new rows or automatic engine widget policy.
+
+Native-null AppTests/ComponentsTests and wasm-debug-null equivalents pass 2/2
+each. Chrome 157.0.8103.78 passes the bounded cursor probe's nine lifecycle
+fixtures and 24 live CSS checks, plus the gallery hover/Name/drag/quit page
+checks. The full window script passes 47 steps before this desktop's known
+fullscreen permission denial; the focused probe uses the same committed
+cursor checks. These are API/handle/CSS observations, not visual theme or
+physical-cursor inspection. The nine standalone CMake checks, 85 browser-protocol tests, source enumeration and website gate (200 tests, 180 pages) pass. Combined app verification remains for
+integration, so the story stays unticked until that result is recorded.
+
 <a id="oca-114"></a>
 ### OCA-114. Copy held touch buttons and a virtual-stick region
 

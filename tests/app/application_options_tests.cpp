@@ -22,6 +22,7 @@ TEST_CASE("the defaults are valid")
 {
 	const ApplicationOptions options;
 	CHECK(options.scripted_gamepad_source == nullptr);
+	CHECK_FALSE(options.cursor_shape.has_value());
 	CHECK_NOTHROW(options.validate());
 }
 
@@ -157,6 +158,7 @@ TEST_CASE("the window an Application opens carries every window field of its opt
 	options.visible = false;
 	options.cursor_visible = false;
 	options.cursor_confined = true;
+	options.cursor_shape = CursorShape::hand;
 	options.min_window_width = 400;
 	options.min_window_height = 300;
 
@@ -170,6 +172,7 @@ TEST_CASE("the window an Application opens carries every window field of its opt
 	CHECK_FALSE(window.visible);
 	CHECK_FALSE(window.cursor_visible);
 	CHECK(window.cursor_confined);
+	CHECK(window.cursor_shape == CursorShape::hand);
 	CHECK(window.min_window_width == 400);
 	CHECK(window.min_window_height == 300);
 
@@ -183,8 +186,34 @@ TEST_CASE("the window an Application opens carries every window field of its opt
 	CHECK(plain.visible == defaults.visible);
 	CHECK(plain.cursor_visible == defaults.cursor_visible);
 	CHECK(plain.cursor_confined == defaults.cursor_confined);
+	CHECK(plain.cursor_shape == defaults.cursor_shape);
 	CHECK(plain.min_window_width == defaults.min_window_width);
 	CHECK(plain.min_window_height == defaults.min_window_height);
+}
+
+TEST_CASE("cursor selection is requested state independent of visibility and confinement")
+{
+	ApplicationOptions options;
+	options.max_threads = 1;
+	Application app(options);
+	CHECK_FALSE(app.cursor_shape().has_value());
+	app.set_cursor_visible(false);
+	app.set_cursor_confined(true);
+	app.set_cursor_shape(CursorShape::text);
+	CHECK(app.cursor_shape() == CursorShape::text);
+	CHECK_FALSE(app.cursor_visible());
+	CHECK(app.cursor_confined());
+	app.set_cursor_visible(true);
+	CHECK(app.cursor_shape() == CursorShape::text);
+	CHECK_THROWS_AS(app.set_cursor_shape(static_cast<CursorShape>(99)), std::invalid_argument);
+	CHECK(app.cursor_shape() == CursorShape::text);
+	app.set_cursor_shape(std::nullopt);
+	CHECK_FALSE(app.cursor_shape().has_value());
+	CHECK(app.cursor_confined());
+	options.cursor_shape = static_cast<CursorShape>(-1);
+	CHECK_THROWS_WITH_AS(options.validate(),
+		"cursor_shape must be a supported CursorShape or null.", std::invalid_argument);
+	CHECK_THROWS_AS(Application{ options }, std::invalid_argument);
 }
 
 TEST_CASE("a client size is optional, and refused below the minimum window size by name")

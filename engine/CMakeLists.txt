@@ -10,6 +10,7 @@ add_library(LabradorEngine STATIC
     app/content_root.cpp
     app/frame_timer.cpp
     app/modifier_sides.cpp
+    app/window.cpp
     assets/asset_manifest_loader.cpp
     assets/json.cpp
     assets/resource_loader.cpp

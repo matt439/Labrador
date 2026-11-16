@@ -31,6 +31,7 @@ namespace labrador
 
 	void ApplicationOptions::validate() const
 	{
+		Window::validate_cursor_shape(this->cursor_shape);
 		const auto require = [](bool condition, const char* message)
 			{
 				if (!condition)
@@ -78,6 +79,8 @@ namespace labrador
 		window_options.min_window_width = options.min_window_width;
 		window_options.min_window_height = options.min_window_height;
 		window_options.window_icon_resource = options.window_icon_resource;
+
+		window_options.cursor_shape = options.cursor_shape;
 		return window_options;
 	}
 
@@ -378,6 +381,21 @@ namespace labrador
 	bool Application::cursor_visible() const
 	{
 		return this->options_.cursor_visible;
+	}
+
+	void Application::set_cursor_shape(std::optional<CursorShape> shape)
+	{
+		Window::validate_cursor_shape(shape);
+		if (this->window_)
+		{
+			this->window_->set_cursor_shape(shape);
+		}
+		this->options_.cursor_shape = shape;
+	}
+
+	std::optional<CursorShape> Application::cursor_shape() const
+	{
+		return this->options_.cursor_shape;
 	}
 
 	void Application::set_cursor_confined(bool confined)

@@ -146,7 +146,7 @@ decision to keep the current rendering-text API. Implementation is open.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-111` | OPEN | could | M | Add best-effort layout labels distinct from stable binding tokens to `OCA-110`'s completed example (`REV#58`). [Scope](docs/product/BACKLOG.md#oca-111). |
-| `OCA-113` | OPEN | could | M | Add native/CSS cursor shapes with gallery pointer use, preserving visibility and confinement (`IDEA#17`). [Scope](docs/product/BACKLOG.md#oca-113). |
+| `OCA-113` | OPEN | could | M | Run combined app verification for implemented native/CSS cursor shapes; native/wasm-null, CSS lifecycle and gallery page checks pass (`IDEA#17`). [Scope](docs/product/BACKLOG.md#oca-113). |
 | `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
 | `OCA-115` | OPEN | could | S | Selected-device texture-size query and oversized diagnostics implemented; combined render runtime and full lint qualification remain (`REV#33`). [Scope and focused checks](docs/product/BACKLOG.md#oca-115). |
 | `SM-87` | OPEN | could | S | Observations and focused native/wasm checks implemented; finish the combined app matrix and website qualification (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |

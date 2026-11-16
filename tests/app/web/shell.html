@@ -38,13 +38,14 @@
     position: absolute; left: 20px; top: 20px;
     width: 400px; height: 250px;
     display: block;
+    cursor: wait;
   }
   #elsewhere { position: absolute; left: 600px; top: 20px; }
 </style>
 </head>
 <body>
-<canvas id="canvas" tabindex="0"></canvas>
-<button id="elsewhere">elsewhere</button>
+<canvas id="canvas" tabindex="0" style="cursor: grab !important; --cursor-test: page"></canvas>
+<button id="elsewhere" style="cursor: help !important">elsewhere</button>
 <script>
   var settle;
   window.labradorExit = new Promise(function (resolve) { settle = resolve; });

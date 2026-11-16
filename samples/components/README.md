@@ -100,6 +100,17 @@ and all of it is page policy rather than a component's:
 - A tick in which the keys or the pad moved the cursor, changed a row or
   chose one cancels the contact, so the two never both act in one tick.
 
+The page also owns the system/CSS cursor cues: `update_cursor` chooses hand
+over an enabled row, text over Name, move while a slider is captured and arrow
+otherwise, including when the mouse has no focus. It uses the same camera and
+targets as clicking, and changes shape only when its choice changes. This
+does not hide the pointer, confine it, focus the canvas or change a component's
+input rules. The window restores its borrowed canvas cursor style on closing;
+native cursor images follow the system's theme. The browser pointer driver
+checks these transitions and release of the style, while hidden-window tests
+check requested state and system handle mappings. Neither is a visual or
+physical-cursor inspection.
+
 `adjust()` returns whether the value moved, which is the signal a cursor sound
 hangs on. Focus colours the label, and the slider's fill as well. The value
 keeps a colour of its own, so the player can tell what is selected from what

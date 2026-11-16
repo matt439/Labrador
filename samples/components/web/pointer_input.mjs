@@ -102,6 +102,18 @@ export default async function drive(page) {
 	const mouse = (type, point, buttons) => send('Input.dispatchMouseEvent', {
 		type, x: point.x, y: point.y, button: 'left', buttons, clickCount: 1,
 	});
+	const cursor = () => evaluate("getComputedStyle(document.getElementById('canvas')).cursor");
+	await evaluate("document.getElementById('canvas').focus(), true");
+	await mouse('mouseMoved', at(20, 20), 0);
+	await frames();
+	assert(await cursor() === 'default', 'blank gallery space did not select the arrow');
+	await mouse('mouseMoved', at(LABEL_X, row_middle(0)), 0);
+	await frames();
+	assert(await cursor() === 'pointer', 'an enabled menu row did not select the hand');
+	await mouse('mouseMoved', at(960, 510), 0);
+	await frames();
+	assert(await cursor() === 'text', 'Name hover did not select the text cursor');
+	console.log('ok - page-owned hover selects arrow, hand and text cursor cues');
 	const tap = async (point) => {
 		await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 1 }] });
 		await frames();
@@ -115,10 +127,13 @@ export default async function drive(page) {
 	const music = track_middle(2);
 	await mouse('mousePressed', at(VALUE_X + TRACK_WIDTH / 2, music), 1);
 	await frames();
+	assert(await cursor() === 'move', 'the captured slider did not select the move cursor');
 	await mouse('mouseMoved', at(1270, music), 1);
 	await frames();
+	assert(await cursor() === 'move', 'a drag lost its move cursor outside the target');
 	await mouse('mouseReleased', at(1270, music), 0);
 	await frames();
+	assert(await cursor() === 'default', 'release off the controls did not restore the arrow');
 	let said = status_since(from);
 	assert(said.some((text) => text.includes('Music slider example: 50%')),
 		`pressing the track's middle did not set 50: ${JSON.stringify(said)}`);
@@ -158,5 +173,7 @@ export default async function drive(page) {
 		await frames(2);
 	}
 	assert(await evaluate('window.componentsPointer.quit') === true, 'a tap on Quit did not quit');
+	assert(await evaluate("document.getElementById('canvas').style.getPropertyValue('cursor')") === '',
+		'quitting the gallery did not release its canvas cursor style');
 	console.log('ok - a tap on Quit quits');
 }

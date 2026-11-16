@@ -44,6 +44,32 @@ namespace labrador
 					std::to_string(error) + ").");
 			}
 			return icon;
+}
+
+		HCURSOR system_cursor(CursorShape shape)
+		{
+			LPCWSTR resource = nullptr;
+			switch (shape)
+			{
+			case CursorShape::arrow: resource = IDC_ARROW; break;
+			case CursorShape::hand: resource = IDC_HAND; break;
+			case CursorShape::text: resource = IDC_IBEAM; break;
+			case CursorShape::crosshair: resource = IDC_CROSS; break;
+			case CursorShape::move: resource = IDC_SIZEALL; break;
+			case CursorShape::not_allowed: resource = IDC_NO; break;
+			}
+			if (resource == nullptr)
+			{
+				throw std::invalid_argument("Window cursor shape is invalid.");
+			}
+			// LoadCursor's predefined handles are shared system resources.
+			// They are borrowed for this window and must not be destroyed.
+			HCURSOR const cursor = LoadCursorW(nullptr, resource);
+			if (cursor == nullptr)
+			{
+				throw std::runtime_error("Could not load the requested system cursor shape.");
+			}
+			return cursor;
 		}
 
 		// The thumb buttons ride in the high word. There is no ceiling on how
@@ -392,6 +418,9 @@ namespace labrador
 		bool active = false;
 		bool cursor_hidden = false;
 		bool cursor_confined = false;
+		std::optional<CursorShape> cursor_shape;
+		// Borrowed shared system handle; the OS owns it through window teardown.
+		HCURSOR cursor = nullptr;
 		bool clipping = false;
 
 		ModifierSides held_modifiers;
@@ -452,6 +481,7 @@ namespace labrador
 		show_command(launcher_show_command()),
 		cursor_hidden(!options.cursor_visible),
 		cursor_confined(options.cursor_confined),
+		cursor_shape(options.cursor_shape),
 		min_width(options.min_window_width),
 		min_height(options.min_window_height),
 		class_name(options.window_class_name)
@@ -460,6 +490,9 @@ namespace labrador
 		{
 			throw std::invalid_argument("WindowOptions::window_title must contain no NUL.");
 		}
+
+		Window::validate_cursor_shape(options.cursor_shape);
+		this->cursor = system_cursor(options.cursor_shape.value_or(CursorShape::arrow));
 		WNDCLASSEXW window_class = {};
 		window_class.cbSize = sizeof(WNDCLASSEXW);
 		window_class.style = CS_HREDRAW | CS_VREDRAW;
@@ -947,6 +980,24 @@ namespace labrador
 		this->impl_->apply_cursor_shape(this->impl_->handle);
 	}
 
+	void Window::set_cursor_shape(std::optional<CursorShape> shape) const
+	{
+		if (this->impl_->handle == nullptr)
+		{
+			return;
+		}
+		Window::validate_cursor_shape(shape);
+		HCURSOR const cursor = system_cursor(shape.value_or(CursorShape::arrow));
+		this->impl_->cursor_shape = shape;
+		this->impl_->cursor = cursor;
+		this->impl_->apply_cursor_shape(this->impl_->handle);
+	}
+
+	std::optional<CursorShape> Window::cursor_shape() const
+	{
+		return this->impl_->cursor_shape;
+	}
+
 	void Window::set_cursor_confined(bool confined) const
 	{
 		if (this->impl_->handle == nullptr)
@@ -995,7 +1046,7 @@ namespace labrador
 		{
 			return;
 		}
-		SetCursor(this->cursor_hidden ? nullptr : LoadCursorW(nullptr, IDC_ARROW));
+		SetCursor(this->cursor_hidden ? nullptr : this->cursor);
 	}
 
 	Vector2I Window::Impl::outer_size(
@@ -1239,14 +1290,14 @@ namespace labrador
 	}
 
 	// THE POINTER'S SHAPE OVER THE CLIENT AREA, asked for every time it moves.
-	// Hidden is no cursor at all; otherwise DefWindowProc answers with the
-	// class's arrow, and over the frame with the frame's own cursors.
+	// Hidden is no cursor at all. The selected shared handle belongs only to
+	// the client area; the frame keeps its platform resize/move cursors.
 	LRESULT Window::Impl::on_cursor_message(HWND window, UINT message,
 		WPARAM w_param, LPARAM l_param)
 	{
-		if (LOWORD(l_param) == HTCLIENT && this->cursor_hidden)
+		if (LOWORD(l_param) == HTCLIENT)
 		{
-			SetCursor(nullptr);
+			SetCursor(this->cursor_hidden ? nullptr : this->cursor);
 			return TRUE;
 		}
 		return DefWindowProc(window, message, w_param, l_param);

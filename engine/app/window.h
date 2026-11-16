@@ -158,6 +158,18 @@ namespace labrador
 		~WindowNotify() = default;
 	};
 
+	// System/CSS choices for the client area. Appearance follows the platform's
+	// cursor theme; these are choices, not custom images or glyph labels.
+	enum class CursorShape
+	{
+		arrow,
+		hand,
+		text,
+		crosshair,
+		move,
+		not_allowed,
+	};
+
 	// What the window needs to exist. The names are ApplicationOptions' names
 	// on purpose: this is the subset of them a window can act on, and nothing
 	// about their meaning changes on the way across.
@@ -204,6 +216,10 @@ namespace labrador
 		// process lifetime; the Window does not destroy it. Ignored in a browser,
 		// whose host page owns its favicon.
 		std::optional<std::wstring> window_icon_resource = std::nullopt;
+
+		// No explicit choice keeps the native arrow or the page's existing
+		// canvas cursor. Visibility and confinement are independent of shape.
+		std::optional<CursorShape> cursor_shape = std::nullopt;
 	};
 
 	// The platform's window: a Win32 window on Windows (engine/app/win32/) and
@@ -406,6 +422,19 @@ namespace labrador
 		// canvas's CSS cursor.
 		void set_cursor_visible(bool visible) const;
 
+		// Selects a system cursor over the native client area or a temporary
+		// canvas-only CSS cursor. std::nullopt restores the native arrow or the page's
+		// prior inline cursor value and priority. It never changes visibility,
+		// confinement, focus, the window frame or other page elements.
+		//
+		// The answer is the last accepted choice, initially the option above,
+		// not a query of the physical pointer or the computed page style. Hide
+		// and show retain it. A closed window ignores setters, retaining its
+		// last choice. Invalid enumerators throw std::invalid_argument before
+		// changing a live window. Call on the window's owning thread.
+		void set_cursor_shape(std::optional<CursorShape> shape) const;
+		std::optional<CursorShape> cursor_shape() const;
+
 		// Whether the pointer is kept inside the client area.
 		//
 		// On Windows the pointer is clipped to the client area while the
@@ -421,6 +450,9 @@ namespace labrador
 
 	private:
 		friend class Application;
+		friend struct ApplicationOptions;
+
+		static void validate_cursor_shape(std::optional<CursorShape> shape);
 
 		// Application keeps a native window hidden until end_frame succeeds.
 		// Direct Window owners retain the constructor's immediate-show contract;

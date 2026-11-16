@@ -16,6 +16,7 @@
 #include <tuple>
 #include <vector>
 
+using labrador::CursorShape;
 using labrador::Key;
 using labrador::MouseButton;
 using labrador::Window;
@@ -999,6 +1000,79 @@ TEST_CASE("a hidden pointer is no cursor over the client area and the arrow else
 			MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
 		CHECK(GetCursor() == nullptr);
 	}
+}
+
+TEST_CASE("system cursor choices keep selection when hidden and leave the frame and clip alone")
+{
+	struct CursorRestore
+	{
+		HCURSOR previous = GetCursor();
+		~CursorRestore() { SetCursor(this->previous); }
+	} restore;
+	RECT before = {};
+	REQUIRE(GetClipCursor(&before) != FALSE);
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	const HWND handle = hwnd(window);
+	const WPARAM over = reinterpret_cast<WPARAM>(handle);
+	CHECK_FALSE(window.cursor_shape().has_value());
+	struct Mapping { CursorShape shape; LPCWSTR resource; };
+	const Mapping choices[] = {
+		{ CursorShape::arrow, IDC_ARROW }, { CursorShape::hand, IDC_HAND },
+		{ CursorShape::text, IDC_IBEAM }, { CursorShape::crosshair, IDC_CROSS },
+		{ CursorShape::move, IDC_SIZEALL }, { CursorShape::not_allowed, IDC_NO },
+	};
+	notify.log.clear();
+	for (const Mapping& choice : choices)
+	{
+		const HCURSOR expected = LoadCursorW(nullptr, choice.resource);
+		REQUIRE(expected != nullptr);
+		window.set_cursor_shape(choice.shape);
+		CHECK(window.cursor_shape() == choice.shape);
+		SendMessageW(handle, WM_SETCURSOR, over, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+		CHECK(GetCursor() == expected);
+		window.set_cursor_visible(false);
+		SendMessageW(handle, WM_SETCURSOR, over, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+		CHECK(GetCursor() == nullptr);
+		CHECK(window.cursor_shape() == choice.shape);
+		window.set_cursor_visible(true);
+		SendMessageW(handle, WM_SETCURSOR, over, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+		CHECK(GetCursor() == expected);
+		SendMessageW(handle, WM_SETCURSOR, over, MAKELPARAM(HTCAPTION, WM_MOUSEMOVE));
+		CHECK(GetCursor() == LoadCursorW(nullptr, IDC_ARROW));
+	}
+	CHECK(notify.log.empty());
+	CHECK_THROWS_AS(window.set_cursor_shape(static_cast<CursorShape>(99)), std::invalid_argument);
+	CHECK(window.cursor_shape() == CursorShape::not_allowed);
+	window.set_cursor_shape(std::nullopt);
+	CHECK_FALSE(window.cursor_shape().has_value());
+	SendMessageW(handle, WM_SETCURSOR, over, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+	CHECK(GetCursor() == LoadCursorW(nullptr, IDC_ARROW));
+	RECT after = {};
+	REQUIRE(GetClipCursor(&after) != FALSE);
+	CHECK(EqualRect(&before, &after) != FALSE);
+	window.set_cursor_shape(CursorShape::hand);
+	window.close();
+	CHECK_NOTHROW(window.set_cursor_shape(static_cast<CursorShape>(99)));
+	CHECK(window.cursor_shape() == CursorShape::hand);
+}
+
+TEST_CASE("initial cursor selection is per window and invalid choices register no class")
+{
+	RecordingNotify notify;
+	WindowOptions options = hidden_options();
+	options.cursor_shape = static_cast<CursorShape>(99);
+	CHECK_THROWS_AS(Window(options, &notify), std::invalid_argument);
+	CHECK_FALSE(class_is_registered());
+	options.cursor_shape = CursorShape::text;
+	Window first(options, &notify);
+	options.window_class_name += L"Second";
+	options.cursor_shape = CursorShape::crosshair;
+	Window second(options, &notify);
+	CHECK(first.cursor_shape() == CursorShape::text);
+	CHECK(second.cursor_shape() == CursorShape::crosshair);
+	first.set_cursor_shape(CursorShape::move);
+	CHECK(second.cursor_shape() == CursorShape::crosshair);
 }
 
 TEST_CASE("a window nobody can see never takes the pointer, confined or not")

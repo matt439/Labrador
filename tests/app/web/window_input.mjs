@@ -80,6 +80,145 @@ export function expected_complaint({ level, text }) {
 	return level === 'error' && text === 'web window test failure';
 }
 
+// CSSOM read-back exercises the real wasm Window. It does not inspect the
+// pointer's pixels or claim that a person has used a cursor on a device.
+export async function check_cursor_selection({ evaluate }) {
+	const lifecycle = JSON.parse(await evaluate(`JSON.stringify({
+		fixtures: Module.labradorCursorFixtures,
+		errors: Module.labradorCursorFixtureErrors,
+		quits: Module.labradorCursorFixtureQuits,
+	})`));
+	const row = (label, value, priority, shape) => ({ label, shape, status: 1, value, priority });
+	const expected = {
+		fixtures: [
+			row('destructor active', 'pointer', 'important', 1),
+			row('destructor restored', 'grab', 'important', -1),
+			row('destructor keeps page edit', 'zoom-in', '', -1),
+			row('close restored', 'grab', 'important', 1),
+			row('close keeps page priority edit', 'pointer', '', 1),
+			row('failure restored', 'grab', 'important', 1),
+			row('failure keeps page edit', 'wait', '', 1),
+			row('constructor failure', 'grab', 'important', -1),
+			row('invalid constructor', 'grab', 'important', -1),
+		],
+		errors: ['web window test failure', 'web window test failure'],
+		quits: 2,
+	};
+	if (JSON.stringify(lifecycle) !== JSON.stringify(expected)) {
+		throw new Error(`cursor lifecycle: expected ${JSON.stringify(expected)}, received ${JSON.stringify(lifecycle)}`);
+	}
+	const checked = await evaluate(`(() => {
+		const canvas = Module.canvas;
+		const style = canvas.style;
+		const elsewhere = document.getElementById('elsewhere');
+		const baseline = {
+			value: style.getPropertyValue('cursor'), priority: style.getPropertyPriority('cursor'),
+			sentinel: style.getPropertyValue('--cursor-test'),
+			sentinelPriority: style.getPropertyPriority('--cursor-test'),
+			width: style.width, height: style.height, outline: style.outline,
+			other: elsewhere.style.cssText, focused: document.activeElement,
+			locked: document.pointerLockElement,
+		};
+		let checks = 0;
+		const state = () => [style.getPropertyValue('cursor'), style.getPropertyPriority('cursor'),
+			Module._web_window_test_cursor(), getComputedStyle(canvas).cursor];
+		const check = (label, value, priority, shape, computed = value) => {
+			const actual = state();
+			const expected = [value, priority, shape, computed];
+			if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+				throw new Error(label + ': expected ' + JSON.stringify(expected) + ', received ' + JSON.stringify(actual));
+			}
+			if (elsewhere.style.cssText !== baseline.other || document.activeElement !== baseline.focused ||
+				document.pointerLockElement !== baseline.locked || style.width !== baseline.width ||
+				style.height !== baseline.height || style.outline !== baseline.outline) {
+				throw new Error(label + ': cursor selection changed another style, element, focus or pointer lock');
+			}
+			++checks;
+		};
+		const select = (shape) => {
+			const result = Module._web_window_test_set_cursor(shape);
+			if (result !== 0) throw new Error('valid cursor selection was refused: ' + shape);
+		};
+		try {
+			check('the default keeps authored inline CSS and its priority', 'grab', 'important', -1);
+			for (const [shape, cursor] of ['default', 'pointer', 'text', 'crosshair', 'move', 'not-allowed'].entries()) {
+				select(shape);
+				check('explicit shape ' + shape, cursor, 'important', shape);
+			}
+			select(1);
+			Module._web_window_test_set_cursor_visible(0);
+			check('hidden retains the requested shape', 'none', 'important', 1);
+			select(2);
+			check('changing the shape while hidden keeps it hidden', 'none', 'important', 2);
+			Module._web_window_test_set_cursor_confined(1);
+			Module._web_window_test_set_cursor_confined(0);
+			check('browser confinement does not lock or change the cursor', 'none', 'important', 2);
+			Module._web_window_test_set_cursor_visible(1);
+			check('showing uses the shape selected while hidden', 'text', 'important', 2);
+			const beforeInvalid = state();
+			if (Module._web_window_test_set_cursor(99) !== 1 || JSON.stringify(state()) !== JSON.stringify(beforeInvalid)) {
+				throw new Error('invalid selection did not throw before mutation');
+			}
+			select(-1);
+			check('reset restores the authored value and priority', 'grab', 'important', -1);
+			style.removeProperty('cursor');
+			select(3);
+			check('an absent inline property can be overridden', 'crosshair', 'important', 3);
+			select(-1);
+			check('reset removes the inline override and exposes page CSS', '', '', -1, 'wait');
+			style.setProperty('cursor', 'grab', 'important');
+			select(1);
+			style.setProperty('cursor', 'zoom-in');
+			check('read-back remains the requested choice after a page edit', 'zoom-in', '', 1);
+			select(-1);
+			check('reset preserves a later page edit', 'zoom-in', '', -1);
+			select(1);
+			style.setProperty('cursor', 'pointer');
+			select(-1);
+			check('reset preserves a priority-only page edit', 'pointer', '', -1);
+			select(1);
+			style.setProperty('cursor', 'progress', 'important');
+			select(4);
+			check('another request takes a new temporary lease', 'move', 'important', 4);
+			select(-1);
+			check('its reset restores the latest page value and priority', 'progress', 'important', -1);
+			select(2);
+			style.setProperty('--cursor-test', 'edited while owned', 'important');
+			Module._web_window_test_set_cursor_visible(0);
+			Module._web_window_test_set_cursor_visible(1);
+			select(-1);
+			check('reset affects only the cursor property', 'progress', 'important', -1);
+			if (style.getPropertyValue('--cursor-test') !== 'edited while owned' ||
+				style.getPropertyPriority('--cursor-test') !== 'important') {
+				throw new Error('cursor restoration overwrote an unrelated page style');
+			}
+			style.setProperty('cursor', 'grab', 'important');
+			Module._web_window_test_set_cursor_visible(0);
+			select(1);
+			select(-1);
+			check('reset while hidden keeps it hidden with no selected shape', 'none', 'important', -1);
+			Module._web_window_test_set_cursor_visible(1);
+			check('showing an unselected cursor restores page CSS', 'grab', 'important', -1);
+			Module._web_window_test_set_cursor_visible(0);
+			style.setProperty('cursor', 'wait');
+			Module._web_window_test_set_cursor_visible(1);
+			check('showing preserves a page edit made while hidden', 'wait', '', -1);
+			style.setProperty('cursor', 'help', 'important');
+			Module._web_window_test_set_cursor_visible(1);
+			check('released ownership leaves future page CSS alone', 'help', 'important', -1);
+			return checks;
+		} finally {
+			Module._web_window_test_set_cursor_visible(1);
+			Module._web_window_test_set_cursor(-1);
+			if (baseline.value) style.setProperty('cursor', baseline.value, baseline.priority);
+			else style.removeProperty('cursor');
+			if (baseline.sentinel) style.setProperty('--cursor-test', baseline.sentinel, baseline.sentinelPriority);
+			else style.removeProperty('--cursor-test');
+		}
+	})()`);
+	console.log(`ok - cursor lifecycle fixtures and ${checked} live CSS ownership checks`);
+}
+
 export default async function drive(page) {
 	await drive_window(page, devtools_input(page.send));
 }
@@ -200,6 +339,9 @@ export async function drive_window(page, input) {
 	await until(`typeof Module === 'object' && Module.labradorWindowReady === true`);
 	await pass('native title and icon requests leave the host metadata alone',
 		() => check_window_metadata(page));
+
+	await pass('cursor choices preserve page CSS, focus and lifecycle ownership',
+		() => check_cursor_selection(page));
 	await pass('motion preference refreshes and unavailable queries fall back',
 		() => check_motion_preference(page));
 	await frames(2);
