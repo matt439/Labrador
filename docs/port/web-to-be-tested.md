@@ -402,6 +402,15 @@ below predate it.
       under a GPU process crash, which ANGLE's Direct3D 11 device rebuilds on
       the same adapter; it is still not a driver reset (a Windows TDR) and
       not the live deploy, so the item stays open.
+      **Windows headless profile, 2026-11-17:** the current runner also
+      disables native-window occlusion tracking in its disposable Windows
+      headless processes. A focused bundle run at `28844a00` completed this
+      driver in 84.9822 s within its unchanged 120 s limit, including its real
+      tab-switch assertions; the wasm-null track passed 30/30. Bare-page
+      callback comparisons and their timing limits are recorded in
+      [verification](../verification.md#windows-headless-native-occlusion-2026-11-17).
+      This supplies software test-process evidence, while the real driver
+      reset and deployment acceptance above remain open.
 - [x] **Owner decision, 2026-10-27 (`BDP-20`): keep the existing 4.3 MB
       on-demand recording** (4,305,947 bytes); no smaller encode is needed.
       The site's page sets it to `preload="none"` with controls, so it neither
