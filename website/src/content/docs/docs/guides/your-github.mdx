@@ -66,19 +66,19 @@ email addresses private**, and use the address ending `users.noreply.github.com`
    ```
 
    `git init` answers `Initialized empty Git repository in C:/dev/mygame/.git/`, and may add a few
-   lines of hints about the name of the first branch, which you can ignore. `git add .` takes about
-   five seconds and prints about 175 warnings like this one, which are harmless:
+   lines of hints about the name of the first branch, which you can ignore. `git add .` can print
+   line-end warnings like this one, which are harmless:
 
    ```text title="Output"
-   warning: in the working copy of 'external/labrador/TODO.md', LF will be replaced by CRLF the next time Git touches it
+   warning: in the working copy of 'vcpkg.json', LF will be replaced by CRLF the next time Git touches it
    ```
 
    They say only that Git will store the file's line ends in its own way. `git commit` then prints
    one `create mode` line for each file and starts with:
 
    ```text title="Output"
-   [master (root-commit) 618880c] Start my game from Labrador's starter project
-    1125 files changed, 306730 insertions(+)
+   [master (root-commit) 9d004a4] Start my game from Labrador's starter project
+    1145 files changed, 319765 insertions(+)
    ```
 
    Your seven characters after `root-commit` differ, and the counts depend on the engine's version
@@ -179,7 +179,8 @@ email addresses private**, and use the address ending `users.noreply.github.com`
    git push -u origin main
    ```
 
-   The first push to GitHub from this machine asks who you are. A window titled
+   If this machine has not already signed in to GitHub, the first push asks who you are.
+   A window titled
    **Connect to GitHub** opens, from Git Credential Manager, which came with Git for Windows. Click
    **Sign in with your browser**. Your browser opens a GitHub page asking you to authorize
    *Git Credential Manager*; sign in there if it asks, and click **Authorize**. The browser then
@@ -188,24 +189,19 @@ email addresses private**, and use the address ending `users.noreply.github.com`
    do not ask again. The window's **Sign in with a code** button does the same through a code
    you type on a GitHub page, for when the browser does not open.
 
-   The prompt then shows the upload, about 8.4 MB for the starter, and ends:
+   The prompt shows the upload's progress when it runs in an interactive prompt. The completed
+   first push of the `v0.3.0` starter to the proof repository printed these final lines:
 
    ```text title="Output"
-   Enumerating objects: 1245, done.
-   Counting objects: 100% (1245/1245), done.
-   Delta compression using up to 32 threads
-   Compressing objects: 100% (1201/1201), done.
-   Writing objects: 100% (1245/1245), 8.35 MiB | 9.64 MiB/s, done.
-   Total 1245 (delta 56), reused 0 (delta 0), pack-reused 0 (from 0)
-   remote: Resolving deltas: 100% (56/56), done.
+   branch 'main' set up to track 'origin/main'.
    To https://github.com/your-name/mygame.git
     * [new branch]      main -> main
-   branch 'main' set up to track 'origin/main'.
    ```
 
-   The numbers depend on your project and your connection: at 1 MB a second the upload takes
-   about ten seconds. `-u` makes `origin`'s `main` the place a plain `git push` sends to from now
-   on. If it fails, the message is under [If something fails](#if-something-fails).
+   The address has been changed to the example's; yours names your repository. Progress output,
+   ordering and upload time depend on your prompt, project and connection. `-u` makes `origin`'s
+   `main` the place a plain `git push` sends to from now on. If it fails, the message is under
+   [If something fails](#if-something-fails).
 
 7. **Look at it on GitHub.** Reload the repository's page in your browser. It now lists your
    project's folders and files: `.github`, `external`, `game`, `CMakeLists.txt` and the rest, with
@@ -248,11 +244,11 @@ workflow and each of its steps are explained in [Check your game in CI](/docs/gu
    passes, or a red cross when it fails. The same mark appears beside the commit on the
    repository's front page, and clicking it lists the run too.
 
-2. **Wait for it.** The first run of the starter takes two to three minutes: the first run on
-   GitHub of the same project, with the engine as a submodule rather than plain files, took 2
-   minutes 31 seconds, of which configure took about a minute and a half, because it builds the
-   engine's libraries from vcpkg and keeps them for next time. Later runs reuse them and took
-   under two minutes.
+2. **Wait for it.** The first run needs to build the engine's libraries from vcpkg and keep
+   them for next time. The `v0.3.0` starter's first plain-file push on 16 November 2026 passed
+   with a `windows` job of 1 minute 48 seconds, including 71 seconds configuring and 20 seconds
+   building. The earlier submodule project's first run took 2 minutes 31 seconds; its cached
+   second run took under two minutes. Your connection, runner and project affect these times.
 
 3. **Read it.** Click the run's name. Its page shows one job, **windows**; click it. The job's
    steps are listed in order, each with a tick or a cross, and a step that never ran in grey:
@@ -276,9 +272,9 @@ workflow and each of its steps are explained in [Check your game in CI](/docs/gu
    ```text title="Test"
    Test project D:/a/mygame/mygame/out/build/x64-debug
        Start 1: MyGameTests
-   1/2 Test #1: MyGameTests ......................   Passed    0.33 sec
+   1/2 Test #1: MyGameTests ......................   Passed    0.35 sec
        Start 2: MyGameSmokeTests
-   2/2 Test #2: MyGameSmokeTests .................   Passed    0.75 sec
+   2/2 Test #2: MyGameSmokeTests .................   Passed    0.76 sec
 
    100% tests passed out of 2
    ```
@@ -402,20 +398,37 @@ page, open a new x64 Native Tools Command Prompt, run the `cd /d` line, and carr
 
 ## What was checked
 
+On 16 November 2026 the current release's `labrador-starter-v0.3.0.zip` was downloaded,
+its published SHA-256 checked, and its unchanged files extracted into a new folder. Steps 2,
+3, 5 and 6 then ran against a new dedicated public repository,
+[matt439/labrador-starter-proof](https://github.com/matt439/labrador-starter-proof), using the
+already authenticated owner account. The commit recorded 1,145 plain files, including the
+engine, with no submodule. The commit counts and final push output above are from this run;
+the push address is changed to the example's. No Credential Manager sign-in window appeared.
+
+The [first push's workflow](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329)
+passed on `windows-latest`, with the unchanged `ci.yml` supplied by the ZIP. The two test times
+above are from that run's log, with its repository name changed to `mygame` in the path. The
+public Actions summary showed the push, commit, `main` branch and `windows` job; its step
+names, timings, test log and final success were read with `gh run view`. The repository was
+created using GitHub CLI, rather than the browser form. Account sign-up, the browser's
+new-repository form, Credential Manager's sign-in window and the Actions log's interactive
+controls were not followed; those instructions retain that qualification.
+
 On 2026-10-30, in a starter project made from a starter ZIP of this tree at
 `C:\dev\g8-author\mygame`, with Git for Windows 2.52.0 and its Git Credential Manager 2.6.1, the
-commands of steps 2, 3 and 5 ran as shown, and their output is quoted from that run with the folder
+commands of steps 2, 3 and 5 ran as shown, and their output was quoted from that run with the folder
 changed to `C:\dev\mygame`. `git add .` printed 175 line-end warnings; the commit recorded 1,125
 files and left `git status` clean.
 
-**No GitHub account was made or signed in to, no repository was created on GitHub, and nothing
-was pushed there.** Steps 1, 4 and 6's sign-in, the Actions pages and the billing figures are
+**That October run made no GitHub account or repository and pushed nothing to GitHub.**
+Steps 1, 4 and 6's sign-in, the Actions pages and the billing figures were
 written from GitHub's documentation as it stood on 2026-10-30: *Creating an account on GitHub*,
 *Creating a new repository*, *Adding locally hosted code to GitHub*, *Using workflow run logs*,
 *Re-running workflows and jobs* and *GitHub Actions billing*. The **Connect to GitHub** window's
 title, its **Sign in with your browser** and **Sign in with a code** buttons and the browser's
 *Authentication Succeeded* page are read from Git Credential Manager's own source and the copy
-installed here; the window was not opened. The push output in step 6 is a real push of this
+installed here; the window was not opened. The push output then shown in step 6 was a real push of this
 project, to an empty repository on the same machine standing in for GitHub, with the address
 line changed: the counts and size are this project's, and GitHub's own extra lines, if any, were
 not seen.
@@ -429,16 +442,17 @@ first)` and the `--force` recovery against a local repository holding a README c
 the same refusal Git prints for GitHub. `Repository not found` needs a sign-in, so its wording is
 GitHub's documentation's. The Credential Manager removal steps were not followed.
 
-The CI run's steps, times and log lines are read, with `gh run view`, from the workflow's
+The CI run's steps, times and log lines were read, with `gh run view`, from the workflow's
 recorded runs on the public repository
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), which holds the project
 *Start your own project* builds; its first run took 2 minutes 31 seconds and the next 1 minute 38
-seconds. The test log above is the first run's, run 40242503246, which its push started, with
+seconds. The test log then quoted was the first run's, run 40242503246, which its push started, with
 the repository's name, `labrador-mygame`, changed to `mygame` in its path. `Process completed with
 exit code 8.` is from a failed test step in a run of Labrador's own CI. That a starter project
-pushed as plain files, with no submodule, runs the same workflow was checked by cloning the commit
-above from the stand-in repository into a fresh folder, as a runner's checkout does, and
-configuring, building and testing it there; it was not run on GitHub.
+pushed as plain files, with no submodule, runs the same workflow was then checked by cloning the
+October commit from the stand-in repository into a fresh folder, as a runner's checkout does,
+and configuring, building and testing it there. The November proof above closes the hosted
+plain-file workflow gap.
 
 On 2026-10-31 a second agent followed the page as worded in another fresh starter at
 `C:\dev\g8-follow\mygame`, with the credential helper off and a local stand-in repository in place
@@ -447,8 +461,8 @@ line-end warnings, within the page's *about 175*; the commit, `git branch -M mai
 -v`, the push to an empty stand-in, *Sending the next change*, and every failure above except
 `Repository not found` and `'git' is not recognized` gave the output quoted, `Authentication failed` included from GitHub
 itself; and `gh run view` listed the same eleven job steps. Two points were corrected: the test
-log had been the second, manually started run's, with times of 0.41 and 0.90 seconds, and is now
-the first run's; and the follower's commit recorded a `startup.txt` that
+log had been the second, manually started run's, with times of 0.41 and 0.90 seconds, and was changed
+to the first run's; and the follower's commit recorded a `startup.txt` that
 [Send your game to a friend](/docs/guides/your-release/) had written into the project's folder,
 which that page now writes to `%TEMP%`. The follower also found the starter's own `ci.yml`
 saying the engine is a submodule, which is false for a project committed as this page commits

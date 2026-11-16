@@ -58,8 +58,8 @@ existing UTF-8 conversion boundary. Every current `GAP#` and `IDEA#` selection
 call is now recorded; deferred scopes retain their own revisit triggers.
 
 The [fifth batch](#fifth-accepted-decision-batch-of-2026-11-16) adds eleven
-scopes in BACKLOG's L118 to L128. `OCA-116` waits for `OCA-79`'s hosted starter
-proof, and `SM-95` waits for owner-supplied public disclosure wording.
+scopes in BACKLOG's L118 to L128. `OCA-116`'s hosted starter prerequisite is
+met, and `SM-95` waits for owner-supplied public disclosure wording.
 `SM-96` refreshes release preparation for the selected candidate independently
 of the new feature queue; the November 13 report does not qualify later
 shader/material changes. Six proposals are deferred and three policies are
@@ -69,8 +69,8 @@ settled. `REV#156` is closed with its bounded advisory-hint wording correction.
 calls are recorded. There is no unresolved `DECISION` row. Approved physical
 acceptance is `BLOCKED` on owner attendance or hardware; deploy-dependent
 checks are `WAITING`. Those statuses preserve the required evidence and do
-not tick acceptance boxes. `OCA-79` and `SM-30` are ready for their bounded
-approved work, with live-state/payload inspection before any write.
+not tick acceptance boxes. `SM-30` is ready for its bounded approved work,
+with live-state inspection before any write.
 
 `PI-14` is closed here as delegated coordination, not as new ColourWars
 qualification. Client changes are selected in BACKLOG's L129 to L131;
@@ -79,9 +79,10 @@ beside the configured shipping backend in the same engine library. Configured
 null alone does not meet issue #122. Registry name recycling is declined;
 the durable name/slot and resource-lifetime boundaries remain.
 
-The earlier `OCA-79` approval gate is now clear: Later's L56 hosted starter
-proof is ready ahead of L66, under the existing return-to-earlier-ready-work
-rule. The first six selected product priorities remain the next product slice.
+Earlier Later item L56, `OCA-79`, is complete: the current-release starter's
+[first public push passed CI](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329).
+`OCA-116` is ready in its existing order. The first six selected product
+priorities remain the next product slice.
 
 **Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
@@ -199,7 +200,7 @@ scope; it does not publish a release, change settings or claim acceptance.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-116` | BLOCKED | could | M | Optional starter browser build/test CI after `OCA-79`; deployment waits for hosting, visibility and credentials (`REV#48`). [Scope](docs/product/BACKLOG.md#oca-116). |
+| `OCA-116` | OPEN | could | M | Optional starter browser build/test CI; hosted starter prerequisite met. Deployment waits for hosting, visibility and credentials (`REV#48`). [Scope](docs/product/BACKLOG.md#oca-116). |
 | `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
 | `SM-93` | OPEN | could | M | Add cross-origin iframe focus/input/permission regressions; host-specific guide and precompression stay deferred (`REV#72`). [Scope](docs/product/BACKLOG.md#sm-93). |
 | `OCA-117` | OPEN | could | S | Add README and link-preview images from reviewed captures; announcements remain a separate owner choice (`REV#73`). [Scope](docs/product/BACKLOG.md#oca-117). |
@@ -240,7 +241,6 @@ owner. These verdicts are planned work, not implementation or remote issue closu
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SITE#4` | WAITING | should | S | After the documentation-site deploy, retain real-iPhone search observation with deployed revision/browser/date; the source fix and Simulator alone do not close it. |
-| `OCA-79` | OPEN | should | S | Approved: review a current-release starter payload, use a dedicated public test repository and retain green hosted CI; no Labrador work-branch push is authorised. [Scope](docs/product/BACKLOG.md#oca-79). |
 | `WEB#12` | WAITING | could | S | After the separately hosted demo deploy, run check_live.mjs for the intended commit and retain dated output/failures; loopback evidence is separate. [Scope](docs/port/web-to-be-tested.md). |
 | `SM-30` | OPEN | could | S | Reconcile current documentation-site Cloudflare settings to the approved gate/Node-file policy; close on a normal production log, with no forced deploy. [Scope](docs/product/BACKLOG.md#later). |
 

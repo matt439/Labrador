@@ -1,6 +1,6 @@
 ---
 title: Check your game in CI
-description: A GitHub Actions workflow to copy into your game's repository, which builds it with Labrador as a submodule and runs its tests on every push.
+description: A GitHub Actions workflow to copy into your game's repository, which builds it with Labrador as plain files or a submodule and runs its tests on every push.
 sidebar:
   order: 9
 ---
@@ -98,11 +98,14 @@ run took about two and a half minutes on `windows-latest`, with MSVC 19.51. Both
 `actions/checkout@v4` and `actions/cache@v4` target Node.js 20, which GitHub now runs on
 Node.js 24; nothing fails because of it.
 
-That a starter project committed as plain files builds from a checkout was checked on 30 October
-2026 by committing a starter project made from a development tree, cloning that commit into
-`C:\dev\g8-author\a\mygame\mygame`, a folder as deep as the runner's, and running the workflow's
-configure, build and test commands there, with Git's line-end conversion on as on the runner;
-both tests passed. Such a project has not yet run the workflow on GitHub itself. On 31 October the
-comment above the checkout step, which had said the engine is a submodule, was reworded to cover
-such a project, after a reader following [Put your project on GitHub](/docs/guides/your-github/)
-found it false for theirs; the file's steps are the ones that ran.
+The released starter's plain-file route also ran on GitHub on 16 November 2026. The
+`v0.3.0` starter ZIP was extracted without changing its files and committed as
+[`9d004a4`](https://github.com/matt439/labrador-starter-proof/commit/9d004a4ce2d6cda8d402e94752ed23d8c4aca488)
+in the dedicated public [starter-proof repository](https://github.com/matt439/labrador-starter-proof).
+Its [first push's run](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329)
+passed on `windows-latest`, Windows Server 2025 with MSVC 19.51.36260. The `windows` job took
+1 minute 48 seconds: configure 71 seconds, build 20 seconds, and both `MyGameTests` and
+`MyGameSmokeTests` passed. It found no vcpkg cache, restored no packages and saved the new cache.
+The ZIP's workflow is byte-for-byte the file shown here; this proof changed no engine source.
+The Node.js 20 action warning above still appeared. Cache restoration for this plain-file
+repository and the `restore-keys` fallback were not exercised by its first run.
