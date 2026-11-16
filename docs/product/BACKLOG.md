@@ -1447,7 +1447,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
 - [ ] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
 - [ ] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
-- [ ] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
+- [x] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
 - [ ] **[OCA-119](#oca-119)** Could · S · The Outside Adopter: Know what Escape does when the browser owns full screen
 - [ ] **[SM-94](#sm-94)** Could · XS · The Sole Owner-Maintainer: State the scope of welcome contributions without promising a response time
 - [ ] **[SM-95](#sm-95)** Could · XS · The Sole Owner-Maintainer: Publish accurate owner-supplied agent-use wording — blocked until the wording is provided
@@ -3367,6 +3367,22 @@ Selected from [`REV#89`](../review/2026-11-10/FINDINGS.md#rev89).
 Deck/Linux test run or platform-support expansion. Check any factual external
 description against its primary source before publishing the note, verify
 its placement/links and run local lint and the website gate.
+
+**Closed 2026-11-17:** the README links to the public Why page's *External
+platforms and streaming* section. It names Proton, Steam Deck and Remote Play
+Together as unqualified and outside current engine support, separates game
+service choices from engine networking, and makes no native-port or
+compatibility claim. The brief descriptions link to Valve's primary
+[Proton](https://partner.steamgames.com/doc/store/application/platforms/linux/proton)
+and [Remote Play](https://partner.steamgames.com/doc/features/remoteplay)
+documentation, checked on this date. No platform run, account integration or
+store setting was selected or performed.
+
+Verification: the website gate passes its type check, 201 tests, 186-page
+build, internal links and archived snapshot assembly. The emitted support
+heading and links were inspected. All 13 local lint phases pass (497 Python
+tests, two Ninja-dependent skips); a follow-up with Ninja on PATH passes
+both skipped fixtures. Independent wording review found no scope issue.
 
 <a id="oca-119"></a>
 ### OCA-119. Observe actual Escape behaviour in browser full screen
