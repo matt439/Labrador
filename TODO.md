@@ -4,6 +4,10 @@ An index of open work, one row per item; each row points to the document that ow
 
 ## NOW
 
+The overnight goal was cleared on 2026-11-17. The [local handoff](docs/2026-11-17-overnight-handoff.md)
+records integrated work, retained qualification failures and completed scopes
+awaiting integration. Resume only on the owner's next instruction.
+
 **The only ordering in this file.** Keep every `DECISION` row here. Keep this block to the current aim and the next few actions; results go in their owners, and a closed story is a ticked box in BACKLOG.md.
 
 **Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0`, `v0.2.0` and `v0.3.0` are cut.
@@ -120,7 +124,7 @@ five deferred review rows below keep their individual revisit triggers.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-97` | OPEN | could | M | Native helpers implemented; finish ordinary-prompt Sandbox qualification at a non-default Visual Studio path, including normal play (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
+| `OCA-97` | OPEN | could | M | Native helpers implemented; finish bounded advertised-launch/normal-play verification with installed tools. Fresh VS installation in Sandbox is retired by the owner; use focused non-default-path fixtures (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
 
 ## Third accepted decision batch of 2026-11-16
 

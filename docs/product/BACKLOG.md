@@ -2293,19 +2293,26 @@ Selected from
   install nothing and do not conceal a failed prerequisite behind a retry.
 
 **Boundaries and verification:** no new build system or bootstrap downloader.
-Use isolated fixtures for discovery and failure handling, and qualify the
-assembled wrappers from an ordinary prompt and by the advertised launch route
-in Sandbox, including a non-default Visual Studio path. Run consumer checks,
-tooling/lint and the website gate; retain the exact tested installer version.
+Use isolated fixtures for discovery and failure handling, including non-default
+Visual Studio paths, and qualify the assembled wrappers from an ordinary prompt
+and by the advertised launch route with the installed tools. Run consumer
+checks, tooling/lint and the website gate; retain the tested tool versions.
 
 **Implementation 2026-11-17:** the assembled native launchers share one
 PowerShell discovery/environment runner, print the manual commands, preserve
 stdout/stderr and real failure codes, and use CMake's cached game name for
 play. Isolated native-process fixtures and the ordinary-prompt host consumer
 proof are in [the qualification record](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md).
-The existing consumer job exercises the optional helpers. Sandbox
-qualification at the non-default Visual Studio path, including bounded normal
-visible play, remains open; this story's box is not ticked by the host result.
+The existing consumer job exercises the optional helpers. Remaining regular
+qualification is bounded normal visible play by the advertised launch route
+with installed tools; the story remains unticked.
+
+**Owner amendment, 2026-11-17:** installing Visual Studio inside Sandbox takes
+too long to be a useful regular test. Retire that installation gate and stop
+the current attempt. Existing installer receipts are observations of setup,
+not helper acceptance. Use installed-tool execution and focused discovery/path
+fixtures; a fresh-machine install is a separate one-off investigation only
+when explicitly requested.
 
 <a id="sm-84"></a>
 ### SM-84. Compile a three-guide pilot against the assembled starter
