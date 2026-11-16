@@ -1401,7 +1401,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
 - [x] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
 - [x] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
-- [ ] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
+- [x] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
 - [ ] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
 - [ ] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
 
@@ -1979,11 +1979,14 @@ native MSVC Release configurations and consumer checks, plus lint and the
 website gate; CPU-phase evidence does not establish FPS, display pacing or
 the unmeasured Radeon tier. Measurement/runtime authorisation remains explicit.
 
-Explicit opt-in selection is implemented with a native-MSVC capability probe
-and Release-only directory scope. It leaves consumer parent targets and
-browser defaults unchanged. Complete native Release, incremental, consumer
-and current-source measurement qualification remains open before changing
-the standalone default.
+Closed 2026-11-17: [the qualification](../performance/2026-11-16-native-release-ipo.md)
+records all five native Release IPO suites, the same-source OFF baseline,
+clean/incremental/no-op/link costs, executable sizes, three consumer policy
+and link modes, installed startup and four bounded CPU-phase runs. Fresh
+standalone native MSVC Release builds enable the guarded default; explicit
+OFF remains supported, with consumer parent policy and browser/clang defaults
+unchanged. [The policy](../performance/native-release-ipo.md) states existing
+cache behaviour and the dated evidence's source, compiler and hardware limits.
 
 <a id="sm-82"></a>
 ### SM-82. Establish consistent ASan instrumentation before scheduling it

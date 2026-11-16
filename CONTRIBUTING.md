@@ -87,7 +87,7 @@ gh label create declined --color b60205 --description "Request declined; the clo
    whether the entry or the declaration is right is review's to check before
    merging, because nothing else does.
    The build inputs are the root, engine and math `CMakeLists.txt`, and
-   `cmake/`'s `settings.cmake`, `source_revision.cmake`, `version.cmake`, `dependencies.cmake`,
+   `cmake/`'s `settings.cmake`, `native_release_ipo.cmake`, `source_revision.cmake`, `version.cmake`, `dependencies.cmake`,
    `compile_shaders.cmake`, `add_material.cmake`, `embed_material.cmake` and
    `check_engine_includes.cmake`, plus `version_values.h.in` and
    `release_identity.txt`. Other CMake scripts and maintainer tooling
