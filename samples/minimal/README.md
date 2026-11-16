@@ -55,7 +55,6 @@ carry it.
   tools and print the manual commands; existing projects can keep those
   commands. The default is Debug; `-Preset x64-release` selects Release.
 
-
 - **2026-11-17.** Starter assembly gives `game/README.md` project instructions
   and adapts copy-specific comments to `MyGame` targets and `game/` paths.
   This source folder keeps its original comments and change list. A manual
@@ -71,7 +70,6 @@ carry it.
   so a missing dependency names the game's manifest obligation alongside
   CMake's discovery details. A copy can replace `find_package(doctest CONFIG REQUIRED)`
   with that line after moving its engine pin; the ordinary CMake call still works.
-
 
 - **2026-11-16.** Development starter ZIPs include an optional
   `labrador.vsconfig` at the project root. A copy can download the same file

@@ -31,13 +31,13 @@ follows the player*.
 
 **Next ready stories:** the owner accepted eighteen scopes on 2026-11-16 in
 [the decision batch below](#accepted-decision-batch-of-2026-11-16), ordered as
-BACKLOG's L66 to L83. The remaining first-six stories in the batch below
-are the initial priorities. `SM-77` waits for `OCA-88`'s texture-size
-query. `SM-81` has qualified native MSVC Release IPO and its standalone default;
+BACKLOG's L66 to L83. The first batch is complete, including its combined
+app/render/input and website qualification ([checkpoint](docs/verification/2026-11-17-overnight-checkpoint.md)).
+`SM-81` has qualified native MSVC Release IPO and its standalone default;
 `SM-82`'s native-null ASan repair is locally qualified; its separate
 scheduled workflow is ready for publication.
 The two deferred scopes, `REV#35` and `REV#53`, retain
-their revisit triggers. Acceptance is recorded; implementation is open.
+their revisit triggers. Later batches continue in their recorded order.
 
 The owner also accepted the [second batch](#second-accepted-decision-batch-of-2026-11-16),
 fourteen more stories in BACKLOG's L84 to L97 after the first batch. Five
@@ -82,7 +82,8 @@ the durable name/slot and resource-lifetime boundaries remain.
 
 Earlier Later item L56, `OCA-79`, is complete: the current-release starter's
 [first public push passed CI](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329).
-The first six selected product priorities remain the next product slice.
+The first six selected product priorities and the rest of the first batch
+are complete. Ready work continues in the later accepted batches.
 
 **Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` awaits hosted qualification and its clean-week gate). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
@@ -107,15 +108,8 @@ accepted scope, acceptance and scheduling order. The original findings remain
 historical; their live review ledgers link to these stories. Each row below
 replaces its selected `REV#` row rather than duplicating its implementation.
 
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `OCA-87` | OPEN | should | M | Finish remaining browser/app-matrix and final website verification; native first-frame and full-screen visual evidence is recorded for all four rasterisers (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
-| `OCA-88` | OPEN | should | S | API, guide and regressions implemented; finish the remaining render-matrix and website qualification (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
-| `SM-77` | OPEN | should | S | Atlas validation, signed/zero-area policy and null/wasm regressions implemented; finish the website gate (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
-| `OCA-90` | OPEN | should | M | Native request hooks and template confirmation pass native/wasm focused checks; combined app-matrix and browser lifecycle qualification remain. [Scope](docs/product/BACKLOG.md#oca-90). |
-| `OCA-92` | OPEN | should | M | Query and LineSweeper integration implemented; complete the combined seven-track app sweep (`REV#60`). [Scope and focused evidence](docs/product/BACKLOG.md#oca-92). |
-| `PI-22` | OPEN | should | S | Version API, exact-tag/archive identity and consumer checks pass; close after the combined website gate (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
-| `PI-23` | OPEN | should | S | Selected dependency diagnostics and configure fixtures pass; close after the combined website gate (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |
+All eighteen scopes are closed in BACKLOG; their combined qualification is
+recorded in the [November 17 checkpoint](docs/verification/2026-11-17-overnight-checkpoint.md).
 
 ## Second accepted decision batch of 2026-11-16
 
@@ -127,7 +121,6 @@ five deferred review rows below keep their individual revisit triggers.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-97` | OPEN | could | M | Native helpers implemented; finish ordinary-prompt Sandbox qualification at a non-default Visual Studio path, including normal play (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
-| `OCA-100` | OPEN | could | S | Run combined input/app verification for the implemented ISO key; native/wasm-null suites and Chrome DOM feed pass (`REV#82`). [Scope](docs/product/BACKLOG.md#oca-100). |
 | `PI-24` | OPEN | could | S | Provide an opt-in optimized Release symbols recipe with matching executable/PDB/source identity (`REV#91`). [Scope](docs/product/BACKLOG.md#pi-24). |
 
 ## Third accepted decision batch of 2026-11-16

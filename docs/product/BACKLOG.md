@@ -1389,16 +1389,16 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-85](#oca-85)** Should · S · The Outside Adopter: Refuse a camera scale the engine cannot render correctly
 - [x] **[SM-76](#sm-76)** Should · S · The Sole Owner-Maintainer: Refuse undefined integer conversions and division
 - [x] **[OCA-86](#oca-86)** Should · S · The Outside Adopter: A short mouse click reaches the next fixed update
-- [ ] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
-- [ ] **[OCA-88](#oca-88)** Should · S · The Outside Adopter: Read a loaded texture's dimensions
-- [ ] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
+- [x] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
+- [x] **[OCA-88](#oca-88)** Should · S · The Outside Adopter: Read a loaded texture's dimensions
+- [x] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
 - [x] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
-- [ ] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
+- [x] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
 - [x] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Construct scripted pad input alongside configured shipping input in the same engine library
 - [x] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
-- [ ] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
-- [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
-- [ ] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
+- [x] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
+- [x] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
+- [x] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
 - [x] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
 - [x] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
 - [x] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
@@ -1415,7 +1415,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
 - [x] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
 - [x] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
-- [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
+- [x] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
 - [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
 - [x] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
 - [x] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
@@ -1611,8 +1611,9 @@ the four rasterisers, windowed and full screen, on the RTX 5080. All first draws
 are logged hidden; later completed-frame observations are visible/foreground
 with stable client and buffer sizes. The record retains source/library/executable
 hashes, commands and snapshot limits; it makes no scan-out or sub-snapshot-flash
-claim. The story stays unticked for the remaining browser/app-matrix and final
-website verification.
+claim. The remaining browser/app-matrix and website checks passed in the
+[combined checkpoint](../verification/2026-11-17-overnight-checkpoint.md);
+the story is closed.
 
 <a id="oca-88"></a>
 ### OCA-88. Query the dimensions of a loaded texture
@@ -1640,9 +1641,10 @@ guide derives its source rectangle and extent from that query, and marks the
 development API's release boundary. Native-null RenderTests and D3D11
 RenderTests, RenderPixelTests and RenderPixelTestsThroughPost passed, including
 non-square replacement dimensions and retained handles. The public-header
-reference parser, citation, include-wall and whitespace checks passed. Remaining
-qualification is the other native backends, wasm tracks and website gate;
-the story stays open until those checks pass.
+reference parser, citation, include-wall and whitespace checks passed. All five
+native Debug tracks, both browser tracks and the website gate subsequently
+passed in the [combined checkpoint](../verification/2026-11-17-overnight-checkpoint.md).
+The story is closed.
 
 <a id="sm-77"></a>
 ### SM-77. Validate sprite-sheet frames against the atlas
@@ -1681,8 +1683,10 @@ AssetsTests and the migrated ComponentsTests pass on native-null and
 wasm-debug; an additional Debug wasm-null AssetsTests run passes the real
 atlas-query, rejected-publication and signed-UV recording cases. Public
 reference parsing, citation, include-wall and whitespace checks pass. The
-website gate remains open; the public signature and content migrations are
-in CHANGES.md and the sprite authoring guide.
+website gate subsequently passed in the
+[combined checkpoint](../verification/2026-11-17-overnight-checkpoint.md).
+The public signature and content migrations are in CHANGES.md and the sprite
+authoring guide; the story is closed.
 
 <a id="oca-89"></a>
 ### OCA-89. Parse a hex colour with an explicit failure result
@@ -1737,9 +1741,10 @@ Focused verification in an isolated worktree passed native-null CoreTests,
 AppTests, MinimalStateTests and MinimalSmokeTests (4/4); wasm-debug with null
 render/audio passed CoreTests and AppTests under Node (2/2), and compiled the
 minimal sample and browser window page. The website gate passed. The story's
-box remains open for the combined app verification matrix and browser
-lifecycle runs after integration; these focused results do not qualify the
-other native renderers or a browser page run.
+combined app verification matrix and browser lifecycle runs subsequently
+passed in the [combined checkpoint](../verification/2026-11-17-overnight-checkpoint.md).
+Those later complete runs close the story; the earlier focused results alone
+did not qualify other renderers or page execution.
 
 <a id="sm-78"></a>
 ### SM-78. Construct scripted pad input alongside the shipping reader
@@ -1830,10 +1835,12 @@ resume and menu restart. The website gate passed its check, 200 tests, build
 and release assembly. Standard x64-release D3D11 captures on RTX 5080 were
 regenerated and all four were byte-identical.
 
-**Remaining qualification:** the combined seven-track app sweep. The full
-local WebWindowTests fixture passed its new preference step and 36 later
-input steps, then the browser denied its full-screen request with
-`TypeError: not granted`; the standalone preference fixture exits zero.
+**Combined qualification, 2026-11-17:** all seven app tracks and the website
+gate passed in the [checkpoint](../verification/2026-11-17-overnight-checkpoint.md).
+The earlier full window fixture stopped at a fullscreen denial; bringing the
+headless page to the foreground and correcting Window-owned Promise handling
+now let the complete lifecycle sequence pass. The original failure is retained
+in the checkpoint receipts.
 These automated results do not claim an informal real-device accessibility
 session or change a host setting.
 
@@ -1874,6 +1881,10 @@ automatic tag/publication. Offline release-check fixtures exercise agreement,
 drift and development states; compile a consumer's header check and inspect
 its CMake value, including a source archive, then run the website gate.
 
+**Closure, 2026-11-17:** the combined website gate and complete lint suite
+passed at `ad711c05`; the [checkpoint](../verification/2026-11-17-overnight-checkpoint.md)
+records the source-specific native/browser checks and consumer fixtures.
+
 <a id="pi-23"></a>
 ### PI-23. Diagnose a missing consumer dependency at configure
 
@@ -1893,6 +1904,10 @@ or runtime staging helper; PI-11 retains its own gate. Configure-only consumer
 fixtures omit each applicable package and preserve a successful normal
 configuration, with failing-toolchain cases distinguished from missing
 manifest entries. Run affected CMake fixtures and the website gate.
+
+**Closure, 2026-11-17:** the combined website gate and complete lint suite
+passed at `ad711c05`; the [checkpoint](../verification/2026-11-17-overnight-checkpoint.md)
+records the source-specific native/browser checks and consumer fixtures.
 
 <a id="sm-79"></a>
 ### SM-79. Cover consumer build inputs in the change-list rule
@@ -2498,8 +2513,10 @@ AppTests (2/2 in each). A bounded Chrome 157.0.8103.78 page probe also passes
 synthetic ISO and unknown-code dispatch through the real Window listener,
 including default prevention and independent typed text. The committed full
 window sequence contains those same checks. No physical ISO keyboard was
-used. The nine standalone CMake lint checks, 56 browser-protocol tests and the website gate (200 tests, 180 pages) pass. The combined input/app verification sweep remains for integration;
-this story stays unticked until that qualification is recorded.
+used. The nine standalone CMake lint checks, 56 browser-protocol tests and the website gate (200 tests, 180 pages) pass. The combined input/app sweep and
+current website gate subsequently passed in the
+[November 17 checkpoint](../verification/2026-11-17-overnight-checkpoint.md),
+closing this story with the physical-hardware limitation unchanged.
 
 <a id="pi-24"></a>
 ### PI-24. Retain matching symbols for an optimised Windows Release
