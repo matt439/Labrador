@@ -155,3 +155,40 @@ The workflow is staged in source only. No dispatch, push, repository-setting
 change or hosted sanitizer run was performed for this qualification. The first
 hosted result after publication remains to be inspected; local green does not
 establish runner-image qualification.
+
+## Combined-source qualification, 2026-11-17
+
+The clean combined engine tree at
+`75131afd3aab93a1e471fd3f1354a6e6956725dd` was checked in the existing isolated
+ASan and ordinary-null build directories without deleting either cache. This
+tree includes the version/dependency helpers, native Release IPO policy,
+collider validation, text alignment, ISO-key mapping and browser fixes.
+
+Both configurations were reconfigured and rebuilt with parallelism 2; CTest
+ran serially. Exact inventory checks passed: ASan **24/24** tests passed in
+15.83 seconds, and ordinary native null **23/23** passed in 11.81 seconds.
+Neither complete run used a test filter or exclusion.
+
+The new atlas-strip preallocation regression was also selected separately
+under ASan: one case and all 18 assertions passed, including the positive
+allocation calibration and refusal-byte budget. That focused corroboration
+supplements the full AssetsTests run. The full sanitizer suite includes the
+unchanged allocation-failure cases and successful safe, heap-overflow and
+container-overflow detection probes.
+
+The instrumentation receipt checked 348 translation units with
+`/fsanitize=address`, no `/RTC` or annotation opt-out, and zero compile commands
+with `/GL`. The ASan cache records Debug, `/Ob0 /Od`, `/INCREMENTAL:NO`,
+`LABRADOR_ASAN=ON`, `LABRADOR_NATIVE_RELEASE_IPO=OFF` and the
+`x64-windows-asan` triplet. The ordinary Debug cache records ASan/IPO off and
+the original `/RTC1` flags. Lodepng's string/vector/optional annotation
+directives remain 1, and AudioTests and DirectXTK retain their ASan runtime
+imports. Both dependency hashes match the November 16 receipt above.
+
+Raw logs, the JSON receipt and the focused regression result are retained as
+`out/asan-qualification/*75131afd*`; JUnit files are
+`out/build/x64-debug-null-asan/asan-75131afd.xml` and
+`out/build/x64-debug-null/ordinary-75131afd.xml` in that validation checkout.
+The source stayed clean at the measured revision throughout the runs. This
+record adds no hosted execution, Release/IPO performance measurement,
+physical-device acceptance, endpoint/browser playback or listening evidence.
