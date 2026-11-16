@@ -1407,7 +1407,7 @@ No new removal API or stale-handle guarantee is implied.
 
 - [ ] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
 - [ ] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
-- [ ] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
+- [x] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
 - [ ] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
 - [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
 - [ ] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
@@ -2130,6 +2130,22 @@ Selected from
 starter. Assembly/ZIP fixtures check the resulting paths, target names and
 copy, and consumer/rename checks still build, test and install the project.
 Update affected walkthrough text and run lint and the website gate.
+
+**Closed 2026-11-17:** assembled starters receive the maintained
+`game-README.md`, root ZIP instructions distinguish `game/` from
+`external/labrador/samples/minimal/`, and bounded comment-line edits adapt
+target names, paths and copy instructions. The complete engine copy keeps
+its original sources, README and template change list. Executable game
+lines and display-name placeholders are unchanged. Fixtures cover code-string
+and line-ending preservation, copied README/ZIP contents and every current
+comment rule; the website's source-anchor model is compared with the real
+assembler. A real assembled starter builds and passes exactly two native
+Debug tests, installs the expected 20 Release files and passes its installed
+smoke test. The guide's own rename line builds and passes both SkyHopper
+tests. The browser build passes its Node rules test and quits in Chromium
+after Escape/Enter. The guide anchors and website gate pass. A manual copy
+keeps the template README/comments until its owner changes them, as both
+walkthrough routes explain.
 
 <a id="oca-96"></a>
 ### OCA-96. Offer optional Visual Studio configuration and explain tool downloads

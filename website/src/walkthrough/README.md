@@ -5,7 +5,8 @@ The files a reader creates in *Start your own project*
 than typed into the page so that the page shows exactly what was built. The
 starter ZIP each release carries, which *Get the starter project*
 (`src/content/docs/docs/get-started/starter.mdx`) builds, holds the same
-files in the same places, made by `tools/consumer_check/starter_zip.py`. *Build
+game code and build files, with adapted game instructions/comments, made by
+`tools/consumer_check/starter_zip.py`. *Build
 for the browser* (`src/content/docs/docs/guides/browser.mdx`) quotes the same
 files: the `wasm` presets in `CMakePresets.json` and the `if(EMSCRIPTEN)`
 block in `game-CMakeLists.txt`.
@@ -14,6 +15,7 @@ block in `game-CMakeLists.txt`.
 | --- | --- |
 | `root-CMakeLists.txt` | `CMakeLists.txt` |
 | `game-CMakeLists.txt` | `game/CMakeLists.txt` |
+| `game-README.md` | `game/README.md`, in assembled starters |
 | `CMakePresets.json` | `CMakePresets.json` |
 | `gitignore.txt` | `.gitignore` |
 | `ci.yml` | `.github/workflows/ci.yml`, from *Check your game in CI* (`src/content/docs/docs/guides/ci.mdx`) |
@@ -29,6 +31,18 @@ listed here because the page reads them from the sample
 (`src/components/IncludeChanges.astro`): every line in the copied `.h` and
 `.cpp` files that starts `#include "samples/minimal/`, `main_web.cpp`'s
 included, which only the `wasm` presets compile.
+
+An assembled starter uses `game-README.md` for the reader's game and applies
+`game-comments.json` to standalone comment lines in its copied C++ and HTML.
+These edits name the assembled targets and paths and remove instructions to
+copy the template again. They preserve executable code, display strings,
+indentation and line endings. The manual `xcopy` route keeps the original
+template README/comments until the reader changes them. Both routes use the
+same game code and build files; the full original template, its README and
+change list remain under `external/labrador/samples/minimal/`.
+
+The guide-anchor tests model the assembled copy, including its comments and
+README; a Python fixture compares that Node model with the real assembler.
 
 **What checks them.** CI's `consumer` job makes a starter ZIP of the project
 from these files on every pull request and every push CI builds, with

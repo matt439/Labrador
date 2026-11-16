@@ -10,9 +10,9 @@ Each Labrador release comes with a **starter ZIP**: a game project of your own, 
 engine's minimal sample, with the engine inside it. You download it, extract it, build it and
 play it. You do not need Git, and you do not build Labrador on its own first.
 
-The project is exactly the one [Start your own project](/docs/get-started/your-project/) makes
-by hand, so every later page applies to it in the same way. The only difference is that its
-engine folder is a plain copy rather than a Git submodule;
+The game code and build are the ones [Start your own project](/docs/get-started/your-project/)
+makes by hand, so later code-editing pages apply to both. The engine folder is a plain copy
+rather than a Git submodule;
 [Put your project in Git](/docs/guides/starter-to-git/) changes that whenever you want to.
 
 Before you start, do [Install the tools](/docs/get-started/prerequisites/). Every command on
@@ -261,6 +261,14 @@ sample.
 
 The guides that add a source file to the game say to list it in `game\CMakeLists.txt`, the one
 under `game`, not the one beside `CMakePresets.json`.
+
+There is also a look-alike `external\labrador\samples\minimal\` inside the complete engine
+source. Follow game guides in `game\`, for example `game\states\hello_state.cpp`.
+The `v0.3.0` ZIP's `game\README.md` is the original template README shown above. New starter
+assemblies from the development engine give that file a concise map of your game's files
+and targets and adapt copy-specific comments to `MyGame` names. Their root `README.txt`
+explains the distinction too. The full original template README and its change list stay at
+`external\labrador\samples\minimal\README.md` in both arrangements.
 
 [Start your own project](/docs/get-started/your-project/) explains each of these files, since
 it makes them one at a time. Everything you change is in `game`. Leave `external\labrador` as
