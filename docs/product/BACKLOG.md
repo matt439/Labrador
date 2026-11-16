@@ -1411,7 +1411,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
 - [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
 - [x] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
-- [ ] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
+- [x] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
 - [ ] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
 - [ ] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
 - [ ] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
@@ -2357,6 +2357,22 @@ remain deferred under REV#35; this guide does not require them. Build and test
 the assembled example natively and under wasm/Node, check its snippets and
 run the website gate. The example makes no cryptographic or replay-format
 promise.
+
+**Closed 2026-11-17:** *Roll a die in your game* keeps `Random` in
+`HelloState`, draws on a new Space press and passes an integer into a
+math-only rules function. Three deterministic cases add six assertions;
+neither the rule nor its tests needs Random or another engine library.
+The guide explains fixed seeds, call order, the standard-distribution
+portability distinction and an optional game-owned clock seed, without
+changing the existing API or REV#35's deferral.
+
+The [verification record](../review/2026-11-12-work-audit/2026-11-17-random-guide.md)
+retains the released v0.3.0 and development ZIP identities and command exits.
+Both fixed/clock variants pass native rules/smoke 2/2, wasm/Node 1/1 and
+Chrome Space/quit runs on each starter. Supplemental native-null glyph
+recording verifies the actual state's documented fixed sequence and held-key
+behaviour on both versions. The v0.3.0 applicability is therefore checked;
+the selected three-guide CI pilot has not been expanded.
 
 <a id="oca-99"></a>
 ### OCA-99. Align a measured line of text with an explicit snapping choice
