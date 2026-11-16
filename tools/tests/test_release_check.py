@@ -253,6 +253,8 @@ class GitFixtureTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(output, "")
         self.assertIn("version-string is '0.1.0'", errors)
+        self.assertNotIn("generated version header", errors)
+        self.assertNotIn("CMake's unverified source version", errors)
         self.assertIn("still has `## Unreleased`", errors)
         self.assertIn("2026-11-01 (The copy renames a thing.) has no commit id; `git log -S` finds "
                       + self.change[:7], errors)

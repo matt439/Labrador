@@ -127,7 +127,7 @@ def check_version_string(vcpkg: str, release: tuple[int, int, int]) -> list[str]
     return []
 
 
-def check_version_contract(files: dict[str, str], release: tuple[int, int, int], head: str) -> list[str]:
+def check_version_contract(files: dict[str, str], head: str) -> list[str]:
     """Run the release's own CMake derivation without a compiler or repository writes."""
     if not re.search(r'project\(Labrador\s+VERSION\s+"\$\{LABRADOR_VERSION\}"\s+LANGUAGES\s+CXX\)',
                      files["CMakeLists.txt"]):
@@ -135,7 +135,15 @@ def check_version_contract(files: dict[str, str], release: tuple[int, int, int],
     cmake = shutil.which("cmake")
     if cmake is None:
         return ["CMake is required for the compiler-free release version/header check; use the x64 tools prompt"]
-    expected = "{}.{}.{}".format(*release)
+    # Requested-release agreement is check_version_string's separate check.
+    # Data that correctly follows an older manifest baseline is not header drift.
+    try:
+        expected = json.loads(files["vcpkg.json"]).get("version-string")
+    except (ValueError, AttributeError):
+        return []
+    canonical = parse_version("v" + expected) if isinstance(expected, str) else None
+    if canonical is None:
+        return []
     failures: list[str] = []
     with tempfile.TemporaryDirectory(prefix="labrador-release-version-") as temporary:
         root = Path(temporary)
@@ -171,7 +179,7 @@ def check_version_contract(files: dict[str, str], release: tuple[int, int, int],
                 failures.append(f"CMake's {'stamped release' if stamped else 'unverified source'} version "
                                 f"is {facts!r}, expected {[expected, expected_string, expected_development]!r}")
             header = (root / "values.h").read_text(encoding="utf-8")
-            for part, value in zip(("major", "minor", "patch"), release):
+            for part, value in zip(("major", "minor", "patch"), canonical):
                 if not re.search(rf"version_{part}\s*=\s*{value}u\s*;", header):
                     failures.append(f"the generated version header's {part} does not agree with v{expected}")
             if f'version_string = "{expected_string}";' not in header:
@@ -423,7 +431,7 @@ def main(arguments: list[str] | None = None, *, repository: Path | None = None) 
         failures += check_version_string(show(location, head, "vcpkg.json"), release)
         version_files = {name: show(location, head, name)
                          for name in (*VERSION_INPUTS, "vcpkg.json", "CMakeLists.txt")}
-        failures += check_version_contract(version_files, release, head)
+        failures += check_version_contract(version_files, head)
         changes = show(location, head, changes_rule.CHANGES)
         heading_failures, entries = check_changes(changes, options.release, options.base, head_date)
         failures += heading_failures
