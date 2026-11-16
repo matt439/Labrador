@@ -475,7 +475,18 @@ cut once PHILOSOPHY's settle criterion has run.
      earlier versions are unchanged. Roll back through Cloudflare's deployment
      history; never edit or remove a published entry, and correct a snapshot
      with an appended erratum or a newer release.
-6. **Afterwards**, the next consumer-visible change opens `## Unreleased`
+6. **Record aggregate counters only when the owner invokes collection.**
+   The [manual counter snapshot](docs/release-counters.md) names the explicit
+   repository, published release and available traffic window. Its default
+   prints a plan. `--collect` requests public starter/documentation asset
+   counts; `--include-traffic` separately requests owner-private views and
+   uniques. Output stays under ignored `out/release-counters/`, with private
+   traffic in a separate companion. No workflow collects or publishes it.
+   Access failure is unavailable, not zero, and the counters do not establish
+   individual adopters. Keep the preserved
+   [v0.3.0 observation](docs/review/2026-11-10/2026-11-12-github-counters.md)
+   as dated evidence. This optional owner invocation is not a release gate.
+7. **Afterwards**, the next consumer-visible change opens `## Unreleased`
    above the release's heading, and `version-string` stays as it is until the
    next release commit changes it.
 

@@ -3301,6 +3301,20 @@ offline fixtures and qualify account reads only when the owner explicitly
 invokes collection. Update the release procedure and run focused tooling,
 lint and the website gate; this planning record collects nothing.
 
+**Implementation, 2026-11-17:** `tools/release_counters.py` plans by default
+and requires explicit repository, release and latest-fourteen-day window
+arguments. Manual `--collect` reads public release/asset metadata;
+`--include-traffic` separately requests owner-private aggregate views/uniques.
+Sanitized replay inputs and public/private reports stay in separate local
+files under ignored `out/`; no workflow or publication hook is added.
+Seventeen offline API/replay fixtures cover metric, availability, identity
+and privacy boundaries, including the real CLI with `gh` absent from PATH.
+The November 12 record remains unchanged. [The manual procedure](../release-counters.md)
+retains cumulative-asset and rolling-window limits and makes no adoption
+inference. No live collection was invoked; account qualification remains
+conditional on an explicit owner invocation. The combined website gate
+remains before story closure.
+
 <a id="sm-91"></a>
 ### SM-91. Compare a tag-named release rebuild without publishing assets
 
