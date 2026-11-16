@@ -95,11 +95,13 @@ target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..
 if(EMSCRIPTEN)
     target_sources(LabradorEngine PRIVATE
         app/web/dom_events.cpp
+        app/web/motion_preference.cpp
         app/web/window.cpp
     )
 elseif(WIN32)
     target_sources(LabradorEngine PRIVATE
         app/win32/keyboard_input.cpp
+        app/win32/motion_preference.cpp
         app/win32/pointer_input.cpp
         app/win32/system_command.cpp
         app/win32/window.cpp

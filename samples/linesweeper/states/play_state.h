@@ -29,7 +29,8 @@ namespace linesweeper
 	public:
 		// `app` is borrowed and must outlive this state; initialize it and load
 		// the sample's content before init(). `motion` selects the particle
-		// count; the browser entry supplies the system preference.
+		// count; both entry points supply the system preference once at startup.
+		// An explicit motion argument is retained across pauses and restarts.
 		//
 		// `report_palette`, if given, is called with the palette the match
 		// starts in and when the pause menu closes on a different one,

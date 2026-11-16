@@ -700,19 +700,21 @@ namespace
 	// tuning in particles.cpp can move without this moving.
 	TEST_CASE("a reduced field throws each burst with at most its reduced count")
 	{
+		CHECK(linesweeper::motion_for_preference(false) == Motion::full);
+		CHECK(linesweeper::motion_for_preference(true) == Motion::reduced);
 		SUBCASE("a piece landing, one cell")
 		{
-			const int full = piece_landing().live;
-			const int reduced = piece_landing(Motion::reduced).live;
+			const int full = piece_landing(linesweeper::motion_for_preference(false)).live;
+			const int reduced = piece_landing(linesweeper::motion_for_preference(true)).live;
 			CHECK(reduced > 0);
 			CHECK(reduced <= sparks_per_cell(full, Motion::reduced));
 		}
 
 		SUBCASE("a row leaving, ten cells")
 		{
-			const int full = row_leaving().live;
+			const int full = row_leaving(linesweeper::motion_for_preference(false)).live;
 			REQUIRE(full % well_columns == 0);
-			const int reduced = row_leaving(Motion::reduced).live;
+			const int reduced = row_leaving(linesweeper::motion_for_preference(true)).live;
 			CHECK(reduced > 0);
 			CHECK(reduced <= well_columns *
 				sparks_per_cell(full / well_columns, Motion::reduced));
@@ -721,9 +723,9 @@ namespace
 		SUBCASE("the whole well topping out, two hundred cells")
 		{
 			const int cells = well_columns * well_visible_rows;
-			const int full = full_well_topping_out().live;
+			const int full = full_well_topping_out(linesweeper::motion_for_preference(false)).live;
 			REQUIRE(full % cells == 0);
-			const int reduced = full_well_topping_out(Motion::reduced).live;
+			const int reduced = full_well_topping_out(linesweeper::motion_for_preference(true)).live;
 			CHECK(reduced > 0);
 			CHECK(reduced <= cells *
 				sparks_per_cell(full / cells, Motion::reduced));

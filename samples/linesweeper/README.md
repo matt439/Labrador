@@ -90,14 +90,18 @@ and phone-layout checks pass. Android remains unverified.
 
 The landing shadow's edge stands out from the empty well at 3:1 or more for
 every piece, checked by a test (*The landing shadow is an outline*).
-In a browser, `main_web.cpp` asks `prefers-reduced-motion` once at start and
-logs which field it made; a player who has asked for reduced motion gets every
+Both entry points ask `labrador::prefers_reduced_motion()` once at start;
+`main_web.cpp` logs which field it made. A player who has asked for reduced motion gets every
 burst with `sparks_per_cell`'s reduced count, an eighth of each cell's sparks
 rounded up (`particles.h`, `Motion`). The bursts keep their heat, so the flash
-check below still bounds them. The desktop build does not read the system's
-animation setting and always plays the full field. `LineSweeperViewTests`
-holds the reduced counts, and `LineSweeperReducedMotionPageTests` runs the page
-with the preference emulated.
+check below still bounds them. Windows reads the client-area animation setting;
+the browser reads `prefers-reduced-motion: reduce`. An unavailable setting selects
+the full field. This is the sample's startup policy: it keeps the selected count
+through pauses and restarts and does not follow later setting changes. The engine
+query itself reads afresh on each call and changes no effects. Explicit `Motion`
+arguments remain the caller's choice. `LineSweeperViewTests` holds the mapping and
+reduced counts, and `LineSweeperReducedMotionPageTests` runs the page with the
+preference emulated.
 
 The pause menu's COLOURS row selects one of four piece palettes: STANDARD and
 one each for **Protanomaly / Protanopia**, **Deuteranomaly / Deuteranopia** and

@@ -13,9 +13,10 @@ commit as the change that fights it.**
 ## 1. Threads come from the machine, views from the layout
 
 `default_thread_count` answers how many logical processors the machine reports,
-and it sizes the thread pool and nothing else. The shell asks the machine two
-questions, and this is one of them; the other is where the executable is
-(`content_root.h`). One constant answering for the pool, the renderer's view
+and it sizes the thread pool and nothing else. Other platform queries have
+independent purposes: the executable's location (`content_root.h`) and the
+animation preference (`motion_preference.h`). One constant answering for the
+pool, the renderer's view
 capacity and the partition count would conflate three different things.
 
 **The pool's ceiling is a property of the machine**, so `max_threads` defaults

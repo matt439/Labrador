@@ -1775,6 +1775,32 @@ a reason to log once per object per frame.
 
 Selected from [`REV#60`](../review/2026-11-10/FINDINGS.md#rev60).
 
+**Scope amendment, 2026-11-16.** This extends BDP-22's browser-only startup
+selection to Windows and moves the platform query into the app seam. The
+sample still samples once at startup; its existing particle counts, heat and
+explicit Motion arguments remain game policy. The engine query itself is
+fresh on each call and has no listener or window lifetime dependency.
+
+**Implementation and focused verification, 2026-11-16.**
+`engine/app/motion_preference.h` exposes the fresh query. Native-null AppTests
+cover the real Win32 request with both values and failed reads; wasm AppTests
+cover Node's unavailable API. The shared browser fixture in
+`tests/app/web/motion_preference_input.mjs` exercises the actual wasm call
+with both values, repeated reads and unavailable/throwing queries, and its
+standalone run through `run_page.mjs` passed in Chrome 157.0.8103.78.
+LineSweeper full/reduced browser pages passed, as did native-null and wasm GL
+view tests; the native state case checks explicit effects choice through pause,
+resume and menu restart. The website gate passed its check, 200 tests, build
+and release assembly. Standard x64-release D3D11 captures on RTX 5080 were
+regenerated and all four were byte-identical.
+
+**Remaining qualification:** the combined seven-track app sweep. The full
+local WebWindowTests fixture passed its new preference step and 36 later
+input steps, then the browser denied its full-screen request with
+`TypeError: not granted`; the standalone preference fixture exits zero.
+These automated results do not claim an informal real-device accessibility
+session or change a host setting.
+
 **Acceptance**
 
 - Expose the platform preference as a read-only fact through the app seam,

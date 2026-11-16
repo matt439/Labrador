@@ -117,6 +117,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Expose the platform reduced-motion preference
+
+**New API and sample behaviour.** `engine/app/motion_preference.h` supplies
+`prefers_reduced_motion()`, a fresh read of Windows' client-area animation
+setting or the browser's media query. An unavailable setting returns false;
+the engine changes no effects. LineSweeper now uses the same startup query on
+both platforms, so Windows users with client-area animations disabled get its
+existing reduced particle counts. The browser keeps its startup-only policy.
+Explicit `Motion` selections remain game policy and are retained across pauses
+and restarts. Games that offer an effects setting can use the query as their
+default and retain the player's explicit choice.
+
 ### 2026-11-16 — Reveal application windows after the first completed frame
 
 **Behaviour change.** A normally visible native `Application` stays hidden

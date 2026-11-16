@@ -9,7 +9,7 @@
 // is a static rather than a local, because in a browser run() does not
 // return (Application::run says why).
 //
-// The page's prefers-reduced-motion is asked once, before the match, and a
+// The platform's reduced-motion preference is asked once, before the match, and a
 // player who has set it gets a calmer particle field (particles.h, Motion).
 // The palette the match is drawn in is logged when the match starts and each
 // time the pause menu closes on a new one (palette.h).
@@ -19,6 +19,7 @@
 // entry without that code; default development play also starts PlayState.
 
 #include "engine/app/application.h"
+#include "engine/app/motion_preference.h"
 #include "samples/linesweeper/states/play_state.h"
 #if defined(LABRADOR_DEVELOPMENT_PACING)
 #include "samples/linesweeper/web/pacing_observer.h"
@@ -34,17 +35,6 @@
 using namespace labrador;
 
 EM_JS_DEPS(linesweeper_main, "$UTF8ToString");
-
-// The player's system setting, asked once at start: the field is made with
-// it and keeps it for the page's life. The console line is what a page test
-// reads to know which field it got.
-EM_JS(int, linesweeper_prefers_reduced_motion, (), {
-	const reduced = typeof matchMedia === "function" &&
-		matchMedia("(prefers-reduced-motion: reduce)").matches;
-	console.info("LineSweeper: motion " + (reduced ? "reduced" : "full") +
-		" (prefers-reduced-motion)");
-	return reduced ? 1 : 0;
-});
 
 // One console line per palette the match is drawn in, which is what a page
 // test reads to know the pause menu's COLOURS row reached the match.
@@ -125,8 +115,9 @@ int main()
 		}
 #endif
 		const linesweeper::Motion motion =
-			linesweeper_prefers_reduced_motion() != 0 ?
-			linesweeper::Motion::reduced : linesweeper::Motion::full;
+			linesweeper::motion_for_preference(prefers_reduced_motion());
+		std::printf("LineSweeper: motion %s (platform preference)\n",
+			motion == linesweeper::Motion::reduced ? "reduced" : "full");
 		return app.run(std::make_unique<linesweeper::PlayState>(&app, motion,
 			report_palette));
 	}

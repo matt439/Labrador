@@ -241,6 +241,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 		headers: [
 			['application.h', 'Application', 'game code'],
 			['content_root.h', 'Content paths', 'game code'],
+			['motion_preference.h', 'Motion preference', 'game code'],
 			['window.h', 'Window', 'game code'],
 		],
 	},
