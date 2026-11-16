@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
 
 This adds one action to the [starter project](/docs/get-started/starter/): **Space** rolls
 a six-sided die and the greeting shows the roll and its points. A six scores ten points;
@@ -260,6 +261,6 @@ ran each page, pressed Space four times and quit through Escape and Enter withou
 A separate native-null recording check drove the actual `HelloState` and matched the first
 four displayed rolls and points above, including holding Space without another roll.
 
-The [verification record](https://github.com/matt439/Labrador/blob/master/docs/review/2026-11-12-work-audit/2026-11-17-random-guide.md)
+The <RepoLink path="docs/review/2026-11-12-work-audit/2026-11-17-random-guide.md">verification record</RepoLink>
 keeps the ZIP identities, command results and the scope of those checks. This is an
 independent guide verification; the three-guide compilation pilot has not been expanded.
