@@ -918,3 +918,25 @@ Local verification passed all 144 Node cases in the complete
 and the citation and whitespace checks. No local geckodriver was available,
 so the Firefox-through-classic-WebDriver runner check was not run. No new
 Safari, hosted workflow or hardware session ran for this follow-up.
+
+### Safari collision action-list follow-up, 2026-11-17
+
+PR #140's Safari job `133662399035` at merge source `fdf171f4` passed the
+pixel page (79 cases, 100,909 assertions), sampled LineSweeper and minimal.
+Collision then received `+KeyO` but no `-KeyO` through three separate
+WebDriver commands, with continued frames and canvas focus. This failure
+does not supply clean-week stability evidence.
+
+The collision runner now sends its unchanged O, O, Escape sequence as one
+W3C action list with the existing pauses. It requires two actual,
+release-separated O cycles before Escape and the first genuine `onQuit`.
+The page hook preserves that first callback's key-log boundary; stale input,
+an already-held test key, later events or a second quit cannot fill missing
+edges. Escape release may follow quit. Held-key repeat is not counted as a
+fresh press, and no collision key is retried. Sampled LineSweeper navigation,
+context restoration, page complaints and deadlines retain their checks.
+
+All 159 local Node browser-protocol fixtures pass, including delayed replies,
+missing/reversed/wrong/stale edges, early quit and late error cases. This is
+runner protocol evidence. Fresh hosted Safari execution and REV#159's
+clean-week criterion remain open; no engine or sample source changed.
