@@ -1418,7 +1418,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
 - [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
 - [ ] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
-- [ ] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
+- [x] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
 
 - [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
 - [ ] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
@@ -2565,6 +2565,20 @@ Selected from
 policy or scheduled benchmark. Offline fixtures exercise log/dependency
 parsing, missing information, parallel tasks and comparisons; check the report
 against an existing real capture, then run local lint and the website gate.
+
+**Closed 2026-11-17:** `tools/build_cost.py` reports an isolated recorded
+Ninja window, explicit-output compilation database and dependency snapshot:
+slow units, overlapping folder sums, header fan-out and link/archive groups.
+Build wall, edge span and summed compiler-edge elapsed remain distinct;
+process CPU time and cache-hit counts are unmeasured. Opt-in recording retains
+source snapshots, actual options/environment, tool identities, machine facts,
+parallelism, declared cache context and input hashes. Comparisons suppress
+deltas when recorded context or workload differs. Thirteen offline fixtures
+and [the bounded local qualification](../performance/2026-11-17-build-cost.md)
+cover malformed/missing inputs and real 29-object captures with 29/29 valid
+dependency coverage, plus no-op handling. Existing IPO wall/link receipts
+are reused only in their original scope. [The procedure](../performance/build-cost.md)
+adds no profiling default, timing threshold or recurring CI policy.
 
 The following eight stories are the third decision batch selected on
 2026-11-16. Their implementation and qualification remain open; OCA-108 also
