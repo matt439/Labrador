@@ -36,6 +36,19 @@ explains the lookup and errors. The three APIs compile one `sprite.hlsl`, and
 the post stage's `post_frame.hlsli` with its materials, at their profiles; GL
 compiles hand-written GLSL for both at device creation.
 
+Game-authored post materials use `labrador_add_material(target name SOURCE
+path DEPENDS ...)` and one HLSL pixel function in the engine frame. GL/WebGL2
+authoring needs host dxc with SPIR-V support and spirv-cross; the optional
+vcpkg `materials` feature supplies them, with cache overrides documented in
+the shader guide. Default starter and built-in-only builds need no new tools.
+Standalone GL (desktop and WebGL2) test configurations compile authored
+fixtures and need
+those tools: pass `-DVCPKG_MANIFEST_FEATURES=materials` unless using an installed
+SDK or explicit tool paths. CI enables the feature for these configurations.
+`MaterialSource` is copied into a renderer-owned `MaterialHandle`; its
+pipeline is rebuilt after device/context loss. Game render targets and
+multi-pass chains remain separate effects milestones.
+
 The browser presets require Emscripten and `EMSDK`; on this machine it is
 `C:\Tools\emsdk`, version 6.0.12, matching CI. Run `emsdk_env.bat` as well as
 vcvars. Emscripten's Node runs headless tests. Browser build details and open
@@ -68,7 +81,10 @@ all six sample `*PageTests`,
 `MinimalLoadFailurePageTests` and
 `LineSweeperBundlePageTests` registered. `MinimalLoadFailurePageTests` answers
 the template page's `.wasm` with 404 and asserts its failure line and the
-loader's console error; a failed loader script or `.data` file is untested. The bundle test loads `web-dist/linesweeper/index.html`, plays and
+loader's console error; a failed loader script or `.data` file is untested.
+`RenderContextLossWithPostTests` selects a game-authored material and checks
+its selected handle and values across context restoration; identity is still
+covered by the pixel suite. The bundle test loads `web-dist/linesweeper/index.html`, plays and
 replays, checks the touch gate, restores a context after a forced loss and a
 GPU process crash, switches tabs and asserts failure UI.
 It requires a rasterizing backend. `LineSweeperHostPageTests` drives the
@@ -302,11 +318,15 @@ pull request already passed. Citation checking skips `website/`.
   builds it, verifies only
   the game's two tests are registered, runs them, installs a Release folder,
   checks `website/src/walkthrough/release-files.txt` and starts the installed
-  game. Last, `rename_check.py` runs the Rename your game guide's own
+  game. Then `rename_check.py` runs the Rename your game guide's own
   replacement line, read from the `.mdx`, on a copy, then builds and tests it
   on `x64-debug` and fails if its build files, its tests or a file in its
-  build folder still name `MyGame`. `wasm-consumer` builds the same project as
-  a browser page and quits it in Chrome. Follow
+  build folder still name `MyGame`. After those baseline checks,
+  `material_fixture.py` adds an opt-in HLSL post material to the assembled
+  copy and the job builds and smoke-tests it. `wasm-consumer` builds the same
+  ordinary project as a browser page and quits it in Chrome, then adds the
+  fixture with its host tools, builds again and quits the material page.
+  The distributed starter keeps its original files and default tools. Follow
   [consumer_check/README.md](tools/consumer_check/README.md) for local checks;
   standalone tests cannot prove consumer-relative paths or dependencies. A clean-machine Sandbox check is separate from CI's runtime.
 

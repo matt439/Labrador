@@ -1,0 +1,211 @@
+---
+title: Write a post-processing shader
+description: Write one HLSL pixel function, build it for your renderer, and use it to tint the starter game's frame.
+sidebar:
+  order: 0.95
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
+
+A post-processing shader changes the picture after the game's sprites have been drawn. This
+page gives the starter game a warm tint, with one HLSL function and a few C++ lines to choose
+it. HLSL describes a pixel's colour; the game's rules, input and states stay in C++.
+
+Before you start, build the project from [Get Started](/docs/get-started/). For the browser
+steps, also complete [Build for the browser](/docs/guides/browser/). The shader is compiled
+when you build the game, so editing it means rebuilding and restarting the game or refreshing
+its page. There is no shader hot reload.
+
+Run the commands below in the x64 Native Tools Command Prompt, from your project's folder:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+## Write and select the material
+
+A **material** is the shader function together with the values your C++ code gives it.
+
+<Steps>
+
+1. **Make a shader file.**
+
+   ```bat
+   mkdir game\shaders
+   notepad game\shaders\warm_tint.hlsl
+   ```
+
+   Paste this, save and close Notepad:
+
+   ```hlsl title="game\shaders\warm_tint.hlsl"
+   float4 material(MaterialInput input)
+   {
+       const float4 picture = scene_point(input.uv);
+       const float3 tint = material_value(0).rgb;
+       return float4(picture.rgb * tint, picture.a);
+   }
+   ```
+
+   The engine supplies `MaterialInput`, `scene_point` and `material_value`; do not include
+   the engine's shader files yourself. `input.uv` runs from `(0, 0)` at the picture's top-left
+   corner to `(1, 1)` at its bottom-right. `scene_point` reads the scene there, without
+   smoothing. The function multiplies the picture's red, green and blue by three numbers
+   from your C++ code, leaving its alpha unchanged.
+
+2. **Add the material to both builds.** Open `game\CMakeLists.txt`. In the
+   `if(EMSCRIPTEN)` block, put this immediately before its `return()`:
+
+   ```cmake title="game\CMakeLists.txt, inside if(EMSCRIPTEN)"
+   labrador_add_material(MyGame warm_tint
+       SOURCE shaders/warm_tint.hlsl)
+   ```
+
+   Add the same two lines at the end of the file for the Windows build. The browser returns
+   before reaching that second copy, so each build adds the material once.
+
+   `MyGame` is the executable's target name; use your game's name if you renamed it.
+   `warm_tint` is the material's C++ name and the generated header's file name. The build
+   creates `materials/warm_tint.h` under its own generated folder and adds that folder to
+   the target's include paths. You do not copy the header into your project.
+
+3. **Register and select it.** In `game\states\hello_state.cpp`, add this include beside
+   the other includes:
+
+   ```cpp
+   #include "materials/warm_tint.h"
+   ```
+
+   At the start of `HelloState::init()`, before its existing statements, add:
+
+   ```cpp
+   labrador::Renderer* renderer = this->app_->renderer();
+   const labrador::MaterialHandle tint_material =
+       renderer->add_material(labrador::warm_tint);
+   renderer->set_post_material(tint_material);
+
+   labrador::PostValues tint_values;
+   tint_values.values[0] = 1.0f;
+   tint_values.values[1] = 0.75f;
+   tint_values.values[2] = 0.5f;
+   renderer->set_post_values(tint_material, tint_values);
+   ```
+
+   `HelloState::init()` runs after the application creates its renderer, before the first
+   frame. Register and choose materials outside a frame, rather than in `draw()`.
+   `add_material` copies the source and returns a handle belonging to this renderer. Keep
+   that handle if you want to change its values later. Register a material once; registration
+   keeps it until the renderer is destroyed. This starter creates its greeting state once.
+   A game that recreates a screen registers shared materials during application setup and
+   hands their handles to the screens. Device or context restoration rebuilds the registered
+   material automatically and does not call this state's `init()` again.
+
+   The three numbers keep red as it is, keep three quarters of green and half of blue.
+   `(1, 1, 1)` leaves the colours unchanged. The greeting and its hint both receive the tint,
+   because this shader processes the whole scene.
+
+4. **Build, test and play on Windows.** The normal Direct3D 11 preset uses the Windows
+   SDK's `fxc`, already required for the starter's own shaders:
+
+   ```bat
+   cmake --preset x64-debug
+   cmake --build --preset x64-debug
+   ctest --preset x64-debug
+   start "" out\build\x64-debug\game\MyGame.exe
+   ```
+
+   The tint should be visible on the greeting. A shader syntax error stops the build and
+   names the `.hlsl` file and its line; fix that file and build again. The compiled shader
+   is embedded in the executable, so there is no shader file to copy into a release folder.
+
+</Steps>
+
+## Build the same shader for a browser
+
+The HLSL file stays the same. For desktop GL and browser WebGL2, the build uses two host
+tools: DirectX Shader Compiler (`dxc`) produces SPIR-V, and `spirv-cross` turns that into
+GLSL for the selected renderer. They run on the computer doing the build; the player's
+browser runs neither tool.
+
+Your game's top-level `vcpkg.json` owns its dependencies. Add these two objects to its
+`dependencies` array, leaving the existing entries and baseline in place:
+
+```json
+{ "name": "directx-dxc", "host": true },
+{ "name": "spirv-cross", "host": true }
+```
+
+Then run the browser commands from the prompt where `emsdk_env.bat` has run:
+
+```bat
+cmake --preset wasm-release
+cmake --build --preset wasm-release
+ctest --preset wasm-release
+```
+
+Serve and open `out\build\wasm-release\game\MyGame.html` as
+[Build for the browser](/docs/guides/browser/) describes. `dxc` and `spirv-cross` are
+build-time tools; adding them does not add a runtime library to your game. A starter that
+writes no materials needs neither tool.
+
+When building the engine repository's own material tests instead of a consumer project,
+enable its optional vcpkg feature with `-DVCPKG_MANIFEST_FEATURES=materials` at configure.
+
+If you already have both tools, you can use them instead of adding the vcpkg dependencies.
+The build checks the host tools vcpkg installed, then the Vulkan SDK's `Bin` folder and
+`PATH`. To choose exact executables, pass `-DLABRADOR_MATERIAL_DXC=C:/path/to/dxc.exe` and
+`-DLABRADOR_SPIRV_CROSS=C:/path/to/spirv-cross.exe` to the configure command. The selected
+`dxc` must support `-spirv`; the Windows SDK's compiler with the same name may not.
+
+## The values and the picture
+
+`PostValues::values` holds 32 floats: eight groups of four. The shader reads the first four
+with `material_value(0)`, the next four with `material_value(1)`, through
+`material_value(7)`. Values start at zero. The renderer refuses a NaN or infinite value.
+Change the selected material's values with `set_post_values(handle, values)` from the
+thread that owns the frame; you do not recompile a shader to change its tint. An unselected,
+unresolved or foreign handle is refused. To animate a look, pass elapsed time in one of
+your parameter groups; the frame's reserved timing fields do not supply a clock.
+
+The frame also supplies:
+
+| Name | Meaning |
+| --- | --- |
+| `input.uv` | Normalised top-down output position. |
+| `input.output_pixel` | Output position in pixels, with the top-left at `(0, 0)`. |
+| `output_size.xy`, `output_size.zw` | Output width and height, and their reciprocals. |
+| `scene_size.xy`, `scene_size.zw` | Input width and height, and their reciprocals. |
+| `scene_point(uv)` | Read the scene with point sampling. |
+| `scene_linear(uv)` | Read the scene with linear smoothing. |
+
+Sample through the helpers and leave register declarations, vertex functions, entry points
+and texture orientation to the engine. The return value replaces the processed pixel;
+there is no extra sprite blend at this stage. Scene colours have premultiplied alpha, so
+keep the result premultiplied when changing alpha. This page's factors stay between zero
+and one and preserve the original alpha.
+
+If a shader includes a file you own, name that dependency in the build so editing it also
+rebuilds the material:
+
+```cmake
+labrador_add_material(MyGame warm_tint
+    SOURCE shaders/warm_tint.hlsl
+    DEPENDS shaders/common.hlsli)
+```
+
+## Switch it off or draw a flat overlay
+
+Use `renderer->set_post_effects({});` outside a frame to return to the ordinary scene.
+Calling `set_post_effects` with a built-in effect also replaces the custom material. Its
+handle remains valid and its values remain available if you select it again.
+
+For a HUD that stays unchanged, call `begin_overlay()` inside the frame before declaring
+and drawing the HUD's view. That view and the views after it draw over the processed scene.
+Allow room for the additional view in `ApplicationOptions::view_capacity`; the starter's
+default code sets that capacity to one. The
+<RepoLink path="engine/render/renderer.h">renderer contract</RepoLink> describes view and
+frame ordering.
+
+One custom material is one full-screen pass. It is for the scene's presentation; it does
+not change the shader of an individual sprite. Game render targets, a custom multi-pass
+chain and bloom are separate work from this authoring path.

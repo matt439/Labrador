@@ -97,11 +97,17 @@ const NOTICES: Notice[] = [
 // Packages vcpkg.json names that no release carries, and why.
 const NOT_SHIPPED: Record<string, string> = {
 	doctest: 'the test framework, linked only by test programs',
+	'directx-dxc': 'an optional host shader compiler; no compiler code is linked into the game',
+	'spirv-cross': 'an optional host shader translator; no translator code is linked into the game',
 };
 
 const manifest = JSON.parse(readRepositoryFile('vcpkg.json'));
 const answered = new Set(NOTICES.flatMap((notice) => notice.ports ?? []));
-for (const dependency of manifest.dependencies as (string | { name: string; features?: string[] })[]) {
+type Dependency = string | { name: string; features?: string[] };
+const featureDependencies = Object.values(
+	manifest.features ?? {}
+).flatMap((feature) => (feature as { dependencies?: Dependency[] }).dependencies ?? []);
+for (const dependency of [...manifest.dependencies, ...featureDependencies] as Dependency[]) {
 	const name = typeof dependency === 'string' ? dependency : dependency.name;
 	const features = typeof dependency === 'string' ? [] : dependency.features ?? [];
 	for (const port of [name, ...features.map((feature) => `${name}[${feature}]`)]) {

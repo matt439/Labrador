@@ -519,6 +519,13 @@ are not counted as ready stories. A selected proposal gets a story here, with
 its acceptance and dependencies; the dated STORIES.md and comparison stay as
 written.
 
+**Shader authoring amendment, 2026-11-16:** the owner selected user-authored
+post-processing shaders from the accepted E1/P6 scope in
+[the effects plan](../effects.md). L65 takes OCA-84 independently of P4's game
+render targets and P5's multi-pass chains. It builds on the existing scene
+target, overlay boundary and built-in effects; those later mechanisms are
+not prerequisites for one custom pixel function.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -596,6 +603,7 @@ written.
 62. L62 Make backends keep their seam contracts and refuse content loudly: SM-73 (hygiene review H1, selected 2026-11-05 by the owner)
 63. L63 Bound untrusted content and keep exceptions out of C callbacks: SM-74 (hygiene review H2, selected 2026-11-05 by the owner)
 64. L64 Close the rest of the 2026-11-05 hygiene review: SM-75 (themes H3 to H17 and H19 to H21, selected 2026-11-05 by the owner)
+65. L65 Write a post-processing shader in my game: OCA-84 (selected from effects P6 on 2026-11-16 by the owner)
 
 **Stories**
 
@@ -1133,6 +1141,8 @@ written.
 
 - [x] **[SM-75](#sm-75)** Should - L - The Sole Owner-Maintainer: The rest of the hygiene review is fixed, or set aside with its reason
 
+- [x] **[OCA-84](#oca-84)** Could · L · The Outside Adopter: Write one HLSL post material and build it for Windows and the browser
+
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work was `WEB#10`: add LineSweeper and the bundle
@@ -1143,6 +1153,49 @@ written.
   entry only, since the image's Firefox makes no WebGL2 context without a
   GPU; the record is
   [web-to-be-tested.md](../port/web-to-be-tested.md#firefox-sample-checks-web4).
+
+<a id="oca-84"></a>
+### OCA-84. Write a post-processing shader in my game
+
+Selected 2026-11-16 by the owner from P6 and the accepted E1 decision in
+[the effects plan](../effects.md#12). A game's HLSL function owns its pixel
+look; C++ owns when it is selected and the values it receives. The engine
+owns the fixed material frame, compiled source formats and backend pipelines.
+
+**Acceptance**
+
+- `labrador_add_material(target name SOURCE path DEPENDS ...)` builds one
+  HLSL pixel function into a generated `MaterialSource` header for every
+  configured render backend. GL and WebGL2 use host dxc and spirv-cross;
+  the optional vcpkg `materials` feature supplies those tools without adding
+  them to default starter builds.
+- A renderer copies the source into a stable `MaterialHandle`, selects one
+  custom post pass, accepts its eight `float4` values, and restores the
+  pipeline and selection after device or context loss. Invalid kinds,
+  sources, handles and frame timing are refused with the caller identified.
+- Tests cover observable custom output, parameter updates, overlay isolation,
+  the return to built-in or direct rendering, and device/context restoration.
+  Null records the material without compiling a GPU shader.
+- The assembled starter builds a material from its own game folder natively
+  and for wasm; consumer CI retains that path. An authoring guide gives the
+  file, build and C++ steps and a broken material fails the build naming it.
+- The authored-material checks pass in the required render configurations,
+  alongside lint and the website gate. Full-suite results, baseline failures,
+  measured device evidence and any unrun acceptance are stated separately.
+
+This story does not add game-owned render targets, multi-pass chains,
+per-draw materials, bloom or persistence. Their effects milestones retain
+their own acceptance. HLSL pixel presentation and byte-header generation
+are scoped explicitly under PHILOSOPHY T10 and T12; game behaviour stays C++.
+
+**Implemented 2026-11-16.** All five native Debug suites pass; compiled game
+materials pass the browser pixel and context-restoration checks, and both
+assembled starter consumers build and run them. Lint and the website gate
+pass. The [qualification record](../effects.md#16) distinguishes those results
+from full browser suites, whose fullscreen and Firefox-startup failures also
+reproduce on unchanged November 13 artifacts. The CI workflow retains the
+material checks; its remote matrix and Release/device acceptance remain unrun
+for this change.
 
 <a id="sm-75"></a>
 ### SM-75. Close the rest of the 2026-11-05 hygiene review

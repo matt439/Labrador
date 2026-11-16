@@ -434,7 +434,7 @@ jobs:
         if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
-          cmake --preset ${{ matrix.preset }}
+          cmake --preset ${{ matrix.preset }} ${{ matrix.preset == 'x64-debug-gl' && '-DVCPKG_MANIFEST_FEATURES=materials' || '' }}
 
       # Through ci_build_retry.py, which builds once more only when a link edge
       # fails on a locked output file, a runner flake whose cause is not known.
@@ -627,7 +627,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          cmake --preset wasm-release -DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON
+          cmake --preset wasm-release -DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON -DVCPKG_MANIFEST_FEATURES=materials
 
       # The statistics are the evidence the cache is doing its job: a warm run
       # on a change that touches no widely included header is nearly all hits.
@@ -986,6 +986,32 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
 
+      # The starter above builds with no shader authoring tools. This second
+      # pass opts its assembled copy into a game-owned HLSL post material.
+      - name: Add and build the game's post material
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\material_fixture.py" . --host-tools || exit /b 1
+          cmake --preset wasm-release || exit /b 1
+          cmake --build --preset wasm-release || exit /b 1
+          ctest --preset wasm-release
+
+      - name: Draw and quit the game-authored material in Chrome
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          "%EMSDK_NODE%" "%GITHUB_WORKSPACE%\tests\render\web\run_page.mjs" --browser "%CHROME%" --page out\build\wasm-release\game\MyGame.html --quit-keys Escape,Enter --timeout 60
+
+      - name: Check the game shader's compiler diagnostics
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          call C:\emsdk\emsdk_env.bat
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\material_fixture.py" . --check-invalid-shader out\build\wasm-release
+
   # THE PROJECT GET STARTED TEACHES, BUILT AGAINST THIS CHANGE'S ENGINE. Every
   # job above builds Labrador as the top-level project, where CMAKE_SOURCE_DIR
   # is the engine's root, all the tests' packages are in the manifest, and the
@@ -1013,8 +1039,9 @@ jobs:
   # CMakeLists.txt - the engine's tests are not in a consumer's ctest, and the
   # game's are - and then the game's tests run: the rules test, and the
   # start-up check, which opens the game hidden, draws a few frames and quits.
-  # After the release folder, the last step renames a copy of the project with
-  # the Rename your game guide's own line and builds and tests it again.
+  # After the release folder, a step renames a copy of the project with the
+  # Rename your game guide's own line and builds and tests it again. The final
+  # pass adds a game-authored shader to the original assembled copy.
   #
   # IT FETCHES NOTHING FROM A CLIENT. The engine cannot reach a repository
   # that consumes it and should not learn how (docs/design/PHILOSOPHY.md,
@@ -1143,12 +1170,28 @@ jobs:
       # guide's step 5 on x64-debug - the engine built once more, in a folder
       # as short as the first - and fails unless ctest lists the renamed
       # game's two tests and no other, the program has the new name, nothing
-      # in the build folder is named MyGame, and both tests pass. It is last,
-      # so a failure above is not hidden behind it, and it is a step of this
-      # job, not a job: a new job would be a new required check. The titles
+      # in the build folder is named MyGame, and both tests pass. It follows
+      # the ordinary starter checks and precedes the material fixture, so
+      # neither changes the project it renames. It is a step of this job:
+      # a new job would be a new required check. The titles
       # the guide edits by hand, the release and the browser build are not
       # renamed here.
       - name: Rename the game as the guide says, then build and test it
         run: |
           call "%VCVARS%"
           python tools\consumer_check\rename_check.py C:\dev\hopper --from C:\dev\mygame
+
+      - name: Build and draw the game's own post material
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\material_fixture.py" . || exit /b 1
+          cmake --preset x64-debug || exit /b 1
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset x64-debug || exit /b 1
+          ctest --preset x64-debug
+
+      - name: Check the game shader's compiler diagnostics
+        working-directory: C:\dev\mygame
+        run: |
+          call "%VCVARS%"
+          python "%GITHUB_WORKSPACE%\tools\consumer_check\material_fixture.py" . --check-invalid-shader out\build\x64-debug

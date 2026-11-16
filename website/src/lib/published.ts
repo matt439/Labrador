@@ -147,6 +147,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 		headers: [
 			['renderer.h', 'Renderer', 'game code'],
 			['post_effect.h', 'Post effects', 'game code'],
+			['material.h', 'Game materials', 'game code'],
 			['render_resources.h', 'RenderResources', 'game code'],
 			['camera.h', 'Camera', 'game code'],
 			['viewport.h', 'Viewport', 'game code'],
@@ -247,6 +248,10 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 
 // Headers intentionally excluded from the public reference, each with its reason.
 export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
+	[
+		'engine/render/material_table.h',
+		'Renderer-internal ownership, selection and validation shared by the backends; callers use MaterialSource and MaterialHandle through renderer.h.',
+	],
 	[
 		'engine/render/null/recording.h',
 		'Backend-internal inspector for null-only tests and benchmarks at an engine pin; the testing guide shows consumer use without publishing a portable render contract.',

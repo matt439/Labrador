@@ -3,6 +3,7 @@
 #include "engine/core/registry.h"
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
+#include "engine/render/material_table.h"
 #include "engine/render/null/recording.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
@@ -131,6 +132,7 @@ namespace labrador
 		// The post chain set_post_effects last gave, the overlay boundary this
 		// frame (-1 before begin_overlay), and what submit() recorded of it.
 		std::vector<PostEffect> post_effects;
+		MaterialTable materials;
 		std::array<PostValues, post_effect_count> post_values{};
 		int overlay_start = -1;
 		std::vector<RecordedPass> passes;

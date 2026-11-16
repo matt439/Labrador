@@ -70,6 +70,13 @@ namespace labrador
 			throw std::invalid_argument("set_post_effects was given more than "
 				"one effect; this build draws a chain of at most one.");
 		}
+		for (const PostEffect effect : effects)
+		{
+			if (effect != PostEffect::identity && effect != PostEffect::crt)
+			{
+				throw std::invalid_argument("set_post_effects received an unknown effect.");
+			}
+		}
 	}
 
 	void check_post_values(const std::vector<PostEffect>& chain,

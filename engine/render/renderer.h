@@ -6,6 +6,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/colour.h"
+#include "engine/render/material.h"
 #include "engine/render/post_effect.h"
 #include "engine/render/viewport.h"
 
@@ -417,6 +418,28 @@ namespace labrador
 		// std::invalid_argument for more than one effect: a chain is one
 		// material until multi-pass chains exist.
 		void set_post_effects(std::span<const PostEffect> effects);
+
+		// Registers build output from labrador_add_material, copying its bytes
+		// and name. Requires create_device and a call outside a frame, otherwise
+		// std::logic_error. Throws std::invalid_argument for a mismatched kind,
+		// empty data, malformed format header or text terminator, or empty name;
+		// null uses empty data. Throws std::runtime_error if the backend cannot
+		// create its shader, including invalid compiled code. The handle and
+		// values survive device loss.
+		MaterialHandle add_material(const MaterialSource& source);
+
+		// Replaces the built-in chain with one registered material. Like
+		// set_post_effects, legal only outside a frame. Throws
+		// std::invalid_argument for an unresolved or foreign handle. Calling
+		// set_post_effects again replaces this selection; an empty span disables
+		// post processing. Registered materials live until this renderer dies.
+		void set_post_material(MaterialHandle material);
+
+		// The selected material's eight float4s, from the next submit onward.
+		// Legal inside a frame on its owning thread; values survive deselection.
+		// Throws std::invalid_argument for an unresolved, foreign or unselected
+		// handle, or any non-finite value.
+		void set_post_values(MaterialHandle material, const PostValues& values);
 
 		// The values a chain's effect draws with, from the next submit() on;
 		// legal inside a frame, from the thread that owns it. Values belong to

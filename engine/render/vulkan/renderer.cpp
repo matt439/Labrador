@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace labrador
@@ -673,52 +674,52 @@ namespace labrador
 			"The post pipeline layout could not be created");
 		this->post_pipeline_layout = made_pipeline_layout;
 
+		this->post_identity_pipeline = this->create_post_pipeline({
+			MaterialKind::spirv,
+			{ post_identity_bytecode, sizeof(post_identity_bytecode) },
+			"identity" });
+		this->post_crt_pipeline = this->create_post_pipeline({
+			MaterialKind::spirv,
+			{ post_crt_bytecode, sizeof(post_crt_bytecode) }, "CRT" });
+		this->material_pipelines.reserve(this->materials.size());
+		for (size_t i = 0; i < this->materials.size(); ++i)
+		{
+			this->material_pipelines.push_back(
+				this->create_post_pipeline(this->materials.source(i)));
+		}
+	}
+
+	VkPipeline Renderer::Impl::create_post_pipeline(const MaterialSource& source)
+	{
+		VkDevice device = this->device_resources.device();
+		const std::string shader_error = "The post material '" +
+			std::string(source.name) + "' shader could not be created";
+		const std::string pipeline_error = "The post material '" +
+			std::string(source.name) + "' pipeline could not be created";
 		VkShaderModule vertex_shader = create_shader(device,
 			post_vertex_bytecode, sizeof(post_vertex_bytecode),
 			"The post vertex shader could not be created");
-		VkShaderModule identity_shader = VK_NULL_HANDLE;
-		VkShaderModule crt_shader = VK_NULL_HANDLE;
+		VkShaderModule pixel_shader = VK_NULL_HANDLE;
 		try
 		{
-			identity_shader = create_shader(device,
-				post_identity_bytecode, sizeof(post_identity_bytecode),
-				"The identity post shader could not be created");
-			crt_shader = create_shader(device,
-				post_crt_bytecode, sizeof(post_crt_bytecode),
-				"The CRT post shader could not be created");
+			pixel_shader = create_shader(device, source.bytes.data(),
+				source.bytes.size(), shader_error.c_str());
 		}
 		catch (...)
 		{
-			if (identity_shader != VK_NULL_HANDLE)
-			{
-				vkDestroyShaderModule(device, identity_shader, nullptr);
-			}
 			vkDestroyShaderModule(device, vertex_shader, nullptr);
 			throw;
 		}
 
-		// ONE VERTEX STAGE, ONE FRAGMENT STAGE PER MATERIAL: identity, then
-		// the CRT. Every other state below is the frame's, shared by both.
-		VkPipelineShaderStageCreateInfo stages[2][2] = {};
-		const VkShaderModule material_shaders[2] =
-		{
-			identity_shader,
-			crt_shader,
-		};
-		for (size_t material = 0; material < 2; ++material)
-		{
-			stages[material][0].sType =
-				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			stages[material][0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-			stages[material][0].module = vertex_shader;
-			stages[material][0].pName = "post_vertex_main";
-
-			stages[material][1].sType =
-				VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			stages[material][1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-			stages[material][1].module = material_shaders[material];
-			stages[material][1].pName = "post_pixel_main";
-		}
+		VkPipelineShaderStageCreateInfo stages[2] = {};
+		stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+		stages[0].module = vertex_shader;
+		stages[0].pName = "post_vertex_main";
+		stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		stages[1].module = pixel_shader;
+		stages[1].pName = "post_pixel_main";
 
 		// NO VERTEX INPUT: the triangle comes from the vertex index alone.
 		VkPipelineVertexInputStateCreateInfo vertex_input = {};
@@ -777,49 +778,32 @@ namespace labrador
 		blending.attachmentCount = 1;
 		blending.pAttachments = &blend;
 
-		// Against the loading pass, with which the output pass is compatible
-		// (device_resources.h, output_render_pass).
-		VkGraphicsPipelineCreateInfo descriptions[2] = {};
-		for (size_t material = 0; material < 2; ++material)
-		{
-			VkGraphicsPipelineCreateInfo& description = descriptions[material];
-			description.sType =
-				VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-			description.stageCount = 2;
-			description.pStages = stages[material];
-			description.pVertexInputState = &vertex_input;
-			description.pInputAssemblyState = &assembly;
-			description.pViewportState = &viewport_state;
-			description.pRasterizationState = &rasteriser;
-			description.pMultisampleState = &multisample;
-			description.pDepthStencilState = nullptr;
-			description.pColorBlendState = &blending;
-			description.pDynamicState = &dynamic;
-			description.layout = this->post_pipeline_layout;
-			description.renderPass = this->device_resources.render_pass();
-			description.subpass = 0;
-		}
+		// Against the loading pass, compatible with the output pass.
+		VkGraphicsPipelineCreateInfo description = {};
+		description.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		description.stageCount = 2;
+		description.pStages = stages;
+		description.pVertexInputState = &vertex_input;
+		description.pInputAssemblyState = &assembly;
+		description.pViewportState = &viewport_state;
+		description.pRasterizationState = &rasteriser;
+		description.pMultisampleState = &multisample;
+		description.pColorBlendState = &blending;
+		description.pDynamicState = &dynamic;
+		description.layout = this->post_pipeline_layout;
+		description.renderPass = this->device_resources.render_pass();
 
-		// One call each, without a pipeline cache: a call for several asks
-		// for one. Each pipeline is kept as it is made, so a failure leaves
-		// destroy_device_dependent_resources whatever already exists.
-		VkPipeline made_identity = VK_NULL_HANDLE;
-		VkResult built = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
-			&descriptions[0], nullptr, &made_identity);
-		this->post_identity_pipeline = made_identity;
-		if (built == VK_SUCCESS)
-		{
-			VkPipeline made_crt = VK_NULL_HANDLE;
-			built = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
-				&descriptions[1], nullptr, &made_crt);
-			this->post_crt_pipeline = made_crt;
-		}
-
+		VkPipeline made_pipeline = VK_NULL_HANDLE;
+		const VkResult built = vkCreateGraphicsPipelines(device,
+			VK_NULL_HANDLE, 1, &description, nullptr, &made_pipeline);
 		vkDestroyShaderModule(device, vertex_shader, nullptr);
-		vkDestroyShaderModule(device, identity_shader, nullptr);
-		vkDestroyShaderModule(device, crt_shader, nullptr);
-
-		check_vk(built, "The post pipelines could not be created");
+		vkDestroyShaderModule(device, pixel_shader, nullptr);
+		if (built != VK_SUCCESS && made_pipeline != VK_NULL_HANDLE)
+		{
+			vkDestroyPipeline(device, made_pipeline, nullptr);
+		}
+		check_vk(built, pipeline_error.c_str());
+		return made_pipeline;
 	}
 
 	void Renderer::Impl::destroy_device_dependent_resources()
@@ -837,6 +821,7 @@ namespace labrador
 			this->post_crt_pipeline = VK_NULL_HANDLE;
 			this->post_pipeline_layout = VK_NULL_HANDLE;
 			this->post_set_layout = VK_NULL_HANDLE;
+			this->material_pipelines.clear();
 			return;
 		}
 
@@ -877,6 +862,11 @@ namespace labrador
 			vkDestroyPipeline(device, this->post_crt_pipeline, nullptr);
 			this->post_crt_pipeline = VK_NULL_HANDLE;
 		}
+		for (const VkPipeline material_pipeline : this->material_pipelines)
+		{
+			vkDestroyPipeline(device, material_pipeline, nullptr);
+		}
+		this->material_pipelines.clear();
 		if (this->post_pipeline_layout != VK_NULL_HANDLE)
 		{
 			vkDestroyPipelineLayout(device, this->post_pipeline_layout,
@@ -1587,8 +1577,9 @@ namespace labrador
 		// One material a chain until multi-pass chains exist
 		// (docs/effects.md#13), so the chain's one effect is the pass.
 		const PostEffect effect = this->post_effects.front();
-		const PostValues& values =
-			this->post_values[static_cast<size_t>(effect)];
+		const PostValues& values = this->materials.has_selection()
+			? this->materials.values()
+			: this->post_values[static_cast<size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
 
@@ -1597,7 +1588,12 @@ namespace labrador
 		// and resampling through the CRT's arithmetic is not exact on every
 		// device (docs/effects.md#7).
 		VkPipeline material_pipeline = this->post_identity_pipeline;
-		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		if (this->materials.has_selection())
+		{
+			material_pipeline = this->material_pipelines[
+				static_cast<size_t>(this->materials.selected().index())];
+		}
+		else if (effect == PostEffect::crt && !crt_values_are_neutral(values))
 		{
 			material_pipeline = this->post_crt_pipeline;
 		}
@@ -1852,14 +1848,62 @@ namespace labrador
 		check_post_chain(effects, this->impl_->frame_begun);
 
 		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->materials.clear_selection();
 		this->impl_->device_resources.set_scene_target(
 			!this->impl_->post_effects.empty());
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
+		if (this->impl_->materials.has_selection())
+		{
+			throw std::invalid_argument("set_post_values was given a built-in "
+				"effect while a game material is selected. Pass that material's "
+				"handle, or select the built-in with set_post_effects first.");
+		}
 		check_post_values(this->impl_->post_effects, effect, values);
 		this->impl_->post_values[static_cast<size_t>(effect)] = values;
+	}
+
+	MaterialHandle Renderer::add_material(const MaterialSource& source)
+	{
+		Impl& impl = *this->impl_;
+		const MaterialHandle handle = impl.materials.add(source,
+			MaterialKind::spirv,
+			!impl.device_info.backend.empty(), impl.frame_begun);
+		VkPipeline pipeline = VK_NULL_HANDLE;
+		try
+		{
+			pipeline = impl.create_post_pipeline(impl.materials.source(
+				static_cast<size_t>(handle.index())));
+			impl.material_pipelines.push_back(pipeline);
+		}
+		catch (...)
+		{
+			if (pipeline != VK_NULL_HANDLE)
+			{
+				vkDestroyPipeline(impl.device_resources.device(), pipeline,
+					nullptr);
+			}
+			impl.materials.remove_last();
+			throw;
+		}
+		return handle;
+	}
+
+	void Renderer::set_post_material(MaterialHandle material)
+	{
+		Impl& impl = *this->impl_;
+		std::vector<PostEffect> effects{ PostEffect::identity };
+		impl.materials.select(material, impl.frame_begun);
+		impl.post_effects = std::move(effects);
+		impl.device_resources.set_scene_target(true);
+	}
+
+	void Renderer::set_post_values(MaterialHandle material,
+		const PostValues& values)
+	{
+		this->impl_->materials.set_values(material, values);
 	}
 
 	void Renderer::begin_overlay()

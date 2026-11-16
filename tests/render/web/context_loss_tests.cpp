@@ -7,6 +7,7 @@
 #include "engine/math/vector2f.h"
 
 #include "tests/render/test_window.h"
+#include "materials/context_material.h"
 
 #include <emscripten/em_js.h>
 #include <emscripten/emscripten.h>
@@ -50,9 +51,9 @@
 //
 // THE SAME SEQUENCE THROUGH THE POST STAGE when the page's address carries
 // through_post (RenderContextLossWithPostTests): every frame then draws
-// through the identity chain, so the red read-back after the restore also
-// pins that the scene target, its framebuffer and the post program were
-// rebuilt with the context (docs/effects.md#10).
+// through a game-authored channel-swap material. Green read-back after the
+// restore pins that its program, retained source and values were rebuilt
+// with the context; the final frame changes its values using the old handle.
 //
 // NOT PINNED: that the device's strings are read again after the restore. On
 // one GPU the restored context describes itself exactly as the lost one did,
@@ -203,6 +204,8 @@ namespace
 		Renderer renderer;
 		std::unique_ptr<RecordingShell> shell;
 		TextureHandle quad;
+		MaterialHandle material;
+		PostValues material_values;
 		Step step = Step::draw_before_loss;
 		int frame = 0;
 		int lost_frames = 0;
@@ -223,14 +226,17 @@ namespace
 		run.renderer.submit();
 	}
 
-	bool centre_is_red(Run& run)
+	bool centre_has_expected_colour(Run& run)
 	{
 		run.renderer.read_back_buffer(run.pixels);
 		const size_t centre =
 			(static_cast<size_t>(buffer_side / 2) * buffer_side + buffer_side / 2) * 4;
+		const bool swapped = run.material.valid() &&
+			run.material_values.values[0] == 1.0f;
 		return run.pixels.size() == static_cast<size_t>(buffer_side) *
 				buffer_side * 4 &&
-			run.pixels[centre] == 255 && run.pixels[centre + 1] == 0 &&
+			run.pixels[centre] == (swapped ? 0 : 255) &&
+			run.pixels[centre + 1] == (swapped ? 255 : 0) &&
 			run.pixels[centre + 2] == 0 && run.pixels[centre + 3] == 255;
 	}
 
@@ -323,7 +329,7 @@ namespace
 				break;
 			}
 			draw_red(run);
-			check(centre_is_red(run), "the quad draws before the loss");
+			check(centre_has_expected_colour(run), "the quad draws before the loss");
 			run.renderer.end_frame();
 			labrador_lose_context(target(run));
 			run.step = Step::draw_while_lost;
@@ -394,7 +400,7 @@ namespace
 				run.shell->heard[0] == "lost" &&
 				run.shell->heard[1] == "restored",
 				"the shell hears lost then restored, together");
-			check(centre_is_red(run),
+			check(centre_has_expected_colour(run),
 				"the reloaded quad draws in the frame that heard the restore");
 			check(page_heard({ page_heard_lost, page_heard_restored }),
 				"the page hears lost then restored, each once and from a "
@@ -406,8 +412,13 @@ namespace
 
 		case Step::draw_after_restore:
 		{
+			if (run.material.valid())
+			{
+				run.material_values.values[0] = 0.0f;
+				run.renderer.set_post_values(run.material, run.material_values);
+			}
 			draw_red(run);
-			check(centre_is_red(run), "the quad draws after the restore");
+			check(centre_has_expected_colour(run), "the quad draws after the restore");
 			run.renderer.end_frame();
 			check(run.shell->heard.size() == 2 &&
 				page_heard({ page_heard_lost, page_heard_restored }),
@@ -446,10 +457,11 @@ int main()
 		if (emscripten_run_script_int(
 			"new URLSearchParams(location.search).has('through_post') ? 1 : 0") != 0)
 		{
-			const labrador::PostEffect identity[] = {
-				labrador::PostEffect::identity };
-			run.renderer.set_post_effects(identity);
-			std::printf("ok: every frame draws through the identity chain\n");
+			run.material = run.renderer.add_material(labrador::context_material);
+			run.renderer.set_post_material(run.material);
+			run.material_values.values[0] = 1.0f;
+			run.renderer.set_post_values(run.material, run.material_values);
+			std::printf("ok: every frame draws through an authored material\n");
 		}
 		run.shell = std::make_unique<RecordingShell>(run.renderer,
 			run.resources);

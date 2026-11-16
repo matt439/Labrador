@@ -55,6 +55,10 @@ namespace labrador
 		int processed_views = 0;
 		int width = 0;
 		int height = 0;
+
+		// Valid for a user material. effect identifies a built-in only when
+		// this handle is unresolved.
+		MaterialHandle material{};
 	};
 
 	// The chain's passes this frame, in order, under the same validity rules

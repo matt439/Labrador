@@ -13,6 +13,7 @@ labrador_add_test_suite(RenderTests
         dxgi_device_kind_tests.cpp
         font_tests.cpp
         label_tests.cpp
+        material_tests.cpp
         png_file_tests.cpp
         post_effect_tests.cpp
         render_resources_tests.cpp
@@ -67,7 +68,8 @@ add_dependencies(RenderTests render_test_content)
 # Windows-only HRESULT test below, RenderTests is identical in every
 # configuration.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
-    target_sources(RenderTests PRIVATE null_tests.cpp null_resource_tests.cpp)
+    target_sources(RenderTests PRIVATE null_tests.cpp null_resource_tests.cpp
+        material_null_tests.cpp)
 endif()
 
 # The two Direct3D backends' HRESULT translation, which is Windows code by
@@ -111,6 +113,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         pixel_test_harness.cpp
         pixel_test_harness.h
         pixel_tests.cpp
+        material_pixel_tests.cpp
         post_pixel_tests.cpp
         sprite_pixel_tests.cpp
         text_pixel_tests.cpp
@@ -124,6 +127,10 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         labrador_settings
         lodepng
     )
+    labrador_add_material(RenderPixelTests test_material
+        SOURCE materials/test_material.hlsl)
+    labrador_add_material(RenderPixelTests constant_material
+        SOURCE materials/constant_material.hlsl)
 
     # The window the device is made on, one file per platform as the engine's
     # own platform folders are.
@@ -137,7 +144,8 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     endif()
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
-        target_sources(RenderPixelTests PRIVATE gl/texture_tests.cpp)
+        target_sources(RenderPixelTests PRIVATE gl/texture_tests.cpp
+            gl/material_tests.cpp)
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         target_sources(RenderPixelTests PRIVATE
             d3d12/submit_allocation_tests.cpp
@@ -360,6 +368,8 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             LabradorEngine
             labrador_settings
         )
+        labrador_add_material(RenderContextLossTests context_material
+            SOURCE materials/test_material.hlsl)
         set_target_properties(RenderContextLossTests PROPERTIES SUFFIX ".html")
         target_link_options(RenderContextLossTests PRIVATE
             -sENVIRONMENT=web

@@ -93,7 +93,7 @@ Why each backend exists is in [ARCHITECTURE](docs/design/ARCHITECTURE.md),
   workload. Ninja and CMake come with it.
 - **The Windows 10/11 SDK**, for `d3d11.h` and friends, and for `fxc` — the
   two Direct3D backends compile their shader at build time and the build fails
-  without it. The OpenGL one needs no tool.
+  without it. OpenGL's built-in shaders need no offline compiler.
 - **The [Vulkan SDK](https://vulkan.lunarg.com/)**, with `VULKAN_SDK` set, and
   **only for the two Vulkan presets**. It does not come with Visual Studio or
   with Windows. That backend compiles the same
@@ -111,6 +111,18 @@ Why each backend exists is in [ARCHITECTURE](docs/design/ARCHITECTURE.md),
 - **vcpkg**, with `VCPKG_ROOT` set. `CMakePresets.json` reads it for the
   toolchain file, and configuring fails without it. Visual Studio ships a copy
   at `<VS install>\VC\vcpkg` if you have no other.
+
+Games may also write custom **post-processing shaders** in HLSL. Built-in
+effects use the tools above; authoring a material for GL or WebGL2 additionally
+needs dxc with SPIR-V support and spirv-cross on the build host. The optional
+vcpkg `materials` feature supplies them; the [shader guide](https://labradorengine.com/docs/guides/your-shader/)
+shows the feature, tool overrides and `labrador_add_material`. The starter
+does not enable it unless a game opts in.
+
+The standalone GL test builds, including wasm's WebGL2 presets, exercise
+authored materials, so configure
+them with `-DVCPKG_MANIFEST_FEATURES=materials` unless those host tools are
+already installed. This does not change a starter project's default build.
 
 Everything else — DirectX Tool Kit, doctest, lodepng — is in `vcpkg.json` and is fetched
 at configure time. rapidjson is vendored in `external/`.

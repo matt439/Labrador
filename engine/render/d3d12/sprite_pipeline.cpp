@@ -299,14 +299,20 @@ namespace labrador
 			IID_PPV_ARGS(this->root_signature_.ReleaseAndGetAddressOf())),
 			"The post root signature could not be created");
 
-		// --- The material pipeline states -----------------------------------
-		//
-		// Every field but the pixel shader is shared, so the description is
-		// filled once and only PS changes between the two creates.
+		this->identity_state_ = this->create_material(device, target_format,
+			post_identity_bytecode, "identity");
+		this->crt_state_ = this->create_material(device, target_format,
+			post_crt_bytecode, "CRT");
+	}
+
+	ComPtr<ID3D12PipelineState> PostPipeline::create_material(
+		ID3D12Device* device, DXGI_FORMAT target_format,
+		std::span<const unsigned char> bytecode, std::string_view name) const
+	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline = {};
 		pipeline.pRootSignature = this->root_signature_.Get();
 		pipeline.VS = { post_vertex_bytecode, sizeof(post_vertex_bytecode) };
-		pipeline.PS = { post_identity_bytecode, sizeof(post_identity_bytecode) };
+		pipeline.PS = { bytecode.data(), bytecode.size() };
 
 		// A FULL-SCREEN PASS REPLACES; only draw lists blend (docs/effects.md).
 		pipeline.BlendState.AlphaToCoverageEnable = FALSE;
@@ -337,14 +343,12 @@ namespace labrador
 		pipeline.SampleDesc.Count = 1;
 		pipeline.SampleDesc.Quality = 0;
 
+		ComPtr<ID3D12PipelineState> state;
+		const std::string what = "The post material '" + std::string(name) +
+			"' pipeline state could not be created";
 		ThrowIfFailed(device->CreateGraphicsPipelineState(&pipeline,
-			IID_PPV_ARGS(this->identity_state_.ReleaseAndGetAddressOf())),
-			"The identity post pipeline state could not be created");
-
-		pipeline.PS = { post_crt_bytecode, sizeof(post_crt_bytecode) };
-		ThrowIfFailed(device->CreateGraphicsPipelineState(&pipeline,
-			IID_PPV_ARGS(this->crt_state_.ReleaseAndGetAddressOf())),
-			"The CRT post pipeline state could not be created");
+			IID_PPV_ARGS(state.GetAddressOf())), what.c_str());
+		return state;
 	}
 
 	void PostPipeline::reset()

@@ -242,6 +242,35 @@ namespace labrador
 			glUniform1i(glGetUniformLocation(program, "input_0_linear"), 1);
 			return program;
 		}
+
+		Renderer::Impl::MaterialProgram create_material_program(
+			const char* prelude, const MaterialSource& source)
+		{
+			const std::string name(source.name);
+			const ShaderOwner vertex(compile_shader(GL_VERTEX_SHADER_,
+				{ prelude, post_vertex_shader }, "post vertex"));
+			const ShaderOwner pixel(compile_shader(GL_FRAGMENT_SHADER_,
+				{ prelude, reinterpret_cast<const char*>(source.bytes.data()) },
+				name.c_str()));
+			Renderer::Impl::MaterialProgram result;
+			result.program = link_post_program(vertex.name, pixel.name,
+				name.c_str());
+			// A driver may shorten an active array or remove it entirely. Each
+			// element is queried separately so uploading a small material's
+			// frame never overruns the linked uniform's active size.
+			const char* const uniforms[] = {
+				"post_frame[0]", "post_frame[1]", "post_frame[2]",
+				"post_frame[3]", "post_frame[4]", "post_frame[5]",
+				"post_frame[6]", "post_frame[7]", "post_frame[8]",
+				"post_frame[9]", "post_frame[10]",
+			};
+			for (std::size_t i = 0; i < result.frame_uniforms.size(); ++i)
+			{
+				result.frame_uniforms[i] = glGetUniformLocation(result.program,
+					uniforms[i]);
+			}
+			return result;
+		}
 	}
 
 	// --- DrawList::View ------------------------------------------------------
@@ -519,6 +548,25 @@ namespace labrador
 			post_crt_pixel.name, "CRT post");
 		this->post_crt_frame_uniform =
 			glGetUniformLocation(this->post_crt_program, "post_frame");
+		std::vector<MaterialProgram> made_materials;
+		made_materials.reserve(this->materials.size());
+		try
+		{
+			for (std::size_t i = 0; i < this->materials.size(); ++i)
+			{
+				made_materials.push_back(create_material_program(
+					this->shader_prelude, this->materials.source(i)));
+			}
+		}
+		catch (...)
+		{
+			for (const MaterialProgram& material : made_materials)
+			{
+				glDeleteProgram(material.program);
+			}
+			throw;
+		}
+		this->material_programs = std::move(made_materials);
 		glUseProgram(this->program);
 
 		// NO ATTRIBUTES, AND STILL A VERTEX ARRAY: the triangle comes from
@@ -648,6 +696,7 @@ namespace labrador
 		// (docs/effects.md#13), so the chain's one effect is the pass.
 		const PostEffect effect = this->post_effects.front();
 		const PostValues& values =
+			this->materials.has_selection() ? this->materials.values() :
 			this->post_values[static_cast<std::size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
@@ -662,15 +711,36 @@ namespace labrador
 		// device (docs/effects.md#7).
 		GLuint material_program = this->post_program;
 		GLint frame_uniform = this->post_frame_uniform;
-		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		if (this->materials.has_selection())
+		{
+			material_program = this->material_programs[static_cast<std::size_t>(
+				this->materials.selected().index())].program;
+		}
+		else if (effect == PostEffect::crt && !crt_values_are_neutral(values))
 		{
 			material_program = this->post_crt_program;
 			frame_uniform = this->post_crt_frame_uniform;
 		}
 
 		glUseProgram(material_program);
-		glUniform4fv(frame_uniform, post_frame_vectors,
-			reinterpret_cast<const GLfloat*>(&constants));
+		if (this->materials.has_selection())
+		{
+			const MaterialProgram& material = this->material_programs[
+				static_cast<std::size_t>(this->materials.selected().index())];
+			const GLfloat* frame = reinterpret_cast<const GLfloat*>(&constants);
+			for (std::size_t i = 0; i < material.frame_uniforms.size(); ++i)
+			{
+				if (material.frame_uniforms[i] >= 0)
+				{
+					glUniform4fv(material.frame_uniforms[i], 1, frame + i * 4);
+				}
+			}
+		}
+		else
+		{
+			glUniform4fv(frame_uniform, post_frame_vectors,
+				reinterpret_cast<const GLfloat*>(&constants));
+		}
 
 		glActiveTexture(GL_TEXTURE0_ + 1);
 		glBindTexture(GL_TEXTURE_2D, this->scene_texture);
@@ -719,6 +789,7 @@ namespace labrador
 		this->post_frame_uniform = -1;
 		this->post_crt_program = 0;
 		this->post_crt_frame_uniform = -1;
+		this->material_programs.clear();
 		this->post_vertex_array = 0;
 		this->scene_texture = 0;
 		this->scene_framebuffer = 0;
@@ -1171,13 +1242,64 @@ namespace labrador
 		check_post_chain(effects, this->impl_->frame_begun);
 
 		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->materials.clear_selection();
 		this->impl_->update_scene_target();
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
+		if (this->impl_->materials.has_selection())
+		{
+			throw std::invalid_argument("set_post_values requires the selected "
+				"material's handle while a game material is active.");
+		}
 		check_post_values(this->impl_->post_effects, effect, values);
 		this->impl_->post_values[static_cast<std::size_t>(effect)] = values;
+	}
+
+	MaterialHandle Renderer::add_material(const MaterialSource& source)
+	{
+		Impl& impl = *this->impl_;
+		const MaterialHandle handle = impl.materials.add(source,
+			MaterialKind::glsl, impl.context != nullptr, impl.frame_begun);
+		Impl::MaterialProgram made;
+		try
+		{
+			if (impl.context_lost())
+			{
+				throw std::runtime_error("Renderer::add_material cannot compile "
+					"a material while the OpenGL context is lost.");
+			}
+			made = create_material_program(impl.shader_prelude,
+				impl.materials.source(static_cast<std::size_t>(handle.index())));
+			impl.material_programs.push_back(made);
+		}
+		catch (...)
+		{
+			if (made.program != 0 && !impl.context_lost())
+			{
+				glDeleteProgram(made.program);
+			}
+			impl.materials.remove_last();
+			glUseProgram(impl.program);
+			throw;
+		}
+		glUseProgram(impl.program);
+		return handle;
+	}
+
+	void Renderer::set_post_material(MaterialHandle material)
+	{
+		std::vector<PostEffect> chain{ PostEffect::identity };
+		this->impl_->materials.select(material, this->impl_->frame_begun);
+		this->impl_->post_effects = std::move(chain);
+		this->impl_->update_scene_target();
+	}
+
+	void Renderer::set_post_values(MaterialHandle material,
+		const PostValues& values)
+	{
+		this->impl_->materials.set_values(material, values);
 	}
 
 	void Renderer::begin_overlay()

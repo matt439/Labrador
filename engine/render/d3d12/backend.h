@@ -6,6 +6,7 @@
 #include "engine/render/d3d12/device_resources.h"
 #include "engine/render/d3d12/sprite_pipeline.h"
 #include "engine/render/font.h"
+#include "engine/render/material_table.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/sprite_vertex.h"
@@ -289,11 +290,13 @@ namespace labrador
 		// texture is made and every view binds the back buffer as it always
 		// has.
 		std::vector<PostEffect> post_effects;
+		MaterialTable materials;
 
 		// Each effect's values, by PostEffect, as set_post_values last gave.
 		std::array<PostValues, post_effect_count> post_values{};
 
 		PostPipeline post_pipeline;
+		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> material_states;
 
 		// RESTS IN RENDER_TARGET between command lists: open_frame clears it
 		// there, views draw into it there, and the post pass transitions it

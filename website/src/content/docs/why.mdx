@@ -132,9 +132,10 @@ design, not by omission
 Within 2D the engine is narrow as well, and these are worth knowing before a design depends on
 them:
 
-- **Drawing** is textured sprites and bitmap-font text through one fixed shader. A game cannot
-  supply its own shader or draw into a texture. A sprite can be rotated; a camera pans and zooms
-  but does not turn.
+- **Drawing** is textured sprites and bitmap-font text through one fixed sprite shader.
+  A game can [write an HLSL post-processing shader](/docs/guides/your-shader/) for the
+  processed scene; it cannot change an individual sprite's shader or draw into its own
+  texture. A sprite can be rotated; a camera pans and zooms but does not turn.
 - **Text** is one glyph for each character, left to right, from an atlas made ahead of time.
   That puts Latin, Greek, Cyrillic, Chinese, Japanese and Korean in reach, given an atlas that
   holds the characters, though only ASCII has been drawn so far. Arabic, Hebrew, the Indic

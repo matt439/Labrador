@@ -9,11 +9,14 @@
 # The one generated include root both functions write under. A target that
 # includes a backend's headers without compiling a shader itself names it too.
 set(LABRADOR_GENERATED_ROOT "${CMAKE_BINARY_DIR}/generated")
+set_property(GLOBAL PROPERTY LABRADOR_GENERATED_ROOT "${LABRADOR_GENERATED_ROOT}")
+set_property(GLOBAL PROPERTY LABRADOR_SOURCE_ROOT "${CMAKE_CURRENT_LIST_DIR}/..")
 
 # Sets `result` to the generated header's path for `output`, its directory
 # made, for the two functions below.
 function(labrador_generated_shader_file output result)
-    set(generated_file "${LABRADOR_GENERATED_ROOT}/${output}")
+    get_property(generated_root GLOBAL PROPERTY LABRADOR_GENERATED_ROOT)
+    set(generated_file "${generated_root}/${output}")
     get_filename_component(generated_directory "${generated_file}" DIRECTORY)
     file(MAKE_DIRECTORY "${generated_directory}")
     set(${result} "${generated_file}" PARENT_SCOPE)
@@ -22,9 +25,12 @@ endfunction()
 # Compiles the generated header into `target` and puts the generated root on
 # its include path.
 function(labrador_add_generated_shader target generated_file)
+    get_property(generated_root GLOBAL PROPERTY LABRADOR_GENERATED_ROOT)
     target_sources(${target} PRIVATE "${generated_file}")
-    target_include_directories(${target} PRIVATE "${LABRADOR_GENERATED_ROOT}")
+    target_include_directories(${target} PRIVATE "${generated_root}")
 endfunction()
+
+include("${CMAKE_CURRENT_LIST_DIR}/add_material.cmake")
 
 # compile_hlsl(<target> <source> <profile> <entry> <symbol> <output> [<include>...])
 #
