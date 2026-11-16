@@ -29,6 +29,8 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-03: the desktop's integrated Radeon stays the named low tier, with no re-plan; the owner re-enables it in the BIOS at the next reboot, then AMD's driver and SM-01's adapter check follow. The primary persona is renamed "The Outside Adopter" from "The Outside C++ Adopter", keeping the id `outside-cpp-adopter` and every `OCA-` id (DOC#5). PHILOSOPHY's opening says outside users are served now, not 'eventually', with the reason; that none has yet appeared is PERSONAS' to record (DOC#6). The GitHub description now names Windows and desktop browsers (WebGL2) (DOC#7, done). OCA-18 closes on the 2026-10-31 agent runs, a person's use of the page being informal. PI-10 closes with every filed report answered; PI-11 stays parked until a request is filed (T1). OCA-45 closes on headless coverage of the slot choice plus informal play with the one owned pad, with no second pad and no ViGEm, recording that unplugging slot 0 has not been seen on hardware. SM-11 moves from Won't this time to Later; its work is WEB#10 | SM-01, SM-07, DOC#5, DOC#6, DOC#7, OCA-18, PI-10, PI-11, OCA-45, SM-11, WEB#10 |
 | Decided 2026-11-16: select the eighteen bounded recommendations as Later's L66 to L83, with the scope, prerequisites and verification below. Selection authorises planned work; every story remains open until its implementation and acceptance land. | OCA-85 to OCA-92, SM-76 to SM-83, PI-22, PI-23 |
 | Decided 2026-11-16: defer Random's move/expansion until a math-only rules caller needs it, and defer a wasm size gate until a measured download or startup target justifies a budget. Their [live review ledger](../review/2026-11-10/STATUS.md) retains the revisit conditions; neither gets an implementation story now. | REV#35, REV#53 |
+| Decided 2026-11-16, second batch: select the fourteen bounded stories in L84 to L97. Keep vcpkg's default tool downloads; OCA-96 explains their expected output alongside its optional Visual Studio configuration route. Selection records future scope, not implementation or qualification. | OCA-93 to OCA-101, SM-84, SM-85, SRL-23, SRL-24, PI-24; REV#121 |
+| Decided 2026-11-16, second batch: defer the debug panel, extra consumption routes, prebuilt samples, fuzzing and static-analysis tooling until their named needs or evidence arise. Their [live review ledger](../review/2026-11-10/STATUS.md) retains the individual triggers; no additional implementation scope is selected. | REV#43, REV#65, REV#66, REV#67, REV#68 |
 
 `SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
 its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
@@ -541,6 +543,20 @@ lane is added. This selection changes no workflow, repository setting,
 build default or runtime behaviour. All eighteen implementation boxes stay
 unticked. `REV#35` and `REV#53` are deferred under the decisions above.
 
+**Second decision triage amendment, 2026-11-16:** L84 to L97 follow the
+accepted recommendations for adopters, sample teaching and bounded tooling.
+They use the same ready-work scheduling rule as L66 to L83; existing hardware
+gates do not block unrelated work. Keep the full engine in the starter while
+making the assembled game's own files clear. The Visual Studio configuration
+and command wrappers are optional routes alongside the documented manual
+commands. Keep vcpkg's default tool downloads and explain their normal output
+in OCA-96; there is no separate implementation story for `REV#121`.
+SM-84 is a three-guide compilation pilot; wider rollout waits for its recorded
+cost. OCA-98 teaches the existing Random API without reopening `REV#35`.
+The five deferrals above retain their individual revisit triggers. All fourteen
+new story boxes stay unticked; this selection changes no build, workflow,
+installed software, release asset or runtime behaviour.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -556,6 +572,9 @@ unticked. `REV#35` and `REV#53` are deferred under the decisions above.
 - Texture dimensions, checked hex colours, the engine release/development identity and actionable consumer-dependency diagnostics are public, with a scripted native pad backend and a replaceable diagnostic sink
 - Consumer build inputs follow the change-list rule, and compiler-free lint detects omitted tracked C++ sources without rejecting conditional sources
 - Native MSVC Release IPO has recorded qualification before its defaults change; an ASan lane consistently instruments its dependencies and retains allocation-failure coverage before scheduled execution is introduced
+- A beginner can identify which guide passages need a newer engine, follow the starter's own source and setup vocabulary, and distinguish their game files from the engine's look-alike sample
+- The starter offers verified optional Visual Studio configuration and command wrappers while preserving the manual route and vcpkg's expected default downloads; a bounded guide-compilation pilot records its upkeep before expansion
+- Existing APIs have a random-number example, measured text alignment, a spawn-and-retire sample route, an honest one-shape collision limit and ISO extra-key support; Release symbols, browser debugging and build-time reporting have bounded documented procedures
 
 **Lands as**
 
@@ -642,6 +661,20 @@ unticked. `REV#35` and `REV#53` are deferred under the decisions above.
 81. L81 Qualify native MSVC Release IPO before changing defaults: SM-81 (`REV#36`)
 82. L82 Establish consistent ASan instrumentation before scheduling it: SM-82 (`REV#49`)
 83. L83 Report invalid collider data at the collision/scene boundary: SM-83 (`REV#57`)
+84. L84 Identify guide passages newer than the released starter: OCA-93 (`REV#62`)
+85. L85 Explain the starter's source and setup vocabulary for beginners: OCA-94 (`REV#119`)
+86. L86 Give the assembled starter its own game-facing comments and README: OCA-95 (`REV#118`)
+87. L87 Offer optional Visual Studio configuration and explain default tool downloads: OCA-96 (`REV#63`, `REV#121`)
+88. L88 Wrap the starter's documented commands without installing tools: OCA-97 (`REV#120`)
+89. L89 Compile a three-guide pilot against the assembled starter: SM-84 (`REV#133`)
+90. L90 Teach Random through an engine-linked state and plain rule inputs: OCA-98 (`REV#136`)
+91. L91 Align a measured text line with an explicit snapping choice: OCA-99 (`REV#32`)
+92. L92 Spawn and retire one object in the collision sample: SRL-23 (`REV#44`)
+93. L93 State the one-shape-per-CollisionObject limit: SRL-24 (`REV#80`)
+94. L94 Name and translate the ISO extra keyboard key: OCA-100 (`REV#82`)
+95. L95 Keep matching symbols for an optimised Windows Release: PI-24 (`REV#91`)
+96. L96 Document browser-only C++ debugging and console output: OCA-101 (`REV#92`)
+97. L97 Report build costs without machine-dependent failure gates: SM-85 (`REV#147`)
 
 **Stories**
 
@@ -1200,6 +1233,21 @@ unticked. `REV#35` and `REV#53` are deferred under the decisions above.
 - [ ] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
 - [ ] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
 
+- [ ] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
+- [ ] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
+- [ ] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
+- [ ] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
+- [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
+- [ ] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
+- [ ] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
+- [ ] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
+- [ ] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
+- [ ] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
+- [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
+- [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
+- [ ] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
+- [ ] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
+
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work was `WEB#10`: add LineSweeper and the bundle
@@ -1592,6 +1640,322 @@ non-finite coordinates/extents with and without scene bounds, signal timing
 and valid controls; run native and wasm portable cases, relevant null scene
 integration checks and the website gate. A diagnostic sink does not replace
 the boundary's explicit result.
+
+The following fourteen stories are the second decision batch selected on
+2026-11-16. Their acceptance describes future work; implementation and
+qualification remain open.
+
+<a id="oca-93"></a>
+### OCA-93. Identify guide passages newer than the released starter
+
+Selected from [`REV#62`](../review/2026-11-10/FINDINGS.md#rev62) and the
+[released-starter run](../review/2026-11-10-first-run/FINDINGS.md#rev62).
+
+**Acceptance**
+
+- Development guide passages that require a feature absent from the current
+  starter release carry a note at the point of use, with the first release
+  that supplies it or an explicit development-build requirement until then.
+- Each affected passage gives the reader a working route: its release's
+  documentation or the documented engine/starter update procedure. Preserve
+  the development site's default and the immutable release snapshots.
+- Review the recorded five mismatches against the current tree and released
+  starter; mark verified applicability rather than inventing a future tag.
+
+**Boundaries and verification:** no site-version default change or archive
+rewrite. Check the notes against actual API availability and follow the
+affected passages with the named starter/version; run focused website
+checks and the website gate. Record any procedure not executed explicitly.
+
+<a id="oca-94"></a>
+### OCA-94. Explain the starter's source and setup vocabulary for beginners
+
+Selected from
+[`REV#119`](../review/2026-11-10-first-run/FINDINGS.md#rev119).
+
+**Acceptance**
+
+- Add a beginner-level reading route through the assembled game's main.cpp
+  and hello_state header/source in file order, explaining the syntax and
+  responsibilities needed to follow those files. Keep advanced rendering
+  discussion and the existing programmer-focused reading route optional.
+- A short setup glossary explains the vocabulary on the main Get Started
+  route. Introduce necessary terms where used and link the glossary without
+  making it a prerequisite reading assignment.
+- Make first-change, the concepts index and the reading page agree on their
+  audience and next step; avoid sending a beginner first to expert comments.
+
+**Boundaries and verification:** no general C++ course, new learner floor or
+promise about the unfinished companion introduction. Quote maintained source
+excerpts where possible, check the walkthrough against the assembled starter,
+and run website checks, excerpt/anchor tests and the full website gate.
+
+<a id="oca-95"></a>
+### OCA-95. Give the assembled starter its own README and comments
+
+Selected from
+[`REV#118`](../review/2026-11-10-first-run/FINDINGS.md#rev118).
+
+**Acceptance**
+
+- Keep the full engine source in external/labrador. The starter's root
+  instructions explain that it includes a look-alike samples/minimal and
+  that the reader edits game/, with full paths where confusion is likely.
+- Give the assembled game a concise README describing its actual files,
+  targets and guide links. Rewrite stale minimal-sample target names and
+  copy instructions in game-owned comments during assembly, while keeping
+  the engine's original source unchanged.
+- Keep the template's useful change list available and explain any difference
+  between its source form and the assembled project's instructions.
+
+**Boundaries and verification:** no engine packaging allowlist or binary-only
+starter. Assembly/ZIP fixtures check the resulting paths, target names and
+copy, and consumer/rename checks still build, test and install the project.
+Update affected walkthrough text and run lint and the website gate.
+
+<a id="oca-96"></a>
+### OCA-96. Offer optional Visual Studio configuration and explain tool downloads
+
+Selected from [`REV#63`](../review/2026-11-10/FINDINGS.md#rev63), with
+[`REV#121`](../review/2026-11-10-first-run/FINDINGS.md#rev121)'s decision to
+keep vcpkg's default tool-download behaviour.
+
+**Acceptance**
+
+- Offer a maintained .vsconfig and one documented Visual Studio installer
+  command as an optional alternative to manually selecting the prerequisites.
+  Keep the existing manual route; explain that the file alone does not
+  configure a CMake project or install components.
+- Validate the component selection and command in an isolated clean-machine
+  run before claiming that route works. Identify the Visual Studio version
+  and measured install/download costs; do not generalise an earlier record
+  to an untested installer version.
+- Explain the first configure's normal CMake and PowerShell downloads and
+  expected messages. Keep vcpkg's defaults; do not force system binaries or
+  add PowerShell 7 as a new prerequisite merely to avoid those downloads.
+
+**Boundaries and verification:** no bundled installer, automatic host install
+or prebuilt dependency cache. Check configuration contents, starter assembly
+and guide commands together; retain the isolated install/build evidence and
+run affected tooling tests, lint and the website gate. REV#121 has no separate
+implementation story: its documentation follow-up is owned here.
+
+<a id="oca-97"></a>
+### OCA-97. Wrap the starter's documented build, test and play commands
+
+Selected from
+[`REV#120`](../review/2026-11-10-first-run/FINDINGS.md#rev120).
+
+**Acceptance**
+
+- Provide optional starter build/test/play wrappers that find a suitable
+  Visual Studio through vswhere, enter its x64 tools environment and print
+  the same commands the manual guide teaches before running them.
+- Keep Visual Studio discovery shared between wrappers. Handle missing
+  tools, non-default installation paths, project paths with spaces and a
+  failed configure/build/test with actionable output and the real exit code.
+- The manual prompt-and-command route remains available. The wrappers
+  install nothing and do not conceal a failed prerequisite behind a retry.
+
+**Boundaries and verification:** no new build system or bootstrap downloader.
+Use isolated fixtures for discovery and failure handling, and qualify the
+assembled wrappers from an ordinary prompt and by the advertised launch route
+in Sandbox, including a non-default Visual Studio path. Run consumer checks,
+tooling/lint and the website gate; retain the exact tested installer version.
+
+<a id="sm-84"></a>
+### SM-84. Compile a three-guide pilot against the assembled starter
+
+Selected from
+[`REV#133`](../review/2026-11-12-work-audit/FINDINGS.md#rev133).
+
+**Acceptance**
+
+- Start with three finished guide examples, for rules, screens and collision,
+  checked against an extracted starter through the existing consumer check.
+  Build and run their relevant rules/state/smoke checks rather than merely
+  checking that their source text occurs in a page.
+- Tie the maintained final examples to the corresponding guide excerpts or
+  checks so a changed final declaration or recipe cannot silently drift.
+  Intermediate edit steps may have separate snapshots; they need not all
+  occur simultaneously in one final source file.
+- Record additional build time and maintenance cost before proposing wider
+  coverage. Retain the baseline starter, rename and material consumer checks.
+
+**Boundaries and verification:** this selects a pilot, not automatic rollout
+to every inline code block or a new required CI job. Verify a deliberately
+broken example fails and the three working examples pass from consumer-relative
+paths; run affected tooling, local lint and the website gate. Respect OCA-93's
+version applicability without changing the site's default documentation.
+
+<a id="oca-98"></a>
+### OCA-98. Hand random values from a state into a tested rule
+
+Selected from
+[`REV#136`](../review/2026-11-12-work-audit/FINDINGS.md#rev136).
+
+**Acceptance**
+
+- A short starter guide seeds the existing engine Random in an engine-linked
+  state, draws the values its example needs and passes those plain values to
+  a rules function. The rules target keeps its existing dependency boundary.
+- Show deterministic tests of the rule using supplied values and explain
+  reproducible seeds, game-owned time seeding and the documented reason that
+  standard-library distributions need not match across platforms.
+- Use the current Random API and name its supported-version requirement
+  consistently with OCA-93.
+
+**Boundaries and verification:** Random's move, shuffle and stream expansion
+remain deferred under REV#35; this guide does not require them. Build and test
+the assembled example natively and under wasm/Node, check its snippets and
+run the website gate. The example makes no cryptographic or replay-format
+promise.
+
+<a id="oca-99"></a>
+### OCA-99. Align a measured line of text with an explicit snapping choice
+
+Selected from [`REV#32`](../review/2026-11-10/FINDINGS.md#rev32).
+
+**Acceptance**
+
+- Add a small pure helper that derives a text origin from measured line
+  bounds, an anchor and a stated alignment. Make whole-pixel snapping an
+  explicit choice rather than silently rounding every scale or caller.
+- Use it at the existing LineSweeper alignment sites so equivalent layout
+  choices follow the same measured arithmetic. Publish the additive contract
+  and any changed presentation in CHANGES.md and affected guides.
+
+**Boundaries and verification:** layout stays manual; no automatic widget
+layout or text engine redesign. Behavioural tests cover odd/fractional sizes,
+non-unit scale, alignment choices and snapping. Follow the render verification
+owner for changed engine/render code; regenerate and review any changed
+LineSweeper captures or goldens under their owners, and run the website gate.
+
+<a id="srl-23"></a>
+### SRL-23. Spawn and retire an object in the collision sample
+
+Selected from [`REV#44`](../review/2026-11-10/FINDINGS.md#rev44).
+
+**Acceptance**
+
+- Extend the existing collision sample with one small object that is spawned
+  during play and retires through the documented Scene lifetime mechanism.
+  Keep the example's ownership and the tick at which changes become visible
+  clear enough to copy.
+- Quote compiled sample code in the collision guide in place of the uncompiled
+  lifetime snippet. Explain the game-owned spawn/retirement condition and
+  what must not retain an object after retirement.
+- Retain the collision sample's existing teaching and scripted smoke route,
+  adapting its assertions to cover the new lifecycle rather than creating
+  a seventh sample.
+
+**Boundaries and verification:** no new engine lifetime API or object pool.
+Headless/null sample tests pin spawn, deferred visibility and retirement;
+native smoke and browser page checks still quit through their bounded routes.
+Run affected sample/tooling checks and the website gate.
+
+<a id="srl-24"></a>
+### SRL-24. State the one-shape-per-CollisionObject limit
+
+Selected from [`REV#80`](../review/2026-11-10/FINDINGS.md#rev80).
+
+**Acceptance**
+
+- State in the design and public scene/collision explanation that one
+  registered CollisionObject supplies one Shape. Distinguish the supported
+  GameObject containing many ordinary values from a batched collidable API.
+- Keep the already implemented churn benchmark's scope and measured evidence
+  intact; do not imply that it establishes an unsupported batched collision
+  feature or a hardware performance guarantee.
+
+**Boundaries and verification:** no new collision batching or benchmark run.
+Check the wording against current signatures and sample use, update quoting
+reference pages in the same change, and run local lint and the website gate.
+
+<a id="oca-100"></a>
+### OCA-100. Name and translate the ISO extra keyboard key
+
+Selected from [`REV#82`](../review/2026-11-10/FINDINGS.md#rev82).
+
+**Acceptance**
+
+- Give the ISO extra position a public Key value and stable key_name token,
+  translating Win32's OEM extra key and the browser's IntlBackslash code
+  to the same logical key.
+- Preserve existing key meanings and documented combined-modifier behaviour.
+  State the new spelling and supported mapping in the public header, input
+  guide and CHANGES.md.
+
+**Boundaries and verification:** no modifier split, OS-owned Windows-key
+policy or layout-dependent glyph-label API. Translation fixtures and InputTests
+cover both feeds, edges and the fallback for unknown keys; follow the input
+verification plan and website gate. Synthetic mapping tests do not establish
+physical ISO-keyboard acceptance.
+
+<a id="pi-24"></a>
+### PI-24. Retain matching symbols for an optimised Windows Release
+
+Selected from [`REV#91`](../review/2026-11-10/FINDINGS.md#rev91).
+
+**Acceptance**
+
+- Provide an opt-in documented build setting or recipe that emits matching
+  PDBs for the actual optimised Windows Release configuration while retaining
+  its optimisation, floating-point and runtime choices.
+- Explain which executable and symbols belong together, how to retain their
+  identities privately and how to use them for a reported failure. Keep PDBs
+  out of the normal installed/distributed game folder by default.
+- Update the release/debugging guidance and CHANGES.md for any build contract
+  added; keep the ordinary Release path unchanged unless opted in.
+
+**Boundaries and verification:** no minidump writer, crash upload or signing
+policy. Build a consumer with the recipe, verify debugger symbol loading and
+optimised build flags, and check install contents with the existing release
+procedure. Run affected configuration/tooling checks and the website gate.
+
+<a id="oca-101"></a>
+### OCA-101. Explain browser output and browser-only C++ debugging
+
+Selected from [`REV#92`](../review/2026-11-10/FINDINGS.md#rev92).
+
+**Acceptance**
+
+- Add a short browser-debugging section that first directs portable rules
+  defects to native debugging, then shows where stdout, stderr and loader
+  failures appear for a browser-only problem.
+- Document one verified Debug build/source-information route and its browser
+  tools, with exact commands, supported tool versions and a small C++ fault
+  whose source can actually be inspected or stepped through.
+- State what differs from the Release bundle and keep source/debug artifacts
+  out of the normal distributable unless the reader explicitly opts in.
+
+**Boundaries and verification:** no debugger framework or default Release
+flag change. Follow the documented route on the named browser/toolchain,
+retain that evidence and check the guide's commands, snippets and links;
+run the website gate. This adds no cross-browser debugging-support claim.
+
+<a id="sm-85"></a>
+### SM-85. Report build costs without a hard timing gate
+
+Selected from
+[`REV#147`](../review/2026-11-12-work-audit/FINDINGS.md#rev147).
+
+**Acceptance**
+
+- Provide an offline report over recorded Ninja logs and dependency data for
+  slow translation units, per-folder work and header fan-out, with an optional
+  comparison against a named capture.
+- Distinguish elapsed build span from overlapping task-time sums, and label
+  any phases or dependency information the input did not record. Retain
+  source revision, toolchain, configuration, parallelism and cache context
+  for comparisons.
+- Document how a maintainer captures and reads a baseline, keeping measurement
+  evidence separate from a promise about other machines or clean builds.
+
+**Boundaries and verification:** no hard timing threshold, automatic CI warning
+policy or scheduled benchmark. Offline fixtures exercise log/dependency
+parsing, missing information, parallel tasks and comparisons; check the report
+against an existing real capture, then run local lint and the website gate.
 
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game
