@@ -357,7 +357,9 @@ namespace labrador
 		// with Escape - and on_fullscreen_changed reports what it decided.
 		// An asynchronous refusal is reported from a later frame and leaves
 		// the game running. Leaving or closing cancels this window's deferred
-		// entry request; late rejection cannot notify a replacement window.
+		// entry request. Owned Promise settlement cannot notify its owner after
+		// closure. The current window still observes platform fullscreen events,
+		// which carry no request identity.
 		// A page owns rejection handling for requests it makes itself.
 		void enter_fullscreen() const;
 		void leave_fullscreen(const Vector2I& client_size) const;
