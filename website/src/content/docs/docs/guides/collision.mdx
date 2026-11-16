@@ -58,6 +58,15 @@ the sprite destination:
 
 <SourceFile path="samples/collision/body.cpp" from="RectangleF Body::bounds() const" to="const Shape* Body::shape() const" />
 
+Each registered `CollisionObject` supplies one `Shape`. An ordinary
+`GameObject` can update and draw a whole array of values, but the scene does
+not discover colliders inside that array. Independently swept shapes use
+separate collision objects, each handed to `Scene::add` in a `unique_ptr`.
+The scene owns them; a pointer kept by the game is a loan that ends when its
+object is removed, retired or destroyed with the scene. Scene offers no
+borrowed registration of another object's array elements or compound-shape
+registration.
+
 The narrow phase measures `RectangleF`, `RectangleRotated`, `Triangle`,
 `Quad` and `Circle`, each against any other. For a round body, `shape()`
 returns a `Circle` and `bounds()` returns its `bounding_box()`. A contact with

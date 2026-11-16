@@ -178,6 +178,10 @@ namespace labrador
 		// own. What the game wants it for is the questions only the game can
 		// ask - "how many of these are still standing" - and the answer to
 		// those is a walk, once, not a virtual on the object.
+		//
+		// The borrowed span and its iterators expire at the next end_tick() or
+		// scene destruction. A copied pointer borrows its particular object
+		// until that object is removed, retired or destroyed with the scene.
 		std::span<CollisionObject* const> collision_objects() const;
 
 		// The view list, refilled by the game each tick.
