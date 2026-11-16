@@ -60,6 +60,8 @@ export default defineConfig({
 						{ label: 'Install the tools', link: '/docs/get-started/prerequisites/' },
 						{ label: 'Get the starter project', link: '/docs/get-started/starter/' },
 						{ label: 'Make a first change', link: '/docs/get-started/first-change/' },
+						{ label: 'Read your starter\'s C++', link: '/docs/concepts/read-your-code/' },
+						{ label: 'Setup words', link: '/docs/get-started/glossary/' },
 						{ label: 'Read a build error', link: '/docs/get-started/build-errors/' },
 						{ label: 'Edit and debug in Visual Studio', link: '/docs/get-started/debug-your-game/' },
 						// The route for readers who use Git, which makes the same project.

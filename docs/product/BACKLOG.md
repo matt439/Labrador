@@ -1406,7 +1406,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
 
 - [x] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
-- [ ] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
+- [x] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
 - [x] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
 - [ ] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
 - [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
@@ -2128,6 +2128,32 @@ no future tag or new release snapshot was created to claim that qualification.
 
 Selected from
 [`REV#119`](../review/2026-11-10-first-run/FINDINGS.md#rev119).
+
+**Completed 2026-11-17.** *Read your starter's C++* follows `game/main.cpp`,
+then `game/states/hello_state.h` and `.cpp` in order, explaining their syntax
+and jobs at the recorded beginner floor. Seventeen maintained source excerpts
+avoid relying on expert comment blocks. The existing programmer companion is
+optional, with its rendering terms grouped for skipping. First-change, the
+concepts index and Get Started distinguish those audiences and next steps.
+*Setup words* is a lookup glossary, with terms introduced beside the existing
+setup steps; it is not a prerequisite assignment. The unavailable companion
+introduction is not part of that route.
+
+The reading page names the current source and marks the `v0.3.0` pad-helper,
+touch-marker and native-close differences. A newly made development starter
+ZIP was extracted and all seventeen excerpt endpoints and their order checked
+against its actual three game files. `starter-reading.test.mjs` holds the same
+check against the placed-source model, whose existing Python fixture was run
+against the real assembler. A deliberate excerpt-order reversal failed that
+regression and passed after restoration. The excerpt/guide-anchor checks and
+full website gate passed: check, 201 tests, 182 pages, valid links and release
+snapshot assembly.
+
+No installation, original first-change command sequence, new C++ build, GUI
+session or first-time learner session was run for this reading-only story.
+The existing executable commands were unchanged. The broad local lint run
+passed its first eleven steps, then hit the separate scripted-pad CI retry
+inventory mismatch; that integration repair remains outside this story.
 
 **Acceptance**
 

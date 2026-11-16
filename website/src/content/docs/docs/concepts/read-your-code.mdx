@@ -1,0 +1,309 @@
+---
+title: Read your starter's C++
+description: Follow main.cpp and the two HelloState files in order, with the punctuation and each file's job explained beside the code.
+sidebar:
+  order: 6
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
+
+If you have [made a first change](/docs/get-started/first-change/), you have already edited C++.
+This page explains what you were looking at. It assumes very little programming experience;
+you do not need to know classes or pointers before starting. Keep one file open beside the
+page and read it from top to bottom. There is nothing to type or change here.
+
+Open the files in **your project's `game` folder**, in this order:
+
+| File | Its job |
+| --- | --- |
+| `game/main.cpp` | Start the Windows program, choose its settings and open the first screen. |
+| `game/states/hello_state.h` | List what the greeting screen can do and what it keeps. |
+| `game/states/hello_state.cpp` | Supply the instructions for those jobs. |
+
+The website reads its excerpts from `samples/minimal`, the source used to make the starter.
+The filenames under each excerpt link to that source. Your files are under `game`, and an
+include beginning `samples/minimal/` in the original becomes `game/` in your project. Leave the
+look-alike sample in `external/labrador` alone. If you made the first change, your greeting,
+speed and title already differ from the original shown here.
+
+These excerpts describe the **development starter at this site's source revision**, not a
+promise that every released ZIP has the same lines. The `v0.3.0` starter has older pad-input
+and touch-marker blocks and no native-close hook; those differences are marked below.
+[Which Labrador you have](/docs/guides/your-version/)
+shows how to find your version and its own documentation. You can learn the shared syntax
+without updating the engine. [Setup words](/docs/get-started/glossary/) explains the tool names
+if one interrupts your reading.
+
+## 1. `game/main.cpp`: starting the program
+
+### Comments, includes and names
+
+Lines starting `//` are comments for people. They do not run. The file starts with comments,
+then `#include` lines:
+
+<SourceFile path="samples/minimal/main.cpp" from="#include &quot;engine/app/application.h&quot;" to="#include &quot;engine/core/state.h&quot;" title="game/main.cpp" />
+
+An include makes declarations from another file available here. A **declaration** tells the
+compiler that a type or function exists and how it can be used. A quoted path names a header
+in the project or engine. A header ends in `.h`; a `.cpp` file holds instructions that are
+compiled into the program. The following `Windows.h` include supplies Windows' names.
+Includes in angle brackets, such as `<memory>`, also bring in declarations; these ones come
+from C++'s standard library, the reusable tools supplied with the language.
+
+<SourceFile path="samples/minimal/main.cpp" from="using namespace labrador;" to="using namespace labrador;" title="game/main.cpp" />
+
+Names can belong to a **namespace**, a group that keeps them apart from other people's names.
+`labrador::Application` means the name `Application` in `labrador`; the two colons select the
+name within the group. `std::` selects the standard library. This `using` line lets this file
+write `Application` without repeating `labrador::`.
+
+### The startup test comes first in the file
+
+The unnamed `namespace { ... }` groups helpers that belong only to this source file. Curly
+braces enclose a group of instructions or declarations. Its first helper is a function:
+
+<SourceFile path="samples/minimal/main.cpp" from="bool asks_for_smoke_test(std::wstring_view arguments)" to="}" title="game/main.cpp" />
+
+A function is a named job. `bool` before its name says it returns a yes-or-no value, `true` or
+`false`. The parentheses describe its input, here some command-line text named `arguments`.
+`const` means the local value will not be reassigned. `arguments.find_first_not_of(...)` calls
+a job on that text; the dot means “use a member of this object”. `return` gives the answer to
+the caller. `&&` requires both conditions to be true, and `==` compares two values. A
+semicolon ends an instruction or declaration.
+
+This function answers whether the program was started with `--smoke-test`. Below it,
+`smoke_test_frames` sets the test's length to 30 drawn frames. `constexpr` makes it a value
+that can be worked out when the program is built. The `SmokeTest` class then wraps the real
+screen: its `init`, `update` and `draw` pass work to that screen, and its update ends the
+program once enough frames have drawn. This is what the project's startup test uses. It does
+not replace the screen you edit, and ordinary play does not use this wrapper.
+
+You can leave that helper class alone. The same class and pointer syntax appears in the
+greeting screen below, where it has a visible job.
+
+### Windows calls `wWinMain`
+
+<SourceFile path="samples/minimal/main.cpp" from="int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE," to="const bool smoke_test = asks_for_smoke_test(command_line);" title="game/main.cpp" />
+
+This is where Windows starts this program. `int` says the function returns a whole number:
+zero means success and a nonzero result means failure. The long list in parentheses is
+Windows' required input list. Only `command_line` is named and used here. Keep the other
+spellings as they are; understanding their Windows types is not needed to change the game.
+The call to `asks_for_smoke_test` puts its yes-or-no answer in `smoke_test`.
+
+`try { ... }` begins the ordinary startup work. If that work reports a C++ exception, execution
+jumps to the `catch` block near the bottom instead of carrying on with a half-started game.
+
+<SourceFile path="samples/minimal/main.cpp" from="ApplicationOptions options;" to="options.window_class_name =" title="game/main.cpp" />
+
+`ApplicationOptions` is a **type**, the description of a kind of value. `options` is one value
+of that type, an **object**. A dot selects one of its fields: `options.window_title` is the
+title kept in that object. A single `=` stores a value. The `L` before a quoted string makes
+wide-character text, the kind these window settings accept. The class name identifies this
+program's Windows window class; the title is the text the player sees along its top.
+
+<SourceFile path="samples/minimal/main.cpp" from="options.window_title =" to="options.resolution =" title="game/main.cpp" />
+
+The following lines choose the size, hide the window only for a startup test and reserve one
+view of the game. In `ScreenResolution::s_1280_720`, `::` selects one of the named sizes.
+`!smoke_test` means the opposite of `smoke_test`, so normal play gets a visible window.
+
+<SourceFile path="samples/minimal/main.cpp" from="Application app(std::move(options));" to="app.initialize();" title="game/main.cpp" />
+
+This creates the `app` object using the chosen options. `std::move` lets that new object take
+the supplied value's contents. The next line calls `initialize` on `app`, opening the window
+and preparing the engine services the screen will use.
+
+<SourceFile path="samples/minimal/main.cpp" from="app.load_manifest(" to="return app.run(std::move(first_state));" title="game/main.cpp" />
+
+The **manifest** is a list of content to load, such as the font. The build copies it beside
+the executable, and this relative filename is resolved there. Loading it before the first
+screen starts makes the font available when that screen creates its text.
+
+`HelloState` is that first screen. `std::make_unique<HelloState>(&app)` makes one and returns
+an owning pointer to it. The `&` in `&app` supplies the address of the existing application:
+the screen uses that application rather than making another. If this is a startup test,
+the `if` block puts the wrapper around the screen. `app.run(...)` takes the owning pointer
+and starts the engine's loop, which calls the screen's functions. `return` passes its exit
+code back to Windows when the native game ends.
+
+In the last `catch` block, the error's `what()` function supplies its explanation. `fprintf` writes it to
+error output; `MessageBoxA` displays it for a person during ordinary play. A startup test
+returns failure without waiting for someone to close a box. These lines report a failure;
+they are not the greeting's drawing code.
+
+## 2. `game/states/hello_state.h`: listing a screen's jobs
+
+`#pragma once` at the top prevents this header's declarations being included twice in one
+compilation. Its includes name the application, state, text, scene and movement types it
+uses. Your own movement declarations come from `game/rules/motion.h`.
+
+<SourceFile path="samples/minimal/states/hello_state.h" from="class HelloState : public labrador::State" to="void draw(labrador::Renderer& renderer) const override;" title="game/states/hello_state.h" />
+
+A **class** collects related data and functions into a type. `HelloState` is this game's
+screen class. `: public labrador::State` makes it a kind of engine state, so the engine can
+call its screen jobs. `public:` says callers may use the declarations that follow.
+
+`HelloState(...)` is its **constructor**, run when a new `HelloState` is created. `explicit`
+requires a deliberate construction rather than an automatic conversion. `Application* app`
+is a pointer: it refers to the existing application at its address. `nullptr` elsewhere in
+the file means a pointer does not refer to an object yet.
+
+`void` means a function returns no answer. `init()` prepares the screen once; `update(float dt)`
+changes it on each simulation step; `draw(...)` draws its current state for a frame. `float`
+stores a number that can have a fractional part, and `dt` is the step's duration in seconds.
+The `&` in `Renderer& renderer` is a **reference** to the existing renderer, not a new copy.
+
+`override` asks the compiler to check that this job matches one defined by the engine's
+`State`. The `const` after `draw(...)` says the call will not normally write this screen's
+own data. Positions change in `update`, then `draw` reads them. The semicolons show these
+are declarations; their instructions are in the `.cpp` file.
+
+The next declarations are lifecycle jobs: `on_suspend` is called when another screen covers
+this one, and `on_resume` when that screen leaves. The development starter also has
+`on_close_requested` for Windows' close button; the `v0.3.0` starter does not. Their bodies
+are near the bottom of the source file.
+
+### Private data belongs to this screen
+
+`private:` starts the part only the class's own functions can use. The development starter's
+`ask_to_quit` is a helper job; the rest of this part is data kept between calls.
+
+<SourceFile path="samples/minimal/states/hello_state.h" from="labrador::Application* app_ = nullptr;" to="labrador::Application* app_ = nullptr;" title="game/states/hello_state.h" />
+
+`app_` borrows the application: the application exists before the screen and stays alive
+until after it.
+
+<SourceFile path="samples/minimal/states/hello_state.h" from="std::unique_ptr<labrador::Scene> scene_ = nullptr;" to="std::unique_ptr<labrador::Scene> scene_ = nullptr;" title="game/states/hello_state.h" />
+
+`scene_` owns its scene through `std::unique_ptr`. Angle brackets here select
+what kind of object the pointer owns. When that owning pointer is destroyed, the scene is
+destroyed too. A trailing underscore is this project's naming convention for private data.
+
+The following `Label*` pointers refer to labels owned by the scene. The screen can move or
+recolour them through those pointers, but it must not delete them itself. The two `std::array`
+fields keep a fixed set of touch-marker pointers and their finger ids. `{}` initializes
+their entries to empty pointers or zero. The final `Motion motion_` holds where the greeting
+circles and how far around it has gone. The movement rules describe that type in
+`game/rules/motion.h`.
+
+The `v0.3.0` header has just the marker-pointer array, not `touch_marker_ids_`. The extra array
+in development remembers which id each marker shows, so its text changes only when needed.
+
+## 3. `game/states/hello_state.cpp`: doing those jobs
+
+The first include is this source file's own header. The following includes provide the other
+declarations the instructions need. `using namespace labrador` has the same meaning as in
+`main.cpp`.
+
+### Local values and keyboard input
+
+Inside the unnamed namespace, `font_name` names the font from the manifest. `const` keeps
+that name unchanged. `stick_deadzone` is a small stick movement to ignore, and
+`touch_marker_offset` places a marker near its finger. Numbers such as `0.2f` and `-5.0f`
+have an `f` suffix because these values use `float`. A minus sign makes a number negative.
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="Vector2F keyboard_direction(const Keyboard& keyboard)" to="}" title="game/states/hello_state.cpp" />
+
+`Vector2F` holds two numbers, `x` and `y`. This function starts with both at zero. Each `if`
+runs its brace-enclosed instructions only when its condition is true. `||` means either
+condition is enough: a left arrow or A moves left. `-=` subtracts from the stored number;
+`+=` adds to it. The function returns the resulting direction. On this screen, positive
+`x` points right and positive `y` points down. `const Keyboard&` lets the helper read the
+existing keyboard without copying it or changing it through that reference.
+
+### Construction and `init`
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="HelloState::HelloState(Application* app) : app_(app)" to="}" title="game/states/hello_state.cpp" />
+
+Here `HelloState::` says this is the constructor declared by that class. The single colon
+starts its initialization list: `app_(app)` stores the supplied pointer in `app_`. Its body
+is empty because opening the screen happens in `init`, after the content has loaded.
+
+In `init`, `this` points to the current `HelloState`. `this->app_` selects its application
+pointer, and `this->app_->resolution_manager()` calls a function on the application reached
+through it. Use `.` with an object and `->` with a pointer to an object. The resolution gives
+the two window dimensions, which the following lines use to place the greeting's centre.
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->scene_ = std::make_unique<Scene>(nullptr, nullptr);" to="labrador::Colour::white));" title="game/states/hello_state.cpp" />
+
+The first line creates the scene the screen owns. The two empty pointers choose a simple
+scene with no drawing workers; you can keep these arguments unchanged. The next lines make
+a `Label` for the greeting and give it to `scene_->add(...)`. That function keeps ownership
+in the scene and returns a pointer saved in `greeting_`. Its inputs are the text, font name,
+position, resources that contain the loaded font, and white colour.
+
+The hint below is another label. The `for` loop makes a label for each possible finger,
+initially with empty text. In `Label*& marker`, the local name refers to each pointer stored
+in the array, so assigning it saves the new label's pointer there.
+`end_tick()` admits the newly added labels to the scene, ready
+for drawing. `add_view(...)` gives the scene one view covering the window. Detailed cameras
+and drawing workers are optional later topics, not something to set up here.
+
+### `update` reads controls and moves the greeting
+
+At the start, the application supplies the current gamepad and keyboard readings. In
+`*this->app_->keyboard()`, `*` follows the returned pointer to the keyboard object; the `&`
+in `const Keyboard&` lets the local name refer to that same object. This is a different use
+of `*` from multiplication in `resolution.x * 0.5f`.
+
+The development starter's loop reads each of four pad slots and `combine_pads(readings)`
+combines them. The `v0.3.0` starter performs the combination inside its loop instead. Both
+accept the keyboard when no pad is present. If Escape or a pad's B requests quitting, the
+screen opens the confirmation question and `return` ends this update early.
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->motion_ = step_motion(this->motion_," to="keyboard_direction(keyboard), dt);" title="game/states/hello_state.cpp" />
+
+This calls the game's movement rule with its previous `motion_`, the stick direction, the
+keyboard direction and the elapsed time. `=` replaces `motion_` with the returned value.
+The engine reads devices; the rule decides what their readings mean for this game.
+
+The touch section then reads the active fingers. `std::span<const TouchPoint>` is a view of
+those points, not a second owned collection. The loop visits the fixed set of markers;
+`i < points.size()` checks that a finger exists before reading `points[i]`. `[]` selects one
+entry by its number, beginning at zero. A marker with no finger gets blank text; a live one
+gets its id and position. `static_cast<float>(...)` converts its whole-number pixel position
+to the fractional-number type used by the label. In the development starter, the
+`touch_marker_ids_` array avoids changing unchanged text, and the `? ... : ...` expressions
+choose one of two values according to the condition before `?`. The `v0.3.0` starter instead
+uses an `if` and `else` to set or clear each marker's text on every update; it has no cached-id
+array or those conditional expressions.
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="this->greeting_->set_position(greeting_position(this->motion_));" to="this->greeting_->set_position(greeting_position(this->motion_));" title="game/states/hello_state.cpp" />
+
+This asks the rule for the greeting's position and gives that position to the label. The
+following `scene_->update(dt)` steps the scene's objects, and `scene_->end_tick()` completes
+that update. That is the end of this screen's movement work for the step.
+
+### Asking to quit, pausing and drawing
+
+In the development starter, `ask_to_quit()` follows `update`. It opens `ConfirmState` and
+supplies a small function that will receive the answer. That small function begins:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="[this](const bool& quit)" to="});" title="game/states/hello_state.cpp" />
+
+This is a **lambda**, a function written where it is used. `[this]` lets it reach this screen.
+`quit` is the question's yes-or-no answer. If it is true, `app_->quit()` ends the program.
+The `v0.3.0` starter puts this same question-and-answer code directly inside `update` rather
+than in the separate helper. The screen stays alive while the question is above it.
+
+<GuideVersionNote feature="the native close-request hook used below" releaseGuide="docs/concepts/states/" />
+
+The development-only `on_close_requested` then opens the same question and returns `false`
+so the native window waits for the answer. Older starters have no such function: their
+Windows close button exits immediately. Browser tab closure cannot promise this confirmation.
+
+`on_suspend` dims the greeting while the question is open; `on_resume` makes it white again.
+Finally, `draw(Renderer& renderer) const` asks `scene_->draw(renderer)` to draw the labels.
+It does not move them. The engine calls `update` for the next step and `draw` for the next
+frame, until the game quits.
+
+## Choose the next thing to do
+
+To use what you have read, [put a picture beside the greeting](/docs/guides/your-picture/) or
+[add a screen of your own](/docs/guides/your-screen/); both guides give every edit. The
+[concepts introduction](/docs/concepts/) explains the engine's model in small pieces.
+If you already write C++ and want more detail about ownership, callbacks or the rendering
+comments, [Reading the C++ in minimal](/docs/concepts/reading-minimal/) is the optional
+programmer companion. This page is a reading guide to this starter, not a general C++ course.

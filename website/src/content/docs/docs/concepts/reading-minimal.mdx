@@ -2,7 +2,7 @@
 title: Reading the C++ in minimal
 description: A reading companion for the language features, ownership and rendering terms used by the minimal sample.
 sidebar:
-  order: 6
+  order: 7
   label: Reading the C++
 ---
 
@@ -13,9 +13,11 @@ your reading. The excerpts come from the sample at the revision in this page's f
 project copied by Get Started, the same state files live under `game/states/` instead of
 `samples/minimal/states/`.
 
-This page assumes you can already write small C++ functions and classes. If you are learning
-the language for the first time, follow the [preparation route in Get Started](/docs/get-started/#what-you-need-to-know-already)
-first. You do not need this page to change your game: [Make a first change](/docs/get-started/first-change/)
+This is the optional programmer companion: it assumes you can already write small C++
+functions and classes. If you have very little programming experience,
+[Read your starter's C++](/docs/concepts/read-your-code/) follows the three files in order and
+explains their punctuation and jobs without that assumption. You do not need either reading
+page to change your game: [Make a first change](/docs/get-started/first-change/)
 and the step-by-step [guides](/docs/guides/) give every line to type. Come back here when a line
 they have you change, such as an `override` or a `std::make_unique`, is one you want to understand. [What a game is to the engine](/docs/concepts/game/) explains how these pieces fit together.
 
@@ -142,7 +144,12 @@ namespace. The sample's headers spell engine names in full: a directive at names
 a header would affect every source file that includes it. Keeping it in the `.cpp` limits
 that effect to this translation unit, the source file together with its includes.
 
-## A deferred context records graphics commands
+## Optional: rendering terms
+
+These sections explain the graphics vocabulary in the source comments. You can skip them
+while learning how to change the greeting; the game does not manage these graphics objects.
+
+### A deferred context records graphics commands
 
 <SourceFile
 	path="samples/minimal/states/hello_state.cpp"
@@ -159,7 +166,7 @@ the graphics contexts and command-list lifetime. Other backends supply their own
 machinery behind that same interface; the game does not allocate a deferred context itself.
 See [the frame from the engine's side](/docs/concepts/drawing/#the-frame-from-the-engines-side).
 
-## A dynamic vertex buffer holds changing sprite geometry
+### A dynamic vertex buffer holds changing sprite geometry
 
 <SourceFile
 	path="samples/minimal/main.cpp"
@@ -177,7 +184,7 @@ is the maximum view count the renderer prepares for; this game asks for one. It 
 to size, map or synchronize a graphics buffer. The [split-screen explanation](/docs/concepts/drawing/#split-screen)
 connects that capacity to a game's actual views.
 
-## Fan-out divides the views, not the objects
+### Fan-out divides the views, not the objects
 
 <SourceFile
 	path="samples/minimal/states/hello_state.h"
