@@ -63,7 +63,8 @@ namespace linesweeper
 
 		// First row hit by a newly pressed finger, or null. Hit-test in board
 		// space, using the row gap as height and at least the measured text's
-		// width plus a margin. Input and hit-test policy stay outside engine/ui/.
+		// width plus a margin. This sample owns target geometry and input policy;
+		// the engine query only compares its explicit rectangles with the point.
 		labrador::UiText* tapped_row() const;
 
 		// The same arrangement PlayState draws the match through, worked out

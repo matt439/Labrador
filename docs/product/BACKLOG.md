@@ -1424,7 +1424,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
 - [x] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
 - [ ] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
-- [ ] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
+- [x] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
 - [ ] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
 - [ ] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
 - [ ] **[OCA-108](#oca-108)** Should · L · The Outside Adopter: Use a qualified non-Xbox controller layer on Windows — blocked until a real non-Xbox pad is available
@@ -2799,6 +2799,19 @@ FocusGroup bounds hit test. Behavioural tests cover edges, overlapping order,
 disabled targets, degenerate geometry and misses; null/sample and browser
 pointer tests preserve both pages' existing interactions. Follow the owners
 for any public UI contract and run lint and the website gate.
+
+**Implemented and qualified, 2026-11-17:** `PointerTarget` and
+`hit_pointer_target` provide the pure query without widget lookup, expansion,
+capture or activation. Disabled and invalid targets cannot hide later matches;
+indices stay in the original span. Both pages retain their authored bands,
+minimum widths and coordinate conversion. Native-null UiTests, ComponentsTests
+and LineSweeperViewTests passed 3/3, including real pause-state press/hold,
+contact order, integral edge sampling, portrait transforms and input priority.
+The portable suites, both pointer pages and the existing keyboard-palette route
+passed 6/6 under wasm-debug GL and 6/6 under wasm-release-null. The development
+page's two observation exports are absent from the packaged module. The menu
+guide, reference and CHANGES publish the query, and the website gate passes.
+Browser touch is emulated; real-glass acceptance remains in its existing owner.
 
 <a id="sm-86"></a>
 ### SM-86. Record nominal monitor refresh through the window seam

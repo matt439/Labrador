@@ -2,6 +2,7 @@ labrador_add_test_suite(UiTests
     SOURCES
         focus_tests.cpp
         navigation_tests.cpp
+        pointer_target_tests.cpp
         widget_tests.cpp
     LINKS LabradorEngine
 )

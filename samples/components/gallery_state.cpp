@@ -509,7 +509,7 @@ namespace components
 		{
 			const Vector2F point = this->world_point(sample.position);
 			const std::optional<size_t> hit =
-				hit_target(this->pointer_targets_, point);
+				hit_pointer_target(this->pointer_targets_, point);
 			if (this->name_->editing() &&
 				(!hit.has_value() || this->pointer_widgets_[*hit] != this->name_))
 			{
@@ -571,7 +571,7 @@ namespace components
 		// anywhere else is the player changing their mind.
 		const Vector2F point = this->world_point(sample.position);
 		const std::optional<size_t> hit =
-			hit_target(this->pointer_targets_, point);
+			hit_pointer_target(this->pointer_targets_, point);
 		if (!hit.has_value() || this->pointer_widgets_[*hit] != pressed)
 		{
 			return;

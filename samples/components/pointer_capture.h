@@ -2,14 +2,10 @@
 
 #include "engine/input/mouse.h"
 #include "engine/input/touch.h"
-#include "engine/math/rectanglef.h"
-#include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 
-#include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <span>
 
 namespace components
 {
@@ -95,18 +91,4 @@ namespace components
 		int quiet_ticks_ = 0;
 	};
 
-	// A place on the page a pointer can choose, in the page's own space.
-	struct PointerTarget
-	{
-		labrador::RectangleF bounds;
-
-		// A disabled target is not chosen and does not hide one beneath it.
-		bool enabled = true;
-	};
-
-	// The first enabled target containing `point`, with left and top edges
-	// inside and right and bottom outside, so two targets that share an edge
-	// never both answer; or nothing.
-	std::optional<size_t> hit_target(std::span<const PointerTarget> targets,
-		const labrador::Vector2F& point);
 }

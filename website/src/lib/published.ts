@@ -219,12 +219,13 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 	},
 	{
 		name: 'ui',
-		summary: 'Widgets, focus and directional navigation.',
+		summary: 'Widgets, focus, directional navigation and explicit pointer targets.',
 		headers: [
 			['widget.h', 'Widgets', 'game code'],
 			['focus.h', 'FocusGroup', 'game code'],
 			['button.h', 'Button', 'game code'],
 			['navigation.h', 'Navigation', 'game code'],
+			['pointer_target.h', 'Pointer targets', 'game code'],
 		],
 	},
 	{

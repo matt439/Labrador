@@ -145,6 +145,11 @@
       "wasm-release",
       "wasm-release-null"
     ],
+    "LineSweeperPointerPageTests": [
+      "wasm-debug",
+      "wasm-release",
+      "wasm-release-null"
+    ],
     "LineSweeperReducedMotionPageTests": [
       "wasm-debug",
       "wasm-release",
@@ -254,6 +259,7 @@
     "LineSweeperPageTests",
     "LineSweeperReducedMotionPageTests",
     "LineSweeperPalettePageTests",
+    "LineSweeperPointerPageTests",
     "LineSweeperBundlePageTests"
   ]
 }

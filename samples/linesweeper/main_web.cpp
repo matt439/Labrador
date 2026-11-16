@@ -21,6 +21,9 @@
 #include "engine/app/application.h"
 #include "engine/app/motion_preference.h"
 #include "samples/linesweeper/states/play_state.h"
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+#include "samples/linesweeper/presentation/arrangement.h"
+#endif
 #if defined(LABRADOR_DEVELOPMENT_PACING)
 #include "samples/linesweeper/web/pacing_observer.h"
 #include "samples/linesweeper/web/pacing_state.h"
@@ -70,6 +73,31 @@ extern "C" EMSCRIPTEN_KEEPALIVE void linesweeper_quit()
 		running->quit();
 	}
 }
+
+#if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
+// The pointer-page driver supplies board-space points, then dispatches real
+// browser touch input at the corresponding client pixel. No input or target
+// policy is changed by this development-only observation.
+EM_JS(void, linesweeper_test_store_pointer_point, (double x, double y), {
+	Module["labradorTestPointerPoint"] = { x, y };
+});
+
+extern "C" EMSCRIPTEN_KEEPALIVE void linesweeper_test_map_pointer(float x, float y)
+{
+	if (running != nullptr)
+	{
+		const linesweeper::Arrangement view = linesweeper::arrange(
+			running->resolution_manager()->resolution_vec());
+		const Vector2F point = view.camera.calculate_view_position(Vector2F(x, y));
+		linesweeper_test_store_pointer_point(point.x, point.y);
+	}
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int linesweeper_test_stack_depth()
+{
+	return running != nullptr ? running->depth() : 0;
+}
+#endif
 
 int main()
 {
