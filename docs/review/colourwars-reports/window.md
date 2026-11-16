@@ -610,11 +610,15 @@ is unchecked, with (d) and (e).
 
 ## 19. Showing a window later
 
-**Decision.** Needs more evidence. No public `Window::show()` or
-`Application::show()` yet: the real question is what a default-visible launch
-shows between `ShowWindow` and the first present, and the answer may be an
-engine startup change rather than a new call. Meanwhile 16's commit states
-that the engine never shows a window created hidden.
+**Decision, 2026-11-16.** Accept, narrowed, as
+[OCA-87](../../product/BACKLOG.md#oca-87): the planned startup change shows a
+normally visible window after its first completed frame and preserves an
+explicitly hidden window. No public `Window::show()` or `Application::show()`
+is selected.
+The implementation and qualification on all native backends, including
+full-screen startup, remain open; this decision records no new build, test or
+capture. Meanwhile 16's existing contract still states that the engine never
+shows a window created hidden.
 
 **What the engine has now.** `visible = false` already creates a hidden window
 with its device and services (engine/app/application.cpp:177,
@@ -667,7 +671,8 @@ window simply behaves as a shown one. The stronger wording first proposed,
 "false holds for the Application's whole life", is not used: it collides with
 the native route the client can use today.
 
-Evidence wanted before a shape is chosen, each recorded with commit and date:
+The original evidence request, answered in part by the dated record below,
+asked for each capture's commit and date:
 
 1. A capture of a default-visible launch of `samples/minimal` and of the
    client on the owner's desktop, on `x64-release` at least, recording what is
@@ -677,22 +682,23 @@ Evidence wanted before a shape is chosen, each recorded with commit and date:
    first state is constructed: whether that gives a clean first visible frame
    or still shows a stale or white one before the first present.
 
-If (1) shows a flash and (2) shows that hide-then-show cures it, the preferred
-shape is engine-side and has no new name: `Window` sizes a full-screen window
-with `monitor_rect` instead of `SW_SHOWMAXIMIZED`, `Application` shows the
-window after its first `end_frame` when `ApplicationOptions::visible` is true,
-and the class brush becomes null or black. Only if a client then needs a later
+The selected shape is engine-side and has no new name: `Window` will size a
+full-screen window with `monitor_rect` instead of `SW_SHOWMAXIMIZED`,
+`Application` will show the window after its first `end_frame` when
+`ApplicationOptions::visible` is true, and the class brush will become null or
+black. Only if a client then needs a later
 moment than the first frame does `Window::show()` become the shape: `const`, a
 no-op in a browser, and its show command, focus and full-screen sizing stated
 in engine/app/window.h, with tests.
 
-**Tests.** None until a shape is chosen; the first-size-report case rides in
-16's commit. If the engine-side shape lands: AppTests cannot observe a visible
-window headlessly, so the test is on ordering. A hidden Application under the
-`-null` presets records that no show happens before the first `end_frame`; the
-null backend has no present, so the assertion is on an end-of-frame hook, not
-on a present. What the first visible frame shows is an attended capture on the
-four rasterising backends, not ctest.
+**Planned verification.** The first-size-report case is in 16's commit;
+OCA-87's implementation and checks have not run. AppTests cannot observe a
+visible window headlessly, so its new test checks ordering: under the `-null`
+presets no show occurs before the first `end_frame`, and an explicitly hidden
+Application never shows. The null backend has no present, so the assertion is
+on an end-of-frame hook. Hidden presentation and the first visible frame need
+qualification on all four native rasterising backends in windowed and
+full-screen startup; attended capture remains separate from ctest.
 
 **Consumer-visible.** Not yet; the sentence that rides on 16 is part of 16's
 entry. A later engine-side show after the first present would be a silent
@@ -715,8 +721,8 @@ the monitor's; both have the client size asked for above the system's
 smallest window, and engine/app/window.h now states the exception. (b) A show after the first present on d3d12
 and Vulkan happens after a present to a window that has never been visible, and
 each backend's behaviour presenting to a hidden window, flip-model swap chains
-especially, has to be checked before the engine-side shape is chosen. Partly
-answered by the evidence below: D3D11, which presents with
+especially, has to be checked before the selected implementation is accepted.
+Partly answered by the evidence below: D3D11, which presents with
 `DXGI_SWAP_EFFECT_FLIP_DISCARD` on this Windows, presented four or five frames
 to the never-shown window without error and showed the drawn frame. D3D12,
 Vulkan and GL presenting to a hidden window are still unchecked. (c) The
@@ -780,3 +786,13 @@ frame cures it. Not captured: the client's own launch, which is its owner's;
 a hidden launch on D3D12, Vulkan or GL; and a full-screen launch, where the
 engine shows with `SW_SHOWMAXIMIZED`. Whether to land the engine-side shape is
 the owner's call.
+
+### Owner selection, 2026-11-16
+
+The owner accepted the engine-owned startup change as
+[OCA-87](../../product/BACKLOG.md#oca-87), within the scope above. The dated
+2026-11-13 evidence is preserved as measured; its pending owner call is now
+answered by this selection. Hidden presentation on D3D12, Vulkan and GL,
+full-screen startup and the eventual implementation's first-frame ordering
+remain to be qualified. No source change, build or new capture accompanies
+the selection.

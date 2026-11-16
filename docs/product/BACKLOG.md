@@ -27,6 +27,8 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-03: a check that can be written as a list is automated, and runs on every change it covers; the owner's manual testing is informal play on real hardware, reporting whatever looks wrong, not a scripted checklist. An acceptance criterion written as an owner checklist is re-planned as an automated suite plus, where only a person can judge (listening, a pad's feel, visible judder, real-device numbers), informal play | SITE#3, WEB#1, SM-09, SM-13, BDP-06, OCA-48, PI-21, WEB#2, WEB#3, WEB#5, BDP-07, REV#3, REV#8, REV#12, OCA-66 |
 | Decided 2026-11-03: cut `v0.3.0` without waiting for the iOS Simulator acceptance job to pass reliably; `SITE#5` stays open as its own item and no longer gates a release | SITE#3, SITE#5 |
 | Decided 2026-11-03: the desktop's integrated Radeon stays the named low tier, with no re-plan; the owner re-enables it in the BIOS at the next reboot, then AMD's driver and SM-01's adapter check follow. The primary persona is renamed "The Outside Adopter" from "The Outside C++ Adopter", keeping the id `outside-cpp-adopter` and every `OCA-` id (DOC#5). PHILOSOPHY's opening says outside users are served now, not 'eventually', with the reason; that none has yet appeared is PERSONAS' to record (DOC#6). The GitHub description now names Windows and desktop browsers (WebGL2) (DOC#7, done). OCA-18 closes on the 2026-10-31 agent runs, a person's use of the page being informal. PI-10 closes with every filed report answered; PI-11 stays parked until a request is filed (T1). OCA-45 closes on headless coverage of the slot choice plus informal play with the one owned pad, with no second pad and no ViGEm, recording that unplugging slot 0 has not been seen on hardware. SM-11 moves from Won't this time to Later; its work is WEB#10 | SM-01, SM-07, DOC#5, DOC#6, DOC#7, OCA-18, PI-10, PI-11, OCA-45, SM-11, WEB#10 |
+| Decided 2026-11-16: select the eighteen bounded recommendations as Later's L66 to L83, with the scope, prerequisites and verification below. Selection authorises planned work; every story remains open until its implementation and acceptance land. | OCA-85 to OCA-92, SM-76 to SM-83, PI-22, PI-23 |
+| Decided 2026-11-16: defer Random's move/expansion until a math-only rules caller needs it, and defer a wasm size gate until a measured download or startup target justifies a budget. Their [live review ledger](../review/2026-11-10/STATUS.md) retains the revisit conditions; neither gets an implementation story now. | REV#35, REV#53 |
 
 `SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
 its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
@@ -526,6 +528,19 @@ render targets and P5's multi-pass chains. It builds on the existing scene
 target, overlay boundary and built-in effects; those later mechanisms are
 not prerequisites for one custom pixel function.
 
+**Decision triage amendment, 2026-11-16:** the owner accepted eighteen
+bounded recommendations from the reviews of
+[2026-11-10](../review/2026-11-10/STATUS.md) and
+[2026-11-12](../review/2026-11-12-work-audit/STATUS.md), selected below as L66
+to L83 in their agreed order. Ready batches may proceed while existing Next
+or Later hardware gates remain open; skip only a batch whose own prerequisite
+is unmet. The texture query precedes atlas validation. Native MSVC Release
+IPO must qualify before any default changes, and ASan must preserve its
+failure tests and instrument dependencies consistently before a scheduled
+lane is added. This selection changes no workflow, repository setting,
+build default or runtime behaviour. All eighteen implementation boxes stay
+unticked. `REV#35` and `REV#53` are deferred under the decisions above.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -536,6 +551,11 @@ not prerequisites for one custom pixel function.
 - Golden regenerations leave a review trace, the five-backend-plus-wasm sweep is one command per area, and site preview and rollback are written down
 - LineSweeper's documented layer boundary fails the build when crossed, and a copyable animation example uses the public sprite-sheet API
 - The hygiene batches remove verified comment debt, organise independent test/tool responsibilities and record ownership-based keep/split decisions for backend candidates
+- Invalid camera scales and integer conversions fail before undefined or silent behaviour, atlas bounds are checked against queried texture dimensions, and invalid collider data has an observable boundary result
+- Short mouse clicks survive a fixed-update gap, games can answer native close requests, normally visible windows first reveal a completed frame, and games can read the platform's reduced-motion preference
+- Texture dimensions, checked hex colours, the engine release/development identity and actionable consumer-dependency diagnostics are public, with a scripted native pad backend and a replaceable diagnostic sink
+- Consumer build inputs follow the change-list rule, and compiler-free lint detects omitted tracked C++ sources without rejecting conditional sources
+- Native MSVC Release IPO has recorded qualification before its defaults change; an ASan lane consistently instruments its dependencies and retains allocation-failure coverage before scheduled execution is introduced
 
 **Lands as**
 
@@ -604,6 +624,24 @@ not prerequisites for one custom pixel function.
 63. L63 Bound untrusted content and keep exceptions out of C callbacks: SM-74 (hygiene review H2, selected 2026-11-05 by the owner)
 64. L64 Close the rest of the 2026-11-05 hygiene review: SM-75 (themes H3 to H17 and H19 to H21, selected 2026-11-05 by the owner)
 65. L65 Write a post-processing shader in my game: OCA-84 (selected from effects P6 on 2026-11-16 by the owner)
+66. L66 Refuse unsupported negative camera scales: OCA-85 (`REV#124`)
+67. L67 Guard integer geometry conversions and division: SM-76 (`REV#130`)
+68. L68 Keep a short mouse click through the next fixed update: OCA-86 (`REV#38`)
+69. L69 Reveal a normally visible window after its first completed frame: OCA-87 (`REV#158`)
+70. L70 Query a loaded texture's dimensions: OCA-88 (`REV#31`)
+71. L71 Validate sprite-sheet frames against their atlas: SM-77 (`REV#30`, after OCA-88)
+72. L72 Parse a hex colour with an explicit failure result: OCA-89 (`REV#34`)
+73. L73 Let a game answer native window-close requests: OCA-90 (`REV#39`)
+74. L74 Drive native pads through a scripted backend: SM-78 (`REV#40`)
+75. L75 Route non-fatal engine diagnostics to a caller's sink: OCA-91 (`REV#41`)
+76. L76 Read the platform's reduced-motion preference: OCA-92 (`REV#60`)
+77. L77 Read the engine's release and development identity: PI-22 (`REV#45`)
+78. L78 Diagnose a missing consumer dependency at configure: PI-23 (`REV#46`)
+79. L79 Apply the change-list rule to consumer build inputs: SM-79 (`REV#142`)
+80. L80 Detect tracked C++ sources omitted from CMake: SM-80 (`REV#51`)
+81. L81 Qualify native MSVC Release IPO before changing defaults: SM-81 (`REV#36`)
+82. L82 Establish consistent ASan instrumentation before scheduling it: SM-82 (`REV#49`)
+83. L83 Report invalid collider data at the collision/scene boundary: SM-83 (`REV#57`)
 
 **Stories**
 
@@ -1143,6 +1181,25 @@ not prerequisites for one custom pixel function.
 
 - [x] **[OCA-84](#oca-84)** Could · L · The Outside Adopter: Write one HLSL post material and build it for Windows and the browser
 
+- [ ] **[OCA-85](#oca-85)** Should · S · The Outside Adopter: Refuse a camera scale the engine cannot render correctly
+- [ ] **[SM-76](#sm-76)** Should · S · The Sole Owner-Maintainer: Refuse undefined integer conversions and division
+- [ ] **[OCA-86](#oca-86)** Should · S · The Outside Adopter: A short mouse click reaches the next fixed update
+- [ ] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
+- [ ] **[OCA-88](#oca-88)** Should · S · The Outside Adopter: Read a loaded texture's dimensions
+- [ ] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
+- [ ] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
+- [ ] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
+- [ ] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Drive Gamepads and Application with scripted native pad input
+- [ ] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
+- [ ] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
+- [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
+- [ ] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
+- [ ] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
+- [ ] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
+- [ ] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
+- [ ] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
+- [ ] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
+
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
   remaining work was `WEB#10`: add LineSweeper and the bundle
@@ -1153,6 +1210,388 @@ not prerequisites for one custom pixel function.
   entry only, since the image's Firefox makes no WebGL2 context without a
   GPU; the record is
   [web-to-be-tested.md](../port/web-to-be-tested.md#firefox-sample-checks-web4).
+
+The following eighteen stories were selected on 2026-11-16. Their acceptance
+describes future work; selection is not an implementation or test result.
+
+<a id="oca-85"></a>
+### OCA-85. Refuse unsupported negative camera scales
+
+Selected from [`REV#124`](../review/2026-11-12-work-audit/FINDINGS.md#rev124).
+The supported camera scale is finite and positive; mirroring is not selected.
+
+**Acceptance**
+
+- Camera operations and render/scene boundaries that require a valid scale
+  refuse zero, negative and non-finite values with a named
+  `std::invalid_argument` before invalid draw/cull calculations. Validate a
+  directly assigned public scale when consumed; valid positive-scale
+  behaviour is preserved.
+- The caller contract and CHANGES.md state the refusal; a mirrored view is
+  not silently represented by a negative-extent visible rectangle.
+
+**Boundaries and verification:** no camera mirroring or rotation feature.
+Focused camera and Scene culling tests cover hand-built/mutated cameras,
+framing, invalid-scale consumption and valid positive scales in native-null
+and wasm configurations; follow the render verification owner for changed
+render code, and run the website gate for published contracts.
+
+<a id="sm-76"></a>
+### SM-76. Guard integer geometry conversions and division
+
+Selected from [`REV#130`](../review/2026-11-12-work-audit/FINDINGS.md#rev130).
+
+**Acceptance**
+
+- RectangleI and Vector2I float conversions refuse NaN, infinity and values
+  whose truncated result cannot be represented as `int`. In-range values
+  retain truncation toward zero.
+- Vector2I division refuses zero divisors and `INT_MIN / -1`, including
+  compound and component forms, before any component is mutated.
+- Headers, CHANGES.md and affected callers state the checked contract.
+
+**Boundaries and verification:** this is the selected conversion/division
+repair, not a redesign of all integer rectangle arithmetic. LabradorMathTests
+cover representable boundaries, fractional values, every invalid component
+and unchanged compound-operation targets in native and wasm builds; the
+website gate checks the published contract.
+
+<a id="oca-86"></a>
+### OCA-86. Retain a short mouse click until the next fixed update
+
+Selected from [`REV#38`](../review/2026-11-10/FINDINGS.md#rev38).
+
+**Acceptance**
+
+- A press and release delivered between two mouse polls produce observable
+  edges at the next fixed update, exactly once, with held state still matching
+  the live button state. The snapshot and edge functions share one contract.
+- Focus loss and capture cancellation discard pending gesture edges without
+  synthesising a normal click or release on return.
+- The published mouse contract and CHANGES.md explain the behaviour change.
+
+**Boundaries and verification:** keyboard semantics remain unchanged; this
+adds no general event queue or gesture policy. InputTests cover short,
+held and repeated clicks, multiple buttons, focus and cancellation; native
+and browser window tests cover the feeds under the input verification plan.
+Synthetic coverage makes no claim about physical click frequency.
+
+<a id="oca-87"></a>
+### OCA-87. Reveal a normally visible window after its first completed frame
+
+Selected from [`REV#158`](../review/2026-11-12-work-audit/FINDINGS.md#rev158)
+and the recorded first-frame evidence in the client report's live ledger.
+
+**Acceptance**
+
+- The engine shows a normally visible native window only after its first
+  frame has completed, without exposing the startup white brush. Failure
+  before that frame reports through the existing error route.
+- Explicitly hidden startup stays hidden; STARTUPINFO, normal activation,
+  requested full screen, shutdown and sample smoke behaviour retain their
+  documented contracts. The game needs no platform-specific show call.
+- The report's disposition, window/application contracts, template change
+  list and CHANGES.md describe the resulting visible behaviour.
+
+**Boundaries and verification:** no splash screen or arbitrary delay. AppTests
+and native-null lifecycle cases pin hidden and visible state transitions;
+qualify first reveal, activation and full screen on all four native
+rasterisers, retaining dated visual evidence separately from automated
+results. Follow the app verification plan and required website checks.
+
+<a id="oca-88"></a>
+### OCA-88. Query the dimensions of a loaded texture
+
+Selected from [`REV#31`](../review/2026-11-10/FINDINGS.md#rev31).
+
+**Acceptance**
+
+- RenderResources exposes the dimensions in texels for a TextureHandle,
+  with the same handle validation and retained-resource contract as its
+  other queries. All five backends return the loaded texture's dimensions.
+- The first-picture guide uses the query instead of hand-typed dimensions;
+  the public header, reference and CHANGES.md publish the additive API.
+
+**Boundaries and verification:** a whole-texture drawable and device maximum
+dimensions are separate proposals. RenderTests cover known sizes, invalid
+handles and retained handles, including null; check every render backend and
+wasm under the render verification plan, plus the website gate. SM-77 uses
+this query rather than adding a second source of texture dimensions.
+
+<a id="sm-77"></a>
+### SM-77. Validate sprite-sheet frames against the atlas
+
+Selected from [`REV#30`](../review/2026-11-10/FINDINGS.md#rev30), after OCA-88.
+
+**Acceptance**
+
+- The loader receives the loaded atlas dimensions and checks the sampled
+  minimum/maximum endpoints of every frame and expanded strip with
+  overflow-safe arithmetic. Refuse genuinely out-of-atlas regions with a
+  diagnostic naming the sheet and offending frame or strip.
+- Preserve valid signed rectangles, their sign-based mirroring and existing
+  strip expansion, order and coordinates. Rejected content does not partially
+  publish a sprite sheet.
+- State and test an explicit zero-area policy after reviewing current callers
+  and compatibility. Retain the signed-rectangle contract cases; document any
+  changed accepted content and its migration in CHANGES.md and the authoring
+  guides rather than banning negative dimensions indiscriminately.
+
+**Boundaries and verification:** no implicit clamp, wrapping or atlas packing.
+AssetsTests cover valid signed regions, the zero-area policy, sampled atlas
+edges, strip expansion and arithmetic limits using the null resource path;
+repeat portable cases under wasm and
+check the website gate. This does not reopen the separate texture-limit API.
+
+<a id="oca-89"></a>
+### OCA-89. Parse a hex colour with an explicit failure result
+
+Selected from [`REV#34`](../review/2026-11-10/FINDINGS.md#rev34).
+
+**Acceptance**
+
+- Add an optional-returning `colour_from_hex` beside `colour_from_name`;
+  specify the accepted six/eight-digit syntax, prefix handling and alpha
+  interpretation, and return absence for malformed input.
+- Preserve the constructor and setter's existing documented black fallback.
+  Publish the additive API and alpha contract in the header and CHANGES.md.
+
+**Boundaries and verification:** no constructor break or broader colour-space
+change. RenderTests cover valid case variants, alpha and malformed lengths,
+digits and prefixes in native and wasm builds; run the website gate.
+
+<a id="oca-90"></a>
+### OCA-90. Let a game answer a native window-close request
+
+Selected from [`REV#39`](../review/2026-11-10/FINDINGS.md#rev39).
+
+**Acceptance**
+
+- Route native X, Alt+F4 and equivalent close requests through an app/state
+  hook so a game may defer or decline closure and show its own confirmation.
+  A game with no handler retains immediate close.
+- Separate a close request from final programmatic close, with repeated
+  requests, state transitions, callback lifetime and teardown specified.
+- The minimal template demonstrates its own confirmation policy; its change
+  list, public contracts and CHANGES.md explain the new mechanism.
+
+**Boundaries and verification:** the browser cannot promise a veto of tab
+closure or arbitrary page navigation; document that limit rather than
+simulating a cross-platform guarantee. AppTests and native-null state tests
+cover allow, decline, defer, repeat and teardown; follow the app verification
+plan, retain browser lifecycle checks, and run the website gate.
+
+<a id="sm-78"></a>
+### SM-78. Add a scripted native pad backend
+
+Selected from [`REV#40`](../review/2026-11-10/FINDINGS.md#rev40).
+
+**Acceptance**
+
+- A build-selected null input backend accepts scripted GamepadState snapshots
+  and records vibration requests without polling physical pads or adding a
+  runtime virtual call to the seam.
+- Native tests drive the shipping Gamepads and Application path through
+  connection changes, slot reuse, button edges, suspension and vibration
+  expiry/stop/teardown. Results do not depend on occupied host pad slots.
+- Update backend contracts, relevant presets/inventories and CHANGES.md;
+  explicitly reconcile the tracker report's request against this scope.
+
+**Boundaries and verification:** no game action map, recording file format
+or replay feature. InputTests and native-null app/sample integration tests
+cover scripted transport; XInput and web retain their existing coverage under
+the input/app verification owners. Physical pad and rumble acceptance stays
+open, and any new ctest entries update the inventory in the same commit.
+
+<a id="oca-91"></a>
+### OCA-91. Capture non-fatal engine diagnostics
+
+Selected from [`REV#41`](../review/2026-11-10/FINDINGS.md#rev41).
+
+**Acceptance**
+
+- One replaceable diagnostic callback receives existing non-fatal engine
+  messages, with stderr as the default and explicit lifetime, threading and
+  non-throwing callback requirements. Existing fatal-error propagation and
+  the browser's Module.onError contract remain intact.
+- Route the current backend and optional-resource messages through it;
+  publish the contract and an adopter example, with CHANGES.md updated.
+
+**Boundaries and verification:** no logging framework, channels, macros or
+shared fatal-error UI. Focused core/assets tests capture actual messages and
+default routing, with relevant backend checks for the moved sites; verify
+native and wasm paths, teardown safety and the website gate. A sink is not
+a reason to log once per object per frame.
+
+<a id="oca-92"></a>
+### OCA-92. Read the platform's reduced-motion preference
+
+Selected from [`REV#60`](../review/2026-11-10/FINDINGS.md#rev60).
+
+**Acceptance**
+
+- Expose the platform preference as a read-only fact through the app seam,
+  from Windows' client-area animation setting and the browser media query,
+  with a stated refresh/lifetime and unavailable-setting fallback.
+- LineSweeper is the first native caller and uses the same preference path
+  in its browser build. Its own options/effects remain game policy.
+- Public contracts, the reduced-motion guide and CHANGES.md state the
+  mechanism and its limits; amend the earlier browser-only scope explicitly.
+
+**Boundaries and verification:** no engine-wide automatic animation changes.
+AppTests and browser page fixtures cover both preference values and refresh
+semantics without changing the host's settings; LineSweeper view/state tests
+pin the game's response. Follow the app verification plan and regenerate
+and review captures only if presentation changes, plus the website gate.
+
+<a id="pi-22"></a>
+### PI-22. Publish release and development identity to code and CMake
+
+Selected from [`REV#45`](../review/2026-11-10/FINDINGS.md#rev45).
+
+**Acceptance**
+
+- One canonical release value feeds a public version header and CMake;
+  a documented development distinction prevents an arbitrary between-tag
+  checkout from claiming to be the tagged release. Source revision remains
+  a separate identity and works for archives as its contract states.
+- The release procedure and release checker hold the header, CMake,
+  manifest and release/tag convention to that value and distinction.
+- Consumer examples, public reference and CHANGES.md show the supported
+  release check without promising compatibility before 1.0.
+
+**Boundaries and verification:** no alias/deprecation policy change or
+automatic tag/publication. Offline release-check fixtures exercise agreement,
+drift and development states; compile a consumer's header check and inspect
+its CMake value, including a source archive, then run the website gate.
+
+<a id="pi-23"></a>
+### PI-23. Diagnose a missing consumer dependency at configure
+
+Selected from [`REV#46`](../review/2026-11-10/FINDINGS.md#rev46).
+
+**Acceptance**
+
+- A missing selected engine dependency gives a configure failure naming
+  the package, the consumer's manifest obligation and the engine manifest
+  to compare, while retaining CMake's useful discovery/error detail.
+- Diagnostics respect selected backends and optional material tools;
+  a different working consumer baseline is not rejected just for differing.
+- The pin-move/consumer guidance and CHANGES.md describe the advice.
+
+**Boundaries and verification:** no manifest rewriting, dependency installation
+or runtime staging helper; PI-11 retains its own gate. Configure-only consumer
+fixtures omit each applicable package and preserve a successful normal
+configuration, with failing-toolchain cases distinguished from missing
+manifest entries. Run affected CMake fixtures and the website gate.
+
+<a id="sm-79"></a>
+### SM-79. Cover consumer build inputs in the change-list rule
+
+Selected from [`REV#142`](../review/2026-11-12-work-audit/FINDINGS.md#rev142).
+
+**Acceptance**
+
+- Extend the rule's explicit paths to the root CMakeLists.txt,
+  engine/math/CMakeLists.txt and the actual consumer-executed CMake scripts,
+  alongside the existing governed paths. Inventory execution before choosing
+  paths; do not silently govern all tooling or all cmake files.
+- The existing `not consumer-visible` opt-out remains. CHANGES.md,
+  CONTRIBUTING, AGENTS.md and checker help describe the same policy.
+
+**Boundaries and verification:** this changes policy coverage, not the
+judgment of whether an entry is right. Offline checker fixtures prove each
+new path fails without an entry/opt-out, passes with either and excludes
+unrelated files; run the focused tooling suite, local lint and website gate.
+
+<a id="sm-80"></a>
+### SM-80. Detect tracked C++ sources omitted from CMake
+
+Selected from [`REV#51`](../review/2026-11-10/FINDINGS.md#rev51).
+
+**Acceptance**
+
+- A compiler-free check compares tracked .cpp paths under engine, tests,
+  samples and bench with their explicit CMake source declarations using
+  directory-aware paths, not basename matches.
+- Conditional/backend sources count as declared even when not built in the
+  host configuration. Unsupported declaration forms and real omissions have
+  actionable diagnostics and narrow explicit handling.
+- Add the check to the existing lint contract and document its lexical
+  limits without claiming every declared source is compiled or tested.
+
+**Boundaries and verification:** no glob-based build enumeration or doctest
+case-count floor. Offline fixtures include orphans, duplicate basenames,
+relative paths, target_sources and conditional sources; run local lint and
+the website gate. No compiler or new CI job is required by this check.
+
+<a id="sm-81"></a>
+### SM-81. Qualify native MSVC Release IPO before enabling it
+
+Selected from [`REV#36`](../review/2026-11-10/FINDINGS.md#rev36), using the
+[measured IPO record](../performance/2026-11-13-ipo-update-phase.md) as the
+starting evidence, not qualification of every build.
+
+**Acceptance**
+
+- Provide explicit native MSVC Release IPO selection and qualify clean,
+  incremental and consumer builds plus affected Release test suites before
+  enabling it by default in the repository's selected native Release builds.
+- Retain precise floating-point rules; record CPU phases, link/rebuild cost
+  and executable size against the same source without IPO. Preserve a
+  supported opt-out and document any qualification gaps.
+- Build policy, consumer guidance and CHANGES.md describe the selected scope.
+
+**Boundaries and verification:** do not set a consumer's global IPO policy or
+change wasm/clang defaults. No Vector2F header move is selected. Run affected
+native MSVC Release configurations and consumer checks, plus lint and the
+website gate; CPU-phase evidence does not establish FPS, display pacing or
+the unmeasured Radeon tier. Measurement/runtime authorisation remains explicit.
+
+<a id="sm-82"></a>
+### SM-82. Establish consistent ASan instrumentation before scheduling it
+
+Selected from [`REV#49`](../review/2026-11-10/FINDINGS.md#rev49).
+
+**Acceptance**
+
+- Define an opt-in native-null ASan configuration with consistently
+  instrumented engine, tests and applicable dependencies, including lodepng;
+  resolve annotation/link conflicts rather than treating an opt-out as the
+  completed instrumentation story.
+- Repair the allocation-failure test seam so its intended failure paths
+  remain covered under instrumentation. Establish a green full configured
+  suite without excluding, bypassing or weakening those tests.
+- Only after that qualification, add the planned scheduled lane, its exact
+  inventory and the truthful SECURITY/verification documentation together.
+  Preserve ordinary builds and keep schedule/settings changes explicit.
+
+**Boundaries and verification:** no fuzzing framework, TSan/UBSan claim or
+sanitizer default for consumers. Retain a deterministic sanitizer-detection
+probe plus allocation-failure regressions, native-null suite results and a
+dependency/instrumentation record; run affected tooling/lint and website
+checks. This planning selection runs no job and changes no live setting.
+
+<a id="sm-83"></a>
+### SM-83. Report invalid collider data at the collision/scene boundary
+
+Selected from [`REV#57`](../review/2026-11-10/FINDINGS.md#rev57).
+
+**Acceptance**
+
+- Invalid non-finite collider data has a named, observable result at the
+  collision/scene boundary instead of becoming silently uncollidable or
+  retired only as a side effect of scene bounds. State the result, timing
+  and rejected-object behaviour in the caller contract and CHANGES.md.
+- Preserve the documented total behaviour of low-level intersection
+  predicates and the valid-shape contact/culling path.
+
+**Boundaries and verification:** no general logging policy, per-object
+per-frame log or new shape feature. CollisionTests and SceneTests cover
+non-finite coordinates/extents with and without scene bounds, signal timing
+and valid controls; run native and wasm portable cases, relevant null scene
+integration checks and the website gate. A diagnostic sink does not replace
+the boundary's explicit result.
 
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game
