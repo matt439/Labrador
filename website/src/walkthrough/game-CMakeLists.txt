@@ -1,3 +1,6 @@
+set(GAME_ICON_FILE "" CACHE FILEPATH
+    "Optional absolute path to an .ico file embedded in the native game")
+
 # The game's rules, in a library that links the engine's maths and nothing else
 # of it, so the tests below run them with no window and no device.
 add_library(MyGameRules STATIC
@@ -76,6 +79,34 @@ target_link_libraries(MyGame PRIVATE
     LabradorEngine
     labrador_settings
 )
+
+if(NOT "${GAME_ICON_FILE}" STREQUAL "")
+    if(GAME_ICON_FILE MATCHES ";")
+        message(FATAL_ERROR "GAME_ICON_FILE cannot contain a semicolon: ${GAME_ICON_FILE}")
+    endif()
+    if(NOT IS_ABSOLUTE "${GAME_ICON_FILE}")
+        message(FATAL_ERROR
+            "GAME_ICON_FILE must be an absolute path to your .ico file: ${GAME_ICON_FILE}")
+    endif()
+    if(NOT EXISTS "${GAME_ICON_FILE}" OR IS_DIRECTORY "${GAME_ICON_FILE}")
+        message(FATAL_ERROR
+            "GAME_ICON_FILE does not name an existing .ico file: ${GAME_ICON_FILE}. "
+            "Supply your icon or clear the option with -DGAME_ICON_FILE=.")
+    endif()
+    get_filename_component(game_icon_extension "${GAME_ICON_FILE}" LAST_EXT)
+    string(TOLOWER "${game_icon_extension}" game_icon_extension)
+    if(NOT game_icon_extension STREQUAL ".ico")
+        message(FATAL_ERROR "GAME_ICON_FILE must name an .ico file: ${GAME_ICON_FILE}")
+    endif()
+    file(TO_CMAKE_PATH "${GAME_ICON_FILE}" game_icon_path)
+    enable_language(RC)
+    target_sources(MyGame PRIVATE game_icon.rc)
+    target_compile_definitions(MyGame PRIVATE
+        GAME_HAS_ICON_RESOURCE=1
+        "GAME_ICON_FILE=\"${game_icon_path}\""
+    )
+    set_property(SOURCE game_icon.rc APPEND PROPERTY OBJECT_DEPENDS "${game_icon_path}")
+endif()
 
 # The start-up check: the game hidden, a few frames drawn, and out. It needs a
 # graphics device, and a missing content file fails it naming the file.

@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace labrador
@@ -166,6 +167,7 @@ namespace labrador
 		// A browser has neither a window class nor a title of the game's - the
 		// page owns both - so neither is read there.
 		std::wstring window_class_name = L"LabradorWindowClass";
+		// Native construction refuses embedded NUL rather than truncating text.
 		std::wstring window_title = L"Labrador";
 
 		// CLIENT pixels - the area the game draws into, not the outer rect.
@@ -192,6 +194,16 @@ namespace labrador
 
 		int min_window_width = 320;
 		int min_window_height = 200;
+
+		// Optional named icon resource in the process executable, not a file
+		// path or a resource in the engine's module. On Windows a requested name
+		// must be nonempty, contain no NUL and load successfully, or construction
+		// throws std::invalid_argument for an empty/NUL name or std::runtime_error
+		// naming a failed lookup. Unset looks for IDI_ICON and permits its absence.
+		// Both class icon fields borrow the shared LoadIconW handle for the
+		// process lifetime; the Window does not destroy it. Ignored in a browser,
+		// whose host page owns its favicon.
+		std::optional<std::wstring> window_icon_resource = std::nullopt;
 	};
 
 	// The platform's window: a Win32 window on Windows (engine/app/win32/) and
@@ -344,6 +356,15 @@ namespace labrador
 		// by close(), by the player, or by an exception it caught - each of
 		// them does nothing and reports nothing to notify.
 		void close() const;
+
+		// Changes the native caption without showing, activating or resizing the
+		// window. Call on its creating thread. Empty text clears the caption;
+		// embedded NUL throws std::invalid_argument instead of truncating it.
+		// A failed native call throws std::runtime_error. A caught window-handler
+		// exception is rethrown after the native call unwinds. After close this
+		// is a no-op.
+		// In a browser this does nothing: the host owns document.title.
+		void set_title(const std::wstring& title) const;
 
 		// Resizes so `client_size` pixels are left to draw into, under
 		// whatever frame the window is currently wearing, and reports what it

@@ -83,18 +83,53 @@ class PortableExecutable:
                 return raw_pointer + rva - virtual_address
         raise ManifestError(f"RVA {rva:#x} is in no section")
 
-    def resource(self, type_id: int, name_id: int) -> bytes | None:
-        """The first language's bytes of resource type_id/name_id, or None."""
+    def resource(self, type_id: int | str, name_id: int | str) -> bytes | None:
+        """The first language's bytes of resource type_id/name_id, or None.
+
+        Integers select numeric IDs; strings select exact UTF-16 names. This
+        reads metadata and does not emulate Windows' resource selection.
+        """
         if not self.resource_rva:
             return None
         root = self.offset(self.resource_rva)
 
-        def find(directory: int, wanted: int | None) -> int | None:
-            named, numbered = self.unpack("<HH", directory + 12)
+        def section_limit(rva: int) -> int:
+            for virtual_address, size, raw_pointer, raw_size in self.sections:
+                if virtual_address <= rva < virtual_address + size:
+                    return min(raw_pointer + raw_size, len(self.data))
+            raise ManifestError(f"RVA {rva:#x} is in no section")
+
+        directory_limit = section_limit(self.resource_rva)
+
+        def metadata(layout: str, offset: int, role: str) -> tuple:
+            if offset < root or offset + struct.calcsize(layout) > directory_limit:
+                raise ManifestError(f"truncated resource {role}")
+            return self.unpack(layout, offset)
+
+        def resource_name(identifier: int) -> str:
+            start = root + (identifier & 0x7FFFFFFF)
+            length = metadata("<H", start, "name")[0]
+            # A resource string has a WORD count of UTF-16 code units. Check
+            # its complete bounded range before slicing or decoding it.
+            end = start + 2 + 2 * length
+            if end > directory_limit:
+                raise ManifestError("truncated resource name")
+            try:
+                return self.data[start + 2:end].decode("utf-16-le")
+            except UnicodeDecodeError as error:
+                raise ManifestError("resource name is not valid UTF-16") from error
+
+        def find(directory: int, wanted: int | str | None) -> int | None:
+            named, numbered = metadata("<HH", directory + 12, "directory")
+            end = directory + 16 + 8 * (named + numbered)
+            if end > directory_limit:
+                raise ManifestError("truncated resource directory entries")
             for index in range(named + numbered):
-                identifier, target = self.unpack("<II", directory + 16 + 8 * index)
+                identifier, target = metadata("<II", directory + 16 + 8 * index, "directory entry")
                 is_name = identifier & 0x80000000
-                if wanted is None or (not is_name and identifier == wanted):
+                if wanted is None or (isinstance(wanted, str) and is_name and
+                                      resource_name(identifier) == wanted) or (
+                        isinstance(wanted, int) and not is_name and identifier == wanted):
                     return target
             return None
 
@@ -111,10 +146,10 @@ class PortableExecutable:
             level = root + (target & 0x7FFFFFFF)
         else:
             raise ManifestError("resource tree is deeper than type, name and language")
-        data_rva, size = self.unpack("<II", level)
+        data_rva, size = metadata("<II", level, "data entry")
         start = self.offset(data_rva)
-        if start + size > len(self.data):
-            raise ManifestError("truncated manifest resource")
+        if start + size > section_limit(data_rva):
+            raise ManifestError("truncated resource data")
         return self.data[start:start + size]
 
 

@@ -1,0 +1,2 @@
+// The optional GAME_ICON_FILE build setting supplies the author's .ico file.
+GAME_ICON ICON GAME_ICON_FILE

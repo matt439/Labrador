@@ -14,6 +14,7 @@ labrador_add_test_suite(AppTests
     LINKS LabradorEngine
 )
 if(NOT EMSCRIPTEN)
+    enable_language(RC)
     target_sources(AppTests PRIVATE
         application_order_tests.cpp
         keyboard_input_tests.cpp
@@ -22,8 +23,17 @@ if(NOT EMSCRIPTEN)
         system_command_tests.cpp
         window_tests.cpp
         win32/display_info_tests.cpp
+
+        window_title_icon_tests.cpp
+        window_icon_fixture.rc
+        window_icon_fixture.ico
         ../../engine/app/web/dom_events.cpp
     )
+    target_compile_definitions(AppTests PRIVATE
+        "WINDOW_ICON_FIXTURE_FILE=\"${CMAKE_CURRENT_SOURCE_DIR}/window_icon_fixture.ico\""
+    )
+    set_property(SOURCE window_icon_fixture.rc APPEND PROPERTY OBJECT_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/window_icon_fixture.ico")
 
     # The child startup_info_tests.cpp launches with a STARTUPINFO of its own,
     # to see whether the engine's first ShowWindow honours it. A Windows
@@ -45,6 +55,7 @@ endif()
 # drives a native HWND and its real size notification.
 if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
     AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
+    target_compile_definitions(AppTests PRIVATE LABRADOR_TEST_APP_NULL=1)
     target_sources(AppTests PRIVATE
         application_loop_tests.cpp
         application_reveal_tests.cpp

@@ -4,6 +4,7 @@
 #include "engine/app/win32/keyboard_input.h"
 #include "engine/app/win32/pointer_input.h"
 #include "engine/app/win32/system_command.h"
+#include "engine/render/text_encoding.h"
 
 #include <Windows.h>
 
@@ -18,6 +19,32 @@ namespace labrador
 {
 	namespace
 	{
+		HICON window_icon(const WindowOptions& options, HINSTANCE instance)
+		{
+			const bool requested = options.window_icon_resource.has_value();
+			const wchar_t* name = L"IDI_ICON";
+			if (requested)
+			{
+				const std::wstring& resource = *options.window_icon_resource;
+				if (resource.empty() || resource.find(L'\0') != std::wstring::npos)
+				{
+					throw std::invalid_argument(
+						"WindowOptions::window_icon_resource must be nonempty and contain no NUL.");
+				}
+				name = resource.c_str();
+			}
+			// LoadIconW returns a shared resource handle. It is borrowed by the
+			// class, including through a failed construction; never DestroyIcon it.
+			const HICON icon = LoadIconW(instance, name);
+			const DWORD error = GetLastError();
+			if (requested && icon == nullptr)
+			{
+				throw std::runtime_error("Could not load explicitly requested window icon resource '" +
+					narrow(*options.window_icon_resource) + "' from the process executable (Win32 error " +
+					std::to_string(error) + ").");
+			}
+			return icon;
+		}
 
 		// The thumb buttons ride in the high word. There is no ceiling on how
 		// many a mouse may report, so anything past the second answers
@@ -429,18 +456,22 @@ namespace labrador
 		min_height(options.min_window_height),
 		class_name(options.window_class_name)
 	{
+		if (options.window_title.find(L'\0') != std::wstring::npos)
+		{
+			throw std::invalid_argument("WindowOptions::window_title must contain no NUL.");
+		}
 		WNDCLASSEXW window_class = {};
 		window_class.cbSize = sizeof(WNDCLASSEXW);
 		window_class.style = CS_HREDRAW | CS_VREDRAW;
 		window_class.lpfnWndProc = window_proc;
 		window_class.hInstance = this->instance;
-		window_class.hIcon = LoadIconW(this->instance, L"IDI_ICON");
+		window_class.hIcon = window_icon(options, this->instance);
 		window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
 		// The renderer owns the client pixels, including after a resize. A
 		// system brush can erase a completed frame during the first reveal.
 		window_class.hbrBackground = nullptr;
 		window_class.lpszClassName = options.window_class_name.c_str();
-		window_class.hIconSm = LoadIconW(this->instance, L"IDI_ICON");
+		window_class.hIconSm = window_class.hIcon;
 
 		if (RegisterClassExW(&window_class) == 0)
 		{
@@ -797,6 +828,30 @@ namespace labrador
 
 	// EVERY CALL BELOW DOES NOTHING ONCE THE WINDOW HAS GONE (window.h), as
 	// close() does: there is no handle to size, style or clip.
+	void Window::set_title(const std::wstring& title) const
+	{
+		if (this->impl_->handle == nullptr)
+		{
+			return;
+		}
+		if (title.find(L'\0') != std::wstring::npos)
+		{
+			throw std::invalid_argument("Window::set_title requires text without NUL.");
+		}
+		SetLastError(ERROR_SUCCESS);
+		const BOOL changed = SetWindowTextW(this->impl_->handle, title.c_str());
+		const DWORD error = GetLastError();
+		if (this->impl_->failure)
+		{
+			std::rethrow_exception(this->impl_->failure);
+		}
+		if (changed == FALSE)
+		{
+			throw std::runtime_error("Could not set the native window title (Win32 error " +
+				std::to_string(error) + ").");
+		}
+	}
+
 	void Window::resize_client(const Vector2I& client_size) const
 	{
 		if (this->impl_->handle == nullptr)

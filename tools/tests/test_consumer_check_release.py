@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -57,6 +58,41 @@ class CheckReleaseTests(unittest.TestCase):
                     with mock.patch("sys.argv", arguments), contextlib.redirect_stdout(io.StringIO()), \
                             contextlib.redirect_stderr(io.StringIO()) as errors:
                         self.assertEqual(check_release.main(), expected, errors.getvalue())
+
+    def test_optional_icon_flag_checks_metadata_and_default_stays_unchanged(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            engine, folder = Path(temporary, "engine"), Path(temporary, "release")
+            listing = engine / check_release.LIST
+            listing.parent.mkdir(parents=True)
+            listing.write_text("MyGame.exe  The game.\n", encoding="utf-8")
+            folder.mkdir()
+            program = folder / "MyGame.exe"
+            group = struct.pack("<HHHBBBBHHIH", 0, 1, 1, 16, 16, 0, 0, 1, 32, 8, 7)
+            valid = images.image([(24, 1, images.TEMPLATE), (14, "GAME_ICON", group), (3, 7, b"12345678")])
+            missing = images.image([(24, 1, images.TEMPLATE)])
+            malformed = images.image([(24, 1, images.TEMPLATE), (14, "GAME_ICON", b"bad")])
+            cases = [(valid, ["--icon-resource", "GAME_ICON"], 0, "referenced image payload"),
+                     (missing, ["--icon-resource", "GAME_ICON"], 1, "no named RT_GROUP_ICON"),
+                     (malformed, ["--icon-resource", "GAME_ICON"], 1, "truncated group header"),
+                     (malformed, [], 0, "dpiAwareness"),
+                     (missing, [], 0, "dpiAwareness")]
+            for data, extra, expected, complaint in cases:
+                with self.subTest(extra=extra, expected=expected):
+                    program.write_bytes(data)
+                    arguments = ["check_release.py", str(folder), "--engine", str(engine), *extra]
+                    output, errors = io.StringIO(), io.StringIO()
+                    with mock.patch("sys.argv", arguments), contextlib.redirect_stdout(output), \
+                            contextlib.redirect_stderr(errors):
+                        self.assertEqual(check_release.main(), expected, errors.getvalue())
+                    self.assertIn(complaint, output.getvalue() + errors.getvalue())
+
+    def test_empty_explicit_icon_name_is_not_silently_ignored(self):
+        with mock.patch("sys.argv", ["check_release.py", ".", "--icon-resource", ""]), \
+                contextlib.redirect_stderr(io.StringIO()) as errors:
+            with self.assertRaises(SystemExit) as failure:
+                check_release.main()
+        self.assertEqual(failure.exception.code, 2)
+        self.assertIn("nonempty resource name", errors.getvalue())
 
 
 if __name__ == "__main__":

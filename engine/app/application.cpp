@@ -16,6 +16,7 @@
 #include <string>
 #include <thread>
 #include <tuple>
+#include <utility>
 
 namespace labrador
 {
@@ -76,6 +77,7 @@ namespace labrador
 		window_options.cursor_confined = options.cursor_confined;
 		window_options.min_window_width = options.min_window_width;
 		window_options.min_window_height = options.min_window_height;
+		window_options.window_icon_resource = options.window_icon_resource;
 		return window_options;
 	}
 
@@ -350,6 +352,16 @@ namespace labrador
 	bool Application::fullscreen() const
 	{
 		return this->options_.fullscreen;
+	}
+
+	void Application::set_window_title(const std::wstring& title)
+	{
+		std::wstring requested = title;
+		if (this->window_)
+		{
+			this->window_->set_title(requested);
+		}
+		this->options_.window_title = std::move(requested);
 	}
 
 	// Kept in the options as well as handed on, so a call before the window

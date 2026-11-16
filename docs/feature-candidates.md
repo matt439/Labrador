@@ -85,7 +85,7 @@ concrete client need.
 | `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Implemented 2026-11-17 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-authored rectangles; capture, focus and expansion stay with each page |
 | `IDEA#14` | Present interval and render-rate control | could | M | Vsync control landed; unfocused visible-window cap deferred 2026-11-16 until measured cost or client need |
 | `IDEA#15` | Display refresh rate in the device report | could | S | Selected 2026-11-16 as [SM-86](product/BACKLOG.md#sm-86), nominal monitor metadata with an explicit unknown state; implementation open |
-| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Selected 2026-11-16 as [OCA-107](product/BACKLOG.md#oca-107), preserving defaults and diagnosing an explicitly requested missing icon; implementation open |
+| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Implemented through [OCA-107](product/BACKLOG.md#oca-107), focused checks passed; combined app sweep remains open |
 | `IDEA#17` | Cursor shapes | could | S | Selected 2026-11-16 as [OCA-113](product/BACKLOG.md#oca-113), system/CSS cursors with the gallery as first caller; implementation open |
 | `IDEA#18` | A side-by-side two-player layout | could | XS | Deferred 2026-11-16 until a selected game or guide needs left and right panes |
 | `IDEA#19` | Rectangle intersection and shortest-arc angle helpers | could | XS | Deferred 2026-11-16: rectangle intersection follows GAP#5 clipping; angle helpers need an aiming/turning caller |
@@ -519,12 +519,13 @@ it; the pacing method cites it in place of the operator's note.
 
 ## IDEA#16. Window title at run time, and a diagnosed window icon
 
-**Result, 2026-11-16:** selected as
-[OCA-107](product/BACKLOG.md#oca-107): a run-time native title and an optional
-explicit icon request whose missing resource fails clearly. Existing defaults
-are preserved; the browser page owns its title and icon. This narrows the
-default-icon question in the original proposal below. Implementation and
-qualification remain open.
+**Result, 2026-11-17:** implemented through
+[OCA-107](product/BACKLOG.md#oca-107): native title updates and an explicit
+named icon request, with shared-handle ownership and missing-resource failure
+defined. Defaults remain optional and the browser host retains its metadata.
+The owner-supplied icon recipe, hidden tests, portable resource checks and
+installed consumer proof passed focused qualification; the combined app sweep
+remains open in the story. The original proposal below remains context.
 
 **Present evidence:** `window_title` is read once from `ApplicationOptions`
 and nothing changes it afterwards. The Win32 window loads an icon resource

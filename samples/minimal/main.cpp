@@ -126,6 +126,11 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		// A game that fans out says so here; this one does not.
 		options.view_capacity = 1;
 
+#if defined(GAME_HAS_ICON_RESOURCE)
+		// CMake enables this block only when GAME_ICON_FILE selects your icon.
+		options.window_icon_resource = L"GAME_ICON";
+#endif
+
 		Application app(std::move(options));
 #if defined(LABRADOR_SAMPLE_PROCESS_OBSERVATIONS)
 		minimal_observation::ProcessReport process_report(&app, smoke_test,

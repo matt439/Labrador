@@ -1036,6 +1036,10 @@ namespace labrador
 	// Every call from here down does nothing once the window has closed
 	// (window.h), as close() does: a closed window listens to nothing and
 	// reports nothing.
+	void Window::set_title(const std::wstring&) const
+	{
+	}
+
 	void Window::resize_client(const Vector2I&) const
 	{
 		if (this->impl_->closed)

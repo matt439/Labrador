@@ -103,6 +103,50 @@ To keep matching symbols for a failure that appears only in the optimized game, 
 optional [Release-symbols recipe](/docs/guides/release-symbols/). It preserves the Release
 choices and keeps the PDB and source evidence privately, outside the installed game folder.
 
+## Your native title and optional icon
+
+Your game's title and artwork are yours to supply. A native state can change the caption with:
+
+```cpp
+this->app_->set_window_title(L"Your title");
+```
+
+Call it on the application thread. Before initialization it selects startup text; later it
+updates the window without showing or resizing it. Empty text clears the caption. Native
+startup and the runtime setter refuse embedded NUL instead of silently truncating the text.
+A browser page keeps ownership of its document title and favicon; these native operations
+do not change either.
+
+The current development template includes `game_icon.rc` and an optional `GAME_ICON_FILE`
+recipe. They are absent from the `v0.3.0` starter. To use the new runtime methods or copied
+template code, first follow [Move a starter project to a newer Labrador](/docs/guides/starter-update/)
+or [Move your engine pin](/docs/guides/move-pin/) with an engine containing the additions.
+Updating the engine alone does not replace your copied `game` files; the
+<RepoLink path="docs/window-icons.md">icon recipe</RepoLink> names the three pieces to take
+together and their placement.
+
+With your icon saved as `C:\dev\mygame\game\app.ico`, configure the Release choice explicitly:
+
+```bat
+cmake --preset x64-release "-DGAME_ICON_FILE=C:/dev/mygame/game/app.ico"
+cmake --build --preset x64-release
+ctest --preset x64-release
+```
+
+The path must name an existing `.ico`; configure names an explicitly missing file, and the
+resource compiler reports a malformed icon. The guarded native entry selects the named
+`GAME_ICON` resource. At runtime an explicit icon name that cannot load stops startup with
+that name. Leaving the choice empty retains the ordinary optional `IDI_ICON` lookup.
+The engine borrows the shared resource handles and does not destroy them.
+
+Use the install command above afterward. The `.ico` is compiled into the executable: the
+release list stays the same, with no loose icon or new installer for a player. CI builds this
+optional recipe in its assembled consumer copy, checks the native entry's compile definition,
+checks the installed named group and image resources, and runs its hidden startup check.
+Those checks establish resource delivery and lookup; Explorer/taskbar appearance with your
+artwork and display scaling are separate observations. The existing scaled-display
+qualification applies; no new physical DPI support is claimed by the icon recipe.
+
 ## The MSVC runtime
 
 The game and `DirectXTK.dll` are built with Visual Studio, and they load its runtime:

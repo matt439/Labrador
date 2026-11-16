@@ -41,6 +41,15 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** `GAME_ICON_FILE` optionally embeds an icon supplied by the
+  game owner. Copy `game_icon.rc`, the native CMake block and main.cpp's
+  `GAME_HAS_ICON_RESOURCE` block together; the latter explicitly selects
+  `GAME_ICON`. An empty option preserves the ordinary default and supplies no
+  branding. The icon stays inside the installed executable. Native titles can
+  change through `Application::set_window_title`; browser title/favicon stay
+  with the host page. [The recipe](../../docs/window-icons.md) gives the build
+  and install commands.
+
 - **2026-11-17.** Development engines can load a required PCM WAV as a `wave`
   manifest asset, with one bank, wave and effect sharing the asset's name.
   [Play a sound in your game](https://labradorengine.com/docs/guides/your-sound/)

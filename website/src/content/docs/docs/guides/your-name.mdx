@@ -44,10 +44,12 @@ cd /d C:\dev\mygame
    powershell -NoProfile -Command "if ($env:NAME -notmatch '^[A-Za-z][A-Za-z0-9]*$') { 'The name must be letters and digits only, starting with a letter. Nothing was changed.'; exit 1 }; if (-not (Test-Path game\main.cpp)) { 'This is not your project''s folder. Nothing was changed.'; exit 1 }; $n = 0; foreach ($f in 'CMakeLists.txt', 'game\CMakeLists.txt') { $p = (Resolve-Path $f).Path; $t = [IO.File]::ReadAllText($p); $n += ([regex]::Matches($t, 'MyGame')).Count; [IO.File]::WriteAllText($p, $t.Replace('MyGame', $env:NAME)) }; $p = (Resolve-Path vcpkg.json).Path; $t = [IO.File]::ReadAllText($p); [IO.File]::WriteAllText($p, $t.Replace('\"name\": \"mygame\"', '\"name\": \"' + $env:NAME.ToLower() + '\"')); 'Replaced MyGame ' + $n + ' times.'"
    ```
 
-   It is one line, and takes about a second. In a starter project it prints:
+   It is one line, and takes about a second. The `v0.3.0` starter prints
+   `Replaced MyGame 27 times.`. The current development template also has two
+   optional-icon target lines, so its output is:
 
-   ```text title="Output"
-   Replaced MyGame 27 times.
+   ```text title="Current development starter"
+   Replaced MyGame 29 times.
    ```
 
    What it changed:
@@ -155,6 +157,10 @@ cd /d C:\dev\mygame
    `out\build\x64-debug\game\SkyHopper.exe`, and `MyGame.exe` is gone.
 
 </Steps>
+
+For a title that changes while the native game runs, or an optional icon you supply, use
+[the native title and icon recipe](/docs/guides/windows-release/#your-native-title-and-optional-icon).
+The browser page retains its own title and favicon.
 
 ## The new name on other pages
 

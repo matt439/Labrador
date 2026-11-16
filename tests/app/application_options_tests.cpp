@@ -3,6 +3,7 @@
 #include "engine/app/application.h"
 #include "engine/app/window.h"
 #include "engine/core/step_timer.h"
+#include "engine/input/scripted_gamepad_source.h"
 #include "engine/math/vector2i.h"
 
 #include <stdexcept>
@@ -39,6 +40,20 @@ TEST_CASE("the original positional window fields retain their aggregate position
 	CHECK(options.window_class_name == L"FixtureClass");
 	CHECK(options.window_title == L"Fixture title");
 	CHECK(options.scripted_gamepad_source == nullptr);
+}
+
+TEST_CASE("the optional icon leaves all prior aggregate fields in place")
+{
+	ScriptedGamepadSource source;
+	const ApplicationOptions application{ L"FixtureClass", L"Fixture title",
+		ScreenResolution::s_1280_720, std::nullopt, false, true, true, false,
+		60, true, 1, 1, 4, 320, 200, &source };
+	CHECK(application.scripted_gamepad_source == &source);
+	CHECK_FALSE(application.window_icon_resource.has_value());
+	const WindowOptions window{ L"FixtureClass", L"Fixture title", Vector2I(640, 360),
+		false, false, true, false, 320, 200 };
+	CHECK(window.min_window_height == 200);
+	CHECK_FALSE(window.window_icon_resource.has_value());
 }
 
 TEST_CASE("the thread ceiling defaults to what the machine reports")
@@ -136,6 +151,7 @@ TEST_CASE("the window an Application opens carries every window field of its opt
 	ApplicationOptions options;
 	options.window_class_name = L"WindowOptionsForClass";
 	options.window_title = L"Window options for";
+	options.window_icon_resource = L"NamedGameIcon";
 	options.client_size = Vector2I(900, 500);
 	options.fullscreen = true;
 	options.visible = false;
@@ -148,6 +164,7 @@ TEST_CASE("the window an Application opens carries every window field of its opt
 	const WindowOptions window = window_options_for(options, Vector2I(640, 360));
 	CHECK(window.window_class_name == options.window_class_name);
 	CHECK(window.window_title == options.window_title);
+	CHECK(window.window_icon_resource == options.window_icon_resource);
 	CHECK(window.client_size == Vector2I(640, 360));
 	CHECK(window.fullscreen);
 	CHECK_FALSE(window.visible);
@@ -161,6 +178,7 @@ TEST_CASE("the window an Application opens carries every window field of its opt
 	const WindowOptions plain = window_options_for(defaults, Vector2I(320, 200));
 	CHECK(plain.window_class_name == defaults.window_class_name);
 	CHECK(plain.window_title == defaults.window_title);
+	CHECK_FALSE(plain.window_icon_resource.has_value());
 	CHECK(plain.fullscreen == defaults.fullscreen);
 	CHECK(plain.visible == defaults.visible);
 	CHECK(plain.cursor_visible == defaults.cursor_visible);

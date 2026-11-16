@@ -127,6 +127,29 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Set native window titles and select optional icon resources
+
+**New API and optional native resources.** `Application::set_window_title`
+and `Window::set_title` update a native caption; a browser host keeps its
+document title. `ApplicationOptions::window_icon_resource` and the matching
+WindowOptions field select a named icon in the process executable. An
+explicit missing resource fails startup by name. An unset choice still tries
+`IDI_ICON` and permits its absence. Shared icon handles belong to the process
+resource cache, and the window does not destroy them. Browsers ignore the
+native icon choice and retain their favicon.
+
+The template's optional `GAME_ICON_FILE` builds a caller-supplied `.ico` into
+the executable as `GAME_ICON`; `main.cpp` explicitly selects it only with
+that option enabled. Copies wanting the recipe take `game_icon.rc`, the
+native CMake block and the guarded main.cpp assignment together. The installed
+game needs no loose icon file or additional installer.
+
+**Checked text.** Native startup titles containing embedded NUL now throw
+`std::invalid_argument` instead of being silently truncated. The new runtime
+setter refuses them too. Remove or deliberately truncate such text before
+handing it to the window; empty captions remain valid. New option fields are
+appended with defaults, preserving earlier aggregate field positions.
+
 ### 2026-11-17 - Load direct PCM WAV assets and owned memory banks
 
 **New audio input.** A `wave` manifest asset loads `<directory>/<name>.wav`
