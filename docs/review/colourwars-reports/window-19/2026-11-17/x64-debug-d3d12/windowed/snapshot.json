@@ -1,0 +1,65 @@
+{
+  "requested_utc": "2026-11-16T14:01:38.300Z",
+  "completed_utc": "2026-11-16T14:01:38.436Z",
+  "retained_utc": "2026-11-16T14:01:44.750Z",
+  "window": {
+    "app": "process:C:\\Projects\\Labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-d3d12\\RevealCaptureWindowed.exe",
+    "id": 28511538,
+    "title": "Labrador OCA-87 capture - windowed"
+  },
+  "screenshot": {
+    "id": "screenshot-0",
+    "width": 1282,
+    "height": 752,
+    "originX": 163,
+    "originY": 156
+  },
+  "inspection": "Direct3D 12 windowed: greeting and full control hint drawn clearly on black client pixels; no white class-brush area in this snapshot.",
+  "client_crop": {
+    "box_in_snapshot": [
+      1,
+      31,
+      1281,
+      751
+    ],
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "c8340ae64f2641f1f5ff6841e3575e15fe29980a19fc978c0da9b42abf21430a",
+    "geometry_event": {
+      "event": "client_redraw_exported",
+      "utc_epoch_ms": 1794837694066,
+      "elapsed_ms": 971.518,
+      "frame": 1,
+      "visible": true,
+      "foreground": true,
+      "fullscreen": false,
+      "client_origin": [
+        164,
+        187
+      ],
+      "client_size": [
+        1280,
+        720
+      ],
+      "window_rect": [
+        156,
+        156,
+        1452,
+        915
+      ],
+      "frame_rect": [
+        163,
+        156,
+        1445,
+        908
+      ],
+      "window_dpi": 96,
+      "buffer_size": [
+        1280,
+        720
+      ]
+    }
+  }
+}

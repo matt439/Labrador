@@ -1,0 +1,65 @@
+{
+  "requested_utc": "2026-11-16T14:02:53.714Z",
+  "completed_utc": "2026-11-16T14:02:53.852Z",
+  "retained_utc": "2026-11-16T14:03:00.241Z",
+  "window": {
+    "app": "process:C:\\Projects\\Labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-vulkan\\RevealCaptureWindowed.exe",
+    "id": 1772986,
+    "title": "Labrador OCA-87 capture - windowed"
+  },
+  "screenshot": {
+    "id": "screenshot-0",
+    "width": 1282,
+    "height": 752,
+    "originX": 111,
+    "originY": 104
+  },
+  "inspection": "Vulkan windowed: greeting and complete bottom control hint rendered clearly on black client pixels; no white class-brush area in this snapshot.",
+  "client_crop": {
+    "box_in_snapshot": [
+      1,
+      31,
+      1281,
+      751
+    ],
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "cd89a00e86d06db2e8937da0df5f3051eab756aaab55eb00a82776858e043860",
+    "geometry_event": {
+      "event": "client_redraw_exported",
+      "utc_epoch_ms": 1794837766683,
+      "elapsed_ms": 921.873,
+      "frame": 1,
+      "visible": true,
+      "foreground": true,
+      "fullscreen": false,
+      "client_origin": [
+        112,
+        135
+      ],
+      "client_size": [
+        1280,
+        720
+      ],
+      "window_rect": [
+        104,
+        104,
+        1400,
+        863
+      ],
+      "frame_rect": [
+        111,
+        104,
+        1393,
+        856
+      ],
+      "window_dpi": 96,
+      "buffer_size": [
+        1280,
+        720
+      ]
+    }
+  }
+}

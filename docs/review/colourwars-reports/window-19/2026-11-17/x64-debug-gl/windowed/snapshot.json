@@ -1,0 +1,65 @@
+{
+  "requested_utc": "2026-11-16T14:02:15.353Z",
+  "completed_utc": "2026-11-16T14:02:15.502Z",
+  "retained_utc": "2026-11-16T14:02:22.548Z",
+  "window": {
+    "app": "process:C:\\Projects\\Labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-gl\\RevealCaptureWindowed.exe",
+    "id": 10292472,
+    "title": "Labrador OCA-87 capture - windowed"
+  },
+  "screenshot": {
+    "id": "screenshot-0",
+    "width": 1282,
+    "height": 752,
+    "originX": 241,
+    "originY": 234
+  },
+  "inspection": "OpenGL windowed: greeting and complete bottom control hint rendered clearly on black client pixels; no white class-brush area in this snapshot.",
+  "client_crop": {
+    "box_in_snapshot": [
+      1,
+      31,
+      1281,
+      751
+    ],
+    "size": [
+      1280,
+      720
+    ],
+    "sha256": "23ed3ff06426306196fa183d8acb2d85e01b8f814d5b83d9828c16d2d73b4ddc",
+    "geometry_event": {
+      "event": "client_redraw_exported",
+      "utc_epoch_ms": 1794837730850,
+      "elapsed_ms": 286.544,
+      "frame": 1,
+      "visible": true,
+      "foreground": true,
+      "fullscreen": false,
+      "client_origin": [
+        242,
+        265
+      ],
+      "client_size": [
+        1280,
+        720
+      ],
+      "window_rect": [
+        234,
+        234,
+        1530,
+        993
+      ],
+      "frame_rect": [
+        241,
+        234,
+        1523,
+        986
+      ],
+      "window_dpi": 96,
+      "buffer_size": [
+        1280,
+        720
+      ]
+    }
+  }
+}
