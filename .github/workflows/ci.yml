@@ -216,6 +216,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_linesweeper_layer_fixtures.cmake
 
+      - name: Check tracked C++ source enumeration
+        run: python tools/check_source_enumeration.py
+
       - name: Check source revision and archive metadata without a compiler
         run: cmake "-DREPO_DIR=${{ github.workspace }}" -P cmake/check_source_revision.cmake
 

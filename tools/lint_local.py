@@ -56,6 +56,8 @@ STEPS: tuple[Step, ...] = (
     Step("Check LineSweeper include layers and failing fixtures",
          (_cmake("REPO_DIR", "{repo}", "cmake/check_linesweeper_layers.cmake"),
           _cmake("REPO_DIR", "{repo}", "cmake/check_linesweeper_layer_fixtures.cmake"))),
+    Step("Check tracked C++ source enumeration",
+         (("python", "tools/check_source_enumeration.py"),)),
     Step("Check source revision and archive metadata without a compiler",
          (_cmake("REPO_DIR", "{repo}", "cmake/check_source_revision.cmake"),)),
     Step("Check indentation and trailing whitespace against .editorconfig",
