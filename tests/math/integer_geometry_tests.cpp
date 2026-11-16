@@ -5,11 +5,12 @@
 #include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 
-using namespace labrador;
+#include <array>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
 
-// The behaviour rectanglei.h and vector2i.h state, pinned as it is. What
-// these types do with non-finite, out-of-range or zero-divisor input is
-// not stated, so nothing here exercises it.
+using namespace labrador;
 
 TEST_SUITE("Vector2I")
 {
@@ -18,6 +19,48 @@ TEST_SUITE("Vector2I")
 		CHECK(Vector2I(Vector2F(2.9f, -2.9f)) == Vector2I(2, -2));
 		CHECK(Vector2I(Vector2F(0.5f, -0.5f)) == Vector2I(0, 0));
 		CHECK(Vector2I(Vector2F(-1.0f, 3.0f)) == Vector2I(-1, 3));
+	}
+
+	TEST_CASE("float conversion accepts the representable boundary values")
+	{
+		const float lower = static_cast<float>(std::numeric_limits<int>::min());
+		const float upper = std::nextafter(
+			static_cast<float>(std::numeric_limits<int>::max()), 0.0f);
+		CHECK(Vector2I(Vector2F(lower, upper)) ==
+			Vector2I(std::numeric_limits<int>::min(), static_cast<int>(upper)));
+		CHECK(Vector2I(Vector2F(-0.0f, -0.999f)) == Vector2I::zero);
+	}
+
+	TEST_CASE("float conversion refuses each non-finite component")
+	{
+		const std::array<float, 3> invalid = {
+			std::numeric_limits<float>::quiet_NaN(),
+			std::numeric_limits<float>::infinity(),
+			-std::numeric_limits<float>::infinity()
+		};
+		for (const float value : invalid)
+		{
+			CHECK_THROWS_AS(Vector2I(Vector2F(value, 1.0f)), std::invalid_argument);
+			CHECK_THROWS_AS(Vector2I(Vector2F(1.0f, value)), std::invalid_argument);
+		}
+	}
+
+	TEST_CASE("float conversion refuses each out-of-range component")
+	{
+		const std::array<float, 4> invalid = {
+			static_cast<float>(std::numeric_limits<int>::max()),
+			std::nextafter(static_cast<float>(std::numeric_limits<int>::min()),
+				-std::numeric_limits<float>::infinity()),
+			std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()
+		};
+		for (const float value : invalid)
+		{
+			CHECK_THROWS_AS(Vector2I(Vector2F(value, 1.0f)), std::out_of_range);
+			CHECK_THROWS_AS(Vector2I(Vector2F(1.0f, value)), std::out_of_range);
+			Vector2I target(8, 9);
+			CHECK_THROWS_AS(target = Vector2I(Vector2F(1.0f, value)), std::out_of_range);
+			CHECK(target == Vector2I(8, 9));
+		}
 	}
 
 	TEST_CASE("division truncates toward zero per component")
@@ -32,6 +75,46 @@ TEST_SUITE("Vector2I")
 		Vector2I by_vector(9, -9);
 		by_vector /= Vector2I(-2, 2);
 		CHECK(by_vector == Vector2I(-4, -4));
+		Vector2I by_self(2, -3);
+		by_self /= by_self;
+		CHECK(by_self == Vector2I(1, 1));
+	}
+
+	TEST_CASE("zero divisors refuse every division form without partial mutation")
+	{
+		const Vector2I initial(8, 9);
+		Vector2I target = initial;
+		CHECK_THROWS_AS(target /= 0, std::invalid_argument);
+		CHECK(target == initial);
+		CHECK_THROWS_AS(initial / 0, std::invalid_argument);
+		for (const Vector2I divisor : {Vector2I(0, 3), Vector2I(2, 0), Vector2I(0, 0)})
+		{
+			CHECK_THROWS_AS(target /= divisor, std::invalid_argument);
+			CHECK(target == initial);
+			CHECK_THROWS_AS(initial / divisor, std::invalid_argument);
+		}
+		Vector2I zero;
+		CHECK_THROWS_AS(zero /= zero, std::invalid_argument);
+		CHECK(zero == Vector2I::zero);
+	}
+
+	TEST_CASE("division overflow refuses every component without partial mutation")
+	{
+		const int minimum = std::numeric_limits<int>::min();
+		for (const Vector2I initial : {Vector2I(minimum, 9), Vector2I(8, minimum)})
+		{
+			Vector2I target = initial;
+			CHECK_THROWS_AS(target /= -1, std::overflow_error);
+			CHECK(target == initial);
+			CHECK_THROWS_AS(initial / -1, std::overflow_error);
+			CHECK_THROWS_AS(target /= Vector2I(-1, -1), std::overflow_error);
+			CHECK(target == initial);
+			CHECK_THROWS_AS(initial / Vector2I(-1, -1), std::overflow_error);
+		}
+		CHECK(Vector2I(minimum, minimum) / 1 == Vector2I(minimum, minimum));
+		CHECK(Vector2I(minimum, minimum) / minimum == Vector2I(1, 1));
+		CHECK(Vector2I(std::numeric_limits<int>::max(), -1) / -1 ==
+			Vector2I(-std::numeric_limits<int>::max(), 1));
 	}
 
 	TEST_CASE("addition, subtraction and multiplication are per component")
@@ -79,6 +162,52 @@ TEST_SUITE("RectangleI")
 			RectangleI(-2, 4, 5, 0));
 		CHECK(RectangleI(Vector2I(-2, 4), Vector2I(5, 1)) ==
 			RectangleI(-2, 4, 5, 1));
+	}
+
+	TEST_CASE("float constructors accept representable boundary fields")
+	{
+		const float lower = static_cast<float>(std::numeric_limits<int>::min());
+		const float upper = std::nextafter(
+			static_cast<float>(std::numeric_limits<int>::max()), 0.0f);
+		const RectangleI expected(std::numeric_limits<int>::min(), static_cast<int>(upper),
+			static_cast<int>(upper), std::numeric_limits<int>::min());
+		CHECK(RectangleI(RectangleF(lower, upper, upper, lower)) == expected);
+		CHECK(RectangleI(Vector2F(lower, upper), Vector2F(upper, lower)) == expected);
+	}
+
+	TEST_CASE("both float constructors refuse invalid input in every field")
+	{
+		const std::array<float, 3> nonfinite = {
+			std::numeric_limits<float>::quiet_NaN(),
+			std::numeric_limits<float>::infinity(),
+			-std::numeric_limits<float>::infinity()
+		};
+		const std::array<float, 2> outside = {
+			static_cast<float>(std::numeric_limits<int>::max()),
+			std::nextafter(static_cast<float>(std::numeric_limits<int>::min()),
+				-std::numeric_limits<float>::infinity())
+		};
+		for (std::size_t field = 0; field < 4; ++field)
+		{
+			for (const float value : nonfinite)
+			{
+				std::array<float, 4> fields = {1.0f, 2.0f, 3.0f, 4.0f};
+				fields[field] = value;
+				CHECK_THROWS_AS(RectangleI(RectangleF(fields[0], fields[1], fields[2], fields[3])),
+					std::invalid_argument);
+				CHECK_THROWS_AS(RectangleI(Vector2F(fields[0], fields[1]),
+					Vector2F(fields[2], fields[3])), std::invalid_argument);
+			}
+			for (const float value : outside)
+			{
+				std::array<float, 4> fields = {1.0f, 2.0f, 3.0f, 4.0f};
+				fields[field] = value;
+				CHECK_THROWS_AS(RectangleI(RectangleF(fields[0], fields[1], fields[2], fields[3])),
+					std::out_of_range);
+				CHECK_THROWS_AS(RectangleI(Vector2F(fields[0], fields[1]),
+					Vector2F(fields[2], fields[3])), std::out_of_range);
+			}
+		}
 	}
 
 	TEST_CASE("edges and corners come from x, y, width and height")
