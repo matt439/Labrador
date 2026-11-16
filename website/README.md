@@ -193,6 +193,22 @@ understand, and why it was chosen over Doxygen and Clang.
 regenerate them; regenerate rather than edit, and look at every image that
 changes.
 
+**Repository and link-preview image.** The repository README and
+`src/components/overrides/Head.astro` use the same `linesweeper-play.png`.
+The README's relative path resolves in the repository; the site imports it
+through Astro's existing asset pipeline, serving the exact PNG bytes with a
+content hash and the selected documentation base. The image and alternative
+text identify the scripted October 2026 LineSweeper frame; the review context
+is in [website-plan.md](../docs/website-plan.md).
+
+`npm run build` checks the README's path/dimensions and every development
+page's Open Graph/Twitter image URL, original bytes, dimensions and alternative
+text before assembling immutable release snapshots. Those snapshots retain
+their original metadata. New candidate snapshots keep the existing
+snapshot verifier's image-URL and version-prefix checks. A later capture
+replacement updates its description/review context as well as the image;
+no crop or resize is used for these placements.
+
 **Regenerate the video.** Build `LineSweeperCapture` with `x64-release`, then
 run these from the repository root with FFmpeg (`ffmpeg` and `ffprobe`) on
 `PATH`:

@@ -1445,7 +1445,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-116](#oca-116)** Could · M · The Outside Adopter: Opt into a verified starter browser build/test workflow — after OCA-79
 - [ ] **[SM-92](#sm-92)** Should · M · The Sole Owner-Maintainer: Audit current dependency alerts and qualify selected action-runtime updates
 - [ ] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
-- [ ] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
+- [x] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
 - [x] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
 - [x] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
 - [ ] **[OCA-119](#oca-119)** Could · S · The Outside Adopter: Know what Escape does when the browser owns full screen
@@ -3483,6 +3483,32 @@ remain deferred. This story selects repository/site assets only, with no
 messages to third parties or live publication in this planning record.
 Review any derived crop or resize visually and run website checks, link/asset
 tests, lint and the full website gate.
+
+**Closed 2026-11-17:** the README and site preview metadata use the existing
+`linesweeper-play.png`, with its original bytes, 1280x720 dimensions and
+meaningful alternative text. The README caption and metadata identify the
+scripted October 2026 LineSweeper frame, preserving the D3D11 Release capture
+context recorded in [website-plan.md](../website-plan.md). The frame was
+inspected again; no crop, resize, replacement artwork or licence change was
+made. The selected PNG's SHA-256 remains
+`C41960FBD185214D0D4A1624F39EC2D37DDE3D8236BE5836D68A2E5B242186CD`.
+
+The thin Starlight Head override retains the existing title, canonical,
+description and card tags, adding image URL/type/dimensions/alt fields through
+Astro's current asset pipeline. The postbuild check validates the README path
+and every development page against the original PNG bytes. Immutable release
+snapshots keep their original metadata. Ten new fixtures cover release-base
+routing, missing/duplicate fields, dimensions, altered/missing assets and the
+current release-list page. All 211 website tests pass; the type check,
+186-page build, internal links and archived snapshot assembly pass. Final
+postbuild qualification validates all 186 development pages. All ten focused
+CMake/source-enumeration and Node lint phases pass; unchanged Python tooling
+had passed the full 13-phase run before this website-only scope.
+
+The README's existing public raw-image path returned HTTP 200 with identical
+PNG bytes on this date. Built Open Graph/Twitter fields resolve to the same
+1280x720 asset. Independent read-only review found no issue. No announcement,
+account change or publication was performed.
 
 <a id="srl-25"></a>
 ### SRL-25. Generate a curated common-task API quick reference
