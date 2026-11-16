@@ -17,3 +17,7 @@ labrador_add_test_suite(AssetsTests
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_NULL_RENDER)
 endif()
+
+if(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")
+    target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_WEBAUDIO)
+endif()

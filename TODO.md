@@ -113,7 +113,6 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-88` | OPEN | should | S | API, guide and regressions implemented; finish the remaining render-matrix and website qualification (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
 | `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
 | `OCA-90` | OPEN | should | M | Native request hooks and template confirmation pass native/wasm focused checks; combined app-matrix and browser lifecycle qualification remain. [Scope](docs/product/BACKLOG.md#oca-90). |
-| `OCA-91` | OPEN | should | S | Offer a small replaceable diagnostic callback with stderr default and defined threading/lifetime (`REV#41`). [Scope](docs/product/BACKLOG.md#oca-91). |
 | `OCA-92` | OPEN | should | M | Query and LineSweeper integration implemented; complete the combined seven-track app sweep (`REV#60`). [Scope and focused evidence](docs/product/BACKLOG.md#oca-92). |
 | `PI-22` | OPEN | should | S | Publish CMake and public-header version facts from one canonical value, distinguishing development builds (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
 | `PI-23` | OPEN | should | S | Name missing consumer dependencies and their manifest repair while retaining CMake details (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |

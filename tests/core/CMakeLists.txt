@@ -1,6 +1,7 @@
 labrador_add_test_suite(CoreTests
     SOURCES
         byte_reader_tests.cpp
+        diagnostic_tests.cpp
         file_path_tests.cpp
         name_table_tests.cpp
         partitioner_tests.cpp

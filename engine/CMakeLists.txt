@@ -23,6 +23,7 @@ add_library(LabradorEngine STATIC
     collision/narrow_phase.cpp
     collision/resolve.cpp
     core/byte_reader.cpp
+    core/diagnostic.cpp
     core/file_path.cpp
     core/partitioner.cpp
     core/random.cpp

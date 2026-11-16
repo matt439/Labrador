@@ -75,6 +75,8 @@ namespace labrador
 		// listener and context it holds keeps the whole module alive. The page
 		// has already been told. A Win32 window's owner is destroyed after its
 		// pump returns, and that window never calls this.
+		// An exception leaving this final callback is reported through
+		// diagnostic.h; the page's close/error notification has already run.
 		virtual void on_closed() {}
 
 		// A native X, Alt+F4 or equivalent request. True allows immediate

@@ -4,11 +4,11 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/audio/audio_device.h"
 #include "engine/audio/audio_resources.h"
+#include "engine/core/diagnostic.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
 
-#include <cstdio>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -178,10 +178,9 @@ namespace labrador
 			// aborts silently; a stated-optional asset is not a broken
 			// contract, but a person wondering where the sound went should be
 			// able to find out without reading this file.
-			std::fprintf(stderr,
-				"no audio: %s. The manifest marks this bank optional, so it "
-				"plays nothing. See the repository's README, 'Audio'.\n",
-				missing.what());
+			report_diagnostic(std::string("no audio: ") + missing.what() +
+				". The manifest marks this bank optional, so it plays nothing. "
+				"See the repository's README, 'Audio'.\n");
 
 			this->audio_resources_->add_sound_bank(name, SoundBank::silent());
 			return;

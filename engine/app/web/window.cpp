@@ -1,5 +1,6 @@
 #include "engine/app/window.h"
 #include "engine/app/web/dom_events.h"
+#include "engine/core/diagnostic.h"
 
 #include <emscripten/emscripten.h>
 #include <emscripten/eventloop.h>
@@ -612,11 +613,11 @@ namespace labrador
 		}
 		catch (const std::exception& error)
 		{
-			std::fprintf(stderr, "%s\n", error.what());
+			report_diagnostic(error.what());
 		}
 		catch (...)
 		{
-			std::fprintf(stderr, "An exception that is not a std::exception "
+			report_diagnostic("An exception that is not a std::exception "
 				"left the owner's on_closed.\n");
 		}
 	}

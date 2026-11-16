@@ -78,7 +78,8 @@ container. The manifest names their shared stem, without either extension:
 
 This bank is required. A missing or unreadable container stops loading with its
 path in the error. `optional: true` is only for content a game can run without:
-it substitutes a silent bank and cannot demonstrate playback. A required bank
+it reports the reason through the [diagnostic callback](/docs/reference/core/diagnostic/)
+(standard error by default), substitutes a silent bank and cannot demonstrate playback. A required bank
 with a misspelt wave also fails during loading.
 
 The definition lists waves and persistent effect instances:

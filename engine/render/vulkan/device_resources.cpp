@@ -1,5 +1,7 @@
 #include "engine/render/vulkan/device_resources.h"
 
+#include "engine/core/diagnostic.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <stdexcept>
@@ -128,7 +130,7 @@ namespace labrador
 		}
 
 #if defined(_DEBUG)
-		// The validation layers' own words, forwarded to the debugger.
+		// The validation layers' own words, forwarded without allocation.
 		//
 		// Direct3D's debug layer says what is wrong through a message queue
 		// the D3D12 file asks to break on; Vulkan's says it through a
@@ -148,9 +150,7 @@ namespace labrador
 
 			if (data != nullptr && data->pMessage != nullptr)
 			{
-				OutputDebugStringA("Vulkan: ");
-				OutputDebugStringA(data->pMessage);
-				OutputDebugStringA("\n");
+				report_diagnostic(data->pMessage);
 			}
 
 			// FALSE, ALWAYS. Returning true aborts the call that raised the
@@ -540,7 +540,7 @@ namespace labrador
 		}
 		else
 		{
-			OutputDebugStringA(
+			report_diagnostic(
 				"WARNING: Vulkan validation layers are not available\n");
 		}
 #endif

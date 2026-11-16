@@ -635,11 +635,19 @@ rules in `game\CMakeLists.txt` if they are absent. The
 Windows' optional **Graphics Tools** feature supplies the Direct3D debug layers, which check
 every call the renderer makes and say in the Output window when one is wrong. Nothing on this
 page needs them, and a beginner can leave them out. Labrador's Debug Direct3D builds use them
-when they are there. Without them, the Output's **Debug** view, chosen in **Show output from**,
-has this line when the game starts under F5, and the game runs as before:
+when they are there. Without them, Labrador writes this notice to standard error, and the
+game runs as before. Standard error is the program's text error output; it can be redirected
+to a file even when the game has no console window:
 
-```text title="Output"
+```text title="Standard error"
 WARNING: Direct3D Debug Device is not available
+```
+
+For example, from the project's Native Tools Command Prompt:
+
+```bat
+start /wait /b "" out\build\x64-debug\game\MyGame.exe 2> "%TEMP%\mygame-diagnostics.txt"
+type "%TEMP%\mygame-diagnostics.txt"
 ```
 
 To install them, as Microsoft's
@@ -649,11 +657,59 @@ Tools** is already listed under **Added features**, it is installed. Otherwise c
 for adding a feature (**View features** on current Windows 11, **Add a feature** on older
 versions), type `Graphics Tools` in the search box, tick it, and click **Next** and **Add**, or
 **Add** alone. Windows downloads it and lists it under **Added features** when it is done. Start the game under F5 again: the warning is gone, and
-any message from the layer appears in the same **Debug** view, starting `D3D11 ERROR:` or
+any message from the Direct3D layer itself appears in Output's **Debug** view, chosen in
+**Show output from**, starting `D3D11 ERROR:` or
 `D3D11 WARNING:` with the call it is about. Ordinary C++ breakpoints work with or without it.
 
 The copied project uses Direct3D 11 by default. Selecting `x64-release` does not enable the
 Debug layer and can make stepping harder because the compiler optimizes the code.
+
+## Capture engine notices
+
+<Aside type="note">
+This API is in the development engine. If your starter has no
+`engine/core/diagnostic.h`, [update your starter](/docs/guides/starter-update/) or
+[move your engine pin](/docs/guides/move-pin/) before using it.
+</Aside>
+
+An optional sound bank that cannot be opened, an engine graphics-backend notice and an
+exception from a browser owner's final `on_closed` callback are non-fatal diagnostics.
+They go to standard error by default. A game can send them to its own already-open C file
+with one callback:
+
+```cpp
+#include "engine/core/diagnostic.h"
+
+#include <cstdio>
+#include <string_view>
+
+void save_engine_notice(std::string_view message, void* context) noexcept
+{
+	std::FILE* file = static_cast<std::FILE*>(context);
+	if (!message.empty()) std::fwrite(message.data(), 1, message.size(), file);
+	if (message.empty() || message.back() != '\n') std::fputc('\n', file);
+	std::fflush(file);
+}
+```
+
+Install it with `labrador::set_diagnostic_callback(save_engine_notice, my_log_file)`,
+where `my_log_file` is your open `std::FILE*`, before creating the engine objects. Keep that
+file and the callback's code alive through their destruction, including the last render
+resources and worker/driver callbacks. Then call `labrador::set_diagnostic_callback(nullptr)`
+before closing the file. That call restores standard error. This example uses C file I/O,
+whose individual writes are synchronised and do not throw; file-write failures are ignored.
+If messages from several threads overlap, their writes may interleave.
+
+The [callback contract](/docs/reference/core/diagnostic/) applies to every game: reporting is
+synchronous on the thread that issued the message, the message is borrowed only for that
+call, a callback must not throw or call back into the engine, and registration/replacement
+must happen while no engine/diagnostic calls are in flight. A callback that retains shared
+data must synchronise it. In a browser, frame callbacks outlive `main`, so a stack-local file
+owner in `main` does not meet that lifetime.
+
+Fatal errors still use the game's exception handling and the browser's `Module.onError`.
+Direct3D's own debug-layer message queue also keeps its debugger reporting. Installing this
+callback changes neither contract.
 
 ## Keep matching symbols
 

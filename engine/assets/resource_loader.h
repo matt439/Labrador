@@ -99,6 +99,8 @@ namespace labrador
 		// if an entry names a kind nobody registered - which is a content bug, and
 		// this is the line that should report it (T6). Whatever loaded before the
 		// bad entry stays loaded; the manifest is not kept.
+		// An unavailable optional sound bank reports through diagnostic.h and
+		// substitutes SoundBank::silent(); required-bank errors still throw.
 		void load_manifest(AssetManifest manifest);
 
 		// Rebuilds what lives on the GPU after a device loss, by walking the same
