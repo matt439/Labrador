@@ -174,7 +174,6 @@ scope; it does not publish a release, change settings or claim acceptance.
 | `OCA-117` | OPEN | could | S | Add README and link-preview images from reviewed captures; announcements remain a separate owner choice (`REV#73`). [Scope](docs/product/BACKLOG.md#oca-117). |
 | `SRL-25` | OPEN | could | M | Generate a curated common-task API quick reference from maintained declarations and excerpts (`REV#88`). [Scope](docs/product/BACKLOG.md#srl-25). |
 | `OCA-119` | OPEN | could | S | Observe actual browser Escape/fullscreen routing; automate only a faithful interaction and document the result (`REV#93`). [Scope](docs/product/BACKLOG.md#oca-119). |
-| `SM-94` | OPEN | could | XS | Welcome scoped fixes/docs/tests, discuss larger changes first and promise no review time; leave community settings unchanged (`REV#94`). [Scope](docs/product/BACKLOG.md#sm-94). |
 | `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |
 | `SM-97` | OPEN | could | M | Pilot LineSweeper on iOS Simulator by explicit invocation, measuring reliability before recurring coverage (`REV#152`). [Scope](docs/product/BACKLOG.md#sm-97). |
