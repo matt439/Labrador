@@ -156,6 +156,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['colour.h', 'Colour', 'game code'],
 			['label.h', 'Label', 'game code'],
 			['text.h', 'Text', 'game code'],
+			['text_alignment.h', 'Text alignment', 'game code'],
 			['text_object.h', 'TextObject', 'game code'],
 			['font.h', 'Font', 'game code'],
 			['text_encoding.h', 'Text encoding', 'game code'],

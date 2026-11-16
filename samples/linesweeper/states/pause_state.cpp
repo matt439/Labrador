@@ -9,6 +9,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/colour.h"
 #include "engine/render/renderer.h"
+#include "engine/render/text_alignment.h"
 #include "engine/render/viewport.h"
 #include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/palette.h"
@@ -18,7 +19,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -70,7 +70,9 @@ namespace linesweeper
 		{
 			const Vector2F size = resources.measure_text(font, text);
 
-			return Vector2F(std::floor((landscape_width - size.x) * 0.5f), y);
+			return aligned_text_position(size,
+				RectangleF(0.0f, y, landscape_width, 0.0f),
+				TextAlignment::top_centre, TextSnapping::floor);
 		}
 
 		// How dark the match goes while the menu is up. Premultiplied black,

@@ -107,6 +107,7 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "null")
         frame_allocation_tests.cpp
         particle_draw_tests.cpp
         top_out_banner_tests.cpp
+        text_alignment_tests.cpp
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/board_view.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/presentation/top_out_banner.cpp"
     )
