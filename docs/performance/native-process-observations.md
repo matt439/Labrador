@@ -127,3 +127,12 @@ startup baseline, pacing evidence, leak result or low-tier acceptance.
 Native-null and wasm GL/Node AppTests pass, as do Release D3D11
 LineSweeperViewTests and the offline analysis tests. The combined app matrix,
 website gate and hosted CI remain separate integration checks.
+
+## Combined qualification, 2026-11-17
+
+The combined seven-track app sweep, local lint and website gate subsequently
+passed at `fadd1a63`, closing SM-87's mechanism/integration scope.
+[The PR record](../verification/2026-11-17-pr-current.md) retains that evidence.
+The bounded collection above keeps its source, build and workload; this adds
+no performance baseline, low-tier, leak or physical-pacing verdict. Hosted
+CI retains its separate PR result.

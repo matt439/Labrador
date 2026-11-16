@@ -69,9 +69,9 @@ planner/CI-gap fixtures were 65/65. Fresh Debug GL, Release GL and Release-null
 configurations matched their inventories exactly: 46, 47 and 31 entries at this
 base, with the iframe entry absent under null. The website gate passed all 201
 tests and built 186 pages with valid internal links. The first twelve lint
-phases passed; the full Python discovery is reserved for combined-root
-qualification to avoid parallel Git-fixture contention, and the story remains
-open for that final gate.
+phases passed. At that initial checkpoint, full Python discovery was reserved
+for combined-root qualification to avoid parallel Git-fixture contention, and
+the story was left open for that final gate.
 
 Raw local receipts are retained under the worktree's `out/sm93/`: final browser
 output, a negative control, runner fixtures, registration inventories and the
@@ -95,3 +95,12 @@ headed fullscreen and Escape, HTTPS hosting, physical pads, phones and audible
 audio are unrun here. LineSweeper has no audio; the delegated gamepad/autoplay
 tokens do not prove input or listening acceptance. itch.io setup and a guide,
 external-host publication and precompressed `.br` distribution remain deferred.
+
+## Combined qualification, 2026-11-17
+
+At `fadd1a63`, the complete local lint, website and seven-track sweep passed,
+including the current `BrowserProtocolTests` and `LineSweeperIframePageTests`.
+[The PR record](../verification/2026-11-17-pr-current.md) retains source and
+receipts, closing SM-93's remaining integration gate. The earlier bundle,
+fixture counts and negative control above retain their actual source epoch.
+The headed, other-browser, external-host and physical limits remain unchanged.

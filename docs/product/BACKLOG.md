@@ -1425,26 +1425,26 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
 - [x] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
 - [x] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
-- [ ] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
-- [ ] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
+- [x] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
+- [x] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
 - [ ] **[OCA-108](#oca-108)** Should · L · The Outside Adopter: Use a qualified non-Xbox controller layer on Windows — blocked until a real non-Xbox pad is available
 
 - [x] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
 - [x] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
 - [ ] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
 - [x] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
-- [ ] **[OCA-113](#oca-113)** Could · M · The Outside Adopter: Choose a native or canvas cursor shape for the current page interaction
+- [x] **[OCA-113](#oca-113)** Could · M · The Outside Adopter: Choose a native or canvas cursor shape for the current page interaction
 - [ ] **[OCA-114](#oca-114)** Could · M · The Outside Adopter: Copy held touch buttons and a virtual-stick region without adopting a game action map
-- [ ] **[OCA-115](#oca-115)** Could · S · The Outside Adopter: Read the selected device's texture limit and understand an oversized-texture refusal
-- [ ] **[SM-87](#sm-87)** Could · S · The Sole Owner-Maintainer: Read defined native memory and first-frame measurements without a hard gate
+- [x] **[OCA-115](#oca-115)** Could · S · The Outside Adopter: Read the selected device's texture limit and understand an oversized-texture refusal
+- [x] **[SM-87](#sm-87)** Could · S · The Sole Owner-Maintainer: Read defined native memory and first-frame measurements without a hard gate
 - [x] **[SM-88](#sm-88)** Could · S · The Sole Owner-Maintainer: Request a read-only report of CI failures by step, ref and attempt
 - [ ] **[SM-89](#sm-89)** Could · M · The Sole Owner-Maintainer: Exercise five extra configurations weekly as non-required checks — after SM-81
-- [ ] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
+- [x] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
 - [x] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
 
 - [x] **[OCA-116](#oca-116)** Could · M · The Outside Adopter: Opt into a verified starter browser build/test workflow — after OCA-79
 - [ ] **[SM-92](#sm-92)** Should · M · The Sole Owner-Maintainer: Audit current dependency alerts and qualify selected action-runtime updates
-- [ ] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
+- [x] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
 - [x] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
 - [x] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
 - [x] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
@@ -2887,7 +2887,11 @@ records a hidden current-mode query matching direct Windows/CIM metadata at
 2560 × 1440 / 59 on its selected logical display. Synthetic mode/monitor
 updates remain distinct from unrun physical transfer/change and pacing
 acceptance. The contract is published, CHANGES.md and collection procedures
-state the limits, and the combined app matrix remains an integration gate.
+state the limits. The combined seven-track app qualification, complete local
+lint and website gate subsequently passed at `fadd1a63`, closing the story;
+[the PR record](../verification/2026-11-17-pr-current.md) retains the exact
+source and receipts. This supplies no new physical monitor-transfer, mode-change
+or pacing acceptance.
 
 <a id="oca-107"></a>
 ### OCA-107. Set a native window title and explicitly request an icon
@@ -2932,8 +2936,9 @@ development copy, and the rename guide keeps release/history count 27 while
 checking development count 29. [Window icons](../window-icons.md) owns the
 optional build/install contract.
 
-**Remaining qualification:** the combined seven-track app sweep after the
-current app-seam batch. Explorer/taskbar appearance with user artwork and
+**Closed 2026-11-17:** the combined seven-track app sweep, complete local
+lint and website gate passed at `fadd1a63`; [the PR record](../verification/2026-11-17-pr-current.md)
+retains source-specific results. Explorer/taskbar appearance with user artwork and
 display scaling were not observed; these automated resource checks do not
 claim physical scaling acceptance or introduce an additional owner-DPI gate.
 The existing OCA-66 observation remains separate.
@@ -3180,8 +3185,9 @@ fixtures and 24 live CSS checks, plus the gallery hover/Name/drag/quit page
 checks. The full window script passes 47 steps before this desktop's known
 fullscreen permission denial; the focused probe uses the same committed
 cursor checks. These are API/handle/CSS observations, not visual theme or
-physical-cursor inspection. The nine standalone CMake checks, 85 browser-protocol tests, source enumeration and website gate (200 tests, 180 pages) pass. Combined app verification remains for
-integration, so the story stays unticked until that result is recorded.
+physical-cursor inspection. The nine standalone CMake checks, 85 browser-protocol tests, source enumeration and website gate (200 tests, 180 pages) pass. The combined seven-track app sweep, complete local lint and website gate
+subsequently passed at `fadd1a63`, closing the story. [The PR record](../verification/2026-11-17-pr-current.md)
+retains that later qualification; it adds no physical-cursor/theme inspection.
 
 <a id="oca-114"></a>
 ### OCA-114. Copy held touch buttons and a virtual-stick region
@@ -3245,8 +3251,10 @@ pass. Chrome 157.0.8103.78 on ANGLE/RTX 5080 passes the normal/no-S3TC pixel
 and both context-loss entries. The pixel pages report an actual API bound
 of 16384; the separate context-loss fixture advertises synthetic 1024 then
 512 bounds to prove refresh, with absence during the loss/restoration gap.
-Native pixel execution, Vulkan `validate_sync` and the full integrated lint
-gate remain for combined render qualification. API-reported bounds and
+The subsequent complete seven-track sweep includes all native pixel entries;
+current Vulkan `validate_sync`, complete local lint and the website gate also
+passed at `fadd1a63`, closing the story. [The PR record](../verification/2026-11-17-pr-current.md)
+retains source, device and receipt identities. API-reported bounds and
 synthetic callbacks do not measure a physical device ceiling or hardware loss.
 
 <a id="sm-87"></a>
@@ -3270,6 +3278,13 @@ unrequested benchmark execution. Deterministic serialization/endpoint fixtures
 cover known/unknown records; compare one explicitly invoked native capture
 with the measurement sources and retain its limits. Update the measurement
 procedure and run affected tooling, lint and the website gate.
+
+**Closed 2026-11-17:** the combined seven-track app sweep, complete local
+lint and website gate passed at `fadd1a63`. [The PR record](../verification/2026-11-17-pr-current.md)
+closes the integration gate for the defined observation mechanism. The
+[bounded collection](../performance/native-process-observations.md#bounded-collection-2026-11-17)
+retains its own earlier source, build, device and workload; no new startup,
+memory, leak, low-tier or pacing measurement is claimed.
 
 <a id="sm-88"></a>
 ### SM-88. Request a read-only CI failure report
@@ -3377,8 +3392,10 @@ and privacy boundaries, including the real CLI with `gh` absent from PATH.
 The November 12 record remains unchanged. [The manual procedure](../release-counters.md)
 retains cumulative-asset and rolling-window limits and makes no adoption
 inference. No live collection was invoked; account qualification remains
-conditional on an explicit owner invocation. The combined website gate
-remains before story closure.
+conditional on an explicit owner invocation. The combined website gate and
+complete local lint subsequently passed at `fadd1a63`, closing the story.
+[The PR record](../verification/2026-11-17-pr-current.md) retains those results;
+closure does not invoke live public or private collection.
 
 <a id="sm-91"></a>
 ### SM-91. Compare a tag-named release rebuild without publishing assets
@@ -3508,7 +3525,10 @@ where needed. Run local lint and the website gate.
 Selected as the bounded regression part of
 [`REV#72`](../review/2026-11-10/FINDINGS.md#rev72).
 
-**Implemented and locally qualified 2026-11-17; combined-root lint remains.**
+**Closed 2026-11-17:** complete combined-root lint and the website gate passed
+at `fadd1a63`; the complete browser tracks also pass, including the current
+iframe entry. [The PR record](../verification/2026-11-17-pr-current.md) retains
+that combined qualification.
 `LineSweeperIframePageTests` retains the packaged page's cross-site iframe
 route, with independent loopback origins, actual host/frame input routing,
 blur pause, quit/replay, default/delegated fullscreen policy and an injected

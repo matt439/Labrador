@@ -22,26 +22,16 @@ owns the implementation stories and their prerequisites.
 
 The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
 `IDEA#16` as the stories linked in the table below. Their current implementation
-and qualification states are recorded there. `IDEA#8` and `IDEA#18` are
-deferred with the named
-
 and qualification states are recorded in BACKLOG.md and the result notes.
-`IDEA#8` and `IDEA#18` are deferred with the named
-
-`IDEA#16` as the stories linked in the table below. Their owners record current
-implementation and qualification. `IDEA#8` and `IDEA#18` are deferred with the named
-
-`IDEA#16` as the stories linked in the table below. Their individual result
-notes state implementation and qualification. `IDEA#8` and `IDEA#18` are deferred with the named
-revisit conditions. Earlier selections `IDEA#6`, `IDEA#7` and `IDEA#10` remain
-landed.
+`IDEA#8` and `IDEA#18` are deferred with the named revisit conditions.
+Earlier selections `IDEA#6`, `IDEA#7` and `IDEA#10` remain landed.
 
 **Fourth decision batch, 2026-11-16:** the owner also selected `IDEA#1`,
 `IDEA#2`, `IDEA#3` and `IDEA#17` as OCA-109, OCA-110, OCA-112 and OCA-113.
-Their bounded scopes are linked below and remain unimplemented. `IDEA#9`,
-`IDEA#12`, `IDEA#14` and `IDEA#19` are deferred with the stated client or
-measurement triggers. No `IDEA#` proposal awaits an unrecorded selection;
-the earlier selected and landed states remain distinct.
+Their current results are linked below. `IDEA#9`, `IDEA#12`, `IDEA#14` and
+`IDEA#19` are deferred with the stated client or measurement triggers.
+No `IDEA#` proposal awaits an unrecorded selection; implementation and
+qualification remain distinct from the original selection.
 
 The result notes below state the selected scope where it narrows an original
 proposal. The original evidence and proposed acceptance are preserved as
@@ -68,31 +58,22 @@ concrete client need.
 | id | proposal | priority | size | selection or prerequisite |
 |---|---|---|---|---|
 | `IDEA#1` | A single-line typed-text component | could | M | Landed 2026-11-17 as [OCA-109](product/BACKLOG.md#oca-109): copyable desktop field with length/font checks and conversion on edits |
-| `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Selected 2026-11-16 as [OCA-110](product/BACKLOG.md#oca-110), duplicate refusal and protected navigation; implementation open |
+| `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Completed 2026-11-17 as [OCA-110](product/BACKLOG.md#oca-110): duplicate refusal, opener-release handling and protected navigation; the game owns actions and stable binding tokens |
 | `IDEA#3` | Versioned saves with recovery | could | M | Closed 2026-11-17 as [OCA-112](product/BACKLOG.md#oca-112): copyable game-owned two-slot recovery, checked native publication and reported browser sync; originals preserved |
-| `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
-
-| `IDEA#3` | Versioned saves with recovery | could | M | Selected 2026-11-16 as [OCA-112](product/BACKLOG.md#oca-112), game-owned recovery preserving previous valid and malformed/future data; implementation open |
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Landed 2026-11-17 as [OCA-103](product/BACKLOG.md#oca-103): copyable per-player tracking, world bounds and explicit resize/small-world policy |
-| `IDEA#5` | A grid sprite-sheet authoring command | could | S | Selected 2026-11-16 as [OCA-104](product/BACKLOG.md#oca-104); implementation open |
-
-| `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
 | `IDEA#5` | A grid sprite-sheet authoring command | could | S | Implemented through [OCA-104](product/BACKLOG.md#oca-104), 2026-11-17: deterministic standard-library command, existing schema, native/wasm loader proof |
 | `IDEA#6` | Pointer interaction in the components gallery | could | S | Selected 2026-11-04 as OCA-83 and landed |
 | `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Deferred 2026-11-16 until a concrete hitscan or region-query caller supplies the need and semantics |
 | `IDEA#9` | Contact begin and end edges | could | S | Deferred 2026-11-16 until a second client needs contact edges beyond the collision sample's existing pattern |
 | `IDEA#10` | Arbitrary client sizes | should | S | Selected 2026-11-04 as OCA-81 and landed; enumeration later |
-| `IDEA#11` | Sounds from WAV files and from memory | could | M | Selected as [OCA-105](product/BACKLOG.md#oca-105); landed 2026-11-17 with bounded PCM WAV and owned banks on all three backends; listening remains separate |
+| `IDEA#11` | Sounds from WAV files and from memory | could | M | Landed 2026-11-17 as [OCA-105](product/BACKLOG.md#oca-105), bounded PCM WAV and owned banks on all three backends; listening remains separate |
 | `IDEA#12` | Animation sequences with named frames and durations | could | M | Deferred 2026-11-16 until a client needs nonuniform timing or exported named-frame animation |
 | `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Implemented 2026-11-17 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-authored rectangles; capture, focus and expansion stay with each page |
 | `IDEA#14` | Present interval and render-rate control | could | M | Vsync control landed; unfocused visible-window cap deferred 2026-11-16 until measured cost or client need |
-| `IDEA#15` | Display refresh rate in the device report | could | S | Selected 2026-11-16 as [SM-86](product/BACKLOG.md#sm-86), nominal monitor metadata with an explicit unknown state; implementation open |
-| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Selected 2026-11-16 as [OCA-107](product/BACKLOG.md#oca-107), preserving defaults and diagnosing an explicitly requested missing icon; implementation open |
-| `IDEA#17` | Cursor shapes | could | S | Implemented as [OCA-113](product/BACKLOG.md#oca-113), system/CSS choices with page-owned gallery cues; combined app verification remains |
-
-| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Implemented through [OCA-107](product/BACKLOG.md#oca-107), focused checks passed; combined app sweep remains open |
-| `IDEA#17` | Cursor shapes | could | S | Selected 2026-11-16 as [OCA-113](product/BACKLOG.md#oca-113), system/CSS cursors with the gallery as first caller; implementation open |
+| `IDEA#15` | Display refresh rate in the device report | could | S | Closed 2026-11-17 through [SM-86](product/BACKLOG.md#sm-86), nominal window-monitor metadata and combined app qualification; no measured-pacing claim |
+| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Closed 2026-11-17 through [OCA-107](product/BACKLOG.md#oca-107), native title/icon contracts and combined app qualification; physical artwork/scaling remains separate |
+| `IDEA#17` | Cursor shapes | could | S | Closed 2026-11-17 through [OCA-113](product/BACKLOG.md#oca-113), system/CSS choices and page-owned gallery cues; combined app checks passed |
 | `IDEA#18` | A side-by-side two-player layout | could | XS | Deferred 2026-11-16 until a selected game or guide needs left and right panes |
 | `IDEA#19` | Rectangle intersection and shortest-arc angle helpers | could | XS | Deferred 2026-11-16: rectangle intersection follows GAP#5 clipping; angle helpers need an aiming/turning caller |
 
@@ -515,7 +496,9 @@ window's supported OS fact; browser and windowless queries remain unknown.
 This selected window scope supersedes the original render-device/null-backend
 proposal below. The [dated qualification](performance/2026-11-17-window-display.md)
 separates synthetic monitor/mode transitions from a bounded current-mode
-query. It supplies no measured FPS, scan-out, VRR or physical pacing acceptance.
+query. The later [combined PR qualification](verification/2026-11-17-pr-current.md)
+closes SM-86's integration gate. It supplies no measured FPS, scan-out, VRR
+or physical pacing acceptance.
 
 The original proposal below records the gap before selection.
 
@@ -540,8 +523,10 @@ it; the pacing method cites it in place of the operator's note.
 named icon request, with shared-handle ownership and missing-resource failure
 defined. Defaults remain optional and the browser host retains its metadata.
 The owner-supplied icon recipe, hidden tests, portable resource checks and
-installed consumer proof passed focused qualification; the combined app sweep
-remains open in the story. The original proposal below remains context.
+installed consumer proof passed focused qualification. The later
+[combined PR qualification](verification/2026-11-17-pr-current.md) closes the
+app-sweep gate. Explorer/taskbar artwork and physical scaling remain separate;
+the original proposal below remains context.
 
 **Present evidence:** `window_title` is read once from `ApplicationOptions`
 and nothing changes it afterwards. The Win32 window loads an icon resource
@@ -568,8 +553,9 @@ desktop; the release guide's step is followed in a copied project.
 [OCA-113](product/BACKLOG.md#oca-113), a small set of native system and browser
 CSS cursor shapes, with the components gallery as the first caller. Preserve
 pointer hiding and confinement contracts. Custom cursor images remain outside
-the selected scope. Implementation landed 2026-11-17; combined app
-qualification remains with OCA-113.
+the selected scope. Implementation landed 2026-11-17; the subsequent
+[combined PR qualification](verification/2026-11-17-pr-current.md) closes
+OCA-113. API/handle/CSS evidence does not qualify physical cursor appearance.
 
 **Current mechanism:** the window/application seam exposes an optional
 `CursorShape` request and read-back. Its six system/CSS choices preserve
