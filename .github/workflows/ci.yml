@@ -1200,7 +1200,7 @@ jobs:
           call "%VCVARS%"
           python "%GITHUB_WORKSPACE%\tools\consumer_check\scripted_pad_fixture.py" . || exit /b 1
           cmake --preset x64-debug || exit /b 1
-          cmake --build --preset x64-debug --target ScriptedPadConsumerTests || exit /b 1
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset x64-debug --target ScriptedPadConsumerTests || exit /b 1
           ctest --preset x64-debug -R "^ScriptedPadConsumerTests$" --no-tests=error --output-on-failure
 
       - name: Build and draw the game's own post material
