@@ -60,6 +60,17 @@ TEST_CASE("Win32 key translation uses physical positions and extended aliases")
 	CHECK(key_from_message(VK_SHIFT, key_position(0x36)) == Key::shift);
 }
 
+TEST_CASE("Win32 ISO extra position is distinct from Backslash and unselected positions")
+{
+	CHECK(key_from_message(VK_OEM_102, key_position(0x56)) == Key::international_backslash);
+	CHECK(key_from_message('Z', key_position(0x56)) == Key::international_backslash);
+	CHECK(key_from_message(VK_OEM_5, key_position(0x2b)) == Key::backslash);
+	CHECK(key_from_message(VK_OEM_102, key_position(0x2b)) == Key::backslash);
+	CHECK(key_from_message(VK_OEM_102, key_position(0x56, true)) == Key::none);
+	CHECK(key_from_message(VK_OEM_102, key_position(0x00)) == Key::none);
+	CHECK(key_from_message(VK_OEM_102, key_position(0x73)) == Key::none);
+}
+
 TEST_CASE("Win32 Pause and NumLock override scans using the full virtual key")
 {
 	const intptr_t contradictory = key_position(0xff, true);

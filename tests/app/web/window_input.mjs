@@ -14,12 +14,15 @@
 // touch. Where a protocol cannot produce an input, its input object says so
 // and the step that needs it states what was done instead.
 //
-// THE ONE INPUT THAT IS NOT REAL is visibilitychange: a headless browser has
+// Visibility is synthetic: a headless browser has
 // no tab strip and no desktop to minimise to, and neither creating and
 // activating another tab, nor the lifecycle states, nor minimising its window
 // changes document.visibilityState. So the page's document is told it is
 // hidden and the event is dispatched at it, which tests what the window does
 // with the event and not that a browser sends it.
+// The ISO extra and unknown-code checks also use synthetic DOM events: printable
+// key actions cannot choose that physical position independently of layout.
+// That step checks the real window's DOM feed, not a physical keyboard.
 //
 // Each step does one thing and then reads and empties the page's log, which
 // window_page.cpp writes one entry per WindowNotify call, and compares it
@@ -239,6 +242,29 @@ export async function drive_window(page, input) {
 	await key('KeyA');
 	await check('a letter is a key and text',
 		['key_down a', 'text 97', 'key_up a'], ['keydown KeyA prevented']);
+	await evaluate(`(() => {
+		const canvas = document.getElementById('canvas');
+		for (const type of ['keydown', 'keyup']) {
+			canvas.dispatchEvent(new KeyboardEvent(type, {
+				code: 'IntlBackslash', key: '<', bubbles: true, cancelable: true,
+			}));
+		}
+		return true;
+	})()`);
+	await check('synthetic ISO-position events reach the real DOM window feed',
+		['key_down international_backslash', 'text 60', 'key_up international_backslash'],
+		['keydown IntlBackslash prevented']);
+	await evaluate(`(() => {
+		const canvas = document.getElementById('canvas');
+		for (const type of ['keydown', 'keyup']) {
+			canvas.dispatchEvent(new KeyboardEvent(type, {
+				code: 'IntlRo', key: 'Unidentified', bubbles: true, cancelable: true,
+			}));
+		}
+		return true;
+	})()`);
+	await check('an unselected international position stays unmapped in the DOM feed',
+		['key_down ', 'key_up '], ['keydown IntlRo kept']);
 	await key('KeyA', { control: true });
 	if (input.presses_modifiers) {
 		// Control held with Control's own key: a key the browser keeps, as a

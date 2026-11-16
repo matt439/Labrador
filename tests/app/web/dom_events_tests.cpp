@@ -48,13 +48,46 @@ TEST_CASE("a key code is a physical position, as a scan code is on Windows")
 	CHECK(key_from_code("Pause") == Key::pause);
 	CHECK(key_from_code("NumLock") == Key::num_lock);
 	CHECK(key_from_code("PrintScreen") == Key::print_screen);
+	CHECK(key_from_code("IntlBackslash") == Key::international_backslash);
+	CHECK(key_from_code("Backslash") == Key::backslash);
 
 	// Positions the engine has no name for, and things that are not codes.
 	CHECK(key_from_code("MetaLeft") == Key::none);
-	CHECK(key_from_code("IntlBackslash") == Key::none);
+	CHECK(key_from_code("IntlRo") == Key::none);
+	CHECK(key_from_code("IntlYen") == Key::none);
 	CHECK(key_from_code("F13") == Key::none);
 	CHECK(key_from_code("keyz") == Key::none);
 	CHECK(key_from_code("") == Key::none);
+}
+
+TEST_CASE("the ISO code feeds ordinary keyboard edges without choosing its typed character")
+{
+	Keyboard keyboard;
+	keyboard.set_focused(true);
+	keyboard.poll();
+	keyboard.poll();
+	const Key key = key_from_code("IntlBackslash");
+	REQUIRE(key == Key::international_backslash);
+	CHECK_FALSE(browser_keeps_key(key, false, false, false));
+	CHECK(browser_keeps_key(key, true, false, false));
+	keyboard.on_key_down(key);
+	keyboard.poll();
+	CHECK(keyboard.held(key));
+	CHECK(keyboard.pressed(key));
+	CHECK_FALSE(keyboard.held(Key::backslash));
+	keyboard.on_key_down(key);
+	keyboard.poll();
+	CHECK_FALSE(keyboard.pressed(key));
+	keyboard.on_key_up(key_from_code("IntlBackslash"));
+	keyboard.poll();
+	CHECK(keyboard.released(key));
+	CHECK_FALSE(keyboard.held(key));
+	keyboard.on_key_down(key_from_code("IntlRo"));
+	keyboard.poll();
+	CHECK_FALSE(keyboard.held(key));
+	CHECK_FALSE(keyboard.held(Key::none));
+	CHECK(text_from_key("<", false, false, false) == U'<');
+	CHECK(text_from_key("\\", false, false, false) == U'\\');
 }
 
 TEST_CASE("DOM modifier sides retain one public key until both are released")
@@ -156,7 +189,7 @@ TEST_CASE("every key the engine names is reachable from a code")
 		"Numpad0", "Numpad1", "Numpad2", "Numpad3", "Numpad4",
 		"Numpad5", "Numpad6", "Numpad7", "Numpad8", "Numpad9",
 		"NumpadAdd", "NumpadSubtract", "NumpadMultiply", "NumpadDivide",
-		"NumpadDecimal",
+		"NumpadDecimal", "IntlBackslash",
 	};
 
 	std::set<Key> reached;

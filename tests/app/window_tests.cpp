@@ -680,6 +680,7 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
 		{ 'Q', 0x1e, false, Key::a },
 		{ 'Y', 0x2c, false, Key::z }, // QWERTZ
 		{ VK_OEM_1, 0x27, false, Key::semicolon },
+		{ VK_OEM_102, 0x56, false, Key::international_backslash },
 		{ VK_HOME, 0x47, false, Key::numpad_7 }, // NumLock off
 		{ VK_NUMPAD7, 0x47, false, Key::numpad_7 },
 		{ VK_HOME, 0x47, true, Key::home },
@@ -722,6 +723,32 @@ TEST_CASE("keyboard messages map physical positions independently of their chara
 
 	SendMessageW(hwnd(window), WM_CHAR, L'z', 1);
 	CHECK(notify.last_text == U'z');
+}
+
+TEST_CASE("the ISO extra key reaches keyboard edges through the Win32 window")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.keyboard.set_focused(true);
+	notify.keyboard.poll();
+	notify.keyboard.poll();
+	SendMessageW(hwnd(window), WM_KEYDOWN, VK_OEM_102, key_down_lparam(0x56));
+	notify.keyboard.poll();
+	CHECK(notify.last_down == Key::international_backslash);
+	CHECK(notify.keyboard.pressed(Key::international_backslash));
+	CHECK_FALSE(notify.keyboard.held(Key::backslash));
+	SendMessageW(hwnd(window), WM_KEYDOWN, VK_OEM_102,
+		key_down_lparam(0x56) | previous_state_bit);
+	notify.keyboard.poll();
+	CHECK(notify.keyboard.held(Key::international_backslash));
+	CHECK_FALSE(notify.keyboard.pressed(Key::international_backslash));
+	SendMessageW(hwnd(window), WM_KEYUP, VK_OEM_102, key_up_lparam(0x56));
+	notify.keyboard.poll();
+	CHECK(notify.last_up == Key::international_backslash);
+	CHECK(notify.keyboard.released(Key::international_backslash));
+	CHECK_FALSE(notify.keyboard.held(Key::international_backslash));
+	SendMessageW(hwnd(window), WM_CHAR, L'<', 1);
+	CHECK(notify.last_text == U'<');
 }
 
 TEST_CASE("UTF-16 character assembly belongs to each hidden window")

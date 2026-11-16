@@ -2484,6 +2484,23 @@ cover both feeds, edges and the fallback for unknown keys; follow the input
 verification plan and website gate. Synthetic mapping tests do not establish
 physical ISO-keyboard acceptance.
 
+**Implemented 2026-11-17:** `Key::international_backslash` and its same-spelled
+token append after the 97 existing valid keys. Win32 non-extended set-1 scan
+`0x56` and DOM `IntlBackslash` feed that position; existing Backslash, modifier
+combining and unknown-key handling retain their meanings. The Windows SDK
+10.0.26100.0 `kbd.h` enhanced-keyboard `T56` table and
+[Microsoft's OEM extra-key description](https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes)
+were checked alongside the
+[UI Events position definition](https://www.w3.org/TR/uievents-code/#code-IntlBackslash).
+The token/ordinal compatibility snapshot, native message feed and portable
+DOM mapping/edge tests pass in native-null and wasm-debug-null InputTests and
+AppTests (2/2 in each). A bounded Chrome 157.0.8103.78 page probe also passes
+synthetic ISO and unknown-code dispatch through the real Window listener,
+including default prevention and independent typed text. The committed full
+window sequence contains those same checks. No physical ISO keyboard was
+used. The nine standalone CMake lint checks, 56 browser-protocol tests and the website gate (200 tests, 180 pages) pass. The combined input/app verification sweep remains for integration;
+this story stays unticked until that qualification is recorded.
+
 <a id="pi-24"></a>
 ### PI-24. Retain matching symbols for an optimised Windows Release
 

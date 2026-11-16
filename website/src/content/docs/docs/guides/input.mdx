@@ -237,6 +237,18 @@ binding wants. The minimal sample reads arrows and WASD together:
 
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="Vector2F keyboard_direction(const Keyboard& keyboard)" to="}" />
 
+The ISO extra position between left Shift and Z is `Key::international_backslash`.
+Its saved-binding token is `"international_backslash"`; the existing
+`Key::backslash` remains the separate position near Enter. Windows maps the
+non-extended set-1 scan `0x56` (normally `VK_OEM_102`), and the browser maps
+[`IntlBackslash`](https://www.w3.org/TR/uievents-code/#code-IntlBackslash), to
+the same new key. The character printed or typed there depends on the layout:
+read `keyboard.typed()` for text. Other unmapped positions remain `Key::none`,
+and left/right Shift, Control and Alt retain their combined keys.
+
+This spelling was added after `v0.3.0`. A starter pinned to that release needs
+an [engine update](/docs/guides/starter-update/) before using it.
+
 **Typed text is separate.** `keyboard.typed()` returns what the player typed during the step, as
 UTF-8, with the keyboard layout, dead keys and input methods already applied by the system. It is
 valid until the next step, so copy it to keep it. Use it for a name-entry box, never for
