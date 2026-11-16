@@ -631,6 +631,11 @@ in the message and the executable's folder. For this preset, expect
 rules in `game\CMakeLists.txt` if they are absent. The
 [content guide](/docs/guides/assets/#getting-content-beside-the-executable) explains those rules.
 
+If a defect appears only in the optimized Release game,
+[Keep matching Release symbols](/docs/guides/release-symbols/) builds and retains the original
+executable/PDB/source pair. Begin with the Debug workflow above for ordinary source defects;
+optimized lines and locals can differ from what stepping in Debug shows.
+
 ## Direct3D diagnostics
 
 <GuideVersionNote feature="standard-error routing of the Direct3D debug-device notice" releaseGuide="docs/get-started/debug-your-game/" />

@@ -23,6 +23,13 @@ block in `game-CMakeLists.txt`.
 | `helpers/build.cmd`, `helpers/test.cmd`, `helpers/play.cmd` | The optional native commands at the project's root. |
 | `helpers/starter_commands.ps1` | `tools/starter_commands.ps1`, their shared Visual Studio discovery, x64 environment and command runner. |
 
+`release-symbols.cmake` is an opt-in game-owned recipe from
+*Keep matching Release symbols* (`src/content/docs/docs/guides/release-symbols.mdx`).
+The assembler does not place or enable it. Including it before the engine
+and game subdirectories and selecting `MYGAME_RELEASE_SYMBOLS=ON` adds full
+native MSVC Release symbols while preserving optimization, runtime and IPO
+choices. It adds no install rule for PDBs.
+
 The installer configuration uses the same five-entry selection qualified in
 the [13 November 2026 isolated install](../../../docs/review/2026-11-10-first-run/2026-11-13-visual-studio-install.md)
 on Visual Studio Community 2026 18.12.0. Its presence installs nothing and does

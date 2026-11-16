@@ -1,0 +1,152 @@
+---
+title: Keep matching Release symbols
+description: An optional native MSVC Release recipe that keeps optimization, verifies a full PDB against the actual executable and source, and retains the matching files privately.
+sidebar:
+  order: 10.1
+---
+
+import { Code, Aside } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
+import recipe from '~/walkthrough/release-symbols.cmake?raw';
+
+A failure that appears only in the optimized game needs the executable that actually failed,
+its matching **PDB** (program database) and the source files used to build it. Rebuilding the
+same commit can produce a different pair. Keep the original files before trying to reproduce
+the failure.
+
+This is an optional recipe for the starter's native Windows **MSVC `x64-release`** build.
+It keeps Release optimization, precise floating-point rules and the selected runtime and IPO
+policy. It does not substitute `RelWithDebInfo` or make the game behave like an unoptimized
+Debug build. For ordinary source defects, begin with
+[Edit and debug in Visual Studio](/docs/get-started/debug-your-game/).
+
+## Opt in for one build
+
+From your game's folder, make `release-symbols.cmake` and paste this file into it:
+
+```bat
+notepad release-symbols.cmake
+```
+
+<Code code={recipe} lang="cmake" title="release-symbols.cmake" />
+
+In the project's top-level `CMakeLists.txt`, add the include **before** the engine and game
+subdirectories, so that it applies to their compiled sources:
+
+```cmake
+include(release-symbols.cmake)
+add_subdirectory(external/labrador)
+add_subdirectory(game)
+```
+
+Then, in the x64 Native Tools Command Prompt:
+
+```bat
+cmake --preset x64-release -DMYGAME_RELEASE_SYMBOLS=ON
+cmake --build --preset x64-release
+ctest --preset x64-release
+```
+
+The option defaults to `OFF`. Opting in recompiles with source information and asks the linker
+for a full `out/build/x64-release/game/MyGame.pdb` beside `MyGame.exe`. The full PDB can be
+used without the original intermediate objects. The recipe adds these settings:
+
+| Setting | Purpose |
+| --- | --- |
+| `/Zi` | Emit compiler debugging information while retaining optimization. |
+| `/ZH:SHA_256` | Record SHA-256 source checksums, so an edited file can be distinguished from the built source. |
+| `/DEBUG:FULL` | Produce the final executable's complete PDB. |
+| `/OPT:REF /OPT:ICF /INCREMENTAL:NO` | Retain Release elimination, folding and non-incremental linking after enabling debug information. |
+
+MSVC's `/DEBUG` changes the default elimination and folding choices and implies incremental
+linking, which is why the recipe states those choices after it.
+[Microsoft's linker reference](https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info)
+explains that interaction; its [source-checksum reference](https://learn.microsoft.com/en-us/cpp/build/reference/zh)
+describes `/ZH`.
+
+The recipe leaves `/O2`, `/fp:precise`, the runtime and IPO selection alone. In particular,
+engine-only IPO and a caller's whole-project IPO remain different choices; the
+<RepoLink path="docs/performance/native-release-ipo.md">qualified IPO policy</RepoLink>
+explains them. Turning this symbol option on does not turn IPO on. Custom compiler/linker
+policies need their own checks; this recipe qualifies the starter's ordinary MSVC Release choices.
+
+## Check the actual pair
+
+<Aside title="Optional development tools">
+The `v0.3.0` starter contains neither tool below. Use a development Labrador tooling checkout
+that contains `tools/consumer_check/symbol_probe` and `retain_symbols.py`; it can be separate
+from the engine your game builds against. The CMake recipe above needs no new engine API.
+</Aside>
+
+The following commands assume that tooling checkout is `C:\dev\Labrador`. Build the small
+standalone probe from your game's Native Tools prompt:
+
+```bat
+cmake -S C:\dev\Labrador\tools\consumer_check\symbol_probe -B out\symbol-probe -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build out\symbol-probe
+out\symbol-probe\LabradorSymbolProbe.exe --exe out\build\x64-release\game\MyGame.exe --pdb out\build\x64-release\game\MyGame.pdb --source game\main.cpp --timeout 60 > out\symbol-check.txt
+```
+
+The probe uses the installed Windows SDK's x64 `dbghelp.dll`, prints the actual loaded path
+and uses only the selected local PDB path. If the DLL is elsewhere, pass its absolute path
+with `--dbghelp`. This installs no debugger and changes no host debugger settings.
+
+Success requires matching executable/PDB GUID and age, full line information, an exact source
+checksum, a real one-shot breakpoint in `wWinMain`, and smoke-test exit zero. The probe starts
+only the selected executable with `--smoke-test`, restores its breakpoint and closes that child
+on failure or timeout. If your game changes its entry point or smoke route, adapt `--symbol`
+to a reachable function or use your normal debugger. The
+<RepoLink path="tools/consumer_check/symbol_probe/README.md">probe's usage</RepoLink>
+states its scope.
+
+## Keep the evidence privately
+
+After a completed build and successful check, before editing its sources, run this from the
+game's folder with Python:
+
+```bat
+python C:\dev\Labrador\tools\consumer_check\retain_symbols.py --exe out\build\x64-release\game\MyGame.exe --pdb out\build\x64-release\game\MyGame.pdb --source-root . --out out\private-symbols\release-one --receipt out\symbol-check.txt
+```
+
+Choose a new destination for each retained build. The helper refuses an existing capture,
+copies the selected EXE/PDB and receipt, and writes `identity.json` with their SHA-256 hashes
+and a `source.zip` containing the source tree's **actual bytes**. It excludes `.git`, `.vs`,
+`out`, `node_modules`, `vcpkg_installed` and `__pycache__` folders and refuses links rather than
+following them into other trees. A destination inside the project must be under its excluded
+`out/` folder. An interrupted capture stays `.partial` and does not replace an older receipt.
+
+Keeping actual bytes matters: a Git archive can have different line endings from the compiled
+working copy, which changes its source checksum. Retain the build commands, compiler version,
+selected options and any relevant generated source too. The capture records files and hashes;
+the separate probe verifies the matching PDB and selected source line. Neither establishes
+reproducible rebuilding of every dependency.
+
+Store that folder where you keep private build evidence. PDBs and source archives can reveal
+private names, paths and source. The normal `cmake --install` rules copy the game and its
+runtime files, and do not copy these PDBs or this private folder. Keep sending players the
+[ordinary installed release](/docs/guides/windows-release/).
+
+## Use it for a reported failure
+
+Keep the failing installed game or ZIP and identify its executable by hash. Select the retained
+pair whose executable hash matches it; the filename or source commit alone is insufficient.
+Extract `source.zip` privately and keep the PDB's basename when moving it. The probe can use
+that PDB and a relocated preserved `main.cpp`, provided its bytes match.
+
+For a failure elsewhere, load the original executable and its matched PDB in your debugger
+and use the preserved sources when it asks for a file. Optimization can inline or remove code
+and variables, and fold identical functions: one verified breakpoint does not promise that
+every line or local is inspectable. Symbols for third-party DLLs require their own matching
+files. This recipe adds no dump writer, upload, signing or automatic publication.
+
+## What was checked
+
+On 17 November 2026 an assembled consumer built and passed its two native tests with symbols
+enabled, both under its ordinary IPO policy and with engine plus caller IPO explicitly on.
+Both real debug-process probes loaded their exact PDB, checked `main.cpp`'s SHA-256, hit line
+102 and resumed to smoke exit zero. The IPO install contained exactly the normal twenty files,
+no PDB, and its installed smoke test passed. Relocated symbols/source passed; mismatched PDB
+or source and a timeout failed with no surviving child. The
+<RepoLink path="docs/performance/2026-11-17-release-symbols.md">dated qualification</RepoLink>
+records source, compiler, options, hashes and limits. Browser, other compilers and a general
+Visual Studio stepping session are outside that check.

@@ -41,6 +41,12 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** The optional
+  [Release-symbols recipe](https://labradorengine.com/docs/guides/release-symbols/)
+  adds full native MSVC Release PDBs without changing optimization, runtime
+  or IPO choices. Existing copies can opt in with the copied CMake file;
+  private EXE/PDB/source retention stays outside the installed game folder.
+
 - **2026-11-17.** The shared project CMake file selects the dependency helper
   only when the engine provides it, keeping that build file usable with
   `v0.3.0` too. A copy with an unconditional `labrador_find_package(doctest)`
