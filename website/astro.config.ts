@@ -40,6 +40,7 @@ export default defineConfig({
 			customCss: ['./src/styles/site.css'],
 			routeMiddleware: './src/route-data.ts',
 			components: {
+				Head: './src/components/overrides/Head.astro',
 				Header: './src/components/overrides/Header.astro',
 				Footer: './src/components/overrides/Footer.astro',
 				EditLink: './src/components/overrides/EditLink.astro',

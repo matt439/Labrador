@@ -18,6 +18,12 @@ empty Windows machine to a game of your own that builds against Labrador, in
 three steps, from a release's starter ZIP and with no Git needed; the first
 release to carry one is `v0.3.0`.
 
+<img src="website/src/assets/captures/linesweeper-play.png" width="1280" height="720" alt="LineSweeper: a scripted October 2026 frame with a yellow square above a multicoloured block stack, beside hold and next-piece slots and a score of 4694.">
+
+LineSweeper, the sample game: a scripted 1280x720 D3D11 Release frame from the
+[reviewed October 2026 capture set](docs/website-plan.md), made with
+[LineSweeperCapture](tools/linesweeper_capture/README.md).
+
 The engine is the point, but an engine with no client is a library of guesses.
 Labrador has one: ColourWars, a split-screen paint-shooter that consumes this
 repository as a submodule and is the thing that keeps saying "this API is
