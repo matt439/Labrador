@@ -1604,9 +1604,15 @@ window to restore to the requested size. Maximized geometry is prepared while
 hidden, with the launcher's command captured before placement preparation.
 Initial-state full-screen transitions also retain the first draw's dimensions
 through reveal; pending maximized geometry is settled before drawing.
-The story remains unticked:
-the combined app matrix, website gate and dated visual qualification on every
-native rasteriser remain separate acceptance work.
+**Native qualification, 2026-11-17:** the five native Debug CTest selections
+pass 112/112 at `5cff44b9`. [The dated visual record](../review/colourwars-reports/window-19/2026-11-17/README.md)
+retains eight inspected client-only window captures and engine redraws across
+the four rasterisers, windowed and full screen, on the RTX 5080. All first draws
+are logged hidden; later completed-frame observations are visible/foreground
+with stable client and buffer sizes. The record retains source/library/executable
+hashes, commands and snapshot limits; it makes no scan-out or sub-snapshot-flash
+claim. The story stays unticked for the remaining browser/app-matrix and final
+website verification.
 
 <a id="oca-88"></a>
 ### OCA-88. Query the dimensions of a loaded texture

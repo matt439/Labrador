@@ -824,3 +824,21 @@ The November 13 captures remain historical evidence;
 the new implementation still needs the app matrix, website gate and dated
 first-reveal, activation and full-screen visual qualification on each native
 rasteriser. [OCA-87](../../product/BACKLOG.md#oca-87) remains open for that work.
+
+### Native qualification, 2026-11-17
+
+[The dated record](window-19/2026-11-17/README.md) contains eight inspected
+client-only visible-window images, eight engine redraws, lifecycle/device logs
+and build/source hashes for `5cff44b9`. Direct3D 11, Direct3D 12, GL and Vulkan
+each drew the sample windowed at 1280 by 720 and full screen at 2560 by 1440 on
+the RTX 5080. Initialization and the first draw are hidden in each log; a later
+completed-frame observation is visible and foreground with unchanged client
+and back-buffer dimensions. Every picture shows the greeting and complete
+control hint on black. All capture applications returned from their loops and
+closed. The five native Debug CTest selections also pass 112/112.
+
+The visible images are later point-in-time observations, not a trace of every
+compositor frame; the framebuffer images are explicitly unpresented redraws.
+Neither supplies scan-out, pacing or a claim excluding sub-snapshot transients.
+This closes the dated all-native-rasteriser/full-screen visual qualification;
+OCA-87 still owes the remaining browser/app-matrix and final website checks.

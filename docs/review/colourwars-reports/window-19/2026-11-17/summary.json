@@ -1,0 +1,284 @@
+{
+  "source_commit": "5cff44b9c6da777479229832abb40bfc0fc6e65c",
+  "source_tree": "c18c7428f6a34961711c3cde928b4a29925e27f5",
+  "recorded_utc": "2026-11-16T14:10:28.659145+00:00",
+  "artifact_hash_policy": "PNG bytes are unchanged; text artifacts normalize CRLF to LF before SHA-256, matching canonical Git text.",
+  "cases": [
+    {
+      "preset": "x64-debug",
+      "mode": "windowed",
+      "device": {
+        "event": "device",
+        "backend": "d3d11",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug\\revealcapturewindowed.exe",
+        "api": "Direct3D 11",
+        "name": "NVIDIA GeForce RTX 5080",
+        "kind": 0,
+        "vendor_id": 4318,
+        "device_id": 11266
+      },
+      "client_size": [
+        1280,
+        720
+      ],
+      "first_draw_end_ms": 159.594,
+      "first_observed_completed_frame": 1,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:01:03.474Z",
+      "snapshot_completed_utc": "2026-11-16T14:01:03.617Z",
+      "inspection": "Direct3D 11 windowed: greeting and full control hint drawn clearly on a black client area; no class-brush white area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug",
+      "mode": "fullscreen",
+      "device": {
+        "event": "device",
+        "backend": "d3d11",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug\\revealcapturefullscreen.exe",
+        "api": "Direct3D 11",
+        "name": "NVIDIA GeForce RTX 5080",
+        "kind": 0,
+        "vendor_id": 4318,
+        "device_id": 11266
+      },
+      "client_size": [
+        2560,
+        1440
+      ],
+      "first_draw_end_ms": 159.565,
+      "first_observed_completed_frame": 2,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:01:20.762Z",
+      "snapshot_completed_utc": "2026-11-16T14:01:20.893Z",
+      "inspection": "Direct3D 11 fullscreen: borderless monitor-sized black client, centered greeting and bottom-left full control hint visible. No white class-brush area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug-d3d12",
+      "mode": "windowed",
+      "device": {
+        "event": "device",
+        "backend": "d3d12",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-d3d12\\revealcapturewindowed.exe",
+        "api": "Direct3D 12",
+        "name": "NVIDIA GeForce RTX 5080",
+        "kind": 0,
+        "vendor_id": 4318,
+        "device_id": 11266
+      },
+      "client_size": [
+        1280,
+        720
+      ],
+      "first_draw_end_ms": 919.728,
+      "first_observed_completed_frame": 1,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:01:38.300Z",
+      "snapshot_completed_utc": "2026-11-16T14:01:38.436Z",
+      "inspection": "Direct3D 12 windowed: greeting and full control hint drawn clearly on black client pixels; no white class-brush area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug-d3d12",
+      "mode": "fullscreen",
+      "device": {
+        "event": "device",
+        "backend": "d3d12",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-d3d12\\revealcapturefullscreen.exe",
+        "api": "Direct3D 12",
+        "name": "NVIDIA GeForce RTX 5080",
+        "kind": 0,
+        "vendor_id": 4318,
+        "device_id": 11266
+      },
+      "client_size": [
+        2560,
+        1440
+      ],
+      "first_draw_end_ms": 484.457,
+      "first_observed_completed_frame": 1,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:01:56.764Z",
+      "snapshot_completed_utc": "2026-11-16T14:01:56.907Z",
+      "inspection": "Direct3D 12 fullscreen: borderless monitor-sized black client, centered greeting and complete bottom control hint visible. No white class-brush area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug-gl",
+      "mode": "windowed",
+      "device": {
+        "event": "device",
+        "backend": "gl",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-gl\\revealcapturewindowed.exe",
+        "api": "OpenGL 3.3.0 NVIDIA 616.92",
+        "name": "NVIDIA Corporation / NVIDIA GeForce RTX 5080/PCIe/SSE2",
+        "kind": 0,
+        "vendor_id": 0,
+        "device_id": 0
+      },
+      "client_size": [
+        1280,
+        720
+      ],
+      "first_draw_end_ms": 244.584,
+      "first_observed_completed_frame": 1,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:02:15.353Z",
+      "snapshot_completed_utc": "2026-11-16T14:02:15.502Z",
+      "inspection": "OpenGL windowed: greeting and complete bottom control hint rendered clearly on black client pixels; no white class-brush area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug-gl",
+      "mode": "fullscreen",
+      "device": {
+        "event": "device",
+        "backend": "gl",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-gl\\revealcapturefullscreen.exe",
+        "api": "OpenGL 3.3.0 NVIDIA 616.92",
+        "name": "NVIDIA Corporation / NVIDIA GeForce RTX 5080/PCIe/SSE2",
+        "kind": 0,
+        "vendor_id": 0,
+        "device_id": 0
+      },
+      "client_size": [
+        2560,
+        1440
+      ],
+      "first_draw_end_ms": 211.668,
+      "first_observed_completed_frame": 1,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:02:32.407Z",
+      "snapshot_completed_utc": "2026-11-16T14:02:32.559Z",
+      "inspection": "OpenGL fullscreen: borderless monitor-sized black client, centered greeting and complete bottom control hint visible. No white class-brush area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug-vulkan",
+      "mode": "windowed",
+      "device": {
+        "event": "device",
+        "backend": "vulkan",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-vulkan\\revealcapturewindowed.exe",
+        "api": "Vulkan 1.4.351",
+        "name": "NVIDIA GeForce RTX 5080",
+        "kind": 0,
+        "vendor_id": 4318,
+        "device_id": 11266
+      },
+      "client_size": [
+        1280,
+        720
+      ],
+      "first_draw_end_ms": 527.777,
+      "first_observed_completed_frame": 1,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:02:53.714Z",
+      "snapshot_completed_utc": "2026-11-16T14:02:53.852Z",
+      "inspection": "Vulkan windowed: greeting and complete bottom control hint rendered clearly on black client pixels; no white class-brush area in this snapshot.",
+      "closed_normally": true
+    },
+    {
+      "preset": "x64-debug-vulkan",
+      "mode": "fullscreen",
+      "device": {
+        "event": "device",
+        "backend": "vulkan",
+        "module_path": "C:\\projects\\labrador-agent-reveal\\out\\reveal-qualification\\x64-debug-vulkan\\revealcapturefullscreen.exe",
+        "api": "Vulkan 1.4.351",
+        "name": "NVIDIA GeForce RTX 5080",
+        "kind": 0,
+        "vendor_id": 4318,
+        "device_id": 11266
+      },
+      "client_size": [
+        2560,
+        1440
+      ],
+      "first_draw_end_ms": 372.793,
+      "first_observed_completed_frame": 2,
+      "visible_when_completed_frame_observed": true,
+      "foreground_when_completed_frame_observed": true,
+      "foreground_observed_during_run": true,
+      "snapshot_requested_utc": "2026-11-16T14:03:11.997Z",
+      "snapshot_completed_utc": "2026-11-16T14:03:12.123Z",
+      "inspection": "Vulkan fullscreen: borderless monitor-sized black client, centered greeting and complete bottom control hint visible. No white class-brush area in this snapshot.",
+      "closed_normally": true
+    }
+  ],
+  "source_contract_sha256": {
+    "CMakeLists.txt": "ecb495194c24d1c3d549cc0ddd28da0e636c34423ac92c179a11c7520831b784",
+    "CMakePresets.json": "5d1474d84359514aca75b4da1a1ae2bc8f8336c06cc629b6e4cc63d1e2afb36f",
+    "cmake/settings.cmake": "790f6a9f3afaaafbee27bb737f9aab06afc01205455aa14e64f105eb37dafb20",
+    "engine/CMakeLists.txt": "e8d32812b7e7260e83de280e2a6a4c674a37ab90fc0240a875134bad6aa76d4c",
+    "engine/app/application.h": "c6e8dd5dadf50c61a05bade37c3a2e12dc8edbebbd8c1e120cfd5adcda66cae0",
+    "engine/app/application.cpp": "e583a39657adb13568873bb1e2a3b95b4d55e0db0e40876635f358e64c505a3b",
+    "engine/app/window.h": "21533a334131a6a6810fc56b18bd1d32972cef75bfb03c9f3754fcfd54a0b193",
+    "engine/app/win32/window.cpp": "e65749bdcd0ba7ad2a3a57f85ca9c4ac7388f72c8e675ccdd3b1ee8e667b0001",
+    "engine/app/web/window.cpp": "6ef756f5b71ad6b30e89931a118b733b4432fc21df2723a49a5c542ec1da63c2",
+    "engine/render/renderer.h": "bbc2d00f3208149b6224231aaed0a3cac9556c4c7c35bb283a8b42f4fe3cf938",
+    "samples/minimal/CMakeLists.txt": "6c19072728bf794e37236747d9930a01e9c81b1557bd4422843d81f1b53a9bcb",
+    "samples/minimal/main.cpp": "35f9ce977251eec1f21cb5f9e8bae4eca7abe1e765b079afe3dac40069370c7c",
+    "samples/minimal/states/hello_state.cpp": "1ea8838e2b217f2ded9175388d1f11d5502a2da8ada24b2bedea7054bd83ab19",
+    "samples/minimal/states/confirm_state.cpp": "61d531a7dc8957965112b67b3c8fd4bbebc0237501ce968e243c715ec24e2cc5",
+    "samples/minimal/content/manifest.json": "c18f65dc6df43f4470f29748665ade78e31d1b04c5ccd3c4ec436319b3b14900",
+    "samples/minimal/content/fonts/jetbrains_mono_bold_16.spritefont": "4eed8bab40cd7c21856e9da166a42a956a63910c57051145571f13d25e7b95b1"
+  },
+  "artifact_sha256": {
+    "README.md": "3db1e371e0c17ed38204125cdc0a2dc621d3e6fb548ce6786bf13e3c3c80930b",
+    "tools/build_capture.py": "8dc14800cf12cc5d90a485a94b41d8f0815166d885a999e0ad26745e24a0a3e1",
+    "tools/capture_main.cpp": "a28a88f406eb3d435167cf36332f00f70cc853c464eb93e948468dfb3386fdb9",
+    "tools/crop_snapshot.py": "dcc1b46678be013f60a36a69ffdc2d7dd20516a6e20e02e34a6ef4bf7d8ecf95",
+    "x64-debug/build-receipt.json": "102b14a25748a748cdab679c49486ac9c2edd1cc4fadadc756fbfa5357e97d94",
+    "x64-debug-d3d12/build-receipt.json": "9cd15b572867ecd9e7d739a5a0c5ce6a5a29f9ee18adacb04fb70434bca40c60",
+    "x64-debug-gl/build-receipt.json": "7fe496791e9c8885237a7658e5e6ee3839a1fe00e02fed705f34cb58a9580015",
+    "x64-debug-vulkan/build-receipt.json": "c102a5f46d1193f170fc44f8fd12150a958dfe2aebf9b4214375ab26306b58ca",
+    "x64-debug-vulkan/fullscreen/client-redraw.png": "012be0bb39e39ea6d4ec7bb44c784705f59ac70cef4fe341e6b8a18bb805f952",
+    "x64-debug-vulkan/fullscreen/client-visible.png": "dd8e20fd4387ba6959304c932d7ddc0193104157d7590022c54185f4f5aebff2",
+    "x64-debug-vulkan/fullscreen/events.jsonl": "ea040bf515890734519b865f6f024c977937155d04ae25dcd8074bae9631c31b",
+    "x64-debug-vulkan/fullscreen/snapshot.json": "2191ff7ba0066e1e1e46ab753c8a5a142c5d3a8f62c35f36fae777507ea3c6aa",
+    "x64-debug-vulkan/windowed/client-redraw.png": "4396da8ec439dfd276cc0cb8c11dae4d6c84d642b67be8c3ec0ee2764626c3fe",
+    "x64-debug-vulkan/windowed/client-visible.png": "cd89a00e86d06db2e8937da0df5f3051eab756aaab55eb00a82776858e043860",
+    "x64-debug-vulkan/windowed/events.jsonl": "a7fdfb16fbd52bd441bfa7d7c9b795e6fd1a7a97046647b31f9cd72d21001df0",
+    "x64-debug-vulkan/windowed/snapshot.json": "729c0ccd75fbe81a2d2a525acd34cfe4fcbfca35f12c9961adf0c16a6e51393b",
+    "x64-debug-gl/fullscreen/client-redraw.png": "012be0bb39e39ea6d4ec7bb44c784705f59ac70cef4fe341e6b8a18bb805f952",
+    "x64-debug-gl/fullscreen/client-visible.png": "850f26d0766b962f05798a46204059f8325a37111bd83e96580de85e842242ae",
+    "x64-debug-gl/fullscreen/events.jsonl": "8ba5412a2ee86492ec4b27d9dcc15402642c07d8197d3085ab8f4ff707ac3ddd",
+    "x64-debug-gl/fullscreen/snapshot.json": "0ad0a572ff8f087415edc30cfcf5720e196db345c369dfbbb8945963646a95a4",
+    "x64-debug-gl/windowed/client-redraw.png": "4396da8ec439dfd276cc0cb8c11dae4d6c84d642b67be8c3ec0ee2764626c3fe",
+    "x64-debug-gl/windowed/client-visible.png": "23ed3ff06426306196fa183d8acb2d85e01b8f814d5b83d9828c16d2d73b4ddc",
+    "x64-debug-gl/windowed/events.jsonl": "4aa2441acea69b054280e2b0318bc28041edde26dc8fe4e2757e936f32ebea30",
+    "x64-debug-gl/windowed/snapshot.json": "bc421fd91bdcb6b11bdf008c0033d416e21c883fb788960de09a6577a66f7e50",
+    "x64-debug-d3d12/fullscreen/client-redraw.png": "012be0bb39e39ea6d4ec7bb44c784705f59ac70cef4fe341e6b8a18bb805f952",
+    "x64-debug-d3d12/fullscreen/client-visible.png": "cc68529b03ccb7db8a442971f803d4f8d677952a1057a6879c1ca7ce3f00f3b5",
+    "x64-debug-d3d12/fullscreen/events.jsonl": "0bf974940ea23826e14e302e6e669338b67d3d5b67ac153d5af40c048d0351a9",
+    "x64-debug-d3d12/fullscreen/snapshot.json": "ff54ce5c3e13a2c7c89f28a7e886097bc8e37066fdae6ded24937b8c0ce7f16a",
+    "x64-debug-d3d12/windowed/client-redraw.png": "4396da8ec439dfd276cc0cb8c11dae4d6c84d642b67be8c3ec0ee2764626c3fe",
+    "x64-debug-d3d12/windowed/client-visible.png": "c8340ae64f2641f1f5ff6841e3575e15fe29980a19fc978c0da9b42abf21430a",
+    "x64-debug-d3d12/windowed/events.jsonl": "8e7cca184377d4ccbee07478ea62f8349fc10f2d359d551c3501e96c9f52db44",
+    "x64-debug-d3d12/windowed/snapshot.json": "f453e4902de6bd90f67dc8ab6525ddea04ecbaedbdd83d5ca613e25f81d87d83",
+    "x64-debug/fullscreen/client-redraw.png": "012be0bb39e39ea6d4ec7bb44c784705f59ac70cef4fe341e6b8a18bb805f952",
+    "x64-debug/fullscreen/client-visible.png": "b2ff4e9062c4b71e04a74ca5465f0242dc725e0df400e1068eaafe53e12b46c1",
+    "x64-debug/fullscreen/events.jsonl": "cf5f9546ebfeb666567b243868fed56fb681f4345a484cbdc10caff3e5f32b3a",
+    "x64-debug/fullscreen/snapshot.json": "a86f6d87f0a5a26a1951d8df1a114c10b236fcada08d5baa9c6c132978034fac",
+    "x64-debug/windowed/client-redraw.png": "4396da8ec439dfd276cc0cb8c11dae4d6c84d642b67be8c3ec0ee2764626c3fe",
+    "x64-debug/windowed/client-visible.png": "746fe0dbb45ecbd4f1cfbfb95ff22e7a2e8bad6500639afe40a7212edfa27f49",
+    "x64-debug/windowed/events.jsonl": "5ff16eb45fa1981db548924e1798c23a8b54e15d3efabad3a3a6afc299a270d8",
+    "x64-debug/windowed/snapshot.json": "ca433e8352909da88c026b7a6b58f3f99ca3c829b68927767fb6ab3b19fbe02d"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "requested_utc": "2026-11-16T14:01:20.762Z",
+  "completed_utc": "2026-11-16T14:01:20.893Z",
+  "retained_utc": "2026-11-16T14:01:27.604Z",
+  "window": {
+    "app": "process:C:\\Projects\\Labrador-agent-reveal\\out\\reveal-qualification\\x64-debug\\RevealCaptureFullscreen.exe",
+    "id": 65015048,
+    "title": "Labrador OCA-87 capture - fullscreen"
+  },
+  "screenshot": {
+    "id": "screenshot-0",
+    "width": 2560,
+    "height": 1440,
+    "originX": 0,
+    "originY": 0
+  },
+  "inspection": "Direct3D 11 fullscreen: borderless monitor-sized black client, centered greeting and bottom-left full control hint visible. No white class-brush area in this snapshot.",
+  "client_crop": {
+    "box_in_snapshot": [
+      0,
+      0,
+      2560,
+      1440
+    ],
+    "size": [
+      2560,
+      1440
+    ],
+    "sha256": "b2ff4e9062c4b71e04a74ca5465f0242dc725e0df400e1068eaafe53e12b46c1",
+    "geometry_event": {
+      "event": "client_redraw_exported",
+      "utc_epoch_ms": 1794837676536,
+      "elapsed_ms": 258.934,
+      "frame": 2,
+      "visible": true,
+      "foreground": true,
+      "fullscreen": true,
+      "client_origin": [
+        0,
+        0
+      ],
+      "client_size": [
+        2560,
+        1440
+      ],
+      "window_rect": [
+        0,
+        0,
+        2560,
+        1440
+      ],
+      "frame_rect": [
+        0,
+        0,
+        2560,
+        1440
+      ],
+      "window_dpi": 96,
+      "buffer_size": [
+        2560,
+        1440
+      ]
+    }
+  }
+}
