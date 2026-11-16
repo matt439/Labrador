@@ -393,6 +393,14 @@ async function evaluate(devtools, session, expression, await_promise = false,
 	return answer.result.value;
 }
 
+// Activate the browser's view, which is separate from DOM focus emulation.
+// Fullscreen requests require that view to have focus even when the renderer
+// reports document.hasFocus() and an active user gesture.
+export async function activate_page(send, session) {
+	await send('Page.enable', {}, session);
+	await send('Page.bringToFront', {}, session);
+}
+
 // The files under `folder` in the page's file system, base64-encoded. Empty if
 // the folder was never made, which is the passing case.
 //
@@ -717,7 +725,7 @@ async function run() {
 		await setup('Inspector.enable', {}, session);
 		await setup('Runtime.enable', {}, session);
 		await setup('Log.enable', {}, session);
-		await setup('Page.enable', {}, session);
+		await activate_page(setup, session);
 		if (input_driver?.prepare) {
 			await Promise.race([input_driver.prepare(page_api), wait(left()).then(() => {
 				throw new Error(`the input driver's prepare did not finish within ${timeout_ms / 1000} s`);
