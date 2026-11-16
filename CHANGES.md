@@ -130,7 +130,8 @@ sampled regions against the real texture. Pass
 `ResourceLoader` supplies the dimensions automatically for manifest callers.
 
 Named frames and every expanded strip frame now refuse sampled endpoints
-outside the atlas, naming the sheet and offending frame or strip. Content
+outside the atlas, naming the sheet and offending frame or strip. The loader
+checks strip bounds before allocating its rectangle cache. Content
 that depended on sampler clamping must move or resize its region or provide
 the intended atlas. Valid negative widths and heights retain their sampling
 order; individual zero-area frames stay valid when their endpoints fit.

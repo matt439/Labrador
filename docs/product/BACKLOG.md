@@ -1666,7 +1666,9 @@ check the website gate. This does not reopen the separate texture-limit API.
 **Implementation and qualification, 2026-11-16:** the reader takes positive
 atlas dimensions, supplied by `ResourceLoader` through `texture_size`, and
 checks signed endpoints with 64-bit arithmetic for individual and expanded
-strip frames. Individual zero-area frames retain their in-bounds degenerate
+strip frames. A strip's linear first/last bounds are checked before allocating
+its cache; native Debug allocation observation verifies that refusal order.
+Individual zero-area frames retain their in-bounds degenerate
 definitions; nonempty zero-area strips remain refused, while zero-count strips
 keep their unused geometry. No sample content needed correction. Portable
 AssetsTests and the migrated ComponentsTests pass on native-null and

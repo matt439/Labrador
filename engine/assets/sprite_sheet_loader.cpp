@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -36,6 +37,33 @@ namespace labrador
 					std::to_string(texture_size.x) + " by " +
 					std::to_string(texture_size.y) + " texels.");
 			}
+		}
+
+		void validate_strip_bounds(const RectangleI& first_frame, int frame_count,
+			const Vector2I& texture_size, const std::string& context)
+		{
+			if (frame_count == 0)
+			{
+				return;
+			}
+			const int last_index = frame_count - 1;
+			const int64_t last_x = static_cast<int64_t>(first_frame.x) +
+				static_cast<int64_t>(last_index) * first_frame.width;
+			if (last_x < (std::numeric_limits<int>::min)() ||
+				last_x > (std::numeric_limits<int>::max)())
+			{
+				throw std::out_of_range("Animation frame " +
+					std::to_string(last_index) + " x coordinate " +
+					std::to_string(last_x) + " is outside int range.");
+			}
+			// Horizontal origins form a linear sequence with one signed width;
+			// its first and last sampled rectangles bound every frame. Check
+			// before constructing the strip's rectangle cache.
+			validate_rectangle(first_frame, texture_size, context + " frame 0");
+			RectangleI last_frame = first_frame;
+			last_frame.x = static_cast<int>(last_x);
+			validate_rectangle(last_frame, texture_size,
+				context + " frame " + std::to_string(last_index));
 		}
 
 		NameTable<SpriteFrame> decode_sprite_frames(const JsonValue& json,
@@ -167,17 +195,13 @@ namespace labrador
 
 				try
 				{
+					validate_strip_bounds(first_frame, frame_count, texture_size,
+						strip.where() + " ('" + name + "')");
 					AnimationStrip animation(
 						first_frame,
 						frame_count,
 						strip.number("frame_time"),
 						strip.boolean("looping"));
-					for (int frame_index = 0; frame_index < frame_count; ++frame_index)
-					{
-						validate_rectangle(animation.frame_rect(frame_index),
-							texture_size, strip.where() + " ('" + name +
-							"') frame " + std::to_string(frame_index));
-					}
 					animation_strips.add(name, std::move(animation));
 				}
 				catch (const std::out_of_range& error)

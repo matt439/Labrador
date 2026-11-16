@@ -9,6 +9,7 @@
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/texture_data.h"
+#include "tests/allocation_scope.h"
 #include "tests/scratch_file.h"
 
 #include <array>
@@ -17,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <vector>
 
 using namespace labrador;
 using labrador_tests::ScratchFile;
@@ -622,3 +624,53 @@ TEST_CASE("sprite sheet atlas dimensions must be positive")
 		CHECK_THROWS_AS(load(sheet_of(""), dimensions), std::invalid_argument);
 	}
 }
+
+TEST_CASE("the maximum accepted strip count is checked against a tiny atlas")
+{
+	const std::string contents = sheet_with_strip(horizontal_strip_definition(
+		"too_many_texels", 0, 1, max_texture_dimension, false));
+	CHECK_THROWS_AS(load(contents, Vector2I(4, 32)), std::runtime_error);
+	const std::string message = refusal_message(contents, Vector2I(4, 32));
+	CHECK(message.find("'too_many_texels'") != std::string::npos);
+	CHECK(message.find("frame " + std::to_string(max_texture_dimension - 1)) != std::string::npos);
+	CHECK(message.find("outside its atlas of 4 by 32 texels") != std::string::npos);
+}
+
+#if defined(_MSC_VER) && defined(_DEBUG) && defined(_DLL)
+TEST_CASE("an out-of-atlas strip is refused before allocating its rectangle cache")
+{
+	labrador_tests::require_allocation_scope_counts();
+	const size_t cache_bytes = max_texture_dimension * sizeof(RectangleI);
+	labrador_tests::AllocationSample calibration;
+	size_t observed_size = 0;
+	{
+		labrador_tests::AllocationScope scope(calibration);
+		const std::vector<RectangleI> cache(max_texture_dimension);
+		observed_size = cache.size();
+	}
+	REQUIRE_FALSE(calibration.hook_conflict);
+	REQUIRE(observed_size == max_texture_dimension);
+	REQUIRE(calibration.bytes >= cache_bytes);
+
+	const ScratchFile file("strip_preallocation.json", sheet_with_strip(
+		horizontal_strip_definition("too_many_texels", 0, 1, max_texture_dimension, false)));
+	labrador_tests::AllocationSample rejected;
+	std::string message;
+	{
+		labrador_tests::AllocationScope scope(rejected);
+		try
+		{
+			read_sprite_sheet(file.path().c_str(), TextureHandle(), Vector2I(4, 32));
+		}
+		catch (const std::runtime_error& error)
+		{
+			message = error.what();
+		}
+	}
+	REQUIRE_FALSE(rejected.hook_conflict);
+	INFO("all normal-block bytes requested during refusal: ", rejected.bytes);
+	CHECK(rejected.bytes < cache_bytes);
+	CHECK(message.find("'too_many_texels'") != std::string::npos);
+	CHECK(message.find("outside its atlas of 4 by 32 texels") != std::string::npos);
+}
+#endif
