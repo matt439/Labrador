@@ -4,6 +4,8 @@
 //
 
 #include "engine/render/d3d11/device_resources.h"
+#include "engine/core/diagnostic.h"
+#include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 
 #include <algorithm>
@@ -90,7 +92,7 @@ namespace labrador
 #ifdef _DEBUG
             wchar_t buff[256] = {};
             swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterIndex, desc.VendorId, desc.DeviceId, desc.Description);
-            OutputDebugStringW(buff);
+            report_diagnostic(narrow(buff));
 #endif
 
             return true;
@@ -121,7 +123,7 @@ namespace labrador
         }
         else
         {
-            OutputDebugStringA("WARNING: Direct3D Debug Device is not available\n");
+            report_diagnostic("WARNING: Direct3D Debug Device is not available\n");
         }
 #endif
 
@@ -135,7 +137,7 @@ namespace labrador
             {
                 m_flipPresent = false;
 #ifdef _DEBUG
-                OutputDebugStringA("INFO: Flip swap effects not supported");
+                report_diagnostic("INFO: Flip swap effects not supported");
 #endif
             }
         }
@@ -191,7 +193,7 @@ namespace labrador
 
             if (SUCCEEDED(hr))
             {
-                OutputDebugStringA("Direct3D Adapter - WARP\n");
+                report_diagnostic("Direct3D Adapter - WARP\n");
             }
         }
 #endif
@@ -262,7 +264,7 @@ namespace labrador
                 char buff[64] = {};
                 sprintf_s(buff, "Device Lost on ResizeBuffers: Reason code 0x%08X\n",
                     static_cast<unsigned int>((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_d3dDevice->GetDeviceRemovedReason() : hr));
-                OutputDebugStringA(buff);
+                report_diagnostic(buff);
 #endif
                 // If the device was removed for any reason, a new device and swap chain will need to be created.
                 HandleDeviceLost();
@@ -415,7 +417,7 @@ namespace labrador
             char buff[64] = {};
             sprintf_s(buff, "Device Lost on Present: Reason code 0x%08X\n",
                 static_cast<unsigned int>((hr == DXGI_ERROR_DEVICE_REMOVED) ? m_d3dDevice->GetDeviceRemovedReason() : hr));
-            OutputDebugStringA(buff);
+            report_diagnostic(buff);
 #endif
             HandleDeviceLost();
         }

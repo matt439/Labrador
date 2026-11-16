@@ -117,6 +117,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Capture non-fatal engine diagnostics
+
+**New API and behaviour change.** `engine/core/diagnostic.h` supplies one
+process-wide `set_diagnostic_callback(callback, context)` and a synchronous
+`report_diagnostic(message)`. The callback is `noexcept`, borrows its context
+and message, and may be called concurrently on reporting threads. Install or
+replace it only while engine and diagnostic calls are stopped; reset it
+before destroying its context, after the engine's objects and callbacks stop.
+Passing `nullptr` restores standard error.
+
+Engine-owned Direct3D and Vulkan notices now use this route instead of
+`OutputDebugString`; their default destination is stderr, with a terminating
+newline. Optional-bank fallback notices and a browser owner's final
+`on_closed` exception use the same callback. Redirect stderr or install a
+callback to retain those messages. Vulkan forwards the validation layer's
+message without the former `Vulkan: ` prefix. Direct3D's own debug-layer
+queue, fatal exception propagation and browser `Module.onError` are unchanged.
+
 ### 2026-11-16 - Construct scripted pad input beside the configured backend
 
 **Additive fixture API.** `ScriptedGamepadSource` supplies copied slot

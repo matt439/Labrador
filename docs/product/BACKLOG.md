@@ -1395,7 +1395,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
 - [ ] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
 - [x] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Construct scripted pad input alongside configured shipping input in the same engine library
-- [ ] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
+- [x] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
 - [ ] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
 - [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
 - [ ] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
@@ -1769,6 +1769,21 @@ shared fatal-error UI. Focused core/assets tests capture actual messages and
 default routing, with relevant backend checks for the moved sites; verify
 native and wasm paths, teardown safety and the website gate. A sink is not
 a reason to log once per object per frame.
+
+**Closed 2026-11-16:** `engine/core/diagnostic.h` provides one non-owning,
+replaceable `noexcept` callback/context pair, synchronous reporting and
+stderr default routing. Its contract requires quiescent registration,
+context/code lifetime through all engine callbacks, and callback-owned
+synchronisation. Trivial constant-initialised state has no teardown
+destructor. Current Direct3D/Vulkan, optional-bank and browser post-close
+notices use it; fatal exceptions and browser `Module.onError` remain separate.
+CoreTests check exact borrowed bytes, replacement, actual stderr defaults,
+reset before context destruction and synchronous worker calls on native-null
+and wasm Debug null-render/Web Audio builds. AssetsTests captures the actual
+missing optional Web Audio bank reason and preserves the required-bank throw;
+the D3D11 Debug pixel suite captures a real adapter notice and passes. The
+published contract, adopter file-output example and website gate are complete.
+The integrated render/app sweep remains the branch's combined validation.
 
 <a id="oca-92"></a>
 ### OCA-92. Read the platform's reduced-motion preference

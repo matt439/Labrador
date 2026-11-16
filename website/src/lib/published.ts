@@ -122,6 +122,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['thread_pool.h', 'ThreadPool', 'game code'],
 			['partitioner.h', 'Partitioner', 'game code'],
 			['byte_reader.h', 'ByteReader', 'game code'],
+			['diagnostic.h', 'Diagnostics', 'game code'],
 			['file_path.h', 'UTF-8 paths', 'game code'],
 			['step_position.h', 'StepPosition', 'game code'],
 			['random.h', 'Random', 'game code'],

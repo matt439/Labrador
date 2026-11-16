@@ -1,6 +1,13 @@
 #include <doctest/doctest.h>
 
 #include "engine/assets/resource_loader.h"
+#if defined(LABRADOR_TEST_WEBAUDIO)
+#include "engine/audio/audio_device.h"
+#include "engine/audio/audio_resources.h"
+#include "engine/audio/sound_bank.h"
+#include "tests/diagnostic_capture.h"
+#include "tests/scratch_file.h"
+#endif
 
 #include <stdexcept>
 #include <string>
@@ -91,6 +98,40 @@ namespace
 		return asset_entry;
 	}
 }
+
+#if defined(LABRADOR_TEST_WEBAUDIO)
+TEST_CASE("a missing optional container reports its real reason through the diagnostic sink")
+{
+	labrador_tests::DiagnosticCapture capture;
+	const labrador_tests::ScratchFile definition("optional_diagnostic.json", R"({
+		"waves": ["ping"],
+		"create_effect_instance_for_each_wave": false,
+		"sound_effect_instances": []
+	})");
+	const std::filesystem::path path(definition.path());
+	AudioDevice device;
+	AudioResources audio;
+	ResourceLoader loader(nullptr, nullptr, &audio, &device);
+	AssetEntry bank = entry("sound_bank", path.stem().string());
+	bank.directory = path.parent_path().generic_string() + "/";
+	bank.optional = true;
+	const AssetManifest manifest = manifest_of({ bank });
+	loader.load_manifest(manifest);
+	CHECK_FALSE(audio.sound_bank(bank.name)->audible());
+	CHECK(capture.calls() == 1);
+	CHECK_FALSE(capture.overflow());
+	CHECK(capture.messages().starts_with("no audio: Failed to open wave bank:"));
+	CHECK(capture.messages().find(bank.name + ".xwb") != std::string_view::npos);
+	CHECK(capture.messages().ends_with(". The manifest marks this bank optional, "
+		"so it plays nothing. See the repository's README, 'Audio'.\n"));
+
+	// Required content still throws, and neither the callback nor the silent
+	// substitute receives that fatal load failure.
+	bank.optional = false;
+	CHECK_THROWS_AS(loader.load_manifest(manifest_of({ bank })), std::runtime_error);
+	CHECK(capture.calls() == 1);
+}
+#endif
 
 TEST_SUITE("ResourceLoaderTests")
 {

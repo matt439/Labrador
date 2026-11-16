@@ -143,7 +143,10 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         )
     endif()
 
-    if(LABRADOR_RENDER_BACKEND STREQUAL "gl")
+    if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
+        target_sources(RenderPixelTests PRIVATE
+            "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d11/diagnostic_tests.cpp>")
+    elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
         target_sources(RenderPixelTests PRIVATE gl/texture_tests.cpp
             gl/material_tests.cpp)
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")

@@ -1,5 +1,6 @@
 #include "engine/render/d3d12/device_resources.h"
 
+#include "engine/core/diagnostic.h"
 #include "engine/render/throw_if_failed.h"
 
 #include <algorithm>
@@ -133,7 +134,7 @@ namespace labrador
 			}
 			else
 			{
-				OutputDebugStringA(
+				report_diagnostic(
 					"WARNING: Direct3D 12 debug layer is not available\n");
 			}
 
@@ -232,7 +233,7 @@ namespace labrador
 				if (SUCCEEDED(hr))
 				{
 					adapter = warp;
-					OutputDebugStringA("Direct3D 12 Adapter - WARP\n");
+					report_diagnostic("Direct3D 12 Adapter - WARP\n");
 				}
 			}
 		}
@@ -532,7 +533,7 @@ namespace labrador
 			sprintf_s(message, "Device lost on Present: reason 0x%08X\n",
 				static_cast<unsigned int>(hr == DXGI_ERROR_DEVICE_REMOVED
 					? this->device_->GetDeviceRemovedReason() : hr));
-			OutputDebugStringA(message);
+			report_diagnostic(message);
 #endif
 			this->handle_device_lost();
 			return;
