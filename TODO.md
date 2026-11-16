@@ -50,16 +50,22 @@ access to a real non-Xbox pad for qualification; scripted input cannot close
 that hardware gate. Nine proposals are deferred and three are declined in
 their owners, with explicit revisit conditions.
 
+The [fourth batch](#fourth-accepted-decision-batch-of-2026-11-16) adds twelve
+scopes in BACKLOG's L106 to L117. `OCA-111` follows `OCA-110`'s rebinding
+example; `SM-89` follows `SM-81`'s native Release qualification. Seven proposals
+are deferred. `REV#56` is settled: retain the wide rendering API and use the
+existing UTF-8 conversion boundary. Every current `GAP#` and `IDEA#` selection
+call is now recorded; deferred scopes retain their own revisit triggers.
+
 **Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; and `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before this selection.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
 - Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `SM-30` (set Cloudflare's build command to `npm ci && npm run gate` and delete its `NODE_VERSION` variable).
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy), `SITE#4` (search on the iPhone after the next deploy).
-- Review of 2026-11-10: every remaining `DECISION` row of [that section](#review-of-2026-11-10), 29 between `REV#33` and `REV#94`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md. Four of them (`REV#33`, `REV#37`, `REV#70`, `REV#72`) had their measurement or brief done on 2026-11-13.
+- Review of 2026-11-10: every remaining `DECISION` row of [that section](#review-of-2026-11-10), 17 between `REV#37` and `REV#94`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md. Two of them (`REV#37`, `REV#72`) had their measurement or brief done on 2026-11-13.
 - Work audit of 2026-11-12: `REV#149` (the v0.4.0 release commit and tag; everything before them is prepared), `REV#152` and `REV#156` in [that section](#work-audit-of-2026-11-12).
 - Client reports: `REV#105`, the verdicts on issues #122 to #124, and `REV#104`, the fix for issue #125, in [the reports table](docs/review/colourwars-reports/README.md).
-- Remaining feature proposals in [Feature candidates](docs/feature-candidates.md): `IDEA#1`, `IDEA#2`, `IDEA#3`, `IDEA#9`, `IDEA#12`, `IDEA#14`, `IDEA#17` and `IDEA#19`: typed text, rebinding, save recovery, contact edges, named-frame animations, an unfocused render-rate cap, cursor shapes and small math helpers. [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) are dated advice; the current owner records hold selections and deferrals.
 
 ## Accepted decision batch of 2026-11-16
 
@@ -130,6 +136,28 @@ declines and remaining boundaries. These are planned stories, not results.
 | `SM-86` | OPEN | could | M | Record the window monitor's nominal refresh rate with explicit unknown values; keep measured pacing separate (`IDEA#15`). [Scope](docs/product/BACKLOG.md#sm-86). |
 | `OCA-107` | OPEN | should | M | Add runtime titles and explicit optional icon selection with a starter/release recipe and clear missing-icon refusal (`IDEA#16`). [Scope](docs/product/BACKLOG.md#oca-107). |
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend on real non-Xbox pads; keep four slots. Waits for hardware access (`GAP#1`). [Scope](docs/product/BACKLOG.md#oca-108). |
+
+## Fourth accepted decision batch of 2026-11-16
+
+**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L106 to L117, owns
+the twelve selected scopes and their acceptance. [Feature candidates](docs/feature-candidates.md)
+and [the review ledger](docs/review/2026-11-10/STATUS.md) hold deferrals and the
+decision to keep the current rendering-text API. Implementation is open.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-109` | OPEN | could | M | Add a copyable desktop text field with bounded editing and font limits, using existing conversion on edits (`IDEA#1`). [Scope](docs/product/BACKLOG.md#oca-109). |
+| `OCA-110` | OPEN | could | M | Demonstrate game-owned keyboard rebinding with duplicate refusal, opener-release handling and protected navigation (`IDEA#2`). [Scope](docs/product/BACKLOG.md#oca-110). |
+| `OCA-111` | BLOCKED | could | M | Add best-effort layout labels distinct from stable binding tokens, after `OCA-110`'s example (`REV#58`). [Scope](docs/product/BACKLOG.md#oca-111). |
+| `OCA-112` | OPEN | could | M | Provide a game-owned save/recovery example preserving prior valid and unrecognised data, with platform durability limits (`IDEA#3`). [Scope](docs/product/BACKLOG.md#oca-112). |
+| `OCA-113` | OPEN | could | M | Add native/CSS cursor shapes with gallery pointer use, preserving visibility and confinement (`IDEA#17`). [Scope](docs/product/BACKLOG.md#oca-113). |
+| `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
+| `OCA-115` | OPEN | could | S | Report the selected device's texture-size limit and include it in oversized-upload diagnostics (`REV#33`). [Scope](docs/product/BACKLOG.md#oca-115). |
+| `SM-87` | OPEN | could | S | Report defined native memory and startup observations with context and no hard thresholds (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
+| `SM-88` | OPEN | could | S | Manually report CI failures by workflow, ref, step and attempt without inferring flakiness from counts (`REV#50`). [Scope](docs/product/BACKLOG.md#sm-88). |
+| `SM-89` | BLOCKED | could | M | Add five weekly non-required configurations after `SM-81`'s Release qualification; keep real-driver checks (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
+| `SM-90` | OPEN | should | XS | Add an owner-invoked release-time aggregate counter snapshot with reporting-window limits (`REV#54`). [Scope](docs/product/BACKLOG.md#sm-90). |
+| `SM-91` | OPEN | could | M | Manually rebuild an explicit release tag and compare immutable-asset hashes; signing remains deferred (`REV#70`). [Scope](docs/product/BACKLOG.md#sm-91). |
 
 ## Input, menus, settings and saves
 
@@ -230,22 +258,18 @@ the owner record rather than as closed rows here.
 ## New feature proposals
 
 **Owner:** [Feature candidates](docs/feature-candidates.md), with current-code
-evidence, bounded scope and proposed acceptance. Selection creates or amends
-a story in BACKLOG.md before implementation; these are separate from the
-ready queue above.
+evidence, bounded scope and proposed acceptance. Every current selection call
+is settled. The remaining rows here are deferred with named triggers; accepted
+implementation scopes are stories in the batches above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `IDEA#1` | DECISION | could | M | A copyable single-line typed-text field using Keyboard::typed and documented font limits. |
-| `IDEA#2` | DECISION | could | M | A game-owned keyboard rebinding screen with capture, cancel, reset and duplicate handling. |
-| `IDEA#3` | DECISION | could | M | A versioned save/recovery example that preserves prior data on write or migration failure. |
 | `IDEA#8` | DEFERRED | could | M | Until a concrete hitscan or region-query caller; circle collision has landed, but nearest-hit geometry and spatial queries still need design. [Decision](docs/feature-candidates.md#idea8-scene-queries-segment-hit-and-region-overlap). |
-| `IDEA#9` | DECISION | could | S | A contact begin/continue/end helper over two ticks' contact lists; the collision sample derives trigger entry by hand. Needs a second client. |
-| `IDEA#12` | DECISION | could | M | Animation sequences of named frames with per-frame durations beside today's horizontal, uniformly timed strips. |
-| `IDEA#14` | DECISION | could | S | An unfocused render-rate cap. The requested present interval has landed (`ApplicationOptions::vsync`, `Renderer::set_vsync`); what an unfocused, shown window costs has not been measured. |
-| `IDEA#17` | DECISION | could | S | System cursor shapes (hand, text, crosshair, move) on Win32 and the canvas; today the pointer is the arrow or hidden. |
+| `IDEA#9` | DEFERRED | could | S | Until a second client needs contact begin/end edges and their lifetime contract; the current sample transition stays local. [Decision](docs/feature-candidates.md). |
+| `IDEA#12` | DEFERRED | could | M | Until a client supplies a nonuniform or exported animation needing a wider schema; keep the uniform-strip tool bounded. [Decision](docs/feature-candidates.md). |
+| `IDEA#14` | DEFERRED | could | S | Until an unfocused-but-visible cost measurement or client need justifies a render cap; vsync and minimised sleeping do not settle it. [Decision](docs/feature-candidates.md). |
 | `IDEA#18` | DEFERRED | could | XS | Until a selected game or guide needs left/right panes; retain today's top/bottom layout. [Decision](docs/feature-candidates.md#idea18-a-side-by-side-two-player-layout). |
-| `IDEA#19` | DECISION | could | XS | RectangleF::intersection_of and shortest-arc angle helpers; the 2026-11-04 recommendation defers them to ride `GAP#5`, whose clip rectangle wants `intersection_of` first. |
+| `IDEA#19` | DEFERRED | could | XS | Rectangle intersection can ride clipping; shortest-arc helpers wait for actual aiming/turning code. No easing prerequisite. [Decision](docs/feature-candidates.md). |
 
 ## Review of 2026-11-10
 
@@ -253,29 +277,20 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#33` | DECISION | could | S | No backend queries the device's texture size limit; D3D12's 256-name cap is now in the Sprites and text guide. Querying the limit, naming it in the GL refusal and a capability field stay the owner's. |
 | `REV#35` | DEFERRED | should | S | Owner deferred 2026-11-16 until a real math-only rules caller needs Random; no speculative move, shuffle or derived streams. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#37` | DECISION | should | S | No display-sleep hold while a game is shown (`win32/window.cpp`, `web/window.cpp`). No-input run and headless Chrome wake-lock check recorded 2026-11-13: no display request either way. Left: a pad-only run with the owner's pad, then whether to add a hold. |
-| `REV#42` | DECISION | could | S | Record peak working set, private bytes at exit and process start to first `end_frame` in `bench/linesweeper_frame_result.h`, and print them from `--smoke-test`, before the SM-01 and SM-07 Radeon session. |
 | `REV#43` | DEFERRED | could | S | Owner deferred 2026-11-16 until a real game needs a recurring diagnostic panel; Label and frame timings remain available. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#48` | DECISION | could | M | `website/src/walkthrough/ci.yml` has no wasm or Pages job; `your-web-page.mdx` publishes by hand into a second repository. A copyable deploy workflow would follow OCA-79 and state the public-repository trade. |
-| `REV#50` | DECISION | could | S | Owner call: a `tools/` report over `gh` run data that counts failed job-steps by name and ref, with offline tests; no tool aggregates failures today and `ci.yml:56-63` holds one hand-measured rate. |
-| `REV#52` | DECISION | could | S | Owner call: build the four other release presets and `wasm-debug` on `ci.yml`'s weekly schedule as non-required jobs; needs `tests/ctest_inventory.json` lists and `ci_gap_report`'s gap definition changed together. |
 | `REV#53` | DEFERRED | should | S | Owner deferred 2026-11-16 until a measured download/startup target or demonstrated size regression justifies a hard budget; keep reporting sizes. [Decision](docs/review/2026-11-10/STATUS.md). |
-| `REV#54` | DECISION | should | XS | v0.3.0's counters, 2026-10-29 to 2026-11-11, are recorded beside the review. Left: whether `CONTRIBUTING.md`'s release procedure gains a step recording views, unique visitors and the starter ZIP's downloads; the traffic API needs the owner's access. |
-| `REV#55` | DECISION | could | M | Texture repeat addressing: `TextureFilter` is the seam's whole sampler vocabulary and every backend clamps; a wrap mode costs goldens on four rasterisers, works only for whole textures, and has no caller yet. |
-| `REV#56` | DECISION | could | L | Whether the public text type stays `std::wstring` while `Keyboard::typed()` returns UTF-8; SEAM.md decides the wide entry point, so a change is a source break best settled with `PORT#2` and `IDEA#1`. |
-| `REV#58` | DECISION | could | M | No layout-label query beside `key_name` in `engine/input/keyboard.h`; sample help text prints fixed US letters. Decide with `IDEA#2`, its only real caller, with a stated fallback for Firefox and Safari. |
-| `REV#59` | DECISION | could | M | `GamepadState` carries no pad identity, so a browser build with a PlayStation or Switch pad still shows the samples' fixed Xbox letters. Decide with `GAP#1`; native builds would always answer Xbox. |
+| `REV#55` | DEFERRED | could | M | Until a whole-texture tiling caller needs repeat addressing; repeating an atlas frame remains a separate problem. [Decision](docs/review/2026-11-10/STATUS.md). |
+| `REV#59` | DEFERRED | could | M | After OCA-108 has physical evidence and reliable mapping facts, with an unknown fallback; browser IDs alone do not qualify family prompts. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `OCA-76` | DEFERRED | could | S | Waits for a second caller. The IDBFS walk of the starter was done on 2026-11-13 (beginner-guides GUIDE#12): it needs flushSave or autoPersist to survive a reload. An engine JSON writer needs README's boundary amended. |
-| `REV#61` | DECISION | could | M | Whether the engine offers a shared fatal-error report (title, message) for `samples/minimal/main.cpp` and `main_web.cpp`, or a run helper; the two-file anatomy is ARCHITECTURE's stated design and would be amended. |
-| `REV#64` | DECISION | could | M | A copyable touch-control component in `samples/components`: held button rectangles answering a bitset per step and a stick region answering a Vector2F, with headless tests over synthetic TouchPoints. |
+| `REV#61` | DEFERRED | could | M | Until accepted starter work demonstrates recurring fatal-reporting defects; retain explicit native/browser entry points and separate non-fatal diagnostics. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#65` | DEFERRED | could | S | Owner deferred 2026-11-16 until a real consumer needs a specific integration route beyond the starter ZIP or source/submodule. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#66` | DEFERRED | could | M | Owner deferred 2026-11-16 until a concrete Windows evaluation or distribution need cannot be met by the browser route. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#67` | DEFERRED | could | M | Reassess after SM-82's ASan qualification, when a concrete parser-coverage need justifies fuzzing and corpus maintenance; no security-policy change selected. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#68` | DEFERRED | could | S | Owner deferred 2026-11-16 until an analyzer demonstrates useful findings with manageable upkeep, or a recurring defect class warrants one. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#69` | DECISION | should | S | Record fix landed (rapidjson commit named in its README and in `docs/dependency-updates.md`). Left: the owner's call on Dependabot alerts and the Node 20 action tags. |
-| `REV#70` | DECISION | could | M | A compare-only release rebuild job, and attesting or signing, are the owner's. A manual v0.3.0 rebuild matched both digests on 2026-11-13 from a CRLF checkout (docs/website-versioning.md); an LF checkout would give different ZIP bytes. |
 | `REV#71` | DECISION | could | L | Owner call: a race check of `engine/core/thread_pool.cpp`'s fan-out needs a `std::thread` pool and a Linux clang ThreadSanitizer build, which NMS-04's refusal of non-Windows hosts rules out today; no race is recorded. |
 | `REV#72` | DECISION | could | M | The bundle ran in a cross-origin iframe in headless Chrome 157 on 2026-11-13 with nothing failing (keys after a click, full screen only with allow, partitioned storage; see the record). Still owner calls: an iframe page test, an itch.io guide (needs the owner's account) and .br output. |
 | `REV#73` | DECISION | could | S | `README.md` has no image and the site sets no `og:image`, though LineSweeper captures exist; whether to add both, and whether to announce or list the project, is the owner's call. |

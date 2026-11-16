@@ -5,7 +5,8 @@ They are based on this checkout, not on claims about other engines. Their
 current selection state is indexed in [TODO.md](../TODO.md). Selected scopes
 have stories in [BACKLOG.md](product/BACKLOG.md), which owns their accepted
 scope, acceptance and order; selection is distinct from implementation.
-Unselected proposals still need a story and a place there before starting.
+Every proposal now has a recorded selection or deferral. A deferred proposal
+needs its named revisit condition and a story before implementation starts.
 
 `IDEA#1` to `IDEA#6` came from a read of the samples and guides. `IDEA#7` to
 `IDEA#19` come from the engine review of 2026-10-31, which read every public
@@ -13,10 +14,9 @@ header and sample README against the planned rows in TODO.md, BACKLOG.md's
 horizons and Won't list, the comparison and its *Not now* list, and kept only
 what none of them names.
 
-The ready work is already substantial: browser contracts and bundle tooling,
-couch joining, working settings, pointer menus, localisation and wrapping,
-asset validation, and the new layer check and animation example. Those
-stories should not wait for a decision on these proposals.
+The proposal bodies preserve the evidence and proposed acceptance as written.
+The selection amendment, table and result notes below are current; BACKLOG.md
+owns the implementation stories and their prerequisites.
 
 ## Owner selection, 2026-11-16
 
@@ -25,6 +25,13 @@ The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
 qualification remain open. `IDEA#8` and `IDEA#18` are deferred with the named
 revisit conditions. Earlier selections `IDEA#6`, `IDEA#7` and `IDEA#10` remain
 landed.
+
+**Fourth decision batch, 2026-11-16:** the owner also selected `IDEA#1`,
+`IDEA#2`, `IDEA#3` and `IDEA#17` as OCA-109, OCA-110, OCA-112 and OCA-113.
+Their bounded scopes are linked below and remain unimplemented. `IDEA#9`,
+`IDEA#12`, `IDEA#14` and `IDEA#19` are deferred with the stated client or
+measurement triggers. No `IDEA#` proposal awaits an unrecorded selection;
+the earlier selected and landed states remain distinct.
 
 The result notes below state the selected scope where it narrows an original
 proposal. The original evidence and proposed acceptance are preserved as
@@ -41,38 +48,48 @@ grid-sheet tool for content authoring. Each stays in tools or sample-owned
 code; promoting a mechanism into the engine still needs the real-client
 argument required by PHILOSOPHY T1.
 
-Among the review's additions, `IDEA#10` and `IDEA#7` remove limits every
-game meets and are graded `should`; the rest are `could` and wait for a
-client's case, as T1 asks. `IDEA#14` is the owner's call before it is a slice,
-because the pacing records rest on the constant it would turn into a setting.
+Among the review's additions, `IDEA#10` and `IDEA#7` originally removed limits
+every game meets and were graded `should`; the table retains the proposals'
+estimates. Current selected scopes follow BACKLOG.md, and deferred scopes
+wait for their named evidence. `IDEA#14`'s vsync control has landed; the
+remaining unfocused, visible-window cap waits for a cost measurement or
+concrete client need.
 
 | id | proposal | priority | size | selection or prerequisite |
 |---|---|---|---|---|
-| `IDEA#1` | A single-line typed-text component | could | M | Select its client and supported text scope; coordinate with OCA-42 |
-| `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Select the sample and its duplicate-binding policy |
-| `IDEA#3` | Versioned saves with recovery | could | M | Select the example's save format and recovery policy; builds on OCA-53 |
+| `IDEA#1` | A single-line typed-text component | could | M | Selected 2026-11-16 as [OCA-109](product/BACKLOG.md#oca-109), desktop text with length/font checks and conversion on edits; implementation open |
+| `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Selected 2026-11-16 as [OCA-110](product/BACKLOG.md#oca-110), duplicate refusal and protected navigation; implementation open |
+| `IDEA#3` | Versioned saves with recovery | could | M | Selected 2026-11-16 as [OCA-112](product/BACKLOG.md#oca-112), game-owned recovery preserving previous valid and malformed/future data; implementation open |
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
 | `IDEA#5` | A grid sprite-sheet authoring command | could | S | Selected 2026-11-16 as [OCA-104](product/BACKLOG.md#oca-104); implementation open |
 | `IDEA#6` | Pointer interaction in the components gallery | could | S | Selected 2026-11-04 as OCA-83 and landed |
 | `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Deferred 2026-11-16 until a concrete hitscan or region-query caller supplies the need and semantics |
-| `IDEA#9` | Contact begin and end edges | could | S | A second client needing the edge; the collision sample derives it in a few lines |
+| `IDEA#9` | Contact begin and end edges | could | S | Deferred 2026-11-16 until a second client needs contact edges beyond the collision sample's existing pattern |
 | `IDEA#10` | Arbitrary client sizes | should | S | Selected 2026-11-04 as OCA-81 and landed; enumeration later |
 | `IDEA#11` | Sounds from WAV files and from memory | could | M | Selected 2026-11-16 as [OCA-105](product/BACKLOG.md#oca-105), bounded PCM on all three audio backends; implementation open |
-| `IDEA#12` | Animation sequences with named frames and durations | could | M | Select the JSON form; the existing strip form stays valid |
+| `IDEA#12` | Animation sequences with named frames and durations | could | M | Deferred 2026-11-16 until a client needs nonuniform timing or exported named-frame animation |
 | `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Selected 2026-11-16 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-supplied target rectangles; implementation open |
-| `IDEA#14` | Present interval and render-rate control | could | M | Owner decision: the pacing records assume today's constant interval |
+| `IDEA#14` | Present interval and render-rate control | could | M | Vsync control landed; unfocused visible-window cap deferred 2026-11-16 until measured cost or client need |
 | `IDEA#15` | Display refresh rate in the device report | could | S | Selected 2026-11-16 as [SM-86](product/BACKLOG.md#sm-86), nominal monitor metadata with an explicit unknown state; implementation open |
 | `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Selected 2026-11-16 as [OCA-107](product/BACKLOG.md#oca-107), preserving defaults and diagnosing an explicitly requested missing icon; implementation open |
-| `IDEA#17` | Cursor shapes | could | S | OCA-50's pointer menu or a client wanting a hand cursor |
+| `IDEA#17` | Cursor shapes | could | S | Selected 2026-11-16 as [OCA-113](product/BACKLOG.md#oca-113), system/CSS cursors with the gallery as first caller; implementation open |
 | `IDEA#18` | A side-by-side two-player layout | could | XS | Deferred 2026-11-16 until a selected game or guide needs left and right panes |
-| `IDEA#19` | Rectangle intersection and shortest-arc angle helpers | could | XS | Selection remains open; rectangle intersection could ride GAP#5 clipping |
+| `IDEA#19` | Rectangle intersection and shortest-arc angle helpers | could | XS | Deferred 2026-11-16: rectangle intersection follows GAP#5 clipping; angle helpers need an aiming/turning caller |
 
 The priority and size columns retain the proposals' estimates, not delivery
 dates; BACKLOG owns a selected story's current grade and size. The acceptance
 below is the original proposed bound, not a final public API.
 
 ## IDEA#1. A single-line typed-text component
+
+**Result, 2026-11-16:** selected as
+[OCA-109](product/BACKLOG.md#oca-109), a desktop copyable text field with
+explicit font-coverage and length checks. Reuse the existing text-widening
+conversion when an edit changes the displayed text, rather than converting
+it on every draw. Mobile text entry and new composition machinery remain
+outside this scope. Implementation and qualification remain open; the
+original proposal below is preserved as context.
 
 **Present evidence:** [Keyboard::typed](../engine/input/keyboard.h) supplies
 UTF-8 text, while the [components gallery](../samples/components/README.md)
@@ -92,6 +109,14 @@ OCA-42; this is interaction, not another localisation story.
 
 ## IDEA#2. A game-owned keyboard rebinding screen
 
+**Result, 2026-11-16:** selected as
+[OCA-110](product/BACKLOG.md#oca-110). The game-owned example refuses a
+duplicate binding with a clear error, ignores the opener until release,
+protects menu navigation, and supports cancel and reset. Bindings use the
+existing stable key tokens; persistence is optional and is not an engine
+action map. Implementation and qualification remain open; the original
+proposal's alternative duplicate policies are not the selected policy.
+
 **Present evidence:** [keyboard.h](../engine/input/keyboard.h) exposes stable
 `key_name`/`key_from_name` tokens, and [LineSweeper's state](../samples/linesweeper/states/play_state.cpp)
 owns its binding tables. The engine supplies device state; games own actions
@@ -107,6 +132,14 @@ The example still accepts navigation after every failed or cancelled capture.
 A native/browser run exercises it; synthetic key input is identified as such.
 
 ## IDEA#3. Versioned saves with recovery
+
+**Result, 2026-11-16:** selected as
+[OCA-112](product/BACKLOG.md#oca-112), a game-owned recovery example. Failed
+writes and migrations preserve the previous valid save; malformed or
+future-version files remain intact rather than being overwritten as a repair.
+Native replacement and browser persistence have separate, explicit durability
+limits. No engine JSON writer is selected. Implementation and qualification
+remain open; BACKLOG.md owns the example's final recovery policy.
 
 **Present evidence:** OCA-53 supplies the basic settings/save path and
 [save_check](../tools/save_check/README.md) proves reload behavior. Its
@@ -255,6 +288,10 @@ guide shows one hitscan and one radius query.
 
 ## IDEA#9. Contact begin and end edges
 
+**Result, 2026-11-16:** deferred until a second client needs contact edges
+beyond the collision sample's existing pattern. No shared helper or event
+mechanism is selected by this decision; the original proposal remains below.
+
 **Present evidence:** the engine reports overlaps per tick as a value list
 ([contacts.h](../engine/collision/contacts.h)). The collision sample derives
 trigger entry by keeping last tick's overlap beside this tick's in
@@ -332,6 +369,10 @@ and record the same levels; the audio guide's first sound needs no tool;
 
 ## IDEA#12. Animation sequences with named frames and durations
 
+**Result, 2026-11-16:** deferred until a real animation client needs nonuniform
+frame timing or exported named-frame sequences. The existing strip schema
+remains; no new runtime animation or JSON form is selected or implemented.
+
 **Present evidence:** [animation_strip.h](../engine/render/animation_strip.h)
 models a strip as a first frame, a count, one frame time and a looping flag:
 horizontal, contiguous and uniformly timed. [sprite_sheet.h](../engine/render/sprite_sheet.h)
@@ -379,6 +420,14 @@ and degenerate widgets and padding; LineSweeper's pause menu and the gallery
 call it; the menus guide quotes it.
 
 ## IDEA#14. Present interval and render-rate control
+
+**Result, 2026-11-16:** vsync control has landed through
+`ApplicationOptions::vsync` and `Renderer::set_vsync`. The remaining cap for
+an unfocused but visible window is deferred until its cost is measured or a
+client needs it. The minimised-window loop fix does not answer that separate
+visible-window case. No additional cap is selected or implemented here; the
+original constant-interval evidence below describes the proposal's starting
+point, not the current vsync contract.
 
 **Present evidence:** every rasterising backend requests a swap interval of
 one, or Vulkan's FIFO, and [renderer.h](../engine/render/renderer.h)'s
@@ -454,6 +503,12 @@ desktop; the release guide's step is followed in a copied project.
 
 ## IDEA#17. Cursor shapes
 
+**Result, 2026-11-16:** selected as
+[OCA-113](product/BACKLOG.md#oca-113), a small set of native system and browser
+CSS cursor shapes, with the components gallery as the first caller. Preserve
+pointer hiding and confinement contracts. Custom cursor images remain outside
+the selected scope. Implementation and qualification remain open.
+
 **Present evidence:** the Win32 window sets the arrow or hides the pointer
 ([window.cpp](../engine/app/win32/window.cpp)), and the browser sets the
 canvas's CSS cursor to default or none. A pointer menu (OCA-50) that wants a
@@ -484,6 +539,12 @@ existing one, with its divider; `all_viewports` and `viewport_dividers` follow.
 then the difference; the local-multiplayer sample or guide shows the switch.
 
 ## IDEA#19. Rectangle intersection and shortest-arc angle helpers
+
+**Result, 2026-11-16:** deferred. Rectangle intersection follows the separately
+deferred `GAP#5` clip-rectangle scope; shortest-arc angle helpers wait for an
+actual aiming or turning caller. Neither depends on an easing feature. The
+original proposal's easing-story suggestion below is superseded by these
+revisit conditions; no helper is selected or implemented here.
 
 **Present evidence:** [rectanglef.h](../engine/math/rectanglef.h) has
 `union_of` and `intersects` but no intersection rectangle, which `GAP#5`'s
