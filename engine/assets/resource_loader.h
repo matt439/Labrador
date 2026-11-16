@@ -114,6 +114,8 @@ namespace labrador
 		// Kinds with no `reload_device` are skipped: they are not device resources,
 		// and callers hold borrowed SoundBank* and level-definition pointers into
 		// them that a reload would invalidate.
+		// Sprite-sheet definitions are retained, not reparsed or revalidated.
+		// A replacement atlas must still contain every retained frame and strip.
 		void reload_device_resources();
 
 	private:

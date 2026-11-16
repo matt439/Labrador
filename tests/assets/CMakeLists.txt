@@ -12,10 +12,11 @@ labrador_add_test_suite(AssetsTests
     LINKS LabradorEngine
 )
 
-# The recipe's drawing check is a recording only, selected with null render.
-# The other cases use metadata and create no renderer on any backend.
+# Drawing recordings and loaded-atlas integration use null render only.
+# The portable reader cases use metadata and create no renderer.
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_NULL_RENDER)
+    target_sources(AssetsTests PRIVATE sprite_sheet_resource_tests.cpp)
 endif()
 
 if(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")

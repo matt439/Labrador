@@ -3,6 +3,7 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/animation_strip.h"
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_frame.h"
@@ -22,9 +23,9 @@ using labrador_tests::ScratchFile;
 
 // What a sheet definition is allowed to say, and what it is not.
 //
-// NO DEVICE, IN EVERY CONFIGURATION. read_sprite_sheet takes a TextureHandle,
-// which is an index and not a resource, so an unresolved one is enough to build
-// a whole sheet and ask it what it read. Nothing here draws - the composition
+// Portable reader cases supply a TextureHandle and atlas dimensions without
+// a device. Null-only loader cases also upload a real fixture and check that
+// rejected definitions do not publish a partial sheet. The composition
 // of an authored origin with a caller's is the one claim that needs a DrawList,
 // and it is pinned in tests/render/null_tests.cpp instead.
 //
@@ -64,21 +65,23 @@ namespace
 		return R"({"sprite_frames":[],"animation_strips":[)" + strip + "]}";
 	}
 
-	std::unique_ptr<SpriteSheet> load(const std::string& contents)
+	std::unique_ptr<SpriteSheet> load(const std::string& contents,
+		const Vector2I& texture_size = Vector2I(max_texture_dimension, max_texture_dimension))
 	{
 		const ScratchFile file("sheet.json", contents);
-		return read_sprite_sheet(file.path().c_str(), TextureHandle());
+		return read_sprite_sheet(file.path().c_str(), TextureHandle(), texture_size);
 	}
 
 	// The message, not only the type. A refusal whose text does not point at
 	// the frame is a refusal the person who authored the sheet cannot act on,
 	// and the text is the entire product of this branch (T6).
-	std::string refusal_message(const std::string& contents)
+	std::string refusal_message(const std::string& contents,
+		const Vector2I& texture_size = Vector2I(max_texture_dimension, max_texture_dimension))
 	{
 		const ScratchFile file("sheet.json", contents);
 		try
 		{
-			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			read_sprite_sheet(file.path().c_str(), TextureHandle(), texture_size);
 		}
 		catch (const std::exception& error)
 		{
@@ -215,7 +218,8 @@ TEST_CASE("sprite sheet unknown keys name the file and exact nested object")
 		const ScratchFile file("sheet.json", test.contents);
 		try
 		{
-			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			read_sprite_sheet(file.path().c_str(), TextureHandle(),
+				Vector2I(max_texture_dimension, max_texture_dimension));
 			FAIL("unknown sprite-sheet member was accepted");
 		}
 		catch (const std::runtime_error& error)
@@ -262,7 +266,8 @@ TEST_CASE("negative authored strip counts name their source and field")
 		bool rejected = false;
 		try
 		{
-			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			read_sprite_sheet(file.path().c_str(), TextureHandle(),
+				Vector2I(max_texture_dimension, max_texture_dimension));
 		}
 		catch (const std::runtime_error& error)
 		{
@@ -298,7 +303,7 @@ TEST_CASE("a zero-count authored strip remains empty")
 TEST_CASE("positive authored strips preserve rectangles timing and looping")
 {
 	const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
-		R"({"name":"once","first_frame":{"x":-4,"y":7,"w":12,"h":18},)"
+		R"({"name":"once","first_frame":{"x":4,"y":7,"w":12,"h":18},)"
 		R"("frame_count":3,"frame_time":0.375,"looping":false})"));
 	const AnimationStrip& strip =
 		sheet->animation_strip(sheet->resolve_animation_strip("once"));
@@ -306,9 +311,9 @@ TEST_CASE("positive authored strips preserve rectangles timing and looping")
 	CHECK(strip.frame_count() == 3);
 	CHECK(strip.frame_time() == 0.375f);
 	CHECK_FALSE(strip.looping());
-	CHECK(strip.frame_rect(0) == RectangleI(-4, 7, 12, 18));
-	CHECK(strip.frame_rect(1) == RectangleI(8, 7, 12, 18));
-	CHECK(strip.frame_rect(2) == RectangleI(20, 7, 12, 18));
+	CHECK(strip.frame_rect(0) == RectangleI(4, 7, 12, 18));
+	CHECK(strip.frame_rect(1) == RectangleI(16, 7, 12, 18));
+	CHECK(strip.frame_rect(2) == RectangleI(28, 7, 12, 18));
 	CHECK_THROWS_AS(strip.frame_rect(3), std::out_of_range);
 }
 
@@ -325,40 +330,22 @@ namespace
 	}
 }
 
-TEST_CASE("authored strips preserve wide products with representable final coordinates")
+TEST_CASE("representable wide strip coordinates still must fit their atlas")
 {
-	struct Control
-	{
-		const char* name;
-		int first_x;
-		int width;
-		std::array<int, 3> expected_x;
-		bool looping;
-	};
 	const int minimum = (std::numeric_limits<int>::min)();
 	const int maximum = (std::numeric_limits<int>::max)();
-	const std::array<Control, 2> controls = { {
-		{ "wide", minimum, 1073741824, { minimum, -1073741824, 0 }, false },
-		{ "backwards", maximum, -1073741825, { maximum, 1073741822, -3 }, true }
-	} };
-	for (const Control& control : controls)
+	const std::array<std::string, 2> definitions = {
+		horizontal_strip_definition("wide", minimum, 1073741824, 3, false),
+		horizontal_strip_definition("backwards", maximum, -1073741825, 3, true)
+	};
+	for (const std::string& definition : definitions)
 	{
-		CAPTURE(control.name);
-		const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
-			strip_of("", "") + "," + horizontal_strip_definition(
-				control.name, control.first_x, control.width, 3, control.looping)));
-		const AnimationStrip& strip =
-			sheet->animation_strip(sheet->resolve_animation_strip(control.name));
-
-		CHECK(strip.frame_count() == 3);
-		CHECK(strip.frame_time() == 0.125f);
-		CHECK(strip.looping() == control.looping);
-		for (int index = 0; index < 3; ++index)
-		{
-			CHECK(strip.frame_rect(index) == RectangleI(
-				control.expected_x[static_cast<size_t>(index)],
-				7, control.width, 18));
-		}
+		const std::string contents = sheet_with_strip(definition);
+		CHECK_THROWS_AS(load(contents), std::runtime_error);
+		const std::string message = refusal_message(contents);
+		CHECK(message.find("animation_strips[0]") != std::string::npos);
+		CHECK(message.find("frame 0") != std::string::npos);
+		CHECK(message.find("outside its atlas") != std::string::npos);
 	}
 }
 
@@ -386,7 +373,8 @@ TEST_CASE("authored strip coordinate failures identify their file and offending 
 		bool rejected = false;
 		try
 		{
-			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			read_sprite_sheet(file.path().c_str(), TextureHandle(),
+				Vector2I(max_texture_dimension, max_texture_dimension));
 		}
 		catch (const std::runtime_error& error)
 		{
@@ -457,7 +445,8 @@ TEST_CASE("sprite sheet repeated keys name the file, the object and the key")
 		const ScratchFile file("sheet.json", test.contents);
 		try
 		{
-			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			read_sprite_sheet(file.path().c_str(), TextureHandle(),
+				Vector2I(max_texture_dimension, max_texture_dimension));
 			FAIL("a repeated sprite-sheet member was accepted");
 		}
 		catch (const std::runtime_error& error)
@@ -506,7 +495,8 @@ TEST_CASE("an authored strip count beyond the widest texture is refused before a
 		bool rejected = false;
 		try
 		{
-			read_sprite_sheet(file.path().c_str(), TextureHandle());
+			read_sprite_sheet(file.path().c_str(), TextureHandle(),
+				Vector2I(max_texture_dimension, max_texture_dimension));
 		}
 		catch (const std::runtime_error& error)
 		{
@@ -534,4 +524,101 @@ TEST_CASE("an authored strip as wide as the widest texture is read")
 	CHECK(strip.frame_count() == max_texture_dimension);
 	CHECK(strip.frame_rect(max_texture_dimension - 1) ==
 		RectangleI(max_texture_dimension - 1, 7, 1, 18));
+}
+
+namespace
+{
+	std::string frame_rectangle(const std::string& name, const RectangleI& rectangle)
+	{
+		return R"({"name":")" + name + R"(","position":{"x":)" +
+			std::to_string(rectangle.x) + R"(,"y":)" +
+			std::to_string(rectangle.y) + R"(},"size":{"w":)" +
+			std::to_string(rectangle.width) + R"(,"h":)" +
+			std::to_string(rectangle.height) + "}}";
+	}
+}
+
+TEST_CASE("atlas validation preserves signed rectangles and in-bounds degenerate frames")
+{
+	const std::array<RectangleI, 8> rectangles = {
+		RectangleI(0, 0, 64, 32), RectangleI(64, 32, -64, -32),
+		RectangleI(64, 0, -16, 16), RectangleI(0, 32, 16, -16),
+		RectangleI(0, 0, 0, 0), RectangleI(64, 32, 0, 0),
+		RectangleI(16, 32, -16, 0), RectangleI(64, 16, 0, -16)
+	};
+	for (const RectangleI& rectangle : rectangles)
+	{
+		const std::unique_ptr<SpriteSheet> sheet = load(
+			sheet_of(frame_rectangle("edge", rectangle)), Vector2I(64, 32));
+		CHECK(sheet->sprite_frame(sheet->resolve_sprite_frame("edge"))
+			.source_rectangle() == rectangle);
+	}
+}
+
+TEST_CASE("out-of-atlas frame endpoints are refused without integer overflow")
+{
+	const int minimum = (std::numeric_limits<int>::min)();
+	const int maximum = (std::numeric_limits<int>::max)();
+	const std::array<RectangleI, 12> rectangles = {
+		RectangleI(-1, 0, 2, 2), RectangleI(0, -1, 2, 2),
+		RectangleI(64, 0, 1, 1), RectangleI(0, 32, 1, 1),
+		RectangleI(65, 0, -1, 1), RectangleI(0, 33, 1, -1),
+		RectangleI(0, 0, -1, 1), RectangleI(0, 0, 1, -1),
+		RectangleI(maximum, 0, maximum, 1),
+		RectangleI(0, minimum, 1, minimum),
+		RectangleI(65, 0, 0, 1), RectangleI(0, 33, 1, 0)
+	};
+	for (const RectangleI& rectangle : rectangles)
+	{
+		const std::string contents = sheet_of(frame_rectangle("outside", rectangle));
+		CHECK_THROWS_AS(load(contents, Vector2I(64, 32)), std::runtime_error);
+		const std::string message = refusal_message(contents, Vector2I(64, 32));
+		CHECK(message.find("sheet.json") != std::string::npos);
+		CHECK(message.find("sprite_frames[0]") != std::string::npos);
+		CHECK(message.find("'outside'") != std::string::npos);
+		CHECK(message.find("outside its atlas of 64 by 32 texels") != std::string::npos);
+	}
+}
+
+TEST_CASE("each expanded signed strip frame must fit its atlas")
+{
+	const std::unique_ptr<SpriteSheet> sheet = load(sheet_with_strip(
+		horizontal_strip_definition("forward", 0, 16, 4, true) + "," +
+		horizontal_strip_definition("backward", 64, -16, 4, false)), Vector2I(64, 32));
+	const AnimationStrip& backward =
+		sheet->animation_strip(sheet->resolve_animation_strip("backward"));
+	for (int index = 0; index < 4; ++index)
+	{
+		CHECK(backward.frame_rect(index) == RectangleI(64 - index * 16, 7, -16, 18));
+	}
+	for (const int width : { 16, -16 })
+	{
+		const std::string contents = sheet_with_strip(horizontal_strip_definition(
+			"too_long", width > 0 ? 0 : 64, width, 5, true));
+		CHECK_THROWS_AS(load(contents, Vector2I(64, 32)), std::runtime_error);
+		const std::string message = refusal_message(contents, Vector2I(64, 32));
+		CHECK(message.find("animation_strips[0]") != std::string::npos);
+		CHECK(message.find("'too_long'") != std::string::npos);
+		CHECK(message.find("frame 4") != std::string::npos);
+		CHECK(message.find("outside its atlas") != std::string::npos);
+	}
+	const std::string vertically_outside = sheet_with_strip(
+		R"({"name":"high","first_frame":{"x":0,"y":32,"w":16,"h":-33},)"
+		R"("frame_count":1,"frame_time":0.5,"looping":true})");
+	CHECK_THROWS_AS(load(vertically_outside, Vector2I(64, 32)), std::runtime_error);
+	const std::unique_ptr<SpriteSheet> upside_down = load(sheet_with_strip(
+		R"({"name":"up","first_frame":{"x":64,"y":32,"w":-16,"h":-32},)"
+		R"("frame_count":4,"frame_time":0.5,"looping":true})"), Vector2I(64, 32));
+	const AnimationStrip& up = upside_down->animation_strip(
+		upside_down->resolve_animation_strip("up"));
+	CHECK(up.frame_rect(3) == RectangleI(16, 32, -16, -32));
+}
+
+TEST_CASE("sprite sheet atlas dimensions must be positive")
+{
+	for (const Vector2I& dimensions : {
+		Vector2I(0, 32), Vector2I(64, 0), Vector2I(-1, 32), Vector2I(64, -1) })
+	{
+		CHECK_THROWS_AS(load(sheet_of(""), dimensions), std::invalid_argument);
+	}
 }

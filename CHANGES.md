@@ -117,6 +117,30 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Validate authored sprite regions against their atlas
+
+**Source break and content validation.** The public
+`read_sprite_sheet(json_path, texture)` becomes
+`read_sprite_sheet(json_path, texture, texture_size)`, with positive
+`Vector2I` atlas dimensions in texels. A two-argument call cannot validate
+sampled regions against the real texture. Pass
+`resources.texture_size(texture)` after loading the atlas, or its decoded
+`TextureData` width and height for a headless tool. The migration in
+`samples/components/animation_preview_content_tests.cpp` shows the latter.
+`ResourceLoader` supplies the dimensions automatically for manifest callers.
+
+Named frames and every expanded strip frame now refuse sampled endpoints
+outside the atlas, naming the sheet and offending frame or strip. Content
+that depended on sampler clamping must move or resize its region or provide
+the intended atlas. Valid negative widths and heights retain their sampling
+order; individual zero-area frames stay valid when their endpoints fit.
+Nonempty zero-area strips remain refused, and zero-count strips continue to
+ignore unused first-frame geometry. A rejected definition does not publish a
+partial sheet or replace an existing valid one. Direct `draw_sprite` sampling
+semantics remain unchanged.
+Device restoration retains sheet definitions and reloads their texture
+storage; a replacement atlas must still contain those retained regions.
+
 ### 2026-11-16 - Capture non-fatal engine diagnostics
 
 **New API and behaviour change.** `engine/core/diagnostic.h` supplies one

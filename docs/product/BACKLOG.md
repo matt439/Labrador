@@ -1663,6 +1663,19 @@ edges, strip expansion and arithmetic limits using the null resource path;
 repeat portable cases under wasm and
 check the website gate. This does not reopen the separate texture-limit API.
 
+**Implementation and qualification, 2026-11-16:** the reader takes positive
+atlas dimensions, supplied by `ResourceLoader` through `texture_size`, and
+checks signed endpoints with 64-bit arithmetic for individual and expanded
+strip frames. Individual zero-area frames retain their in-bounds degenerate
+definitions; nonempty zero-area strips remain refused, while zero-count strips
+keep their unused geometry. No sample content needed correction. Portable
+AssetsTests and the migrated ComponentsTests pass on native-null and
+wasm-debug; an additional Debug wasm-null AssetsTests run passes the real
+atlas-query, rejected-publication and signed-UV recording cases. Public
+reference parsing, citation, include-wall and whitespace checks pass. The
+website gate remains open; the public signature and content migrations are
+in CHANGES.md and the sprite authoring guide.
+
 <a id="oca-89"></a>
 ### OCA-89. Parse a hex colour with an explicit failure result
 
