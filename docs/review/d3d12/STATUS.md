@@ -25,6 +25,20 @@ now places wrapper/registry publication before the descriptor write. Native
 builds and headless checks pass; failure injection and GPU reload/lifetime
 qualification remain open. No new device observation is added to this ledger.
 
+## Approved display acceptance, 2026-11-16
+
+The owner approved the remaining `REV#3` display session. TODO records it as
+`BLOCKED` pending owner-attended hardware work, rather than another policy
+choice. It concerns the **D3D11 same-size factory-refresh path** identified
+in item 5 below; the D3D12 review's location does not make it a new D3D12
+defect. Keep the actual display/driver observation separate from source
+inspection and ordinary resize tests.
+
+This can share the approved display session with `BDP-07`'s physical 60/144 Hz
+judder observations and `OCA-66`'s real 150% Windows scaling. No session,
+factory-refresh result, scaled-display acceptance or new runtime measurement
+is supplied by this amendment; item 5's remaining limit stays open.
+
 ## Section 6 adjudication, 2026-10-26
 
 | Item | Disposition | Current evidence and remaining limit |

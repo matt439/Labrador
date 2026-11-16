@@ -27,7 +27,7 @@ the evidence and owner; it does not put a frozen review ahead of that order.
 | [vulkan/](vulkan/README.md) | Fifth-backend review at `4d91b91` | [CANDIDATES.md](vulkan/CANDIDATES.md) and [41-65](vulkan/CANDIDATES-41-65.md) preserve and adjudicate every original. [Vulkan tracking below](#vulkan-tracking) owns remaining follow-ups and the two section-6 questions, including the platform re-entry condition. |
 | [gpt6/](gpt6/README.md) | Review at `9dea4516` on 2026-09-17 | The eleven numbered findings are closed in [the resolution map below](#gpt-6-resolution-map). REV#7's bounded lifecycle observations are below; other opportunities remain in TODO.md as REV#8 to REV#10 and the low-tier record. |
 | [2026-09-26/](2026-09-26/README.md) | September 26 review, supplement and reproduction evidence | [STATUS.md](2026-09-26/STATUS.md) is live and [FIXES.md](2026-09-26/FIXES.md) records all 23 numbered resolutions. The four hardening candidates, manual limits and tooling CI follow-up remain separately tracked; see below. |
-| [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on client reports, assessed at `0c15f34` | Its README's decision table is live: all fifteen originals are answered and withdrawn from filing. Report 19's first-frame evidence is recorded in window.md; the owner selected its engine-owned show-after-first-frame scope as [OCA-87](../product/BACKLOG.md#oca-87) on 2026-11-16, with implementation and native-backend/full-screen qualification still open. Issues #122 to #125, filed 2026-11-05, remain indexed there; that selection does not answer them. PI-09's approved disclosure boundary excludes client ledger detail. |
+| [colourwars-reports/](colourwars-reports/README.md) | Engine decisions on client reports, assessed at `0c15f34` | Its README's decision table is live: all fifteen originals are answered and withdrawn from filing. Report 19's first-frame evidence is recorded in window.md; [OCA-87](../product/BACKLOG.md#oca-87) owns the selected engine-startup change, with implementation and native-backend/full-screen qualification open. The final 2026-11-16 responses select [SM-98](../product/BACKLOG.md#sm-98), [OCA-120](../product/BACKLOG.md#oca-120), [PI-25](../product/BACKLOG.md#pi-25) and the revised [SM-78](../product/BACKLOG.md#sm-78); the report table maps those planned scopes to issues #122 to #125. Acceptance of scope is not implementation or tracker closure. PI-09's approved disclosure boundary excludes client ledger detail. |
 | [Vulkan device ownership](vulkan/2026-10-28-device-ownership.md) | Source-only SM-53 review at `15c6979`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-53-vulkan-devicebuffer-ownership-review) closes the keep verdict; SM-56 owns the separate texture-publication and read-back-generation fixes/qualification. |
 | [Renderer construction](2026-10-28-renderer-construction.md) | Source-only SM-54 review at `8048e24`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-54-renderer-construction-review) closes the per-backend verdicts; SM-56/57 own confirmed exception gaps and SM-58 the selected D3D12 pipeline cut. |
 | [Web Audio transport](2026-10-28-webaudio-transport.md) | Source-only SM-55 review at `8048e24`, 2026-10-28 | [Code hygiene](../code-hygiene.md#sm-55-web-audio-transport-review) closes the keep verdict. No extraction is selected; browser graph/unlock and WEB#3 listening acceptance remain separate. |
@@ -49,7 +49,10 @@ defect for items 1 and 4. A creation-only experiment refutes item 6's claimed
 remain unchanged and the ledger records the experiment's limits.
 
 Source: [D3D12 review, section 6](d3d12/README.md#6-not-verified).
-Work index: **REV#3** in TODO.md.
+Work index: **REV#3** in TODO.md. Its display session was approved on
+2026-11-16 and remains blocked on owner-attended hardware; the
+[live ledger](d3d12/STATUS.md#approved-display-acceptance-2026-11-16) identifies
+the actual D3D11 same-size factory-refresh question and retains its limits.
 
 - [x] **6.1** Both view-opening loops and the existing restart cases were
   checked; no behavior mismatch was found. No count-only refactor is owed.
@@ -208,6 +211,15 @@ also records the earlier repairs as present.
 
 These entries point to their existing live owners. They do not claim that a
 green headless suite supplies a human session or a hardware measurement.
+
+The final 2026-11-16 decisions approve the remaining owner-attended sessions;
+their `BLOCKED` status is a hardware/attendance gate rather than an unmade
+policy call. [The acceptance action record](../port/web-to-be-tested.md#approved-acceptance-actions-2026-11-16)
+groups pad, Air, iPhone/LAN, listening/recovery, physical displays and Radeon
+work, and distinguishes the two deployment waits from approved ready
+external actions. No proof is closed by that selection. Labrador's `PI-14`
+coordination is closed as delegated; ColourWars retains its candidate
+qualification and the limits of the existing Sandbox evidence.
 
 | Work | Live owner and remaining evidence |
 |---|---|

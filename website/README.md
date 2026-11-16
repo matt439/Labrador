@@ -321,9 +321,18 @@ also runs, so a check added to that script in `package.json` reaches
 production with no dashboard edit. Cloudflare reads `.node-version` in the
 root directory, but its documentation does not say which wins against a
 `NODE_VERSION` build variable, so that variable must be absent for the file to
-decide. Until the owner makes the dashboard match this table (SM-30 in
-[TODO.md](../TODO.md)), production still runs the earlier command
-`npm ci && npm run check && npm test && npm run build` with `NODE_VERSION=24`.
+decide. The earlier settings record used
+`npm ci && npm run check && npm test && npm run build` with `NODE_VERSION=24`;
+that record is not a current dashboard query.
+
+**Approved 2026-11-16 (`SM-30`):** this is `OPEN` reconciliation work, not a
+pending policy choice. Read the current settings for this documentation site
+before writing, then change only differences from the table: the one gate
+command, Node from `.node-version`, and no `NODE_VERSION` override. Retain a
+dated result, including an already-correct configuration if no change is
+needed. The next normal production build's log must show Node 24 and the
+gate before the story closes. No forced deploy is needed for this settings
+action; this planning amendment changes no dashboard setting or deployment.
 
 These build settings live in Cloudflare's dashboard. The separate
 `.github/workflows/website.yml` checks, builds and retains an artifact for each pull request;

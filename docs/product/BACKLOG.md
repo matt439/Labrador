@@ -37,6 +37,9 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-16, fourth batch: retain the wide renderer text API and the existing UTF-8 conversion boundary; defer contact edges, named-frame animation, an unfocused render cap, small math helpers, texture repeat, pad identity and a shared fatal-error helper under their live owner records. | REV#56; IDEA#9, IDEA#12, IDEA#14, IDEA#19, REV#55, REV#59, REV#61 |
 | Decided 2026-11-16, fifth batch: select the eleven bounded stories in L118 to L128. Starter browser build/test automation follows OCA-79; deployment automation waits for hosting, repository-visibility and credential choices. Factual agent-use disclosure comes from the owner, account/settings work begins with current read-only state, and browser/Simulator observations retain their qualification limits. SM-96 has an independent release-preparation lane for the actual candidate. | OCA-116 to OCA-119, SRL-25, SM-92 to SM-97 |
 | Decided 2026-11-16, fifth batch: release verified batches without a fixed calendar or new per-module stability badges; retain Windows/browser scope rather than a whole-SDL window/audio port, and retain the explicit default WebGL hint. REV#156 still owns its factual wording repair. Defer the six remaining speculative or unqualified scopes under their live review records. | REV#74, REV#90, REV#156; REV#37, REV#71, REV#75, REV#77, REV#79, REV#83 |
+| Decided 2026-11-16, final acceptance batch: separate unresolved choices from already-approved execution and acceptance. Owner-attended hardware acceptance with settled policy is blocked on session/device access; waiting means a named external event. Reclassification closes no acceptance. Group pad, Air/iPhone, audio and display play while retaining each row's evidence limits. | OCA-48, OCA-45, PI-21, SM-09, SM-14, WEB#3, REV#8, BDP-07, REV#3, OCA-66, SM-01 |
+| Decided 2026-11-16, final acceptance batch: close Labrador's PI-14 coordination as delegated to ColourWars, preserving its candidate-only proof and SM-36 responsibility. Authorise OCA-79's dedicated public current-release starter proof/first push and SM-30's read-first Cloudflare gate convergence within the scope below; wait for the next respective deployments for SITE#4 and WEB#12. | PI-14, OCA-79, SM-30, SITE#4, WEB#12 |
+| Decided 2026-11-16, final acceptance batch: select L129 to L131 for default Release refusal of known software Direct3D with an explicit truthful CI opt-in, a narrow render-device-unavailable exception category and mutable contact participants with a pinned dispatch contract. Amend SM-78 to offer its constructed scripted source alongside shipping XInput/web in the same library. Registry names/slots remain stable; forgetting or recycling them is declined. | SM-98, OCA-120, PI-25, SM-78; issues #122 to #125 |
 
 `SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
 its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
@@ -322,7 +325,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
 - [x] **[OCA-61](STORIES.md#oca-61)** Must · S · The Outside Adopter · **Owner**: My release runs on a clean Windows machine — after OCA-60
 - [x] **[OCA-64](STORIES.md#oca-64)** Should · S · The Outside Adopter: Know the minimum hardware and Windows my players need — after OCA-61
 - [x] **[OCA-65](STORIES.md#oca-65)** Should · S · The Outside Adopter: Know which render backend to ship and what to do when a machine refuses it
-- [ ] **[PI-14](STORIES.md#pi-14)** Should · M · The Pinned Submodule Integrator · **Owner**: My release ZIP is known to run on a player's clean Windows machine at a current pin — after OCA-61, SM-36
+- [x] **[PI-14](STORIES.md#pi-14)** Should · M · The Pinned Submodule Integrator: Coordinate the client's release qualification — **closed as delegated**; actual runs and records remain ColourWars' — after OCA-61, SM-36
   *Amended 2026-11-03 by the persona re-review:* the Radeon criterion is
   recorded as not run, since no Radeon GPU is available (owner fact
   2026-11-03), which the criterion allows; it no longer waits on SM-01. The
@@ -341,9 +344,12 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   [ROAD#37 record](https://github.com/matt439/ColourWars/blob/f7b2652d3ebbed96278e4e30d10f96f5f5869f16/docs/feature-roadmap.md#windows-sandbox-run-of-the-release-zip-road37)
   supplies the preceding run's environment and limits, not another claim of
   physical-pad, audio, target-GPU or Radeon acceptance. No new Sandbox run
-  was made for this reconciliation. PI-14 stays open; whether Labrador closes
-  it as delegated remains the owner's call. Listable checks stay automated;
-  physical-pad acceptance remains informal play in OCA-48's session.
+  was made for this reconciliation. **Closed as delegated, 2026-11-16:**
+  Labrador's coordination is complete; ColourWars owns its current candidate
+  qualification and the release/pin responsibility in SM-36. This closes no
+  public-tag ZIP, current-master, physical-pad, audio, target-GPU or Radeon
+  acceptance by implication. Listable checks stay automated; physical-pad
+  acceptance remains informal play in OCA-48's session.
 - [x] **[OCA-44](STORIES.md#oca-44)** Should · XS · The Outside Adopter: Know which controllers work on Windows and how slots are assigned
 - [ ] **[OCA-45](STORIES.md#oca-45)** Should · S · The Outside Adopter: A one-player game that accepts the pad in whatever slot it is in — after OCA-44
   *Amended 2026-11-03 by the persona re-review:* the open criterion, a dated
@@ -612,6 +618,61 @@ than making those stories release prerequisites. Preserve the existing first
 six product priorities; release preparation has its own bounded evidence and
 owner-cut handoff, and does not tag or publish as part of this record.
 
+**Final acceptance and ownership amendment, 2026-11-16:** the owner accepted
+the remaining policy calls and the status clarification recorded above.
+Existing hardware acceptance stays open and unticked; a blocked attended
+session is not an unresolved design choice. Do not turn informal play into
+another manual checklist: automate listable behaviour and retain only the
+actual physical, audible or visual observations in the owner records.
+
+The shared acceptance groups are:
+
+- **Pad play:** OCA-48 carries OCA-45 and PI-21's remaining informal native
+  and Chrome play. Existing mapping, slot-choice and vibration transport
+  coverage remains automated. The unobserved physical unplug-slot-0 path is
+  still stated; no second-pad or ViGEm prerequisite is reintroduced.
+- **Air and iPhone:** SM-09 retains informal play on the Air despite hosted
+  Safari coverage. SM-14 is tried and corrected while serving SM-13's iPhone
+  session; the real phone, layout, touch, memory and top-out terms stay open.
+  Simulator evidence does not close them, and optional Android evidence does
+  not become a prerequisite.
+- **Audio:** WEB#3's listening and REV#8's actual endpoint loss/reappearance
+  can share one attended session. Deterministic lifecycle/retry tests stay
+  separate from what was heard and from retained-bank playback after a real
+  endpoint transition.
+- **Display:** BDP-07's automated real-display cadence capture, REV#3's real
+  D3D11 factory-refresh transition and OCA-66's template play at actual 150%
+  scaling may share a session. The owner judges visible judder and layout;
+  each claim still needs its own recorded observations and identities.
+- **Radeon readiness:** SM-01 remains blocked on the owner's firmware enable,
+  AMD driver and a usable render/display-path proof identifying the actual
+  Radeon in the bench's adapter check. SM-07's low-tier measurements follow
+  only after that readiness; enumeration or RTX/software results do not
+  substitute for the selected adapter.
+
+OCA-79 and SM-30 are ready approved work in their existing Later positions,
+within the scope below; this planning change performs neither action.
+SITE#4 waits for the next documentation-site deployment before its informal
+iPhone search, while WEB#12 waits for the next demo deployment before the live
+automated bundle check. Neither waiting row authorises a deployment.
+
+L129 to L131 follow the new engine scopes below. SM-78's selected scope is
+amended in place to answer the same-library input-source requirement; it
+remains unimplemented. The other earlier implementation stories retain their
+order and the independent release-preparation lane remains available.
+The [client-report owners](../review/colourwars-reports/README.md) record the
+public-issue decisions and the stable-registry rider. No source, device run,
+account setting, push, release, deployment or implementation acceptance changes
+as a consequence of this planning record.
+
+The registry rider of [issue #122](../review/colourwars-reports/scripted-pad.md)
+selects no forgetting or recycling of names/slots. The existing empty-payload
+replacement route may release a payload while retaining its stable name and
+handle, subject to the documented borrowed-value lifetime before replacement.
+If a game creates a new catalog for a different name set, it retires the old
+catalog's handles rather than treating them as valid in the new catalog.
+No new removal API or stale-handle guarantee is implied.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -639,6 +700,7 @@ owner-cut handoff, and does not tag or publish as part of this record.
 - A verified starter can opt into documented browser build/test automation while source-repository visibility and public output remain separate choices; deployment automation waits for its hosting, visibility and credential decisions. Selected dependency alerts/action updates are qualified from current state, and a cross-origin iframe regression checks the supported embedding contract without selecting a hosting account or compression rollout
 - Existing captures supply repository/link-preview images, a generated quick reference points to exact contracts, unverified external-platform routes are labelled honestly, browser Escape behaviour is recorded, and contribution/agent-use copy reflects the bounded owner decisions
 - The actual v0.4.0 candidate has refreshed release evidence independent of newly queued stories, and an explicitly invoked iOS Simulator pilot records only its own results while the real-phone gate remains open
+- Normal Release Direct3D refuses known software adapters by default while explicitly opted-in CI still rasterises truthfully; genuine startup render-device absence has a distinct runtime-error category, and mutable contact responses retain deterministic pair dispatch and deferred destruction
 
 **Lands as**
 
@@ -715,7 +777,7 @@ owner-cut handoff, and does not tag or publish as part of this record.
 71. L71 Validate sprite-sheet frames against their atlas: SM-77 (`REV#30`, after OCA-88)
 72. L72 Parse a hex colour with an explicit failure result: OCA-89 (`REV#34`)
 73. L73 Let a game answer native window-close requests: OCA-90 (`REV#39`)
-74. L74 Drive native pads through a scripted backend: SM-78 (`REV#40`)
+74. L74 Construct scripted pad input alongside shipping input in the same library: SM-78 (`REV#40`, issue #122)
 75. L75 Route non-fatal engine diagnostics to a caller's sink: OCA-91 (`REV#41`)
 76. L76 Read the platform's reduced-motion preference: OCA-92 (`REV#60`)
 77. L77 Read the engine's release and development identity: PI-22 (`REV#45`)
@@ -770,6 +832,9 @@ owner-cut handoff, and does not tag or publish as part of this record.
 126. L126 Publish owner-supplied agent-use wording: SM-95 (`REV#76`, blocked on wording)
 127. L127 Refresh the actual v0.4.0 candidate's release preparation: SM-96 (`REV#149`, independent release-preparation lane)
 128. L128 Record a manually invoked iOS Simulator game pilot: SM-97 (`REV#152`)
+129. L129 Refuse known software Direct3D by default and preserve explicit software CI: SM-98 (`REV#104`, issue #125)
+130. L130 Distinguish genuine startup render-device unavailability: OCA-120 (issue #123)
+131. L131 Expose mutable contact participants with a pinned dispatch contract: PI-25 (issue #124)
 
 **Stories**
 
@@ -1134,16 +1199,18 @@ owner-cut handoff, and does not tag or publish as part of this record.
   build pass. Across two runs, all 182 permitted Python cases pass: the seven
   CMake fixtures received explicit installed tool paths after initially skipping.
   The exact ten stopped PowerShell worker/trace cases were never executed.
-- [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer · **Owner**: Change the website gate in one place — after SM-29
+- [ ] **[SM-30](STORIES.md#sm-30)** Could · S · The Sole Owner-Maintainer: Converge the approved website build settings after reading current state — after SM-29
   Source landed 2026-11-05: `npm run gate` in website/package.json runs the
   check, the tests and the build, and website.yml's job runs it as one step
   after `versions:verify`. The tracked `website/.node-version` (24) feeds
   every setup-node step and is the file Cloudflare reads in the root
   directory. website/README.md records the build command as
-  `npm ci && npm run gate` with no build variable. Left, owner-only: change the
-  Cloudflare build command to `npm ci && npm run gate` and delete the
-  `NODE_VERSION` build variable; the next production build's log showing
-  Node 24 from the file and the gate's steps closes it.
+  `npm ci && npm run gate` with no build variable. **Approved 2026-11-16:**
+  read the actual Cloudflare project configuration first and change only
+  differences from that build command and the absence of a `NODE_VERSION`
+  override, so Node 24 comes from the tracked file. Do not force a deployment
+  or alter unrelated settings. The next normal production build's log showing
+  the file-selected Node and gate steps closes the remaining acceptance.
 - [x] **[SM-32](STORIES.md#sm-32)** Could · S · The Sole Owner-Maintainer: Keep the site's LineSweeper footage in step with the sample
 - [x] **[NMS-03](STORIES.md#nms-03)** Could · S · The Native Multi-Platform Shipper (anti-persona, for now): The Why page's Platform support section links the plans, their scope, and what would change the answer — after OCA-01
   Source added 2026-10-29. Why links the existing Android scoping record and
@@ -1291,7 +1358,7 @@ owner-cut handoff, and does not tag or publish as part of this record.
 
 - [x] **[OCA-78](#oca-78)** Must - M - The Outside Adopter: Start my own game from a release download, without Git
 
-- [ ] **[OCA-79](#oca-79)** Should - S - The Outside Adopter · **Owner**: My starter project's first push runs green on GitHub — after OCA-78
+- [ ] **[OCA-79](#oca-79)** Should - S - The Outside Adopter: My approved dedicated public starter project's first push runs green on GitHub — after OCA-78
 
 - [x] **[OCA-80](#oca-80)** Should - S - The Outside Adopter: Collide a round body without the narrow phase throwing
 
@@ -1317,7 +1384,7 @@ owner-cut handoff, and does not tag or publish as part of this record.
 - [ ] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
 - [ ] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
 - [ ] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
-- [ ] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Drive Gamepads and Application with scripted native pad input
+- [ ] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Construct scripted pad input alongside configured shipping input in the same engine library
 - [ ] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
 - [ ] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
 - [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
@@ -1376,6 +1443,10 @@ owner-cut handoff, and does not tag or publish as part of this record.
 - [ ] **[SM-95](#sm-95)** Could · XS · The Sole Owner-Maintainer: Publish accurate owner-supplied agent-use wording — blocked until the wording is provided
 - [ ] **[SM-96](#sm-96)** Should · M · The Sole Owner-Maintainer: Refresh preparation for the actual v0.4.0 candidate independently of queued feature stories
 - [ ] **[SM-97](#sm-97)** Could · M · The Sole Owner-Maintainer: Invoke an iOS Simulator game pilot without adding a recurring acceptance lane
+
+- [ ] **[SM-98](#sm-98)** Should · M · The Sole Owner-Maintainer: Refuse known software Direct3D by default while preserving explicit, truthfully labelled software CI coverage
+- [ ] **[OCA-120](#oca-120)** Should · M · The Outside Adopter: Catch genuine startup render-device absence separately from other runtime errors
+- [ ] **[PI-25](#pi-25)** Should · M · The Pinned Submodule Integrator: Mutate the other contact participant under a deterministic dispatch and retirement contract
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
@@ -1559,26 +1630,34 @@ cover allow, decline, defer, repeat and teardown; follow the app verification
 plan, retain browser lifecycle checks, and run the website gate.
 
 <a id="sm-78"></a>
-### SM-78. Add a scripted native pad backend
+### SM-78. Construct scripted pad input alongside the shipping reader
 
-Selected from [`REV#40`](../review/2026-11-10/FINDINGS.md#rev40).
+Selected from [`REV#40`](../review/2026-11-10/FINDINGS.md#rev40) and amended
+2026-11-16 to answer [issue #122](../review/colourwars-reports/scripted-pad.md).
+This supersedes the earlier build-selected-null-only sketch; implementation
+and qualification remain open.
 
 **Acceptance**
 
-- A build-selected null input backend accepts scripted GamepadState snapshots
-  and records vibration requests without polling physical pads or adding a
-  runtime virtual call to the seam.
-- Native tests drive the shipping Gamepads and Application path through
-  connection changes, slot reuse, button edges, suspension and vibration
-  expiry/stop/teardown. Results do not depend on occupied host pad slots.
-- Update backend contracts, relevant presets/inventories and CHANGES.md;
-  explicitly reconcile the tracker report's request against this scope.
+- Construction selects either the normal configured XInput/web source or a
+  scripted/recording source available alongside it in the same built engine
+  library. Preserve ordinary defaults; no global source override, symbol
+  replacement or rebuild into a null-only library is required for a fixture.
+- State ownership and lifetime of supplied snapshots, source/record storage
+  and vibration records. Scripts drive the real Gamepads and Application
+  path through connection changes, slot reuse, button edges, suspension and
+  vibration expiry/stop/teardown without polling physical pads.
+- Tests link the shipping engine library and assert that independently
+  constructed readers/sources do not contaminate one another. Publish the
+  construction contract, reconcile relevant presets/inventories and update
+  CHANGES.md, architecture/seam guidance and public reference together.
 
-**Boundaries and verification:** no game action map, recording file format
-or replay feature. InputTests and native-null app/sample integration tests
-cover scripted transport; XInput and web retain their existing coverage under
-the input/app verification owners. Physical pad and rumble acceptance stays
-open, and any new ctest entries update the inventory in the same commit.
+**Boundaries and verification:** no game action map, recording file format or
+replay system. Deterministic native and wasm tests cover the selected source,
+data lifetime, output recording, suspension and ordinary shipping defaults;
+XInput and web retain their backend-specific coverage. Physical pad and rumble
+acceptance remains separate. Follow the input/app verification owners and
+consumer checks; new ctest entries update the inventory in the same commit.
 
 <a id="oca-91"></a>
 ### OCA-91. Capture non-fatal engine diagnostics
@@ -2843,6 +2922,93 @@ invoked Simulator run, retain the evidence and integration limits, and run
 affected tooling, lint and the website gate. No Simulator session starts as
 part of this planning record.
 
+The following three stories were selected in the final acceptance batch on
+2026-11-16. All remain unimplemented; their public-issue owner records retain
+the decisions and source-break boundaries.
+
+<a id="sm-98"></a>
+### SM-98. Refuse known software Direct3D by default and preserve explicit CI
+
+Selected from `REV#104` and
+[issue #125](../review/colourwars-reports/device-kind.md).
+
+**Acceptance**
+
+- Normal Release Direct3D startup refuses a known software adapter by default,
+  consistently with the adapter classification reported to callers. Cover an
+  unflagged Basic Render Driver as well as the ordinary software flag, without
+  disguising either as hardware or changing the supported hardware floor.
+- Provide an explicit supported opt-in for software CI execution and label
+  its device/results truthfully. Preserve the rasterising Direct3D test and
+  installed-consumer coverage rather than skipping them or silently selecting
+  a non-rasterising backend.
+- Keep default-refusal tests and explicit opt-in coverage together. State the
+  selection/refusal contract, configuration scope and consumer-visible change
+  in the implementation's public/build documentation and CHANGES.md.
+
+**Boundaries and verification:** no implicit software fallback for ordinary
+Release consumers and no emulation-as-hardware claim. Deterministic selection
+fixtures cover flagged/unflagged software and hardware controls; real CI runs
+exercise the intended software rasteriser and installed game with explicit
+configuration. Follow all affected render/app configurations and consumer
+checks, update inventories/required-check records if needed, and run lint and
+the website gate. This planning record changes no selection or CI behaviour.
+
+<a id="oca-120"></a>
+### OCA-120. Distinguish genuine startup render-device unavailability
+
+Selected from [issue #123](../review/colourwars-reports/device-unavailable.md).
+
+**Acceptance**
+
+- Add a public exception category derived from `std::runtime_error` for
+  genuine startup absence of a usable render device, so a caller can catch
+  that condition without treating every runtime error as optional graphics.
+- Define and test exactly which startup failures belong to that category.
+  Asset/content failures, programming/state errors, shader failures and audio
+  failures retain their own meaning rather than being relabelled as a missing
+  graphics device.
+- Publish its inheritance, message/context and caller handling contract with
+  representative consumer usage. Update affected backend errors, tests,
+  public-header publication and CHANGES.md together.
+
+**Boundaries and verification:** no universal catch-and-ignore wrapper or
+automatic null-render fallback. Error-path fixtures distinguish genuine
+device absence from every excluded class, and consumer checks exercise the
+specific catch while ordinary `std::runtime_error` handling still works.
+Follow affected render/app verification and the website gate; no unavailable
+device or platform-support result is claimed by this planning selection.
+
+<a id="pi-25"></a>
+### PI-25. Expose mutable contact participants with a pinned dispatch contract
+
+Selected from [issue #124](../review/colourwars-reports/contact.md).
+
+**Acceptance**
+
+- Change the callback's other participant from `const CollisionObject&` to
+  `CollisionObject&`, allowing a game to mutate/retire it without a const cast.
+  Name the old/new signature, update every in-tree override and provide the
+  sample migration diff and CHANGES.md entry for this source break.
+- Measure each surviving pair once immediately before its dispatch, then
+  deliver both callback halves once using that same pre-callback manifold
+  with opposite normals. Earlier responses may affect the measurement of
+  later pairs; do not measure the second half again after the first mutates.
+- Pin deterministic input/registration-order dispatch, including agreement
+  between exhaustive and broad-phase enumeration. Retirement during a pair
+  does not suppress its already-started other half; later pairs involving a
+  retired object are skipped, and destruction stays deferred to `end_tick`.
+- State reference/geometry lifetime and mutation limits in the public
+  collision/scene contracts and amend design/reference guidance alongside
+  implementation and tests.
+
+**Boundaries and verification:** no contact-point addition, event bus or
+immediate destruction. Behavioural tests cover mutation from both halves,
+pre-measurement reuse, pair order, separation by an earlier pair, retirement
+and later-pair suppression with destruction deferred; verify representative
+sample/client migration and native/wasm portable cases. Run relevant collision
+and scene checks, lint and the website gate.
+
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game
 
@@ -3068,9 +3234,11 @@ from GitHub's documentation without running them
 **Acceptance**
 
 - A starter ZIP of the current release is extracted and committed as plain
-  files exactly as *Put your project on GitHub* says, and pushed, with the
-  owner's authorisation, to a public test repository under the owner's
-  account; its `ci.yml` runs green on `windows-latest`.
+  files exactly as *Put your project on GitHub* says. The owner's
+  2026-11-16 approval covers its dedicated public starter-proof repository
+  and first push under the current owner account; read the actual account
+  and review the precise outgoing payload before that external write.
+  Its `ci.yml` runs green on `windows-latest`.
 - The run's URL replaces the sentence in the CI guide (`ci.mdx`) saying such
   a project has not yet run the workflow on GitHub, and the steps seen for
   real (push output, the Actions pages) replace *Put your project on
@@ -3080,6 +3248,12 @@ from GitHub's documentation without running them
   secret, so whether to do it is recorded as the owner's decision.
 - The walkthrough project's own pin moves on its own cadence and is not
   part of this story.
+
+**Approved boundary, 2026-11-16:** the first-push proof is ready work. It
+authorises neither this Labrador work branch's push nor publication of new
+engine changes, unrelated repositories or recurring starter-push automation.
+The current-release payload and the selected account/target are reviewed
+before writing; this planning record creates or pushes nothing.
 
 <a id="oca-78"></a>
 ### OCA-78. Start a project from a release ZIP without Git

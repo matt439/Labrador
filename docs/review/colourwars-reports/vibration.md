@@ -120,3 +120,17 @@ The per-motor physical record above is re-planned as follows.
   can ride OCA-48's pad session.
 
 Headless tests still make no claim about physical output.
+
+### Approved physical acceptance, 2026-11-16
+
+The owner approved `PI-21`'s remaining native and Chrome pad play as part of
+the same session as `OCA-48` and `OCA-45`, with `BDP-06`'s browser pad
+acceptance. TODO's `BLOCKED` state means approved work awaiting owner
+attendance with the physical pad; the transport decision is already made.
+The owner's observation is how the motors feel and anything that behaves
+wrongly, rather than a new per-button checklist.
+
+This planning amendment records no motor output, audible or visible result,
+new test or completed physical acceptance. The existing automated evidence
+and its limits above are unchanged; close the remaining acceptance only with
+a dated record of the real session.
