@@ -152,6 +152,36 @@ export function declarationName(text: string): string {
 	return name ? name[1] : flat;
 }
 
+// A declaration as a caller needs it: the signature, without an inline body or
+// a constructor's initialiser list, which are implementation and name private
+// members. `= default`, `= delete` and `= 0` stay, because they are contract.
+export function declarationSignature(text: string): string {
+	let open = text.indexOf('(');
+	if (open < 0) {
+		return text;
+	}
+	// operator() spells its own parentheses before the parameter list.
+	if (/operator\s*$/.test(text.slice(0, open)) && text.startsWith('()', open)) {
+		open = text.indexOf('(', open + 2);
+	}
+	let depth = 0;
+	let close = -1;
+	for (let index = open; index >= 0 && index < text.length; index++) {
+		if (text[index] === '(') {
+			depth++;
+		} else if (text[index] === ')' && --depth === 0) {
+			close = index;
+			break;
+		}
+	}
+	if (close < 0) {
+		return text;
+	}
+	const rest = text.slice(close + 1);
+	const cut = rest.search(/(?<!:):(?!:)|\{/);
+	return cut < 0 ? text : `${(text.slice(0, close + 1) + rest.slice(0, cut)).trimEnd()};`;
+}
+
 export function parseHeader(path: string, text: string): HeaderDocument {
 	const lines = text.replace(/\r\n?/g, '\n').split('\n');
 	const document: HeaderDocument = { namespaces: [], items: [] };

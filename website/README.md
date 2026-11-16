@@ -118,6 +118,8 @@ src/lib/
   reference.ts            a parsed header as a page, and the index of names
                           and members every page links through; module overviews
                           list the same headers as the sidebar
+  quick-reference.ts      curated common tasks and names; declarations and
+                          contract anchors come from the same reference reader
   code-links.ts           C++ tokens linked without changing highlighted or copied code
   excerpt.ts              a passage of a file, found by its text
   emscripten.ts           the pinned Emscripten version, read from CI's wasm job
@@ -155,6 +157,13 @@ never line numbers, which would quietly quote the wrong lines after an edit. A
 `` `engine/scene/scene.h` ``. The first mention in
 each section links to its place in the reference by itself, a member to its own
 section where it has one. Nothing written by hand has to track the anchors.
+
+**Change the common-task quick reference.** Curate tasks, guide links and public
+names in `src/lib/quick-reference.ts`. It reads every selected declaration and
+overload through `cpp-header.ts` and resolves contracts through `reference.ts`.
+Keep signatures and default values in the engine header. A missing or private
+name, an unpublished game-code header or a missing contract fails the build;
+`tests/quick-reference.test.mjs` also checks source drift and destinations.
 
 C++ fenced blocks and `<SourceFile>` excerpts link the first occurrence of
 each known target in that block. Links preserve syntax colours, selection and
