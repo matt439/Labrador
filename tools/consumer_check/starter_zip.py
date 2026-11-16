@@ -133,6 +133,11 @@ def starter_files(engine: Path, release: str | None) -> dict[str, bytes | Path]:
     entries: dict[str, bytes | Path] = dict(assemble.project_files(engine, files))
     for relative in files:
         entries[(assemble.ENGINE / relative).as_posix()] = engine / relative
+    # --release reaches here only after check_release verified the exact clean
+    # tag. Preserve that package identity when the ZIP has no Git metadata.
+    if release:
+        identity = f"commit={git(engine, 'rev-parse', 'HEAD')}\nrefs=tag: {release}\n"
+        entries[(assemble.ENGINE / "cmake/release_identity.txt").as_posix()] = identity.encode("ascii")
     entries["README.txt"] = readme(engine, release)
     print(f"engine: {len(files)} files from {engine}")
     return entries

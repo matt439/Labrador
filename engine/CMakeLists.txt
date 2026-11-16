@@ -31,6 +31,7 @@ add_library(LabradorEngine STATIC
     core/state_context.cpp
     core/thread_pool.cpp
     core/utf8.cpp
+    core/version.cpp
     input/direction.cpp
     input/gamepad.cpp
     input/gamepads.cpp
@@ -88,6 +89,9 @@ add_library(LabradorEngine STATIC
 # true when this repository is built standalone - a consumer builds it from a
 # tree that may well have a game/ in it.
 target_include_directories(LabradorEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version_values.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/engine/core/version_values.h" @ONLY)
+target_include_directories(LabradorEngine PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 # The shell's window, which is the platform's: app/win32/ or app/web/, behind
 # the one neutral app/window.h (its header says why the class is not in either

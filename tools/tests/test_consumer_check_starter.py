@@ -184,6 +184,9 @@ class StarterZipTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((output / "labrador-starter-v0.3.0.zip").is_file())
         self.assertIn("sha256", result.stdout)
+        with zipfile.ZipFile(output / "labrador-starter-v0.3.0.zip") as archive:
+            identity = archive.read("mygame/external/labrador/cmake/release_identity.txt").decode("ascii")
+        self.assertRegex(identity, r"^commit=[0-9a-f]{40}\nrefs=tag: v0\.3\.0\n$")
 
     def test_assemble_writes_the_same_project_as_the_zip_holds(self):
         project = self.root / "mygame"

@@ -87,9 +87,10 @@ gh label create declined --color b60205 --description "Request declined; the clo
    whether the entry or the declaration is right is review's to check before
    merging, because nothing else does.
    The build inputs are the root, engine and math `CMakeLists.txt`, and
-   `cmake/`'s `settings.cmake`, `source_revision.cmake`,
+   `cmake/`'s `settings.cmake`, `source_revision.cmake`, `version.cmake`,
    `compile_shaders.cmake`, `add_material.cmake`, `embed_material.cmake` and
-   `check_engine_includes.cmake`. Other CMake scripts and maintainer tooling
+   `check_engine_includes.cmake`, plus `version_values.h.in` and
+   `release_identity.txt`. Other CMake scripts and maintainer tooling
    are not implicitly included. CHANGES.md records the frozen historical
    boundary for the paths added to coverage on 2026-11-16; the original paths
    remain checked across history.
@@ -253,6 +254,21 @@ made.
 **The name** is `v` followed by `vcpkg.json`'s `version-string`: `"0.1.0"` is
 tagged `v0.1.0`. At a tagged commit the two always agree.
 
+That manifest field is the only numeric version to edit. `cmake/version.cmake`
+derives CMake's `LABRADOR_VERSION` and numeric parts, and configures the private
+data behind `engine/core/version.h`. `LABRADOR_VERSION_STRING` and
+`LABRADOR_VERSION_IS_DEVELOPMENT` distinguish a clean exact matching tag from
+development. Before the tag exists, the prepared candidate is still `-dev`;
+reconfigure after tagging before building a binary intended to report the
+release. Source revision remains a separate configure fact.
+
+`git archive` exports `cmake/release_identity.txt` through `.gitattributes`,
+and the verified release starter packer writes the same exact-tag metadata.
+Those source packages can identify their release without Git; an ordinary
+unstamped copy remains `-dev`. The stamp describes the packaged release,
+not the integrity of later edits, and does not change an archive's `unknown`
+source revision.
+
 **The number.** Before 1.0, the second number moves for a batch that has any
 CHANGES.md entry, and the third only for a batch with none. That is T6: a
 `settings.cmake` flag or a silent behaviour change breaks a game as hard as a
@@ -287,16 +303,21 @@ cut once PHILOSOPHY's settle criterion has run.
    **Check it** with
    `python tools/release_check.py --release vX.Y.Z --base vPREV --head <rev>`,
    on the pull request's head and again on the `master` commit in step 3. It
-   reads local Git objects only, and fails naming each mismatch: the
+   reads local Git objects and runs compiler-free CMake version fixtures in a
+   temporary directory, and fails naming each mismatch: the
    `version-string`, a remaining `## Unreleased`, the release heading's date
    against the head's author date, the heading after it against `vPREV`, a
-   number *The number* does not allow for the batch, a change-list entry
+   number *The number* does not allow for the batch, drift between the canonical
+   version, CMake and the generated version data, a lost release/development
+   distinction, a change-list entry
    without a commit id (with the commit `git log -S` finds), a tag of that
    name on another commit, and step 1's `check_changes_rule.py` over
    `vPREV..<rev>`. It lists the commits that change an engine `.cpp` file
    without touching CHANGES.md, which step 1 reads; the reading itself, and
    whether an entry is right, stay with the audit. It tags, fetches and
    uploads nothing.
+   The checked head must contain this checker's version-metadata contract;
+   for a historical release predating it, use the checker at that release.
 
    **For `v0.3.0`, qualify documentation versioning before the tag is cut.**
    It is the first release with a complete immutable snapshot; `v0.1.0` and

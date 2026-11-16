@@ -25,6 +25,7 @@ class RuleTests(unittest.TestCase):
         for path in (HEADER, "engine/render/gl/deep/nested.h", "engine/CMakeLists.txt",
                      "cmake/settings.cmake", "vcpkg.json", "CMakeLists.txt",
                      "engine/math/CMakeLists.txt", "cmake/source_revision.cmake",
+                     "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
                      "cmake/compile_shaders.cmake", "cmake/add_material.cmake",
                      "cmake/embed_material.cmake", "cmake/check_engine_includes.cmake"):
             with self.subTest(path=path):

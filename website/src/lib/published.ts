@@ -114,6 +114,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 		summary: 'Game objects, the state stack, handles and the tables that issue them, the thread pool and the partitioner that slices its work, and a seeded random stream.',
 		headers: [
 			['state.h', 'State', 'game code'],
+			['version.h', 'Version', 'game code'],
 			['state_context.h', 'StateContext', 'game code'],
 			['game_object.h', 'GameObject', 'game code'],
 			['handle.h', 'Handle', 'game code'],

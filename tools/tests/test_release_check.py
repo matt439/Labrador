@@ -127,8 +127,8 @@ class TextTests(unittest.TestCase):
 
 class GitFixtureTests(unittest.TestCase):
     def setUp(self):
-        if not shutil.which("git"):
-            self.skipTest("Git is required for isolated commit fixtures")
+        if not shutil.which("git") or not shutil.which("cmake"):
+            self.skipTest("Git and CMake are required for isolated commit fixtures")
         temporary = tempfile.TemporaryDirectory(prefix="labrador-release-check-")
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -142,6 +142,9 @@ class GitFixtureTests(unittest.TestCase):
         isolate_repository(self.git, hooks)
         self.base = self.commit("First release", {
             "vcpkg.json": vcpkg("0.1.0"),
+            "CMakeLists.txt": b'include(cmake/version.cmake)\nlabrador_set_version("${CMAKE_CURRENT_SOURCE_DIR}")\n'
+                             b'project(Labrador VERSION "${LABRADOR_VERSION}" LANGUAGES CXX)\n',
+            **{path: (REPOSITORY / path).read_bytes() for path in release_check.VERSION_INPUTS},
             "CHANGES.md": changes("## v0.1.0 (2026-10-13)\n\n### 2026-10-12 - Start\n\nText.\n"),
             "samples/minimal/README.md": minimal("- **2026-10-12, `0000000`.** Start."),
             "docs/design/PHILOSOPHY.md": PHILOSOPHY.encode("utf-8"),
@@ -214,6 +217,36 @@ class GitFixtureTests(unittest.TestCase):
                       output)
         self.assertIn("blob/v0.2.0/docs/design/PHILOSOPHY.md#the-public-face", output)
         self.assertIn("`labrador-starter-v0.2.0.zip`", output)
+
+    def test_generated_header_drift_fails_release_preflight(self):
+        template = (REPOSITORY / "cmake/version_values.h.in").read_bytes()
+        self.commit("Drift the public version data", {
+            "cmake/version_values.h.in": template.replace(b"@LABRADOR_VERSION_MINOR@u", b"999u"),
+        })
+        self.prepare()
+        code, _, errors = self.run_check("--release", "v0.2.0", "--base", "v0.1.0")
+        self.assertEqual(code, 1)
+        self.assertIn("generated version header's minor does not agree", errors)
+
+    def test_a_hard_coded_cmake_project_version_fails_release_preflight(self):
+        self.commit("Drift project version", {
+            "CMakeLists.txt": b'project(Labrador VERSION "0.2.0" LANGUAGES CXX)\n',
+        })
+        self.prepare()
+        code, _, errors = self.run_check("--release", "v0.2.0", "--base", "v0.1.0")
+        self.assertEqual(code, 1)
+        self.assertIn("project(Labrador) the canonical LABRADOR_VERSION", errors)
+
+    def test_losing_the_development_distinction_fails_release_preflight(self):
+        template = (REPOSITORY / "cmake/version_values.h.in").read_bytes()
+        self.commit("Lose development identity", {
+            "cmake/version_values.h.in": template.replace(b"#cmakedefine01 LABRADOR_VERSION_IS_DEVELOPMENT",
+                                                          b"#define LABRADOR_VERSION_IS_DEVELOPMENT 0"),
+        })
+        self.prepare()
+        code, _, errors = self.run_check("--release", "v0.2.0", "--base", "v0.1.0")
+        self.assertEqual(code, 1)
+        self.assertIn("loses the release/development distinction", errors)
 
     def test_an_unprepared_tree_fails_by_name_on_each_step_2_mismatch(self):
         code, output, errors = self.run_check("--release", "v0.2.0", "--base", "v0.1.0", "--notes")

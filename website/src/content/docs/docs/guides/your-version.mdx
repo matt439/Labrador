@@ -148,7 +148,60 @@ ways on:
 If you ask for help, give your `Labrador version:` and `Labrador commit:` lines; [Ask for
 help](/docs/guides/ask-for-help/) says what else to include.
 
+## Check the version from C++ or CMake
+
+This API is newer than the released `v0.3.0` starter. It is available in the
+development engine and the next release; [move your engine pin](/docs/guides/move-pin/)
+or [update a starter](/docs/guides/starter-update/) before using it in an older project.
+
+Include `engine/core/version.h` in engine-linked game code. A check for one specific
+release line can use the numeric parts and the development flag:
+
+```cpp
+#include "engine/core/version.h"
+
+bool is_labrador_release(unsigned int major, unsigned int minor, unsigned int patch)
+{
+	const labrador::Version engine_version = labrador::version();
+	return !engine_version.development && engine_version.major == major &&
+		engine_version.minor == minor && engine_version.patch == patch;
+}
+```
+
+`engine_version.string` is `X.Y.Z` for a verified release and `X.Y.Z-dev` for a
+development checkout whose manifest names that numeric baseline. This identifies a release;
+it promises no source or behaviour
+compatibility before 1.0. Read CHANGES.md before choosing which releases your game accepts.
+
+After the engine's `add_subdirectory(...)` line, CMake can inspect the same facts:
+
+```cmake
+message(STATUS "Labrador: ${LABRADOR_VERSION_STRING}")
+if(LABRADOR_VERSION_IS_DEVELOPMENT)
+    message(STATUS "This engine is a development build")
+endif()
+```
+
+`LABRADOR_VERSION` is the numeric baseline; `LABRADOR_VERSION_MAJOR`,
+`LABRADOR_VERSION_MINOR` and `LABRADOR_VERSION_PATCH` are its parts. A clean engine
+checkout must be exactly at the matching `vX.Y.Z` tag to count as a release. A nearest
+tag, tracked edits or unavailable Git leave it development. Reconfigure after changing
+the pin, tracked files or tags, then rebuild.
+
+A release starter ZIP or a Git source archive carries exact-tag package metadata, so
+it can identify its release without Git. A plain source copy with no verified metadata
+is development. The metadata identifies the original package and cannot detect later
+manual edits. Source revision is separate: `LABRADOR_SOURCE_REVISION` stays `unknown`
+for those archives, as explained by [the CMake version facts](/docs/reference/core/version/).
+
 ## What was checked
+
+On 16 November 2026, compiler-free CMake fixtures checked exact tags, tracked edits,
+between-tag commits, missing Git, unverified archives and exported exact-tag archives.
+A separate console consumer compiled the public header, linked the engine and agreed
+with CMake's facts for a synthetic untagged `0.3.0-dev` checkout and its tagged source
+archive (`0.3.0`, with source revision `unknown`). That fixture's local tag is test data;
+it does not name a published engine release with this API.
 
 On 31 October 2026, in a starter project made from a starter ZIP of this tree at commit
 `8bebb67`, the `findstr` lines of steps 1 and 4 printed what is shown, and `findstr` for a name

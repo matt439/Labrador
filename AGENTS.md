@@ -380,8 +380,9 @@ in the commit message, which the lint job checks per commit
 (`tools/check_changes_rule.py`). The rule includes silent behaviour and dependency/flag
 changes. A source break names old/new spellings and the sample migration diff.
 The build-input list is the root, engine and math `CMakeLists.txt`, plus
-`cmake/`'s settings, source_revision, compile_shaders, add_material,
-embed_material and check_engine_includes scripts. It does not cover every
+`cmake/`'s settings, source_revision, version, compile_shaders, add_material,
+embed_material and check_engine_includes scripts, version_values.h.in and
+release_identity.txt. It does not cover every
 CMake script or maintainer tool. CHANGES.md records the 2026-11-16 expansion's
 frozen historical boundary; the original paths remain checked across history.
 Keep history there, never in header comments. Releases are owner-cut tags by
