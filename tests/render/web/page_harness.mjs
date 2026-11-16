@@ -14,7 +14,7 @@ export const SAMPLES = Object.freeze({
 	// The pause menu: RESUME, RESTART, COLOURS, QUIT.
 	linesweeper: { target: 'LineSweeperSample', keys: ['Escape', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'Enter'] },
 	minimal: { target: 'MinimalSample', keys: ['Escape', 'Enter'] },
-	collision: { target: 'CollisionSample', keys: ['Escape'] },
+	collision: { target: 'CollisionSample', keys: ['KeyO', 'KeyO', 'Escape'] },
 	audio: { target: 'AudioSample', keys: ['KeyA', 'KeyS', 'Escape'] },
 	local_multiplayer: { target: 'LocalMultiplayerSample', keys: ['Escape'] },
 	// The keys ComponentsPageTests presses: a browser can take the first
@@ -36,6 +36,7 @@ export const WEBDRIVER_KEYS = Object.freeze({
 	ArrowRight: '\uE014',
 	ArrowDown: '\uE015',
 	KeyA: 'a',
+	KeyO: 'o',
 	KeyR: 'r',
 	KeyS: 's',
 });
@@ -53,7 +54,7 @@ export function key_table(codes) {
 }
 
 // The keys SAMPLES presses.
-export const SAMPLE_KEYS = key_table(['Escape', 'Enter', 'KeyA', 'KeyS', 'KeyR',
+export const SAMPLE_KEYS = key_table(['Escape', 'Enter', 'KeyA', 'KeyO', 'KeyS', 'KeyR',
 	'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']);
 
 // One key source pressing each key in turn, each held for hold_ms and
