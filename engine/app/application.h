@@ -110,6 +110,11 @@ namespace labrador
 		int min_window_width = 320;
 		int min_window_height = 200;
 
+		// Optional fixture source, borrowed through Application destruction.
+		// Null selects the configured shipping backend. A scripted source
+		// must have no other reader while this application is initialized.
+		ScriptedGamepadSource* scripted_gamepad_source = nullptr;
+
 		// Throws std::invalid_argument naming the field, rather than letting
 		// a bad number reach the code that divides by it. Application calls
 		// this before it opens a window. max_threads and target_fps are

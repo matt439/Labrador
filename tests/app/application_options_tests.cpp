@@ -6,6 +6,7 @@
 #include "engine/math/vector2i.h"
 
 #include <stdexcept>
+#include <optional>
 #include <string>
 
 using namespace labrador;
@@ -19,7 +20,17 @@ using namespace labrador;
 TEST_CASE("the defaults are valid")
 {
 	const ApplicationOptions options;
+	CHECK(options.scripted_gamepad_source == nullptr);
 	CHECK_NOTHROW(options.validate());
+}
+
+TEST_CASE("the original positional window fields retain their aggregate positions")
+{
+	const ApplicationOptions options{ L"FixtureClass", L"Fixture title",
+		ScreenResolution::s_1280_720, std::nullopt };
+	CHECK(options.window_class_name == L"FixtureClass");
+	CHECK(options.window_title == L"Fixture title");
+	CHECK(options.scripted_gamepad_source == nullptr);
 }
 
 TEST_CASE("the thread ceiling defaults to what the machine reports")

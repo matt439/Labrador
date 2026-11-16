@@ -131,6 +131,16 @@ well. So a tab shown again while the canvas does not have the keyboard gives
 the pads back and not the keys, and a click beside a canvas takes the keys and
 not the pads.
 
+The reader normally uses the configured platform backend. An explicit
+`ApplicationOptions::scripted_gamepad_source` lets a fixture run the same
+`Gamepads` and shell presence path with copied snapshots and recorded output,
+without constructing or calling that backend. The shell owns its reader and
+`Gamepads`, but borrows the source: the source outlives the Application,
+including cleanup after browser closure and destruction. Presence suspends
+and resumes either source through the same reader methods. The source owns
+its clock and bounded records, so a fixture controls expiry and inspects
+teardown after the Application is gone.
+
 ## 7. A browser quit releases what the destructor would
 
 On Windows, `run()` returns, `main` returns and `~Application` releases the

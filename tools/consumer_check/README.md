@@ -228,3 +228,26 @@ can instead be named by the shader guide's CMake cache overrides.
 is in. `assemble.py`'s folder must be new or empty; delete it to assemble
 again. `tar` overwrites the files of a `C:\dev\mygame` that is there already
 but deletes none, so delete the folder before extracting a ZIP again.
+
+**Scripted pad input.** After those baseline checks (and, natively, the rename/release checks), the
+existing `consumer` and `wasm-consumer` jobs opt their assembled copy into
+`scripted_pad_fixture.py`. Its one `ScriptedPadConsumerTests` target links the
+same configured LabradorEngine as the game and constructs a normal reader
+beside a scripted source. It drives real Gamepads snapshots, edges,
+suspension, vibration records and teardown with no physical pad output.
+The source lives in `scripted_pad.cpp`; nothing is added to the distributed
+starter's own two tests or to the repository's ctest inventory.
+
+To add this optional fixture after the baseline checks:
+
+```bat
+python <engine>\tools\consumer_check\scripted_pad_fixture.py C:\dev\mygame
+cd /d C:\dev\mygame
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target ScriptedPadConsumerTests
+ctest --preset x64-debug -R "^ScriptedPadConsumerTests$" --no-tests=error --output-on-failure
+```
+
+Use the browser preset and Emscripten environment for the same test under
+Node. This fixture qualifies the consumer construction boundary; it does
+not qualify physical mapping or rumble.

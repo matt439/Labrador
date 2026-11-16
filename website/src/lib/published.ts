@@ -200,6 +200,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['touch.h', 'Touch', 'game code'],
 			['direction.h', 'Direction', 'game code'],
 			['gamepad_reader.h', 'GamepadReader', 'game code'],
+			['scripted_gamepad_source.h', 'ScriptedGamepadSource', 'game code'],
 		],
 	},
 	{

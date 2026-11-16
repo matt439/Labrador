@@ -35,6 +35,7 @@ add_library(LabradorEngine STATIC
     input/gamepads.cpp
     input/keyboard.cpp
     input/mouse.cpp
+    input/scripted_gamepad_source.cpp
     input/touch.cpp
     render/animation_strip.cpp
     render/block_decode.cpp

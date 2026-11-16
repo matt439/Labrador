@@ -656,10 +656,70 @@ run the `cd /d C:\dev\mygame` line, then the command again.
 </Aside>
 
 The script is yours to change;
-the engine has no replay or input-injection mechanism of its own. Labrador's browser pages are
+the engine has no keyboard replay or key-injection mechanism of its own. Labrador's browser pages are
 driven the same way through Chrome's DevTools protocol, with real key events dispatched
 through the page's shell:
 <RepoLink path="tests/app/web/window_input.mjs">`tests/app/web/window_input.mjs`</RepoLink>.
+
+## Script pad input
+
+This section uses the development API added after `v0.3.0`. A released starter
+needs an engine update before using it; follow
+[Move a starter project to a newer Labrador](/docs/guides/starter-update/).
+
+A pad fixture can link the same `LabradorEngine` as its game. Add a test file
+to an engine-linked test target, such as the draw or state tests above, and
+select a `ScriptedGamepadSource` when constructing the reader:
+
+```cpp
+#include <doctest/doctest.h>
+
+#include "engine/input/gamepads.h"
+#include "engine/input/scripted_gamepad_source.h"
+
+TEST_CASE("a chosen pad button reaches the game's input path")
+{
+	labrador::ScriptedGamepadSource source;
+	labrador::GamepadReader reader(source);
+	labrador::Gamepads pads(&reader);
+	labrador::GamepadState state;
+	state.connected = true;
+	source.set_state(0, state);
+	pads.poll();
+	CHECK(pads.just_connected(0));
+	CHECK_FALSE(pads.pressed(0, labrador::GamepadButton::a));
+
+	state.buttons = labrador::gamepad_button_bit(labrador::GamepadButton::a);
+	source.set_state(0, state);
+	pads.poll();
+	CHECK(pads.pressed(0, labrador::GamepadButton::a));
+	CHECK_FALSE(source.records_overflowed());
+}
+```
+
+The source copies `state`. Assignments change the next sample, and `poll()`
+takes that sample before computing edges. Sample a disconnected state before
+reusing a slot for another pad. The source must outlive the reader: declaring
+it first above makes it die last. Each source has one borrowing reader;
+separate sources keep separate snapshots and records.
+
+To exercise the Application's own input polling and presence handling, keep
+the source outside the Application and set
+`options.scripted_gamepad_source = &source` before constructing it. Leaving
+that option null, or constructing `GamepadReader` without a source, uses the
+configured XInput or browser backend. Scripted construction calls neither
+physical input nor vibration APIs.
+
+`source.set_time(seconds)` advances a finite, nondecreasing clock from zero;
+the next poll ends an expired vibration without a test sleeping.
+`set_vibration_available(slot, false)` makes simulated output refuse requests.
+Inspect `source.records()` for sample, suspension, resume and vibration/stop
+records, including stops when the reader is destroyed. The source reserves a
+bounded record buffer at construction (1,024 records by default). Assert
+`records_overflowed()` is false before trusting a complete record, and use
+`clear_records()` between phases or select a larger capacity at construction.
+These tests establish engine behaviour; real-pad mapping and felt rumble need
+real-device acceptance.
 
 ## In CI
 
