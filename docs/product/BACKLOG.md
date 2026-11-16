@@ -1979,6 +1979,12 @@ native MSVC Release configurations and consumer checks, plus lint and the
 website gate; CPU-phase evidence does not establish FPS, display pacing or
 the unmeasured Radeon tier. Measurement/runtime authorisation remains explicit.
 
+Explicit opt-in selection is implemented with a native-MSVC capability probe
+and Release-only directory scope. It leaves consumer parent targets and
+browser defaults unchanged. Complete native Release, incremental, consumer
+and current-source measurement qualification remains open before changing
+the standalone default.
+
 <a id="sm-82"></a>
 ### SM-82. Establish consistent ASan instrumentation before scheduling it
 

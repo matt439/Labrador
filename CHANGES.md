@@ -121,6 +121,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Add explicit native MSVC Release IPO selection
+
+**Build option.** `-DLABRADOR_NATIVE_RELEASE_IPO=ON` enables checked
+Release-only interprocedural optimization for targets in Labrador's CMake
+directory tree. The default remains off during qualification. The setting
+keeps `/fp:precise`, leaves Debug and browser compilation unchanged and does
+not set a consumer game's own target properties or global IPO policy.
+Configure `OFF` to opt out of this selection; a separately supplied CMake IPO
+override remains the caller's responsibility. See
+[the policy and consumer recipe](docs/performance/native-release-ipo.md).
+
 ### 2026-11-17 - Explain missing consumer dependencies at configure
 
 **Configure diagnostics.** Missing selected config packages now name the

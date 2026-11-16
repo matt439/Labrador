@@ -150,6 +150,11 @@ The `-null` pair takes no graphics API and no audio API, so it runs end to end
 on a machine with neither. A backend is chosen at compile time, so asking for
 one that was not built is a missing symbol at link.
 
+Native MSVC Release builds can opt into interprocedural optimization with
+`-DLABRADOR_NATIVE_RELEASE_IPO=ON`; Debug and browser defaults are unchanged.
+[The build policy](docs/performance/native-release-ipo.md) gives the opt-out,
+consumer target recipe and qualification limits.
+
 The presets put the build in `out/build/<preset>/`. The sample lands at
 `out/build/x64-debug/samples/minimal/MinimalSample.exe` and runs from
 anywhere — the build mirrors its content beside it. Under a `wasm-*` preset

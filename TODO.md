@@ -116,7 +116,7 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-92` | OPEN | should | M | Query and LineSweeper integration implemented; complete the combined seven-track app sweep (`REV#60`). [Scope and focused evidence](docs/product/BACKLOG.md#oca-92). |
 | `PI-22` | OPEN | should | S | Version API, exact-tag/archive identity and consumer checks pass; close after the combined website gate (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
 | `PI-23` | OPEN | should | S | Selected dependency diagnostics and configure fixtures pass; close after the combined website gate (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |
-| `SM-81` | OPEN | should | M | Qualify native MSVC Release IPO before enabling it there; browser qualification stays separate (`REV#36`). [Scope](docs/product/BACKLOG.md#sm-81). |
+| `SM-81` | OPEN | should | M | Opt-in native Release IPO is guarded; qualify clean/incremental/consumer builds and current-source costs before changing the standalone default (`REV#36`). [Scope](docs/product/BACKLOG.md#sm-81). |
 | `SM-82` | OPEN | should | M | Repair dependency instrumentation and allocation-failure coverage, then add scheduled native-null ASan (`REV#49`). [Scope](docs/product/BACKLOG.md#sm-82). |
 | `SM-83` | OPEN | should | S | Diagnose invalid collider data at the scene/collision boundary while retaining low-level predicate semantics (`REV#57`). [Scope](docs/product/BACKLOG.md#sm-83). |
 
