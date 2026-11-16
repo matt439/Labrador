@@ -26,6 +26,8 @@ namespace labrador
 		// Each of x, y, width and height truncates toward zero on its own,
 		// as static_cast<int> does; the corners are not rounded outward, so
 		// (0.5, 0.5, 2.9, 2.9) becomes (0, 0, 2, 2).
+		// Both float constructors throw std::invalid_argument for non-finite
+		// input and std::out_of_range if a truncated field does not fit in int.
 		RectangleI(const Vector2F& position,
 			const Vector2F& size);
 		explicit RectangleI(const RectangleF& rectangle);

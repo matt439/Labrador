@@ -1377,7 +1377,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-84](#oca-84)** Could · L · The Outside Adopter: Write one HLSL post material and build it for Windows and the browser
 
 - [ ] **[OCA-85](#oca-85)** Should · S · The Outside Adopter: Refuse a camera scale the engine cannot render correctly
-- [ ] **[SM-76](#sm-76)** Should · S · The Sole Owner-Maintainer: Refuse undefined integer conversions and division
+- [x] **[SM-76](#sm-76)** Should · S · The Sole Owner-Maintainer: Refuse undefined integer conversions and division
 - [ ] **[OCA-86](#oca-86)** Should · S · The Outside Adopter: A short mouse click reaches the next fixed update
 - [ ] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
 - [ ] **[OCA-88](#oca-88)** Should · S · The Outside Adopter: Read a loaded texture's dimensions
@@ -1488,6 +1488,13 @@ render code, and run the website gate for published contracts.
 ### SM-76. Guard integer geometry conversions and division
 
 Selected from [`REV#130`](../review/2026-11-12-work-audit/FINDINGS.md#rev130).
+
+**Completed 2026-11-16.** Float constructors check finite and truncated-range
+values through Vector2I; RectangleI shares that path. Division validates both
+components before mutation. LabradorMathTests passed in native Debug null
+and wasm Debug with null render/audio; the integer suites cover 18 cases and
+163 assertions, including each invalid field and unchanged division targets.
+The website gate passed its check, 200 tests, build and release assembly.
 
 **Acceptance**
 

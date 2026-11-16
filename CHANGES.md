@@ -80,6 +80,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Check integer geometry conversions and division
+
+**Behaviour change.** Float constructors of `Vector2I` and `RectangleI` now
+throw `std::invalid_argument` for NaN or infinity and `std::out_of_range` when
+a truncated coordinate cannot fit in `int`. Valid values still truncate
+toward zero. `Vector2I` division now throws `std::invalid_argument` for zero
+divisors and `std::overflow_error` for `INT_MIN / -1`; compound division leaves
+both components unchanged on failure. These inputs previously invoked undefined
+behaviour. Validate untrusted geometry before conversion, or handle these
+exceptions at its input boundary. Other integer arithmetic is unchanged.
+
 ### 2026-11-16 - Build and use game-authored post-processing materials
 
 **New API and optional build dependencies.** `labrador_add_material(target

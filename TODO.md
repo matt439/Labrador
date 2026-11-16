@@ -31,8 +31,8 @@ follows the player*.
 
 **Next ready stories:** the owner accepted eighteen scopes on 2026-11-16 in
 [the decision batch below](#accepted-decision-batch-of-2026-11-16), ordered as
-BACKLOG's L66 to L83. Start with `OCA-85`, `SM-76` and `OCA-86`; the first six
-stories are the initial priorities. `SM-77` waits for `OCA-88`'s texture-size
+BACKLOG's L66 to L83. The remaining first-six stories in the batch below
+are the initial priorities. `SM-77` waits for `OCA-88`'s texture-size
 query. `SM-81` qualifies native MSVC Release IPO before enabling it there;
 `SM-82` repairs the sanitizer configuration before adding scheduled ASan.
 The two deferred scopes, `REV#35` and `REV#53`, retain
@@ -108,7 +108,6 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-85` | OPEN | should | S | Reject negative camera scales explicitly; mirroring waits for a real caller (`REV#124`). [Scope](docs/product/BACKLOG.md#oca-85). |
-| `SM-76` | OPEN | should | S | Check float-to-int geometry conversions, zero divisors and division overflow without partial mutation (`REV#130`). [Scope](docs/product/BACKLOG.md#sm-76). |
 | `OCA-86` | OPEN | should | S | Preserve short mouse-click edges between updates, truthful held state and focus-loss cancellation (`REV#38`). [Scope](docs/product/BACKLOG.md#oca-86). |
 | `OCA-87` | OPEN | should | M | Reveal a normally visible native window after its first completed frame; qualify every native renderer and full screen (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
 | `OCA-88` | OPEN | should | S | Expose texture dimensions across all five render backends and use them in the first-picture guide (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |

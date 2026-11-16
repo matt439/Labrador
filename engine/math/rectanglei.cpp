@@ -14,19 +14,14 @@ namespace labrador
 		this->width = size.x;
 		this->height = size.y;
 	}
-	RectangleI::RectangleI(const Vector2F& position,const Vector2F& size)
+	RectangleI::RectangleI(const Vector2F& position, const Vector2F& size)
+		: RectangleI(Vector2I(position), Vector2I(size))
 	{
-		this->x = static_cast<int>(position.x);
-		this->y = static_cast<int>(position.y);
-		this->width = static_cast<int>(size.x);
-		this->height = static_cast<int>(size.y);
 	}
 	RectangleI::RectangleI(const RectangleF& rectangle)
+		: RectangleI(Vector2F(rectangle.x, rectangle.y),
+			Vector2F(rectangle.width, rectangle.height))
 	{
-		this->x = static_cast<int>(rectangle.x);
-		this->y = static_cast<int>(rectangle.y);
-		this->width = static_cast<int>(rectangle.width);
-		this->height = static_cast<int>(rectangle.height);
 	}
 	int RectangleI::left() const
 	{
