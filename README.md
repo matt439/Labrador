@@ -45,8 +45,9 @@ focused examples for the website's guides: a collision arena, a playable
 sound bank and two players sharing a world through separate views. Each has
 its own README with controls and build commands.
 
-`samples/components` has an option row, a slider, a nine-slice panel and a
-sprite-strip animation preview, each a header, a source file and its tests.
+`samples/components` has an option row, a slider, a nine-slice panel,
+a sprite-strip animation preview and a bounded desktop text field, each with
+its source and tests.
 A game copies these pieces into its own tree rather than links them; a
 gallery shows them running. [Its README](samples/components/README.md)
 says why they are copied, and when one would move into the engine.
@@ -319,7 +320,7 @@ Direct3D 12 presets have 23, with a synchronization test of their own. The
 the local multiplayer and audio samples' start-up checks, which record calls
 instead of drawing or playing, and the minimal sample's states driven by keys
 in a hidden window are added. A `wasm-*` build has 20 without
-a Chromium and, where one is found, 37 in Debug and 38 in Release, the extra
+a Chromium and, where one is found, 38 in Debug and 39 in Release, the extra
 ones being pages run in headless Chrome, one for each sample among them, and no
 start-up check, because a page has no command line. Where configure also finds
 a Firefox, eight `Firefox*` entries run the same pages in it.

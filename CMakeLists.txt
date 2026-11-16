@@ -295,6 +295,9 @@ if(PROJECT_IS_TOP_LEVEL)
         labrador_page_test(ComponentsPointerPageTests
             PAGE "$<TARGET_FILE:ComponentsGallery>"
             ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/samples/components/web/pointer_input.mjs")
+        labrador_page_test(ComponentsTextPageTests
+            PAGE "$<TARGET_FILE:ComponentsGallery>"
+            ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/samples/components/web/text_field_input.mjs")
 
         # The packaged host page mounts an ES-module factory on a click,
         # rather than exposing the development shell's Module. Its driver

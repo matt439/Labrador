@@ -53,7 +53,8 @@ namespace components
 		const RectangleI panel_source(0, 0, 16, 16);
 		constexpr SliceBorder panel_border{ 6, 6, 6, 6 };
 		constexpr float panel_scale = 2.0f;
-		const RectangleF panel_bounds(120.0f, 90.0f, 1040.0f, 490.0f);
+		const RectangleF panel_bounds(120.0f, 90.0f, 1040.0f, 570.0f);
+		const RectangleF name_target(880.0f, 490.0f, 260.0f, 40.0f);
 
 		// The window row's choices, in the order init() lists them.
 		constexpr size_t windowed_choice = 0;
@@ -67,6 +68,7 @@ namespace components
 
 		constexpr Colour heading_colour(200, 208, 222);
 		constexpr Colour help_colour(150, 160, 180);
+		constexpr float detail_scale = 0.7f;
 
 		// What a pointer can choose on each row: a band the row's full
 		// spacing tall, centred on its line of text, from just left of the
@@ -174,7 +176,7 @@ namespace components
 		// every line hears this one too.
 		this->status_ = this->scene_->add(std::make_unique<UiText>("status",
 			L"", font_name, Vector2F(label_x, row_y(status_row)), resources,
-			help_colour));
+			help_colour, false, detail_scale));
 		this->set_status(
 			L"Window mode applies; difficulty and volume sliders are examples.");
 
@@ -228,15 +230,30 @@ namespace components
 
 		this->quit_ = this->scene_->add(std::make_unique<UiText>("quit",
 			L"Quit", font_name, Vector2F(label_x, row_y(4)), resources));
+		this->name_ = this->scene_->add(std::make_unique<TextField>("name",
+			L"Name", "Player", TextFieldLimits{ 12, 180.0f },
+			Vector2F(900.0f, 500.0f), 960.0f, font_name, resources));
+		this->scene_->add(std::make_unique<UiText>("name_help",
+			L"Enter saves / Esc cancels", font_name,
+			Vector2F(900.0f, 535.0f), resources, help_colour, false, detail_scale));
+		this->scene_->add(std::make_unique<UiText>("name_scope",
+			L"ASCII only; 12 chars", font_name,
+			Vector2F(900.0f, 555.0f), resources, help_colour, false, detail_scale));
+		this->scene_->add(std::make_unique<UiText>("name_focus_help",
+			L"Focus loss cancels", font_name,
+			Vector2F(900.0f, 575.0f), resources, help_colour, false, detail_scale));
+		this->name_status_ = this->scene_->add(std::make_unique<UiText>(
+			"name_status", L"Enter/click Name to edit", font_name,
+			Vector2F(900.0f, 610.0f), resources, help_colour, false, detail_scale));
 
-		// The rows are focus targets with no action: A on one means nothing,
-		// and left and right are what change it. Quit is the one with an
-		// action.
+		// Left/right change settings rows. Quit closes the page; Name starts
+		// its desktop editing mode, whose keys the page owns.
 		this->focus_.add(this->difficulty_);
 		this->focus_.add(this->window_mode_);
 		this->focus_.add(this->music_);
 		this->focus_.add(this->effects_);
 		this->focus_.add(this->quit_, [this]() { this->app_->quit(); });
+		this->focus_.add(this->name_, [this]() { this->begin_name_edit(); });
 
 		// The same rows, in the same order, as places a pointer can choose.
 		UiWidget* const rows[] = { this->difficulty_, this->window_mode_,
@@ -248,6 +265,8 @@ namespace components
 			this->pointer_widgets_.push_back(widget);
 			++row;
 		}
+		this->pointer_targets_.push_back({ name_target, true });
+		this->pointer_widgets_.push_back(this->name_);
 
 		// Adds are pending until a tick ends, and the frame drawn before the
 		// first update() is a real one.
@@ -319,48 +338,68 @@ namespace components
 
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
-
-		if (keyboard.pressed(Key::escape) || pads.pressed(0, GamepadButton::b))
+		const bool was_editing = this->name_->editing();
+		if (was_editing)
 		{
-			this->app_->quit();
-			return;
+			this->update_name_edit();
+			if (!this->name_->editing())
+			{
+				// A queued release on Name cannot reopen an edit just ended
+				// by Enter, Escape or keyboard-focus loss in the same poll.
+				this->pointer_.cancel();
+				this->pressed_row_ = nullptr;
+				this->dragging_ = nullptr;
+			}
+			else
+			{
+				this->update_pointer();
+			}
 		}
-
-		const Direction direction =
-			this->repeat_.update(this->held_direction(), dt);
-
-		// Both returns say whether anything moved, which is what a cursor
-		// sound would hang on. This sample has no audio, so they go unused.
-		if (direction == Direction::up || direction == Direction::down)
+		else
 		{
-			this->focus_.move(0, direction);
-		}
-		else if (direction == Direction::left || direction == Direction::right)
-		{
-			this->adjust_focused(direction);
-		}
+			if (keyboard.pressed(Key::escape) || pads.pressed(0, GamepadButton::b))
+			{
+				this->app_->quit();
+				return;
+			}
 
-		const bool confirmed = keyboard.pressed(Key::enter) ||
-			keyboard.pressed(Key::space) || pads.pressed(0, GamepadButton::a);
-		if (confirmed)
-		{
-			this->focus_.activate(0);
-		}
+			const Direction direction =
+				this->repeat_.update(this->held_direction(), dt);
 
-		// THE KEYS AND THE PAD COME FIRST. A tick in which either moved the
-		// cursor, changed a row or chose one drops any click or drag in
-		// progress, so the two can never both act on a row in one tick.
-		if (direction != Direction::none || confirmed)
-		{
-			this->pointer_.cancel();
-			this->pressed_row_ = nullptr;
-			this->dragging_ = nullptr;
+			// Both returns say whether anything moved, which is what a cursor
+			// sound would hang on. This sample has no audio, so they go unused.
+			if (direction == Direction::up || direction == Direction::down)
+			{
+				this->focus_.move(0, direction);
+			}
+			else if (direction == Direction::left || direction == Direction::right)
+			{
+				this->adjust_focused(direction);
+			}
+
+			const bool confirmed = keyboard.pressed(Key::enter) ||
+				keyboard.pressed(Key::space) || pads.pressed(0, GamepadButton::a);
+			if (confirmed)
+			{
+				this->focus_.activate(0);
+			}
+
+			// THE KEYS AND THE PAD COME FIRST. A tick in which either moved the
+			// cursor, changed a row or chose one drops any click or drag in
+			// progress, so the two can never both act on a row in one tick.
+			if (direction != Direction::none || confirmed)
+			{
+				this->pointer_.cancel();
+				this->pressed_row_ = nullptr;
+				this->dragging_ = nullptr;
+			}
+			this->update_pointer();
 		}
-		this->update_pointer();
 
 		this->loop_preview_->update(dt);
 		this->once_preview_->update(dt);
-		if (keyboard.pressed(Key::r) || pads.pressed(0, GamepadButton::x))
+		if (!was_editing && !this->name_->editing() &&
+			(keyboard.pressed(Key::r) || pads.pressed(0, GamepadButton::x)))
 		{
 			// Reset after the tick's step so the next draw shows frame zero.
 			this->loop_preview_->restart();
@@ -373,6 +412,14 @@ namespace components
 		this->scene_->end_tick();
 	}
 
+	void GalleryState::on_deactivated()
+	{
+		this->cancel_name_edit();
+		this->pointer_.cancel();
+		this->pressed_row_ = nullptr;
+		this->dragging_ = nullptr;
+	}
+
 	void GalleryState::update_pointer()
 	{
 		const PointerSample sample =
@@ -383,6 +430,11 @@ namespace components
 			const Vector2F point = this->world_point(sample.position);
 			const std::optional<size_t> hit =
 				hit_target(this->pointer_targets_, point);
+			if (this->name_->editing() &&
+				(!hit.has_value() || this->pointer_widgets_[*hit] != this->name_))
+			{
+				this->cancel_name_edit();
+			}
 			if (!hit.has_value())
 			{
 				return;
@@ -453,8 +505,8 @@ namespace components
 			}
 		}
 
-		// Quit is the one row with an action, and activation runs it.
-		if (pressed == this->quit_)
+		// Quit and Name have actions, and activation runs the selected one.
+		if (pressed == this->quit_ || pressed == this->name_)
 		{
 			this->focus_.activate(0);
 		}

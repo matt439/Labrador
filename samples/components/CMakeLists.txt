@@ -6,7 +6,7 @@
 # ComponentsExample.
 add_library(ComponentsExample STATIC
     animation_preview.cpp nine_slice.cpp option_row.cpp pointer_capture.cpp
-    slider.cpp)
+    slider.cpp text_field.cpp)
 target_link_libraries(ComponentsExample PUBLIC LabradorEngine labrador_settings)
 
 set(components_texture_files
@@ -17,7 +17,7 @@ set(components_texture_files
 )
 
 if(EMSCRIPTEN)
-    add_executable(ComponentsGallery main_web.cpp gallery_state.cpp)
+    add_executable(ComponentsGallery main_web.cpp gallery_state.cpp gallery_text.cpp)
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
     # The gallery and tests use the same texture-folder paths in the module.
@@ -37,7 +37,7 @@ if(EMSCRIPTEN)
     )
 elseif(WIN32)
     # The template's DPI awareness declaration (samples/minimal/dpi_aware.manifest).
-    add_executable(ComponentsGallery WIN32 main.cpp gallery_state.cpp
+    add_executable(ComponentsGallery WIN32 main.cpp gallery_state.cpp gallery_text.cpp
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/dpi_aware.manifest")
     target_link_libraries(ComponentsGallery PRIVATE ComponentsExample labrador_settings)
 
@@ -70,19 +70,21 @@ add_executable(ComponentsTests
     option_row_tests.cpp
     pointer_capture_tests.cpp
     slider_tests.cpp
+    text_field_tests.cpp
     test_main.cpp
 )
 target_link_libraries(ComponentsTests PRIVATE
     ComponentsExample doctest::doctest labrador_settings)
 if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(ComponentsTests PRIVATE animation_preview_null_tests.cpp
-        widget_draw_null_tests.cpp)
+        text_field_null_tests.cpp widget_draw_null_tests.cpp)
 endif()
 if(NOT EMSCRIPTEN
     AND LABRADOR_RENDER_BACKEND STREQUAL "null"
     AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(ComponentsTests PRIVATE gallery_animation_tests.cpp
-        gallery_pointer_tests.cpp gallery_state.cpp)
+        gallery_pointer_tests.cpp gallery_text_tests.cpp
+        gallery_state.cpp gallery_text.cpp)
 endif()
 if(TARGET components_content)
     add_dependencies(ComponentsTests components_content)
