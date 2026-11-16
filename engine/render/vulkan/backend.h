@@ -157,6 +157,7 @@ namespace labrador
 
 		DeviceResources device_resources;
 		RenderDeviceInfo device_info;
+		std::optional<std::uint32_t> texture_limit;
 
 		std::vector<std::unique_ptr<DrawList::View>> views;
 		int view_count = 0;

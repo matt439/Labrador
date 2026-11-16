@@ -2,6 +2,7 @@
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
+#include "engine/render/texture_data.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -91,6 +92,23 @@ EM_JS(void, labrador_restore_context, (), {
 	Module["labradorLoseContext"].restoreContext();
 });
 
+// A synthetic lower advertised bound proves the renderer reads it again;
+// a physical device normally reports the same value after restoration. This
+// changes only the query, never GL's upload rules or the context's real limit.
+EM_JS(void, labrador_install_texture_limit_fixture, (), {
+	Module["labradorTextureLimit"] = 1024;
+	var original = WebGL2RenderingContext.prototype.getParameter;
+	WebGL2RenderingContext.prototype.getParameter = function (name) {
+		if (name === this.MAX_TEXTURE_SIZE && !this.isContextLost())
+			return Module["labradorTextureLimit"];
+		return original.call(this, name);
+	};
+});
+
+EM_JS(void, labrador_change_texture_limit_fixture, (), {
+	Module["labradorTextureLimit"] = 512;
+});
+
 // The host page's two hooks, as a page sets them, recording each call and
 // whether it came while a frame was running: 1 for lost and 2 for restored,
 // plus 10 when no frame was.
@@ -167,12 +185,18 @@ namespace
 
 		void on_device_lost() override
 		{
+			check(!this->renderer_.texture_dimension_limit().has_value(),
+				"the texture bound is unavailable in on_device_lost");
 			this->heard.push_back("lost");
 			this->resources_.release_device_resources();
 		}
 
 		void on_device_restored() override
 		{
+			check(this->renderer_.texture_dimension_limit() ==
+				static_cast<std::uint32_t>(emscripten_run_script_int(
+					"Module['labradorTextureLimit']")),
+				"on_device_restored observes the freshly queried texture bound");
 			this->heard.push_back("restored");
 			load_texture_asset(this->renderer_, this->resources_, "./content/",
 				"quad");
@@ -329,6 +353,8 @@ namespace
 				break;
 			}
 			draw_red(run);
+			check(run.renderer.texture_dimension_limit() == 1024u,
+				"the created device reports the initial synthetic texture bound");
 			check(centre_has_expected_colour(run), "the quad draws before the loss");
 			run.renderer.end_frame();
 			labrador_lose_context(target(run));
@@ -338,6 +364,20 @@ namespace
 
 		case Step::draw_while_lost:
 		{
+			check(!run.renderer.texture_dimension_limit().has_value(),
+				"the texture bound is unavailable while the context is lost");
+			TextureData empty;
+			bool refused_upload = false;
+			try
+			{
+				add_texture_asset(run.renderer, run.resources, "lost-upload", empty);
+			}
+			catch (const std::runtime_error& error)
+			{
+				refused_upload = std::string(error.what()).find("lost-upload") !=
+					std::string::npos;
+			}
+			check(refused_upload, "an upload while lost is refused by name");
 			// The context is lost from the moment it was asked to be, and the
 			// event saying so arrives in a later task, so the first of these
 			// frames may come before the event and the rest after it. Either
@@ -379,6 +419,7 @@ namespace
 			if (run.lost_frames >= frames_to_lose &&
 				page_heard({ page_heard_lost }))
 			{
+				labrador_change_texture_limit_fixture();
 				labrador_restore_context();
 				run.step = Step::wait_for_restore;
 			}
@@ -387,6 +428,8 @@ namespace
 
 		case Step::wait_for_restore:
 		{
+			check(!run.renderer.texture_dimension_limit().has_value(),
+				"the texture bound stays unavailable until a frame rebuilds resources");
 			// begin_frame is where the restore is heard, so the shell has
 			// either heard both halves by the end of this draw or neither.
 			draw_red(run);
@@ -400,6 +443,8 @@ namespace
 				run.shell->heard[0] == "lost" &&
 				run.shell->heard[1] == "restored",
 				"the shell hears lost then restored, together");
+			check(run.renderer.texture_dimension_limit() == 512u,
+				"the restored device reports the changed synthetic texture bound");
 			check(centre_has_expected_colour(run),
 				"the reloaded quad draws in the frame that heard the restore");
 			check(page_heard({ page_heard_lost, page_heard_restored }),
@@ -451,6 +496,7 @@ int main()
 	try
 	{
 		static Run run;
+		labrador_install_texture_limit_fixture();
 		run.renderer.create_device(run.window.handle(), buffer_side,
 			buffer_side, 1);
 		run.renderer.set_resources(&run.resources);

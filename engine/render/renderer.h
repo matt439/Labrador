@@ -308,6 +308,14 @@ namespace labrador
 		// implementation this Renderer is using.
 		const RenderDeviceInfo& device_info() const;
 
+		// The selected API device's maximum 2D texture width or height, in
+		// texels. Empty before successful create_device, while a device is lost
+		// or being restored, and for the null backend, which has no device.
+		// Restoration refreshes it before on_device_restored.
+		// This dimension bound does not guarantee an allocation or a format;
+		// file readers may also impose their own, independent admission bound.
+		std::optional<std::uint32_t> texture_dimension_limit() const;
+
 		// Whether end_frame waits for the display. true, the default, presents
 		// at most once per refresh; false hands the frame over as soon as it is
 		// submitted, so the frame rate is no longer the display's. Whether the

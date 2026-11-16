@@ -36,6 +36,24 @@ namespace labrador
 		static_cast<std::uint32_t>(DXGI_ADAPTER_FLAG_SOFTWARE),
 		"dxgi_device_kind.h's flag value is DXGI's.");
 
+	std::optional<std::uint32_t> texture_limit_for_feature_level(
+		D3D_FEATURE_LEVEL feature_level)
+	{
+		switch (feature_level)
+		{
+		case D3D_FEATURE_LEVEL_10_0:
+		case D3D_FEATURE_LEVEL_10_1:
+			return 8192u;
+		case D3D_FEATURE_LEVEL_11_0:
+		case D3D_FEATURE_LEVEL_11_1:
+		case D3D_FEATURE_LEVEL_12_0:
+		case D3D_FEATURE_LEVEL_12_1:
+			return static_cast<std::uint32_t>(D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION);
+		default:
+			return std::nullopt;
+		}
+	}
+
 	namespace
 	{
 		RenderDeviceInfo selected_device(ID3D11Device* device, bool vsync)
@@ -645,6 +663,7 @@ namespace labrador
 	void Renderer::Impl::OnDeviceLost()
 	{
 		this->device_info = {};
+		this->texture_limit.reset();
 
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
@@ -687,10 +706,13 @@ namespace labrador
 
 	void Renderer::Impl::OnDeviceRestored()
 	{
+		this->texture_limit.reset();
 		this->create_device_dependent_resources();
 		this->create_scene_target();
 		this->device_info = selected_device(
 			this->device_resources.GetD3DDevice(), this->vsync);
+		this->texture_limit = texture_limit_for_feature_level(
+			this->device_resources.GetD3DDevice()->GetFeatureLevel());
 
 		if (this->notify != nullptr)
 		{
@@ -844,6 +866,7 @@ namespace labrador
 		int view_capacity)
 	{
 		check_view_capacity(view_capacity);
+		this->impl_->texture_limit.reset();
 
 		this->impl_->device_resources.SetWindow(
 			static_cast<HWND>(native_window), width, height);
@@ -861,12 +884,19 @@ namespace labrador
 		this->impl_->create_scene_target();
 		this->impl_->device_info = selected_device(
 			this->impl_->device_resources.GetD3DDevice(), this->impl_->vsync);
+		this->impl_->texture_limit = texture_limit_for_feature_level(
+			this->impl_->device_resources.GetD3DDevice()->GetFeatureLevel());
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
 		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
+	}
+
+	std::optional<std::uint32_t> Renderer::texture_dimension_limit() const
+	{
+		return this->impl_->texture_limit;
 	}
 
 	void Renderer::set_vsync(bool vsync)

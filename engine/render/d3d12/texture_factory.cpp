@@ -3,6 +3,7 @@
 #include "engine/render/d3d12/backend.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 #include "engine/render/throw_if_failed.h"
@@ -106,6 +107,8 @@ namespace labrador
 			throw std::runtime_error("Texture '" + name + "' was loaded before "
 				"create_device made a device.");
 		}
+		check_texture_dimension_limit(name, texture.width, texture.height,
+			renderer.texture_dimension_limit());
 
 		ID3D12Device* device = device_of(renderer);
 		Renderer::Impl& impl = *renderer.impl();

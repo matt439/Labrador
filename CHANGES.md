@@ -127,6 +127,28 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Report selected-device texture dimension limits
+
+**New API and load diagnostics.** `Renderer::texture_dimension_limit()` returns
+the selected API device's maximum 2D texture width or height in texels as an
+optional unsigned value. It is absent before successful device creation,
+during device loss or recreation, and on the null renderer. Restoration
+refreshes the selected-device bound before notifying the game. This describes
+a dimension bound, not format support or an allocation guarantee; it is
+separate from `RenderResources::texture_size(texture)` and Direct3D 12's
+256 texture-name capacity.
+
+An upload beyond a known device bound now fails before allocation with the
+texture name, requested width and height, and selected-device limit in its
+diagnostic. Existing format, image-data and narrower per-format checks stay
+in force. Split or reduce an oversized image rather than relying on a later
+graphics-API failure. PNG's independent 16384 admission bound is unchanged;
+a larger reported device limit does not raise it, and a missing device limit
+does not impose a guessed one.
+
+GL uploads made while a context is lost or awaiting restoration are refused
+by texture name, instead of publishing a resource from ignored GL calls.
+
 ### 2026-11-17 - Set native window titles and select optional icon resources
 
 **New API and optional native resources.** `Application::set_window_title`

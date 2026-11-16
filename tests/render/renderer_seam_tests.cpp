@@ -154,6 +154,18 @@ TEST_CASE("CONTRACT: device information names a device that was actually created
 	CHECK_THROWS_AS(std::ignore = renderer.device_info(), std::logic_error);
 }
 
+TEST_CASE("CONTRACT: a renderer without a selected device has no texture dimension bound")
+{
+	Renderer renderer;
+	CHECK_FALSE(renderer.texture_dimension_limit().has_value());
+	CHECK_FALSE(renderer.window_size_changed(640, 480));
+	CHECK_FALSE(renderer.texture_dimension_limit().has_value());
+
+	CHECK_THROWS_AS(renderer.create_device(nullptr, 640, 480, 0),
+		std::invalid_argument);
+	CHECK_FALSE(renderer.texture_dimension_limit().has_value());
+}
+
 TEST_CASE("CONTRACT: vsync is on until asked otherwise, and is legal before there is a device")
 {
 	// A client reads its setting before Application makes the device, so the

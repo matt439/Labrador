@@ -1033,6 +1033,7 @@ namespace labrador
 	void Renderer::Impl::on_device_lost()
 	{
 		this->device_info = {};
+		this->texture_limit.reset();
 
 		for (std::unique_ptr<DrawList::View>& view : this->views)
 		{
@@ -1074,12 +1075,15 @@ namespace labrador
 
 	void Renderer::Impl::on_device_restored()
 	{
+		this->texture_limit.reset();
 		// After the swap chain, which handle_device_lost has already rebuilt,
 		// so the scene takes the back buffer's size.
 		this->create_device_dependent_resources();
 		this->create_scene_target();
 		this->device_info = selected_device(
 			this->device_resources.adapter_description(), this->vsync);
+		this->texture_limit = static_cast<std::uint32_t>(
+			D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 
 		if (this->notify != nullptr)
 		{
@@ -1102,6 +1106,7 @@ namespace labrador
 		int view_capacity)
 	{
 		check_view_capacity(view_capacity);
+		this->impl_->texture_limit.reset();
 
 		this->impl_->device_resources.set_window(
 			static_cast<HWND>(native_window), width, height);
@@ -1122,12 +1127,19 @@ namespace labrador
 		this->impl_->device_info = selected_device(
 			this->impl_->device_resources.adapter_description(),
 			this->impl_->vsync);
+		this->impl_->texture_limit = static_cast<std::uint32_t>(
+			D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
 		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
+	}
+
+	std::optional<std::uint32_t> Renderer::texture_dimension_limit() const
+	{
+		return this->impl_->texture_limit;
 	}
 
 	void Renderer::set_vsync(bool vsync)

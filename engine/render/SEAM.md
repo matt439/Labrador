@@ -90,6 +90,15 @@ machine owns does not establish which one rendered the measured frame, while a
 pointer to that adapter would undo this section's boundary to answer the same
 question.
 
+`Renderer::texture_dimension_limit()` is the narrow capability query for
+texture admission: the selected API device's maximum 2D width or height in
+texels, unavailable before creation, during loss/restoration, and on null.
+D3D11 derives it from the selected feature level, D3D12 from its required 2D
+dimension bound, GL queries `GL_MAX_TEXTURE_SIZE`, and Vulkan queries the
+selected physical device's `maxImageDimension2D`. Each restored device refreshes
+the value before notifying the shell. The query neither guarantees an allocation
+nor replaces per-format checks or the readers' independent safety bounds.
+
 `software` in that classification means the API, or the engine's list of known
 CPU rasterisers, says the device is one; `hardware` means neither did, which is
 not proof of a GPU. The two Direct3D backends share one classifier,

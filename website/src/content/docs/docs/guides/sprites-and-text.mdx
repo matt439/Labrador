@@ -40,6 +40,31 @@ block-compressed BC1, BC2 or BC3. Anything else is refused at load, with the fil
 file is listed in the [manifest](/docs/concepts/resources/#the-manifest) by name, without its
 extension.
 
+### The selected device's texture dimensions
+
+`Renderer::texture_dimension_limit()` reports the selected API device's maximum
+2D texture width or height in texels. It returns an optional value: absence means
+the limit is unavailable, including before successful device creation, while a
+device is lost or being recreated, and with the null renderer, which has no
+graphics device. Restoration refreshes the new device's limit before notifying the game.
+See the [renderer contract](/docs/reference/render/renderer/) for its lifetime.
+
+This query is newer than the released `v0.3.0` starter. Use the development
+engine or a release that contains it; [update a starter](/docs/guides/starter-update/)
+or [move a submodule pin](/docs/guides/move-pin/) before using it in an older project.
+
+Each dimension must fit a known device bound. An oversized upload stops before
+allocation and names the texture, the requested width and height, and that bound.
+Fitting does not guarantee that the device supports the image's format or has
+enough memory to allocate it. The PNG reader separately refuses dimensions above
+16384 before decoding; a higher device limit does not raise that admission cap.
+A DDS carries its pixel bytes and has no PNG admission cap, but its data, format
+and device bounds are still checked.
+
+`RenderResources::texture_size(texture)` answers a different question: the width
+and height of one loaded texture. Neither dimension query changes the number of
+texture names the Direct3D 12 backend can hold:
+
 The Direct3D 12 backend holds at most 256 distinct texture names, because its textures sit in one
 fixed-size table on the graphics card. Every texture, every sprite sheet and every font's atlas
 takes one name, and the engine's own one-pixel white texture takes another, so a game has 255.

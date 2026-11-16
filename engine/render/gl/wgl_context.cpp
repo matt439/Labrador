@@ -259,6 +259,11 @@ namespace labrador
 		return false;
 	}
 
+	bool Renderer::Impl::context_ready() const
+	{
+		return this->context != nullptr;
+	}
+
 	bool Renderer::Impl::take_restored_context()
 	{
 		return false;

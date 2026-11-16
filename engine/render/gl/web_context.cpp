@@ -188,6 +188,12 @@ namespace labrador
 			emscripten_is_webgl_context_lost(this->context->handle);
 	}
 
+	bool Renderer::Impl::context_ready() const
+	{
+		return this->context != nullptr && !this->context->lost &&
+			!emscripten_is_webgl_context_lost(this->context->handle);
+	}
+
 	std::string Renderer::Impl::device_string(GLenum name) const
 	{
 		// getParameter on the context, not glGetString: Emscripten keeps one

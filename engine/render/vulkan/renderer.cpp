@@ -72,6 +72,17 @@ namespace labrador
 			return info;
 		}
 
+		std::optional<std::uint32_t> selected_texture_limit(
+			const DeviceResources& resources)
+		{
+			VkPhysicalDeviceProperties properties = {};
+			vkGetPhysicalDeviceProperties(resources.owner().physical_device,
+				&properties);
+			return properties.limits.maxImageDimension2D > 0
+				? std::optional<std::uint32_t>(properties.limits.maxImageDimension2D)
+				: std::nullopt;
+		}
+
 		// Pixels to clip space.
 		//
 		// THE SAME FOUR NUMBERS THE DIRECT3D BACKENDS WRITE, AND THAT IS A
@@ -966,6 +977,7 @@ namespace labrador
 
 	void Renderer::Impl::on_device_lost()
 	{
+		this->texture_limit.reset();
 		this->device_info = {};
 		this->destroy_device_dependent_resources();
 
@@ -977,8 +989,10 @@ namespace labrador
 
 	void Renderer::Impl::on_device_restored()
 	{
+		this->texture_limit.reset();
 		this->create_device_dependent_resources();
 		this->device_info = selected_device(this->device_resources);
+		this->texture_limit = selected_texture_limit(this->device_resources);
 
 		if (this->notify != nullptr)
 		{
@@ -1001,6 +1015,7 @@ namespace labrador
 		int view_capacity)
 	{
 		check_view_capacity(view_capacity);
+		this->impl_->texture_limit.reset();
 
 		Impl& impl = *this->impl_;
 
@@ -1026,12 +1041,18 @@ namespace labrador
 
 		impl.reset_views();
 		impl.device_info = selected_device(impl.device_resources);
+		impl.texture_limit = selected_texture_limit(impl.device_resources);
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
 		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
+	}
+
+	std::optional<std::uint32_t> Renderer::texture_dimension_limit() const
+	{
+		return this->impl_->texture_limit;
 	}
 
 	bool Renderer::window_size_changed(int width, int height)
