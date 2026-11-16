@@ -1,0 +1,150 @@
+{
+  "recorded_utc": "2026-11-16T16:29:05.622040+00:00",
+  "base_source_commit": "5cff44b9c6da777479229832abb40bfc0fc6e65c",
+  "emscripten": {
+    "version": "6.0.12",
+    "revision": "5488e0871d46d19a3209988190fa6a653126256f",
+    "clang": "24.0.0git 55ea1f4ebea23d0355d5cdb075f1e12f28ab82d0"
+  },
+  "browser": {
+    "product": "Google Chrome for Testing",
+    "version": "151.0.7922.34",
+    "exe_sha256": "409805a16d6416087e6b2f778df1cf8f7bbb267d6b99f6b5bb0a618eace234f2",
+    "portable_copy_matches_original_bytes": true,
+    "helper_identity_workaround": "Renamed only the copied executable to LabradorDebugBrowser.exe, so the native UI tool uses its process path instead of the installed Chrome app alias. No sandbox flag or filesystem permission was changed."
+  },
+  "extension": {
+    "official_web_store_id": "pdcpmagijalfljmkmjngeonclgbbannb",
+    "version": "0.2.5854.1",
+    "download_url": "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=151.0.0.0&acceptformat=crx2,crx3&x=id%3Dpdcpmagijalfljmkmjngeonclgbbannb%26uc",
+    "crx_sha256": "f4c7d9951929acccb602e3cb0e73ece394ecafc1e2094419887d95bf54bd8fce",
+    "bytes": 11491062,
+    "manifest": {
+      "update_url": "https://clients2.google.com/service/update2/crx",
+      "manifest_version": 3,
+      "version": "0.2.5854.1",
+      "name": "C/C++ DevTools Support (DWARF)",
+      "description": "DevTools Plugin for debugging C/C++ WebAssembly applications (using DWARF debug information). BETA version, use at your own risk.",
+      "host_permissions": [
+        "https://*/",
+        "http://*/"
+      ],
+      "permissions": [
+        "storage"
+      ],
+      "devtools_page": "DevToolsPlugin.html",
+      "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+      },
+      "icons": {
+        "16": "icon-16x16.png",
+        "48": "icon-48x48.png",
+        "128": "icon-128x128.png"
+      },
+      "options_ui": {
+        "page": "ExtensionOptions.html",
+        "open_in_tab": true
+      },
+      "minimum_chrome_version": "105.0.5195.0"
+    }
+  },
+  "compile_and_link": [
+    "em++",
+    "browser_fault.cpp",
+    "-g",
+    "-O0",
+    "-fdebug-compilation-dir=.",
+    "-sERROR_ON_WASM_CHANGES_AFTER_LINK=1",
+    "-sEXIT_RUNTIME=0",
+    "-o",
+    "browser_fault.js"
+  ],
+  "dw_at_comp_dir": ".",
+  "dwarf_version": 4,
+  "probe_builds": {
+    "bug_source_sha256": "590195b74d3a723b2926375e9c3c6c911d64947aed56f7260525335864278d85",
+    "bug_wasm_sha256": "61dc0928dc12c070810c6bd9b364eaa1e6b25da5a41759b68bd074ad414bbdb2",
+    "fixed_source_sha256": "c4d8d38d6b65ef84e5082e5847386167f943fbab6b1955d9220ed3398582dc5f",
+    "fixed_wasm_sha256": "b170990802f2733463015496a5aa484b60d79c462231f5e7564ff6114125f6bf"
+  },
+  "ui_observations": {
+    "paused-before": [
+      "Paused on breakpoint",
+      "browser_fault.cpp:7",
+      "player_count : 2",
+      "points_per_player : 10"
+    ],
+    "paused-after": [
+      "browser_fault.cpp:8",
+      "total_points : 12"
+    ],
+    "corrected": [
+      "browser_fault.cpp:8",
+      "total_points : 20"
+    ],
+    "console": [
+      "stdout: browser debugging example ready",
+      "stderr: intentional diagnostic example",
+      "score: 2 players produced 20 points"
+    ],
+    "loader-failure": [
+      "404",
+      "Aborted",
+      "The Debug module could not load"
+    ]
+  },
+  "isolated_url": "http://127.0.0.1:49907/index.html",
+  "browser_launch": [
+    "C:\\Projects\\Labrador-agent-browserdebug\\out\\browser-debug\\portable-cft\\LabradorDebugBrowser.exe",
+    "--user-data-dir=C:\\Projects\\Labrador-agent-browserdebug\\out\\browser-debug\\profile-portable",
+    "--load-extension=C:\\Projects\\Labrador-agent-browserdebug\\out\\browser-debug\\cxx-dwarf",
+    "--disable-extensions-except=C:\\Projects\\Labrador-agent-browserdebug\\out\\browser-debug\\cxx-dwarf",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--remote-debugging-port=0",
+    "--auto-open-devtools-for-tabs",
+    "--new-window",
+    "http://127.0.0.1:49907/index.html"
+  ],
+  "normal_profiles_untouched": true,
+  "browser_window_closed": true,
+  "loopback_server_stopped": true,
+  "artifact_sha256": {
+    "console.png": "d5779c5815835d569d3fa57439ba62a98bf04af6c668c71902fa7569c3324fb9",
+    "console.txt": "68520662745a88f6b651bef55945bad499bbcb3fd15cdaddf92087d8f06086b6",
+    "corrected.png": "6ba6ebfc517a7e5f828b5844c4d402082f46e757e287aadc12a895293ce9cd49",
+    "corrected.txt": "27259410abfb7ba96a594e6ce9ebd670f861593cf0cfdeab8e382acfa1a32baf",
+    "loader-failure.png": "cde48484b4e9efcfdfed0c859bdf1ff929204065568f3d946faeb3ef164094bc",
+    "loader-failure.txt": "0c1a2845666dbf997a81d679c29e8cad6361a40e4e02d75b244072346a03e486",
+    "paused-after.png": "8a5ffb8f1d435dbe5a4fbd88150d390a91984f3a10c377bd575cb0f12df2533e",
+    "paused-after.txt": "60aeb6e17d591aab3ec803c9f1318e7ccf113afef9b086a55c271f5b33980f62",
+    "paused-before.png": "939ad3c2b01243959fde5613c4d1b7492a49d2b2e9a6f1a2c249959ce649c1d8",
+    "paused-before.txt": "66de5e083c3adb7a91bd8f7a1facc1894fa256caa7846066f911e463973858f2",
+    "README.md": "31b7a316d820d268e822d38dccb84036faa5a329ffd93e2d168c33b349782a3c",
+    "recipe-receipt.json": "9d634570c36e7c384b20f9336e47daac88a70cecaba82ef9cda1e51c708fdcc1"
+  },
+  "fixture_sha256": {
+    "tools/browser_debug/browser_fault.cpp": "590195b74d3a723b2926375e9c3c6c911d64947aed56f7260525335864278d85",
+    "tools/browser_debug/index.html": "70c49b50aa4d8d0303d4def2b6d0b074c509c7c815fc9cdd0cfbe673822e2260",
+    "tools/browser_debug/prepare_extension.py": "2f82eef1f00f411216e4512aef09538ed5e735fcc59c95aeb634679bec558d6f"
+  },
+  "artifact_hash_policy": "PNG bytes unchanged; text hashes normalize CRLF to LF, matching Git text",
+  "recipe_http_verified": true,
+  "qualified_helper_extension_files_identical": 11,
+  "website_gate": {
+    "command": [
+      "npm",
+      "run",
+      "gate"
+    ],
+    "result": "passed",
+    "type_errors": 0,
+    "type_warnings": 0,
+    "tests": 200,
+    "passed": 200,
+    "pages": 180,
+    "internal_links": "valid"
+  },
+  "accessibility_text_format": "Relevant observed UI lines excerpted; surrounding/trailing whitespace removed. Original full observations remain in ignored local output."
+}
