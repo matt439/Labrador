@@ -68,7 +68,7 @@ class BuildRetry(unittest.TestCase):
         workflow = (REPOSITORY / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         builds = [line.strip() for line in workflow.splitlines()
                   if "cmake --build" in line and "wasm" not in line]
-        self.assertEqual(len(builds), 5, builds)
+        self.assertEqual(len(builds), 6, builds)
         wrapper = 'python "%GITHUB_WORKSPACE%\\tools\\ci_build_retry.py" cmake --build'
         for line in builds:
             self.assertTrue(line.startswith(wrapper), line)
