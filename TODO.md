@@ -156,7 +156,6 @@ decision to keep the current rendering-text API. Implementation is open.
 | `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
 | `OCA-115` | OPEN | could | S | Report the selected device's texture-size limit and include it in oversized-upload diagnostics (`REV#33`). [Scope](docs/product/BACKLOG.md#oca-115). |
 | `SM-87` | OPEN | could | S | Report defined native memory and startup observations with context and no hard thresholds (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
-| `SM-88` | OPEN | could | S | Manually report CI failures by workflow, ref, step and attempt without inferring flakiness from counts (`REV#50`). [Scope](docs/product/BACKLOG.md#sm-88). |
 | `SM-89` | OPEN | could | M | Add five weekly non-required configurations with native Release IPO qualified; keep real-driver checks (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
 | `SM-90` | OPEN | should | XS | Add an owner-invoked release-time aggregate counter snapshot with reporting-window limits (`REV#54`). [Scope](docs/product/BACKLOG.md#sm-90). |
 | `SM-91` | OPEN | could | M | Manually rebuild an explicit release tag and compare immutable-asset hashes; signing remains deferred (`REV#70`). [Scope](docs/product/BACKLOG.md#sm-91). |

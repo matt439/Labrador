@@ -236,6 +236,12 @@ source and takes longer.
 `gh api repos/matt439/Labrador/branches/master/protection` shows what the
 settings hold, and its contexts should be this list.
 
+For a read-only view of observed failures over an explicit creation window,
+[the manual CI report](docs/ci-failure-report.md) groups step observations by
+workflow, ref and attempt, keeps cancelled/incomplete data separate and can
+replay captured API responses offline. It triggers no runs or notifications;
+counts alone establish no flakiness or failure rate.
+
 **A pull request that adds, removes or renames a job or a matrix entry updates
 the branch protection in the same change**, and this list with it. A removed or
 renamed context leaves every later pull request waiting on a check that never
