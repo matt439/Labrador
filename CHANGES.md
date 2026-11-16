@@ -127,6 +127,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Report nominal window display metadata
+
+**New API and additive benchmark metadata.** `Window::display_info()` and
+`Application::display_info()` return `WindowDisplayInfo`: a session-local
+UTF-8 logical monitor id and optional configured whole-Hz nominal refresh.
+Windows queries the window's current/nearest monitor and its current mode
+on every call. Default, invalid and unavailable values remain unknown;
+mode failure can retain a known id without a rate. Browser, closed and
+windowless queries are unknown. A native null renderer still has its real
+Win32 window's supported metadata. Query on the window/application thread.
+
+Frame-benchmark JSON adds `window_display` start/end snapshots and labels
+their sampling context and nominal-only meaning. Collection sits outside
+retained frame timings. Analysis preserves and labels this optional metadata
+without changing existing pools, targets or verdicts; legacy records remain
+valid. Neither the API nor the metadata measures fractional refresh, VRR,
+achieved FPS or scan-out. Workload pacing and renderer selection are unchanged.
+
 ### 2026-11-17 - Retain matching symbols for optimised Release builds
 
 **Optional copied build recipe.** A game can include

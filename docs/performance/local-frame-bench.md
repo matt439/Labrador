@@ -24,7 +24,14 @@ for which column supports which claim.
 `--refresh` sets the software pacer's rate and does not affect timing under
 presentation pacing, so it is not passed. Its default still lands in the JSON
 as `workload.refresh_hz` 60 and `target_frame_ns`; under presentation pacing
-those are not the display's rate, which the machine file records. The presets
+those are not the display's rate. `window_display` now records the native
+window's logical monitor id and optional nominal configured whole-Hz mode,
+queried before the frame loop and after the last retained present timestamp.
+Unknown values are JSON `null`; a native null renderer can still have its
+real Win32 window's OS metadata. This neither changes the pacer nor identifies
+fractional refresh, VRR, achieved FPS or scan-out. Keep the machine file and
+operator's physical-display/mode/VRR record alongside these snapshots; matching
+endpoints do not prove that nothing changed between them. The presets
 are `x64-release-d3d12` and `x64-release-vulkan`, the pair SM-07's low-tier
 capture selects; `x64-release` (D3D11) and `x64-release-gl` take the same steps.
 
@@ -124,6 +131,11 @@ Run the block again with `$repetition` raised for another repetition.
 
 The JSON's `render_device` names the adapter, vendor and device the backend
 used, and `present_mode` with the swap intervals names how it presented.
+The additive `window_display` object labels its sampling points and nominal-only
+meaning separately from `render_device` and `workload.refresh_hz`. Analysis
+retains it per repetition and labels matching, mixed or partial known contexts
+beside existing pools. It does not change pooling rules, target periods or
+verdicts: keep different displays/modes in separate experiments as before.
 `DriverVersion` in the machine file is Windows' driver version string, not
 the vendor's marketing number. Under presentation pacing the frame-start
 interval measures cadence against the display, not scan-out. `update_ns` and

@@ -128,6 +128,7 @@ namespace
 
 		void pump()
 		{
+			this->display_start_ = this->window_->display_info();
 			this->started_utc_ = utc_now();
 			this->running_ = true;
 			this->next_frame_ = Clock::now();
@@ -151,6 +152,8 @@ namespace
 			Result result;
 			result.samples = std::move(this->samples_);
 			result.device = this->renderer_.device_info();
+			result.display_start = std::move(this->display_start_);
+			result.display_end = std::move(this->display_end_);
 			result.measurement_class = std::move(this->measurement_class_);
 			result.started_utc = std::move(this->started_utc_);
 			result.finished_utc = std::move(this->finished_utc_);
@@ -355,6 +358,9 @@ namespace
 				if (this->completed_frames_ >=
 					this->options_.warmup + this->options_.sample)
 				{
+					// Collected after the last retained present timestamp, with
+					// no subsequent frame-start interval to perturb.
+					this->display_end_ = this->window_->display_info();
 					this->window_->close();
 				}
 			}
@@ -429,6 +435,8 @@ namespace
 		}
 
 		Options options_;
+		WindowDisplayInfo display_start_;
+		WindowDisplayInfo display_end_;
 
 		// The window outlives the resources and renderer, and the resource table
 		// outlives the renderer. Destruction is the reverse of this declaration

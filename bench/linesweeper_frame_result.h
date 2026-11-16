@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/app/window_display_info.h"
 #include "engine/render/renderer.h"
 
 #include <cstdint>
@@ -46,6 +47,8 @@ namespace linesweeper_frame_bench
 	{
 		std::vector<FrameSample> samples;
 		labrador::RenderDeviceInfo device;
+		labrador::WindowDisplayInfo display_start;
+		labrador::WindowDisplayInfo display_end;
 		std::string measurement_class;
 		std::string started_utc;
 		std::string finished_utc;

@@ -879,4 +879,9 @@ namespace labrador
 		return this->window_ ? this->window_->handle() : nullptr;
 	}
 
+	WindowDisplayInfo Application::display_info() const
+	{
+		return this->window_ ? this->window_->display_info() : WindowDisplayInfo{};
+	}
+
 }

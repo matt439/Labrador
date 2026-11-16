@@ -143,6 +143,19 @@ namespace linesweeper_frame_bench
 		}
 
 		template <typename Writer>
+		void write_display(Writer& writer, const labrador::WindowDisplayInfo& display)
+		{
+			writer.StartObject();
+			writer.Key("monitor_id");
+			if (display.monitor_id.empty()) writer.Null();
+			else writer.String(display.monitor_id.c_str());
+			writer.Key("nominal_refresh_hz");
+			if (display.nominal_refresh_hz) writer.Int(*display.nominal_refresh_hz);
+			else writer.Null();
+			writer.EndObject();
+		}
+
+		template <typename Writer>
 		void write_summary(Writer& writer,
 			const std::vector<std::int64_t>& values)
 		{
@@ -330,6 +343,18 @@ namespace linesweeper_frame_bench
 		{
 			writer.Null();
 		}
+		writer.EndObject();
+
+		writer.Key("window_display");
+		writer.StartObject();
+		writer.Key("sampling");
+		writer.String("before_frame_loop_and_after_last_present");
+		writer.Key("refresh_scope");
+		writer.String("nominal_configured_integer_hz_not_measured");
+		writer.Key("start");
+		write_display(writer, result.display_start);
+		writer.Key("end");
+		write_display(writer, result.display_end);
 		writer.EndObject();
 
 		writer.Key("workload");

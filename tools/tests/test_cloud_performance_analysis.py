@@ -39,6 +39,58 @@ def refresh_terminal_manifest(root: Path) -> None:
     write_json(marker_path, marker)
 
 
+def window_display(refresh: int | None = 144, monitor: str | None = r"\\.\DISPLAY1") -> dict:
+    snapshot = {"monitor_id": monitor, "nominal_refresh_hz": refresh}
+    return {"sampling": "before_frame_loop_and_after_last_present",
+            "refresh_scope": "nominal_configured_integer_hz_not_measured",
+            "start": dict(snapshot), "end": dict(snapshot)}
+
+
+def without_window_display(value):
+    """Leave all pre-existing verdicts, samples, targets and summaries available for equality checks."""
+    if isinstance(value, dict):
+        return {key: without_window_display(item) for key, item in value.items()
+                if key not in {"window_display", "window_display_context"}}
+    if isinstance(value, list):
+        return [without_window_display(item) for item in value]
+    return value
+
+
+class WindowDisplayMetadataTests(unittest.TestCase):
+    def test_optional_metadata_accepts_legacy_unknown_partial_and_integer_boundaries(self):
+        analysis._validate_window_display({})
+        for refresh, monitor in ((None, None), (None, r"\\.\DISPLAY1"),
+                                 (2, "monitor"), (59, "monitor"), (2_147_483_647, "monitor")):
+            document = {"window_display": window_display(refresh, monitor)}
+            before = copy.deepcopy(document)
+            analysis._validate_window_display(document)
+            self.assertEqual(document, before)
+
+    def test_invalid_metadata_and_implicit_unknowns_are_refused(self):
+        invalid = [None, False, [], {}]
+        for field, value in (("sampling", "per_frame"), ("refresh_scope", "measured_fps"),
+                             ("start", None), ("end", [])):
+            item = window_display()
+            item[field] = value
+            invalid.append(item)
+        for snapshot in ("start", "end"):
+            for field in ("monitor_id", "nominal_refresh_hz"):
+                item = window_display()
+                del item[snapshot][field]
+                invalid.append(item)
+            for refresh in (True, False, 0, 1, -60, 60.0, "60", 2_147_483_648):
+                item = window_display()
+                item[snapshot]["nominal_refresh_hz"] = refresh
+                invalid.append(item)
+            for monitor in (None, "", 1, True, []):
+                item = window_display()
+                item[snapshot]["monitor_id"] = monitor
+                invalid.append(item)
+        for item in invalid:
+            with self.subTest(item=item), self.assertRaisesRegex((ValueError, TypeError), "window_display"):
+                analysis._validate_window_display({"window_display": item})
+
+
 class AnalysisTests(unittest.TestCase):
     def evidence(self, root: Path) -> dict:
         now = datetime.now(timezone.utc)
@@ -232,6 +284,45 @@ class AnalysisTests(unittest.TestCase):
             self.assertEqual(pools["not_locked"]["summary"], backend["summary"])
             for phase in analysis.PACING_PHASES:
                 self.assertNotIn(phase, pools["not_locked"]["summary"])
+
+    def test_cloud_preserves_display_facts_and_labels_mixed_snapshots_without_changing_policy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            legacy = analysis.analyze(root)
+            expected = []
+            for repetition, rate in ((1, 59), (2, 144)):
+                path = root / "output/results" / f"result-d3d11-{repetition:03d}.json"
+                result = json.loads(path.read_text())
+                result["window_display"] = window_display(rate, f"monitor-{repetition}")
+                expected.append(result["window_display"])
+                write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+            report = analysis.analyze(root)
+            self.assertTrue(report["complete"], report)
+            self.assertEqual(without_window_display(report), legacy)
+            backend = report["backends"]["d3d11"]
+            self.assertEqual([item["window_display"] for item in backend["repetitions"]], expected)
+            self.assertEqual(backend["target_frame_ns"], 16_666_667)
+            self.assertEqual(backend["window_display_context"]["status"], "mixed_known_snapshots")
+            pool = backend["cadence_pools"]["not_locked"]
+            self.assertEqual(pool["window_display_context"]["status"], "mixed_known_snapshots")
+            self.assertEqual(pool["window_display_context"]["pooling_policy"],
+                             "existing_backend_and_cadence_rules_unchanged")
+
+    def test_cloud_rejects_invalid_optional_display_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.evidence(root)
+            path = root / "output/results/result-d3d11-001.json"
+            result = json.loads(path.read_text())
+            result["window_display"] = window_display(True)
+            write_json(path, result)
+            refresh_terminal_manifest(root / "output")
+            report = analysis.analyze(root)
+            self.assertFalse(report["complete"])
+            self.assertEqual(report["analysis_withheld"], "result_validation_failed")
+            self.assertIn("window_display", report["error"])
 
     def test_cadence_pool_percentiles_use_raw_samples_across_repetitions(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -964,6 +1055,82 @@ class LocalAnalysisTests(unittest.TestCase):
         path = self.root / name
         write_json(path, document)
         return path
+
+    def test_nominal_metadata_is_retained_without_overriding_targets_or_existing_analysis(self):
+        document = capture(frames(120, update=300_000, record=900_000, present=200_000))
+        path = self.write("display.json", document)
+        legacy = analysis.analyze_local([path])
+        self.assertNotIn("window_display_context", legacy["backends"]["vulkan"])
+        document["window_display"] = window_display(144)
+        self.write("display.json", document)
+        report = analysis.analyze_local([path])
+        self.assertTrue(report["complete"], report)
+        self.assertEqual(without_window_display(report), legacy)
+        backend = report["backends"]["vulkan"]
+        self.assertEqual(backend["repetitions"][0]["window_display"], document["window_display"])
+        self.assertEqual(backend["window_display_context"]["status"], "matching_known_snapshots")
+        self.assertEqual(backend["target_frame_ns"], PERIOD_NS)
+        self.assertEqual(report["target_frame_source"], "workload.target_frame_ns")
+        stated = analysis.analyze_local([path], refresh_hz=75)
+        self.assertEqual(stated["backends"]["vulkan"]["target_frame_ns"], (1_000_000_000 + 37) // 75)
+        self.assertEqual(stated["target_frame_source"], "refresh_hz_argument")
+        self.assertEqual(stated["backends"]["vulkan"]["repetitions"][0]["window_display"], document["window_display"])
+
+    def test_unknown_and_partial_metadata_are_explicit_and_legacy_mix_is_preserved(self):
+        document = capture(frames(120, update=300_000, record=900_000, present=200_000))
+        document["window_display"] = window_display(None, None)
+        unknown = self.write("unknown.json", document)
+        backend = analysis.analyze_local([unknown])["backends"]["vulkan"]
+        self.assertEqual(backend["window_display_context"]["status"], "unknown_or_partial")
+        self.assertEqual(backend["window_display_context"]["known_snapshot_contexts"], [])
+        self.assertIsNone(backend["repetitions"][0]["window_display"]["start"]["nominal_refresh_hz"])
+        document["window_display"]["start"] = window_display(59)["start"]
+        self.write("unknown.json", document)
+        legacy = self.write("legacy.json", capture(frames(120, update=300_000, record=900_000,
+                                                         present=200_000), run="legacy-run"))
+        report = analysis.analyze_local([unknown, legacy])
+        self.assertTrue(report["complete"], report)
+        backend = report["backends"]["vulkan"]
+        context = backend["window_display_context"]
+        self.assertEqual(context["status"], "unknown_or_partial")
+        self.assertEqual(context["unknown_or_partial_repetitions"], [1, 2])
+        self.assertEqual(context["different_snapshot_repetitions"], [1])
+        self.assertEqual(backend["sample_count"], 240)
+        self.assertNotIn("window_display", backend["repetitions"][1])
+
+    def test_display_context_labels_are_scoped_to_each_existing_cadence_pool(self):
+        waiting = capture(frames(120, update=300_000, record=900_000, present=200_000))
+        working = capture(frames(120, update=6_000_000, record=10_400_000, present=100_000), run="work-run")
+        waiting["window_display"] = window_display(59, "monitor-1")
+        working["window_display"] = window_display(144, "monitor-2")
+        paths = [self.write("wait.json", waiting), self.write("work.json", working)]
+        report = analysis.analyze_local(paths)
+        self.assertTrue(report["complete"], report)
+        backend = report["backends"]["vulkan"]
+        self.assertEqual(backend["window_display_context"]["status"], "mixed_known_snapshots")
+        for verdict in ("work_limited", "presentation_wait_candidate"):
+            self.assertEqual(backend["cadence_pools"][verdict]["window_display_context"]["status"],
+                             "matching_known_snapshots")
+        waiting["window_display"]["end"] = window_display(144, "monitor-2")["end"]
+        self.write("wait.json", waiting)
+        changed = analysis.analyze_local(paths)["backends"]["vulkan"]
+        context = changed["cadence_pools"]["presentation_wait_candidate"]["window_display_context"]
+        self.assertEqual(context["status"], "mixed_known_snapshots")
+        self.assertEqual(context["different_snapshot_repetitions"], [1])
+        del waiting["window_display"]
+        self.write("wait.json", waiting)
+        mixed_legacy = analysis.analyze_local(paths)["backends"]["vulkan"]
+        context = mixed_legacy["cadence_pools"]["presentation_wait_candidate"]["window_display_context"]
+        self.assertEqual(context["status"], "unknown_or_partial")
+        self.assertEqual(context["unknown_or_partial_repetitions"], [1])
+
+    def test_local_rejects_invalid_optional_display_metadata(self):
+        document = capture(frames(120, update=300_000, record=900_000, present=200_000))
+        document["window_display"] = window_display(1)
+        report = analysis.analyze_local([self.write("invalid-display.json", document)])
+        self.assertFalse(report["complete"])
+        self.assertEqual(report["analysis_withheld"], "result_validation_failed")
+        self.assertIn("window_display", report["error"])
 
     def test_radeon_capture_without_nvidia_identity_gets_a_verdict_and_pooled_p99s(self):
         waiting = self.write("wait.json", capture(

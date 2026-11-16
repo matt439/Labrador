@@ -997,6 +997,13 @@ namespace labrador
 		return 0;
 	}
 
+	WindowDisplayInfo Window::display_info() const
+	{
+		// The page supplies no supported monitor-mode fact. Animation-frame
+		// intervals describe callback delivery, not configured refresh.
+		return {};
+	}
+
 	void Window::pump_until_quit()
 	{
 		// Closed before the loop began - a first state that quit from its

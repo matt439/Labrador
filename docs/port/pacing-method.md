@@ -18,6 +18,16 @@ DPR. Record other active workloads, power connection and thermal state;
 repeat after an interruption rather than concealing it. Keep each display,
 browser, orientation and power mode as a separate run.
 
+Native `LineSweeperFrameBench` results also contain `window_display` snapshots
+from `Window::display_info()` / `Application::display_info()`: a logical monitor
+id and optional nominal configured integer Hz, sampled before its frame loop
+and after the final retained present. This helps associate a native capture
+with its selected window monitor. It is not an independently measured rate,
+fractional timing, VRR state or a physical-panel identifier. Browser queries
+remain unknown and never infer refresh from rAF. Retain the operator's display
+record and keep separate modes in separate runs; existing timing analysis does
+not use this metadata to choose a target period or alter its verdicts.
+
 For desktop R5 use the Release bundle page that is being judged. Use a real
 60 Hz mode and a real mode above 60 Hz, with the browser wholly on that
 display. A browser's callback rate does not identify the physical refresh

@@ -117,6 +117,7 @@ if(EMSCRIPTEN)
         "${labrador_window_dependencies}")
 elseif(WIN32)
     target_sources(LabradorEngine PRIVATE
+        app/win32/display_info.cpp
         app/win32/keyboard_input.cpp
         app/win32/motion_preference.cpp
         app/win32/pointer_input.cpp

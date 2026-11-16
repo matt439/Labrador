@@ -1,12 +1,15 @@
 #include <doctest/doctest.h>
 
 #include "engine/app/window.h"
+#include "engine/render/text_encoding.h"
 
 #include <Windows.h>
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <functional>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -1437,6 +1440,40 @@ TEST_CASE("a per-monitor-aware window gets the client size it asked for")
 	const RECT resized = client_of(handle);
 	CHECK(resized.right - resized.left == 400);
 	CHECK(resized.bottom - resized.top == 300);
+}
+
+TEST_CASE("native window display metadata matches its selected current mode and clears on close")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	const labrador::WindowDisplayInfo info = window.display_info();
+	const HMONITOR monitor = MonitorFromWindow(hwnd(window), MONITOR_DEFAULTTONEAREST);
+	MONITORINFOEXW identity = {};
+	identity.cbSize = sizeof(identity);
+	DEVMODEW mode = {};
+	mode.dmSize = sizeof(mode);
+	std::string expected_id;
+	std::optional<int> expected_refresh;
+	if (monitor && GetMonitorInfoW(monitor, reinterpret_cast<MONITORINFO*>(&identity)))
+	{
+		expected_id = labrador::narrow(identity.szDevice);
+		if (EnumDisplaySettingsExW(identity.szDevice, ENUM_CURRENT_SETTINGS, &mode, 0) &&
+			(mode.dmFields & DM_DISPLAYFREQUENCY) != 0 && mode.dmDisplayFrequency > 1 &&
+			mode.dmDisplayFrequency <= static_cast<DWORD>(std::numeric_limits<int>::max()))
+		{
+			expected_refresh = static_cast<int>(mode.dmDisplayFrequency);
+		}
+	}
+	CHECK(info.monitor_id == expected_id);
+	CHECK(info.nominal_refresh_hz == expected_refresh);
+	MESSAGE("Selected native display: ", info.monitor_id, "; configured whole Hz: ",
+		info.nominal_refresh_hz ? std::to_string(*info.nominal_refresh_hz) : "unknown",
+		"; mode pixels: ", mode.dmPelsWidth, "x", mode.dmPelsHeight,
+		"; nominal metadata only, not measured scan-out");
+	window.close();
+	CHECK(window.display_info().monitor_id.empty());
+	CHECK_FALSE(window.display_info().nominal_refresh_hz.has_value());
+	window.pump_until_quit();
 }
 
 TEST_CASE("WM_GETDPISCALEDSIZE answers the outer size that keeps the client")

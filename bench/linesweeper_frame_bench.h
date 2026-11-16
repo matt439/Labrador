@@ -13,8 +13,10 @@ namespace linesweeper_frame_bench
 	};
 
 	// Runs the LineSweeper frame workload `options` describes, warm-up and
-	// retained sample, and returns the retained samples, the render device and
-	// the measurement class. Writes nothing; the caller labels and publishes
+	// retained sample, and returns the samples, render device, measurement
+	// class and nominal window-display snapshots before/after the frame loop.
+	// Display queries sit outside retained frame timings. Writes nothing;
+	// the caller labels and publishes
 	// the result.
 	//
 	// Throws std::runtime_error when the workload cannot be measured as
