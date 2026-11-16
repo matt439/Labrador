@@ -135,6 +135,9 @@
 // fall back to its software rasteriser for WebGL where there is no GPU, which
 // it otherwise refuses to; where there is one, Chrome uses it and the flag
 // changes nothing. LABRADOR_TEST_BROWSER_ARGS appends more, space-separated.
+// Windows headless processes also disable native-window occlusion tracking:
+// desktop covering can otherwise stall their animation callbacks. Browser tab
+// visibility remains in effect; callback timing does not measure display pacing.
 
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -327,12 +330,8 @@ function serve(directory) {
 	});
 }
 
-// The browser, and the DevTools endpoint it prints on stderr once it is
-// listening. The port is the browser's choice, so two runs never collide.
-function launch(browser, profile) {
-	const extra = (process.env.LABRADOR_TEST_BROWSER_ARGS ?? '')
-		.split(' ').filter((argument) => argument.length > 0);
-	const child = spawn(browser, [
+export function chromium_arguments(profile, extra = [], platform = process.platform) {
+	return [
 		'--headless=new',
 		'--remote-debugging-port=0',
 		`--user-data-dir=${profile}`,
@@ -340,9 +339,19 @@ function launch(browser, profile) {
 		'--no-default-browser-check',
 		'--disable-extensions',
 		'--enable-unsafe-swiftshader',
+		...(platform === 'win32' ? ['--disable-features=CalculateNativeWinOcclusion'] : []),
 		...extra,
 		'about:blank',
-	], { stdio: ['ignore', 'ignore', 'pipe'] });
+	];
+}
+
+// The browser, and the DevTools endpoint it prints on stderr once it is
+// listening. The port is the browser's choice, so two runs never collide.
+function launch(browser, profile) {
+	const extra = (process.env.LABRADOR_TEST_BROWSER_ARGS ?? '')
+		.split(' ').filter((argument) => argument.length > 0);
+	const child = spawn(browser, chromium_arguments(profile, extra),
+		{ stdio: ['ignore', 'ignore', 'pipe'] });
 
 	// The last 16 KiB the browser wrote to stderr: where its endpoint is
 	// found, and what a failure reports.

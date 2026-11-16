@@ -2,10 +2,32 @@
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { NETWORK_PROFILES, USAGE, UsageError, activate_page, heap_line, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
+import { NETWORK_PROFILES, USAGE, UsageError, activate_page, chromium_arguments, heap_line, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
 
 const page = join('build', 'samples', 'minimal', 'MinimalSample.html');
 const sample = ['--browser', 'chrome', '--page', page, '--quit-keys', 'Escape,Enter'];
+
+test('only Windows headless profiles disable native-window occlusion tracking', () => {
+	const flag = '--disable-features=CalculateNativeWinOcclusion';
+	const windows = chromium_arguments('disposable-profile', [], 'win32');
+	assert.equal(windows.filter((argument) => argument === flag).length, 1);
+	assert.ok(windows.includes('--headless=new'));
+	assert.ok(windows.includes('--user-data-dir=disposable-profile'));
+	for (const platform of ['linux', 'darwin']) {
+		assert.deepEqual(chromium_arguments('disposable-profile', [], platform),
+			windows.filter((argument) => argument !== flag));
+	}
+});
+
+test('explicit browser arguments keep their order after the platform defaults', () => {
+	const extra = ['--disable-gpu-watchdog', '--disable-features=OwnerSelectedFeature'];
+	for (const platform of ['win32', 'linux', 'darwin']) {
+		const defaults = chromium_arguments('profile', [], platform);
+		const args = chromium_arguments('profile', extra, platform);
+		assert.deepEqual(args, [...defaults.slice(0, -1), ...extra, 'about:blank']);
+	}
+	assert.deepEqual(extra, ['--disable-gpu-watchdog', '--disable-features=OwnerSelectedFeature']);
+});
 
 test('page activation waits for Page.enable and its own reply before navigation', async () => {
 	const commands = [];

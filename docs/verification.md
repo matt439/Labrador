@@ -322,6 +322,40 @@ on the NVIDIA GeForce RTX 5080 through Direct3D11. The offline
 navigation and propagate activation failure. Full browser sweeps and hosted
 CI retain their own per-run results.
 
+## Windows headless native occlusion (2026-11-17)
+
+Windows headless Chromium processes use
+`--disable-features=CalculateNativeWinOcclusion` by default. Linux and macOS
+arguments are unchanged, and explicit `LABRADOR_TEST_BROWSER_ARGS` remain
+appended in their original order. This is a disposable test-process profile;
+actual tab visibility remains part of the browser tests.
+
+Fresh activated Chrome 157.0.8103.78 profiles on this Windows host produced
+these bare-page animation callbacks in successive eight-second probes:
+
+| Profile | Callbacks | Largest interval |
+| --- | ---: | ---: |
+| Previous defaults | 426 | 194.7 ms |
+| Native occlusion disabled | 450 | 20.2 ms |
+| Previous defaults, repeat | 21 | 2702.5 ms |
+| Native occlusion disabled, repeat | 445 | 72.8 ms |
+
+Each probe was focused and `visible` at its start and finish and loaded no
+engine or wasm. These software callback observations reproduce an intermittent
+stall and support the scoped profile comparison; they do not isolate every
+slow run's cause or measure physical display pacing.
+
+At `28844a00`, passing the flag explicitly let
+`LineSweeperBundlePageTests` complete its unchanged driver in 84.9822 s under
+its existing 120 s limit, including repeated play, context restoration, GPU
+process crashes, real tab switching and failure UI. Its earlier full-track run
+had reached that limit. The same process profile passed the 30-entry
+wasm-release-null track. Platform/argument fixtures keep the default Windows
+scope and explicit argument precedence; the offline `BrowserProtocolTests`
+command passes 148 tests. The new default profile also passed the focused
+Chrome/Firefox window and Components page cases 3/3. Full combined reruns
+retain their own receipts.
+
 ## Window-owned fullscreen refusal (2026-11-17)
 
 The Fullscreen API rejects a refused request's Promise separately from its
