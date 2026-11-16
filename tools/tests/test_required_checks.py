@@ -1,5 +1,5 @@
-"""CONTRIBUTING's required-check list against the check names the workflows
-report; reads ci.yml, website.yml and CONTRIBUTING.md and runs nothing.
+"""CONTRIBUTING's required-check list against the ordinary PR workflows;
+reads ci.yml, website.yml and CONTRIBUTING.md and runs nothing.
 
 GitHub's branch protection holds the required contexts by name. A job or
 matrix entry renamed in a workflow but not in the protection leaves every pull
@@ -15,6 +15,8 @@ import re
 import unittest
 
 REPOSITORY = Path(__file__).resolve().parents[2]
+# Schedule/manual-only weekly and sanitizer contexts are deliberately separate.
+# test_weekly_configurations.py checks that they do not enter this PR contract.
 WORKFLOWS = (".github/workflows/ci.yml", ".github/workflows/website.yml")
 LIST_LEAD = "The required contexts are exactly these "
 NUMBERS = {

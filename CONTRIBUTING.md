@@ -113,8 +113,8 @@ gh label create declined --color b60205 --description "Request declined; the clo
    [website/src/components/ReleaseNotices.astro](website/src/components/ReleaseNotices.astro),
    in the same commit; the website build fails on a package it does not cover.
 4. **Open a pull request** against `master`.
-5. **Wait for CI to go green.** Every configuration CI builds is a required
-   check, and a change is not known to be clean until all of them pass: a
+5. **Wait for CI to go green.** Every configuration in the ordinary PR matrix
+   is a required check, and a change is not known to be clean until all of them pass: a
    change clean under MSVC is not yet known to be clean under clang, and an
    edit outside `website/` can fail the website build.
 6. **Rebase-merge.** `gh pr merge --rebase`, or `--squash` if the branch grew
@@ -201,6 +201,15 @@ Manual dispatches of the CI workflow and its weekly Monday 03:17 UTC schedule
 always run the full build matrix, so runner/browser drift gets a run without
 a source edit.
 
+The separate [additional weekly workflow](.github/workflows/weekly-configurations.yml)
+uses that same timing for `x64-release-d3d12`, `x64-release-gl`,
+`x64-release-vulkan`, `x64-release-null` and `wasm-debug`, or an explicit
+manual dispatch. Its five `weekly native (...)` / `weekly browser (...)`
+contexts are non-required and never report on a pull request or push. Do
+not add them to branch protection. [Its inventory, cost and qualification
+record](docs/verification-weekly.md) keeps the first hosted run separate from
+source preparation and local Release IPO evidence.
+
 The separate [native sanitizer workflow](.github/workflows/sanitizers.yml)
 runs `x64-debug-null-asan` on Monday 03:47 UTC or manual dispatch. It is a
 non-required maintainer check, outside the twenty required contexts above;
@@ -249,8 +258,8 @@ workflow, ref and attempt, keeps cancelled/incomplete data separate and can
 replay captured API responses offline. It triggers no runs or notifications;
 counts alone establish no flakiness or failure rate.
 
-**A pull request that adds, removes or renames a job or a matrix entry updates
-the branch protection in the same change**, and this list with it. A removed or
+**A pull request that adds, removes or renames a required PR job or matrix entry
+updates the branch protection in the same change**, and this list with it. A removed or
 renamed context leaves every later pull request waiting on a check that never
 reports; an added one that is not required can fail and still merge.
 [test_required_checks.py](tools/tests/test_required_checks.py), in the `lint`
@@ -258,6 +267,9 @@ job's offline tooling tests, derives the check names from both workflows,
 expanding matrix names, and fails when this list leaves one out or names one
 no job reports. It cannot read GitHub's settings, so the `gh api` comparison
 above stays a manual step after such a change.
+The schedule-only weekly and sanitizer workflows are explicitly outside that
+required list; their source fixtures ensure they cannot silently add PR
+contexts or weaken the ordinary matrix.
 
 **Required checks are strict**: a branch must be up to date with `master`
 before it merges, so its checks have run against the tree it will produce. Two
@@ -361,7 +373,7 @@ cut once PHILOSOPHY's settle criterion has run.
    **Then run what CI cannot, on that commit, on a real GPU:** check it out
    and run `python tools/ci_gap_report.py --execute` from a cmd shell with
    vcvars and emsdk_env, as
-   [the procedure](docs/verification.md#configurations-ci-cannot-run) says.
+   [the procedure](docs/verification.md#release-and-real-driver-qualification) says.
    Every preset passes before the commit is tagged. This is where a fault
    that only a real driver shows is caught, since CI's GL and Vulkan jobs draw
    on software rasterisers.
@@ -555,13 +567,14 @@ qualifications separately from a printed plan or fake-command test result.
   CI builds all of them, but it is slower than finding out first.
 - A green pull request needs no local test run. CI runs every test on
   every backend, the GL and Vulkan device tests on software rasterisers.
-  What it cannot run is `python tools/ci_gap_report.py --execute`: the GL and
-  Vulkan device tests on a real driver, the release presets CI skips and
-  `wasm-debug`. That is run before a release is tagged (step 3 of *Cutting a
+  Qualification outside required PR CI is `python tools/ci_gap_report.py --execute`:
+  GL and Vulkan device tests on a real driver, the four additional native
+  Release presets and `wasm-debug`. Weekly software results do not qualify a
+  later candidate or replace real-driver evidence. The sweep runs before a release is tagged (step 3 of *Cutting a
   release*), and on a pull request only when it changes golden images or the
   author has a GPU and has changed `engine/render/` or `engine/app/`. Paste its
-  output under the template's "Configurations CI cannot run", adding the
-  driver version; [the procedure](docs/verification.md#configurations-ci-cannot-run)
+  output under the template's "Configurations outside required PR CI", adding the
+  driver version; [the procedure](docs/verification.md#release-and-real-driver-qualification)
   says what the record does and does not show. Otherwise write "Not run".
 - If you edited a public engine header, a line a website page quotes, or a
   file a design document links to, run the website's gate (`npm ci` then

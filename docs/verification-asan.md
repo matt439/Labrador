@@ -150,6 +150,10 @@ dispatch. It configures the isolated preset, builds every target, checks its
 exact inventory and instrumentation receipt, then runs the entire configured
 suite including the detection probe. CTest results are retained as an artifact.
 The ordinary pull-request matrix and its required contexts do not change.
+The [additional weekly configurations](verification-weekly.md) use ordinary
+native Release and Debug browser builds at 03:17 UTC. They leave this isolated
+sanitizer preset, dependency cache namespace, inventory and receipt/probe
+requirements unchanged; their green results do not qualify this ASan lane.
 
 The workflow is staged in source only. No dispatch, push, repository-setting
 change or hosted sanitizer run was performed for this qualification. The first
