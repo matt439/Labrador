@@ -152,7 +152,7 @@ decision to keep the current rendering-text API. Implementation is open.
 | `OCA-115` | OPEN | could | S | Report the selected device's texture-size limit and include it in oversized-upload diagnostics (`REV#33`). [Scope](docs/product/BACKLOG.md#oca-115). |
 | `SM-87` | OPEN | could | S | Observations and focused native/wasm checks implemented; finish the combined app matrix and website qualification (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
 | `SM-89` | WAITING | could | M | Five non-required weekly selections and exact-inventory checks are staged; retain the first hosted results after owner publication (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
-| `SM-90` | OPEN | should | XS | Add an owner-invoked release-time aggregate counter snapshot with reporting-window limits (`REV#54`). [Scope](docs/product/BACKLOG.md#sm-90). |
+| `SM-90` | OPEN | should | XS | Manual collector, privacy boundaries and offline API/replay checks pass; close after the website gate (`REV#54`). Live reads stay explicitly owner-invoked. [Scope](docs/product/BACKLOG.md#sm-90). |
 
 ## Fifth accepted decision batch of 2026-11-16
 
