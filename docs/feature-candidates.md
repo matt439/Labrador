@@ -69,6 +69,9 @@ concrete client need.
 |---|---|---|---|---|
 | `IDEA#1` | A single-line typed-text component | could | M | Landed 2026-11-17 as [OCA-109](product/BACKLOG.md#oca-109): copyable desktop field with length/font checks and conversion on edits |
 | `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Selected 2026-11-16 as [OCA-110](product/BACKLOG.md#oca-110), duplicate refusal and protected navigation; implementation open |
+| `IDEA#3` | Versioned saves with recovery | could | M | Closed 2026-11-17 as [OCA-112](product/BACKLOG.md#oca-112): copyable game-owned two-slot recovery, checked native publication and reported browser sync; originals preserved |
+| `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
+
 | `IDEA#3` | Versioned saves with recovery | could | M | Selected 2026-11-16 as [OCA-112](product/BACKLOG.md#oca-112), game-owned recovery preserving previous valid and malformed/future data; implementation open |
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Landed 2026-11-17 as [OCA-103](product/BACKLOG.md#oca-103): copyable per-player tracking, world bounds and explicit resize/small-world policy |
 | `IDEA#5` | A grid sprite-sheet authoring command | could | S | Selected 2026-11-16 as [OCA-104](product/BACKLOG.md#oca-104); implementation open |
@@ -157,8 +160,18 @@ A native/browser run exercises it; synthetic key input is identified as such.
 writes and migrations preserve the previous valid save; malformed or
 future-version files remain intact rather than being overwritten as a repair.
 Native replacement and browser persistence have separate, explicit durability
-limits. No engine JSON writer is selected. Implementation and qualification
-remain open; BACKLOG.md owns the example's final recovery policy.
+limits. No engine JSON writer is selected.
+
+**Closed, 2026-11-17:** [Recover a failed save](../website/src/content/docs/docs/guides/save-recovery.mdx)
+and the separate `recovery_*` example add version 1 to 2 migration in memory,
+exclusive staging and alternating generation slots. An unacknowledged attempt
+never replaces the previous acknowledged slot. Unknown/duplicate, malformed,
+future or invalid data blocks ordinary saving and stays intact; explicit
+recovery copies validated values or defaults to a fresh directory. Native
+checked flush/publication and browser sync have separate limits, including
+the fact that a rejected sync does not establish rollback. Assembled native
+and wasm tests plus a real browser abort/reload/retry check passed; existing
+consumer jobs retain the opt-in checks. BACKLOG.md records qualification.
 
 **Present evidence:** OCA-53 supplies the basic settings/save path and
 [save_check](../tools/save_check/README.md) proves reload behavior. Its

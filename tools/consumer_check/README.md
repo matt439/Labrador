@@ -463,3 +463,25 @@ These fixtures are source preparation and protocol checks; retain actual
 revision/toolchain/native/browser results when running them. No fixture or
 loading test substitutes for listening, physical output or endpoint-recovery
 acceptance.
+
+**Game-owned save recovery.** After baseline and material checks, the existing
+consumer jobs also apply `save_fixture.py`. It copies the advanced settings
+example into `game/save_example` and adds `MyGameSaveTests`; wasm additionally
+adds the standalone `MyGameSavePage`. These remain opt-in targets outside the
+ordinary starter's test inventory. From the assembled project:
+
+```bat
+python external\labrador\tools\consumer_check\save_fixture.py .
+cmake --preset x64-debug
+cmake --build --preset x64-debug --target MyGameSaveTests
+ctest --preset x64-debug -R "^MyGameSaveTests$" --no-tests=error --output-on-failure
+```
+
+Use the wasm preset and `MyGameSaveTests MyGameSavePage` build targets for
+the Node test and compiled browser page. The page driver
+`tools/save_check/recovery_reload.mjs` checks sync success, a real aborted
+IndexedDB write transaction, explicit retry, refusal to overwrite newer data
+and fresh-copy recovery in an isolated profile. Native tests use disposable
+paths, including a real sharing-lock replacement failure. Commands, policy
+and durability limits are in [save_check/README.md](../save_check/README.md).
+Neither fixture opens a live user's save directory.
