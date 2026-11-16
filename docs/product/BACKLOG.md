@@ -1410,7 +1410,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
 - [x] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
 - [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
-- [ ] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
+- [x] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
 - [ ] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
 - [ ] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
 - [ ] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
@@ -2316,6 +2316,24 @@ to every inline code block or a new required CI job. Verify a deliberately
 broken example fails and the three working examples pass from consumer-relative
 paths; run affected tooling, local lint and the website gate. Respect OCA-93's
 version applicability without changing the site's default documentation.
+
+**Closed 2026-11-17:** `guide_check.py` reads the numbered main procedures in
+`your-rule.mdx`, `your-screen.mdx` and `your-collision.mdx`, applies them
+independently to a copy of the extracted development starter and runs native-
+null consumer rules/state/smoke checks. Complete new files come from the
+guide's titled blocks; recipe selectors bind build lists and edits to the
+same procedure. The existing consumer job runs the pilot without adding a
+job or changing the baseline, rename, release or material checks.
+
+The [dated cost record](../review/2026-11-12-work-audit/2026-11-17-guide-pilot.md)
+and its receipt retain the clean ZIP identity, guide/tool/source hashes,
+19 command exits and times: baseline 2/2, rule 2/2, screen 3/3 and collision
+3/3, plus an intentional compiler typo that failed before exact-byte
+restoration and a passing rebuild/retest. The command sum was 49.298 s with
+installed packages; the implementation maintains 39 selectors. Wider rollout
+is not selected. Hosted timing, the released v0.3.0 starter, browser builds/
+pages, optional/intermediate edits and visual acceptance remain unmeasured
+by this pilot, as the pages and procedure state.
 
 <a id="oca-98"></a>
 ### OCA-98. Hand random values from a state into a tested rule

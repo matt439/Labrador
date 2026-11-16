@@ -1204,6 +1204,23 @@ jobs:
           call "%VCVARS%"
           python tools\consumer_check\rename_check.py C:\dev\hopper --from C:\dev\mygame
 
+      # Three independent numbered guide procedures, applied from the pages'
+      # actual code to another extracted-starter copy. Native null permits
+      # behavioural state checks without turning drawing into visual evidence.
+      # Baseline, rename and material checks keep their existing project.
+      - name: Compile the rules, screens and collision guide pilot
+        run: |
+          call "%VCVARS%"
+          python tools\consumer_check\guide_check.py C:\dev\guide-pilot --from C:\dev\mygame --check-broken
+
+      - name: Keep compiled-guide sources, timing and command logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-guide-pilot
+          path: C:\dev\guide-pilot\out\guide-pilot
+          if-no-files-found: ignore
+
       - name: Script pads beside the shipping native input library
         working-directory: C:\dev\mygame
         run: |
