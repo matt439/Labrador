@@ -66,10 +66,15 @@ class DriftTests(unittest.TestCase):
         ci_presets |= set(re.findall(r"ctest --preset ([A-Za-z0-9-]+)", workflow))
         presets = json.loads((REPOSITORY / "CMakePresets.json").read_text(encoding="utf-8"))
         tested = {preset["name"] for preset in presets["testPresets"] if not preset.get("hidden")}
+        # Sanitizer qualification has its own scheduled, device-free lane;
+        # it is not an unrun release-render configuration.
+        sanitizer_workflow = (REPOSITORY / ".github/workflows/sanitizers.yml").read_text(encoding="utf-8")
+        sanitizers = set(re.findall(r"ctest --preset (\S+)", sanitizer_workflow))
+        self.assertEqual(sanitizers, {"x64-debug-null-asan"})
 
         gaps = {gap.preset: gap for gap in report.GAPS}
         whole = {name for name, gap in gaps.items() if not gap.real_driver}
-        self.assertEqual(whole, tested - ci_presets)
+        self.assertEqual(whole, tested - ci_presets - sanitizers)
         software = {preset for preset, device in matrix if device}
         self.assertEqual(software, {name for name, gap in gaps.items() if gap.real_driver})
         for gap in report.GAPS:

@@ -22,3 +22,7 @@ target_compile_definitions(CoreTests PRIVATE
     LABRADOR_EXPECTED_VERSION_STRING="${LABRADOR_VERSION_STRING}"
     LABRADOR_EXPECTED_VERSION_IS_DEVELOPMENT=$<BOOL:${LABRADOR_VERSION_IS_DEVELOPMENT}>
 )
+
+if(LABRADOR_ASAN)
+    target_sources(CoreTests PRIVATE asan_allocation_tests.cpp)
+endif()

@@ -87,7 +87,8 @@ gh label create declined --color b60205 --description "Request declined; the clo
    whether the entry or the declaration is right is review's to check before
    merging, because nothing else does.
    The build inputs are the root, engine and math `CMakeLists.txt`, and
-   `cmake/`'s `settings.cmake`, `native_release_ipo.cmake`, `source_revision.cmake`, `version.cmake`, `dependencies.cmake`,
+   `cmake/`'s `settings.cmake`, `native_release_ipo.cmake`, `sanitizers.cmake`,
+   `source_revision.cmake`, `version.cmake`, `dependencies.cmake`,
    `compile_shaders.cmake`, `add_material.cmake`, `embed_material.cmake` and
    `check_engine_includes.cmake`, plus `version_values.h.in` and
    `release_identity.txt`. Other CMake scripts and maintainer tooling
@@ -191,6 +192,14 @@ as skipped, and a skipped check passes.
 Manual dispatches of the CI workflow and its weekly Monday 03:17 UTC schedule
 always run the full build matrix, so runner/browser drift gets a run without
 a source edit.
+
+The separate [native sanitizer workflow](.github/workflows/sanitizers.yml)
+runs `x64-debug-null-asan` on Monday 03:47 UTC or manual dispatch. It is a
+non-required maintainer check, outside the twenty required contexts above;
+it adds no pull-request job or branch-protection requirement.
+[Its qualification record](docs/verification-asan.md) distinguishes the
+passing local suite from hosted execution, which remains to be verified
+after publication. It does not replace the release/driver sweep below.
 
 **A merge is tested once, by its pull request.** On a push to `master`, both
 workflows run [tools/ci_tested_tree.py](tools/ci_tested_tree.py) first. When

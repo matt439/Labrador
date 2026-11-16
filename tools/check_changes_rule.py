@@ -30,7 +30,7 @@ RULE_PATHS = (*ORIGINAL_RULE_PATHS, "CMakeLists.txt", "engine/math/CMakeLists.tx
               "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
               "cmake/dependencies.cmake",
               "cmake/add_material.cmake", "cmake/embed_material.cmake",
-              "cmake/check_engine_includes.cmake", "cmake/native_release_ipo.cmake")
+              "cmake/check_engine_includes.cmake", "cmake/native_release_ipo.cmake", "cmake/sanitizers.cmake")
 # The approved scope before the coverage expansion. Preserve the policy those
 # ancestors were reviewed under, without exempting their originally governed paths.
 EXPANDED_COVERAGE_BASE = "f5c17f32f57205f3eea4142380845e382fcc27de"

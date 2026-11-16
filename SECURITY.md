@@ -77,12 +77,22 @@ What the readers do, and what the tree has tests for:
   test parses 100000 nested brackets, and the same number left unclosed is a
   parse error naming the file.
 
+An opt-in native-null MSVC AddressSanitizer configuration instruments the
+engine, tests, lodepng and the source-built DirectXTK dependency. It retains
+the parser tests and allocation-failure regressions; a separate probe requires
+actual heap and container-overflow reports. Its scope, local qualification,
+allocator limitations and scheduled lane are in
+[the sanitizer record](docs/verification-asan.md). A passing run checks only
+the paths those tests execute; it does not establish that a reader is safe on
+every input. Hosted execution of the new lane remains unverified until it is
+published and run.
+
 What the readers do not do:
 
-- **There is no fuzzing and no sanitizer configuration.** No fuzz target, no
-  AddressSanitizer or UndefinedBehaviorSanitizer preset and no CI job that runs
-  either exists in this repository. The tests above are hand-written cases, not
-  a search for inputs nobody thought of.
+- **There is no fuzzing or UndefinedBehaviorSanitizer configuration.** The
+  tests above are hand-written cases, not a search for inputs nobody thought
+  of. The native AddressSanitizer lane supplies neither fuzzing nor race,
+  leak or undefined-behaviour coverage.
 - **Memory use has two limits and no budget.** Every reader loads the whole
   file into memory, whatever its size; the binary readers refuse only a file
   longer than the build can address, which matters to a 32-bit browser build.

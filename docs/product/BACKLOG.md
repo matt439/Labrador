@@ -1402,7 +1402,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
 - [x] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
 - [x] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
-- [ ] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
+- [x] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
 - [ ] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
 
 - [ ] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
@@ -2011,6 +2011,15 @@ sanitizer default for consumers. Retain a deterministic sanitizer-detection
 probe plus allocation-failure regressions, native-null suite results and a
 dependency/instrumentation record; run affected tooling/lint and website
 checks. This planning selection runs no job and changes no live setting.
+
+**Local implementation, 2026-11-16:** the isolated native-null MSVC ASan
+configuration passes all 24 entries with instrumented lodepng and DirectXTK,
+retained STL annotations, unchanged audio failpoint assertions and positive
+heap/container detection probes. The [qualification record](../verification-asan.md)
+owns exact source/toolchain, dependency hashes and allocator limits. The
+separate non-required scheduled/manual workflow is prepared after that local
+green result. The local implementation and qualification close this scope;
+hosted execution remains explicitly unrun until publication.
 
 <a id="sm-83"></a>
 ### SM-83. Report invalid collider data at the collision/scene boundary

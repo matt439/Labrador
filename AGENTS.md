@@ -75,6 +75,7 @@ Web Audio and web input.
 | `x64-debug-gl`, `x64-release-gl` | desktop GL / XAudio2 | 22; real GL driver |
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
+| `x64-debug-null-asan` | null / null | 24; opt-in MSVC AddressSanitizer, including a deterministic detection probe |
 | `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 36 Debug / 37 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
@@ -385,7 +386,7 @@ in the commit message, which the lint job checks per commit
 (`tools/check_changes_rule.py`). The rule includes silent behaviour and dependency/flag
 changes. A source break names old/new spellings and the sample migration diff.
 The build-input list is the root, engine and math `CMakeLists.txt`, plus
-`cmake/`'s settings, native_release_ipo, source_revision, version, dependencies, compile_shaders, add_material,
+`cmake/`'s settings, native_release_ipo, sanitizers, source_revision, version, dependencies, compile_shaders, add_material,
 embed_material and check_engine_includes scripts, version_values.h.in and
 release_identity.txt. It does not cover every
 CMake script or maintainer tool. CHANGES.md records the 2026-11-16 expansion's

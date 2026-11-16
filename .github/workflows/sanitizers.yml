@@ -1,0 +1,68 @@
+# Separate, non-required maintainer qualification. Ordinary pull requests keep
+# the existing matrix; source/dependency instrumentation is checked here too.
+name: native sanitizer qualification
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '47 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-null-asan:
+    name: native-null AddressSanitizer
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      VCPKG_MAX_CONCURRENCY: '2'
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
+      - name: Cache instrumented vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: asan-vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/x64-windows-asan.cmake') }}-${{ env.IMAGE_VERSION }}
+          restore-keys: asan-vcpkg-${{ runner.os }}-
+      - name: Configure the native-null sanitizer
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --preset x64-debug-null-asan
+      - name: Build all configured targets
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --build --preset x64-debug-null-asan --parallel 2
+      - name: Check the exact sanitizer inventory
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          python tools/check_ctest_inventory.py --configuration x64-debug-null-asan --build-dir out/build/x64-debug-null-asan
+      - name: Verify source and dependency instrumentation
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          python tools/asan_receipt.py --build-dir out/build/x64-debug-null-asan
+      - name: Run the full configured suite and detection probe
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          ctest --preset x64-debug-null-asan --parallel 1 --output-on-failure --no-tests=error --stop-on-failure --test-output-size-passed 1048576 --output-junit asan-results.xml
+      - name: Keep sanitizer test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-null-asan-results
+          path: out/build/x64-debug-null-asan/asan-results.xml
+          if-no-files-found: ignore

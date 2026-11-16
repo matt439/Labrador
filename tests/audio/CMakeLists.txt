@@ -11,8 +11,9 @@ labrador_add_test_suite(AudioTests
     LINKS LabradorEngine
 )
 
-# Allocation-failure injection uses the native Debug DLL CRT only and adds
-# cases to this suite. Its null fixture creates no platform audio API device.
+# Allocation-failure injection uses the native Debug DLL CRT, or the ASan
+# test allocator in that opt-in build, and adds cases to this suite. Its null
+# fixture creates no platform audio API device.
 if(MSVC AND NOT EMSCRIPTEN)
     target_sources(AudioTests PRIVATE
         "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/audio_resources_failure_tests.cpp>"

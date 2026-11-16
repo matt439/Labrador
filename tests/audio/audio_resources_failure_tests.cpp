@@ -3,6 +3,9 @@
 #include <doctest/doctest.h>
 
 #include "engine/audio/audio_resources.h"
+#if defined(LABRADOR_ASAN)
+#include "tests/asan_allocation.h"
+#endif
 #if defined(LABRADOR_TEST_NULL_AUDIO)
 #include "engine/assets/sound_bank_loader.h"
 #include "engine/audio/audio_device.h"
@@ -36,9 +39,26 @@ namespace
 	};
 
 	thread_local AllocationFailureSample* active_sample = nullptr;
+	std::atomic_flag hook_owned = ATOMIC_FLAG_INIT;
+
+#if defined(LABRADOR_ASAN)
+	bool refuse_asan_allocation(std::size_t bytes) noexcept
+	{
+		if (active_sample != nullptr && bytes >= active_sample->minimum_bytes)
+		{
+			++active_sample->attempts;
+			if (active_sample->attempts == active_sample->fail_on)
+			{
+				active_sample->injected = true;
+				active_sample = nullptr;
+				return false;
+			}
+		}
+		return true;
+	}
+#else
 	std::atomic<_CRT_ALLOC_HOOK> previous_hook = nullptr;
 	static_assert(std::atomic<_CRT_ALLOC_HOOK>::is_always_lock_free);
-	std::atomic_flag hook_owned = ATOMIC_FLAG_INIT;
 
 	int __cdecl refuse_allocation(int operation, void* data, size_t bytes,
 		int block_type, long request, const unsigned char* file, int line) noexcept
@@ -66,6 +86,7 @@ namespace
 		}
 		return 1;
 	}
+#endif
 
 	// One process-wide hook owner, one targeted thread, one refusal. No heap
 	// operation or assertion belongs in the hook. Other instrumentation must
@@ -95,6 +116,15 @@ namespace
 					throw std::logic_error("CRT warning mode changed concurrently");
 				}
 
+#if defined(LABRADOR_ASAN)
+				this->previous_asan_ = labrador_tests::asan_allocation_hooks();
+				if (this->previous_asan_ != labrador_tests::AsanAllocationHooks{})
+				{
+					throw std::logic_error("Unexpected audio ASan allocation probe hook");
+				}
+				labrador_tests::set_asan_allocation_hooks({ refuse_asan_allocation, nullptr });
+				this->hook_installed_ = true;
+#else
 				const _CRT_ALLOC_HOOK expected = _CrtGetAllocHook();
 				if (expected == refuse_allocation)
 				{
@@ -107,6 +137,7 @@ namespace
 				{
 					throw std::logic_error("CRT allocation hook changed concurrently");
 				}
+#endif
 				active_sample = &sample;
 			}
 			catch (...)
@@ -132,6 +163,17 @@ namespace
 			active_sample = nullptr;
 			if (this->hook_installed_)
 			{
+#if defined(LABRADOR_ASAN)
+				if (labrador_tests::asan_allocation_hooks() ==
+					labrador_tests::AsanAllocationHooks{ refuse_asan_allocation, nullptr })
+				{
+					labrador_tests::set_asan_allocation_hooks(this->previous_asan_);
+				}
+				else
+				{
+					this->sample_.hook_conflict = true;
+				}
+#else
 				if (_CrtGetAllocHook() == refuse_allocation)
 				{
 					_CrtSetAllocHook(this->previous_);
@@ -140,6 +182,7 @@ namespace
 				{
 					this->sample_.hook_conflict = true;
 				}
+#endif
 			}
 			if (this->warning_mode_installed_)
 			{
@@ -155,7 +198,11 @@ namespace
 		}
 
 		AllocationFailureSample& sample_;
+#if defined(LABRADOR_ASAN)
+		labrador_tests::AsanAllocationHooks previous_asan_;
+#else
 		_CRT_ALLOC_HOOK previous_ = nullptr;
+#endif
 		int previous_warning_mode_ = 0;
 		int warning_mode_ = 0;
 		bool hook_installed_ = false;
@@ -179,11 +226,17 @@ namespace
 			REQUIRE_FALSE(sample.hook_conflict);
 			REQUIRE(_CrtGetAllocHook() == this->hook_);
 			REQUIRE(_CrtSetReportMode(_CRT_WARN, _CRTDBG_REPORT_MODE) == this->mode_);
+#if defined(LABRADOR_ASAN)
+			REQUIRE(labrador_tests::asan_allocation_hooks() == this->asan_hooks_);
+#endif
 		}
 
 	private:
 		_CRT_ALLOC_HOOK hook_;
 		int mode_;
+#if defined(LABRADOR_ASAN)
+		labrador_tests::AsanAllocationHooks asan_hooks_ = labrador_tests::asan_allocation_hooks();
+#endif
 	};
 }
 

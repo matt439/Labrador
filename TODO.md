@@ -34,7 +34,8 @@ follows the player*.
 BACKLOG's L66 to L83. The remaining first-six stories in the batch below
 are the initial priorities. `SM-77` waits for `OCA-88`'s texture-size
 query. `SM-81` has qualified native MSVC Release IPO and its standalone default;
-`SM-82` repairs the sanitizer configuration before adding scheduled ASan.
+`SM-82`'s native-null ASan repair is locally qualified; its separate
+scheduled workflow is ready for publication.
 The two deferred scopes, `REV#35` and `REV#53`, retain
 their revisit triggers. Acceptance is recorded; implementation is open.
 
@@ -116,7 +117,6 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-92` | OPEN | should | M | Query and LineSweeper integration implemented; complete the combined seven-track app sweep (`REV#60`). [Scope and focused evidence](docs/product/BACKLOG.md#oca-92). |
 | `PI-22` | OPEN | should | S | Version API, exact-tag/archive identity and consumer checks pass; close after the combined website gate (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
 | `PI-23` | OPEN | should | S | Selected dependency diagnostics and configure fixtures pass; close after the combined website gate (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |
-| `SM-82` | OPEN | should | M | Repair dependency instrumentation and allocation-failure coverage, then add scheduled native-null ASan (`REV#49`). [Scope](docs/product/BACKLOG.md#sm-82). |
 | `SM-83` | OPEN | should | S | Diagnose invalid collider data at the scene/collision boundary while retaining low-level predicate semantics (`REV#57`). [Scope](docs/product/BACKLOG.md#sm-83). |
 
 ## Second accepted decision batch of 2026-11-16

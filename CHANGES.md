@@ -33,6 +33,7 @@ review's and the release audit's.
 | `engine/math/CMakeLists.txt` | Declares the linked math library. |
 | `cmake/settings.cmake` | Defines the compile settings the game links. |
 | `cmake/native_release_ipo.cmake` | Checks and selects opt-in native Release IPO inside the engine's directory. |
+| `cmake/sanitizers.cmake` | Declares the isolated sanitizer option and refuses incompatible selections before building. |
 | `cmake/source_revision.cmake` | Reports the engine source identity during configure. |
 | `cmake/version.cmake` | Derives release/development version facts from the canonical manifest. |
 | `cmake/dependencies.cmake` | Supplements missing selected package/tool discovery with consumer manifest advice. |

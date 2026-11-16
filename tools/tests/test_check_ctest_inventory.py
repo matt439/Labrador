@@ -77,8 +77,13 @@ class Drift(unittest.TestCase):
         # The rest are the presets CI never builds, which ci_gap_report holds
         # to the same lists.
         whole = {gap.preset for gap in gap_report.GAPS if not gap.real_driver}
+        sanitizer_workflow = (REPOSITORY / ".github/workflows/sanitizers.yml").read_text(encoding="utf-8")
+        sanitizers = set(re.findall(r"ctest --preset (\S+)", sanitizer_workflow))
+        sanitizer_checks = set(re.findall(r"check_ctest_inventory\.py --configuration (\S+)", sanitizer_workflow))
+        self.assertEqual(sanitizers, {"x64-debug-null-asan"})
+        self.assertEqual(sanitizer_checks, sanitizers)
         self.assertEqual(set(INVENTORY["configurations"]),
-                         matrix | {"wasm-release", "wasm-release-null"} | whole)
+                         matrix | {"wasm-release", "wasm-release-null"} | whole | sanitizers)
         self.assertFalse(matrix & whole)
         checked = set(re.findall(r"check_ctest_inventory\.py --configuration (\S+)", workflow))
         # The windows job passes its matrix preset, which reads as "${{" here.
