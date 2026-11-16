@@ -1,0 +1,98 @@
+---
+title: Check your browser build in CI
+description: An optional workflow that builds and tests the starter's browser game, checks its packaged page in Chrome and keeps a downloadable artifact without publishing a site.
+sidebar:
+  order: 9.1
+---
+
+import { Code, Aside } from '@astrojs/starlight/components';
+import workflow from '~/walkthrough/browser-ci.yml?raw';
+
+The native workflow from [Check your game in CI](/docs/guides/ci/) checks the Windows game.
+This optional second workflow checks the browser build from
+[Build for the browser](/docs/guides/browser/). It builds the game, tests its rules under Node,
+packages the page with its notices, draws and quits that packaged page in headless Chrome,
+then keeps the package as a downloadable **artifact** of the run.
+
+Your game's repository can remain private. The workflow asks only for `contents: read` to
+check out its files. It grants no Pages or deployment permissions, uses no publication secret
+and publishes no website. [Put your game on the web](/docs/guides/your-web-page/) remains the
+separate manual publication route; choosing where to host the finished game does not decide
+who can read its source.
+
+## Add the optional workflow
+
+Start with the unchanged starter project, or the same project made through the submodule
+walkthrough, already [on GitHub](/docs/guides/your-github/). Keep its existing
+`.github/workflows/ci.yml` for Windows. From the project's folder, make a second file:
+
+```bat
+if not exist .github\workflows mkdir .github\workflows
+notepad .github\workflows\browser.yml
+```
+
+Paste this entire workflow into it, save and close Notepad. If you renamed the game, change
+the three input filenames containing `MyGame` and their `.js` and `.wasm` output names to your
+game's names too. The HTML becomes `index.html` in the package, as in the manual web release.
+
+<Code code={workflow} lang="yaml" title=".github/workflows/browser.yml" />
+
+Commit the file and push when you are ready, as
+[Sending the next change](/docs/guides/your-github/#sending-the-next-change) shows. The separate
+**browser build and test** workflow starts on pushes and pull requests. Its **browser** job
+has the same 90-minute timeout as the native example. Installing the pinned SDK and fetching
+vcpkg packages makes its first run longer than a cached one.
+
+<Aside title="A file you own">
+Like the native example, this is a copy, not a maintained reusable action. It uses the complete
+engine tree at `external/labrador`, including the page runner's sibling modules and website
+server helper; copying `run_page.mjs` alone is insufficient. A private engine fork or private
+submodule may need checkout credentials of its own, as the native CI guide explains. The
+ordinary starter needs no extra secret.
+</Aside>
+
+## What it checks and keeps
+
+The SDK version matches Labrador's pinned compiler. Emscripten and vcpkg have separate caches;
+the browser dependency key includes both that compiler version and the game's manifest.
+Each command step loads its own tool environment, since steps do not share a command prompt.
+
+The rules run through `ctest --preset wasm-release`. The template embeds its content in the
+module, so its runtime is three files: `MyGame.html`, `MyGame.js` and `MyGame.wasm`. The bundler
+renames the page to `index.html` and adds `NOTICE.txt` and `BUILD.json` in `out/web-release/`.
+The record names the source commit, compiler version, build type and file hashes; it does not
+measure a physical display or prove that the game plays well on a phone.
+
+The browser check serves **that package**, rather than the build folder. After it draws,
+`Escape,Enter` opens and confirms the starter's quit question; success ends with
+`Module.onQuit was called`. Console errors and warnings, loader failures, `Module.onError` and
+a page that never quits fail the check. If you change the game's quit controls, update
+`--quit-keys` in both browser steps. A missing runtime or licence input fails packaging, and
+a failed final browser check prevents the artifact upload.
+
+The first browser step starts Chrome's GPU process and may fail without failing the job.
+Labrador's hosted runners have a recorded first-page context-loss problem; the second step
+must pass against the same package. The first load is preparation and supplies no acceptance
+evidence on its own.
+
+On a successful run, open its summary and download **mygame-browser** under **Artifacts**.
+It contains the five files above and is retained for seven days. Serve the extracted folder
+over HTTP as [Build for the browser](/docs/guides/browser/) shows; opening the HTML as a local
+file does not run it. Before sharing or publishing it, add the visible notices link from
+[Put your game on the web](/docs/guides/your-web-page/) step 1 to your
+page template and rebuild.
+
+If you later use external content such as a `.data` preload, worker scripts or other downloaded
+files, add those runtime files to the bundler's `--file` list and keep their relative names.
+Add the licences of any new dependencies too. The final browser check will catch missing files
+the tested route loads; it cannot discover files used only by a later level or another route.
+
+## What was checked
+
+The workflow's permissions, artifact path, required final check and optional nature have offline
+fixtures. Those fixtures execute this file's actual packaging command against runtime and
+licence files, check its names and hashes, and require failure when each input is missing.
+On 16 November 2026 the assembled starter's Release build and Node rules passed locally with
+Emscripten 6.0.12, and its packaged page quit in Chrome 157.0.8103.78 through the keys above.
+This recipe has not yet run as its own hosted workflow;
+local command execution and a future GitHub run remain distinct evidence.

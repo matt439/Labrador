@@ -87,6 +87,13 @@ carry it.
   with `LABRADOR_NATIVE_RELEASE_IPO`; its own target IPO properties remain the
   game's choice. [The recipe](../../docs/performance/native-release-ipo.md)
   retains Debug and browser defaults and the supported opt-out.
+
+- **2026-11-16.** The optional
+  [browser CI recipe](https://labradorengine.com/docs/guides/browser-ci/)
+  adds a separate `.github/workflows/browser.yml` to a game's repository.
+  It builds and tests the browser game, packages its runtime and notices,
+  checks the packaged page in Chrome and keeps a download artifact. Existing
+  copies can opt in; their native workflow and manual publication stay as they are.
 - **2026-11-15.** Web Audio now owns pending resume requests during fast quit.
   A browser game moving its engine pin needs no template changes; concurrent
   activation gestures share a request, and intentional close handles only

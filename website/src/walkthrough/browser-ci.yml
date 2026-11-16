@@ -1,0 +1,111 @@
+# Optional: copy to .github/workflows/browser.yml in your game project.
+# Builds, tests and keeps a downloadable browser artifact. It publishes no site.
+name: browser build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  EMSDK_VERSION: 6.0.12
+
+jobs:
+  browser:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Find build tools and Chrome
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'Visual Studio C++ tools were not found.' }
+          "VCVARS=$vs/VC/Auxiliary/Build/vcvars64.bat" >> $env:GITHUB_ENV
+          "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          $chrome = "$env:ProgramFiles/Google/Chrome/Application/chrome.exe"
+          if (-not (Test-Path -LiteralPath $chrome)) { throw 'Chrome was not found.' }
+          "CHROME=$chrome" >> $env:GITHUB_ENV
+
+      - name: Cache Emscripten
+        id: emsdk
+        uses: actions/cache@v4
+        with:
+          path: C:/emsdk
+          key: starter-emsdk-${{ runner.os }}-${{ env.EMSDK_VERSION }}
+
+      - name: Install Emscripten
+        if: steps.emsdk.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch %EMSDK_VERSION% https://github.com/emscripten-core/emsdk.git C:/emsdk || exit /b 1
+          call C:/emsdk/emsdk.bat install %EMSDK_VERSION% || exit /b 1
+          call C:/emsdk/emsdk.bat activate %EMSDK_VERSION% || exit /b 1
+
+      - name: Cache vcpkg's browser binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: starter-wasm-${{ runner.os }}-${{ env.EMSDK_VERSION }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: starter-wasm-${{ runner.os }}-${{ env.EMSDK_VERSION }}-
+
+      - name: Configure, build and test rules
+        run: |
+          call "%VCVARS%" || exit /b 1
+          call C:/emsdk/emsdk_env.bat || exit /b 1
+          cmake --preset wasm-release || exit /b 1
+          cmake --build --preset wasm-release --parallel 2 || exit /b 1
+          ctest --preset wasm-release || exit /b 1
+
+      - name: Package the browser runtime and notices
+        run: |
+          call C:/emsdk/emsdk_env.bat || exit /b 1
+          set "engine=external/labrador"
+          set "emscripten=%EMSDK%/upstream/emscripten"
+          "%EMSDK_NODE%" "%engine%/tools/web_bundle/bundle.mjs" ^
+            --out out/web-release ^
+            --repository . ^
+            --emscripten "%emscripten%" ^
+            --build-type Release ^
+            --file "index.html=out/build/wasm-release/game/MyGame.html" ^
+            --file "MyGame.js=out/build/wasm-release/game/MyGame.js" ^
+            --file "MyGame.wasm=out/build/wasm-release/game/MyGame.wasm" ^
+            --notice "%engine%/NOTICE" ^
+            --licence "Labrador=%engine%/LICENSE" ^
+            --licence "Microsoft sample code=%engine%/tools/web_bundle/Microsoft-LICENSE.txt" ^
+            --licence "RapidJSON=%engine%/external/rapidjson/license.txt" ^
+            --licence "LodePNG=out/build/wasm-release/vcpkg_installed/wasm32-emscripten/share/lodepng/copyright" ^
+            --licence "JetBrains Mono=game/content/fonts/OFL.txt" ^
+            --licence "Emscripten=%emscripten%/LICENSE" ^
+            --licence "libc++=%emscripten%/system/lib/libcxx/LICENSE.TXT" ^
+            --licence "libc++abi=%emscripten%/system/lib/libcxxabi/LICENSE.TXT" ^
+            --licence "libunwind=%emscripten%/system/lib/libunwind/LICENSE.TXT" ^
+            --licence "compiler-rt=%emscripten%/system/lib/compiler-rt/LICENSE.TXT" ^
+            --licence "musl=%emscripten%/system/lib/libc/musl/COPYRIGHT" || exit /b 1
+
+      - name: Start Chrome's GPU process
+        continue-on-error: true
+        run: |
+          call C:/emsdk/emsdk_env.bat || exit /b 1
+          "%EMSDK_NODE%" external/labrador/tests/render/web/run_page.mjs --browser "%CHROME%" --page out/web-release/index.html --quit-keys Escape,Enter --timeout 60
+
+      - name: Draw and quit the packaged page
+        run: |
+          call C:/emsdk/emsdk_env.bat || exit /b 1
+          "%EMSDK_NODE%" external/labrador/tests/render/web/run_page.mjs --browser "%CHROME%" --page out/web-release/index.html --quit-keys Escape,Enter --timeout 60
+
+      - name: Keep the tested runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: mygame-browser
+          path: out/web-release/
+          if-no-files-found: error
+          retention-days: 7

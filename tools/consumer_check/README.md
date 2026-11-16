@@ -225,6 +225,29 @@ ctest --preset wasm-release
 ctest runs `MyGameTests` alone, under Node, and the last command must end
 `Module.onQuit was called` and exit 0.
 
+**The optional browser CI recipe.**
+`website/src/walkthrough/browser-ci.yml` is copied only when a game opts into
+the guide `website/src/content/docs/docs/guides/browser-ci.mdx`; it is absent
+from `assemble.py`'s `PLACED` list and leaves the native workflow alone.
+Its packaging step invokes the consumer's full embedded
+`external/labrador/tools/web_bundle/bundle.mjs`, with the runtime files,
+licences and SDK-version input named in that step. It writes
+`out/web-release/index.html`, `MyGame.js`, `MyGame.wasm`, `NOTICE.txt` and
+`BUILD.json`. Run the page command above with
+`--page out/web-release/index.html` to qualify that packaged copy; the starter
+still quits with `Escape,Enter`. Keep the full embedded engine because the
+page runner imports sibling modules and the website server helper.
+
+`python -m unittest tools.tests.test_consumer_browser_ci` runs the offline
+workflow and real-command packaging fixtures, including missing-input
+failures. On 2026-11-16 the assembled consumer's Release build and Node test
+passed locally with Emscripten 6.0.12, and its packaged page quit in Chrome
+157.0.8103.78 on ANGLE/D3D11/RTX 5080. Its Git identity was unknown because
+the assembled copy was an archive, not a repository. These local results do
+not qualify this new workflow's hosted SDK/cache or artifact-upload steps.
+No deploy step or publication credential is supplied. The bundler's
+`--verify` mode belongs to LineSweeper and does not accept this package.
+
 **With a game-authored shader.** After those baseline checks, both consumer
 jobs run `material_fixture.py` on the assembled copy. It writes a game-owned
 HLSL pixel function, calls `labrador_add_material` from the project's root

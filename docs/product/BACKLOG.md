@@ -598,8 +598,8 @@ unchanged. No collector, workflow, account query, release rebuild or publication
 runs as part of this planning selection.
 
 **Fifth decision triage amendment, 2026-11-16:** L118 to L128 follow the
-eleven selected scopes under the same ready-work rule. OCA-116 waits for
-OCA-79's starter repository proof and selects browser build/test automation,
+eleven selected scopes under the same ready-work rule. The selection made
+OCA-116 conditional on OCA-79's starter repository proof and selected browser build/test automation,
 with deployment automation deferred until its hosting, visibility and
 credential choices are made. SM-95 waits for owner-supplied factual public
 wording rather than invented assurances or a new contributor AI policy.
@@ -608,8 +608,8 @@ iframe regression, image metadata and Simulator work keep the bounded scopes
 below; selection starts none of their runtime, account or publication actions.
 The three retained policies and six deferrals are recorded in
 [the live review ledgers](../review/INDEX.md), with the factual WebGL wording
-follow-up still open as REV#156. All eleven story boxes remain unticked, and
-the earlier fifty-two implementation stories and their order remain unchanged.
+follow-up still open as REV#156. This selection left all eleven story boxes
+unticked and the earlier fifty-two implementation stories and their order unchanged.
 
 **Independent release-preparation lane:** SM-96 may prepare and qualify the
 actual selected v0.4.0 candidate without waiting for the unimplemented stories
@@ -1442,7 +1442,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
 - [ ] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
 
-- [ ] **[OCA-116](#oca-116)** Could · M · The Outside Adopter: Opt into a verified starter browser build/test workflow — after OCA-79
+- [x] **[OCA-116](#oca-116)** Could · M · The Outside Adopter: Opt into a verified starter browser build/test workflow — after OCA-79
 - [ ] **[SM-92](#sm-92)** Should · M · The Sole Owner-Maintainer: Audit current dependency alerts and qualify selected action-runtime updates
 - [ ] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
 - [ ] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
@@ -3015,8 +3015,8 @@ an explicitly requested tag rebuild separately. Update the release/rebuild
 guide and run affected tooling, lint and the website gate.
 
 The following eleven stories are the fifth decision batch selected on
-2026-11-16. Implementation and qualification remain open; OCA-116 and SM-95
-also wait for their named prerequisites. SM-96 uses the independent
+2026-11-16. Their entries track implementation and qualification; SM-95
+waits for owner-supplied wording. SM-96 uses the independent
 release-preparation lane above rather than waiting for the product queue.
 
 <a id="oca-116"></a>
@@ -3047,6 +3047,37 @@ Offline workflow and packaging fixtures cover paths, permissions and missing
 output; the consumer browser check loads the built output, draws and quits
 through its bounded protocol, preserving loader and runtime failures. Run
 affected consumer/tooling checks, lint and the website gate.
+
+**Closed 2026-11-16:** `website/src/walkthrough/browser-ci.yml` is an optional
+second workflow a game copies to `.github/workflows/browser.yml`; neither the
+assembler nor the ordinary starter installs it. The guide quotes that file
+directly. It requests only `contents: read`, builds `wasm-release`, runs the
+game's rules under Node and uses the embedded engine's bundler to gather
+`index.html`, `MyGame.js`, `MyGame.wasm`, `NOTICE.txt` and `BUILD.json`.
+The mandatory browser check drives that package through the starter's
+`Escape,Enter` quit route before a seven-day download artifact is uploaded.
+The preparatory Chrome load remains distinct from that required check.
+
+An assembled consumer at `C:\dev\oca116`, from the worktree based on
+`102a81c7` with this optional recipe, configured and built with Emscripten
+6.0.12. Its one Node rules entry passed. The workflow's command body was also
+run directly with only its local SDK path substituted. Its actual bundle
+arguments produced the five-file package with full notices, then both Chrome
+loads passed: Chrome 157.0.8103.78, ANGLE/D3D11 on the RTX 5080, 60 animation
+frames and `Module.onQuit` after `Escape,Enter`. The heap was 17,956,864 bytes
+at warm-up and quit; this is no pacing, listening, phone or informal-play claim.
+The assembled copy has no Git repository, so its BUILD record honestly names
+an unknown commit rather than borrowing the surrounding checkout's identity.
+
+Four offline tests check the permissions, optional installation and artifact
+paths and execute the workflow's actual bundler command against fixtures.
+They check the five runtime/notice/record outputs, hashes and every licence,
+and require failure without a completed BUILD record when each runtime,
+notice, licence or SDK-version input is removed. The default native workflow,
+manual publication and repository-visibility choices are unchanged. This
+recipe's hosted SDK/cache and upload steps remain unrun; no new hosted push,
+deployment, credential or publication was performed. The guide, starter
+change notes and consumer procedure retain those limits.
 
 <a id="sm-92"></a>
 ### SM-92. Audit dependency alerts and qualify action-runtime updates
