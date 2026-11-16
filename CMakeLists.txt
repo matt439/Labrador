@@ -320,6 +320,12 @@ if(PROJECT_IS_TOP_LEVEL)
             # and timed out (jobs 125764194088, 126339685291).
             set_tests_properties(LineSweeperBundlePageTests PROPERTIES
                 COST 1000 RESOURCE_LOCK linesweeper_frame_timing)
+            labrador_page_test(LineSweeperIframePageTests
+                PAGE "${CMAKE_BINARY_DIR}/web-dist/linesweeper/index.html"
+                TIMEOUT 120
+                ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/iframe_input.mjs")
+            set_tests_properties(LineSweeperIframePageTests PROPERTIES
+                RESOURCE_LOCK linesweeper_frame_timing)
             # The site's own page for the same bundle, from a checkout of the
             # host repository after its sync-demo: the page is the host's, so
             # it is registered only when configure is given that checkout's

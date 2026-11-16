@@ -132,6 +132,10 @@
       "wasm-debug",
       "wasm-release"
     ],
+    "LineSweeperIframePageTests": [
+      "wasm-debug",
+      "wasm-release"
+    ],
     "LineSweeperPacingPageTests": [
       "wasm-release"
     ],
@@ -260,6 +264,7 @@
     "LineSweeperReducedMotionPageTests",
     "LineSweeperPalettePageTests",
     "LineSweeperPointerPageTests",
-    "LineSweeperBundlePageTests"
+    "LineSweeperBundlePageTests",
+    "LineSweeperIframePageTests"
   ]
 }

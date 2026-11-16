@@ -3443,6 +3443,14 @@ where needed. Run local lint and the website gate.
 Selected as the bounded regression part of
 [`REV#72`](../review/2026-11-10/FINDINGS.md#rev72).
 
+**Implemented and locally qualified 2026-11-17; combined-root lint remains.**
+`LineSweeperIframePageTests` retains the packaged page's cross-site iframe
+route, with independent loopback origins, actual host/frame input routing,
+blur pause, quit/replay, default/delegated fullscreen policy and an injected
+loader failure. Child renderer diagnostics join the runner's strict failure
+path. [The dated record](../port/2026-11-17-cross-origin-iframe.md) names the
+clean bundle, browser, renderer, negative control and explicit unrun paths.
+
 **Acceptance**
 
 - Extend the existing bundle/page harness with a cross-origin iframe case

@@ -45,6 +45,11 @@ captured `onError` does the same after frames have drawn. These are automated
 browser checks, not real-phone or physical-controller acceptance. The driver
 is `tests/render/web/bundle_input.mjs`; its injected factory wrapper delegates
 to the packaged module, and only the truncated-response case changes its wasm.
+`LineSweeperIframePageTests` drives that same packaged page inside a cross-site
+iframe on two loopback origins: actual start/focus/pause/quit/replay, fullscreen
+delegation and download-failure UI. Its
+[dated evidence](../../docs/port/2026-11-17-cross-origin-iframe.md) keeps
+headless Chromium separate from external-host, headed and physical acceptance.
 `LineSweeperHostPageTests` drives the host site's own page through the same
 steps (`tests/render/web/host_input.mjs`, sharing `bundle_page.mjs`); it is
 registered only when configure is given a host checkout's `public/` folder as

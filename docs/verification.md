@@ -177,7 +177,7 @@ Node AudioTests and audio listening remain separate evidence.
 Even wasm-null can register WebWindowTests and development sample pages when a
 browser is found. It is not a Node-only or browser-free command. The plan names
 required GL browser registrations, conditional null pages and forbidden null
-pixel/context/bundle/pacing entries; the first two come from the inventory's
+pixel/context/bundle/iframe/pacing entries; the first two come from the inventory's
 `chromium_registered` list. The executor inspects actual registrations,
 rejects zero selected tests and absent required pages, then reports the selection.
 `--no-tests=error` cannot detect a missing page while unrelated tests still exist.

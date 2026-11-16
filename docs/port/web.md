@@ -660,6 +660,15 @@ cmake --preset wasm-release -DLABRADOR_HOST_SITE=C:/Projects/PersonalWebsite/pub
 ctest --preset wasm-release -R LineSweeperHostPageTests
 ```
 
+`LineSweeperIframePageTests` retains the packaged example page's cross-site
+iframe route in Chromium, using independent `localhost` and `127.0.0.1`
+loopback origins. It checks click-to-start, real host/frame keyboard focus,
+blur pause, quit/replay, default and delegated fullscreen policy, origin
+separation and a failed loader's recovery UI. It runs only with a rasterizing
+browser backend. [The dated qualification](2026-11-17-cross-origin-iframe.md)
+records its source, device and limits; Firefox, Safari, external hosts and
+headed fullscreen/Escape remain separate evidence.
+
 It passed on 2026-11-04 against host commit `6b57e7c` (the `v0.3.0` bundle) in
 headless Chrome 153 on SwiftShader. A GPU process restart on SwiftShader is
 not a real GPU's driver reset, and emulation is not a real phone.
