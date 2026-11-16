@@ -57,6 +57,12 @@ carry it.
   CMake's discovery details. A copy can replace `find_package(doctest CONFIG REQUIRED)`
   with that line after moving its engine pin; the ordinary CMake call still works.
 
+
+- **2026-11-16.** Development starter ZIPs include an optional
+  `labrador.vsconfig` at the project root. A copy can download the same file
+  from *Install the tools* to select the Visual Studio prerequisites; the
+  manual route and vcpkg's default tool downloads stay the same. The file
+  installs nothing by itself and does not change the CMake project.
 - **2026-11-16.** A native game stays hidden until its first completed frame,
   including content loading and the first draw. The engine reveals a normally
   visible window itself; no platform show call is needed. Explicit hidden smoke

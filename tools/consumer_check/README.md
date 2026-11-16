@@ -22,6 +22,19 @@ rather than a submodule, and it builds nothing. It also puts the example
 workflow the *Check your game in CI* guide gives at `.github/workflows/ci.yml`,
 where nothing runs it.
 
+The assembled project also gets the walkthrough's optional `labrador.vsconfig`
+beside its presets. The manual project route needs no such file: it selects
+the same Visual Studio prerequisites by hand. Assembly and CMake never run an
+installer or change vcpkg's tool selection. The configuration matches the
+five-entry selection and bootstrapper command qualified on Visual Studio
+Community 2026 18.12.0 in the
+[isolated installation record](../../docs/review/2026-11-10-first-run/2026-11-13-visual-studio-install.md).
+`test_consumer_check_starter.py` checks that selection, the command and the
+assembled/ZIP bytes. The website's configuration download reads the same
+canonical file; after a site build, compare `website/dist/labrador.vsconfig`
+with `website/src/walkthrough/labrador.vsconfig` before claiming payload
+verification. A later installer is not qualified by the older install record.
+
 `starter_zip.py` writes the same project, engine included, to a ZIP: the
 starter ZIP each release carries as `labrador-starter-vX.Y.Z.zip`, which
 *Get the starter project*
