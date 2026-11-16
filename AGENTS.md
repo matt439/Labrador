@@ -300,8 +300,11 @@ pull request already passed. Citation checking skips `website/`.
   `wasm-release-null` has no row: a standalone run lists them as not checked.
   The [fixture script](cmake/check_agent_brief_fixtures.cmake)
   proves the failures. README.md's counts are not checked.
-- Sources are enumerated explicitly in engine/test/sample CMakeLists.txt;
-  add each new `.cpp`, or it is silently absent from the build.
+- Sources are enumerated explicitly in CMakeLists.txt. The compiler-free
+  [source check](docs/source-enumeration.md) requires tracked `.cpp` files in
+  engine, tests, samples and bench to have directory-aware declarations,
+  including conditional backend lists. It checks enumeration, not whether
+  the host selected and compiled each source. Add each new file to its list.
 - No preset sets a ctest timeout, so each entry carries its own:
   `labrador_add_test_suite` gives 60 s unless given `TIMEOUT`, sized from the
   CI durations its comment records; page entries are bounded by their
@@ -334,7 +337,8 @@ pull request already passed. Citation checking skips `website/`.
 `python tools/lint_local.py --base origin/master` runs CI's whole `lint` job
 in its order and stops at the first failure: the per-commit golden-review and
 CHANGES.md checks over the range (without `--base`, HEAD alone), the CMake
-lint scripts, the Node flash, pacing and bundle tests, and the Python suite.
+lint scripts, the tracked C++ source-enumeration check, the Node flash, pacing
+and bundle tests, and the Python suite.
 `--list` prints the commands. Its test fails when the lint job's step names,
 order or commands differ from it; the prose lists of steps are not checked.
 The CMake lint scripts alone (no configure required):

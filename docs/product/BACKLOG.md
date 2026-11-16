@@ -1400,7 +1400,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
 - [ ] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
 - [x] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
-- [ ] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
+- [x] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
 - [ ] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
 - [ ] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
 - [ ] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
@@ -1944,6 +1944,17 @@ Selected from [`REV#51`](../review/2026-11-10/FINDINGS.md#rev51).
 case-count floor. Offline fixtures include orphans, duplicate basenames,
 relative paths, target_sources and conditional sources; run local lint and
 the website gate. No compiler or new CI job is required by this check.
+
+**Implemented 2026-11-16:** `tools/check_source_enumeration.py` compares the
+tracked source paths with directory-aware source declarations in tracked
+CMake lists. It counts conditional/backend alternatives without configuring,
+handles local lists and the existing suite wrapper, and refuses unsupported
+source expressions with file/line guidance. The existing lint job and local
+runner share its command. [The lexical contract](../source-enumeration.md)
+states the supported forms and separates enumeration from compilation/test
+execution. Fixtures exercise orphan paths, duplicate basenames, comments,
+relative paths, target_sources, conditional lists, assignment/removal,
+unknown expressions, caller-relative helpers and CLI failure statuses.
 
 <a id="sm-81"></a>
 ### SM-81. Qualify native MSVC Release IPO before enabling it

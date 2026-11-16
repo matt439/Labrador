@@ -162,14 +162,20 @@ and the last seven are jobs in
 every path it changes is a `.md` file or under `docs/`, the `changes` job
 says so, the build jobs report without building, and `lint` runs the
 citation check, the agent brief check with its offline fixtures, the engine and
-LineSweeper include walls with their offline layer fixtures, offline source
-revision fixtures, the whitespace check, the flash-definition, pacing-analysis
+LineSweeper include walls with their offline layer fixtures, tracked C++ source
+enumeration, offline source-revision fixtures, the whitespace check, the flash-definition, pacing-analysis
 and bundle-verification tests, and the Python tooling suite, after the
 per-commit golden-review and CHANGES.md checks every change gets.
 `python tools/lint_local.py --base origin/master` runs that whole job locally,
 in `ci.yml`'s order, and stops at the first failure; its offline test fails
 when the job's step names, order or commands differ from the script's, but
 not when this paragraph's list does.
+
+The [source-enumeration check](docs/source-enumeration.md) requires explicit,
+directory-aware declarations for tracked `.cpp` files in engine, tests,
+samples and bench across all conditional branches. It runs without a compiler
+and refuses unsupported source expressions with an actionable diagnostic;
+passing does not prove a host selected, compiled or tested each source.
 
 The Vulkan SDK download and its offline helper tests use Python 3.11 or newer. Its bounded HTTP
 retry helper leaves SHA-256 validation and installation outside the retry;
