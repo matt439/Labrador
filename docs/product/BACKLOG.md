@@ -3117,8 +3117,8 @@ fixtures, tooling/lint and the website gate accompany the local commit.
 
 Selected from [`REV#52`](../review/2026-11-10/FINDINGS.md#rev52), after SM-81.
 
-**Prerequisite:** SM-81's native MSVC Release qualification and build policy
-have landed. This story remains blocked until that dependency closes.
+**Prerequisite satisfied, 2026-11-17:** SM-81's native MSVC Release
+qualification and standalone build policy have landed.
 
 **Acceptance**
 
@@ -3137,6 +3137,18 @@ claim. Offline workflow/planner fixtures prove schedule and registration
 selection; retain the first qualified hosted results after publication.
 Changing scheduling is explicit implementation scope, not an execution made
 by this planning record. Run relevant tooling, lint and the website gate.
+
+**Implementation, 2026-11-17:** the separate schedule/manual-only
+`weekly-configurations.yml` selects the four additional native Release
+presets and `wasm-debug` on the existing Monday 03:17 UTC timing. It checks
+their unchanged exact inventories, retains complete test/device output and
+uses explicit native Release IPO plus the existing software-driver/material
+tool setup. The twenty required PR contexts, the independent ASan preset
+and its instrumentation/detection checks, and all seven local release/driver
+obligations remain. [The qualification and cost record](../verification-weekly.md)
+holds the first hosted receipt, which is **waiting for owner publication**;
+the implementation does not push, activate a schedule or dispatch a run.
+The story remains unticked until that hosted result is retained.
 
 <a id="sm-90"></a>
 ### SM-90. Invoke an aggregate counter snapshot when cutting a release

@@ -74,8 +74,8 @@ class Drift(unittest.TestCase):
     def test_every_configuration_ci_tests_is_checked_and_listed(self):
         workflow = (REPOSITORY / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         matrix = set(re.findall(r"^\s+- preset: (\S+)$", workflow, re.MULTILINE))
-        # The rest are the presets CI never builds, which ci_gap_report holds
-        # to the same lists.
+        # Ordinary required PR CI omits the whole candidate-qualification
+        # presets. Their separate weekly software lane uses the same inventory.
         whole = {gap.preset for gap in gap_report.GAPS if not gap.real_driver}
         sanitizer_workflow = (REPOSITORY / ".github/workflows/sanitizers.yml").read_text(encoding="utf-8")
         sanitizers = set(re.findall(r"ctest --preset (\S+)", sanitizer_workflow))

@@ -15,7 +15,7 @@ Every configure/build/test phase remains `not-run` unless `--execute` is explici
 The executor stops at the first failed command or validation and names it.
 The real sweep ran on 2026-10-29 ([qualification](#real-sweep-qualification-2026-10-29));
 fake-command tests qualify the control flow. The per-change record of what
-CI cannot run is [below](#configurations-ci-cannot-run).
+required PR CI does not fully qualify is [below](#release-and-real-driver-qualification).
 
 These examples run from the repository root:
 
@@ -433,13 +433,18 @@ caused a consumer relink with no C++ recompilation. The starter assembler's
 ordinary source-copy set includes this file. These are local link/runtime
 results; hosted CI retains its own qualification.
 
-## Configurations CI cannot run
+<a id="configurations-ci-cannot-run"></a>
 
-CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on
+## Release and real-driver qualification
+
+Ordinary required PR CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on
 `x64-debug-gl` and `x64-debug-vulkan` with software rasterisers, Mesa's llvmpipe and Chrome's
 SwiftShader, so a real driver is what those two presets leave out. Its matrix
-also leaves out the four release presets other than `x64-release` (CI's
-`wasm-release` is the browser one), and `wasm-debug`.
+also leaves out the four native Release presets other than `x64-release`
+and `wasm-debug`. The [additional weekly workflow](verification-weekly.md)
+runs those five as non-required software checks against their existing exact
+inventories. That periodic result does not qualify a later candidate or a
+real driver, so the local release/driver obligations remain unchanged.
 It runs before each release on a real GPU, which CONTRIBUTING's *Cutting a
 release* makes a step, and is not required of a pull request.
 `tools/ci_gap_report.py` holds that list; its test derives the same list from
@@ -462,7 +467,7 @@ so the record covers every selected preset. Results come from JUnit, because
 and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
 case, a nonzero ctest exit, or a required test that was never registered makes
 the preset fail. On `x64-debug-gl` and `x64-debug-vulkan` the required tests
-are the pixel and smoke tests. Each preset CI never builds must register
+are the pixel and smoke tests. Each whole candidate qualification must register
 exactly its list in `tests/ctest_inventory.json`, the file CI holds its own
 configurations to: an entry missing from the run or one the list does not
 name fails the preset, naming the entry. `wasm-debug`'s list has the pages
@@ -476,7 +481,7 @@ read, HEAD moved during the run, or the output directory exists or cannot be
 made; argument errors also exit 2. The plan exits 0.
 
 Its standard output is the body of the pull request template's
-"Configurations CI cannot run" section. It names the commit and how many
+"Configurations outside required PR CI" section. It names the commit and how many
 uncommitted changes the tree had, and lists each run preset's device as its
 `RenderPixelTests` named it, read from the JUnit as the sweep reads it: "not
 reached" where configure or build failed, and "no test here draws on a device"

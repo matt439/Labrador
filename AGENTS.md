@@ -155,13 +155,17 @@ The current mapping covers four engine folders:
 | `engine/app/` | All seven render tracks, with `AppTests`, native `MinimalSmokeTests` and `CollisionSmokeTests` and native-null `LocalMultiplayerSmokeTests`; the window reaches every backend. |
 | Other engine folders, samples, website and tooling | Not modeled by the planner; follow their current owners and affected-configuration checks. |
 
-`python tools/ci_gap_report.py --execute` builds and tests what CI cannot
-(GL/Vulkan pixel and smoke tests on a real driver, four release presets,
+`python tools/ci_gap_report.py --execute` builds and tests release qualification
+outside required PR CI (GL/Vulkan pixel and smoke tests on a real driver, four additional release presets,
 `wasm-debug`) and prints
 the PR template's section; its test fails if `ci.yml` drifts from its list.
-A preset CI never builds fails unless it registers exactly its inventory list.
+A whole candidate qualification fails unless it registers exactly its inventory list.
 It is a release step, not a per-PR one: a pull request without a GPU writes
 "Not run" ([CONTRIBUTING](CONTRIBUTING.md#before-opening-a-pull-request)).
+The same five additional configurations have separate non-required weekly
+software coverage; it does not replace the candidate or real-driver sweep.
+[Weekly verification](docs/verification-weekly.md) owns its exact inventory,
+cost evidence and first hosted qualification.
 
 The five native selections are `x64-debug`, `x64-debug-d3d12`, `x64-debug-gl`,
 `x64-debug-vulkan` and `x64-debug-null`. CI's wasm-null selection is an explicit
@@ -371,8 +375,9 @@ document it makes false, then a PR and rebase-merge on green. Master is protecte
 merges are linear, and required checks are strict. Update a branch with
 `git rebase origin/master`, never by merging master into it: the golden-review
 check in `lint` refuses merge commits. Adding, removing or renaming
-a CI job or matrix entry requires the owner to update branch protection and its
-required-check list.
+a required PR job or matrix entry requires the owner to update branch protection
+and its required-check list. The documented schedule-only weekly and sanitizer
+jobs stay outside that list and add no PR contexts.
 
 For the owner's work with agents, accumulate self-contained commits on a local
 work branch across tasks. Create the branch from `master` when no work branch

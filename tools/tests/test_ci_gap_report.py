@@ -52,7 +52,7 @@ def git_runner(heads: list[str], dirty: str = ""):
 
 
 class DriftTests(unittest.TestCase):
-    def test_gaps_are_exactly_what_ci_leaves_out(self):
+    def test_gaps_are_exactly_what_ordinary_required_ci_leaves_out(self):
         workflow = (REPOSITORY / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         # Each matrix entry runs from its "- preset:" line through the lines
         # indented as its keys are.

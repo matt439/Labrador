@@ -2,7 +2,7 @@
 
 <!-- One paragraph per commit is enough; the commit messages carry the detail. -->
 
-## Configurations CI cannot run
+## Configurations outside required PR CI
 
 <!--
 Not required: CI's green is enough to merge, and this is run on a real GPU
@@ -17,7 +17,9 @@ whose inventory list needs a Chromium and a Firefox).
 It configures, builds and tests x64-debug-gl and x64-debug-vulkan (whose
 RenderPixelTests, MinimalSmokeTests and CollisionSmokeTests CI runs only on
 software rasterisers),
-the four release presets CI does not build, and wasm-debug. A preset left out
+the four additional release presets and wasm-debug. Their separate weekly
+software checks do not qualify this PR's source or replace the release/driver
+sweep. A preset left out
 with --preset stays in the
 table as "not run"; say why. The tool lists each preset's device; fill in
 its "Driver:" line, which no test prints.

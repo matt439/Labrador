@@ -1,0 +1,277 @@
+# The five configurations outside ordinary required PR CI, on the existing
+# weekly timing. A separate schedule/manual workflow keeps these jobs out of
+# ordinary pull-request checks and the branch-protection context list.
+name: additional weekly configurations
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VULKAN_SDK_VERSION: 1.4.357.0
+  VULKAN_SDK_SHA256: 81f474711e9042f4cd22b31b2f7a8870db2e428b21586fb43dd80150be97310d
+  MESA_VERSION: 26.2.6
+  MESA_SHA256: da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388
+  EMSDK_VERSION: 6.0.12
+  CCACHE_VERSION: 4.14.1
+  CCACHE_SHA256: 6219f3865ca59aec41ee4b678df171d5d35855ecb2b6dbbbd20690b3a68af7b4
+  CCACHE_DIR: C:\ccache
+  CCACHE_MAXSIZE: 500M
+  LABRADOR_TEST_BROWSER_ARGS: --disable-gpu-watchdog
+  VCPKG_MAX_CONCURRENCY: '2'
+  EMSDK_QUIET: '1'
+
+jobs:
+  native:
+    name: weekly native (${{ matrix.preset }})
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - preset: x64-release-d3d12
+            software_device: ''
+            vulkan_sdk: false
+          - preset: x64-release-gl
+            software_device: llvmpipe
+            vulkan_sdk: false
+          - preset: x64-release-vulkan
+            software_device: SwiftShader
+            vulkan_sdk: true
+          - preset: x64-release-null
+            software_device: ''
+            vulkan_sdk: false
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
+          restore-keys: vcpkg-${{ runner.os }}-
+
+      - name: Cache the Vulkan SDK installer and Mesa
+        if: (matrix.vulkan_sdk || matrix.software_device == 'llvmpipe')
+        uses: actions/cache@v4
+        with:
+          path: C:\ci-downloads
+          key: ci-downloads-${{ matrix.preset }}-${{ env.VULKAN_SDK_SHA256 }}-${{ env.MESA_SHA256 }}
+
+      - name: Install the Vulkan SDK
+        if: matrix.vulkan_sdk
+        timeout-minutes: 15
+        shell: pwsh
+        run: |
+          $name = "vulkansdk-windows-X64-$env:VULKAN_SDK_VERSION.exe"
+          New-Item -ItemType Directory -Force C:\ci-downloads | Out-Null
+          $installer = Join-Path C:\ci-downloads $name
+          $uri = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/$name"
+          Write-Output "Installing Vulkan SDK $env:VULKAN_SDK_VERSION from $uri"
+          if (Test-Path $installer) {
+            Write-Output "Using the cached installer."
+          } else {
+            python tools/ci_download.py --url "$uri" --output "$installer"
+            if ($LASTEXITCODE -ne 0) {
+              throw "The Vulkan SDK download failed with exit code $LASTEXITCODE."
+            }
+          }
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne $env:VULKAN_SDK_SHA256) {
+            throw "$name does not match VULKAN_SDK_SHA256."
+          }
+          $process = Start-Process -FilePath $installer -WindowStyle Hidden -Wait -PassThru -ArgumentList `
+            "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install"
+          if ($process.ExitCode -ne 0) {
+            throw "The Vulkan SDK installer exited with $($process.ExitCode). Nothing after this step can work, and every message it would produce would name the wrong cause."
+          }
+          if (-not (Test-Path "C:\VulkanSDK\Bin\dxc.exe")) {
+            throw "The Vulkan SDK installed without the dxc that cmake/compile_shaders.cmake looks for in `$VULKAN_SDK/Bin. There is no other one on this runner with a SPIR-V backend."
+          }
+          echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
+
+      - name: Configure
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --preset ${{ matrix.preset }} -DLABRADOR_NATIVE_RELEASE_IPO=ON ${{ matrix.preset == 'x64-release-gl' && '-DVCPKG_MANIFEST_FEATURES=materials' || '' }}
+
+      - name: Build
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset ${{ matrix.preset }} --parallel 2
+
+      - name: Check that every expected test is registered
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          python tools\check_ctest_inventory.py --configuration ${{ matrix.preset }} --build-dir out\build\${{ matrix.preset }}
+
+      - name: Check that each sample declares per-monitor DPI awareness
+        run: python tools\check_dpi_manifest.py out\build\${{ matrix.preset }}\samples
+
+      - name: Point the Vulkan loader at Chrome's SwiftShader
+        if: matrix.software_device == 'SwiftShader'
+        shell: pwsh
+        run: |
+          $manifest = Get-ChildItem "$env:ProgramFiles\Google\Chrome\Application\*\vk_swiftshader_icd.json" |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $manifest) {
+            throw "This runner's Chrome has no vk_swiftshader_icd.json, so the Vulkan tests have no device."
+          }
+          Write-Output "Vulkan driver: $($manifest.FullName)"
+          New-Item -Path HKLM:\SOFTWARE\Khronos\Vulkan\Drivers -Force | Out-Null
+          New-ItemProperty -Path HKLM:\SOFTWARE\Khronos\Vulkan\Drivers -Name $manifest.FullName -PropertyType DWord -Value 0 -Force | Out-Null
+          echo "VK_DRIVER_FILES=$($manifest.FullName)" >> $env:GITHUB_ENV
+
+      - name: Put Mesa's llvmpipe beside the tests that make a device
+        if: matrix.software_device == 'llvmpipe'
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $name = "mesa3d-$env:MESA_VERSION-release-mingw.7z"
+          New-Item -ItemType Directory -Force C:\ci-downloads | Out-Null
+          $archive = Join-Path C:\ci-downloads $name
+          $uri = "https://github.com/pal1000/mesa-dist-win/releases/download/$env:MESA_VERSION/$name"
+          if (-not (Test-Path $archive)) {
+            python tools/ci_download.py --url "$uri" --output "$archive"
+            if ($LASTEXITCODE -ne 0) {
+              throw "The Mesa download failed with exit code $LASTEXITCODE."
+            }
+          }
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $env:MESA_SHA256) {
+            throw "$name does not match MESA_SHA256."
+          }
+          $mesa = Join-Path $env:RUNNER_TEMP mesa
+          7z e -y "-o$mesa" $archive x64/opengl32.dll x64/libgallium_wgl.dll | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            throw "7z could not extract Mesa's two DLLs from $name."
+          }
+          Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\tests\render"
+          Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\samples\minimal"
+          Copy-Item "$mesa\*.dll" "out\build\${{ matrix.preset }}\samples\collision"
+          echo "GALLIUM_DRIVER=llvmpipe" >> $env:GITHUB_ENV
+
+      - name: Test
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          ctest --preset ${{ matrix.preset }} --parallel 1 --output-on-failure --no-tests=error --test-output-size-passed 1048576 --output-junit "${{ github.workspace }}/out/build/${{ matrix.preset }}/weekly-results.xml"
+
+      - name: Record the device that drew
+        if: matrix.preset != 'x64-release-null'
+        working-directory: out/build/${{ matrix.preset }}/tests/render
+        run: |
+          RenderPixelTests.exe -tc="the renderer reports the rasterising device it selected" > device.txt || exit /b 1
+          type device.txt
+          if "${{ matrix.software_device }}"=="" exit /b 0
+          findstr /C:"Drawing on" device.txt | findstr /C:"${{ matrix.software_device }}" >nul || (echo RenderPixelTests did not draw on ${{ matrix.software_device }}. & exit /b 1)
+
+      - name: Keep the frames a golden check rejected
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-golden-actual-${{ matrix.preset }}
+          path: out/build/${{ matrix.preset }}/tests/render/golden-actual/
+          if-no-files-found: ignore
+
+      - name: Keep the native test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-results-${{ matrix.preset }}
+          path: |
+            out/build/${{ matrix.preset }}/weekly-results.xml
+            out/build/${{ matrix.preset }}/Testing/Temporary/LastTest.log
+            out/build/${{ matrix.preset }}/tests/render/device.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  browser:
+    name: weekly browser (wasm-debug)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up the MSVC environment
+        uses: ./.github/actions/msvc-env
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
+          restore-keys: vcpkg-wasm-
+      - name: Install Emscripten and ccache
+        uses: ./.github/actions/emscripten
+        with:
+          objects: wasm-debug-weekly-gl
+      - name: Configure Debug WebGL and software Firefox
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          set MSYSTEM=
+          call C:\emsdk\emsdk_env.bat
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --preset wasm-debug -DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON -DVCPKG_MANIFEST_FEATURES=materials
+      - name: Build all configured targets
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          set MSYSTEM=
+          call C:\emsdk\emsdk_env.bat
+          if errorlevel 1 exit /b %errorlevel%
+          "%EM_COMPILER_WRAPPER%" -z
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --build --preset wasm-debug --parallel 2
+          if errorlevel 1 exit /b %errorlevel%
+          "%EM_COMPILER_WRAPPER%" -s
+      - name: Check the exact Debug browser inventory
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          python tools/check_ctest_inventory.py --configuration wasm-debug --build-dir out/build/wasm-debug
+      - name: Run every registered test with browser and device evidence
+        run: |
+          call "%VCVARS%"
+          if errorlevel 1 exit /b %errorlevel%
+          set MSYSTEM=
+          call C:\emsdk\emsdk_env.bat
+          if errorlevel 1 exit /b %errorlevel%
+          ctest --preset wasm-debug --parallel 1 --output-on-failure --no-tests=error --test-output-size-passed 1048576 --output-junit "${{ github.workspace }}/out/build/wasm-debug/weekly-results.xml" -V
+      - name: Keep the browser test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-results-wasm-debug
+          path: |
+            out/build/wasm-debug/weekly-results.xml
+            out/build/wasm-debug/Testing/Temporary/LastTest.log
+            out/build/wasm-debug/tests/render/golden-actual/
+          if-no-files-found: ignore
+          retention-days: 14

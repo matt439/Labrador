@@ -1,6 +1,6 @@
-# Emscripten and ccache for the three browser jobs in ci.yml, which share one
-# compiler and so share its pins (EMSDK_VERSION, CCACHE_VERSION,
-# CCACHE_SHA256, CCACHE_DIR and CCACHE_MAXSIZE in that workflow's env).
+# Emscripten and ccache for ordinary and weekly browser jobs, which share one
+# compiler and its pins (EMSDK_VERSION, CCACHE_VERSION, CCACHE_SHA256,
+# CCACHE_DIR and CCACHE_MAXSIZE in each workflow's env).
 #
 # EMSCRIPTEN IS INSTALLED BY ITS OWN SDK MANAGER, NOT BY AN ACTION, for the
 # reason .github/actions/msvc-env finds vcvars64 through vswhere: the tools to

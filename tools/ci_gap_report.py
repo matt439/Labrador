@@ -1,4 +1,4 @@
-"""Run the configurations CI cannot run and print a pull-request section's body.
+"""Run release/driver qualification outside required PR CI and print its section's body.
 
 The default prints the plan and runs nothing. --execute configures, builds and
 tests each selected preset in turn, records ctest's JUnit per preset and keeps
@@ -31,14 +31,15 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 @dataclass(frozen=True)
 class Gap:
     preset: str
-    # Empty means CI never builds this preset, so every test is the gap.
+    # Empty means ordinary required PR CI omits this preset, so every test
+    # must qualify on the release candidate. Weekly software runs are separate.
     # Otherwise these tests are the ones CI's job for the preset runs only on
     # a software rasteriser, so a real driver is the gap.
     real_driver: tuple[str, ...] = ()
     # Tests that must have run and passed. Registration can quietly drop them:
     # a GL or Vulkan run must include the device tests.
     required: tuple[str, ...] = ()
-    # For a preset CI never builds, the exact set of entries ctest must
+    # For a whole candidate qualification, the exact set of entries ctest must
     # register, from tests/ctest_inventory.json: one missing or one extra
     # fails the preset. Configure registers wasm-debug's browser pages only
     # when it finds a Chromium and a Firefox, so without them its headless
@@ -54,8 +55,10 @@ def whole_preset(preset: str) -> Gap:
     return Gap(preset, expected=tuple(sorted(check_ctest_inventory.expected_tests(INVENTORY, preset))))
 
 
-# What .github/workflows/ci.yml leaves out. tools/tests/test_ci_gap_report.py
-# derives the same list from ci.yml and CMakePresets.json and fails on drift.
+# What ordinary required PR CI leaves out. The five whole presets also run
+# weekly on hosted software; that does not qualify a later release candidate
+# or a real driver. tools/tests/test_ci_gap_report.py checks the ordinary gap,
+# and test_weekly_configurations.py separately holds the weekly selection.
 GAPS = (
     Gap("x64-debug-gl", DEVICE_TESTS, DEVICE_TESTS),
     Gap("x64-debug-vulkan", DEVICE_TESTS, DEVICE_TESTS),
@@ -65,6 +68,8 @@ GAPS = (
     whole_preset("x64-release-null"),
     whole_preset("wasm-debug"),
 )
+
+WEEKLY_PRESETS = tuple(gap.preset for gap in GAPS if not gap.real_driver)
 
 
 class ReportError(ValueError):
@@ -234,7 +239,7 @@ def markdown(outcomes: list[Outcome], *, commit: str, changed: int, executed: bo
                   "Each preset was configured, built and tested in this run; results are ctest's JUnit.", ""]
     else:
         lines += [f"Nothing was run for `{commit}`; this is the plan.", ""]
-    lines += ["| Preset | What CI misses | Result |", "|---|---|---|"]
+    lines += ["| Preset | What required PR CI misses | Result |", "|---|---|---|"]
     for outcome in outcomes:
         result = outcome.result if not outcome.detail else f"{outcome.result}: {outcome.detail}"
         lines.append(f"| `{outcome.preset}` | {scope[outcome.preset]} | {result} |")

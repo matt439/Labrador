@@ -120,6 +120,12 @@ ColourWars does, moves it separately.
 
 ## SDK and cache-tool releases
 
+The [additional weekly workflow](../.github/workflows/weekly-configurations.yml)
+mirrors `ci.yml`'s Emscripten, ccache, Vulkan and Mesa pins. Update both copies
+in the same bump; `test_weekly_configurations.py` refuses a split toolchain.
+Its Debug browser objects use their own ccache namespace. The sanitizer lane
+keeps its separately instrumented dependency triplet and binary-cache namespace.
+
 **Emscripten:** change EMSDK_VERSION in ci.yml and follow the local composite
 action's existing install/activate sequence when installation is authorized.
 Check the imported guide value and hand-written references. The SDK cache key

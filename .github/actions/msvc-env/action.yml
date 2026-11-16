@@ -1,4 +1,4 @@
-# The Windows build environment every Windows job in ci.yml starts from.
+# The Windows build environment shared by ordinary and scheduled jobs.
 #
 # VCPKG_ROOT IS THE RUNNER'S vcpkg. CMakePresets.json reads $env{VCPKG_ROOT}
 # for the toolchain file and configuring fails without it: the same one-time
