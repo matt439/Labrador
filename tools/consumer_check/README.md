@@ -66,8 +66,18 @@ compare, while retaining CMake's package reason, considered configurations
 and versions, and directory/search hints. A declared-but-missing
 port points to toolchain/triplet/discovery repair rather than a duplicate
 entry. A different working baseline is accepted. Optional materials need host
-tools only when a material is selected. The starter's doctest lookup uses the
-same `labrador_find_package` advice; ordinary CMake package lookup remains valid.
+tools only when a material is selected. The shared starter CMake file uses
+`labrador_find_package` for doctest when the selected engine provides it,
+and ordinary `find_package(doctest CONFIG REQUIRED)` otherwise. This keeps
+the development walkthrough's file usable with the released engine it pins.
+
+On 2026-11-17 that same file configured successfully in both a real Git-route
+project with the engine submodule at `v0.3.0` (`0f4f5033`) and a development
+assembly copied from `f21917f5`. CMake traces selected ordinary discovery in
+the former and the helper in the latter; the copied game CMake files had
+identical bytes. These are configure/generate checks, not new build or device
+results. The offline dependency fixtures execute the shared lookup with the
+helper both present and absent and require the imported doctest target.
 
 CI's `consumer` job (`.github/workflows/ci.yml`) makes that ZIP on every pull
 request and every push CI builds, from that run's own checkout, extracts it

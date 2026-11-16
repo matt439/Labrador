@@ -123,6 +123,17 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Keep the walkthrough's package lookup compatible with released engines
+
+**Configure fix.** The shared game CMake file now checks whether the selected
+engine provides `labrador_find_package` before using it. A `v0.3.0` engine
+uses `find_package(doctest CONFIG REQUIRED)` instead, so copying the current
+walkthrough file after selecting that release does not fail with an unknown
+CMake command. Current development engines retain the additional dependency
+diagnostic. An existing ordinary lookup needs no change; a copy containing
+the unconditional new call can take the conditional block from
+`website/src/walkthrough/game-CMakeLists.txt`.
+
 ### 2026-11-17 - Share measured-text alignment with explicit snapping
 
 **Additive API.** `aligned_text_position` in `engine/render/text_alignment.h`

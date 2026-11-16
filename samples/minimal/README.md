@@ -41,6 +41,13 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** The shared project CMake file selects the dependency helper
+  only when the engine provides it, keeping that build file usable with
+  `v0.3.0` too. A copy with an unconditional `labrador_find_package(doctest)`
+  call can take the conditional block from
+  `website/src/walkthrough/game-CMakeLists.txt`; ordinary `find_package`
+  calls need no change.
+
 - **2026-11-17.** The assembled starter offers optional native `build.cmd`,
   `test.cmd` and `play.cmd`, sharing `tools/starter_commands.ps1`. A source
   copy can take these four files from `website/src/walkthrough/helpers/`
