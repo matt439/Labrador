@@ -1437,7 +1437,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-114](#oca-114)** Could · M · The Outside Adopter: Copy held touch buttons and a virtual-stick region without adopting a game action map
 - [ ] **[OCA-115](#oca-115)** Could · S · The Outside Adopter: Read the selected device's texture limit and understand an oversized-texture refusal
 - [ ] **[SM-87](#sm-87)** Could · S · The Sole Owner-Maintainer: Read defined native memory and first-frame measurements without a hard gate
-- [ ] **[SM-88](#sm-88)** Could · S · The Sole Owner-Maintainer: Request a read-only report of CI failures by step, ref and attempt
+- [x] **[SM-88](#sm-88)** Could · S · The Sole Owner-Maintainer: Request a read-only report of CI failures by step, ref and attempt
 - [ ] **[SM-89](#sm-89)** Could · M · The Sole Owner-Maintainer: Exercise five extra configurations weekly as non-required checks — after SM-81
 - [ ] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
 - [ ] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
@@ -3095,6 +3095,22 @@ notifications or write access. Offline fixtures cover attempts, pagination,
 missing steps, cancelled runs and query failures; an explicitly invoked
 read-only comparison may qualify the live path. Run tooling/lint and the
 website gate; this planning selection queries no account.
+
+**Completed 2026-11-17.**
+[`tools/ci_failure_report.py`](../../tools/ci_failure_report.py) is a manually
+invoked GET-only report with explicit repository, original-run creation
+window and latest/all attempt scope. Attempt-specific metadata/job queries
+retain retries separately; cancellation, incomplete observations and missing
+steps stay explicit. Bounded pagination, request/run/attempt caps, identity
+mismatches, duplicate sources and auth/API failures are reported rather than
+silently becoming zero failures. Captured response sets replay offline with
+no network fallback. It changes no workflow, schedule, run, issue or setting.
+[The command contract and qualification](../ci-failure-report.md) record
+limits, exit codes and the public single-run comparison: three report GETs
+selected run 43694319140 attempt 1, with one observed failed Firefox-page
+step on a work-in-progress ref. Independent source metadata and offline
+replay agreed. This is not a flakiness or whole-history finding. Offline
+fixtures, tooling/lint and the website gate accompany the local commit.
 
 <a id="sm-89"></a>
 ### SM-89. Extend weekly configurations after native Release qualification
