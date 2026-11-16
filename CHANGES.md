@@ -80,6 +80,21 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Retain short mouse-click edges
+
+**Behaviour change.** A mouse press and release delivered between fixed
+updates now makes both `pressed` and `released` true on the next update,
+exactly once; `held` and `MouseState::buttons` still report the live state.
+The snapshot helpers use `MouseState::pressed_buttons` and
+`released_buttons` as well as held-state transitions. Multiple clicks in one
+update coalesce without retaining their order or count. Focus loss and capture
+cancellation discard pending gesture edges, including when focus returns
+before the next update. Keyboard semantics are unchanged. A game that assumes
+`pressed` implies `held`, or that the two edges cannot coincide, must handle
+the completed click explicitly. The copied `PointerCapture` sample provides
+that policy: it presses now and releases next tick at the sampled position,
+unless cancelled; existing copies can take its header and source together.
+
 ### 2026-11-16 - Report malformed hex colours explicitly
 
 **Additive API.** `colour_from_hex(std::string_view)` returns a colour for

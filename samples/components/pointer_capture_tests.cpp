@@ -78,6 +78,47 @@ TEST_CASE("a click is pressed, held while it moves, and released where it lets g
 	check(devices.tick(), PointerPhase::none);
 }
 
+TEST_CASE("a completed mouse click is pressed then released at its sampled position")
+{
+	Devices devices;
+	devices.mouse.on_move(Vector2I(10, 20));
+	devices.mouse.on_button_down(MouseButton::left);
+	devices.mouse.on_button_up(MouseButton::left);
+	check(devices.tick(), PointerPhase::pressed, Vector2I(10, 20));
+	CHECK_FALSE(devices.mouse.held(MouseButton::left));
+	CHECK(devices.capture.active());
+	devices.mouse.on_move(Vector2I(300, 400));
+	check(devices.tick(), PointerPhase::released, Vector2I(10, 20));
+	CHECK_FALSE(devices.capture.active());
+	check(devices.tick(), PointerPhase::none);
+}
+
+TEST_CASE("a deferred short mouse click still respects page and platform cancellation")
+{
+	Devices devices;
+	devices.mouse.on_button_down(MouseButton::left);
+	devices.mouse.on_button_up(MouseButton::left);
+	check(devices.tick(), PointerPhase::pressed);
+	SUBCASE("the page cancels")
+	{
+		devices.capture.cancel();
+		check(devices.tick(), PointerPhase::none);
+	}
+	SUBCASE("focus leaves and returns")
+	{
+		devices.mouse.set_focused(false);
+		devices.mouse.set_focused(true);
+		check(devices.tick(), PointerPhase::cancelled);
+	}
+	SUBCASE("the platform cancels capture")
+	{
+		devices.mouse.cancel_buttons();
+		check(devices.tick(), PointerPhase::cancelled);
+	}
+	CHECK_FALSE(devices.capture.active());
+	check(devices.tick(), PointerPhase::none);
+}
+
 TEST_CASE("a tap is pressed, then released where the finger was last seen")
 {
 	Devices devices;

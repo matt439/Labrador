@@ -97,6 +97,12 @@ namespace labrador
 		float wheel = 0.0f;
 		float wheel_horizontal = 0.0f;
 
+		// Transitions delivered since the previous poll, one bit per button.
+		// Several transitions of the same kind coalesce. Both can be set for
+		// a short click while buttons still reports the live held state.
+		uint8_t pressed_buttons = 0;
+		uint8_t released_buttons = 0;
+
 		// False for MouseButton::none and MouseButton::count, which are bounds
 		// rather than buttons.
 		bool is_down(MouseButton button) const;
@@ -105,7 +111,10 @@ namespace labrador
 	static_assert(static_cast<unsigned int>(MouseButton::count) <= 8,
 		"MouseState::buttons is one byte. More buttons than that need more.");
 
-	// The edges between two frames, and the rule they inherit.
+	// The edges delivered in now or implied by a change in held state.
+	// Both pressed and released may be true for a click completed between
+	// polls. The masks in now expire at the next poll, with no event ordering
+	// or click count. Hand-authored snapshots may leave the masks zero.
 	//
 	// Button edges also require matching button_epoch values: cancelled capture
 	// ends a gesture without inventing a release.
@@ -148,15 +157,14 @@ namespace labrador
 		// exactly this seam. The tests in tests/input/
 		// drive a Mouse with no window anywhere.
 		//
-		// Button changes become visible at poll(), as keys do. A button
-		// pressed and released between polls has no sampled edge: neither
-		// pressed() nor released() reports it. Touch keeps such a tap; the
-		// mouse does not.
+		// Button changes become visible at poll(). A press and release between
+		// polls reports both edges once, while held() follows the live state.
+		// Repeated down/up messages without a transition add no edge.
 		void on_move(const Vector2I& position);
 		void on_button_down(MouseButton button);
 		void on_button_up(MouseButton button);
-		// Clears buttons at the next poll without synthesizing normal release
-		// edges. Focus, position, and wheel input are preserved.
+		// Clears buttons and pending edges at the next poll without normal
+		// release edges. Focus, position, and wheel input are preserved.
 		void cancel_buttons();
 
 		// Accumulated until the next poll, not replaced. Several wheel
@@ -167,14 +175,14 @@ namespace labrador
 		void on_wheel_horizontal(float notches);
 
 		// The window gained or lost the mouse. Losing it puts every button up
-		// and drops the wheel accumulated so far; the position is left where
+		// and drops pending button edges and wheel input; the position is left where
 		// it was, because zero is a real place and pretending the cursor went
 		// there is worse than admitting nothing is known.
 		void set_focused(bool focused);
 
 		// THE FRAME BOUNDARY, called by the shell. What was current becomes
 		// previous, what the messages have been building becomes current, and
-		// the wheel accumulator resets so the next frame counts from nothing.
+		// button-edge and wheel accumulators reset for the next update.
 		void poll();
 
 		const MouseState& state() const;
@@ -197,7 +205,7 @@ namespace labrador
 
 	private:
 		// What the messages have been building since the last poll. Its wheel
-		// fields are the accumulator; every other field is the live value.
+		// and button-edge fields accumulate; the other fields are live values.
 		MouseState live_;
 
 		MouseState current_;

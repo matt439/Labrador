@@ -96,8 +96,26 @@ namespace
 		void on_deactivated() override { this->note("deactivated"); }
 		void on_suspending() override { this->note("suspending"); }
 		void on_resuming() override { this->note("resuming"); }
-		void on_keyboard_gained() override { this->note("keyboard_gained"); }
-		void on_keyboard_lost() override { this->note("keyboard_lost"); }
+		void on_keyboard_gained() override
+		{
+			this->mouse_.set_focused(true);
+			this->note("keyboard_gained");
+		}
+		void on_keyboard_lost() override
+		{
+			this->mouse_.set_focused(false);
+			this->note("keyboard_lost");
+		}
+
+		// The runner owns this frame boundary, so real browser input can be
+		// delivered entirely between two Mouse polls, independent of rAF.
+		int poll_mouse()
+		{
+			this->mouse_.poll();
+			return (this->mouse_.held(labrador::MouseButton::left) ? 1 : 0) |
+				(this->mouse_.pressed(labrador::MouseButton::left) ? 2 : 0) |
+				(this->mouse_.released(labrador::MouseButton::left) ? 4 : 0);
+		}
 
 		void on_fullscreen_changed(bool fullscreen) override
 		{
@@ -148,16 +166,19 @@ namespace
 
 		void on_mouse_button_down(labrador::MouseButton button) const override
 		{
+			this->mouse_.on_button_down(button);
 			this->note(std::string("button_down ") + button_name(button));
 		}
 
 		void on_mouse_button_up(labrador::MouseButton button) const override
 		{
+			this->mouse_.on_button_up(button);
 			this->note(std::string("button_up ") + button_name(button));
 		}
 
 		void on_mouse_capture_lost() const override
 		{
+			this->mouse_.cancel_buttons();
 			this->note("capture_lost");
 		}
 
@@ -207,6 +228,7 @@ namespace
 		int height_ = 0;
 		mutable bool ticked_ = false;
 		bool throw_on_key_ = false;
+		mutable labrador::Mouse mouse_;
 	};
 
 	// Static, because in a browser pump_until_quit unwinds main's stack
@@ -222,6 +244,11 @@ namespace
 		options.client_size = labrador::Vector2I(320, 200);
 		return options;
 	}
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_poll_mouse()
+{
+	return recorder.poll_mouse();
 }
 
 // Closes the window from the page, as a game's quit would, so that the input

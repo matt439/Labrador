@@ -257,6 +257,38 @@ export async function drive_window(page, input) {
 
 	// A LOST CAPTURE. The keyboard going elsewhere mid-drag ends the drag as
 	// WM_CAPTURECHANGED does, and the release that follows is nobody's.
+	// Poll only on request: even if browser frames elapse during dispatch,
+	// these events all reach the mouse before its next fixed update.
+	const poll_mouse = () => evaluate('Module._web_window_test_poll_mouse()');
+	await poll_mouse();
+	await poll_mouse();
+	await press(CANVAS);
+	await release(CANVAS);
+	await check('a short click reaches the window before the next mouse poll',
+		['mouse_move 100 50', 'button_down left', 'button_up left']);
+	await pass('the short click has both edges with no held button', async (what) =>
+		expect(what, await poll_mouse(), 6));
+	await pass('the next poll has no click edges', async (what) =>
+		expect(what, await poll_mouse(), 0));
+	await press(CANVAS);
+	await release(CANVAS);
+	await press(CANVAS);
+	await check('pending click then held press before focus leaves',
+		['mouse_move 100 50', 'button_down left', 'button_up left',
+			'mouse_move 100 50', 'button_down left']);
+	await evaluate('document.getElementById("elsewhere").focus(), true');
+	await check('focus cancellation discards the pending gesture',
+		['capture_lost', 'keyboard_lost']);
+	await release(OUTSIDE);
+	await check('the cancelled release is not delivered', []);
+	await pass('no pending click is reported after cancellation', async (what) =>
+		expect(what, await poll_mouse(), 0));
+	await evaluate('document.getElementById("canvas").focus(), true');
+	await check('focus can return without a gesture', ['keyboard_gained']);
+	await pass('focus return synthesises no button edge', async (what) =>
+		expect(what, await poll_mouse(), 0));
+	await move(CANVAS);
+	await take();
 	await press(CANVAS);
 	await check('a second press', ['mouse_move 100 50', 'button_down left']);
 	await evaluate('document.getElementById("elsewhere").focus(), true');

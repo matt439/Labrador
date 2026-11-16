@@ -108,8 +108,6 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-85` | OPEN | should | S | Reject negative camera scales explicitly; mirroring waits for a real caller (`REV#124`). [Scope](docs/product/BACKLOG.md#oca-85). |
-| `OCA-86` | OPEN | should | S | Preserve short mouse-click edges between updates, truthful held state and focus-loss cancellation (`REV#38`). [Scope](docs/product/BACKLOG.md#oca-86). |
 | `OCA-87` | OPEN | should | M | Reveal a normally visible native window after its first completed frame; qualify every native renderer and full screen (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
 | `OCA-88` | OPEN | should | S | API, guide and regressions implemented; finish the remaining render-matrix and website qualification (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
 | `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
