@@ -367,3 +367,60 @@ TEST_SUITE("Camera::world_position")
 		}
 	}
 }
+
+TEST_SUITE("Camera scale contract")
+{
+	TEST_CASE("every transform refuses invalid scales when consumed")
+	{
+		const Viewport pane(0.0f, 0.0f, 100.0f, 80.0f);
+		const RectangleF world(10.0f, 20.0f, 30.0f, 40.0f);
+		for (const float scale : { 0.0f, -0.0f, -1.0f,
+			std::numeric_limits<float>::quiet_NaN(),
+			std::numeric_limits<float>::infinity(),
+			-std::numeric_limits<float>::infinity() })
+		{
+			CAPTURE(scale);
+			Camera mutated;
+			mutated.scale = scale;
+			for (const Camera& camera : { Camera(Vector2F::zero, scale),
+				Camera(0.0f, 0.0f, scale), Camera(pane, scale), mutated })
+			{
+				CHECK_THROWS_WITH_AS(camera.calculate_view_rectangle(world),
+					"Camera::calculate_view_rectangle: the camera's scale must be finite and positive",
+					std::invalid_argument);
+				RectangleF in_place = world;
+				CHECK_THROWS_AS(camera.calculate_view_rectangle(in_place),
+					std::invalid_argument);
+				CHECK(in_place == world);
+				CHECK_THROWS_WITH_AS(camera.calculate_view_position(Vector2F(1, 2)),
+					"Camera::calculate_view_position: the camera's scale must be finite and positive",
+					std::invalid_argument);
+				CHECK_THROWS_WITH_AS(camera.calculate_view_scale(2.0f),
+					"Camera::calculate_view_scale: the camera's scale must be finite and positive",
+					std::invalid_argument);
+				CHECK_THROWS_WITH_AS(camera.visible_rectangle(pane),
+					"Camera::visible_rectangle: the camera's scale must be finite and positive",
+					std::invalid_argument);
+				CHECK_THROWS_WITH_AS(camera.world_position(Vector2I(1, 2), pane),
+					"Camera::world_position: the camera's scale must be finite and positive",
+					std::invalid_argument);
+			}
+		}
+	}
+
+	TEST_CASE("positive scales preserve the forward and inverse transforms")
+	{
+		const Viewport pane(0.0f, 0.0f, 100.0f, 80.0f);
+		for (const float scale : { 0.25f, 1.0f, 4.0f })
+		{
+			const Camera camera(10.0f, 20.0f, scale);
+			CHECK(camera.calculate_view_position(Vector2F(18.0f, 32.0f)) ==
+				Vector2F(8.0f * scale, 12.0f * scale));
+			CHECK(camera.calculate_view_scale(3.0f) == 3.0f * scale);
+			CHECK(camera.visible_rectangle(pane) ==
+				RectangleF(10.0f, 20.0f, 100.0f / scale, 80.0f / scale));
+			CHECK(camera.world_position(Vector2I(8, 12), pane) ==
+				Vector2F(10.0f + 8.0f / scale, 20.0f + 12.0f / scale));
+		}
+	}
+}

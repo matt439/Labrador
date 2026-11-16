@@ -1376,7 +1376,7 @@ No new removal API or stale-handle guarantee is implied.
 
 - [x] **[OCA-84](#oca-84)** Could · L · The Outside Adopter: Write one HLSL post material and build it for Windows and the browser
 
-- [ ] **[OCA-85](#oca-85)** Should · S · The Outside Adopter: Refuse a camera scale the engine cannot render correctly
+- [x] **[OCA-85](#oca-85)** Should · S · The Outside Adopter: Refuse a camera scale the engine cannot render correctly
 - [x] **[SM-76](#sm-76)** Should · S · The Sole Owner-Maintainer: Refuse undefined integer conversions and division
 - [ ] **[OCA-86](#oca-86)** Should · S · The Outside Adopter: A short mouse click reaches the next fixed update
 - [ ] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
@@ -1483,6 +1483,17 @@ Focused camera and Scene culling tests cover hand-built/mutated cameras,
 framing, invalid-scale consumption and valid positive scales in native-null
 and wasm configurations; follow the render verification owner for changed
 render code, and run the website gate for published contracts.
+
+**Closed 2026-11-16:** every consuming Camera transform refuses a zero,
+negative or non-finite scale with a named `std::invalid_argument` before
+calculating its result. Construction and the public field remain available;
+directly assigned values are checked when consumed. The shared sprite/text
+recording path and Scene's visible-rectangle cull use those transforms.
+Camera tests cover all construction forms, direct mutation, unchanged
+in-place rectangles on failure and valid positive scales; native-null and
+wasm-release-null RenderTests and SceneTests pass, including invalid draw
+and cull consumption. The caller contract, drawing guide and CHANGES.md
+state the rule. The website gate checks the published contract.
 
 <a id="sm-76"></a>
 ### SM-76. Guard integer geometry conversions and division

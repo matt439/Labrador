@@ -15,6 +15,7 @@
 #include "engine/render/viewport.h"
 #include "tests/render/null_test_harness.h"
 
+#include <limits>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -135,6 +136,27 @@ TEST_CASE("the camera reaches the recording, because it is applied before it")
 	REQUIRE(drawn.size() == 1);
 	CHECK(drawn[0].corners[0].position.x == doctest::Approx(0.0f));
 	CHECK(drawn[0].corners[0].position.y == doctest::Approx(0.0f));
+}
+
+TEST_CASE("invalid camera scales cannot record sprites or text")
+{
+	Harness harness;
+	for (const float scale : { 0.0f, -1.0f,
+		std::numeric_limits<float>::quiet_NaN(),
+		std::numeric_limits<float>::infinity() })
+	{
+		DrawList list = harness.begin();
+		Camera camera;
+		camera.scale = scale;
+		list.set_camera(camera);
+		CHECK_THROWS_AS(list.draw_sprite(harness.quad, Harness::whole(),
+			RectangleF(0, 0, 2, 2), Colour::white, 0.0f,
+			Vector2F::zero, SpriteFlip::none, 0.0f), std::invalid_argument);
+		CHECK_THROWS_AS(list.draw_text(harness.font, L"A", Vector2F::zero,
+			Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f),
+			std::invalid_argument);
+		CHECK(harness.end().empty());
+	}
 }
 
 TEST_CASE("one glyph is one sprite, and the atlas is the texture")

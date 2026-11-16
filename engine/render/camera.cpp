@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 namespace labrador
 {
@@ -13,6 +14,15 @@ namespace labrador
 		bool positive_finite(float value)
 		{
 			return value > 0.0f && std::isfinite(value);
+		}
+
+		void check_scale(float scale, const char* operation)
+		{
+			if (!positive_finite(scale))
+			{
+				throw std::invalid_argument(std::string(operation) +
+					": the camera's scale must be finite and positive");
+			}
 		}
 	}
 
@@ -39,6 +49,7 @@ namespace labrador
 	RectangleF Camera::calculate_view_rectangle(
 		const RectangleF& world_rectangle) const
 	{
+		check_scale(this->scale, "Camera::calculate_view_rectangle");
 		return RectangleF((world_rectangle.x - this->translation.x) * this->scale,
 			(world_rectangle.y - this->translation.y) * this->scale,
 			world_rectangle.width * this->scale,
@@ -95,12 +106,7 @@ namespace labrador
 	}
 	RectangleF Camera::visible_rectangle(const Viewport& viewport) const
 	{
-		if (this->scale == 0.0f || !std::isfinite(this->scale))
-		{
-			throw std::invalid_argument(
-				"Camera::visible_rectangle: the camera's scale is zero or not "
-				"finite, so it shows no region of the world");
-		}
+		check_scale(this->scale, "Camera::visible_rectangle");
 
 		return RectangleF(this->translation,
 			Vector2F(viewport.width / this->scale,
@@ -109,12 +115,7 @@ namespace labrador
 	Vector2F Camera::world_position(const Vector2I& buffer_point,
 		const Viewport& viewport) const
 	{
-		if (this->scale == 0.0f || !std::isfinite(this->scale))
-		{
-			throw std::invalid_argument(
-				"Camera::world_position: the camera's scale is zero or not "
-				"finite, so no world point is under any pixel");
-		}
+		check_scale(this->scale, "Camera::world_position");
 
 		const RectangleI pane = viewport.pixel_rect();
 		return Vector2F(
@@ -126,11 +127,13 @@ namespace labrador
 	Vector2F Camera::calculate_view_position(
 		const Vector2F& world_position) const
 	{
+		check_scale(this->scale, "Camera::calculate_view_position");
 		return Vector2F((world_position.x - this->translation.x) * this->scale,
 			(world_position.y - this->translation.y) * this->scale);
 	}
 	float Camera::calculate_view_scale(float world_scale) const
 	{
+		check_scale(this->scale, "Camera::calculate_view_scale");
 		return world_scale * this->scale;
 	}
 	// Literals rather than Vector2F::zero, because a const object is not a
