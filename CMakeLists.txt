@@ -281,11 +281,10 @@ if(PROJECT_IS_TOP_LEVEL)
             PAGE "$<TARGET_FILE:MinimalSample>"
             ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/load_failure_input.mjs")
         labrador_sample_page_test(CollisionPageTests CollisionSample "Escape")
-        # S stops a loop that is not playing, so it changes nothing on the
-        # board, and it is a key that grants activation: the gesture that
-        # lets Web Audio make its context. Escape grants none (the gesture note
-        # in engine/audio/webaudio/audio_device.cpp) and is only the way out.
-        labrador_sample_page_test(AudioPageTests AudioSample "KeyS,Escape")
+        # A grants activation and plays the direct WAV. S stops any loop;
+        # Escape grants no activation and is only the way out. The separate
+        # Web Audio driver observes the native graph and natural source end.
+        labrador_sample_page_test(AudioPageTests AudioSample "KeyA,KeyS,Escape")
         # Navigate settings, request an animation restart, then quit. A browser can
         # consume Escape to leave full screen, so send a second press for the gallery.
         # This checks page loading/drawing/exit, without reading the rows or frames.

@@ -27,7 +27,7 @@ advisory once the fix has landed.
 ## What input the engine trusts
 
 **Content files are trusted input.** The engine reads `.dds` and `.png`
-textures, `.spritefont` fonts, `.xwb` wave banks, an asset manifest
+textures, `.spritefont` fonts, `.xwb` wave banks, PCM `.wav` files, an asset manifest
 (`manifest.json`) and the sprite-sheet and sound-bank JSON a manifest names. It
 reads them to turn a mistake in content a developer made into a clear error,
 not to defend a process against a file written to attack it. If your game
@@ -38,14 +38,15 @@ untrusted code.
 
 What the readers do, and what the tree has tests for:
 
-- **A malformed file is a throw at load that names the file.** The four
-  binary readers (`.dds`, `.png`, `.spritefont` and `.xwb`) throw
+- **A malformed file is a throw at load that names the file.** The five
+  binary readers (`.dds`, `.png`, `.spritefont`, `.xwb` and `.wav`) throw
   `std::out_of_range` naming the path when there is no file there, and every
   reader throws `std::runtime_error` naming the path and what is wrong with it
   otherwise, including the JSON reader for a file it cannot open
   (PHILOSOPHY T6). The tests in `tests/core/byte_reader_tests.cpp`,
   `tests/render/dds_file_tests.cpp`, `tests/render/png_file_tests.cpp`,
   `tests/render/sprite_font_file_tests.cpp`, `tests/audio/xwb_file_tests.cpp`,
+  `tests/audio/wav_file_tests.cpp`,
   `tests/assets/json_tests.cpp` and `tests/assets/asset_manifest_loader_tests.cpp`
   feed the readers missing, truncated, mislabelled and inconsistent files and
   check that each is refused, and some of them that the message names the file
@@ -69,6 +70,10 @@ What the readers do, and what the tree has tests for:
 - **`.xwb` banks are bounds-checked per entry** - each entry's play region must
   lie inside the bank's wave data and its loop inside the wave - and the
   MS-ADPCM decoder's step is clamped so a corrupt block cannot overflow it.
+- **PCM `.wav` chunks are checked before decoding.** RIFF and chunk sizes,
+  padding, format arithmetic, nonempty whole frames and the optional `smpl`
+  loop are checked against the file and portable audio limits. Unsupported
+  encodings and duplicate format/data/sampler chunks fail by name.
 - **JSON reads are checked.** `engine/assets/json.h` wraps rapidjson so that a
   missing key or a value of the wrong type is a throw naming the file and where
   in it, rather than an assertion that a Release build has disabled.
@@ -93,9 +98,14 @@ What the readers do not do:
   tests above are hand-written cases, not a search for inputs nobody thought
   of. The native AddressSanitizer lane supplies neither fuzzing nor race,
   leak or undefined-behaviour coverage.
-- **Memory use has two limits and no budget.** Every reader loads the whole
+- **Format limits do not impose a memory budget.** Every reader loads the whole
   file into memory, whatever its size; the binary readers refuse only a file
   longer than the build can address, which matters to a 32-bit browser build.
+  The PCM WAV reader checks RIFF/chunk extents and decoded API count limits,
+  but the complete file and decoded samples coexist during loading; unsigned
+  PCM8 doubles its payload bytes when expanded to signed PCM16. Backend-owned
+  playback storage and caller copies add their documented costs. These are
+  format/API bounds, not a per-file memory budget.
   A `.png` is refused above 16384 pixels a side, which still allows a decode of
   one gibibyte from a much smaller file. A `.dds` or a `.spritefont` cannot ask
   its reader for more than it holds, because its pixels must all be in the

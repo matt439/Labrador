@@ -27,12 +27,14 @@
 // transitions without the asynchronous buffer completion XAudio2 reports.
 //
 // open_wave_bank stores the supplied wave names without opening a container.
-// Missing-container failures and ResourceLoader's optional-bank fallback to
-// SoundBank::silent() therefore cannot be exercised through this backend.
-// A wave's loop region is in the container and never crosses the seam, so no
-// record carries one: play_voice records the loop it was asked for and not
-// which frames would repeat. tests/audio/webaudio/webaudio_tests.cpp follows a
-// region from a container to the browser's source node.
+// Its missing-container failures cannot be exercised through this backend.
+// WAV assets read and validate their file above the seam on every backend,
+// so their optional-file fallback is observable under null too.
+// File-backed loop regions stay in the unread container. play_voice records
+// the loop it was asked for; recorded_memory_bank additionally exposes owned
+// PCM samples and frame-based regions for the in-memory route. Neither record
+// is a mixer. tests/audio/webaudio/webaudio_tests.cpp follows a region into the
+// browser's source node.
 
 namespace labrador
 {
@@ -85,5 +87,11 @@ namespace labrador
 	// The device owns the vector; opening another bank may invalidate this
 	// reference. Copy names needed across that operation or device destruction.
 	const std::vector<std::string>& recorded_wave_names(
+		const AudioDevice& device, AudioDevice::WaveBankHandle bank);
+
+	// The device's owned PCM input, or nullptr for a name-only file bank.
+	// Checked handles follow recorded_wave_names. Borrowed until the owning
+	// device implementation is destroyed; opening another bank retains it.
+	const WaveBankData* recorded_memory_bank(
 		const AudioDevice& device, AudioDevice::WaveBankHandle bank);
 }

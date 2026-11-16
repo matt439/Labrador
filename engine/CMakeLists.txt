@@ -17,6 +17,8 @@ add_library(LabradorEngine STATIC
     assets/sprite_sheet_loader.cpp
     audio/audio_resources.cpp
     audio/sound_bank.cpp
+    audio/wave_data.cpp
+    audio/wav_file.cpp
     audio/xwb_file.cpp
     collision/broad_phase.cpp
     collision/collision_object.cpp

@@ -90,7 +90,7 @@ tar -a -c -f C:\dev\mygame-release.zip -C C:\dev mygame-release
 - The content lines copy what the build copies beside the program while you work. When you add
   a folder to `content`, add an `install(DIRECTORY ...)` line for it after the fonts one, such
   as `install(DIRECTORY content/textures DESTINATION .)` or
-  `install(DIRECTORY content/sounds DESTINATION .)`, or the release will start and then stop on
+  `install(DIRECTORY content/waves DESTINATION .)`, or the release will start and then stop on
   the missing file, naming it. [Put a picture in your game](/docs/guides/your-picture/) and
   [Play a sound in your game](/docs/guides/your-sound/) add those two lines.
 - The notice lines copy the licence of each thing the program carries, as

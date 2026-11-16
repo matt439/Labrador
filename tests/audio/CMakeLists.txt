@@ -7,6 +7,8 @@ labrador_add_test_suite(AudioTests
         audio_resources_tests.cpp
         sound_bank_tests.cpp
         wave_tables_tests.cpp
+        wave_data_tests.cpp
+        wav_file_tests.cpp
         xwb_file_tests.cpp
     LINKS LabradorEngine
 )
@@ -56,7 +58,7 @@ add_dependencies(AudioTests audio_test_content)
 # It is where SoundBank's effect verbs say what they did, and where the level
 # clamp is read back off the numbers that reached the device.
 if(LABRADOR_AUDIO_BACKEND STREQUAL "null")
-    target_sources(AudioTests PRIVATE null/null_tests.cpp)
+    target_sources(AudioTests PRIVATE null/null_tests.cpp null/memory_bank_tests.cpp)
     target_compile_definitions(AudioTests PRIVATE LABRADOR_TEST_NULL_AUDIO)
 endif()
 

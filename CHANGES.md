@@ -127,6 +127,33 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Load direct PCM WAV assets and owned memory banks
+
+**New audio input.** A `wave` manifest asset loads `<directory>/<name>.wav`
+as a one-wave bank with a same-name persistent effect. The first-sound guide
+uses this route without XWBTool. Existing `sound_bank`/XWB content and playback
+remain supported; no dependency or notice changes are required.
+
+`AudioDevice::open_memory_bank(WaveBankData)` takes owned decoded PCM, so
+caller containers may be released after loading. Null retains samples for
+recording, XAudio2 owns SoundEffects and Web Audio owns AudioBuffers. The
+portable route accepts nonempty mono/stereo signed 16-bit frames at
+8000–96000 Hz, with checked names, a 2 GiB decoded payload limit per wave
+and frame-based loop regions.
+Looping voices play from the beginning before repeating the stored region;
+zero loop length loops the whole wave. Banks/voices stay with their owning
+device implementation; replacing a SoundBank resource does not free them.
+
+`read_wav_file` supports little-endian RIFF PCM8/PCM16 and an optional single
+forward integral `smpl` loop, returning owned signed 16-bit samples. Other
+encodings, malformed chunk geometry and inconsistent PCM fields fail by name
+before publication. `WaveData`, `WaveBankData` and `WaveEncoding` now have
+the neutral `engine/audio/wave_data.h` header; `xwb_file.h` continues to
+include them, preserving existing type spellings and includes. The audio
+sample adds A for the WAV ping alongside its XWB controls. Compressed codecs
+and streamed music remain separate work. Web Audio buffer failures now retain
+the browser's original reason beside the bank and wave names.
+
 ### 2026-11-17 - Share pointer hit arithmetic over authored targets
 
 **New API.** `PointerTarget` and `hit_pointer_target` in

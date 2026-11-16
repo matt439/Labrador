@@ -10,6 +10,12 @@
             "directory": "./sounds/",
             "names": ["tones"],
             "optional": false
+        },
+        {
+            "kind": "wave",
+            "directory": "./waves/",
+            "names": ["ping_wav"],
+            "optional": false
         }
     ]
 }

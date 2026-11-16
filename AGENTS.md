@@ -223,10 +223,13 @@ paths are planning information; they do not establish a build or test result.
   always headless: XAudio2 presets use `SoundBank::silent()` and bank-reader
   tests; native null adds recorded wave/level/order assertions; wasm uses
   `webaudio_tests.cpp` under Node with no Web Audio, and holds a wave's loop
-  region to a recording stand-in there; no XAudio2 test plays a region and null
-  records none. The shared `.xwb` reader
+  region to a recording stand-in there. The native audio smoke also plays an
+  owned PCM region through XAudio2 after releasing caller storage; null records
+  that memory bank's samples and region without a clock. The shared `.xwb` reader
   checks PCM/MS-ADPCM against original WAVs and refuses xWMA/XMA/compact entries.
-  XAudio2 keeps DirectXTK's reader. `samples/audio/README.md` owns authoring and
+  XAudio2 keeps DirectXTK's reader. A shared RIFF reader accepts bounded PCM WAV,
+  and `open_memory_bank` owns decoded samples on all three backends.
+  `samples/audio/README.md` owns authoring and
   playback; XAudio2 smoke needs an endpoint. Browser `AudioSampleTests` tests
   lifecycle under Node instead of a command-line smoke. Nobody has listened to
   this backend's output; an AnalyserNode measurement is not listening evidence.

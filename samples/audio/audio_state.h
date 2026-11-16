@@ -21,9 +21,13 @@ namespace audio
 		void on_activated() override;
 
 	private:
+		void refresh_view();
 		// Borrowed from the application that owns this state and its resources.
 		labrador::Application* app_;
 		std::unique_ptr<SoundBoard> board_;
+		// Borrowed from the application's audio resources, which outlive this state.
+		labrador::SoundBank* wav_bank_ = nullptr;
+		labrador::SoundBank::WaveHandle wav_ping_;
 		labrador::Scene scene_{ nullptr, nullptr };
 		// Owned by scene_ and retained until this state is destroyed.
 		labrador::Label* status_ = nullptr;

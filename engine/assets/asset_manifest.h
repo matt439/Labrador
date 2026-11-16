@@ -8,8 +8,8 @@ namespace labrador
 	// One asset to load: what it is, where it lives, and what it is called.
 	//
 	// `kind` is a key into whatever kinds the loader has been taught, not
-	// something this type interprets. The engine ships four and a game adds its
-	// own, so the set is open by construction and no engine header has to learn
+	// something this type interprets. A game extends the engine's built-in kinds,
+	// so the set is open by construction and no engine header has to learn
 	// the word "level" (T1).
 	//
 	// `name` is both the file's stem and the registry name the asset lands under.

@@ -30,9 +30,12 @@ Each name is a file in the group's directory, with an extension that depends on 
 | `font` | `name.spritefont` | A font, as a pre-rendered glyph atlas. |
 | `sprite_sheet` | `name.dds` or `name.png`, and `name.json` | A texture plus named frames and animations cut from it. |
 | `sound_bank` | `name.xwb` and `name.json` | A bank of sounds, and the names of the sounds in it. |
+| `wave` | `name.wav` | One PCM WAV, loaded as a bank, wave and retained effect with that name. |
 
-A group can say `"optional": true`. Only sound banks honour it today: a missing optional bank
-gives the game silence instead of an error. Anything else that is missing stops the game at
+A group can say `"optional": true`. The two audio kinds honour it: an unavailable optional
+bank or WAV reports a diagnostic and gives the game silence instead of an error. For a WAV,
+that includes a malformed or unsupported container; allocation and memory-data validation
+errors still propagate. Anything else that is missing stops the game at
 startup with a message naming the file
 ([T6, loud failure](/docs/design/philosophy/#t6-loud-failure-over-graceful-degradation)).
 

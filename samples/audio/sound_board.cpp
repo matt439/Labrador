@@ -12,7 +12,7 @@ namespace audio
 		audio_manifest.source_path = manifest.source_path;
 		for (const labrador::AssetEntry& entry : manifest.entries)
 		{
-			if (entry.kind == "sound_bank")
+			if (entry.kind == "sound_bank" || entry.kind == "wave")
 			{
 				audio_manifest.entries.push_back(entry);
 			}

@@ -32,8 +32,8 @@ using namespace labrador;
 // null_tests.cpp. Other AudioTests sources follow their own backend and
 // native Debug conditions in the same CMake file.
 //
-// WHAT IT DOES NOT ASSERT. Nothing here is about sound. There is no mixer, no
-// sample rate and no clock behind these calls, so a case cannot say that two
+// WHAT IT DOES NOT ASSERT. Nothing here is about sound. There is no mixer or
+// playback clock behind these calls, so a case cannot say that two
 // waves overlapped or that one was louder in any physical sense.
 // engine/audio/null/recording.h states the one place the model is deliberately
 // weaker than XAudio2's - a voice with no clock never finishes on its own - and

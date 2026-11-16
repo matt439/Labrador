@@ -578,8 +578,11 @@ engine API to depend on.
   bank, at which levels, in what order — so a test can assert playing on a
   machine with no sound card, and `audio/xaudio2/` is the platform's. The
   second platform is the browser, `audio/webaudio/`, which plays the same
-  banks through the engine's own `.xwb` reader and changed no code above the
-  seam; Android's backend is the whole of what `docs/port/android.md` §3.2
+  banks through the engine's own `.xwb` reader. An owned PCM route also takes
+  WAV or generated wave data on all three backends: each owns its playback
+  storage, and null exposes the samples as well as the calls. Containers and
+  platform types stay outside game code; streaming is a separate mechanism.
+  Android's backend is the whole of what `docs/port/android.md` §3.2
   has left. What the headless one bought was measured before it was written:
   with only DirectXTK behind that module, eight of `SoundBank`'s thirteen instance methods and five sites of level
   clamping were code no test in this repository could reach, because the one

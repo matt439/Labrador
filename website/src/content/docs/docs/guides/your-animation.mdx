@@ -155,9 +155,9 @@ cd /d C:\dev\mygame
    [Put a picture in your game](/docs/guides/your-picture/) and nothing else; the others keep
    the `hero` picture or the fonts from
    [Fonts and text in your game](/docs/guides/your-font/) only if you have them. If you have
-   done [Play a sound in your game](/docs/guides/your-sound/), none of these versions has its
-   `sound_bank` group: after pasting, add the group back with that page's second manifest tab,
-   or the game stops with `SoundBank 'tones' was never loaded.`
+   done [Play a sound in your game](/docs/guides/your-sound/), preserve its `wave` group.
+   The [XWB bank route](/docs/guides/your-sound-xwb/) needs its `sound_bank` group instead.
+   These versions include neither; add the group back or the bank lookup fails at startup.
 
    <Tabs>
    <TabItem label="Picture">

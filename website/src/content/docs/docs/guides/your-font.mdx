@@ -126,9 +126,9 @@ cd /d C:\dev\mygame
    place, then save and close Notepad. Each has the font group with the two new names, which
    are the files' names without `.spritefont`, and keeps the picture or sprite sheet from the
    other pages only if you have them. If you have done
-   [Play a sound in your game](/docs/guides/your-sound/), none of these versions has its
-   `sound_bank` group: after pasting, add the group back with that page's second manifest tab,
-   or the game stops with `SoundBank 'tones' was never loaded.`
+   [Play a sound in your game](/docs/guides/your-sound/), keep its `wave` group when pasting.
+   The [XWB bank route](/docs/guides/your-sound-xwb/) instead needs its `sound_bank` group.
+   These versions include neither; add the group back or the bank lookup fails at startup.
 
    <Tabs>
    <TabItem label="Starter project">

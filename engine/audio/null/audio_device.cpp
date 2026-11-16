@@ -1,10 +1,12 @@
 #include "engine/audio/audio_device.h"
 #include "engine/audio/null/recording.h"
+#include "engine/audio/wave_data_checks.h"
 #include "engine/audio/wave_tables.h"
 
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 // The null audio backend: everything the seam requires, and no audio API.
@@ -16,8 +18,7 @@
 // what an object played rather than only that playing it did not throw.
 // recording.h is what a test reads back; this file is the mechanism.
 //
-// A BANK IS THE LIST OF NAMES IT WAS HANDED, and that is the whole of the
-// container question on this side of the seam. audio_device.h explains why the
+// A FILE BANK IS THE LIST OF NAMES IT WAS HANDED. audio_device.h explains why the
 // list crosses at all: the definition JSON is content engine/assets/ parses,
 // the container is not, and a backend with no container still has to be able to
 // answer "which wave is that" so a misspelt name fails at load the way it does
@@ -25,6 +26,8 @@
 // where the engine decodes a .dds and render/null/ keeps the width and the
 // height - the engine parses its own content and a backend keeps the minimum it
 // needs to answer questions.
+// In-memory banks also retain their owned PCM data for recording; they still
+// have no mixer or playback clock.
 
 namespace labrador
 {
@@ -35,6 +38,7 @@ namespace labrador
 	struct AudioDevice::Impl
 	{
 		WaveTables tables;
+		std::vector<std::unique_ptr<WaveBankData>> memory_banks;
 		std::vector<RecordedSound> recording;
 		bool suspended = false;
 
@@ -70,7 +74,24 @@ namespace labrador
 		std::ignore = directory;
 		std::ignore = name;
 
-		return this->impl_->tables.add_bank(wave_names);
+		this->impl_->memory_banks.reserve(this->impl_->memory_banks.size() + 1);
+		const WaveBankHandle handle = this->impl_->tables.add_bank(wave_names);
+		this->impl_->memory_banks.push_back(nullptr);
+		return handle;
+	}
+
+	AudioDevice::WaveBankHandle AudioDevice::open_memory_bank(WaveBankData data)
+	{
+		detail::validate_wave_bank_data(data);
+		std::vector<std::string> names;
+		names.reserve(data.waves.size());
+		for (const WaveData& wave : data.waves) names.push_back(wave.name);
+		std::unique_ptr<WaveBankData> owned = std::make_unique<WaveBankData>(std::move(data));
+		this->impl_->tables.reserve_bank();
+		this->impl_->memory_banks.reserve(this->impl_->memory_banks.size() + 1);
+		const WaveBankHandle handle = this->impl_->tables.add_bank(std::move(names));
+		this->impl_->memory_banks.push_back(std::move(owned));
+		return handle;
 	}
 
 	int AudioDevice::wave_index(WaveBankHandle bank,
@@ -282,5 +303,13 @@ namespace labrador
 		const AudioDevice& device, AudioDevice::WaveBankHandle bank)
 	{
 		return device.impl()->tables.bank(bank);
+	}
+
+	const WaveBankData* recorded_memory_bank(
+		const AudioDevice& device, AudioDevice::WaveBankHandle bank)
+	{
+		// Keep the same checked-handle behaviour as recorded_wave_names.
+		std::ignore = device.impl()->tables.bank(bank);
+		return device.impl()->memory_banks[static_cast<size_t>(bank.index())].get();
 	}
 }

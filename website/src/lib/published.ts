@@ -214,6 +214,8 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['audio_resources.h', 'AudioResources', 'game code'],
 			['sound_group.h', 'SoundGroup', 'game code'],
 			['audio_device.h', 'AudioDevice', 'game code'],
+			['wave_data.h', 'Owned PCM wave data', 'game code'],
+			['wav_file.h', 'PCM WAV files', 'game code'],
 			['xwb_file.h', 'XWB files', 'game code'],
 		],
 	},
@@ -290,6 +292,10 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 	[
 		'engine/audio/wave_tables.h',
 		'The wave-name and voice tables the null and Web Audio backends share, private to them; the reference documents what a game calls, in audio_device.h and sound_bank.h.',
+	],
+	[
+		'engine/audio/wave_data_checks.h',
+		'Load-time validation shared by audio backends; caller contracts are in wave_data.h and audio_device.h.',
 	],
 	[
 		'engine/input/vibration_output.h',

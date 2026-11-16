@@ -78,7 +78,7 @@ Include `engine/audio/audio_resources.h` and `engine/audio/sound_bank.h`;
 handle or resolve it by name: `add_sound_group` throws for a name already added, and a state's
 `init()` runs again each time the game makes that state again. A group spans banks, so assign
 any other banks' music/effects to those same handles. In a starter project these lines need two
-guides done first: [Play a sound in your game](/docs/guides/your-sound/) loads the `tones` bank,
+guides done first: [Play sounds from an XWB bank](/docs/guides/your-sound-xwb/) loads the `tones` bank,
 and [Copy the components into your game](/docs/guides/your-components/) copies the slider.
 [An effects volume in the starter project](#an-effects-volume-in-the-starter-project) below puts
 these lines and the slider's into the starter's state, with its whole `init()`.
@@ -110,7 +110,7 @@ them, as the gallery does for its Application services.
 
 This puts the lines above into the starter's `HelloState`, as a third row, **Effects**, under
 the two rows of [Copy the components into your game](/docs/guides/your-components/). It needs
-that page's steps 1 to 5 and [Play a sound in your game](/docs/guides/your-sound/)'s part 1 done
+that page's steps 1 to 5 and [Play sounds from an XWB bank](/docs/guides/your-sound-xwb/)'s part 1 done
 first: **P** plays `ping`, and the screen has the **Colour** and **Speed** rows. It takes about
 ten minutes. The commands run in the x64 Native Tools Command Prompt, in `C:\dev\mygame`.
 

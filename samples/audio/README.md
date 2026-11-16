@@ -1,7 +1,7 @@
 # Audio sample
 
-A sound board with two one-shots and one persistent looping voice. It loads a
-required `SoundBank` through the manifest, resolves names once, and shows play,
+A sound board with XWB one-shots, a separate direct-WAV ping and one persistent
+looping voice. It loads required audio through the manifest, resolves names once, and shows play,
 pause, resume, immediate stop, volume, pitch and stereo pan. The original PCM
 content and its ready-to-play XWB container are checked in; a fresh clone needs
 no audio authoring tools.
@@ -21,6 +21,7 @@ out\build\x64-debug\samples\audio\AudioSample.exe
 | Control | Action |
 | --- | --- |
 | 1 / 2 | Play ping / ascending chime; successive one-shots may overlap. |
+| A | Play the same ping from a standalone PCM WAV, without XWBTool. |
 | 3 | Start the drone loop. |
 | Space | Pause or resume the drone; a stopped drone stays stopped. |
 | S | Stop the drone immediately. |
@@ -29,8 +30,11 @@ out\build\x64-debug\samples\audio\AudioSample.exe
 | Q / E | Lower / raise pitch. |
 | Escape | Quit. |
 
+The scene fits a logical 1280 by 720 sound board to the current window or
+canvas, keeping its controls, status and backend description in view on resize.
+
 The displayed values affect the persistent voice immediately and the next
-one-shot at launch. A one-shot has no retained handle, so it cannot be adjusted
+XWB or WAV one-shot at launch. A one-shot has no retained handle, so it cannot be adjusted
 afterward. Losing focus pauses a playing loop and returning resumes it; a loop
 the player paused remains paused. Leaving the state stops the loop while its
 borrowed bank is still alive.
@@ -49,8 +53,12 @@ if %errorlevel% neq 0 echo Audio sample smoke failed
 ```
 
 This check needs no graphics device or window. It loads the packaged manifest's
-required bank, plays both one-shots, starts the looping voice and asserts its
-playing, paused, resumed and stopped states. It exits in about a second. A
+required XWB bank and WAV asset, plays all three one-shots, exercises the WAV's
+auto-created retained effect, and starts the XWB looping voice. Both retained
+effects are checked through playing, paused, resumed and stopped states. It
+also opens an owned PCM bank with a 128-frame region beginning at frame 32,
+destroys the caller's containers, then plays, pauses, resumes and stops that
+loop through the same backend. It exits in about a second. A
 missing bank or inactive audio endpoint fails the XAudio2 check rather than
 accepting silence. With null audio it checks the same lifecycle and explicitly
 reports no playback; it does not validate the XWB container. The `-null`
@@ -62,7 +70,7 @@ active endpoint and stays a check made by hand.
 The `wasm-debug` and `wasm-release` presets build the same sound board as a
 page, `AudioSample.html`, beside its `.js` and `.wasm`, playing through the
 engine's Web Audio backend. `main_web.cpp` is the browser's entry point and
-`web/shell.html` the development page; the manifest, the bank and the font are
+`web/shell.html` the development page; the manifest, the bank, WAV and font are
 embedded in the module at the paths the Windows build copies them to. In a
 shell where vcvars and `emsdk_env.bat` have both run, from the engine's folder
 ([Install Emscripten](https://labradorengine.com/docs/guides/browser/#install-emscripten)
@@ -92,14 +100,17 @@ Escape ends the module and says so under the canvas.
 
 There is no `--smoke-test` in a browser, because a page has no command line.
 Its lifecycle is an `AudioSampleTests` case in this build instead, run under
-Node: the packaged manifest's required bank loaded through the Web Audio
-backend, both one-shots, and the drone played, paused, resumed and stopped.
+Node: the staged manifest's required XWB and WAV loaded through the Web Audio
+backend, one-shots, and retained effects played, paused, resumed and stopped.
 Node has no Web Audio, so that case proves the bank is read and the states are
 right, and nothing about a speaker.
 
-`AudioSampleTests` reads the real manifest and definition and refuses a silent
-bank. Under null audio it also asserts which waves the sample plays, the loop
-lifecycle, the levels sent to both kinds of voice and the stop on teardown.
+`AudioSampleTests` reads the real staged manifest, XWB definition and WAV, and
+refuses missing-content substitutes for required content. Native and Node test
+content is staged from the same original source files as the sample. Under
+null audio it also asserts the WAV's same-name wave/effect, levels, order and
+lifecycle. The original board routing, loop levels and stop-on-teardown
+assertions remain.
 
 ## Longer music tracks
 
@@ -109,6 +120,20 @@ explains stored versus decoded memory costs, the roughly 1 MB content threshold
 for a separate preloaded `.data` file, and why that still loads before startup.
 
 ## Content and provenance
+
+The `wave` manifest entry reads `waves/ping_wav.wav` into one owned memory bank.
+The bank, wave and retained effect are all named `ping_wav`; no JSON bank
+definition or XWBTool is needed. CMake copies or embeds `source/ping.wav` under
+that asset name, so the source tree keeps just one original WAV. The reader
+accepts unsigned 8-bit or signed 16-bit little-endian PCM, mono or stereo, at
+8,000–96,000 Hz. A single integer-frame forward `smpl` loop is supported. With
+no loop region, a looping effect repeats the whole wave.
+
+Both audio kinds preserve content through graphics-device restoration. The
+WAV's decoded samples are owned by the audio device after loading; neither the
+sample nor a voice borrows the file reader's temporary storage. The native
+finite check and browser page's A,S,Escape route exercise this path, while
+listening remains separate evidence.
 
 All three sounds are newly synthesized mathematical tones, with no recorded or
 third-party source audio. They and their generator are covered by the root
@@ -157,8 +182,9 @@ drone: 22050 samples; source PCM matches named XWB entry
 ```
 
 [Play a sound in your game](https://labradorengine.com/docs/guides/your-sound/)
-copies this bank into a starter project with no tools, then packs a WAV of
-the reader's own.
+uses the standalone WAV path in a development starter. The retained
+[XWB walkthrough](https://labradorengine.com/docs/guides/your-sound-xwb/)
+copies this bank into a starter project and explains packing other WAVs.
 
 `-f` retains each filename stem in the bank's name table: Labrador resolves those
 names, so omitting it is a load error. `-nc` selects standard entries so the
@@ -177,13 +203,15 @@ the drone loops its whole wave. A WAV with a `smpl` chunk packs into an entry
 with a region, which a looping effect then repeats after playing the wave from
 its start. The audio guide's
 [loop region section](https://labradorengine.com/docs/guides/audio/#a-loop-region-inside-a-wave)
-says what of that has been checked on each platform; nobody has listened to
-one, and this sample does not exercise it.
+says what of that has been checked on each platform. The finite check creates
+its region in memory; nobody has listened to a region, and this sample's
+checked-in sounds carry none.
 
 The font is copied at build time from `samples/minimal/content/fonts`; its
 provenance is in the root [NOTICE](../../NOTICE). The Windows build also
 compiles the template's DPI awareness declaration,
 `samples/minimal/dpi_aware.manifest`. On Windows the sample plays
-the bank through XAudio2 and DirectXTK's reader; in a browser, through the
-engine's own reader and Web Audio. It introduces no audio backend or engine
-format of its own.
+the XWB bank through XAudio2 and DirectXTK's reader; in a browser, through the
+engine's own XWB reader and Web Audio. The standalone WAV uses the shared PCM
+reader and owned memory-bank seam on every backend. It introduces no codec
+dependency or streamed-audio format.
