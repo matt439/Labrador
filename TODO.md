@@ -59,8 +59,8 @@ existing UTF-8 conversion boundary. Every current `GAP#` and `IDEA#` selection
 call is now recorded; deferred scopes retain their own revisit triggers.
 
 The [fifth batch](#fifth-accepted-decision-batch-of-2026-11-16) adds eleven
-scopes in BACKLOG's L118 to L128. `OCA-116`'s hosted starter prerequisite is
-met, and `SM-95` waits for owner-supplied public disclosure wording.
+scopes in BACKLOG's L118 to L128. `SM-95` waits for owner-supplied public
+disclosure wording.
 `SM-96` refreshes release preparation for the selected candidate independently
 of the new feature queue; the November 13 report does not qualify later
 shader/material changes. Six proposals are deferred and three policies are
@@ -82,8 +82,7 @@ the durable name/slot and resource-lifetime boundaries remain.
 
 Earlier Later item L56, `OCA-79`, is complete: the current-release starter's
 [first public push passed CI](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329).
-`OCA-116` is ready in its existing order. The first six selected product
-priorities remain the next product slice.
+The first six selected product priorities remain the next product slice.
 
 **Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` awaits hosted qualification and its clean-week gate). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
@@ -186,7 +185,6 @@ scope; it does not publish a release, change settings or claim acceptance.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-116` | OPEN | could | M | Optional starter browser build/test CI; hosted starter prerequisite met. Deployment waits for hosting, visibility and credentials (`REV#48`). [Scope](docs/product/BACKLOG.md#oca-116). |
 | `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
 | `SM-93` | OPEN | could | M | Add cross-origin iframe focus/input/permission regressions; host-specific guide and precompression stay deferred (`REV#72`). [Scope](docs/product/BACKLOG.md#sm-93). |
 | `OCA-117` | OPEN | could | S | Add README and link-preview images from reviewed captures; announcements remain a separate owner choice (`REV#73`). [Scope](docs/product/BACKLOG.md#oca-117). |

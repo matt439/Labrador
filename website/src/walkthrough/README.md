@@ -50,6 +50,16 @@ a process-local script-policy option, without changing the user's policy.
 Native stdout/stderr and failure exit codes are retained. Browser commands
 remain in their own guide.
 
+`browser-ci.yml` is an optional second workflow, copied to
+`.github/workflows/browser.yml` only when a game chooses
+*Check your browser build in CI* (`src/content/docs/docs/guides/browser-ci.mdx`).
+The assembler and ordinary starter do not install it. It packages the browser
+runtime and notices, drives that package through the starter's quit route,
+and retains a download artifact; it has only `contents: read` and no deployment.
+`tools/tests/test_consumer_browser_ci.py` executes its actual bundle command
+on fixtures and holds its permissions, package and artifact paths to this
+contract. The ordinary native workflow remains `ci.yml`.
+
 `release-files.txt` goes nowhere: it is every file `cmake --install` puts in the
 project's release folder, which *Ship a Windows release*
 (`src/content/docs/docs/guides/windows-release.mdx`) shows as a table and
