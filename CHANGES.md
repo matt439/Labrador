@@ -80,6 +80,25 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Let states answer native window-close requests
+
+**New API and template behaviour.** Native X, Alt+F4 and system-menu Close now
+ask the top state's `State::on_close_requested()`. Its default `true` keeps
+immediate closure for existing games. Return `false` to decline or defer the
+request while a game-owned confirmation runs; stack changes are applied after
+the handler returns. Later requests ask the current top, and recursive
+requests are ignored. `StateContext::notify_close_requested()` lets a root
+state forward to a nested stack. `WindowNotify` exposes the same hook for
+owners that use the window directly.
+
+`Application::quit()` and `Window::close()` remain final and bypass the hook;
+destruction calls no request handler. The minimal template now uses its
+existing quit question for native close and ignores further requests while
+that question is open. Copy its `HelloState::on_close_requested`,
+`ask_to_quit` helper and `ConfirmState` override to adopt that policy. Browser
+tab closure/navigation, session shutdown and forced termination cannot be
+vetoed through this API.
+
 ### 2026-11-16 - Retain short mouse-click edges
 
 **Behaviour change.** A mouse press and release delivered between fixed

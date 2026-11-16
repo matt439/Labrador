@@ -201,6 +201,27 @@ namespace labrador
 		return this->active_;
 	}
 
+	bool StateContext::notify_close_requested()
+	{
+		if (this->close_request_active_)
+		{
+			return false;
+		}
+		if (this->frames_.empty())
+		{
+			return true;
+		}
+
+		const Deferral request(this->close_request_active_);
+		bool allow_close;
+		{
+			const Deferral deferral(this->deferring_);
+			allow_close = this->frames_.back().state->on_close_requested();
+		}
+		this->apply_pending();
+		return allow_close;
+	}
+
 	int StateContext::depth() const
 	{
 		// The applied stack. Operations queued during this update are not in it

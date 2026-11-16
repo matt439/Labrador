@@ -229,7 +229,9 @@ namespace labrador
 		// no init() meets a service that does not exist (T6).
 		int run(std::unique_ptr<State> first_state);
 
-		// Closes the window, which ends run(). This is the whole of the quit path:
+		// Closes the window, which ends run(), without asking on_close_requested().
+		// Native user close requests first ask the top state; a game asking to
+		// exit here has already made its decision. This is the final quit path:
 		// a game asking to exit does not need to know which platform it is on.
 		// In a browser the page is told, and decides what comes next; the
 		// states and services are released on a later task (APPLICATION.md#7).
@@ -482,8 +484,7 @@ namespace labrador
 		std::chrono::nanoseconds tick_minimized() override;
 
 		// The four that mean "the player is looking at us" or "the player is
-		// not", and the only four that reach the state stack. Non-const for
-		// that reason and no other: see WindowNotify.
+		// not". Non-const because they reach the state stack: see WindowNotify.
 		void on_activated() override;
 		void on_deactivated() override;
 		void on_suspending() override;
@@ -499,6 +500,7 @@ namespace labrador
 		// window, in the order the destructor would release them
 		// (APPLICATION.md#7).
 		void on_closed() override;
+		bool on_close_requested() override;
 		void on_window_moved() const override;
 		void on_window_size_changed(int width, int height) override;
 

@@ -617,6 +617,11 @@ namespace labrador
 		this->options_.fullscreen = fullscreen;
 	}
 
+	bool Application::on_close_requested()
+	{
+		return this->notify_close_requested();
+	}
+
 	void Application::on_closed()
 	{
 		// The destructor's work, which in a browser nothing else does: the

@@ -99,6 +99,14 @@ namespace labrador
 		virtual void on_activated() {}
 		virtual void on_deactivated() {}
 
+		// A native window's X, Alt+F4 or equivalent close request. Only the top
+		// state is asked. Return true to allow immediate closure, or false to
+		// keep running, including while a game-owned confirmation is open.
+		// Stack changes wait until this callback returns. Application::quit()
+		// is final and bypasses this hook. Browser tab closure, navigation and
+		// forced process/session termination cannot be vetoed here.
+		virtual bool on_close_requested() { return true; }
+
 		void set_context(StateContext* context);
 	protected:
 		StateContext* context() const;

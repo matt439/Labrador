@@ -188,3 +188,31 @@ gets `tick` and no wait.
 clock, so what was held toward the next step is dropped and no catch-up runs.
 No frame is published while minimised, so `frame_timings` stands still and the
 first frame back has no interval.
+
+## 9. A close request is distinct from final shutdown
+
+The native window receives the player's X, Alt+F4 and system-menu Close as
+`WM_CLOSE`. It asks `WindowNotify::on_close_requested`; `Application` asks its
+top state through `StateContext::notify_close_requested`. True closes the
+window immediately and false leaves it running. Defaults at both seams allow
+closure, including an application with no states. The state owns any question
+or saving policy; the minimal template pushes its existing confirmation and
+keeps it open across repeated close requests.
+
+The state context defers pushes, pops and transitions until the handler
+returns, preserving its state and captured data through the call. Requests
+afterward ask the new top. Recursive requests during a handler or the
+context's operation drain are ignored, so pumping messages inside a callback
+cannot ask that callback again. A handler that throws follows the native
+window's ordinary stored-exception route. Owners outlive their callbacks;
+tearing down an Application from inside one is outside that lifetime contract.
+
+`Application::quit`, `Window::close` and destruction are final paths and do
+not ask. A handler may use final quit itself; the window checks that its
+handle still exists before applying an allowed request. State destruction
+retains its existing top-down order and delivers no result callbacks.
+
+This contract covers native close requests. Browser tab closure and
+navigation, session shutdown and forced process termination cannot be vetoed
+through it. The browser's in-game quit and deferred release of states and
+services remain section 7's path, with no unload handler added.

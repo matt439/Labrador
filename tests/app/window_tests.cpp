@@ -41,6 +41,15 @@ namespace
 
 		// What tick() does, so one test can make it throw.
 		std::function<void()> on_tick;
+		std::function<bool()> on_close;
+		int close_requests = 0;
+
+		bool on_close_requested() override
+		{
+			++this->close_requests;
+			return this->on_close ? this->on_close() :
+				WindowNotify::on_close_requested();
+		}
 
 		void tick() override
 		{
@@ -226,6 +235,83 @@ TEST_CASE("an ordinary close destroys the window and ends the pump")
 	CHECK_FALSE(class_is_registered());
 }
 
+TEST_CASE("native close requests allow ordinary closure by default")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	SUBCASE("X and an ordinary close request")
+	{
+		SendMessageW(hwnd(window), WM_CLOSE, 0, 0);
+	}
+	SUBCASE("system-menu close, including Alt+F4")
+	{
+		SendMessageW(hwnd(window), WM_SYSCOMMAND, SC_CLOSE, 0);
+	}
+	CHECK(notify.close_requests == 1);
+	CHECK(window.handle() == nullptr);
+	window.pump_until_quit();
+	CHECK_FALSE(quit_is_queued());
+}
+
+TEST_CASE("a declined close keeps running and later requests ask again")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.on_close = []() { return false; };
+	SendMessageW(hwnd(window), WM_CLOSE, 0, 0);
+	SendMessageW(hwnd(window), WM_SYSCOMMAND, SC_CLOSE, 0);
+	CHECK(notify.close_requests == 2);
+	CHECK(IsWindow(hwnd(window)));
+	CHECK_FALSE(quit_is_queued());
+	// The game's final answer does not consult the request callback.
+	window.close();
+	CHECK(notify.close_requests == 2);
+	window.pump_until_quit();
+}
+
+TEST_CASE("a close handler may close finally or pump a recursive request")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	SUBCASE("final close inside the callback")
+	{
+		notify.on_close = [&]()
+			{
+				window.close();
+				return true;
+			};
+		SendMessageW(hwnd(window), WM_CLOSE, 0, 0);
+		CHECK(window.handle() == nullptr);
+		window.pump_until_quit();
+	}
+	SUBCASE("recursive requests are ignored until the callback returns")
+	{
+		notify.on_close = [&]()
+			{
+				SendMessageW(hwnd(window), WM_CLOSE, 0, 0);
+				return false;
+			};
+		SendMessageW(hwnd(window), WM_CLOSE, 0, 0);
+		CHECK(IsWindow(hwnd(window)));
+		window.close();
+		window.pump_until_quit();
+	}
+	CHECK(notify.close_requests == 1);
+	CHECK_FALSE(quit_is_queued());
+}
+
+TEST_CASE("a throwing close handler uses the ordinary stored failure route")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.on_close = []() -> bool { throw std::runtime_error("close failed"); };
+	SendMessageW(hwnd(window), WM_CLOSE, 0, 0);
+	CHECK(window.handle() == nullptr);
+	CHECK(notify.close_requests == 1);
+	CHECK_THROWS_WITH_AS(window.pump_until_quit(), "close failed", std::runtime_error);
+	CHECK_FALSE(quit_is_queued());
+}
+
 TEST_CASE("leaving scope with the window still up destroys it")
 {
 	// The shape of every exit that is not the pump returning: the owner is
@@ -243,6 +329,7 @@ TEST_CASE("leaving scope with the window still up destroys it")
 	}
 
 	CHECK_FALSE(IsWindow(handle));
+	CHECK(notify.close_requests == 0);
 	CHECK_FALSE(class_is_registered());
 
 	// Nothing DestroyWindow sent reached the owner. By the time the

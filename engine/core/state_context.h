@@ -15,13 +15,14 @@ namespace labrador
 	// what it set up; states beneath a pushed screen remain alive.
 	//
 	// transition_to(), push() and pop() issued during this context's update,
-	// init, activation walk or operation drain wait for the enclosing call to
-	// return. Nested callbacks retain that protection; the drain never reenters
-	// itself. Those operations outside these calls take effect immediately.
+	// init, activation walk, close request or operation drain wait for the
+	// enclosing call to return. Nested callbacks retain that protection; the
+	// drain never reenters itself. Operations outside these calls take effect immediately.
 	//
 	// A root State can own a separate StateContext to run code around every
 	// game update and draw. It forwards update, draw and activation to the owned
-	// context, including its parent's active() value during init(). Inner states
+	// context, including its parent's active() value during init(). It forwards
+	// on_close_requested() to notify_close_requested() too. Inner states
 	// use their own context(); Application::depth() then counts only the root.
 	// Frame capture belongs in the root's update after the owned update returns,
 	// never in draw() (engine/render/renderer.h, Renderer::read_back_buffer).
@@ -107,13 +108,22 @@ namespace labrador
 		// in init() to learn whether it entered an inactive context.
 		bool active() const;
 
+		// Asks the current top state's on_close_requested(), or allows closure
+		// when the stack is empty. Does not close a window itself. Stack changes
+		// wait until the callback returns, preserving its state and captures;
+		// the returned decision belongs to that request even if the top changes.
+		// Each later request asks the then-current top. A recursive request
+		// during this notification or its drain returns false without a callback.
+		bool notify_close_requested();
+
 		// Drops queued operations, then destroys live states top first without
 		// delivering result callbacks. It leaves active() unchanged. Also called
 		// by the destructor; repeated calls on an empty stack are harmless.
 		//
 		// Immediate, never deferred: do not call it from a state's update(),
-		// init() or activation callback. The state whose code is running could
-		// be destroyed, along with frames an activation walk has yet to visit.
+		// init(), activation or close-request callback. The state whose code is
+		// running could be destroyed, along with frames an activation walk has
+		// yet to visit.
 		// Owners must clear states before destroying any services they borrow;
 		// Application clears its stack before its service members are destroyed.
 		// A throwing state destructor terminates here: teardown is noexcept (T6).
@@ -151,12 +161,15 @@ namespace labrador
 		std::vector<PendingOp> pending_;
 
 		// True while something of this context's is on the stack - a state's
-		// update(), a state's init(), an activation callback, or the drain
-		// itself.
+		// update(), a state's init(), an activation or close-request callback,
+		// or the drain itself.
 		bool deferring_ = false;
 
 		// The foreground, as last reported. See notify_activation.
 		bool active_ = true;
+
+		// Prevent a close handler that pumps messages from asking itself again.
+		bool close_request_active_ = false;
 
 		void queue(PendingOp op);
 		void apply_pending();

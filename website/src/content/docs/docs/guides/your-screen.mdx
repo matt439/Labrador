@@ -400,12 +400,14 @@ Search for `game/states/confirm_state.h` and add a line after it, so the two rea
 #include "game/states/title_state.h"
 ```
 
-Then search for `Really quit?`. You are in the part of `update` that asks the question:
+Then search for `Really quit?`. In the v0.3.0 starter, this is in `update`.
+The development template shares the same push and callback in `ask_to_quit`,
+so Escape and native close can ask the same question:
 
 <SourceFile
 	path="samples/minimal/states/hello_state.cpp"
-	from="this->context()->push<bool>("
-	to="return;"
+	from="void HelloState::ask_to_quit()"
+	to="}"
 />
 
 Change the question's text, `Really quit?`, to `Back to the title?`, and the line

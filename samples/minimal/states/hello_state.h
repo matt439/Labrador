@@ -20,7 +20,8 @@
 //
 // A state is the whole of what a game is to the engine (PHILOSOPHY, Structural
 // types) - there is no IGame to implement. The engine calls init() once, then
-// update() and draw() every frame, and never asks anything else of you.
+// update() every step and draw() every frame. Optional lifecycle hooks let
+// the game answer focus, suspension and native close requests.
 //
 // It borrows the Application rather than owning anything: the shell created
 // every service before this was constructed and outlives it.
@@ -39,8 +40,11 @@ public:
 	// checkpoint. Dimming is what this one has.
 	void on_suspend() override;
 	void on_resume() override;
+	bool on_close_requested() override;
 
 private:
+	void ask_to_quit();
+
 	labrador::Application* app_ = nullptr;
 
 	// What is on screen, and where it is watched from. A game does not loop

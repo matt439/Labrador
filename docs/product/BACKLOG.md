@@ -1686,6 +1686,21 @@ simulating a cross-platform guarantee. AppTests and native-null state tests
 cover allow, decline, defer, repeat and teardown; follow the app verification
 plan, retain browser lifecycle checks, and run the website gate.
 
+**Implemented 2026-11-16:** `State::on_close_requested` and
+`StateContext::notify_close_requested` let the current top answer a native
+request while retaining its lifetime across queued stack changes. The native
+window asks through `WindowNotify`; final quit, close and teardown bypass the
+hook. The minimal template reuses its quit question and declines repeat close
+requests while it is open. Browser unload behavior is unchanged.
+
+Focused verification in an isolated worktree passed native-null CoreTests,
+AppTests, MinimalStateTests and MinimalSmokeTests (4/4); wasm-debug with null
+render/audio passed CoreTests and AppTests under Node (2/2), and compiled the
+minimal sample and browser window page. The website gate passed. The story's
+box remains open for the combined app verification matrix and browser
+lifecycle runs after integration; these focused results do not qualify the
+other native renderers or a browser page run.
+
 <a id="sm-78"></a>
 ### SM-78. Construct scripted pad input alongside the shipping reader
 

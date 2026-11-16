@@ -133,19 +133,7 @@ void HelloState::update(float dt)
 
 	if (quit_requested)
 	{
-		// Ask, rather than quit. The result type is named here and matched
-		// at the pop; the question knows nothing about this state, and the
-		// callback runs once, when it closes, rather than being a flag read
-		// on every frame until something sets it.
-		this->context()->push<bool>(
-			std::make_unique<ConfirmState>(this->app_, L"Really quit?"),
-			[this](const bool& quit)
-			{
-				if (quit)
-				{
-					this->app_->quit();
-				}
-			});
+		this->ask_to_quit();
 		return;
 	}
 
@@ -195,6 +183,29 @@ void HelloState::update(float dt)
 	// objects.
 	this->scene_->update(dt);
 	this->scene_->end_tick();
+}
+
+void HelloState::ask_to_quit()
+{
+	// Ask, rather than quit. The result type is named here and matched
+	// at the pop; the question knows nothing about this state, and the
+	// callback runs once, when it closes, rather than being a flag read
+	// on every frame until something sets it.
+	this->context()->push<bool>(
+		std::make_unique<ConfirmState>(this->app_, L"Really quit?"),
+		[this](const bool& quit)
+		{
+			if (quit)
+			{
+				this->app_->quit();
+			}
+		});
+}
+
+bool HelloState::on_close_requested()
+{
+	this->ask_to_quit();
+	return false;
 }
 
 void HelloState::on_suspend()

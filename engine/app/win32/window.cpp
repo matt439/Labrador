@@ -305,6 +305,7 @@ namespace labrador
 		// everything window_proc reads has to be initialised before handle is
 		// assigned.
 		WindowNotify* notify = nullptr;
+		bool close_request_active = false;
 		bool in_sizemove = false;
 		bool in_suspend = false;
 		bool minimized = false;
@@ -1374,6 +1375,20 @@ namespace labrador
 	{
 		switch (message)
 		{
+		case WM_CLOSE:
+			if (!this->close_request_active)
+			{
+				this->close_request_active = true;
+				const bool allow_close = this->notify->on_close_requested();
+				this->close_request_active = false;
+				// A handler may have called the final close itself.
+				if (allow_close && this->handle != nullptr)
+				{
+					DestroyWindow(this->handle);
+				}
+			}
+			return 0;
+
 		case WM_PAINT:
 		case WM_MOVE:
 		case WM_SIZE:

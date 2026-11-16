@@ -77,6 +77,16 @@ namespace labrador
 		// pump returns, and that window never calls this.
 		virtual void on_closed() {}
 
+		// A native X, Alt+F4 or equivalent request. True allows immediate
+		// close; false leaves the window running. Repeated requests are asked
+		// again, except recursive requests during this callback are ignored.
+		// close() and destruction bypass this callback. The Window and notify
+		// owner must outlive it; exceptions follow the ordinary handler failure
+		// route. The callback runs synchronously on the native window's thread.
+		// Browser tab closure/navigation and forced process/session termination
+		// provide no veto through this hook.
+		virtual bool on_close_requested() { return true; }
+
 		virtual void on_window_moved() const = 0;
 		virtual void on_window_size_changed(int width, int height) = 0;
 
@@ -101,8 +111,8 @@ namespace labrador
 		// exists to hand over.
 		//
 		// On Windows, F10 and Alt pressed alone are keys and nothing else;
-		// Alt+F4 and Alt+Space reach the game and still close the window and
-		// open its system menu. In a browser the function keys and the Alt
+		// Alt+F4 and Alt+Space reach the game and request closure and open its
+		// system menu respectively. In a browser the function keys and the Alt
 		// chords reach the game and keep their browser defaults.
 		virtual void on_key_down(Key key) const = 0;
 		virtual void on_key_up(Key key) const = 0;
@@ -308,8 +318,8 @@ namespace labrador
 		// Module.onError if it supplied one.
 		void pump_until_quit();
 
-		// Ends the loop. A game asking to exit does not need to know which
-		// platform it is on, so this is the whole of the quit path.
+		// Ends the loop without asking on_close_requested(). A game asking to
+		// exit does not need to know which platform it is on.
 		//
 		// On Windows it destroys the window, which ends the pump. In a browser
 		// it cancels the frame loop, stops listening to the canvas and calls
