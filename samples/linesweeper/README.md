@@ -1042,6 +1042,13 @@ phase. A neutral release update resets menu repeat before the next press. This
 keeps slow browser/DevTools replies from turning one scripted arrow press into
 several menu moves during catch-up updates.
 
+The classic WebDriver Safari sample runner uses the same gate for this
+development page's quit sequence. It sends genuine platform keys, requires
+the actual pause-menu rows 0, 1, 2 and 3, and still requires `Module.onQuit`.
+This keeps driver round-trip latency out of sampled navigation; the separate
+bundle play runs without the gate. It does not qualify ordinary held-key
+repeat or natural gameplay timing.
+
 The checks retain their full control sequences, palette and motion reports,
 real `Module.onQuit`, error policy and timeout. Genuine quit ends the sequence
 without waiting for another game update. They qualify sampled UI actions, not
@@ -1050,7 +1057,7 @@ the development executable, stays inactive unless the runner requests it, and
 is absent from the packaged module and native game. Pacing checks use the
 development executable without enabling this protocol. Offline
 protocol regressions run with `node --test tests/render/web/sample_key.test.mjs
-tests/render/web/sample_input_bridge.test.mjs`
+tests/render/web/sample_input_bridge.test.mjs tests/render/web/safari_protocol.test.mjs`
 from the repository root; hosted wasm checks exercise the real state hooks.
 
 ## Development-page pacing instrument

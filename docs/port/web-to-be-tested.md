@@ -869,3 +869,31 @@ recently [run 43809435219](https://github.com/matt439/Labrador/actions/runs/4380
 at `2b0116cd`, finishing 2026-11-16 05:32 UTC. Skipped jobs supply no stability
 evidence. These green jobs record successful sample and bundle runs, not a
 clean week or a diagnosis of that failure.
+
+### Safari sampled quit follow-up, 2026-11-16
+
+The classic WebDriver runner now uses LineSweeper's existing development-only
+sampled-input gate for its unchanged Escape, Down, Down, Down, Enter sequence.
+Each phase still arrives through a genuine WebDriver key action. One real UI
+update consumes that sampled level, and an acknowledged neutral release resets
+menu repeat before the next down. The runner requires the actual pause-menu
+rows 0, 1, 2 and 3, preserves the page's error policy and deadline, and requires
+the genuine quit callback. It sends no synthetic DOM event and retries no
+sampled key phase. Ordinary drawing and forced context loss/restoration precede
+the gated sequence; the packaged bundle's play runs without this gate.
+
+This addresses the duration-dependent quit sequence exposed by the November
+14 failure without changing the game's repeat policy. The classic-WebDriver
+fixtures feed trusted-action translations to the production handwritten
+JavaScript bridge while running eighty catch-up updates before each reply;
+they require the exact rows and final quit and reject a wrong row, missing
+protocol or bridge error. This is local protocol evidence, not Safari or
+physical-device acceptance. Hosted Safari qualification and a full clean week
+after publication remain open as REV#159; sampled navigation does not qualify
+ordinary held-key repeat or gameplay timing.
+
+Local verification passed all 144 Node cases in the complete
+`BrowserProtocolTests` command, including the classic-WebDriver fixtures,
+and the citation and whitespace checks. No local geckodriver was available,
+so the Firefox-through-classic-WebDriver runner check was not run. No new
+Safari, hosted workflow or hardware session ran for this follow-up.

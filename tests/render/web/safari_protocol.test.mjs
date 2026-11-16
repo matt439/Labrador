@@ -2,14 +2,16 @@
 // control, against fixtures: no Safari, driver or network.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { pixel_diagnostics } from './pixel_diagnostics.mjs';
 import { PRELUDE } from './bundle_page.mjs';
-import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
+import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, SAMPLED_SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
 	assert_test_exit, drive_test, TEST_LOG_HOOK, capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
-	safari_tabs_to_links, session_commands, substitute, webdriver_command } from './run_safari.mjs';
+	safari_tabs_to_links, sampled_linesweeper_quit, session_commands, substitute, webdriver_command } from './run_safari.mjs';
+import { SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 
 test('the options name one mode and refuse every other combination', () => {
 	const sample = parse_options(['--pages', 'p', '--sample', 'minimal']);
@@ -39,6 +41,8 @@ test('each mode serves only its own files and hooks, and only the bundle substit
 	assert.deepEqual(artifact_files(sample).map((file) => file.replace(/\\/g, '/').split('/').slice(-2).join('/')),
 		['collision/CollisionSample.html', 'collision/CollisionSample.js', 'collision/CollisionSample.wasm']);
 	assert.deepEqual(page_scripts(sample), [COMPLAINT_HOOK, SAMPLE_HOOK]);
+	assert.deepEqual(page_scripts(parse_options(['--pages', 'pages', '--sample', 'linesweeper'])),
+		[COMPLAINT_HOOK, SAMPLED_SAMPLE_HOOK]);
 	assert.equal(substitute(sample, new URL('http://h/linesweeper.js')), null);
 	const bundle = parse_options(['--bundle', 'dist']);
 	assert.deepEqual(artifact_files(bundle).map((file) => file.replace(/\\/g, '/').split('/').pop()),
@@ -232,6 +236,24 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 	assert.equal(sandbox.Module.onQuit, undefined);
 });
 
+test('only the sampled development hook wires Module to the shared input protocol', () => {
+	for (const sampled of [false, true]) {
+		class WebGL2RenderingContext { clear() {} drawElements() {} }
+		const sandbox = vm.createContext({ WebGL2RenderingContext });
+		sandbox.window = sandbox;
+		vm.runInContext(sampled ? SAMPLED_SAMPLE_HOOK : SAMPLE_HOOK, sandbox);
+		sandbox.Module = { onQuit() {} };
+		if (sampled) {
+			assert.equal(sandbox.Module.labradorTestInput, sandbox.labradorSafari.input);
+			assert.equal(sandbox.labradorRun, sandbox.labradorSafari);
+			assert.equal(sandbox.Module.labradorTestInput.started, false);
+		} else {
+			assert.equal(sandbox.Module.labradorTestInput, undefined);
+			assert.equal(sandbox.labradorRun, undefined);
+		}
+	}
+});
+
 // A page that answers drive_sample's evaluations as a sample would: it draws
 // on every evaluation, loses and restores its context when asked, and quits
 // once the keys have been pressed and released, if its canvas has the
@@ -311,6 +333,98 @@ test('a sample run draws, survives a forced context loss, quits on its keys and 
 	assert.equal(heard.quit, true);
 	assert.match(lines[0], /context lost 1 and restored 1 times; onQuit observed/);
 	assert.match(lines[0], /RENDERER=WebKit WebGL; unmasked=Apple GPU/);
+});
+
+// The production handwritten Emscripten bridge, with a tiny menu standing in
+// for C++ state updates. Classic WebDriver actions feed real key levels to
+// that bridge; eighty catch-up updates run before each command returns.
+function sampled_session({ wrong_row = false, failure = null, missing_hook = false } = {}) {
+	const source = readFileSync(new URL('../../../samples/linesweeper/web/test_input.cpp', import.meta.url), 'utf8');
+	const body = (name) => {
+		const found = source.match(new RegExp(`EM_JS\\([^,]+, ${name},[\\s\\S]*?\\), \\{([\\s\\S]*?)\\n\\}\\);`));
+		assert.ok(found, name);
+		return found[1];
+	};
+	const heard = { quit: false, errors: [], input: vm.runInNewContext(SAMPLE_INPUT_HOOK) };
+	const module = { labradorTestInput: heard.input };
+	const bridge = vm.createContext({ Module: module, UTF8ToString: (text) => text });
+	const begin = vm.runInContext(`(function(held, pressed, completed) { const key_count = 9; ${body('linesweeper_test_input_begin')} })`, bridge);
+	const ack = vm.runInContext(`(function(id, completed, state, row, palette, result) { ${body('linesweeper_test_input_ack')} })`, bridge);
+	if (missing_hook) heard.input = undefined;
+	const actions = [];
+	const updates = [];
+	let held = 0;
+	let previous = 0;
+	let completed = 0;
+	let state = 'play';
+	let row = -1;
+	const frame = () => {
+		const pressed = held & ~previous;
+		previous = held;
+		const id = begin(held, pressed, completed);
+		if (id <= 0) return;
+		const down = held !== 0;
+		updates.push({ id, down });
+		let result = null;
+		if (state === 'play' && held === 1) result = 'pause';
+		if (state === 'pause' && held === 4) ++row;
+		if (state === 'pause' && held === 32 && row === 3) result = 'quit';
+		if (ack(id, completed, state, wrong_row ? 9 : row, 0, result)) completed = id;
+		if (result === 'pause') { state = 'pause'; row = 0; }
+		if (result === 'quit') heard.quit = true;
+	};
+	const context = vm.createContext({ window: { labradorRun: heard }, requestAnimationFrame: (callback) => {
+		setImmediate(() => { frame(); callback(); });
+	} });
+	const session = {
+		set_timeouts: async () => {},
+		execute_async: async (script, [expression]) => {
+			assert.equal(script, EVALUATE_SCRIPT);
+			try { return JSON.stringify({ value: await vm.runInContext(expression, context) }); }
+			catch (error) { return JSON.stringify({ error: error.message }); }
+		},
+		perform: async ([source]) => {
+			assert.equal(source.type, 'key');
+			assert.equal(source.id, 'keyboard');
+			assert.equal(source.actions.length, 1);
+			const [action] = source.actions;
+			actions.push(action);
+			const code = { '\uE00C': 0, '\uE015': 2, '\uE007': 5 }[action.value];
+			assert.ok(Number.isInteger(code), 'the exact sample quit keys are translated');
+			held = action.type === 'keyDown' ? 1 << code : 0;
+			if (failure) module.labradorTestInput.error = failure;
+			for (let tick = 0; tick < 80; ++tick) frame();
+		},
+	};
+	return { session, actions, updates, heard };
+}
+
+test('classic WebDriver sampled quit keeps exact rows across delayed replies and catch-up', async () => {
+	const run = sampled_session();
+	const logs = [];
+	await sampled_linesweeper_quit(run.session, evaluator(run.session, () => 1000), { log: (line) => logs.push(line) });
+	assert.equal(run.heard.quit, true);
+	assert.deepEqual(run.actions.map((action) => action.type), Array(5).fill(['keyDown', 'keyUp']).flat());
+	assert.deepEqual(run.actions.filter((action) => action.type === 'keyDown').map((action) => action.value),
+		['\uE00C', '\uE015', '\uE015', '\uE015', '\uE007']);
+	assert.deepEqual(run.updates.map((update) => update.down), [true, false, true, false, true, false, true, false, true]);
+	assert.equal(logs.length, 8);
+	assert.match(logs.at(-1), /"row":3/);
+});
+
+test('sampled quit refuses a wrong menu row, a protocol failure and an unavailable hook', async () => {
+	for (const [options, expected] of [
+		[{ wrong_row: true }, /unexpected sampled menu state/],
+		[{ failure: 'bridge failed' }, /bridge failed/],
+		[{ missing_hook: true }, /protocol is unavailable/],
+	]) {
+		const run = sampled_session(options);
+		await assert.rejects(sampled_linesweeper_quit(run.session, evaluator(run.session, () => 1000),
+			{ log: () => {} }), expected);
+		assert.equal(run.heard.quit, false);
+		if (options.missing_hook) assert.equal(run.actions.length, 0);
+		else assert.equal(run.actions.at(-1).type, 'keyUp');
+	}
 });
 
 test('a sample run fails on a complaint, on onError, and on draws that never resume', async () => {

@@ -15,7 +15,10 @@
 // real WebGL2 clears and draws, forces a context loss through
 // WEBGL_lose_context and requires draws to resume after restoration, presses
 // the sample's quit keys as trusted WebDriver key actions and waits for
-// Module.onQuit. --bundle runs bundle_page.mjs's desktop play, forced context
+// Module.onQuit. LineSweeper's development page acknowledges one real UI
+// update per sampled key level, avoiding menu repeat during slow driver
+// replies; this checks sampled actions, not natural held-key timing.
+// --bundle runs bundle_page.mjs's desktop play, forced context
 // loss and restore, quit and replay, as the Chromium and Firefox entries do.
 // --renderer prints Safari's masked RENDERER and the unmasked string
 // WEBGL_debug_renderer_info gives.
@@ -46,6 +49,7 @@ import { WebDriverError, command } from '../../../website/acceptance/webdriver.m
 import { BUNDLE_FILES, PRELUDE, READY, bundle_state, bundle_substitute, steps } from './bundle_page.mjs';
 import { SAMPLES, WEBDRIVER_OPTION, close_server, deadline_after, frames_expression,
 	key_actions as webdriver_key_actions, key_table, module_hook, serve_files } from './page_harness.mjs';
+import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 
 export { SAMPLES };
 
@@ -150,13 +154,15 @@ export const COMPLAINT_HOOK = `(() => {
 
 // The sample page's Module callbacks, its real WebGL2 submissions on the
 // module's canvas, its context events and the renderer strings it drew with.
-export const SAMPLE_HOOK = `(() => {
+function sample_hook(sampled = false) {
+	return `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false,
 		clears: 0, draw_calls: 0, elements: 0, lost: 0, restored: 0,
 		raw_api: null, raw_renderer: null, unmasked_renderer: null,
 		frames: 0, longest_frame_gap_ms: 0, last_frame_ms: null, keys: [], logs: [], audio: [], focus: [] };
 	window.labradorSafari = heard;
-	${module_hook('labradorSafariHooked')}
+	${sampled ? `heard.input = ${SAMPLE_INPUT_HOOK}; window.labradorRun = heard;` : ''}
+	${module_hook('labradorSafariHooked', sampled ? 'value.labradorTestInput = heard.input;' : '')}
 	// What a failed run reports: whether frames kept coming and how far apart,
 	// which key events the page received, and the page's last console lines.
 	if (typeof requestAnimationFrame === 'function') {
@@ -244,6 +250,10 @@ export const SAMPLE_HOOK = `(() => {
 		return result;
 	};
 })();`;
+}
+
+export const SAMPLE_HOOK = sample_hook();
+export const SAMPLED_SAMPLE_HOOK = sample_hook(true);
 
 export function inject_head(html, scripts) {
 	const head = /<head(\s[^>]*)?>/i.exec(html);
@@ -358,6 +368,41 @@ export function held_expression(frames, ms) {
 	})`;
 }
 
+// The same trusted quit sequence as Chromium, with real sampled menu rows.
+// The existing development-only state gate permits one UI update per level;
+// a delayed action or reply cannot add repeat moves before the next release.
+export async function sampled_linesweeper_quit(session, evaluate, { log = console.log, label = 'Safari' } = {}) {
+	const transport = bundle_input(session, evaluate);
+	const expected_down = [
+		{ state: 'play', row: -1, result: 'pause' },
+		{ state: 'pause', row: 1, result: null },
+		{ state: 'pause', row: 2, result: null },
+		{ state: 'pause', row: 3, result: null },
+		{ state: 'pause', row: 3, result: 'quit' },
+	];
+	for (const [index, code] of SAMPLES.linesweeper.keys.entries()) {
+		const dispatched = [];
+		const page = { evaluate, send: async (method, event) => {
+			dispatched.push(event.type);
+			return transport.send(method, event);
+		} };
+		const result = await press_sample_key(page, { code }, { sampled: true });
+		const terminal = index === SAMPLES.linesweeper.keys.length - 1;
+		if (dispatched.join(',') !== 'rawKeyDown,keyUp' || result.quit !== terminal ||
+			(!terminal && result.phases.length !== 2) || (terminal && result.phases.length > 1)) {
+			throw new Error(`${label} ${code}: unexpected sampled quit result ${JSON.stringify(result)}`);
+		}
+		for (const [level, phase] of result.phases.entries()) {
+			const expected = level === 0 ? expected_down[index] :
+				{ state: 'pause', row: index, result: null };
+			if (phase.state !== expected.state || phase.row !== expected.row || phase.result !== expected.result) {
+				throw new Error(`${label} ${code}: unexpected sampled menu state ${JSON.stringify(phase)}`);
+			}
+			log(`${label}: sampled ${code}: ${JSON.stringify(phase)}`);
+		}
+	}
+}
+
 export async function drive_sample(session, url, sample,
 	{ timeout_ms = 60000, frames = 60, pause = wait, log = console.log, label = 'Safari', progress = {} } = {}) {
 	const evaluate = evaluator(session, deadline_after(timeout_ms, `${label} sample`, 15000));
@@ -418,13 +463,12 @@ export async function drive_sample(session, url, sample,
 		if (Date.now() > focus_by) throw new Error(`The sample's canvas never took the keyboard; page ${await focus_state()}`);
 		await pause(50);
 	}
-	// Two ways of sending the keys, each chosen by what CI's hosted Mac did
+	// The sample key paths follow what CI's hosted Mac requires
 	// (REV#159, docs/review/2026-11-12-work-audit/STATUS.md):
-	// - Each press and each release alone, sent until the page reports it,
-	//   then held for frames past it. One action list held a fixed time lets
-	//   Safari stretch an arrow key's hold to about 550 ms, past the 400 ms
-	//   before a held menu direction repeats, so LineSweeper's pause menu
-	//   moved two rows a press; this form passed LineSweeper in every run.
+	// - LineSweeper acknowledges one real sampled UI update per key level.
+	//   Driver round trips can stretch a hold beyond menu repeat's delay.
+	// - Other simple quit sequences confirm each press and release in the
+	//   page's key log, then hold it for frames past that observation.
 	// - One action list for a page whose keys start Web Audio (the audio
 	//   sample) or full screen (the components gallery): after either, keys
 	//   sent in separate actions went missing, while one list passed. Their
@@ -433,7 +477,9 @@ export async function drive_sample(session, url, sample,
 	//   any row, its second Escape covering one spent leaving full screen.
 	// Every resend is logged, so none is silent.
 	progress.phase = 'pressing the quit keys';
-	if (sample === SAMPLES.audio || sample === SAMPLES.components) {
+	if (sample === SAMPLES.linesweeper) {
+		await sampled_linesweeper_quit(session, evaluate, { log, label });
+	} else if (sample === SAMPLES.audio || sample === SAMPLES.components) {
 		await session.perform(key_actions(sample.keys));
 		if (sample === SAMPLES.components) {
 			// Safari has spent both of the gallery's Escapes leaving full screen,
@@ -573,7 +619,8 @@ export function artifact_files(options) {
 // The page's hooks, per mode.
 export function page_scripts(options) {
 	if (options['test-page'] !== undefined) return [COMPLAINT_HOOK, TEST_LOG_HOOK];
-	return options.bundle !== undefined ? [COMPLAINT_HOOK, PRELUDE + ';'] : [COMPLAINT_HOOK, SAMPLE_HOOK];
+	if (options.bundle !== undefined) return [COMPLAINT_HOOK, PRELUDE + ';'];
+	return [COMPLAINT_HOOK, options.sample === 'linesweeper' ? SAMPLED_SAMPLE_HOOK : SAMPLE_HOOK];
 }
 
 // The bundle's loader, asked for without a query, is bundle_page.mjs's
