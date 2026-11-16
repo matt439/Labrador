@@ -8,6 +8,7 @@
 // and is meant to be read. ARCHITECTURE says which is which.
 
 #include "engine/app/application.h"
+#include "engine/app/motion_preference.h"
 #include "samples/linesweeper/states/play_state.h"
 
 #include <Windows.h>
@@ -52,7 +53,9 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int)
 		// (Application::load_manifest).
 		app.load_manifest("./manifest.json");
 
-		return app.run(std::make_unique<linesweeper::PlayState>(&app));
+		const linesweeper::Motion motion =
+			linesweeper::motion_for_preference(prefers_reduced_motion());
+		return app.run(std::make_unique<linesweeper::PlayState>(&app, motion));
 	}
 	catch (const std::exception& e)
 	{

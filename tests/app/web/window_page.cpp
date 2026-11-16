@@ -1,4 +1,5 @@
 #include "engine/app/window.h"
+#include "engine/app/motion_preference.h"
 
 #include <emscripten/em_js.h>
 #include <emscripten/emscripten.h>
@@ -249,6 +250,11 @@ namespace
 extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_poll_mouse()
 {
 	return recorder.poll_mouse();
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_motion_preference()
+{
+	return labrador::prefers_reduced_motion() ? 1 : 0;
 }
 
 // Closes the window from the page, as a game's quit would, so that the input

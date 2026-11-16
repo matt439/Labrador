@@ -56,6 +56,8 @@
 //   the starting ratio of one is the box it snaps the canvas to, so the
 //   fractional-position step must find the snapped size.
 
+import { check_motion_preference } from './motion_preference_input.mjs';
+
 const CANVAS = { x: 120, y: 70 };
 const OUTSIDE = { x: 650, y: 400 };
 
@@ -190,6 +192,8 @@ export async function drive_window(page, input) {
 	// element in a page without focus is never sent focus or blur.
 	await input.prepare();
 	await until(`typeof Module === 'object' && Module.labradorWindowReady === true`);
+	await pass('motion preference refreshes and unavailable queries fall back',
+		() => check_motion_preference(page));
 	await frames(2);
 
 	// THE CONSTRUCTOR'S REPORTS. The canvas's box, measured, rather than the

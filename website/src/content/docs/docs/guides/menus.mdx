@@ -202,8 +202,23 @@ other games decide their own accessibility aims.
 Physical controller play still awaits the
 <RepoLink path="docs/port/web-to-be-tested.md" hash="needs-a-gamepad-m4">recorded hardware checks</RepoLink>.
 LineSweeper's landing shadow meets 3:1 against the empty well for every piece, checked by a test.
-In a browser whose system asks for reduced motion, LineSweeper throws an eighth of the sparks
-from each line clear, landing and top-out; the desktop build does not ask.
+On Windows and in a browser whose system asks for reduced motion, LineSweeper throws an eighth
+of the sparks from each line clear, landing and top-out, rounded up per cell. Both entry points
+use the same engine query:
+
+```cpp
+#include "engine/app/motion_preference.h"
+
+const bool reduced = labrador::prefers_reduced_motion();
+```
+
+Call this on the application thread. It reads Windows' client-area animation setting or the
+browser's `prefers-reduced-motion: reduce` media query afresh on each call, with `false` when
+the setting is unavailable. It installs no listener and keeps no cached preference. A game
+chooses when to ask again and how a player's explicit effects setting takes priority.
+LineSweeper samples once at startup and keeps that choice through pauses and restarts; it
+does not follow changes made while it is running. The engine changes no animation itself.
+
 The pause menu's *Colours* row selects a piece palette for **Protanomaly / Protanopia**,
 **Deuteranomaly / Deuteranopia** or **Tritanomaly / Tritanopia**, beside the standard one. The
 palettes were chosen by simulation and checked against the landing-shadow contrast and the flash

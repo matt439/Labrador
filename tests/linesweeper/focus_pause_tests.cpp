@@ -3,8 +3,11 @@
 #include "engine/app/application.h"
 #include "engine/core/state_context.h"
 #include "engine/input/keyboard.h"
+#include "engine/render/null/recording.h"
 #include "samples/linesweeper/states/play_state.h"
 
+#include <array>
+#include <cstddef>
 #include <memory>
 #include <string>
 
@@ -29,7 +32,7 @@ namespace
 	class Match
 	{
 	public:
-		explicit Match(bool active = true) : app_(options())
+		explicit Match(bool active = true, Motion motion = Motion::full) : app_(options())
 		{
 			this->app_.initialize();
 			this->app_.load_manifest(std::string(LINESWEEPER_CONTENT_DIRECTORY) + "manifest.json");
@@ -37,7 +40,7 @@ namespace
 			this->app_.keyboard()->poll();
 			this->app_.keyboard()->poll();
 			this->context_.notify_activation(active);
-			this->context_.transition_to(std::make_unique<PlayState>(&this->app_));
+			this->context_.transition_to(std::make_unique<PlayState>(&this->app_, motion));
 		}
 
 		void step()
@@ -67,10 +70,47 @@ namespace
 
 		int depth() const { return this->context_.depth(); }
 
+		std::size_t drawn_sprites()
+		{
+			Renderer& renderer = *this->app_.renderer();
+			renderer.begin_frame();
+			this->context_.draw(renderer);
+			renderer.submit();
+			return recorded_sprites(renderer).size();
+		}
+
 	private:
 		Application app_;
 		StateContext context_;
 	};
+}
+
+TEST_CASE("LineSweeper retains its explicit effects choice through pause and restart")
+{
+	using namespace labrador;
+	using namespace linesweeper;
+	const auto counts_for = [](Motion motion)
+	{
+		Match match(true, motion);
+		match.step();
+		match.press(Key::space);
+		std::array<std::size_t, 2> counts = {match.drawn_sprites(), 0};
+		match.press(Key::escape);
+		CHECK(match.depth() == 2);
+		match.press(Key::escape);
+		CHECK(match.depth() == 1);
+		match.press(Key::escape);
+		match.press(Key::down);
+		match.press(Key::enter);
+		CHECK(match.depth() == 1);
+		match.press(Key::space);
+		counts[1] = match.drawn_sprites();
+		return counts;
+	};
+	const std::array<std::size_t, 2> full = counts_for(Motion::full);
+	const std::array<std::size_t, 2> reduced = counts_for(motion_for_preference(true));
+	CHECK(full[0] > reduced[0]);
+	CHECK(full[1] > reduced[1]);
 }
 
 TEST_CASE("LineSweeper pauses on keyboard focus loss and waits for an explicit resume")

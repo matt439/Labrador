@@ -60,16 +60,21 @@ namespace linesweeper
 	// between 10,000 sparks and 9,600 is nothing anybody can see.
 	inline constexpr int particle_capacity = 10000;
 
-	// Whether the player has asked their system for reduced motion. A field
+	// The game's effects choice. A field
 	// made with Motion::reduced throws the same bursts with fewer sparks: a
-	// count, not a second effect (T3). The browser build asks the page's
-	// prefers-reduced-motion once at start (main_web.cpp); the desktop build
-	// does not ask, and plays Motion::full.
+	// count, not a second effect (T3). Both entry points sample the platform
+	// preference once at start; an explicit Motion argument remains the caller's.
 	enum class Motion
 	{
 		full,
 		reduced,
 	};
+
+	// The sample's startup policy; an explicit Motion selection can bypass it.
+	constexpr Motion motion_for_preference(bool reduced)
+	{
+		return reduced ? Motion::reduced : Motion::full;
+	}
 
 	// Each burst's sparks per cell under Motion::reduced are its full count
 	// divided by this, rounded up, so a cell that went still sparks. A
