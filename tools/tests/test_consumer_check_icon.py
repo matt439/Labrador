@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-from tools.tests.tool_fixtures import load_tool
+from tools.tests.tool_fixtures import load_tool, windows_short_path
 
 
 fixture = load_tool("tools/consumer_check/icon_fixture.py")
@@ -26,7 +26,7 @@ def project_files(project: Path) -> None:
 class IconFixtureTests(unittest.TestCase):
     def test_copies_only_test_input_and_changes_no_code_or_embedded_engine(self):
         with tempfile.TemporaryDirectory() as directory:
-            project = Path(directory) / "mygame"
+            project = Path(directory).resolve() / "mygame"
             project_files(project)
             before = {path.relative_to(project): path.read_bytes() for path in project.rglob("*") if path.is_file()}
             copied = fixture.prepare(project, ROOT)
@@ -39,7 +39,7 @@ class IconFixtureTests(unittest.TestCase):
 
     def test_refuses_an_old_or_incomplete_starter_before_writing(self):
         with tempfile.TemporaryDirectory() as directory:
-            project = Path(directory) / "mygame"
+            project = Path(directory).resolve() / "mygame"
             project_files(project)
             (project / "game/game_icon.rc").unlink()
             with self.assertRaisesRegex(ValueError, "current starter"):
@@ -48,7 +48,7 @@ class IconFixtureTests(unittest.TestCase):
 
     def test_does_not_overwrite_an_existing_fixture_or_authored_file(self):
         with tempfile.TemporaryDirectory() as directory:
-            project = Path(directory) / "mygame"
+            project = Path(directory).resolve() / "mygame"
             project_files(project)
             copied = fixture.prepare(project, ROOT)
             copied.write_bytes(b"owner data")
@@ -58,7 +58,7 @@ class IconFixtureTests(unittest.TestCase):
 
     def test_the_configured_entry_must_enable_the_explicit_request(self):
         with tempfile.TemporaryDirectory() as directory:
-            project = Path(directory) / "mygame"
+            project = Path(directory).resolve() / "mygame"
             project_files(project)
             build = project / "out"
             build.mkdir()
@@ -76,6 +76,17 @@ class IconFixtureTests(unittest.TestCase):
             (build / "compile_commands.json").write_text("[]", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "no native game/main.cpp"):
                 fixture.check_configured(project, build)
+
+    def test_a_real_short_parent_alias_returns_the_same_canonical_icon_path(self):
+        with tempfile.TemporaryDirectory(prefix="labrador-icon-alias-") as directory:
+            parent = Path(directory).resolve()
+            alias = windows_short_path(parent)
+            project = parent / "Project & %literal% with spaces"
+            project_files(project)
+            copied = fixture.prepare(alias / project.name, ROOT)
+            self.assertEqual(copied, project / fixture.PLACED)
+            self.assertEqual(copied.read_bytes(), (ROOT / fixture.ICON).read_bytes())
+            self.assertTrue(copied.samefile(alias / project.name / fixture.PLACED))
 
 
 def icon_option_block(text: str) -> str:
@@ -100,7 +111,7 @@ class IconRecipeValidationTests(unittest.TestCase):
         cmake = shutil.which("cmake")
         for relative in ("samples/minimal/CMakeLists.txt", "website/src/walkthrough/game-CMakeLists.txt"):
             with self.subTest(recipe=relative), tempfile.TemporaryDirectory() as directory:
-                folder = Path(directory)
+                folder = Path(directory).resolve()
                 wrong_type = folder / "not-an-icon.txt"
                 wrong_type.write_text("fixture", encoding="utf-8")
                 directory_icon = folder / "folder.ico"
