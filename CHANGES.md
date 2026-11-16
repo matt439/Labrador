@@ -123,6 +123,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Handle browser fullscreen refusal within its owning Window
+
+**Behaviour change.** A browser's asynchronous refusal of a Window-owned
+fullscreen entry or exit is handled and reported through
+`on_fullscreen_changed` with the actual status on a later frame. It leaves
+the game running, without an unhandled Promise rejection. A deferred entry
+still waits for eligible user activation. Leaving or closing cancels that
+window's queued request, and a late rejection from a closed window cannot
+notify its replacement. Page-owned requests keep their own rejection handling;
+other page errors and `Module.onError` remain visible. Games moving their
+engine pin need no API or template changes.
+
 ### 2026-11-16 - Refuse non-finite collider data at scene and contact boundaries
 
 **Behaviour change.** `find_contacts` now throws `std::invalid_argument`

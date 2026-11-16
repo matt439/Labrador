@@ -351,11 +351,14 @@ namespace labrador
 		// and is given the size a shown one would be, or std::runtime_error is
 		// thrown if the size of its monitor cannot be read.
 		//
-		// In a browser, the Fullscreen API on the canvas. A browser grants it
-		// only inside an input event, so a request made from a frame waits
-		// for the next key or button event and is made there. The browser has
-		// the last word either way - it may refuse, and the player may leave
+		// In a browser, the Fullscreen API on the canvas. A request without
+		// transient user activation waits for the next eligible input event.
+		// The browser has the last word - it may refuse, and the player may leave
 		// with Escape - and on_fullscreen_changed reports what it decided.
+		// An asynchronous refusal is reported from a later frame and leaves
+		// the game running. Leaving or closing cancels this window's deferred
+		// entry request; late rejection cannot notify a replacement window.
+		// A page owns rejection handling for requests it makes itself.
 		void enter_fullscreen() const;
 		void leave_fullscreen(const Vector2I& client_size) const;
 

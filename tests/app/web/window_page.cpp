@@ -48,6 +48,12 @@ EM_JS(void, web_window_test_ready, (), {
 	Module.labradorWindowReady = true;
 });
 
+EM_JS_DEPS(web_window_fullscreen_probe, "$JSEvents");
+EM_JS(void, web_window_test_queue_other_activation, (), {
+	Module.labradorOtherActivationCalls = 0;
+	JSEvents.deferCall(() => { ++Module.labradorOtherActivationCalls; }, 1, []);
+});
+
 namespace
 {
 	const char* button_name(labrador::MouseButton button)
@@ -255,6 +261,27 @@ extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_poll_mouse()
 extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_motion_preference()
 {
 	return labrador::prefers_reduced_motion() ? 1 : 0;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_enter_fullscreen()
+{
+	window->enter_fullscreen();
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_leave_fullscreen()
+{
+	window->leave_fullscreen(labrador::Vector2I(320, 200));
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_queue_other_activation_call()
+{
+	web_window_test_queue_other_activation();
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_reopen()
+{
+	window = std::make_unique<labrador::Window>(window_options(), &recorder);
+	window->pump_until_quit();
 }
 
 // Closes the window from the page, as a game's quit would, so that the input
