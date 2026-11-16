@@ -84,7 +84,7 @@ Earlier Later item L56, `OCA-79`, is complete: the current-release starter's
 `OCA-116` is ready in its existing order. The first six selected product
 priorities remain the next product slice.
 
-**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
+**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` has a later quit failure to investigate before its clean-week gate). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
 **Owner-attended acceptance remains open.** Group it without restoring manual
 checklists: pad play (`OCA-48`, `OCA-45`, `PI-21`); audio/listening and endpoint
@@ -379,9 +379,8 @@ implementation scopes are stories in the batches above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#150` | OPEN | should | S | CI configuration now enables software WebGL and selects all eight Firefox entries with renderer evidence. Left: verify the published CI run reaches WARP and whether audio's "Closed before resume completed" flakes there. Local evidence is in docs/port/web-to-be-tested.md. |
-| `REV#151` | OPEN | could | M | Safari and Firefox runs prove drawing and keys but read back nothing; `RenderPixelTests` and `WebWindowTests` run only in Chromium. Pixel page exit-protocol CI wiring is staged locally; hosted Safari readback, per-case drift and WebWindow input remain open. Firefox follows REV#150 (see web-to-be-tested.md). |
-| `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. Pages whose keys start Web Audio or full screen now get one action list, the others one confirmed key at a time, each the form that passed there; failures print the page's keys and focus. Close after a week clean. |
+| `REV#151` | OPEN | could | M | Hosted Safari pixel readback passes. Left: passing-frame drift, Safari rejected-frame extraction and WebWindow input, and Firefox pixel variants/CI. [Evidence](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16). |
+| `REV#159` | OPEN | should | S | Investigate the November 14 LineSweeper quit timeout despite received keys; seven later Safari jobs pass. A full clean week remains unmet. [Evidence](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16). |
 
 ## Ports
 

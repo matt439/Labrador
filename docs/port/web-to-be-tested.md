@@ -633,9 +633,9 @@ Firefox 160 and `wasm-release` at `1dc8533c`:
 WARP is not the device a player's Firefox uses, and a submission count on it
 proves no more than one on a GPU. CI now passes the option and selects
 `-R "^Firefox"` with verbose output.
-The sample runner refuses a non-WARP renderer in this mode. This change has
-not yet been published, so a hosted-run result and the Sandbox audio race's
-behaviour on that host are still outstanding.
+The sample runner refuses a non-WARP renderer in this mode. The
+[hosted verification below](#hosted-browser-verification-2026-11-16) records
+the published runs and the audio race's subsequent repair.
 
 **Local integration check, 2026-11-15:** a fresh isolated `wasm-release` build
 based on `d44101a0`, with the CI/runner changes in this work branch, registered
@@ -708,18 +708,18 @@ LineSweeper's earlier Firefox run remains the separate M3 entry in
 
 ### Safari pixel exit-protocol wiring (2026-11-15)
 
-The staged `work/safari-readback` change adds `run_safari.mjs --test-page`
+The change shipped in `df60f96e` and `c28528ca` adds `run_safari.mjs --test-page`
 for the existing `RenderPixelTests.html` page and carries that page, loader
 and embedded-data wasm from the Windows build to the Safari job. The runner
 requires the page's `labradorExit` promise to settle to integer zero without
 an abort, emits the test's console output, and rejects page complaints.
 
-Local verification is the runner's Node fixtures on Windows, not Safari,
-WebKit emulation or an Apple GPU measurement. Actual Safari readback, per-case
-passing drift records, rejected-frame extraction, and the full WebWindow input
-sequence remain unverified or unimplemented. REV#151 remains open.
-The week-long REV#159 stability observation is unchanged. This branch stacks
-on the Firefox software-WebGL wiring; neither is a hosted result until pushed.
+The initial local verification used the runner's Node fixtures on Windows,
+not Safari, WebKit emulation or an Apple GPU measurement. The
+[hosted verification below](#hosted-browser-verification-2026-11-16) now records
+actual Safari readback. Per-case passing drift records, Safari rejected-frame
+extraction and its full WebWindow input sequence remain unimplemented or
+unverified. REV#151 and the week-long REV#159 stability observation stay open.
 
 
 ### Pixel failure diagnostics (2026-11-15, local fixtures only)
@@ -786,8 +786,8 @@ On Windows, forced cleanup checks the live launcher's executable, unique
 profile and unchanged creation time before terminating only that PID's tree.
 A local forced-cleanup check verified the distinct launcher/browser and their
 children were terminated. No sandbox preference, timeout, page assertion,
-required test or failure verdict was relaxed. Local evidence is Firefox 160;
-these changes still need hosted Firefox 159 verification.
+required test or failure verdict was relaxed. The initial local evidence is
+Firefox 160; the final hosted Firefox 159 result is recorded below.
 
 
 The third hosted run (43694319140) passed the audio page and both Minimal and
@@ -803,7 +803,7 @@ that the resulting document was focused. The harness activates after each
 navigation (including bundle reloads), then waits for actual document.hasFocus
 within its existing bounded execution. It never overrides that property or
 dispatches synthetic focus. Fixtures cover delayed focus propagation and a
-persistent-focus failure. These corrections still require hosted verification.
+persistent-focus failure. The final hosted verification is recorded below.
 
 
 A follow-up local focus experiment rejected startup-tab reuse as a solution:
@@ -812,3 +812,60 @@ window.focus, while a newly created foreground tab had real document focus.
 The runner therefore creates a foreground test tab and closes the unused
 startup tab, still verifying the owned profile and actual focus. No test uses
 an unfocused startup document merely because rendering happened to work.
+
+
+### Hosted browser verification, 2026-11-16
+
+The published CI logs close REV#150's hosted execution gate. These three
+independent runs passed all eight `Firefox*` entries with Firefox 159.0.1
+(build 20261102144711) on Windows, after the intermediate audio-resume,
+startup-tab, focus and cleanup failures described above:
+
+| Run | Head | UTC date | Result |
+|---|---|---|---|
+| [43696022260](https://github.com/matt439/Labrador/actions/runs/43696022260/job/132756665669) | `7d3ff30c` | 2026-11-15 | 8/8 Firefox entries passed |
+| [43798148301](https://github.com/matt439/Labrador/actions/runs/43798148301/job/133071656497) | `d776df5f` | 2026-11-16 | Scheduled master run, 8/8 passed |
+| [43807435145](https://github.com/matt439/Labrador/actions/runs/43807435145/job/133101351900) | `61118c5a` | 2026-11-16 | Game-authored-material candidate, 8/8 passed |
+
+Each run's six samples explicitly report WebGL 2.0 on
+`ANGLE (Microsoft, Microsoft Basic Render Driver (0x0000008C) Direct3D11
+vs_5_0 ps_5_0), or similar`, meeting the runner's WARP check. The bundle's
+desktop play, forced context loss/restore, quit and replay and WebWindow's
+input sequence passed. Each audio page passed; none of these three job logs
+contains `Closed before resume completed`. That records the observed result,
+not proof that no further race is possible. WARP, synthetic touch and the
+input sequence do not establish physical-device or listening acceptance.
+
+The same published workflow now reads pixels back in Safari 27.2 on the
+hosted macOS runner. The test page itself reports
+`Drawing on Apple Inc. / Apple GPU (hardware)`; this is the hosted device
+identity, not acceptance on the owner's physical Mac:
+
+| Run | Head | Pixel result |
+|---|---|---|
+| [43696022260](https://github.com/matt439/Labrador/actions/runs/43696022260/job/132758747254) | `7d3ff30c` | 71/71 cases, 76,276 assertions passed |
+| [43807435145](https://github.com/matt439/Labrador/actions/runs/43807435145/job/133104077180) | `61118c5a` | 76/76 cases, 100,866 assertions passed |
+
+Both pages exited zero without page complaints. The latter run's transferred
+`RenderPixelTests.wasm` is 737,935 bytes, SHA-256
+`152eddf4df5d3a1f5bfde30eb87219572306776a1cd980c293100e9d17d6db72`.
+Its empty failure-diagnostics list is accompanied by the comparator's explicit
+`passing_frame_details: "not emitted by comparator"`; no per-case drift
+measurement can be inferred from it. The existing allowance of one channel
+value was unchanged. REV#151 remains open for passing-frame drift reporting,
+Safari rejected-frame extraction and WebWindow input, and Firefox's separate
+pixel-coverage remainder recorded above.
+
+REV#159's clean-week gate also remains open. A later
+[failure in run 43550104143](https://github.com/matt439/Labrador/actions/runs/43550104143/job/132312634060)
+at `edfe87e3`, 2026-11-14 03:19 UTC, left LineSweeper waiting for quit with
+the canvas focused, the page visible and no page error. Its longest recorded
+frame gap was 842 ms; a received ArrowDown was held for 598 ms and Enter
+arrived, but `quit` stayed false. The failure must be investigated rather
+than counting a week from the November 12 fix. Across all published job
+attempts since that fix, twelve executed Safari jobs passed, one failed and
+eleven were skipped. Seven executed jobs after the failure passed, most
+recently [run 43809435219](https://github.com/matt439/Labrador/actions/runs/43809435219/job/133111393228)
+at `2b0116cd`, finishing 2026-11-16 05:32 UTC. Skipped jobs supply no stability
+evidence. These green jobs record successful sample and bundle runs, not a
+clean week or a diagnosis of that failure.
