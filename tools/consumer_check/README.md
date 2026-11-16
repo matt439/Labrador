@@ -398,3 +398,56 @@ visual or physical-input acceptance, does not qualify the released v0.3.0
 starter, and does not check every intermediate or optional edit. Its measured
 cost and expansion boundary are in the
 [2026-11-17 record](../../docs/review/2026-11-12-work-audit/2026-11-17-guide-pilot.md).
+
+## Direct PCM WAV assets
+
+The opt-in `wav_fixture.py` prepares the new
+first-sound guide in an assembled development starter. It refuses an embedded
+engine without memory banks and the `wave` asset kind, including `v0.3.0`,
+before editing anything. Keep the baseline starter checks above first and use
+a fresh copy for this fixture:
+
+```bat
+python tools\consumer_check\assemble.py C:\dev\wav-consumer
+python tools\consumer_check\wav_fixture.py C:\dev\wav-consumer
+cd /d C:\dev\wav-consumer
+cmake --preset x64-debug
+cmake --build --preset x64-debug --parallel 2
+ctest --preset x64-debug --no-tests=error --output-on-failure
+```
+
+The script reads the four C++ paste blocks in
+`website/src/content/docs/docs/guides/your-sound.mdx`, copies the audio sample's
+original `source/ping.wav` as `game/content/waves/ping_wav.wav`, and applies
+that guide's manifest, copy/embed/install and HelloState edits. Space plays
+the WAV at volume 0.4; the existing quit question still uses Escape and Enter.
+The extra `MyGameWaveTests` target checks real `wave` asset loading, its
+same-name wave/effect, and named rejection without publication for missing
+and malformed required WAVs. The malformed four-byte WAV exists only in this
+validation copy and is not named by the game's manifest. The ordinary starter
+still ships with its original files and tests. `--source <engine>` names the
+same development checkout used for assembly when that explicit source is
+needed; it does not replace the engine in an existing project.
+
+In this fresh native fixture, all three entries must register and pass:
+`MyGameTests`, `MyGameSmokeTests` and `MyGameWaveTests`. This establishes
+loading/refusal and startup, not audible output. With Emscripten activated,
+qualify the same source under Node and through the real page:
+
+```bat
+cmake --preset wasm-debug
+cmake --build --preset wasm-debug --parallel 2
+ctest --preset wasm-debug --no-tests=error --output-on-failure
+"%EMSDK_NODE%" external\labrador\tests\render\web\run_page.mjs --browser <chrome.exe> --page out\build\wasm-debug\game\MyGame.html --quit-keys Space,Escape,Enter --timeout 60
+```
+
+The browser configuration registers `MyGameTests` and `MyGameWaveTests`; its
+page still quits through `Module.onQuit`. Trusted Space activates Web Audio
+and asks the game's compiled update to play the direct WAV before quitting.
+The page runner must report the real quit callback without page complaints.
+`python -m unittest tools.tests.test_consumer_wav_fixture` checks preparation,
+guide-block drift, old-engine refusal and non-overwriting boundaries offline.
+These fixtures are source preparation and protocol checks; retain actual
+revision/toolchain/native/browser results when running them. No fixture or
+loading test substitutes for listening, physical output or endpoint-recovery
+acceptance.

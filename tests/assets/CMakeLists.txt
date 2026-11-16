@@ -27,3 +27,7 @@ endif()
 if(LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")
     target_compile_definitions(AssetsTests PRIVATE LABRADOR_TEST_WEBAUDIO)
 endif()
+
+if(LABRADOR_AUDIO_BACKEND STREQUAL "null" OR LABRADOR_AUDIO_BACKEND STREQUAL "webaudio")
+    target_sources(AssetsTests PRIVATE wave_asset_tests.cpp)
+endif()

@@ -157,3 +157,120 @@ test('close resolution without a closed context still rejects resume cancellatio
 	f.context.reject(closed_error());
 	await assert.rejects(pending, /Closed before resume completed/);
 });
+
+// The decoded-bank functions from that same production body, with actual
+// owned Float32Array channel storage and a small stand-in for the wasm heap.
+function bank_fixture({ heap = new Int16Array(16), refuse_buffer = false, refuse_copy = false } = {}) {
+	const sources = [];
+	const gains = [];
+	const panners = [];
+	const listeners = new Map();
+	class Node {
+		connect() {}
+		disconnect() {}
+	}
+	class Buffer {
+		constructor(options) {
+			if (refuse_buffer) throw new RangeError('browser buffer limit');
+			this.channels = Array.from({ length: options.numberOfChannels }, () => new Float32Array(options.length));
+		}
+		getChannelData(channel) {
+			if (refuse_copy) throw new Error('channel copy refused');
+			return this.channels[channel];
+		}
+	}
+	class Context {
+		constructor() { this.state = 'running'; this.currentTime = 0; this.destination = new Node(); }
+		suspend() { this.state = 'suspended'; return Promise.resolve(); }
+		resume() { this.state = 'running'; return Promise.resolve(); }
+		close() { this.state = 'closed'; return Promise.resolve(); }
+	}
+	class Source extends Node {
+		constructor(context, options) { super(); Object.assign(this, options); sources.push(this); }
+		start(when, offset = 0) { this.offset = offset; }
+		stop() { this.stopped = true; }
+	}
+	class Gain extends Node {
+		constructor(context, options) { super(); this.gain = { value: options.gain }; gains.push(this); }
+	}
+	class Panner extends Node {
+		constructor(context, options) { super(); this.pan = { value: options.pan }; panners.push(this); }
+	}
+	const Module = {};
+	vm.runInNewContext('(function() {' + body + '})()', {
+		Module, HEAP16: heap, AudioContext: Context, AudioBuffer: Buffer,
+		AudioBufferSourceNode: Source, GainNode: Gain, StereoPannerNode: Panner,
+		window: {
+			addEventListener(name, listener) { listeners.set(name, listener); },
+			removeEventListener(name) { listeners.delete(name); },
+		},
+	});
+	const api = Module.labradorAudio;
+	const id = api.open();
+	return { api, id, heap, sources, gains, panners, listeners };
+}
+
+test('decoded PCM is copied before caller storage changes and reaches nodes in order', () => {
+	const heap = new Int16Array([-32768, 32767, -16384, 16384, 0, 8192, 16384, -8192]);
+	const f = bank_fixture({ heap });
+	const bank = f.api.add_bank(f.id);
+	assert.equal(f.api.add_wave(f.id, bank, 2, 8000, 4, 0, 1, 2), 1);
+	const voice = f.api.create_voice(f.id, bank, 0);
+	heap.fill(0);
+	f.api.play(f.id, voice, 1);
+	assert.equal(f.sources.length, 0);
+	f.listeners.get('keydown')({ type: 'keydown', key: 'a' });
+	assert.equal(f.sources.length, 1);
+	assert.deepEqual(Array.from(f.sources[0].buffer.channels[0]), [-1, -0.5, 0, 0.5]);
+	assert.deepEqual(Array.from(f.sources[0].buffer.channels[1]), [32767 / 32768, 0.5, 0.25, -0.25]);
+	assert.equal(f.sources[0].loopStart, 1 / 8000);
+	assert.equal(f.sources[0].loopEnd, 3 / 8000);
+	f.api.play_wave(f.id, bank, 0, 0.25, 2, -0.5);
+	assert.equal(f.sources.length, 2);
+	assert.equal(f.gains[1].gain.value, 0.25);
+	assert.equal(f.panners[1].pan.value, -0.5);
+	assert.equal(f.sources[1].playbackRate, 2);
+	assert.equal(f.sources[1].loop, false);
+	f.api.close(f.id);
+});
+
+test('browser buffer and channel-copy refusals roll back the pending bank with their reason', () => {
+	for (const [options, reason] of [[{ refuse_buffer: true }, 'browser buffer limit'],
+		[{ refuse_copy: true }, 'channel copy refused']]) {
+		const f = bank_fixture(options);
+		const bank = f.api.add_bank(f.id);
+		assert.equal(f.api.add_wave(f.id, bank, 1, 8000, 2, 0, 0, 0), 0);
+		assert.equal(f.api.devices[f.id].banks.length, 0);
+		assert.equal(f.api.devices[f.id].bank_error, reason);
+		assert.equal(f.api.add_bank(f.id), bank);
+		f.api.close(f.id);
+	}
+});
+
+test('publication failure preserves existing banks and the next bank index', () => {
+	const f = bank_fixture();
+	const kept = f.api.add_bank(f.id);
+	assert.equal(f.api.add_wave(f.id, kept, 1, 8000, 2, 0, 0, 0), 1);
+	const rejected = f.api.add_bank(f.id);
+	f.api.devices[f.id].banks[rejected].push = () => { throw new Error('publication refused'); };
+	assert.equal(f.api.add_wave(f.id, rejected, 1, 8000, 2, 0, 0, 0), 0);
+	assert.equal(f.api.devices[f.id].banks.length, 1);
+	assert.equal(f.api.devices[f.id].banks[kept].length, 1);
+	assert.equal(f.api.devices[f.id].bank_error, 'publication refused');
+	assert.equal(f.api.add_bank(f.id), rejected);
+	f.api.close(f.id);
+});
+
+test('PCM byte pointers keep their unsigned wasm32 address without a multi-gigabyte allocation', () => {
+	const f = bank_fixture({ heap: { 1073741824: -32768, 1073741825: 16384 } });
+	const bank = f.api.add_bank(f.id);
+	assert.equal(f.api.add_wave(f.id, bank, 1, 8000, 2, -2147483648, 999, 0), 1);
+	const wave = f.api.devices[f.id].banks[bank][0];
+	assert.deepEqual(Array.from(wave.buffer.channels[0]), [-1, 0.5]);
+	const voice = f.api.create_voice(f.id, bank, 0);
+	f.api.play(f.id, voice, 1);
+	f.listeners.get('keydown')({ type: 'keydown', key: 'a' });
+	assert.equal(f.sources[0].loopStart, 0);
+	assert.equal(f.sources[0].loopEnd, 0);
+	f.api.close(f.id);
+});

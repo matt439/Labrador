@@ -5,7 +5,7 @@
 
 namespace audio
 {
-	// The manifest's sound-bank entries, in its order, under its source path:
+	// The manifest's sound-bank and single-WAV entries, in order, under its source path:
 	// what a run with no graphics device loads - the Windows smoke test, and
 	// the browser build's test in its place - since the font needs a renderer.
 	labrador::AssetManifest audio_entries(const labrador::AssetManifest& manifest);

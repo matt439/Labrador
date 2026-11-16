@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 using namespace labrador;
@@ -19,18 +20,25 @@ namespace audio
 	{
 		SoundBank* bank = this->app_->audio_resources()->sound_bank("tones");
 		this->board_ = std::make_unique<SoundBoard>(bank);
+		this->wav_bank_ = this->app_->audio_resources()->sound_bank("ping_wav");
+		if (!this->wav_bank_->audible())
+		{
+			throw std::runtime_error("The sample requires the ping_wav WAV asset");
+		}
+		this->wav_ping_ = this->wav_bank_->resolve_wave("ping_wav");
 		RenderResources* resources = this->app_->render_resources();
 		const std::string font = "jetbrains_mono_bold_16";
-		this->scene_.add(std::make_unique<Label>(L"AUDIO / SOUND BANK",
+		this->scene_.add(std::make_unique<Label>(L"AUDIO / XWB AND WAV",
 			font, Vector2F(48.0f, 56.0f), resources, Colour::white, 2.0f));
 		this->scene_.add(std::make_unique<Label>(
 			L"1  Ping       2  Chime       3  Start drone loop\n\n"
+			L"A  WAV ping (no bank authoring tool)\n\n"
 			L"Space  Pause / resume       S  Stop loop\n\n"
 			L"Up / Down  Volume          Left / Right  Stereo pan\n\n"
 			L"Q / E  Pitch               Escape  Quit",
 			font, Vector2F(48.0f, 144.0f), resources));
 		this->status_ = this->scene_.add(std::make_unique<Label>(L"",
-			font, Vector2F(48.0f, 388.0f), resources));
+			font, Vector2F(48.0f, 420.0f), resources));
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
 		const std::wstring backend =
 			L"Null audio: calls are recorded. Use x64-debug to hear these tones.";
@@ -48,8 +56,7 @@ namespace audio
 			L"Adjustments change the drone and the next one-shot.",
 			font, Vector2F(48.0f, 588.0f), resources));
 		this->scene_.end_tick();
-		this->scene_.add_view(Viewport(RectangleF(Vector2F::zero,
-			this->app_->resolution_manager()->resolution_vec())));
+		this->refresh_view();
 		this->refresh_status();
 	}
 
@@ -60,6 +67,11 @@ namespace audio
 		if (keyboard.pressed(Key::digit_1)) { this->board_->play_ping(); }
 		if (keyboard.pressed(Key::digit_2)) { this->board_->play_chime(); }
 		if (keyboard.pressed(Key::digit_3)) { this->board_->start_loop(); }
+		if (keyboard.pressed(Key::a))
+		{
+			this->wav_bank_->play_wave(this->wav_ping_, this->board_->volume(),
+				this->board_->pitch(), this->board_->pan());
+		}
 		if (keyboard.pressed(Key::space)) { this->board_->toggle_pause(); }
 		if (keyboard.pressed(Key::s)) { this->board_->stop_loop(); }
 
@@ -84,6 +96,16 @@ namespace audio
 		this->refresh_status();
 		this->scene_.update(dt);
 		this->scene_.end_tick();
+		this->refresh_view();
+	}
+
+	void AudioState::refresh_view()
+	{
+		const Viewport viewport(RectangleF(Vector2F::zero,
+			this->app_->resolution_manager()->resolution_vec()));
+		this->scene_.clear_views();
+		this->scene_.add_view(viewport,
+			Camera::frame(RectangleF(0.0f, 0.0f, 1280.0f, 720.0f), viewport));
 	}
 
 	void AudioState::refresh_status()

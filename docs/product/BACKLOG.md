@@ -1423,7 +1423,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
 - [x] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
 - [x] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
-- [ ] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
+- [x] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
 - [x] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
 - [ ] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
 - [ ] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
@@ -2764,6 +2764,15 @@ Selected from
 - Expose the WAV asset path and a first-sound guide that needs no XWBTool.
   Preserve existing XWB loading and playback, and update public contracts,
   CHANGES.md, sample/template guidance and notices where dependencies change.
+
+**Completed 2026-11-17.** Shared checked PCM WAV input, device-owned memory
+banks on all three backends, the `wave` asset kind and a compiled first-sound
+guide preserve the existing XWB route. The full four-track audio plan,
+actual XAudio2 endpoint lifecycle and real Chrome WAV pipeline passed;
+the copied starter, tooling and website were also checked. The
+[input contract and dated qualification](../audio-input.md) record formats,
+ownership, limits and evidence. Listening remains open under WEB#3, and
+endpoint recovery under REV#8.
 
 **Boundaries and verification:** compressed codecs and streamed music remain
 with GAP#2. Reader fixtures compare supported source WAVs with their existing

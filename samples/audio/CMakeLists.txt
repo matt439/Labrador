@@ -22,6 +22,7 @@ if(EMSCRIPTEN)
     target_link_options(AudioSample PRIVATE
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json@/manifest.json"
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/content/sounds@/sounds"
+        "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/source/ping.wav@/waves/ping_wav.wav"
         "SHELL:--embed-file ${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts@/fonts"
         "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html"
         -sENVIRONMENT=web
@@ -33,6 +34,7 @@ if(EMSCRIPTEN)
         "${CMAKE_CURRENT_SOURCE_DIR}/content/manifest.json"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.json"
         "${CMAKE_CURRENT_SOURCE_DIR}/content/sounds/tones.xwb"
+        "${CMAKE_CURRENT_SOURCE_DIR}/source/ping.wav"
         "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts/jetbrains_mono_bold_16.spritefont"
     )
 elseif(WIN32)
@@ -49,6 +51,11 @@ elseif(WIN32)
         COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/content"
             "$<TARGET_FILE_DIR:AudioSample>"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+            "$<TARGET_FILE_DIR:AudioSample>/waves"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/source/ping.wav"
+            "$<TARGET_FILE_DIR:AudioSample>/waves/ping_wav.wav"
         COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/../minimal/content/fonts"
             "$<TARGET_FILE_DIR:AudioSample>/fonts"
@@ -71,7 +78,21 @@ add_executable(AudioSampleTests sound_board_tests.cpp sound_board.cpp)
 target_link_libraries(AudioSampleTests PRIVATE
     LabradorEngine doctest::doctest labrador_settings)
 target_compile_definitions(AudioSampleTests PRIVATE
-    "LABRADOR_AUDIO_SAMPLE_CONTENT=\"${CMAKE_CURRENT_SOURCE_DIR}/content\"")
+    "LABRADOR_AUDIO_SAMPLE_CONTENT=\"$<TARGET_FILE_DIR:AudioSampleTests>/content\"")
+
+# Stage the same required audio payload for native and Node tests without
+# duplicating the generated WAV in the source tree.
+add_custom_target(audio_sample_test_content ALL
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/content"
+        "$<TARGET_FILE_DIR:AudioSampleTests>/content"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "$<TARGET_FILE_DIR:AudioSampleTests>/content/waves"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/source/ping.wav"
+        "$<TARGET_FILE_DIR:AudioSampleTests>/content/waves/ping_wav.wav"
+    VERBATIM)
+add_dependencies(AudioSampleTests audio_sample_test_content)
 add_test(NAME AudioSampleTests COMMAND AudioSampleTests)
 set_tests_properties(AudioSampleTests PROPERTIES TIMEOUT 60)
 

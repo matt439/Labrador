@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/audio/wave_data.h"
 #include "engine/core/handle.h"
 
 #include <memory>
@@ -60,7 +61,7 @@ namespace labrador
 	// actually does - open a container, find a name in it, build a voice, and
 	// start, stop, adjust or report one - and nothing else.
 	//
-	// WHAT THE SEAM DOES NOT DECIDE IS THE CONTAINER, AND THAT IS DELIBERATE.
+	// THE FILE ROUTE DELEGATES ITS CONTAINER TO THE BACKEND.
 	// open_wave_bank takes a directory and a bank name, never a file name: the
 	// extension, the reader and the bytes are the backend's business, exactly
 	// as a swapchain is render/'s. What crosses instead is the list of wave
@@ -70,7 +71,10 @@ namespace labrador
 	// against it and throws naming the wave that is missing. The format itself
 	// is written down once, in engine/audio/xwb_file.h, for a backend whose
 	// audio API has no reader of its own. A backend whose API has one may keep
-	// it, and that is why the cut sits above the format rather than at it.
+	// it, and that is why that cut sits above the format rather than at it.
+	// open_memory_bank instead takes already decoded, owned PCM data, for WAV
+	// assets and generated sounds. Each backend supplies its own playback
+	// storage while preserving the shared samples and frame-based loop region.
 	class AudioDevice
 	{
 	public:
@@ -115,6 +119,34 @@ namespace labrador
 		WaveBankHandle open_wave_bank(const std::string& directory,
 			const std::string& name,
 			const std::vector<std::string>& wave_names);
+
+		// Load-time owned PCM input, checked before
+		// publication. A malformed bank throws std::invalid_argument naming
+		// the bank/wave; backend refusal throws a named std::runtime_error.
+		// C++ allocation failure propagates as std::bad_alloc. A browser's
+		// AudioBuffer refusal retains its original reason in runtime_error.
+		// Banks and wave names are nonempty/NUL-free; waves have unique names,
+		// nonempty whole mono/stereo frames at 8000..96000 Hz, frame counts
+		// fitting int, at most 2 GiB of decoded PCM per wave and any nonempty
+		// loop wholly in its wave.
+		//
+		// Passing an lvalue copies its data; std::move transfers it. After this
+		// call returns, caller containers may be destroyed or reused: playback
+		// borrows none of their storage. Banks and voices belong to the device
+		// implementation; destroying or replacing it invalidates their handles.
+		// Moving transfers that implementation, but does not redirect a
+		// SoundBank's borrowed pointer to its original AudioDevice object.
+		//
+		// Final sample payload is 2 bytes per sample on null/XAudio2 and 4 on
+		// Web Audio, plus backend overhead. XAudio2/Web Audio conversion also
+		// holds the input's 2-byte samples temporarily; an lvalue retains its
+		// additional caller copy. Null also retains unused vector capacity.
+		// No streaming or compressed input is implied.
+		//
+		// Loop fields are frames. Non-looping voices play the complete wave;
+		// looping voices play from the start, then repeat the stored region.
+		// Zero loop length means the whole wave, ignoring loop_start.
+		WaveBankHandle open_memory_bank(WaveBankData data);
 
 		// The index of `wave_name` within `bank`, or -1 if the bank has no such
 		// wave. The index is the backend's own and means nothing to any other

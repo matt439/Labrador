@@ -7,7 +7,7 @@
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
 #include "engine/audio/null/recording.h"
 #endif
-#if defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
+#if defined(LABRADOR_AUDIO_SAMPLE_NULL) || defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
 #include "engine/app/content_root.h"
 #include "engine/assets/resource_loader.h"
 #include "engine/audio/audio_resources.h"
@@ -46,6 +46,7 @@ TEST_CASE("the audio example declares required content and the named loop")
 	const AssetManifest manifest = read_asset_manifest(
 		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json");
 	bool found = false;
+	bool found_wav = false;
 	for (const AssetEntry& entry : manifest.entries)
 	{
 		if (entry.kind == "sound_bank")
@@ -55,8 +56,16 @@ TEST_CASE("the audio example declares required content and the named loop")
 			CHECK_FALSE(entry.optional);
 			found = true;
 		}
+		if (entry.kind == "wave")
+		{
+			CHECK(entry.name == "ping_wav");
+			CHECK(entry.directory == "./waves/");
+			CHECK_FALSE(entry.optional);
+			found_wav = true;
+		}
 	}
 	CHECK(found);
+	CHECK(found_wav);
 	const SoundBankDefinition definition = sample_definition();
 	const std::vector<std::string> waves{ "ping", "chime", "drone" };
 	CHECK(definition.waves == waves);
@@ -72,7 +81,7 @@ TEST_CASE("the audio example refuses the missing-content substitute")
 	CHECK_THROWS_AS(SoundBoard(nullptr), std::runtime_error);
 }
 
-TEST_CASE("the audio entries are the manifest's sound banks, in order, under its path")
+TEST_CASE("the audio entries are the manifest's sound banks and WAVs, in order, under its path")
 {
 	AssetManifest manifest;
 	manifest.source_path = "content/manifest.json";
@@ -80,21 +89,66 @@ TEST_CASE("the audio entries are the manifest's sound banks, in order, under its
 	manifest.entries.push_back(entry_of("sound_bank", "tones", false));
 	manifest.entries.push_back(entry_of("texture", "panel", false));
 	manifest.entries.push_back(entry_of("sound_bank", "music", true));
+	manifest.entries.push_back(entry_of("wave", "ping_wav", false));
 
 	const AssetManifest audio_manifest = audio_entries(manifest);
 	CHECK(audio_manifest.source_path == "content/manifest.json");
-	REQUIRE(audio_manifest.entries.size() == 2);
+	REQUIRE(audio_manifest.entries.size() == 3);
 	CHECK(audio_manifest.entries[0].name == "tones");
 	CHECK_FALSE(audio_manifest.entries[0].optional);
 	CHECK(audio_manifest.entries[1].name == "music");
 	CHECK(audio_manifest.entries[1].optional);
+	CHECK(audio_manifest.entries[2].name == "ping_wav");
+	CHECK(audio_manifest.entries[2].kind == "wave");
+	CHECK_FALSE(audio_manifest.entries[2].optional);
 
-	// The sample's own manifest has its font beside the one bank.
+	// The sample's own manifest has its font beside the XWB bank and WAV.
 	const AssetManifest sample = audio_entries(read_asset_manifest(
 		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json"));
-	REQUIRE(sample.entries.size() == 1);
+	REQUIRE(sample.entries.size() == 2);
 	CHECK(sample.entries[0].name == "tones");
+	CHECK(sample.entries[1].name == "ping_wav");
 }
+
+#if defined(LABRADOR_AUDIO_SAMPLE_NULL) || defined(LABRADOR_AUDIO_SAMPLE_WEBAUDIO)
+TEST_CASE("the sample loads its WAV as a same-name wave and retained effect beside XWB")
+{
+	AudioDevice device;
+	AudioResources resources;
+	ResourceLoader loader(nullptr, nullptr, &resources, &device);
+	loader.load_manifest(audio_entries(anchored_to_source(read_asset_manifest(
+		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json"))));
+	SoundBank* wav = resources.sound_bank("ping_wav");
+	REQUIRE(wav->audible());
+	const SoundBank::WaveHandle wave = wav->resolve_wave("ping_wav");
+	const SoundBank::EffectHandle effect = wav->resolve_effect("ping_wav");
+	wav->play_wave(wave, 0.4f, 0.25f, -0.5f);
+	wav->play_effect(effect, true, 0.2f);
+	CHECK(wav->effect_state(effect) == SoundState::playing);
+	wav->pause_effect(effect);
+	CHECK(wav->effect_state(effect) == SoundState::paused);
+	wav->resume_effect(effect);
+	CHECK(wav->effect_state(effect) == SoundState::playing);
+	wav->stop_effect(effect, true);
+	CHECK(wav->effect_state(effect) == SoundState::stopped);
+	loader.reload_device_resources();
+	CHECK(resources.sound_bank("ping_wav") == wav);
+#if defined(LABRADOR_AUDIO_SAMPLE_NULL)
+	const std::vector<RecordedSound>& calls = recorded_sounds(device);
+	REQUIRE(calls.size() == 5);
+	CHECK(calls[0].call == SoundCall::play_wave);
+	CHECK(calls[0].volume == 0.4f);
+	CHECK(calls[0].pitch == 0.25f);
+	CHECK(calls[0].pan == -0.5f);
+	CHECK(calls[1].call == SoundCall::play_voice);
+	CHECK(calls[1].loop);
+	CHECK(calls[2].call == SoundCall::pause_voice);
+	CHECK(calls[3].call == SoundCall::resume_voice);
+	CHECK(calls[4].call == SoundCall::stop_voice);
+	CHECK(calls[4].immediate);
+#endif
+}
+#endif
 
 #if defined(LABRADOR_AUDIO_SAMPLE_NULL)
 TEST_CASE("the sample routes one-shots and keeps its loop pause separate from stop")
@@ -179,7 +233,7 @@ TEST_CASE("the sample's bank loads through Web Audio and its drone keeps its sta
 	const AssetManifest manifest = anchored_to_source(read_asset_manifest(
 		LABRADOR_AUDIO_SAMPLE_CONTENT "/manifest.json"));
 	AssetManifest audio_manifest = audio_entries(manifest);
-	REQUIRE(audio_manifest.entries.size() == 1);
+	REQUIRE(audio_manifest.entries.size() == 2);
 	loader.load_manifest(std::move(audio_manifest));
 
 	SoundBank* bank = resources.sound_bank("tones");

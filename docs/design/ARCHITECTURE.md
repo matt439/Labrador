@@ -539,8 +539,8 @@ name means which wave, which handles are valid, the clamp that folds a
 volume into [0,1] and a pitch and a pan into [-1,1], and the sound group's
 volume multiplied into every level a bank sends, are all engine arithmetic
 and sit above the test for whether there is anything to play. Below it is what
-an audio API actually does and nothing else. **The one thing the seam declines
-to decide is the container**: `open_wave_bank` takes a directory and a bank
+an audio API actually does and nothing else. **The file-bank route delegates
+its container**: `open_wave_bank` takes a directory and a bank
 name, never a file name, so the extension and the reader are the backend's —
 an `.xwb` on `xaudio2/` and on `webaudio/`, and on `null/` the list of wave names the definition
 JSON gave it, because that JSON is content this engine parses and the container
@@ -549,6 +549,15 @@ is not. What the format *is* the engine still writes down once:
 API has no reader of its own, as `render/dds_file.h` reads a texture for every
 backend — `webaudio/` is one, and makes each wave an `AudioBuffer` — and a
 backend whose API has one may keep it.
+
+`open_memory_bank` takes the common owned `WaveBankData` instead. Its signed
+16-bit PCM and frame-based loop regions are independent of a file container;
+`audio/wav_file.h` supplies the bounded RIFF/PCM reader and generated sounds
+use the same data. XAudio2 retains owned SoundEffects, Web Audio copies into
+owned AudioBuffers, and null retains samples and metadata for recording.
+No caller storage is borrowed after the call. The `wave` asset kind builds a
+one-wave bank without a separate authoring tool; compressed streaming remains
+a separate mechanism.
 
 A backend may publish a second header beside `backend.h` **as long as it names
 no backend type** — `render/null/recording.h` is one, `audio/null/recording.h`

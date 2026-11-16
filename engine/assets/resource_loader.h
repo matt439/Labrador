@@ -16,10 +16,10 @@ namespace labrador
 	// Turns a manifest into loaded resources, and does it again when the GPU
 	// throws the first set away.
 	//
-	// It knows how to build four things - a texture, a font, a sprite sheet, a
-	// sound bank - and nothing whatever about which ones a given game has: the
-	// names are the manifest's business (T7). A game needing a fifth kind teaches
-	// the loader one, rather than the engine learning that game's vocabulary (T1).
+	// Its built-in kinds load textures, fonts, sprite sheets, XWB sound banks
+	// and single-WAV banks. The manifest chooses which ones a game has (T7).
+	// A game registers another kind rather than teaching the engine that
+	// game's vocabulary (T1).
 	class ResourceLoader
 	{
 	public:
@@ -28,7 +28,7 @@ namespace labrador
 		// name rather than a finished path.
 		// `optional` is the manifest's own word for "the game still runs
 		// without this" (asset_manifest.h). A kind that has no substitute to
-		// offer ignores it and throws; the sound bank is the one that has one.
+		// offer ignores it and throws; the audio kinds offer a silent bank.
 		using LoadAsset = std::function<void(const std::string& directory,
 			const std::string& name, bool optional)>;
 
@@ -85,7 +85,7 @@ namespace labrador
 		ResourceLoader& operator=(const ResourceLoader&) = delete;
 
 		// Teaches the loader a kind of asset a manifest may name. The engine
-		// registers "texture", "font", "sprite_sheet" and "sound_bank" at
+		// registers "texture", "font", "sprite_sheet", "sound_bank" and "wave" at
 		// construction; anything else is the game's to register, before it loads a
 		// manifest that names one. Registering a kind twice replaces it.
 		void register_kind(const std::string& kind, AssetKind asset_kind);
@@ -99,8 +99,12 @@ namespace labrador
 		// if an entry names a kind nobody registered - which is a content bug, and
 		// this is the line that should report it (T6). Whatever loaded before the
 		// bad entry stays loaded; the manifest is not kept.
-		// An unavailable optional sound bank reports through diagnostic.h and
-		// substitutes SoundBank::silent(); required-bank errors still throw.
+		// An unavailable optional sound bank or WAV reports through diagnostic.h
+		// and substitutes SoundBank::silent(); required audio errors still throw.
+		// A "wave" asset reads directory/name.wav into a one-wave bank; the
+		// bank, wave and persistent effect all use the manifest's name. Its
+		// missing, malformed, unsupported or unplayable optional container may
+		// use that substitute; allocation failures and logic errors propagate.
 		void load_manifest(AssetManifest manifest);
 
 		// Rebuilds what lives on the GPU after a device loss, by walking the same
@@ -139,6 +143,8 @@ namespace labrador
 		void load_sprite_sheet(const std::string& directory,
 			const std::string& name);
 		void load_sound_bank(bool optional, const std::string& directory,
+			const std::string& name);
+		void load_wave(bool optional, const std::string& directory,
 			const std::string& name);
 	};
 }

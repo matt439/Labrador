@@ -10,8 +10,8 @@ import GuideVersionNote from '~/components/GuideVersionNote.astro';
 import RepoLink from '~/components/RepoLink.astro';
 
 The <RepoLink path="samples/audio">audio sample</RepoLink> is a playable sound board:
-two short tones and a looping drone, with volume, pitch and stereo pan controls.
-Its original PCM sounds and the built wave bank are in the repository. The sample is in the
+two short tones, a direct-WAV copy of the ping and a looping drone, with volume,
+pitch and stereo pan controls. Its original PCM sounds and built XWB bank are in the repository. The sample is in the
 engine's folder, not in your game, and your game's build does not make it. In the
 [x64 Native Tools Command Prompt](/docs/get-started/prerequisites/), these commands go to the
 engine's folder in a [starter project](/docs/get-started/starter/), configure and build there,
@@ -27,6 +27,7 @@ out\build\x64-debug\samples\audio\AudioSample.exe
 ```
 
 Press **1** for a ping, **2** for an ascending chime and **3** to start the drone.
+Press **A** for the ping loaded directly from a PCM WAV, without a bank-packing step.
 **Space** pauses or resumes the drone; **S** stops it. Hold **Up/Down** for volume,
 **Left/Right** for stereo pan and **Q/E** for pitch. **Escape** quits. The screen
 shows the current values and loop state. An active Windows audio output is
@@ -64,7 +65,7 @@ or calling `stop_effect(effect, true)` cancels its pending start. If a
 title-screen jingle must be heard, play it after the player starts the game, or use a persistent
 effect instance that can wait for the gesture.
 
-[Play a sound in your game](/docs/guides/your-sound/) puts these sounds into a starter project
+[Play sounds from an XWB bank](/docs/guides/your-sound-xwb/) puts these bank sounds into a starter project
 step by step, with no tools, then a WAV of your own: the files, the manifest, the build file's
 lines and the code, with what each failure means. The sections below show the sample's code for
 using a bank. If a build fails after you put some of it into your own game, [Read a build error](/docs/get-started/build-errors/) shows how to read
@@ -72,12 +73,21 @@ the error.
 
 ## Declare a required bank
 
-A bank has two files: a JSON definition and the XAudio2 backend's `.xwb` wave
-container. The manifest names their shared stem, without either extension:
+For a first sound, [load one PCM WAV directly](/docs/guides/your-sound/) without
+a bank-packing tool. Generated or already decoded sounds can use
+[`AudioDevice::open_memory_bank`](/docs/reference/audio/audio-device/#open_memory_bank)
+with owned [`WaveBankData`](/docs/reference/audio/wave-data/).
+The [input contract and qualification record](https://github.com/matt439/Labrador/blob/master/docs/audio-input.md)
+state supported formats, loop frames, ownership and memory costs.
+
+A `sound_bank` asset has two files: a JSON definition and the XAudio2 backend's
+`.xwb` container. The sample also declares one `wave` asset, whose standalone
+PCM WAV becomes its own one-wave bank. The manifest names each asset without
+its file extension:
 
 <SourceFile path="samples/audio/content/manifest.json" />
 
-This bank is required. A missing or unreadable container stops loading with its
+Both audio assets are required. A missing or unreadable container stops loading with its
 path in the error. `optional: true` is only for content a game can run without:
 it reports the reason through the [diagnostic callback](/docs/reference/core/diagnostic/)
 (standard error by default), substitutes a silent bank and cannot demonstrate playback. A required bank
@@ -240,10 +250,10 @@ sound has to suit both:
   channels, and pan is a stereo control.
 - **Sample rate:** one a browser's `AudioBuffer` accepts. The Web Audio
   standard promises 8,000 to 96,000 Hz, and browsers differ outside that. The
-  engine's reader does not judge the rate; the browser does, when the bank
-  loads, and the load fails naming the wave. Headless Chrome, given a bank at
-  2,000 Hz, fails with `wave 'ping' is 2000 Hz, which this browser's Web Audio
-  cannot hold`.
+  engine's XWB reader does not judge the rate; the browser does, when the bank
+  loads, and the load fails naming the bank and wave while preserving the
+  browser's buffer-refusal reason. The direct WAV and memory-bank routes
+  check 8,000 to 96,000 Hz before calling the backend.
 
 The default to pick is the sample's: **mono, 16-bit PCM at 22,050 Hz**. It is
 exact, it is the format XWBTool packs as it is, and it is half the size of the
@@ -256,7 +266,7 @@ ffmpeg -i source.wav -ac 1 -ar 22050 -c:a pcm_s16le ping.wav
 
 `winget install Gyan.FFmpeg` installs FFmpeg; a prompt opened afterwards finds it, and
 `ffmpeg -version` checks it.
-[Sounds xwbtool will not take](/docs/guides/your-sound/#sounds-xwbtool-will-not-take) has the
+[Sounds xwbtool will not take](/docs/guides/your-sound-xwb/#sounds-xwbtool-will-not-take) has the
 install and the conversion step by step, with their messages.
 
 MS-ADPCM is the choice when the download matters more than the memory. It is
@@ -323,11 +333,17 @@ What has been checked, and what has not:
   bank.
 - **On Windows.** DirectX Tool Kit's reader hands the same region to XAudio2 as the buffer's
   `LoopBegin` and `LoopLength`, with an unending loop count when the effect loops. That is read
-  from the `may2026` source, in `WaveBank.cpp` and `SoundEffectInstance.cpp`. No test here runs
-  it.
+  from the `may2026` source, in `WaveBank.cpp` and `SoundEffectInstance.cpp`.
+  The native audio sample's finite check separately opens an owned PCM bank
+  with a region at frame 32 for 128 frames, releases the caller's containers,
+  and checks playing, paused, resumed and stopped states through the real
+  XAudio2 backend. That endpoint check passed on 17 November 2026; it does not
+  qualify the unplayed XWB loop fixture or its audible region boundaries.
 - **By ear.** Nobody has listened to a region loop on either platform.
 
-The `-null` presets open no container, so their recording holds the loop flag and no region.
+The `-null` presets keep the XWB route's name-only recording. A memory-built
+bank, including a direct WAV asset, instead records its owned samples and
+frame-based region; it still has no playback clock.
 
 ## Music, bank memory and the page download
 
@@ -364,7 +380,7 @@ inside `if(EMSCRIPTEN)`, and change it to `--preload-file`, so that the line rea
 Build `wasm-debug` again as [Build for the browser](/docs/guides/browser/) does. The build
 folder `out\build\wasm-debug\game` then has a fourth file beside `MyGame.html`, `MyGame.js`
 and `MyGame.wasm`: `MyGame.data`, which holds the content folder, 99,711 bytes for a starter with
-the `tones` bank of [Play a sound in your game](/docs/guides/your-sound/). Serve and open the
+the `tones` bank of [Play sounds from an XWB bank](/docs/guides/your-sound-xwb/). Serve and open the
 page as before, or run that guide's page check; the game starts as it did, and the server's
 window shows a `GET /MyGame.data` line. Copy `MyGame.data` with the other three wherever you
 put the page. Without it the game never starts: the starter's page is written to say `The game

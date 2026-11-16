@@ -30,7 +30,7 @@ using namespace labrador;
 // IT RUNS IN EVERY CONFIGURATION, which is the point. Every loader here is
 // built from four null pointers, and that is not a shortcut - it is the first
 // thing this file pins. ResourceLoader dereferences what it was handed only
-// from the four kinds it registers itself, so a game's own kind reaches none of
+// from its built-in kinds, so a game's own kind reaches none of
 // them, and the whole of the restore contract is answerable with no device, no
 // window and no audio engine.
 

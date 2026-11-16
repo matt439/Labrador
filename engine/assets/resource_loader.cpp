@@ -4,11 +4,13 @@
 #include "engine/assets/sprite_sheet_loader.h"
 #include "engine/audio/audio_device.h"
 #include "engine/audio/audio_resources.h"
+#include "engine/audio/wav_file.h"
 #include "engine/core/diagnostic.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
 #include "engine/render/resource_factory.h"
 
+#include <exception>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -32,7 +34,7 @@ namespace labrador
 		this->kinds_[kind] = std::move(asset_kind);
 	}
 
-	// The four kinds the engine can build without being told anything about the
+	// The kinds the engine can build without being told anything about the
 	// game. Each is a pair: how to load it, and what a device restore does to it.
 	void ResourceLoader::register_builtin_kinds()
 	{
@@ -70,6 +72,15 @@ namespace labrador
 					bool optional)
 				{
 					this->load_sound_bank(optional, directory, name);
+				},
+				nullptr
+			});
+		this->register_kind("wave",
+			{
+				[this](const std::string& directory, const std::string& name,
+					bool optional)
+				{
+					this->load_wave(optional, directory, name);
 				},
 				nullptr
 			});
@@ -184,6 +195,58 @@ namespace labrador
 				"See the repository's README, 'Audio'.\n");
 
 			this->audio_resources_->add_sound_bank(name, SoundBank::silent());
+			return;
+		}
+
+		this->audio_resources_->add_sound_bank(name,
+			build_sound_bank(this->audio_device_, wave_bank, definition));
+	}
+
+	void ResourceLoader::load_wave(bool optional,
+		const std::string& directory, const std::string& name)
+	{
+		const std::string path = directory + name + ".wav";
+		SoundBankDefinition definition;
+		definition.source_path = path;
+		definition.waves.push_back(name);
+		definition.effects.push_back(SoundBankDefinition::Effect{ name, name });
+		const auto unavailable = [this, optional, &name](const std::exception& error)
+		{
+			if (!optional) return false;
+			report_diagnostic(std::string("no audio: ") + error.what() +
+				". The manifest marks this wave optional, so it plays nothing. "
+				"See the repository's README, 'Audio'.\n");
+			this->audio_resources_->add_sound_bank(name, SoundBank::silent());
+			return true;
+		};
+
+		WaveData wave;
+		try
+		{
+			wave = read_wav_file(path);
+		}
+		catch (const std::out_of_range& missing)
+		{
+			if (!unavailable(missing)) throw;
+			return;
+		}
+		catch (const std::runtime_error& unread)
+		{
+			if (!unavailable(unread)) throw;
+			return;
+		}
+		wave.name = name;
+		WaveBankData data;
+		data.name = name;
+		data.waves.push_back(std::move(wave));
+		AudioDevice::WaveBankHandle wave_bank;
+		try
+		{
+			wave_bank = this->audio_device_->open_memory_bank(std::move(data));
+		}
+		catch (const std::runtime_error& unplayable)
+		{
+			if (!unavailable(unplayable)) throw;
 			return;
 		}
 

@@ -4,6 +4,8 @@
 #include "engine/audio/audio_device.h"
 #include "engine/audio/audio_resources.h"
 #include "engine/audio/sound_bank.h"
+#include "engine/audio/wave_data.h"
+#include "engine/audio/webaudio/wave_limits.h"
 
 #include <emscripten/em_js.h>
 
@@ -52,8 +54,11 @@ EM_JS(void, test_install_fake_web_audio, (), {
 		now: 0,
 		sources: [],
 		gains: [],
+		panners: [],
+		buffers: [],
 		listeners: [],
 		non_finite: 0,
+		refuse_buffer_at: -1,
 	};
 	class FakeParam {
 		constructor(value) {
@@ -96,10 +101,15 @@ EM_JS(void, test_install_fake_web_audio, (), {
 	};
 	globalThis.AudioBuffer = class {
 		constructor(options) {
+			if (fake.buffers.length === fake.refuse_buffer_at) {
+				fake.refuse_buffer_at = -1;
+				throw new RangeError("recording AudioBuffer refused");
+			}
 			this.channels = [];
 			for (let channel = 0; channel < options.numberOfChannels; channel++) {
 				this.channels.push(new Float32Array(options.length));
 			}
+			fake.buffers.push(this);
 		}
 		getChannelData(channel) {
 			return this.channels[channel];
@@ -108,6 +118,7 @@ EM_JS(void, test_install_fake_web_audio, (), {
 	globalThis.AudioBufferSourceNode = class extends FakeNode {
 		constructor(context, options) {
 			super();
+			this.buffer = options.buffer;
 			this.loop = options.loop;
 			this.loopStart = options.loopStart;
 			this.loopEnd = options.loopEnd;
@@ -120,6 +131,7 @@ EM_JS(void, test_install_fake_web_audio, (), {
 			this.offset = offset === undefined ? 0 : offset;
 		}
 		stop() {
+			this.stopped = true;
 		}
 	};
 	globalThis.GainNode = class extends FakeNode {
@@ -133,6 +145,7 @@ EM_JS(void, test_install_fake_web_audio, (), {
 		constructor(context, options) {
 			super();
 			this.pan = new FakeParam(options.pan);
+			fake.panners.push(this);
 		}
 	};
 	Object.defineProperty(globalThis, "window", {
@@ -211,6 +224,27 @@ EM_JS(double, test_gain_value, (int gain), {
 	return globalThis.labradorFakeAudio.gains[gain].gain.value;
 });
 
+EM_JS(double, test_pan_value, (int panner), {
+	return globalThis.labradorFakeAudio.panners[panner].pan.value;
+});
+
+EM_JS(double, test_source_sample, (int source, int channel, int frame), {
+	return globalThis.labradorFakeAudio.sources[source].buffer.channels[channel][frame];
+});
+
+EM_JS(int, test_source_stopped, (int source), {
+	return globalThis.labradorFakeAudio.sources[source].stopped ? 1 : 0;
+});
+
+EM_JS(void, test_refuse_buffer_after, (int count), {
+	const fake = globalThis.labradorFakeAudio;
+	fake.refuse_buffer_at = fake.buffers.length + count;
+});
+
+EM_JS(int, test_buffer_count, (), {
+	return globalThis.labradorFakeAudio.buffers.length;
+});
+
 // How many capture-phase listeners the fake window holds for one event:
 // 0 keydown, 1 mousedown, 2 pointerdown, 3 pointerup, 4 touchend. Any other
 // number asks how many it holds for every other event together.
@@ -280,6 +314,28 @@ namespace
 				definition);
 		}
 	};
+
+	WaveBankData memory_bank_data()
+	{
+		WaveData looped;
+		looped.name = "looped";
+		looped.channels = 2;
+		looped.sample_rate = 8000;
+		looped.loop_start = 1;
+		looped.loop_length = 2;
+		looped.samples = { -32768, 32767, -16384, 16384, 0, 8192, 16384, -8192 };
+		WaveData whole;
+		whole.name = "whole";
+		whole.channels = 1;
+		whole.sample_rate = 8000;
+		whole.loop_start = std::numeric_limits<uint32_t>::max();
+		whole.samples = { -8192, 8192 };
+		WaveBankData data;
+		data.name = "generated_pcm";
+		data.waves.push_back(std::move(looped));
+		data.waves.push_back(std::move(whole));
+		return data;
+	}
 }
 
 TEST_CASE("a bank is read from its container, and its order is the file's")
@@ -673,4 +729,126 @@ TEST_CASE("a looping voice with no region wraps at the end of its wave")
 	CHECK(test_source_value(1, source_offset) == doctest::Approx(0.125));
 	CHECK(test_source_value(1, source_loop_start) == 0.0);
 	CHECK(test_source_value(1, source_loop_end) == 0.0);
+}
+
+TEST_CASE("an owned memory bank retains actual PCM, order, levels and lifecycle after caller release")
+{
+	const FakeWebAudio fake;
+	AudioDevice device;
+	WaveBankData caller = memory_bank_data();
+	const AudioDevice::WaveBankHandle handle = device.open_memory_bank(caller);
+	caller = {};
+	CHECK(device.wave_index(handle, "looped") == 0);
+	CHECK(device.wave_index(handle, "whole") == 1);
+	CHECK(device.wave_index(handle, "missing") == -1);
+
+	SoundBankDefinition definition;
+	definition.source_path = "generated_pcm";
+	definition.waves = { "looped", "whole" };
+	definition.effects = { { "loop", "looped" } };
+	AudioResources resources;
+	resources.add_sound_bank("generated_pcm", build_sound_bank(&device, handle, definition));
+	SoundBank* bank = resources.sound_bank("generated_pcm");
+	const SoundBank::EffectHandle loop = bank->resolve_effect("loop");
+	const SoundBank::WaveHandle whole = bank->resolve_wave("whole");
+	const AudioResources::SoundGroupHandle group = resources.add_sound_group("memory_group");
+	bank->set_effect_group(loop, group);
+	bank->set_wave_group(whole, group);
+	resources.set_group_volume(group, 0.5f);
+	bank->play_wave(whole);
+	bank->play_effect(loop, true, 0.6f, 0.0f, 0.25f);
+	CHECK(bank->effect_state(loop) == SoundState::playing);
+	CHECK(test_source_count() == 0);
+	test_send_key(0);
+	REQUIRE(test_source_count() == 1);
+	CHECK(test_source_sample(0, 0, 0) == -1.0);
+	CHECK(test_source_sample(0, 0, 1) == -0.5);
+	CHECK(test_source_sample(0, 0, 2) == 0.0);
+	CHECK(test_source_sample(0, 0, 3) == 0.5);
+	CHECK(test_source_sample(0, 1, 0) == doctest::Approx(32767.0 / 32768.0));
+	CHECK(test_source_sample(0, 1, 1) == 0.5);
+	CHECK(test_source_sample(0, 1, 2) == 0.25);
+	CHECK(test_source_sample(0, 1, 3) == -0.25);
+	CHECK(test_source_value(0, source_loop_start) == doctest::Approx(1.0 / 8000.0));
+	CHECK(test_source_value(0, source_loop_end) == doctest::Approx(3.0 / 8000.0));
+	CHECK(test_gain_value(0) == doctest::Approx(0.3));
+	CHECK(test_pan_value(0) == doctest::Approx(0.25));
+
+	bank->play_wave(whole, 0.8f, 1.0f, -0.5f);
+	REQUIRE(test_source_count() == 2);
+	CHECK(test_source_sample(1, 0, 0) == -0.25);
+	CHECK(test_source_sample(1, 0, 1) == 0.25);
+	CHECK(test_source_value(1, source_rate) == 2.0);
+	CHECK(test_gain_value(1) == doctest::Approx(0.4));
+	CHECK(test_pan_value(1) == -0.5);
+	resources.set_group_volume(group, 0.25f);
+	CHECK(test_gain_value(0) == doctest::Approx(0.15));
+	CHECK(test_gain_value(1) == doctest::Approx(0.4));
+
+	test_advance_clock(4.0 / 8000.0);
+	bank->pause_effect(loop);
+	CHECK(bank->effect_state(loop) == SoundState::paused);
+	CHECK(test_source_stopped(0) == 1);
+	bank->set_effect_pitch(loop, 1.0f);
+	bank->set_effect_pan(loop, -0.75f);
+	bank->resume_effect(loop);
+	REQUIRE(test_source_count() == 3);
+	CHECK(test_source_value(2, source_offset) == doctest::Approx(2.0 / 8000.0));
+	CHECK(test_source_value(2, source_rate) == 2.0);
+	CHECK(test_pan_value(2) == -0.75);
+	bank->stop_effect(loop, true);
+	CHECK(bank->effect_state(loop) == SoundState::stopped);
+	CHECK(test_source_stopped(2) == 1);
+	device.suspend();
+	bank->play_wave(whole);
+	CHECK(test_source_count() == 3);
+	device.resume();
+	CHECK(test_source_count() == 3);
+	CHECK(test_non_finite_levels() == 0);
+}
+
+TEST_CASE("a refused memory bank publishes neither its first wave nor its bank index")
+{
+	const FakeWebAudio fake;
+	AudioDevice device;
+	WaveBankData invalid = memory_bank_data();
+	invalid.waves[0].channels = 3;
+	CHECK_THROWS_AS(device.open_memory_bank(invalid), std::invalid_argument);
+	CHECK(test_buffer_count() == 0);
+	const WaveBankData data = memory_bank_data();
+	test_refuse_buffer_after(1);
+	try
+	{
+		device.open_memory_bank(data);
+		FAIL("the recording AudioBuffer refusal was accepted");
+	}
+	catch (const std::runtime_error& error)
+	{
+		const std::string message = error.what();
+		CHECK(message.find("generated_pcm") != std::string::npos);
+		CHECK(message.find("whole") != std::string::npos);
+		CHECK(message.find("recording AudioBuffer refused") != std::string::npos);
+	}
+	const AudioDevice::WaveBankHandle handle = device.open_memory_bank(data);
+	CHECK(handle.index() == 0);
+	CHECK(device.wave_index(handle, "looped") == 0);
+	CHECK(device.wave_index(handle, "whole") == 1);
+	const AudioDevice::VoiceHandle voice = device.create_voice(handle, 1);
+	device.play_voice(voice, true, 1.0f, 0.0f, 0.0f);
+	test_send_key(0);
+	REQUIRE(test_source_count() == 1);
+	CHECK(test_source_sample(0, 0, 0) == -0.25);
+	CHECK(test_source_value(0, source_loop_start) == 0.0);
+	CHECK(test_source_value(0, source_loop_end) == 0.0);
+}
+
+TEST_CASE("Web Audio bridge counts are checked before signed narrowing without large buffers")
+{
+	const size_t limit = static_cast<size_t>(std::numeric_limits<int>::max());
+	const uint32_t loop_limit = static_cast<uint32_t>(limit);
+	CHECK_NOTHROW(detail::check_web_audio_wave_counts(limit, loop_limit - 1, 1, "bank", "wave"));
+	CHECK_NOTHROW(detail::check_web_audio_wave_counts(4, std::numeric_limits<uint32_t>::max(), 0, "bank", "wave"));
+	CHECK_THROWS_AS(detail::check_web_audio_wave_counts(limit + 1, 0, 0, "bank", "wave"), std::runtime_error);
+	CHECK_THROWS_AS(detail::check_web_audio_wave_counts(limit, loop_limit + 1, 1, "bank", "wave"), std::runtime_error);
+	CHECK_THROWS_AS(detail::check_web_audio_wave_counts(limit, 0, loop_limit + 1, "bank", "wave"), std::runtime_error);
 }

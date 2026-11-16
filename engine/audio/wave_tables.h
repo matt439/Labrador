@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -33,6 +34,17 @@ namespace labrador
 	class WaveTables
 	{
 	public:
+		// Reserve before another backend-owned table publishes its bank. The
+		// subsequent add_bank(std::move(names)) then needs no allocation.
+		void reserve_bank()
+		{
+			if (this->banks_.size() >= static_cast<size_t>(std::numeric_limits<int>::max()))
+			{
+				throw std::length_error("Audio bank table exceeds the handle index range.");
+			}
+			this->banks_.reserve(this->banks_.size() + 1);
+		}
+
 		// Keeps a bank's wave names, in the order whose index wave_index
 		// answers with.
 		AudioDevice::WaveBankHandle add_bank(std::vector<std::string> names)

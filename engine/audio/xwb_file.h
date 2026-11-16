@@ -1,60 +1,11 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
+#include "engine/audio/wave_data.h"
+
 #include <string>
-#include <vector>
 
 namespace labrador
 {
-	// How a wave was stored in its bank. The samples are 16-bit whatever this
-	// says; it is kept so that a caller can tell content that was always exact
-	// from content that came through a lossy codec.
-	enum class WaveEncoding
-	{
-		pcm8,
-		pcm16,
-		adpcm
-	};
-
-	// One wave out of a bank, decoded to signed 16-bit PCM.
-	struct WaveData
-	{
-		// The wave's name in the bank's name table, or empty when the bank was
-		// packed without one. This engine finds waves by name, so a bank with
-		// no table can be read and cannot be resolved against.
-		std::string name;
-
-		WaveEncoding encoding = WaveEncoding::pcm16;
-		int channels = 0;
-		int sample_rate = 0;
-
-		// The loop region, in frames. A length of zero means the wave carries
-		// none, and a looping voice then loops the whole wave. With a region,
-		// a looping voice plays from the wave's first frame and then repeats
-		// the region; a voice that is not looping ignores it.
-		uint32_t loop_start = 0;
-		uint32_t loop_length = 0;
-
-		// Interleaved: a frame is `channels` consecutive samples.
-		std::vector<int16_t> samples;
-
-		size_t frames() const
-		{
-			return this->channels > 0
-				? this->samples.size() / static_cast<size_t>(this->channels)
-				: 0;
-		}
-	};
-
-	// A whole bank: its own name and every wave in it, in the bank's order.
-	// The index of a wave here is the index its entry has in the file.
-	struct WaveBankData
-	{
-		std::string name;
-		std::vector<WaveData> waves;
-	};
-
 	// Reads the XACT wave bank (.xwb) at `path`.
 	//
 	// THE ENGINE READS IT, NOT A BACKEND, for the reason dds_file.h gives for

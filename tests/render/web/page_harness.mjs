@@ -15,7 +15,7 @@ export const SAMPLES = Object.freeze({
 	linesweeper: { target: 'LineSweeperSample', keys: ['Escape', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'Enter'] },
 	minimal: { target: 'MinimalSample', keys: ['Escape', 'Enter'] },
 	collision: { target: 'CollisionSample', keys: ['Escape'] },
-	audio: { target: 'AudioSample', keys: ['KeyS', 'Escape'] },
+	audio: { target: 'AudioSample', keys: ['KeyA', 'KeyS', 'Escape'] },
 	local_multiplayer: { target: 'LocalMultiplayerSample', keys: ['Escape'] },
 	// The keys ComponentsPageTests presses: a browser can take the first
 	// Escape to leave full screen, so a second one quits the gallery.
@@ -53,7 +53,7 @@ export function key_table(codes) {
 }
 
 // The keys SAMPLES presses.
-export const SAMPLE_KEYS = key_table(['Escape', 'Enter', 'KeyS', 'KeyR',
+export const SAMPLE_KEYS = key_table(['Escape', 'Enter', 'KeyA', 'KeyS', 'KeyR',
 	'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']);
 
 // One key source pressing each key in turn, each held for hold_ms and

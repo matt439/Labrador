@@ -22,6 +22,9 @@ owns the implementation stories and their prerequisites.
 
 The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
 `IDEA#16` as the stories linked in the table below. Their current implementation
+and qualification states are recorded there. `IDEA#8` and `IDEA#18` are
+deferred with the named
+
 and qualification states are recorded in BACKLOG.md and the result notes.
 `IDEA#8` and `IDEA#18` are deferred with the named
 
@@ -77,7 +80,7 @@ concrete client need.
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Deferred 2026-11-16 until a concrete hitscan or region-query caller supplies the need and semantics |
 | `IDEA#9` | Contact begin and end edges | could | S | Deferred 2026-11-16 until a second client needs contact edges beyond the collision sample's existing pattern |
 | `IDEA#10` | Arbitrary client sizes | should | S | Selected 2026-11-04 as OCA-81 and landed; enumeration later |
-| `IDEA#11` | Sounds from WAV files and from memory | could | M | Selected 2026-11-16 as [OCA-105](product/BACKLOG.md#oca-105), bounded PCM on all three audio backends; implementation open |
+| `IDEA#11` | Sounds from WAV files and from memory | could | M | Selected as [OCA-105](product/BACKLOG.md#oca-105); landed 2026-11-17 with bounded PCM WAV and owned banks on all three backends; listening remains separate |
 | `IDEA#12` | Animation sequences with named frames and durations | could | M | Deferred 2026-11-16 until a client needs nonuniform timing or exported named-frame animation |
 | `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Implemented 2026-11-17 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-authored rectangles; capture, focus and expansion stay with each page |
 | `IDEA#14` | Present interval and render-rate control | could | M | Vsync control landed; unfocused visible-window cap deferred 2026-11-16 until measured cost or client need |
@@ -368,8 +371,14 @@ custom size; CHANGES.md records the addition.
 [OCA-105](product/BACKLOG.md#oca-105), a bounded PCM WAV and in-memory source
 path on XAudio2, Web Audio and null. Existing XWB support stays; compressed
 formats and streaming remain separate. The earlier PNG prerequisite has
-landed. Implementation and qualification remain open, including backend-owned
-data and voice lifetime; the original proposal below is context.
+landed. The original proposal below is context.
+
+**Landed, 2026-11-17:** the shared reader, owned bank seam, `wave` assets and
+tool-free first-sound guide passed the full audio plan, real native-endpoint
+and Chrome pipeline checks, and the copied-starter checks. The
+[dated input record](audio-input.md) states ownership, memory/loop limits and
+exact qualification; listening and endpoint recovery retain their separate
+WEB#3 and REV#8 gates.
 
 **Present evidence:** the only way sound enters is
 [audio_device.h](../engine/audio/audio_device.h)'s `open_wave_bank`, which

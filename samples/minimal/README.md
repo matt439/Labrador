@@ -41,6 +41,13 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** Development engines can load a required PCM WAV as a `wave`
+  manifest asset, with one bank, wave and effect sharing the asset's name.
+  [Play a sound in your game](https://labradorengine.com/docs/guides/your-sound/)
+  shows copying a WAV, the build/install lines and resolving it in HelloState;
+  no XWBTool is needed for that path. The default template still has no sounds,
+  and the released `v0.3.0` starter uses the retained XWB bank guide.
+
 - **2026-11-17.** Optional native smoke-process reporting is enabled by
   `-DLABRADOR_SAMPLE_PROCESS_OBSERVATIONS=ON`, off by default. Its copied
   `native_process_report.h` reports the Application's first published UTC

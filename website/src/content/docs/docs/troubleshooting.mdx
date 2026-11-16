@@ -1056,7 +1056,7 @@ states the contract and how it applies to the game's sounds.
 [Put a picture in your game](/docs/guides/your-picture/#if-something-fails),
 [Animate a sprite sheet](/docs/guides/your-animation/#if-something-fails),
 [Fonts and text in your game](/docs/guides/your-font/#if-something-fails) and
-[Play a sound in your game](/docs/guides/your-sound/#if-something-fails) show where each of
+[Play sounds from an XWB bank](/docs/guides/your-sound-xwb/#if-something-fails) show where each of
 these messages comes from in a starter project, made on purpose.
 
 ### `'texconv' is not recognized as an internal or external command`
@@ -1191,7 +1191,7 @@ are the opposite mistake: a source that was already premultiplied, premultiplied
 
 The sound bank's `.json` file is beside the game and its `.xwb` file is not, or the `.xwb` is
 not a wave bank. Copy or pack the bank again
-([Play a sound in your game](/docs/guides/your-sound/)) and build. On Windows the reader's own
+([Play sounds from an XWB bank](/docs/guides/your-sound-xwb/)) and build. On Windows the reader's own
 word, `(WaveBank)`, follows the file name. In the browser build the same words begin the
 reader's own messages, such as the compact-entries one below. On Windows, `... is a streaming
 bank` means xwbtool was run with `-s`; pack the bank again without it.
@@ -1218,7 +1218,7 @@ needs all three of `waves`, `create_effect_instance_for_each_wave` and
 xwbtool takes WAV files holding 8-bit or 16-bit PCM. The first two are a 32-bit float or a 24-bit
 WAV; the third a file that is not a WAV at all, such as an MP3, whatever its name ends with.
 Export the sound again as 16-bit PCM, or convert it with FFmpeg
-([Sounds xwbtool will not take](/docs/guides/your-sound/#sounds-xwbtool-will-not-take)).
+([Sounds xwbtool will not take](/docs/guides/your-sound-xwb/#sounds-xwbtool-will-not-take)).
 
 ### `... uses compact entries, which this engine does not read`
 
@@ -1226,11 +1226,16 @@ The wave bank was packed without `-nc`. Windows plays a compact bank and the bro
 not, because it reads banks with the engine's own reader. Pack it again with
 `xwbtool -f -nc` ([Make sound content and verify it](/docs/guides/audio/#make-sound-content-and-verify-it)).
 
-### `... Hz, which this browser's Web Audio cannot hold`
+### Web Audio refuses a decoded wave
 
-A wave in the bank is at a sample rate the browser will not make a buffer for. Export it at a
-rate between 8,000 and 96,000 Hz, which every browser accepts, and pack the bank again
+A browser buffer refusal names the bank and wave after `Failed to open wave bank`,
+followed by the browser's own reason. For a sample-rate refusal, export at
+8,000 to 96,000 Hz and pack the XWB bank again
 ([Exporting sounds both platforms play](/docs/guides/audio/#exporting-sounds-both-platforms-play)).
+The direct WAV and memory-bank routes reject rates outside that range before
+asking Web Audio. A browser can also refuse a buffer because it cannot hold
+the requested allocation; changing its sample rate is not a remedy for every
+buffer error.
 
 ## Sharing the game
 

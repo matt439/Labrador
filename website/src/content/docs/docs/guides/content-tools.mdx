@@ -8,7 +8,9 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
-Labrador does not load font files or WAV sounds directly: it loads files made from them. The
+Labrador loads font atlases made from font files. XWB sound banks are another
+converted format; development builds can also load supported PCM WAVs directly,
+as [Play a sound in your game](/docs/guides/your-sound/) shows. The
 picture guides likewise load a `.dds` texture made from a PNG. The engine reads a PNG as it is
 too, so for a picture the conversion is a choice:
 [Put a picture in your game](/docs/guides/your-picture/) says how to keep the PNG and what that
@@ -22,7 +24,7 @@ The conversions are done by three free command-line programs from Microsoft:
 | --- | --- | --- | --- |
 | `texconv` | a picture, such as a PNG | a `.dds` texture | [Put a picture in your game](/docs/guides/your-picture/), which can keep the PNG and leave this out, and [Animate a sprite sheet](/docs/guides/your-animation/) |
 | `MakeSpriteFont` | a font installed on Windows | a `.spritefont` atlas | [Fonts and text in your game](/docs/guides/your-font/) |
-| `xwbtool` | WAV sounds | a `.xwb` wave bank | [Play a sound in your game](/docs/guides/your-sound/), [Audio](/docs/guides/audio/) |
+| `xwbtool` | WAV sounds | a `.xwb` wave bank | [Play sounds from an XWB bank](/docs/guides/your-sound-xwb/), [Audio](/docs/guides/audio/) |
 
 Each is one `.exe` file with nothing to install. This page downloads all three into one folder,
 `C:\dev\tools`, and checks that each one runs. It takes under a minute; the three files are about

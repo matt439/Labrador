@@ -395,7 +395,7 @@ test('sample control requires continuing draws then uses BiDi key actions before
 		['\uE015', '\uE015', '\uE012', '\uE013', '\uE014', 'r', '\uE00C', '\uE00C']);
 	assert.equal(protocol.calls.at(-1).method, 'input.releaseActions');
 	assert.deepEqual(key_actions(SAMPLES.audio.keys)[0].actions.filter((action) => action.type === 'keyDown')
-		.map((action) => action.value), ['s', '\uE00C']);
+		.map((action) => action.value), ['a', 's', '\uE00C']);
 });
 
 test('sample control refuses absent drawing, early quit, engine errors and a warning arriving during final evaluation', async () => {

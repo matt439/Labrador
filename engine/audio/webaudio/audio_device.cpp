@@ -1,4 +1,7 @@
 #include "engine/audio/audio_device.h"
+#include "engine/audio/wave_data_checks.h"
+#include "engine/audio/webaudio/wave_limits.h"
+#include "engine/audio/wave_data.h"
 #include "engine/audio/wave_tables.h"
 #include "engine/audio/xwb_file.h"
 
@@ -7,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <exception>
 #include <memory>
 #include <new>
@@ -22,9 +26,9 @@
 // WHAT THIS FILE OWNS THAT THE SEAM DOES NOT. Five things, the first of them
 // the one xaudio2/ also lists and the rest the browser's:
 //
-//  - THE CONTAINER. A wave bank is an .xwb, read by the engine's own reader
-//    (engine/audio/xwb_file.h), because Web Audio has no reader for it. Every
-//    wave arrives as 16-bit PCM and becomes an AudioBuffer of floats at load,
+//  - THE CONTENT. The container route reads .xwb through the engine's reader
+//    (engine/audio/xwb_file.h); the memory route takes owned decoded samples.
+//    Every wave arrives as 16-bit PCM and becomes an AudioBuffer of floats at load,
 //    so nothing is decoded while a sound plays and the samples the engine read
 //    are dropped once the browser holds them. A wave at a rate the browser's
 //    AudioBuffer refuses fails the load with a runtime_error naming it.
@@ -259,6 +263,7 @@ EM_JS(void, labrador_audio_install, (), {
 				closing: false,
 				suspended: false,
 				banks: [],
+				bank_error: null,
 				voices: [],
 				listener: null,
 			};
@@ -301,49 +306,58 @@ EM_JS(void, labrador_audio_install, (), {
 
 		add_bank(id) {
 			const device = this.devices[id];
-			device.banks.push([]);
-			if (device.listener && typeof navigator !== "undefined" &&
-				navigator.userActivation && navigator.userActivation.hasBeenActive) {
-				unlock(device);
+			const bank = device.banks.length;
+			device.bank_error = null;
+			try {
+				device.banks.push([]);
+				if (device.listener && typeof navigator !== "undefined" &&
+					navigator.userActivation && navigator.userActivation.hasBeenActive) {
+					unlock(device);
+				}
+				return bank;
+			} catch (refused) {
+				device.banks.length = bank;
+				device.bank_error = String(refused?.message ?? refused);
+				return -1;
 			}
-			return device.banks.length - 1;
 		},
 
 		add_wave(id, bank, channels, rate, frames, samples, loop_start,
 			loop_length) {
 			const device = this.devices[id];
-			const wave = {
-				buffer: null,
-				duration: frames / rate,
-				has_region: loop_length > 0,
-				loop_start: loop_length > 0 ? loop_start / rate : 0,
-				loop_end: loop_length > 0 ? (loop_start + loop_length) / rate
-					: frames / rate,
-			};
-			if (usable && frames > 0) {
-				try {
+			try {
+				const wave = {
+					buffer: null,
+					duration: frames / rate,
+					has_region: loop_length > 0,
+					loop_start: loop_length > 0 ? loop_start / rate : 0,
+					loop_end: loop_length > 0 ? (loop_start + loop_length) / rate
+						: frames / rate,
+				};
+				if (usable && frames > 0) {
 					wave.buffer = new AudioBuffer({
 						length: frames,
 						numberOfChannels: channels,
 						sampleRate: rate,
 					});
-				} catch (refused) {
-					// A rate this browser's Web Audio will not hold. The bank
-					// goes with it, because it is the last one opened and the
-					// load that opened it is about to throw.
-					device.banks.length = bank;
-					return 0;
-				}
-				const first = samples >> 1;
-				for (let channel = 0; channel < channels; channel++) {
-					const out = wave.buffer.getChannelData(channel);
-					for (let frame = 0; frame < frames; frame++) {
-						out[frame] = HEAP16[first + frame * channels + channel] / 32768;
+					const first = samples >>> 1;
+					for (let channel = 0; channel < channels; channel++) {
+						const out = wave.buffer.getChannelData(channel);
+						for (let frame = 0; frame < frames; frame++) {
+							out[frame] = HEAP16[first + frame * channels + channel] / 32768;
+						}
 					}
 				}
+				device.banks[bank].push(wave);
+				return 1;
+			} catch (refused) {
+				// Roll back the pending bank for buffer construction, channel
+				// copy and publication failures alike. The C++ name table has
+				// not committed this bank yet.
+				device.banks.length = bank;
+				device.bank_error = String(refused?.message ?? refused);
+				return 0;
 			}
-			device.banks[bank].push(wave);
-			return 1;
 		},
 
 		play_wave(id, bank, index, volume, rate, pan) {
@@ -496,6 +510,18 @@ EM_JS(int, labrador_audio_add_wave, (int device, int bank, int channels,
 		samples, loop_start, loop_length);
 });
 
+EM_JS_DEPS(labrador_audio_bank_error_length, "$lengthBytesUTF8");
+EM_JS(int, labrador_audio_bank_error_length, (int device), {
+	return lengthBytesUTF8(Module.labradorAudio.devices[device].bank_error ||
+		"Web Audio refused the decoded wave data");
+});
+
+EM_JS_DEPS(labrador_audio_bank_error_copy, "$stringToUTF8");
+EM_JS(void, labrador_audio_bank_error_copy, (int device, char* output, int bytes), {
+	stringToUTF8(Module.labradorAudio.devices[device].bank_error ||
+		"Web Audio refused the decoded wave data", output, bytes);
+});
+
 EM_JS(void, labrador_audio_play_wave, (int device, int bank, int wave,
 	double volume, double rate, double pan), {
 	Module.labradorAudio.play_wave(device, bank, wave, volume, rate, pan);
@@ -589,12 +615,52 @@ namespace labrador
 		// This device's index in Module.labradorAudio's table.
 		int device = -1;
 
-		// Each bank's wave names, in the file's order, which is the index
+		// Each bank's wave names, in its data order, which is the index
 		// wave_index answers with and the JavaScript side's index too. The
 		// JavaScript side holds each voice's nodes and position; these tables
 		// hold its three-valued state and loop flag (VoiceRecord), so that
 		// what a game is told does not depend on a promise settling.
 		WaveTables tables;
+
+		std::string bank_failure() const
+		{
+			const int length = labrador_audio_bank_error_length(this->device);
+			std::string message(static_cast<size_t>(length), '\0');
+			labrador_audio_bank_error_copy(this->device, message.data(), length + 1);
+			return message;
+		}
+
+		WaveBankHandle publish_bank(const WaveBankData& data,
+			std::vector<std::string> names, const std::string& label)
+		{
+			for (const WaveData& wave : data.waves)
+			{
+				detail::check_web_audio_wave_counts(wave.frames(), wave.loop_start,
+					wave.loop_length, label, wave.name);
+			}
+			// Complete every C++ allocation before the JavaScript side changes.
+			// Moving this names vector into the reserved slot cannot allocate.
+			this->tables.reserve_bank();
+			const int bank = labrador_audio_add_bank(this->device);
+			if (bank < 0)
+			{
+				throw std::runtime_error("Failed to open wave bank '" + label +
+					"': " + this->bank_failure());
+			}
+			for (const WaveData& wave : data.waves)
+			{
+				if (labrador_audio_add_wave(this->device, bank,
+					wave.channels, wave.sample_rate,
+					static_cast<int>(wave.frames()), wave.samples.data(),
+					wave.loop_length == 0 ? 0 : static_cast<int>(wave.loop_start),
+					static_cast<int>(wave.loop_length)) == 0)
+				{
+					throw std::runtime_error("Failed to open wave bank '" + label +
+						"' wave '" + wave.name + "': " + this->bank_failure());
+				}
+			}
+			return this->tables.add_bank(std::move(names));
+		}
 
 		VoiceRecord& voice(VoiceHandle handle)
 		{
@@ -671,28 +737,21 @@ namespace labrador
 			}
 		}
 
-		// The rate is the one property of a wave the browser judges rather than
-		// the reader: the spec promises 8000 to 96000 Hz and browsers take more,
-		// each a different range, so the AudioBuffer constructor is asked and
-		// its refusal comes back here, where it can name the bank and the wave.
-		// The script has already dropped the bank, so the tables still agree.
-		const int bank = labrador_audio_add_bank(this->impl_->device);
+		return this->impl_->publish_bank(data, std::move(names), path);
+	}
+
+	AudioDevice::WaveBankHandle AudioDevice::open_memory_bank(WaveBankData data)
+	{
+		detail::validate_wave_bank_data(data);
+		std::vector<std::string> names;
+		names.reserve(data.waves.size());
 		for (const WaveData& wave : data.waves)
 		{
-			if (labrador_audio_add_wave(this->impl_->device, bank,
-				wave.channels, wave.sample_rate,
-				static_cast<int>(wave.frames()), wave.samples.data(),
-				static_cast<int>(wave.loop_start),
-				static_cast<int>(wave.loop_length)) == 0)
-			{
-				throw std::runtime_error("Failed to open wave bank: '" + path +
-					"' wave '" + wave.name + "' is " +
-					std::to_string(wave.sample_rate) +
-					" Hz, which this browser's Web Audio cannot hold.");
-			}
+			names.push_back(wave.name);
 		}
-
-		return this->impl_->tables.add_bank(std::move(names));
+		// add_wave copies every sample into owned AudioBuffer channel storage.
+		// Neither this temporary bank nor its caller's memory is borrowed.
+		return this->impl_->publish_bank(data, std::move(names), data.name);
 	}
 
 	int AudioDevice::wave_index(WaveBankHandle bank,
