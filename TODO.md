@@ -130,7 +130,6 @@ five deferred review rows below keep their individual revisit triggers.
 | `OCA-100` | OPEN | could | S | Run combined input/app verification for the implemented ISO key; native/wasm-null suites and Chrome DOM feed pass (`REV#82`). [Scope](docs/product/BACKLOG.md#oca-100). |
 | `PI-24` | OPEN | could | S | Provide an opt-in optimized Release symbols recipe with matching executable/PDB/source identity (`REV#91`). [Scope](docs/product/BACKLOG.md#pi-24). |
 | `OCA-101` | OPEN | could | S | Document console output and one freshly verified browser-only C++ debugging route (`REV#92`). [Scope](docs/product/BACKLOG.md#oca-101). |
-| `SM-85` | OPEN | could | S | Report compilation costs and comparable build baselines, separating compiler work from wall time (`REV#147`). [Scope](docs/product/BACKLOG.md#sm-85). |
 
 ## Third accepted decision batch of 2026-11-16
 
