@@ -370,11 +370,16 @@ open one PR for the accumulated work when asked. Do not create a branch or PR
 per commit. Push or open a PR only when the owner asks.
 
 A consumer-visible change goes in [CHANGES.md](CHANGES.md), newest first under
-`## Unreleased`. Touching `engine/**/*.h`, `engine/CMakeLists.txt`,
-`cmake/settings.cmake` or `vcpkg.json` requires an entry or `not consumer-visible`
+`## Unreleased`. Touching `engine/**/*.h`, `vcpkg.json` or an explicit
+[consumer build input](CHANGES.md#the-rule) requires an entry or `not consumer-visible`
 in the commit message, which the lint job checks per commit
 (`tools/check_changes_rule.py`). The rule includes silent behaviour and dependency/flag
 changes. A source break names old/new spellings and the sample migration diff.
+The build-input list is the root, engine and math `CMakeLists.txt`, plus
+`cmake/`'s settings, source_revision, compile_shaders, add_material,
+embed_material and check_engine_includes scripts. It does not cover every
+CMake script or maintainer tool. CHANGES.md records the 2026-11-16 expansion's
+frozen historical boundary; the original paths remain checked across history.
 Keep history there, never in header comments. Releases are owner-cut tags by
 CONTRIBUTING's release procedure, with entries under the tag carrying them.
 
