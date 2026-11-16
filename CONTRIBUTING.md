@@ -4,6 +4,13 @@ How a change reaches `master`. This is the procedure the owner and every agent
 working in this tree follow; it is written here because a rule that lives only
 in someone's memory cannot be followed by anyone else.
 
+Scoped bug fixes, documentation corrections and tests are welcome. Discuss
+larger API, feature or design changes through the
+[issue tracker](https://github.com/matt439/Labrador/issues/new/choose) before
+substantial implementation; engine requests follow the exhibit and trade-off
+rules below. Every pull request follows the review, validation and landing
+procedure in this file. No response or review time is promised.
+
 ## Asking a question or requesting a change
 
 Everything goes through the

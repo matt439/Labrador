@@ -1449,7 +1449,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
 - [x] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
 - [ ] **[OCA-119](#oca-119)** Could · S · The Outside Adopter: Know what Escape does when the browser owns full screen
-- [ ] **[SM-94](#sm-94)** Could · XS · The Sole Owner-Maintainer: State the scope of welcome contributions without promising a response time
+- [x] **[SM-94](#sm-94)** Could · XS · The Sole Owner-Maintainer: State the scope of welcome contributions without promising a response time
 - [ ] **[SM-95](#sm-95)** Could · XS · The Sole Owner-Maintainer: Publish accurate owner-supplied agent-use wording — blocked until the wording is provided
 - [ ] **[SM-96](#sm-96)** Should · M · The Sole Owner-Maintainer: Refresh preparation for the actual v0.4.0 candidate independently of queued feature stories
 - [ ] **[SM-97](#sm-97)** Could · M · The Sole Owner-Maintainer: Invoke an iOS Simulator game pilot without adding a recurring acceptance lane
@@ -3424,6 +3424,20 @@ Selected from [`REV#94`](../review/2026-11-10/FINDINGS.md#rev94).
 funding configuration or separately invented policy document. Check the
 wording against existing contribution/intake rules and the design trade-offs,
 then run local lint and the website gate.
+
+**Closed 2026-11-17:** CONTRIBUTING now welcomes scoped bug fixes,
+documentation corrections and tests before its intake procedure. Larger
+API, feature and design changes go through discussion before substantial
+implementation; engine requests retain the existing client-exhibit and
+trade-off rules. Every pull request keeps the review, validation and landing
+procedure. No response or review time is promised, and no repository or
+community setting changed.
+
+Independent wording review found no conflict with the existing intake,
+security or design rules. All 13 local lint phases pass (497 Python tests,
+two Ninja-dependent skips followed by both fixtures passing with Ninja on
+PATH). The website gate passes its type check, 201 tests, 186-page build,
+internal links and archived snapshot assembly.
 
 <a id="sm-95"></a>
 ### SM-95. Publish owner-supplied agent-use wording
