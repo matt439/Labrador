@@ -5,6 +5,10 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+#include <limits>
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -30,14 +34,20 @@ namespace
 		VkInstance handle = VK_NULL_HANDLE;
 	};
 
-	VkImageFormatProperties selected_limits(const labrador::RenderDeviceInfo& selected)
+	struct TextureLimits
+	{
+		VkImageFormatProperties format;
+		std::uint32_t dimension = 0;
+	};
+
+	TextureLimits selected_limits(const labrador::RenderDeviceInfo& selected)
 	{
 		QueryInstance query;
 		uint32_t count = 0;
 		REQUIRE(vkEnumeratePhysicalDevices(query.handle, &count, nullptr) == VK_SUCCESS);
 		std::vector<VkPhysicalDevice> devices(count);
 		REQUIRE(vkEnumeratePhysicalDevices(query.handle, &count, devices.data()) == VK_SUCCESS);
-		VkImageFormatProperties limits = {};
+		TextureLimits limits = {};
 		bool matched = false;
 		for (VkPhysicalDevice device : devices)
 		{
@@ -53,10 +63,11 @@ namespace
 				&current) == VK_SUCCESS);
 			if (matched)
 			{
-				REQUIRE(current.maxExtent.width == limits.maxExtent.width);
-				REQUIRE(current.maxExtent.height == limits.maxExtent.height);
+				REQUIRE(current.maxExtent.width == limits.format.maxExtent.width);
+				REQUIRE(current.maxExtent.height == limits.format.maxExtent.height);
+				REQUIRE(properties.limits.maxImageDimension2D == limits.dimension);
 			}
-			limits = current;
+			limits = { current, properties.limits.maxImageDimension2D };
 			matched = true;
 		}
 		REQUIRE(matched);
@@ -68,14 +79,27 @@ TEST_CASE("Vulkan refuses queried image extent overflow before creating an image
 {
 	using namespace labrador;
 	render_tests::DeviceFixture fixture;
-	const VkImageFormatProperties limits = selected_limits(fixture.renderer.device_info());
+	const TextureLimits limits = selected_limits(fixture.renderer.device_info());
+	REQUIRE(limits.dimension > 0);
+	CHECK(fixture.renderer.texture_dimension_limit() ==
+		std::optional<std::uint32_t>(limits.dimension));
 	for (bool wide : { true, false })
 	{
+		const std::uint32_t extent_limit = wide
+			? limits.format.maxExtent.width : limits.format.maxExtent.height;
+		if (extent_limit >= static_cast<std::uint32_t>(std::numeric_limits<int>::max()))
+		{
+			// TextureData has no representable positive dimension above this bound.
+			continue;
+		}
 		TextureData texture;
-		texture.width = wide ? static_cast<int>(limits.maxExtent.width + 1) : 1;
-		texture.height = wide ? 1 : static_cast<int>(limits.maxExtent.height + 1);
-		texture.levels.push_back(texture_level(texture.format, texture.width, texture.height, 0));
-		texture.pixels.assign(texture.levels[0].size, 255);
+		texture.width = wide ? static_cast<int>(extent_limit + 1) : 1;
+		texture.height = wide ? 1 : static_cast<int>(extent_limit + 1);
+		TextureLevel level;
+		level.width = texture.width;
+		level.height = texture.height;
+		texture.levels.push_back(level);
+		// No pixel allocation: both extent checks must refuse before upload.
 		try
 		{
 			add_texture_asset(fixture.renderer, fixture.resources, "oversized-atlas", texture);
@@ -85,7 +109,20 @@ TEST_CASE("Vulkan refuses queried image extent overflow before creating an image
 		{
 			const std::string message = error.what();
 			CHECK(message.find("oversized-atlas") != std::string::npos);
-			CHECK(message.find("image extent limit") != std::string::npos);
+			if (extent_limit < limits.dimension)
+			{
+				CHECK(message.find("image extent limit") != std::string::npos);
+				CHECK(message.find(std::to_string(limits.format.maxExtent.width) + "x" +
+					std::to_string(limits.format.maxExtent.height) + "x" +
+					std::to_string(limits.format.maxExtent.depth)) != std::string::npos);
+			}
+			else
+			{
+				CHECK(message == "Texture 'oversized-atlas' at " +
+					std::to_string(texture.width) + "x" + std::to_string(texture.height) +
+					" exceeds the selected device's 2D texture dimension limit of " +
+					std::to_string(limits.dimension) + " texels.");
+			}
 		}
 	}
 }

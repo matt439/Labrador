@@ -13,6 +13,8 @@
 #include "engine/render/sprite_frame.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/render/sprite_vertex.h"
+#include "engine/render/texture_data.h"
+#include "engine/render/texture_format.h"
 #include "engine/render/texture_object.h"
 #include "tests/render/null_test_harness.h"
 
@@ -44,6 +46,24 @@
 
 using namespace labrador;
 using namespace render_tests::null_backend;
+
+TEST_CASE("the null renderer adds no selected-device or PNG admission bound to CPU textures")
+{
+	Harness harness;
+	CHECK_FALSE(harness.renderer().texture_dimension_limit().has_value());
+
+	TextureData texture;
+	texture.width = max_texture_dimension + 1;
+	texture.height = 1;
+	texture.levels.push_back(texture_level(texture.format, texture.width,
+		texture.height, 0));
+	texture.pixels.resize(texture.levels.front().size, 255);
+	add_texture_asset(harness.renderer(), harness.resources(), "cpu_texture", texture);
+	CHECK(harness.resources().texture_size(
+		harness.resources().resolve_texture("cpu_texture")) ==
+		Vector2I(max_texture_dimension + 1, 1));
+	CHECK_FALSE(harness.renderer().texture_dimension_limit().has_value());
+}
 
 TEST_CASE("the load path is the real one, and its failures are the real ones")
 {

@@ -35,6 +35,20 @@ namespace labrador
 		}
 	}
 
+	void check_texture_dimension_limit(std::string_view name, int width,
+		int height, std::optional<std::uint32_t> limit)
+	{
+		if (limit.has_value() &&
+			((width > 0 && static_cast<std::uint32_t>(width) > *limit) ||
+			 (height > 0 && static_cast<std::uint32_t>(height) > *limit)))
+		{
+			throw std::runtime_error("Texture '" + std::string(name) + "' at " +
+				std::to_string(width) + "x" + std::to_string(height) +
+				" exceeds the selected device's 2D texture dimension limit of " +
+				std::to_string(*limit) + " texels.");
+		}
+	}
+
 	void check_view_count_in_capacity(int count, int capacity)
 	{
 		if (count < 0 || count > capacity)

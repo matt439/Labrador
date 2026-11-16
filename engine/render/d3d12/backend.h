@@ -15,7 +15,9 @@
 #include <wrl/client.h>
 
 #include <array>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -231,6 +233,7 @@ namespace labrador
 
 		DeviceResources device_resources;
 		RenderDeviceInfo device_info;
+		std::optional<std::uint32_t> texture_limit;
 
 		// What set_vsync last asked, which outlives the device: it is the
 		// sync interval end_frame hands to Present, 1 or 0.

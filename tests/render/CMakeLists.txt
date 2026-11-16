@@ -26,6 +26,7 @@ labrador_add_test_suite(RenderTests
         text_encoding_tests.cpp
         text_tests.cpp
         texture_format_tests.cpp
+        texture_limit_tests.cpp
         viewport_manager_tests.cpp
         viewport_tests.cpp
         visual_tests.cpp
@@ -71,6 +72,10 @@ add_dependencies(RenderTests render_test_content)
 if(LABRADOR_RENDER_BACKEND STREQUAL "null")
     target_sources(RenderTests PRIVATE null_tests.cpp null_resource_tests.cpp
         material_null_tests.cpp)
+endif()
+
+if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
+    target_sources(RenderTests PRIVATE d3d11/texture_limit_tests.cpp)
 endif()
 
 # The two Direct3D backends' HRESULT translation, which is Windows code by
@@ -120,6 +125,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         text_pixel_tests.cpp
         view_pixel_tests.cpp
         resource_pixel_tests.cpp
+        texture_limit_pixel_tests.cpp
         ../test_main.cpp
     )
     target_link_libraries(RenderPixelTests PRIVATE
@@ -146,6 +152,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
 
     if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
         target_sources(RenderPixelTests PRIVATE
+            d3d11/texture_limit_lifecycle_tests.cpp
             "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d11/diagnostic_tests.cpp>")
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
         target_sources(RenderPixelTests PRIVATE gl/texture_tests.cpp
@@ -155,6 +162,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             d3d12/submit_allocation_tests.cpp
             d3d12/texture_upload_tests.cpp
             d3d12/texture_replacement_tests.cpp
+            d3d12/texture_limit_lifecycle_tests.cpp
             "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d12/presentation_diagnostics_tests.cpp>"
         )
 
@@ -209,6 +217,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             vulkan/shader_failure_tests.cpp
             vulkan/pending_submission_tests.cpp
             vulkan/cleanup_failure_tests.cpp
+            vulkan/texture_limit_lifecycle_tests.cpp
         )
         target_link_libraries(RenderPixelTests PRIVATE Vulkan::Vulkan)
 

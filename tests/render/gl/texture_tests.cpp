@@ -15,7 +15,32 @@
 #endif
 
 #include <stdexcept>
+#include <limits>
 #include <string>
+
+TEST_CASE("GL reports GL_MAX_TEXTURE_SIZE and checks it before changing bindings")
+{
+	using namespace labrador;
+	render_tests::DeviceFixture fixture;
+	GLint actual = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &actual);
+	REQUIRE(actual > 0);
+	CHECK(fixture.renderer.texture_dimension_limit() ==
+		static_cast<std::uint32_t>(actual));
+	REQUIRE(actual < std::numeric_limits<int>::max());
+	TextureData oversized;
+	oversized.width = actual + 1;
+	oversized.height = 1;
+	GLuint sentinel = 0;
+	glGenTextures(1, &sentinel);
+	glBindTexture(GL_TEXTURE_2D, sentinel);
+	CHECK_THROWS_AS(add_texture_asset(fixture.renderer, fixture.resources,
+		"too-wide", oversized), std::runtime_error);
+	GLint bound = 0;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+	CHECK(static_cast<GLuint>(bound) == sentinel);
+	glDeleteTextures(1, &sentinel);
+}
 
 TEST_CASE("GL texture refusal leaves the caller's binding untouched and permits retry")
 {

@@ -177,12 +177,13 @@ namespace labrador
 		~Impl();
 
 		// The platform's half: the window or canvas, and the context made on
-		// it. Null until create_context, and whether it is null is the only
-		// question anything outside the two context files asks of it.
+		// it. Null until create_context; readiness and loss are queried through
+		// the platform helpers below without exposing the context's contents.
 		struct Context;
 		std::unique_ptr<Context> context;
 
 		RenderDeviceInfo device_info;
+		std::optional<std::uint32_t> texture_limit;
 
 		// What set_vsync last asked, and whether the context has yet to hear
 		// it. A swap interval is the context's, so a change made after
@@ -344,6 +345,10 @@ namespace labrador
 		// Whether the context is lost right now, so that every GL call would
 		// do nothing. Never, on WGL. Defined by the context.
 		bool context_lost() const;
+
+		// False also after a browser restore event and before begin_frame has
+		// rebuilt the context's engine resources. Defined by the context.
+		bool context_ready() const;
 
 		// Whether the context was lost and is back, asked once a frame by
 		// begin_frame. True once per restore; the context has already

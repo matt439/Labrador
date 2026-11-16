@@ -87,9 +87,15 @@ namespace labrador
 	//
 	// The engine functions above call it, so a backend never sees a file; a
 	// test or a tool may call it directly to install TextureData it built
-	// itself. Throws std::runtime_error naming `name` and the format if the
-	// device will not take it, which is the answer a backend that cannot
+	// itself. An unsupported format throws std::runtime_error naming `name`
+	// and the format, which is the answer a backend that cannot
 	// upload block compression owes rather than a blank texture.
+	// A width or height above renderer.texture_dimension_limit(), when known,
+	// throws std::runtime_error naming the texture, requested dimensions and
+	// limit before allocating or replacing a resource. This check does not
+	// replace the backend's format, image-data or allocation checks.
+	// GL also refuses an upload by name while its context is lost or awaiting
+	// restoration; a lost context cannot create a resource.
 	//
 	// AFTER create_device, AND THAT IS A RULE OF THE SEAM RATHER THAN ONE
 	// BACKEND'S PREFERENCE. `renderer` is named here only because a texture is

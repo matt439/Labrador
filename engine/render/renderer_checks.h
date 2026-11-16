@@ -3,8 +3,11 @@
 #include "engine/render/post_effect.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
+#include <string_view>
 #include <vector>
 
 // The argument checks renderer.h states for create_device, device_info,
@@ -23,6 +26,12 @@ namespace labrador
 	// Throws std::logic_error when `created` is false: device_info has no
 	// truthful answer before create_device.
 	void check_device_created(bool created);
+
+	// A known device bound refuses either oversized positive dimension before
+	// allocation. Unknown adds no dimension restriction; format, data and
+	// positive-size validation still belong to their existing upload paths.
+	void check_texture_dimension_limit(std::string_view name, int width,
+		int height, std::optional<std::uint32_t> limit);
 
 	// Throws std::out_of_range for an index outside [0, view_count).
 	void check_view_index(int index, int view_count);

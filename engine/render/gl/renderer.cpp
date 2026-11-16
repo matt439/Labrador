@@ -106,6 +106,15 @@ namespace labrador
 				? RenderDeviceKind::software : RenderDeviceKind::hardware;
 		}
 
+		std::optional<std::uint32_t> selected_texture_limit()
+		{
+			GLint limit = 0;
+			glGetIntegerv(GL_MAX_TEXTURE_SIZE, &limit);
+			return limit > 0
+				? std::optional<std::uint32_t>(static_cast<std::uint32_t>(limit))
+				: std::nullopt;
+		}
+
 		// Points the three attributes at the vertex `first_vertex` of the
 		// bound vertex buffer.
 		//
@@ -772,6 +781,7 @@ namespace labrador
 
 	void Renderer::Impl::restore_device()
 	{
+		this->texture_limit.reset();
 		// EVERY NAME THE OLD CONTEXT HELD IS FORGOTTEN, NOT DELETED. Its
 		// objects went with it, and a delete of one on the restored context is
 		// an error the browser reports - so the names are dropped, and
@@ -808,10 +818,12 @@ namespace labrador
 		// keeps the textures it has, which draw nothing until then. One that
 		// failed on a context that is still there is a real failure, and is
 		// thrown.
+		std::optional<std::uint32_t> restored_limit;
 		try
 		{
 			this->create_gl_resources();
 			describe_device(*this);
+			restored_limit = selected_texture_limit();
 		}
 		catch (const std::exception&)
 		{
@@ -825,7 +837,6 @@ namespace labrador
 		{
 			return;
 		}
-
 		// Then the shell, both calls, in the order d3d11, d3d12 and vulkan
 		// make them - release what the device held, then load it again - so
 		// a client written against any of them hears the same two here.
@@ -834,6 +845,7 @@ namespace labrador
 			this->notify->on_device_lost();
 		}
 
+		this->texture_limit = restored_limit;
 		if (this->notify != nullptr)
 		{
 			this->notify->on_device_restored();
@@ -915,6 +927,7 @@ namespace labrador
 		int view_capacity)
 	{
 		check_view_capacity(view_capacity);
+		this->impl_->texture_limit.reset();
 
 		this->impl_->reported_width = width;
 		this->impl_->reported_height = height;
@@ -931,12 +944,19 @@ namespace labrador
 
 		this->impl_->create_gl_resources();
 		describe_device(*this->impl_);
+		this->impl_->texture_limit = selected_texture_limit();
 	}
 
 	const RenderDeviceInfo& Renderer::device_info() const
 	{
 		check_device_created(!this->impl_->device_info.backend.empty());
 		return this->impl_->device_info;
+	}
+
+	std::optional<std::uint32_t> Renderer::texture_dimension_limit() const
+	{
+		return this->impl_->context_ready()
+			? this->impl_->texture_limit : std::nullopt;
 	}
 
 	void Renderer::set_vsync(bool vsync)

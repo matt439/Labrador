@@ -13,7 +13,9 @@
 #include <wrl/client.h>
 
 #include <array>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -37,6 +39,11 @@
 
 namespace labrador
 {
+	// The 2D texture limit guaranteed by a selected feature level, or unknown
+	// for levels this backend does not describe. No device or API call.
+	std::optional<std::uint32_t> texture_limit_for_feature_level(
+		D3D_FEATURE_LEVEL feature_level);
+
 	// The swap chain's format. read_back_buffer swaps B and R to answer RGBA,
 	// so it static_asserts this rather than trusting it.
 	constexpr DXGI_FORMAT back_buffer_format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -250,6 +257,7 @@ namespace labrador
 		// class comment on DeviceResources, which has none to offer.
 		DeviceResources device_resources{ back_buffer_format };
 		RenderDeviceInfo device_info;
+		std::optional<std::uint32_t> texture_limit;
 
 		// What set_vsync last asked, which outlives the device: it is the
 		// sync interval end_frame hands to Present, 1 or 0.

@@ -184,6 +184,11 @@ namespace labrador
 		return this->impl_->device_info;
 	}
 
+	std::optional<std::uint32_t> Renderer::texture_dimension_limit() const
+	{
+		return std::nullopt;
+	}
+
 	void Renderer::set_vsync(bool vsync)
 	{
 		this->impl_->vsync = vsync;

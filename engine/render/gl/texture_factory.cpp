@@ -4,6 +4,7 @@
 #include "engine/render/gl/backend.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/renderer.h"
+#include "engine/render/renderer_checks.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
 
@@ -138,6 +139,13 @@ namespace labrador
 			throw std::runtime_error("Texture '" + name + "' was loaded before "
 				"create_device made a context.");
 		}
+		if (!renderer.impl()->context_ready())
+		{
+			throw std::runtime_error("Texture '" + name + "' was loaded while "
+				"the GL context is lost or awaiting restoration.");
+		}
+		check_texture_dimension_limit(name, texture.width, texture.height,
+			renderer.texture_dimension_limit());
 
 		// GL QUEUES ERRORS AND HANDS THEM OUT ONE AT A TIME, so an error raised
 		// by anything earlier is still waiting and the check below would report

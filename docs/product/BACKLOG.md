@@ -3184,6 +3184,27 @@ qualify the actual selected-device facts and upload behaviour across affected
 render backends and wasm under the render verification owner, then run lint
 and the website gate. Software-driver evidence is labelled as such.
 
+**Implementation, 2026-11-17:** the renderer query reports the selected API's
+2D dimension bound, with absence before successful device creation, during
+loss or recreation, and on null. The shared oversized-request check names the
+texture, requested dimensions and known bound before allocation; existing
+format and data checks remain. The texture guide separates that device fact
+from loaded texture dimensions, PNG admission and D3D12 texture-name capacity.
+Common boundary/diagnostic tests and null CPU-texture tests are added, with
+native backend notification-cycle cases and a browser restoration fixture.
+
+**Focused checks:** all five native Debug `RenderTests` pass, as do wasm GL
+and wasm-null `RenderTests`. All four native `RenderPixelTests` targets and
+the wasm pixel/context-loss targets compile. The CMake and offline Node lint
+phases, source enumeration and website check, 200 tests and production build
+pass. Chrome 157.0.8103.78 on ANGLE/RTX 5080 passes the normal/no-S3TC pixel
+and both context-loss entries. The pixel pages report an actual API bound
+of 16384; the separate context-loss fixture advertises synthetic 1024 then
+512 bounds to prove refresh, with absence during the loss/restoration gap.
+Native pixel execution, Vulkan `validate_sync` and the full integrated lint
+gate remain for combined render qualification. API-reported bounds and
+synthetic callbacks do not measure a physical device ceiling or hardware loss.
+
 <a id="sm-87"></a>
 ### SM-87. Report native memory and first-frame timing with defined endpoints
 
