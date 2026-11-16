@@ -26,6 +26,13 @@ on the two deploy checks means awaiting their distinct outside events.
 Listable checks stay automated; the owner's contribution remains informal
 play, listening and observations on the real devices.
 
+`OCA-119` is also **BLOCKED** on a qualified trusted-key or informal human
+headed-browser observation. The [2026-11-17 attempt](2026-11-17-browser-escape-attempt.md)
+stopped at Computer Use's URL-policy gate before any trusted click or Escape.
+No full-screen exit or game-key routing was observed. Headed launch and
+offline runner fixtures do not satisfy that acceptance, and the existing
+explicit-exit/full-screen-flag tests remain separate evidence.
+
 | Approved session | Remaining evidence and boundary |
 |---|---|
 | Pad: `OCA-48`, `OCA-45`, `PI-21`, with `BDP-06` | Informal native and Chrome play with the owned XInput pad, including background-input behaviour and how vibration feels. Record date, source and device identity with observations. Automated mapping and slot tests remain their own evidence; this session does not imply a second pad or an observed unplug-slot-0 path. |

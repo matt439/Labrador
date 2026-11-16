@@ -117,6 +117,20 @@ test('explicit browser arguments keep their order after the platform defaults', 
 	assert.deepEqual(extra, ['--disable-gpu-watchdog', '--disable-features=OwnerSelectedFeature']);
 });
 
+test('headed mode retains the isolated profile and omits headless-only switches', () => {
+	assert.equal(parse_arguments(sample).headed, false);
+	assert.equal(parse_arguments([...sample, '--browser-mode', 'headed']).headed, true);
+	assert.equal(parse_arguments([...sample, '--browser-mode', 'headless']).headed, false);
+	assert.throws(() => parse_arguments([...sample, '--browser-mode', 'visible']), UsageError);
+	for (const platform of ['win32', 'linux', 'darwin']) {
+		const args = chromium_arguments('owned-profile', [], platform, true);
+		assert.ok(args.includes('--user-data-dir=owned-profile'));
+		assert.ok(args.includes('--remote-debugging-port=0'));
+		assert.ok(!args.some((argument) => argument.startsWith('--headless')));
+		assert.ok(!args.some((argument) => argument.includes('CalculateNativeWinOcclusion')));
+	}
+});
+
 test('page activation waits for Page.enable and its own reply before navigation', async () => {
 	const commands = [];
 	let enabled;
