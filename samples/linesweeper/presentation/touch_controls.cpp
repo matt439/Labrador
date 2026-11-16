@@ -2,6 +2,7 @@
 
 #include "engine/math/rectanglei.h"
 #include "engine/render/colour.h"
+#include "engine/render/text_alignment.h"
 #include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/palette.h"
 
@@ -187,8 +188,8 @@ namespace linesweeper
 			const Vector2F& size = this->label_sizes_[index];
 
 			draw_list.draw_text(this->font_, labels[index],
-				Vector2F(rectangle.x + (rectangle.width - size.x) * 0.5f,
-					rectangle.y + (rectangle.height - size.y) * 0.5f),
+				aligned_text_position(size, rectangle,
+					TextAlignment::centre, TextSnapping::none),
 				label_colour, label_scale, 0.0f, Vector2F::zero, 0.0f);
 		}
 	}

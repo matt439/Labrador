@@ -3,12 +3,12 @@
 #include "engine/math/rectanglei.h"
 #include "engine/render/font.h"
 #include "engine/render/sprite_geometry.h"
+#include "engine/render/text_alignment.h"
 #include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/layout.h"
 #include "samples/linesweeper/presentation/palette.h"
 
 #include <algorithm>
-#include <cmath>
 #include <string>
 #include <string_view>
 
@@ -89,9 +89,9 @@ namespace linesweeper
 		}
 		// Floor the centered board-space origin so an odd measured width does
 		// not place it on a half unit at the sample's capture resolution.
-		this->text_origin_ = Vector2F(
-			std::floor(well_origin_x + (well_width - this->text_size_.x) * 0.5f),
-			banner_middle);
+		this->text_origin_ = aligned_text_position(this->text_size_,
+			RectangleF(well_origin_x, banner_middle, well_width, 0.0f),
+			TextAlignment::top_centre, TextSnapping::floor);
 		this->text_bounds_.offset(this->text_origin_.x, this->text_origin_.y);
 	}
 

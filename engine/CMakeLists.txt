@@ -62,6 +62,7 @@ add_library(LabradorEngine STATIC
     render/sprite_sheet.cpp
     render/sprite_sheet_object.cpp
     render/text.cpp
+    render/text_alignment.cpp
     render/text_encoding.cpp
     render/text_object.cpp
     render/texture_data.cpp

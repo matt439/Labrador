@@ -1412,7 +1412,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
 - [x] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
 - [x] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
-- [ ] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
+- [x] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
 - [ ] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
 - [ ] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
 - [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
@@ -2393,6 +2393,18 @@ layout or text engine redesign. Behavioural tests cover odd/fractional sizes,
 non-unit scale, alignment choices and snapping. Follow the render verification
 owner for changed engine/render code; regenerate and review any changed
 LineSweeper captures or goldens under their owners, and run the website gate.
+
+Closed 2026-11-17: `text_alignment.h` publishes a pure `aligned_text_position`
+for point and manually supplied rectangle anchors, nine alignment choices,
+explicit none/floor snapping and scale. Layout, glyph bearings and renderer
+policy remain separate. The three LineSweeper sites retain their snapping
+choices and exact placement arithmetic. Native-null and wasm-null RenderTests
+and LineSweeperViewTests pass, including a loaded font, empty/multiline,
+fractional/non-unit and invalid-input cases, plus the sample's actual recorded
+glyph geometry across ten arrangements. All four D3D11 Release website
+captures were regenerated before/after and match both each other and the
+tracked PNGs byte for byte. The public reference and guide document the helper;
+the website gate passes. No image or golden changed.
 
 <a id="srl-23"></a>
 ### SRL-23. Spawn and retire an object in the collision sample

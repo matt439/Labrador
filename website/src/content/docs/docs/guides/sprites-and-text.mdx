@@ -147,17 +147,33 @@ The [language limits](#which-languages-the-text-path-can-draw) and the glyphs in
 your atlas still determine which text can draw.
 
 **Centring text means measuring it.** `RenderResources::measure_text(font, text)` returns its
-size. LineSweeper's pause menu centres each row this way when the menu is built, and the COLOURS
+unscaled layout size. Include `engine/render/text_alignment.h` and pass that size to
+`aligned_text_position`, with a point or rectangle to align against, a `TextAlignment` and an
+explicit `TextSnapping` choice. It returns the position for unrotated text drawn with zero origin.
+Pass the same scale as the draw, or use a size already scaled by your game with the helper's
+default scale of one. Multiline text aligns as one measured block; its shorter lines keep their
+own left margin.
+
+This helper is in the development engine after `v0.3.0`; that release's starter does not have
+it. Use a source checkout containing the helper, or the release that carries it.
+[Update a starter](/docs/guides/starter-update/) and
+[Move your engine pin](/docs/guides/move-pin/) explain the two update routes.
+
+LineSweeper's pause menu centres each row this way when the menu is built, and the COLOURS
 row again each time it names a different palette:
 
 <SourceFile path="samples/linesweeper/states/pause_state.cpp" from="Vector2F centred(const RenderResources& resources, FontHandle font," to="}" />
 
-The position is rounded down to a whole pixel. Half of an odd width is half a pixel, and text
+This call selects `TextSnapping::floor`, which rounds the final coordinates down to whole
+board-space units. At the sample's identity camera those units are pixels. Half of an odd width is half a pixel, and text
 there sits with every pixel centre on the edge between two texels of its font. Each graphics
 backend picks between them its own way, and can tear a glyph doing it. Any other fraction draws
 as it would on the nearest whole pixel, under the point filter.
 
-The engine has no layout system: positions are numbers your game works out, as here.
+`TextSnapping::none` keeps fractional positions. The touch labels use that choice with their
+scaled measurements; the helper does not silently round every scale. A camera can still map a
+whole board-space coordinate to a fraction of a screen pixel. The engine has no layout system:
+the anchor, alignment, scale and snapping are numbers and choices your game supplies.
 
 ### From a string table to text
 

@@ -620,6 +620,16 @@ recognisable ways `engine/input/direction.h` lists. The keyboard is still read
 here, and should be: which key means up is a binding, and a binding is the
 game's.
 
+### Measured text alignment keeps each caller's snapping choice
+
+The pause menu, top-out banner and touch labels share
+`aligned_text_position` from `engine/render/text_alignment.h`. Pause and
+top-out select floor in board space; touch labels keep fractional positions
+with no snapping and their already-scaled measurements. The helper aligns
+the measured layout, without changing glyph bearings or selecting a camera
+policy. It preserves the sample's placement arithmetic. On 2026-11-17 the four
+D3D11 Release website captures were regenerated and matched their prior bytes.
+
 ### Additive blending needs no engine change
 
 The engine looked as though it could not blend additively: it opened every batch

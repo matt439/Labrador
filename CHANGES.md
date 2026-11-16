@@ -123,6 +123,22 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Share measured-text alignment with explicit snapping
+
+**Additive API.** `aligned_text_position` in `engine/render/text_alignment.h`
+places a measured text layout at a point or within a manually supplied
+rectangle, using nine `TextAlignment` choices. `TextSnapping::none` preserves
+fractional coordinates; `floor` rounds the final position down in the supplied
+coordinate space. It does not change the renderer's pixel or camera policy,
+align individual lines, or place rotated/mirrored text. The helper's scale is
+finite and positive; measured/anchor extents are finite and nonnegative,
+including empty text. Invalid inputs fail explicitly.
+
+LineSweeper's pause and top-out rows select floor; its touch labels retain
+unsnapped placement. Existing positions and the four website captures are
+unchanged. The [guide](website/src/content/docs/docs/guides/sprites-and-text.mdx)
+shows the measured call and explains coordinate-space limits.
+
 ### 2026-11-17 - Handle browser fullscreen refusal within its owning Window
 
 **Behaviour change.** A browser's asynchronous refusal of a Window-owned
