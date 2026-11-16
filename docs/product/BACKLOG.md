@@ -33,6 +33,8 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-16, second batch: defer the debug panel, extra consumption routes, prebuilt samples, fuzzing and static-analysis tooling until their named needs or evidence arise. Their [live review ledger](../review/2026-11-10/STATUS.md) retains the individual triggers; no additional implementation scope is selected. | REV#43, REV#65, REV#66, REV#67, REV#68 |
 | Decided 2026-11-16, third batch: select the eight bounded stories in L98 to L105. Keep non-Xbox controller qualification gated on a real controller; retain four native slots in this scope. Selection records future work and changes no implementation, dependency, hardware, release or service. | OCA-102 to OCA-108, SM-86 |
 | Decided 2026-11-16, third batch: defer nine proposals and decline speculative easing, a tilemap/Tiled subsystem and a runtime font subsystem. The [feature candidates](../feature-candidates.md) and [engine comparison's current ledger](../survey/2026-10-27.md) retain the individual reasons and revisit triggers; existing post-processing and authored materials remain implemented. | GAP#2, GAP#3, GAP#5, GAP#7 to GAP#13; IDEA#8, IDEA#18 |
+| Decided 2026-11-16, fourth batch: select the twelve bounded stories in L106 to L117. Layout labels follow the selected rebinding example; extra weekly configurations wait for native Release qualification. Reporting and release collection are explicitly invoked, and rebuild comparison neither publishes nor replaces assets. Selection is not implementation or execution. | OCA-109 to OCA-115, SM-87 to SM-91 |
+| Decided 2026-11-16, fourth batch: retain the wide renderer text API and the existing UTF-8 conversion boundary; defer contact edges, named-frame animation, an unfocused render cap, small math helpers, texture repeat, pad identity and a shared fatal-error helper under their live owner records. | REV#56; IDEA#9, IDEA#12, IDEA#14, IDEA#19, REV#55, REV#59, REV#61 |
 
 `SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
 its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
@@ -572,6 +574,21 @@ pad closes that gate. Nine deferrals and three declines are recorded in their
 owners with revisit triggers. All eight new story boxes remain unticked;
 the earlier thirty-two stories and their order are unchanged.
 
+**Fourth decision triage amendment, 2026-11-16:** L106 to L117 follow the
+twelve selected scopes in their agreed order, under the same ready-work rule
+as the earlier batches. Typed entry and rebinding are copied game-owned
+examples; saves retain game-owned format and recovery policy. OCA-111 waits
+for OCA-110's rebinding client, and SM-89 waits for SM-81's native Release
+qualification and policy before extending scheduled coverage. Touch fixtures
+do not establish real-glass acceptance. Keep the renderer's wide text API;
+OCA-109 uses the existing UTF-8 conversion boundary when edited text changes.
+The seven deferrals retain their triggers in
+[Feature candidates](../feature-candidates.md) and
+[the live review ledger](../review/2026-11-10/STATUS.md). All twelve new story
+boxes stay unticked, and the earlier forty stories and their order remain
+unchanged. No collector, workflow, account query, release rebuild or publication
+runs as part of this planning selection.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -593,6 +610,9 @@ the earlier thirty-two stories and their order are unchanged.
 - Copyable collision outlines and bounded camera following demonstrate the existing primitives, a deterministic grid-sheet tool emits the existing schema, and pages share hit-test arithmetic while owning their target geometry and pointer policy
 - PCM WAV files and caller-supplied samples work through the three audio backends with owned lifetimes, XWB compatibility and separately recorded endpoint, browser and listening evidence
 - Platform-window metadata records the nominal monitor refresh where available, a game can set its native title and explicitly request a diagnosed icon, and a selected bought controller layer is qualified with a real non-Xbox pad while retaining the four-slot contract
+- Copied typed entry, keyboard rebinding and save recovery preserve game-owned policy, stable binding tokens and existing data; best-effort key labels follow the rebinding example without changing saved identities
+- Native/canvas cursor choices and copyable touch controls have explicit page ownership, with real-device evidence separated from deterministic interaction tests; selected-device texture limits improve oversized-upload diagnostics
+- Native memory/startup and manually requested CI reports state their measurement limits, extra weekly configurations follow native Release qualification, release counters are collected only when invoked, and tag-named rebuilds compare recorded assets without publishing or replacing them
 
 **Lands as**
 
@@ -701,6 +721,18 @@ the earlier thirty-two stories and their order are unchanged.
 103. L103 Record nominal monitor refresh through the window seam: SM-86 (`IDEA#15`)
 104. L104 Set a native window title and explicitly request an icon: OCA-107 (`IDEA#16`)
 105. L105 Qualify a bought non-Xbox controller layer with a real pad: OCA-108 (`GAP#1`, blocked on controller availability)
+106. L106 Copy a bounded desktop typed-text field: OCA-109 (`IDEA#1`)
+107. L107 Copy game-owned keyboard rebinding with duplicate refusal: OCA-110 (`IDEA#2`)
+108. L108 Show best-effort keyboard-layout labels without changing binding tokens: OCA-111 (`REV#58`, after OCA-110)
+109. L109 Preserve valid saves across write and migration failures: OCA-112 (`IDEA#3`)
+110. L110 Select native and canvas cursor shapes through the app seam: OCA-113 (`IDEA#17`)
+111. L111 Copy held touch buttons and a stick region: OCA-114 (`REV#64`)
+112. L112 Report selected-device texture limits and name oversized requests: OCA-115 (`REV#33`)
+113. L113 Report native memory and first-frame timing with explicit endpoints: SM-87 (`REV#42`)
+114. L114 Summarise CI failures through a manually invoked read-only report: SM-88 (`REV#50`)
+115. L115 Extend weekly non-required configurations after native Release qualification: SM-89 (`REV#52`, after SM-81)
+116. L116 Record aggregate release counters only when the owner invokes collection: SM-90 (`REV#54`)
+117. L117 Compare a tag-named release rebuild without publishing assets: SM-91 (`REV#70`)
 
 **Stories**
 
@@ -1282,6 +1314,19 @@ the earlier thirty-two stories and their order are unchanged.
 - [ ] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
 - [ ] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
 - [ ] **[OCA-108](#oca-108)** Should · L · The Outside Adopter: Use a qualified non-Xbox controller layer on Windows — blocked until a real non-Xbox pad is available
+
+- [ ] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
+- [ ] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
+- [ ] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
+- [ ] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
+- [ ] **[OCA-113](#oca-113)** Could · M · The Outside Adopter: Choose a native or canvas cursor shape for the current page interaction
+- [ ] **[OCA-114](#oca-114)** Could · M · The Outside Adopter: Copy held touch buttons and a virtual-stick region without adopting a game action map
+- [ ] **[OCA-115](#oca-115)** Could · S · The Outside Adopter: Read the selected device's texture limit and understand an oversized-texture refusal
+- [ ] **[SM-87](#sm-87)** Could · S · The Sole Owner-Maintainer: Read defined native memory and first-frame measurements without a hard gate
+- [ ] **[SM-88](#sm-88)** Could · S · The Sole Owner-Maintainer: Request a read-only report of CI failures by step, ref and attempt
+- [ ] **[SM-89](#sm-89)** Could · M · The Sole Owner-Maintainer: Exercise five extra configurations weekly as non-required checks — after SM-81
+- [ ] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
+- [ ] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
@@ -2205,6 +2250,286 @@ real controller acceptance remains distinct from the scripted backend.
 Follow the input/app verification owners and affected consumer, dependency,
 lint and website checks. This planning decision purchases no hardware,
 installs no dependency and changes no live configuration.
+
+The following twelve stories are the fourth decision batch selected on
+2026-11-16. Implementation and qualification remain open; OCA-111 and SM-89
+also wait for their named earlier stories.
+
+<a id="oca-109"></a>
+### OCA-109. Copy a bounded desktop typed-text field
+
+Selected from [`IDEA#1`](../feature-candidates.md#idea1-a-single-line-typed-text-component).
+
+**Acceptance**
+
+- Add a copyable single-line name/label field demonstrated in the components
+  gallery, with append, code-point backspace, confirm, cancel, length/width
+  limits and focus-loss behaviour stated. The page feeds input and owns the
+  editing/focus policy rather than the component polling devices itself.
+- Retain UTF-8 input/storage and use the existing `widen` boundary when text
+  changes, outside draw. Validate the selected font's renderability and show
+  the supported character scope and refusal/fallback policy explicitly.
+- Keep the renderer's wide text API and current language limitations; the
+  example does not depend on REV#56's declined broad text migration.
+
+**Boundaries and verification:** this is desktop code-point editing, not a
+grapheme editor, selection/clipboard system, IME-composition API or mobile
+soft-keyboard promise. Headless tests cover multi-byte deletion, limits,
+confirm/cancel, unfocused input and unsupported glyphs; native/browser gallery
+checks exercise the documented path. Update copied-test instructions and
+run affected sample checks, lint and the website gate.
+
+<a id="oca-110"></a>
+### OCA-110. Copy game-owned keyboard rebinding with duplicate refusal
+
+Selected from [`IDEA#2`](../feature-candidates.md#idea2-a-game-owned-keyboard-rebinding-screen).
+
+**Acceptance**
+
+- Demonstrate a copyable capture row and game-owned keyboard action table in
+  an existing sample. Refuse a duplicate binding with a clear message, leaving
+  the prior table unchanged; provide cancel and reset without silently
+  changing another action.
+- Ignore the opener until released, cancel capture on focus loss and retain
+  a protected route for menu navigation/cancellation after every refusal.
+  The page owns which keys/actions can be rebound and when capture begins.
+- Use the existing stable `key_name`/`key_from_name` tokens wherever bindings
+  are represented as data; display labels are separate from saved identities.
+
+**Boundaries and verification:** no engine action map or controller rebinding
+framework. Persistence is a separate example-owned choice. Tests cover capture,
+opener release, duplicate refusal, invalid tokens, reset, cancellation and
+usable navigation afterwards; exercise native/browser sample flows and run
+affected sample checks, lint and the website gate.
+
+<a id="oca-111"></a>
+### OCA-111. Show best-effort keyboard-layout labels for rebinding
+
+Selected from [`REV#58`](../review/2026-11-10/FINDINGS.md#rev58), after OCA-110.
+
+**Acceptance**
+
+- Expose a best-effort human-readable label for a physical key through the
+  input/platform boundary, with an explicit unavailable result or documented
+  stable-token fallback on unsupported browsers/platforms.
+- Use it in OCA-110's rebinding display, updating or invalidating cached
+  labels when supported layout information changes. Keep saved bindings and
+  key identity on existing stable tokens, independent of the displayed text.
+- The displaying page uses the documented stable-token fallback when its
+  selected font cannot render an otherwise available label; font policy does
+  not move into the input query.
+- State the layout/browser limits and preserve the current key mapping,
+  including the separately selected ISO extra-key position.
+
+**Boundaries and verification:** no public text-representation migration,
+automatic binding remap or promise that every browser reveals the active
+layout. Deterministic tests cover labels, unknown values, unrenderable labels
+and the displaying page's fallback; verify
+the documented native/browser routes and keep physical-layout evidence
+separate. Follow input/app verification owners and run the website gate.
+
+<a id="oca-112"></a>
+### OCA-112. Preserve valid saves across write and migration failures
+
+Selected from [`IDEA#3`](../feature-candidates.md#idea3-versioned-saves-with-recovery).
+
+**Acceptance**
+
+- Extend the game-owned settings example with one explicit file version and
+  migration, temporary-write/replacement on Windows and a reported browser
+  flush result. State each platform's actual durability limits.
+- Preserve prior valid data when writing, replacing, flushing or migrating
+  fails. Keep malformed or future-version data intact until the documented
+  recovery policy permits replacement, and offer an explicit retry route.
+- Keep schema, serialization and recovery decisions in the example. The
+  engine still supplies checked reading rather than a new JSON writer or
+  serializer, and this work does not wait for OCA-76's deferred second caller.
+
+**Boundaries and verification:** no universal filesystem transaction promise.
+Fixtures cover missing/current/old/future versions, malformed/out-of-range
+data, interrupted and failed writes and retry. Browser reload checks exercise
+both sync success and failure in an isolated profile; tests use disposable
+directories rather than real user saves. Follow the guide in an assembled
+project and run affected tooling, lint and the website gate.
+
+<a id="oca-113"></a>
+### OCA-113. Select native and canvas cursor shapes through the app seam
+
+Selected from [`IDEA#17`](../feature-candidates.md#idea17-cursor-shapes).
+
+**Acceptance**
+
+- Add a small native-system/canvas-CSS cursor choice through the app/window
+  seam for arrow, hand, text, crosshair, move and not-allowed, with a stated
+  default and read-back contract.
+- The components gallery is the first caller and chooses its shape from
+  page-owned hover/capture state. Canvas changes remain local to the canvas;
+  visibility and confinement keep their existing semantics, including the
+  selected shape when the cursor is shown again.
+- Publish the additive contract, guide example and CHANGES.md entry together.
+
+**Boundaries and verification:** no custom-image cursor subsystem or automatic
+widget pointer policy. Hidden-window and page tests cover selection, default,
+hide/show and gallery transitions; distinguish platform read-back from
+visual inspection. Follow the app verification plan, preserve browser focus
+behaviour, and run affected samples, lint and the website gate.
+
+<a id="oca-114"></a>
+### OCA-114. Copy held touch buttons and a virtual-stick region
+
+Selected from [`REV#64`](../review/2026-11-10/FINDINGS.md#rev64).
+
+**Acceptance**
+
+- Provide copyable button rectangles answering held state and a stick region
+  answering a bounded vector, driven by page-supplied TouchPoints. Demonstrate
+  them in an existing sample and document coordinate conversion and copying
+  their tests.
+- Define multiple-contact ownership, movement outside a region, release,
+  cancellation and focus loss. The page selects target geometry, overlapping
+  target precedence, action bindings and whether a gesture is accepted.
+- Preserve the engine's input mechanism boundary and the existing game's
+  controls; the components do not become an engine action map.
+
+**Boundaries and verification:** synthetic fixtures cover simultaneous fingers,
+distinct ids, bounded sticks, held buttons and cancellation without starting
+another contact. Native/browser sample checks exercise their feeds, while
+real-glass, pen and phone acceptance remain under WEB#5 and SM-13 and stay
+explicitly open until observed. Run sample checks, lint and the website gate.
+
+<a id="oca-115"></a>
+### OCA-115. Report selected-device texture limits and oversized requests
+
+Selected from [`REV#33`](../review/2026-11-10/FINDINGS.md#rev33).
+
+**Acceptance**
+
+- Report the selected device's maximum supported texture dimension through
+  a narrow capability contract, with explicit unavailable/non-device meaning
+  where appropriate. Keep it distinct from OCA-88's loaded-texture size query
+  and D3D12's separate texture-name capacity.
+- Oversized-upload refusals name the requested texture, its dimensions and
+  the relevant device limit without weakening existing format/size checks.
+- Update the public reference, texture guide and CHANGES.md for the contract
+  and refusal changes, preserving the already documented D3D12 name cap.
+
+**Boundaries and verification:** no general capability framework or new
+allocation policy. Focused tests cover known/unknown limits and diagnostics;
+qualify the actual selected-device facts and upload behaviour across affected
+render backends and wasm under the render verification owner, then run lint
+and the website gate. Software-driver evidence is labelled as such.
+
+<a id="sm-87"></a>
+### SM-87. Report native memory and first-frame timing with defined endpoints
+
+Selected from [`REV#42`](../review/2026-11-10/FINDINGS.md#rev42).
+
+**Acceptance**
+
+- Add report-only native peak working set, private bytes at the stated exit
+  endpoint and process-start-to-first-completed-frame timing to the frame
+  benchmark and relevant smoke output. Define each clock origin, sampling
+  point, unit and unavailable value rather than relabelling an entry-point
+  timer as complete process startup.
+- Retain source/build/configuration and device identity with the report so
+  before/after comparisons use the same workload and endpoints. Memory and
+  startup results do not become a device-performance or leak verdict.
+
+**Boundaries and verification:** no hard CI memory/startup thresholds or
+unrequested benchmark execution. Deterministic serialization/endpoint fixtures
+cover known/unknown records; compare one explicitly invoked native capture
+with the measurement sources and retain its limits. Update the measurement
+procedure and run affected tooling, lint and the website gate.
+
+<a id="sm-88"></a>
+### SM-88. Request a read-only CI failure report
+
+Selected from [`REV#50`](../review/2026-11-10/FINDINGS.md#rev50).
+
+**Acceptance**
+
+- A manually invoked read-only report groups failed job steps by workflow,
+  ref and run attempt over an explicit scope, preserving cancellations,
+  retries and incomplete/missing data rather than merging them into failure
+  counts or labelling them flakes.
+- Support offline captured responses and retain the queried repository,
+  time/range and source run identifiers. State aggregation limits and expose
+  API/authentication failures without changing remote runs or issues.
+
+**Boundaries and verification:** no scheduled polling, automatic reruns,
+notifications or write access. Offline fixtures cover attempts, pagination,
+missing steps, cancelled runs and query failures; an explicitly invoked
+read-only comparison may qualify the live path. Run tooling/lint and the
+website gate; this planning selection queries no account.
+
+<a id="sm-89"></a>
+### SM-89. Extend weekly configurations after native Release qualification
+
+Selected from [`REV#52`](../review/2026-11-10/FINDINGS.md#rev52), after SM-81.
+
+**Prerequisite:** SM-81's native MSVC Release qualification and build policy
+have landed. This story remains blocked until that dependency closes.
+
+**Acceptance**
+
+- Add the four other native Release configurations and wasm-debug to the
+  existing weekly schedule as non-required checks, with their exact intended
+  inventory and clear selection apart from ordinary pull-request builds.
+- Coordinate workflow scope, inventory, required-check documentation and the
+  ci_gap_report definition together. Preserve the real-driver and release
+  checks that scheduled software execution cannot replace.
+- Coordinate the scheduled lane with SM-82's separately gated ASan work so
+  their configuration choices, names and qualification records agree without
+  weakening either suite or adding an implicit required check.
+
+**Boundaries and verification:** no additional platform-support or hardware
+claim. Offline workflow/planner fixtures prove schedule and registration
+selection; retain the first qualified hosted results after publication.
+Changing scheduling is explicit implementation scope, not an execution made
+by this planning record. Run relevant tooling, lint and the website gate.
+
+<a id="sm-90"></a>
+### SM-90. Invoke an aggregate counter snapshot when cutting a release
+
+Selected from [`REV#54`](../review/2026-11-10/FINDINGS.md#rev54).
+
+**Acceptance**
+
+- Add an owner-invoked release-procedure step for a small dated aggregate
+  snapshot of GitHub views, unique visitors and starter-download counts,
+  naming the repository/release, available reporting window and access limits.
+- Keep observations separate from inferred demand: automation-driven clones,
+  documentation downloads and views do not establish individual adopters.
+  Preserve the already recorded v0.3.0 counter evidence.
+
+**Boundaries and verification:** no automatic tracking, scheduled collection,
+new analytics service or personal-event data. Verify parsing/formatting on
+offline fixtures and qualify account reads only when the owner explicitly
+invokes collection. Update the release procedure and run focused tooling,
+lint and the website gate; this planning record collects nothing.
+
+<a id="sm-91"></a>
+### SM-91. Compare a tag-named release rebuild without publishing assets
+
+Selected from [`REV#70`](../review/2026-11-10/FINDINGS.md#rev70).
+
+**Acceptance**
+
+- An explicitly invoked compare-only procedure takes a named release tag,
+  records its source, toolchain and checkout/line-ending convention, rebuilds
+  the starter and documentation assets and compares their digests against
+  the recorded release identities.
+- Preserve both the original asset identity and any mismatching rebuilt
+  evidence. Explain missing prerequisites and reproducibility limits instead
+  of uploading a replacement or changing the accepted digest.
+- Keep the earlier successful v0.3.0 comparison and its CRLF/LF caveat as
+  dated evidence, without generalising it to other tags or toolchains.
+
+**Boundaries and verification:** no publication, asset replacement, release
+creation, signing, attestation, key management or automatic scheduling.
+Offline fixtures prove match, mismatch and missing-input handling; qualify
+an explicitly requested tag rebuild separately. Update the release/rebuild
+guide and run affected tooling, lint and the website gate.
 
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game
