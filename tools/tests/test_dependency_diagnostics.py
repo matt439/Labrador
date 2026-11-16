@@ -73,6 +73,31 @@ class DependencyDiagnosticsTests(unittest.TestCase):
         self.assertEqual(code, 0, output)
         self.assertNotIn("could not discover", output)
 
+    def test_shared_walkthrough_uses_the_helper_only_when_the_engine_provides_it(self):
+        shared = (REPOSITORY / "website/src/walkthrough/game-CMakeLists.txt").read_text(encoding="utf-8")
+        start = shared.index("if(COMMAND labrador_find_package)")
+        end = shared.index("\nadd_executable(MyGameTests", start)
+        (self.consumer / "game/CMakeLists.txt").write_text(
+            shared[start:end] + '\nif(NOT TARGET doctest::doctest)\n'
+            'message(FATAL_ERROR "The walkthrough needs doctest::doctest")\nendif()\n',
+            encoding="utf-8")
+        root = self.consumer / "CMakeLists.txt"
+        source = root.read_text(encoding="utf-8")
+        source = source.replace('add_subdirectory(engine)\n',
+            'if(WITH_DEPENDENCY_HELPER)\n'
+            f'include("{REPOSITORY.as_posix()}/cmake/dependencies.cmake")\nendif()\n')
+        root.write_text(source, encoding="utf-8")
+        helper_call = r"\):\s+labrador_find_package\(doctest\s*\)"
+        ordinary_call = r"\):\s+find_package\(doctest CONFIG REQUIRED\s*\)"
+        for enabled in (False, True):
+            with self.subTest(helper=enabled):
+                code, output = self.configure(
+                    f"-DWITH_DEPENDENCY_HELPER={'ON' if enabled else 'OFF'}",
+                    f"--trace-source={self.consumer.as_posix()}/game/CMakeLists.txt")
+                self.assertEqual(code, 0, output)
+                self.assertRegex(output, helper_call if enabled else ordinary_call)
+                self.assertNotRegex(output, ordinary_call if enabled else helper_call)
+
     def test_each_missing_package_names_the_consumer_obligation_and_retains_cmake_detail(self):
         for package in PACKAGES:
             with self.subTest(package=package):

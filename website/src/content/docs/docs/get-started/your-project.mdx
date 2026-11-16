@@ -178,6 +178,10 @@ The original template's full README and change list stay in
 
    <Code code={gameCMake} lang="cmake" title="game/CMakeLists.txt" />
 
+   Its doctest lookup works with the `v0.3.0` engine selected above. A newer development
+   engine provides `labrador_find_package`, which adds manifest advice when a dependency is
+   missing; when that command is absent the file uses CMake's ordinary `find_package`.
+
    To do that in Notepad, open the file:
 
    ```bat

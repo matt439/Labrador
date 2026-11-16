@@ -98,9 +98,11 @@ and tests the rule with supplied rolls, including the bonus and refused inputs.
 - **A new test file** goes in `game\tests` and is listed in `MyGameTests`. One target holds all
   of them and is one ctest entry; doctest prints how many cases ran.
 - **doctest comes from vcpkg.** Your `vcpkg.json` names it beside the engine's dependencies, and
-  the starter's package lookup finds it. After `v0.3.0`, `labrador_find_package(doctest)` adds
-  manifest advice to a missing-package error; an older starter uses the ordinary
-  `find_package(doctest CONFIG REQUIRED)`, which remains valid. A project made from an older version of the
+  the starter's package lookup finds it. The development engine after `v0.3.0` supplies
+  `labrador_find_package(doctest)`, which adds manifest advice to a missing-package error.
+  The copyable CMake file uses it only when the selected engine provides it; otherwise it
+  uses the ordinary `find_package(doctest CONFIG REQUIRED)`, including with `v0.3.0`.
+  A project made from an older version of the
   page, whose manifest has no `doctest`, adds `"doctest"` to its `dependencies` and configures
   again.
 
