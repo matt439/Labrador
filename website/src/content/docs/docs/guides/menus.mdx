@@ -6,6 +6,7 @@ sidebar:
 ---
 
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 import RepoLink from '~/components/RepoLink.astro';
 import Capture from '~/components/Capture.astro';
 import pause from '~/assets/captures/linesweeper-pause.png';
@@ -203,8 +204,11 @@ Physical controller play still awaits the
 <RepoLink path="docs/port/web-to-be-tested.md" hash="needs-a-gamepad-m4">recorded hardware checks</RepoLink>.
 LineSweeper's landing shadow meets 3:1 against the empty well for every piece, checked by a test.
 On Windows and in a browser whose system asks for reduced motion, LineSweeper throws an eighth
-of the sparks from each line clear, landing and top-out, rounded up per cell. Both entry points
-use the same engine query:
+of the sparks from each line clear, landing and top-out, rounded up per cell.
+
+<GuideVersionNote feature="motion_preference.h and prefers_reduced_motion" releaseGuide="docs/guides/menus/" />
+
+Both entry points use the same engine query:
 
 ```cpp
 #include "engine/app/motion_preference.h"

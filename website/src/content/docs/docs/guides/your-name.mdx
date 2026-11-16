@@ -108,7 +108,10 @@ cd /d C:\dev\mygame
    <title>Sky Hopper</title>
    ```
 
-   Then search for `aria-label`. It is on the canvas's line, and it is the name a screen reader
+   Then search for `aria-label`. A `v0.3.0` starter has no such attribute, so search for
+   `<canvas` instead and add `aria-label="Sky Hopper"` inside its opening tag, as in the line
+   below. Adding the label works with that release's engine too. In a newer template it is
+   already on the canvas's line and is the name a screen reader
    gives the game's picture; change `Minimal sample` between the quotation marks to the same
    words, so that the line reads:
 

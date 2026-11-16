@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 In the game from [Get the starter project](/docs/get-started/starter/), the arrow keys can steer
 the greeting off the edge of the window, and it is lost until you steer it back. This page adds a
@@ -355,6 +356,13 @@ once for Windows. This page adds no state, so it changes neither of those two li
 8. **Run the tests on their own.** The tests are a program you can run directly, which shows how
    many tests and checks it ran:
 
+   <GuideVersionNote kind="template" feature="the third original pad-rule test included in the development totals below" releaseGuide="docs/guides/your-rule/" />
+
+   The `v0.3.0` starter begins with two test cases and nine assertions. This page adds three
+   cases and ten assertions in either version, so its successful release total is **5 cases
+   and 19 assertions**; the development example below has **6 and 27**. Compare with your
+   count before adding the file: it must increase by three cases and ten assertions.
+
    ```bat
    out\build\x64-debug\game\MyGameTests.exe
    ```
@@ -370,7 +378,7 @@ once for Windows. This page adds no state, so it changes neither of those two li
 
    It takes well under a second. `test cases: 6` is the starter's three tests in
    `motion_tests.cpp` and your three; `assertions: 27` counts every `CHECK` run, the starter's 17
-   and your 10. **If it says `test cases: 3`**, your test file is not in the program: step 5's line is
+   and your 10. **If the case count did not increase by three**, your test file is not in the program: step 5's line is
    missing or misspelt, and nothing warns about that, because a file that is not listed is simply
    not built. To see the tests' names, add `--list-test-cases`:
 
@@ -391,12 +399,19 @@ once for Windows. This page adds no state, so it changes neither of those two li
    [doctest] unskipped test cases passing the current filters: 6
    ```
 
+   In `v0.3.0`, the list omits `the only pad counts in whichever slot it is in` and ends with 5.
+
 </Steps>
 
 ## When a test fails
 
 A test is worth having because it fails when the rule stops doing what the test expects. To see
-what that looks like, break one check on purpose. Open the test file:
+what that looks like, break one check on purpose.
+
+The failure output below uses the development starter's totals. With `v0.3.0`, the same broken
+check instead reports five cases and nineteen assertions, with one failure in each count.
+
+Open the test file:
 
 ```bat
 notepad game\tests\bounds_tests.cpp
@@ -474,7 +489,8 @@ between asterisks. This runs only the one about the nearest edge:
 out\build\x64-debug\game\MyGameTests.exe --test-case="*nearest edge*"
 ```
 
-Its counts say `test cases: 1 | 1 passed | 0 failed | 5 skipped`, and it ends
+Its counts say `test cases: 1 | 1 passed | 0 failed | 5 skipped` in the development example,
+or `4 skipped` with the `v0.3.0` starter, and it ends
 `Status: SUCCESS!`.
 
 ## The wall around the rules
@@ -686,7 +702,8 @@ Explorer, so a file that shows there as `bounds.h` can really be `bounds.h.txt`;
 whole name.
 </Aside>
 
-**`test cases: 3` where you expected 6.** The test file is not in the build: step 5's line is
+**The case count did not increase by three.** A development starter still shows 3 instead of 6;
+`v0.3.0` still shows 2 instead of 5. The test file is not in the build: step 5's line is
 missing from `add_executable(MyGameTests`, or misspelt. The build and ctest both pass, since a
 file that is not listed is simply not built, so the count is the only sign. Add the line, save
 and build again.

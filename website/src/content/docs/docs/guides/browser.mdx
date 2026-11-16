@@ -7,6 +7,7 @@ sidebar:
 
 import { Code, Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 import { EMSDK_VERSION } from '~/lib/emscripten';
 
 The game you started from the [starter project](/docs/get-started/starter/) or
@@ -330,7 +331,8 @@ which a browser build reads in place of everything below it:
 ## Serve it and open it
 
 A browser will not run a WebAssembly module from a file opened by double-clicking: opened that
-way the page says `The game could not be loaded.` It has to come from a web server, and the Python that came
+way the development page says `The game could not be loaded.`; the `v0.3.0` starter stays at
+`Loading...`. It has to come from a web server, and the Python that came
 with Emscripten has one. Start it in a window of its own, from the prompt in `C:\dev\mygame`:
 
 ```bat
@@ -631,6 +633,10 @@ replace with your game's name, as the `<title>` is. The status line has `role="s
 change to it is read out. What else the page or the game does for accessibility is the game's
 choice.
 
+The `v0.3.0` template has neither attribute. Add `aria-label="Your game's name"` inside its
+opening `<canvas>` tag and `role="status"` inside its opening `<p id="status">` tag if keeping
+that template. They are ordinary page attributes and need no engine update.
+
 The four callbacks below are optional. **Names are exact and case sensitive.** A misspelled name
 is silently ignored, with no warning; a value that is not a function is ignored too. The engine
 reads each callback from `Module` when it is due.
@@ -645,7 +651,9 @@ reads each callback from `Module` when it is due.
 Keep the startup error forwarding in `main_web.cpp` when you change the entry point. A script,
 fetch or WebAssembly compilation failure can happen before the engine runs, so the page must
 handle loader failures separately; `onError` cannot report every failure to load the module.
-The template does it in the lines below `Module`:
+The development template does it in the lines below `Module`:
+
+<GuideVersionNote kind="template" feature="the copied shell's loader-failure handlers and player-facing failure sentence" releaseGuide="docs/guides/browser/" />
 
 <SourceFile path="samples/minimal/web/shell.html" from="// A download that fails" to="}, true);" lang="js" />
 
@@ -656,7 +664,9 @@ loader does not report, a script that would not download and a promise nobody ca
 missing `.data` file's. None of them hides anything: the browser's console still shows the
 failure, and the page check still fails on it. The sentence is for a player, so it does not name
 a file; change its words as you change the others. Without these lines a page whose download
-failed would stay at `Loading...`.
+failed would stay at `Loading...`, as the `v0.3.0` template does. You can copy the handlers
+into that template too; they use the browser and Emscripten callbacks, rather than a newer
+engine API.
 
 The context callbacks run from a frame, rather than directly from the browser's context events.
 Loss is reported before restoration, even if both happen between two frames. Restoration has no
@@ -803,6 +813,9 @@ red line that is not about `favicon.ico` says what failed. The page's sentence i
 and names no file; the console does. A page that stays at `Loading...` has not run its own
 script, or lost the lines of `shell.html` that report a failed download. [Troubleshooting](/docs/troubleshooting/#browser-builds) lists the
 browser messages.
+
+The `v0.3.0` template predates those handlers, so `Loading...` is expected after a failed load;
+it does not mean your copy lost any lines. Use the same console and server checks.
 </Aside>
 
 <Aside type="caution" title="run_page: spawn C:\Program Files\Google\Chrome\Application\chrom.exe ENOENT">

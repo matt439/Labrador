@@ -7,6 +7,7 @@ sidebar:
 
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 A game's content (its textures, fonts, sprite sheets and sound banks) is **named in a manifest**
 and loaded when the game starts. Code refers to each item by its name exactly once, to turn the
@@ -18,6 +19,8 @@ The manifest is a JSON file listing what to load, in groups by kind and folder. 
 LineSweeper's, which loads one font and one texture:
 
 <SourceFile path="samples/linesweeper/content/manifest.json" />
+
+<GuideVersionNote feature="PNG texture loading" releaseGuide="docs/concepts/resources/" />
 
 Each name is a file in the group's directory, with an extension that depends on the kind:
 

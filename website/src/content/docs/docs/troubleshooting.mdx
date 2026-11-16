@@ -5,6 +5,7 @@ description: The failures most likely when building Labrador or a game on it, wh
 
 import { Aside } from '@astrojs/starlight/components';
 import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 This page collects the failures people are most likely to meet, by the message they see. It
 starts from what [Get Started](/docs/get-started/) has already run into and will grow from
@@ -975,6 +976,8 @@ harmless.
 
 ### `The game could not be loaded.` when opened from `file://`
 
+The `v0.3.0` starter has no loader-failure handler, so it stays at `Loading...` instead.
+
 Double-clicking the generated HTML file is not enough. In Chrome, the minimal sample's page
 replaces `Loading...` with `The game could not be loaded. Check your connection and reload the
 page.`, and the developer console includes:
@@ -1113,6 +1116,11 @@ looked, and for a texture it names both the `.dds` and the `.png` it would have 
 the build does not copy all give this. A new content folder needs a copy line in
 `game\CMakeLists.txt`, as
 [Put a picture in your game](/docs/guides/your-picture/) adds for `textures`.
+
+The `v0.3.0` engine reads only DDS textures and names just the `.dds` path. With that starter,
+use `texconv` to make a DDS file. Keeping a PNG requires the newer engine.
+
+<GuideVersionNote feature="PNG texture loading" releaseGuide="docs/guides/your-picture/" />
 
 ### `read_json_file - ... is not valid JSON:`
 

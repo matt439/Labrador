@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 This page changes how the game from [Get the starter project](/docs/get-started/starter/) looks:
 the greeting's colour, its size and where it starts, the size of the window, full screen, what
@@ -228,6 +229,11 @@ line from step 3. This time `main.cpp` is compiled again. The window is 1920 pix
 places it from `resolution`. So does the greeting, unless you gave it a place of its own in the
 section before: `Vector2F(200.0f, 150.0f)` stays where it is. The text stays the same size in
 pixels, so it looks smaller.
+
+<GuideVersionNote feature="ApplicationOptions::client_size" releaseGuide="docs/guides/your-window/" />
+
+With `v0.3.0`, keep one of the four resolution presets above. Pasting `client_size` into that
+starter instead gives `error C2039: 'client_size': is not a member of 'labrador::ApplicationOptions'`.
 
 **Any other size** goes on its own line under that one, as width then height:
 
@@ -639,13 +645,16 @@ folder and the `Picture` class, and [Install the content tools](/docs/guides/con
 3. **Draw it first.** In `game\states\hello_state.cpp`, add these lines above
    `this->greeting_ = this->scene_->add(`, in place of the `Backdrop` lines if you added them:
 
+   <GuideVersionNote feature="the Picture constructor that reads RenderResources::texture_size" releaseGuide="docs/guides/your-window/" />
+
    ```cpp
    	this->scene_->add(std::make_unique<Picture>(
-   		"sky", 1280, 720, Vector2F::zero, *resources));
+           "sky", Vector2F::zero, *resources));
    ```
 
-   `"sky"` is the name in the manifest, `1280, 720` its size, and `Vector2F::zero` puts its
-   top-left corner in the window's.
+   `"sky"` is the name in the manifest, and `Vector2F::zero` puts its top-left corner in the
+   window's. The development `Picture` class from the picture guide reads the texture's size;
+   its `v0.3.0` guide instead supplies `1280, 720` to that release's class.
 
 4. **Build, test and run.** The build runs CMake again, as on the picture page, and took 8
    seconds. The sky is behind the greeting, and the green ground behind the hint.

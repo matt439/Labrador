@@ -1,0 +1,45 @@
+---
+import { Aside } from '@astrojs/starlight/components';
+import { RELEASE_SOURCE } from '../lib/repository';
+import { publishedReleases } from '../lib/versions';
+import { sitePath } from '../lib/site-path';
+
+interface Props {
+	feature: string;
+	// A related guide that exists in the v0.3.0 documentation snapshot.
+	releaseGuide: string;
+	kind?: 'engine' | 'template';
+	// Set only after a published release is checked to contain the feature.
+	firstRelease?: string;
+}
+
+const { feature, releaseGuide, firstRelease, kind = 'engine' } = Astro.props;
+if (!RELEASE_SOURCE && firstRelease && !publishedReleases().some((release) => release.tag === firstRelease)) {
+	throw new Error(`GuideVersionNote names an unpublished first release: ${firstRelease}`);
+}
+const releasedGuide = `https://labradorengine.com/versions/v0.3.0/${releaseGuide}`;
+---
+
+{!RELEASE_SOURCE && (
+	<Aside type="note" title="Check your starter version">
+		<p>
+			The <code>v0.3.0</code> starter does not include {feature}.{' '}
+			{firstRelease
+				? kind === 'template'
+					? <>This template version first shipped in the <code>{firstRelease}</code> starter.</>
+					: <>This passage needs Labrador <code>{firstRelease}</code> or later.</>
+				: kind === 'template'
+					? <>The example here is from the development template, which has not shipped in a starter release yet.</>
+					: <>This passage needs a development checkout containing the change; it is not in a released starter yet.</>}
+		</p>
+		{kind === 'template' && <p>
+			These are changes to the copied game files. Moving only the engine pin leaves your copy unchanged;
+			carry over the documented template edits or keep following the released guide.
+		</p>}
+		<p>
+			Keeping that starter? <a href={releasedGuide}>Follow its released guide</a>. For a released update, use{' '}
+			<a href={sitePath('/docs/guides/starter-update/')}>Move a starter project to a newer Labrador</a>, or{' '}
+			<a href={sitePath('/docs/guides/move-pin/')}>Move your engine pin</a> for a submodule project.
+		</p>
+	</Aside>
+)}
