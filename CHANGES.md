@@ -123,6 +123,22 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 — Name the ISO extra keyboard position
+
+The ISO extra position between left Shift and Z now reports as
+`Key::international_backslash`, with the saved-binding token
+`"international_backslash"`. It was previously unmapped. Win32 maps
+non-extended set-1 scan `0x56` (normally `VK_OEM_102`); the browser maps
+`IntlBackslash`. `Key::backslash` keeps its existing separate position.
+All 97 prior valid-key ordinals and tokens are preserved; `Key::count`
+continues to be an exclusive bound rather than a key or saved token.
+
+An exhaustive consumer `Key` switch needs a case for the new value.
+`key_name` in `engine/input/keyboard.cpp` shows the added case; existing
+bindings need no migration. This adds no layout-dependent character label or
+binding policy. The mapping tests are synthetic, with no physical ISO-keyboard
+acceptance claim.
+
 ### 2026-11-17 - Keep the walkthrough's package lookup compatible with released engines
 
 **Configure fix.** The shared game CMake file now checks whether the selected

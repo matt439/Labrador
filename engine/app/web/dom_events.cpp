@@ -72,6 +72,7 @@ namespace labrador
 			{ "BracketLeft", Key::left_bracket },
 			{ "BracketRight", Key::right_bracket },
 			{ "Backslash", Key::backslash },
+			{ "IntlBackslash", Key::international_backslash },
 			{ "Semicolon", Key::semicolon },
 			{ "Quote", Key::apostrophe },
 			{ "Backquote", Key::grave },

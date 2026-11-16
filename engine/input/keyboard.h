@@ -83,6 +83,11 @@ namespace labrador
 		numpad_divide,
 		numpad_decimal,
 
+		// The ISO extra position between left Shift and Z, independent of its
+		// printed character: IntlBackslash in a browser, non-extended set-1
+		// scan 0x56 (the OEM extra key) on Win32.
+		international_backslash,
+
 		// Exclusive bound, not a key.
 		count,
 	};

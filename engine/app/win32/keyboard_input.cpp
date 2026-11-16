@@ -134,6 +134,7 @@ namespace labrador
 		case 0x51: return Key::numpad_3;
 		case 0x52: return Key::numpad_0;
 		case 0x53: return Key::numpad_decimal;
+		case 0x56: return Key::international_backslash;
 		case 0x57: return Key::f11;
 		case 0x58: return Key::f12;
 		default: return Key::none;

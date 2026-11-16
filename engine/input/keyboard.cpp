@@ -297,6 +297,7 @@ namespace labrador
 		case Key::numpad_multiply: return "numpad_multiply";
 		case Key::numpad_divide: return "numpad_divide";
 		case Key::numpad_decimal: return "numpad_decimal";
+		case Key::international_backslash: return "international_backslash";
 		}
 		return {};
 	}

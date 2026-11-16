@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <iterator>
 #include <optional>
 // Not a stray include. doctest only forward-declares std::basic_ostream, and
 // reporting a failed comparison of std::string_view calls the standard
@@ -479,4 +480,81 @@ TEST_SUITE("KeyboardTests")
 		CHECK(key_from_name("digit_1") == Key::digit_1);
 		CHECK(key_from_name("numpad_1") == Key::numpad_1);
 	}
+}
+
+TEST_CASE("existing key tokens retain their published numeric order")
+{
+	// Freeze the published tokens and key values independently of the current
+	// enum, so inserting or renaming a value cannot change both sides of a test.
+	constexpr std::string_view original_names[] = {
+		"a", "b", "c", "d", "e",
+		"f", "g", "h", "i", "j",
+		"k", "l", "m", "n", "o",
+		"p", "q", "r", "s", "t",
+		"u", "v", "w", "x", "y",
+		"z", "digit_0", "digit_1", "digit_2", "digit_3",
+		"digit_4", "digit_5", "digit_6", "digit_7", "digit_8",
+		"digit_9", "f1", "f2", "f3", "f4",
+		"f5", "f6", "f7", "f8", "f9",
+		"f10", "f11", "f12", "escape", "tab",
+		"caps_lock", "shift", "control", "alt", "space",
+		"enter", "backspace", "insert", "del", "home",
+		"end", "page_up", "page_down", "left", "right",
+		"up", "down", "print_screen", "scroll_lock", "pause",
+		"num_lock", "minus", "equals", "left_bracket", "right_bracket",
+		"backslash", "semicolon", "apostrophe", "grave", "comma",
+		"period", "slash", "numpad_0", "numpad_1", "numpad_2",
+		"numpad_3", "numpad_4", "numpad_5", "numpad_6", "numpad_7",
+		"numpad_8", "numpad_9", "numpad_add", "numpad_subtract", "numpad_multiply",
+		"numpad_divide", "numpad_decimal",
+	};
+	for (std::size_t index = 0; index < std::size(original_names); ++index)
+	{
+		const Key key = static_cast<Key>(index + 1);
+		CAPTURE(index);
+		CHECK(key_name(key) == original_names[index]);
+		const std::optional<Key> read = key_from_name(original_names[index]);
+		REQUIRE(read.has_value());
+		CHECK(*read == key);
+	}
+	CHECK(static_cast<std::size_t>(Key::international_backslash) == std::size(original_names) + 1);
+	CHECK(key_name(Key::international_backslash) == "international_backslash");
+	CHECK(key_from_name("international_backslash") == Key::international_backslash);
+	CHECK_FALSE(key_from_name("IntlBackslash").has_value());
+}
+
+TEST_CASE("the ISO extra key has independent sampled edges and focus cancellation")
+{
+	Keyboard keyboard;
+	keyboard.set_focused(true);
+	keyboard.poll();
+	keyboard.poll();
+	keyboard.on_key_down(Key::international_backslash);
+	keyboard.on_key_down(Key::backslash);
+	keyboard.poll();
+	CHECK(keyboard.pressed(Key::international_backslash));
+	CHECK(keyboard.pressed(Key::backslash));
+	keyboard.on_key_down(Key::international_backslash);
+	keyboard.poll();
+	CHECK_FALSE(keyboard.pressed(Key::international_backslash));
+	keyboard.on_key_up(Key::international_backslash);
+	keyboard.poll();
+	CHECK(keyboard.released(Key::international_backslash));
+	CHECK(keyboard.held(Key::backslash));
+	keyboard.on_key_down(Key::international_backslash);
+	keyboard.poll();
+	keyboard.set_focused(false);
+	keyboard.poll();
+	CHECK_FALSE(keyboard.held(Key::international_backslash));
+	CHECK_FALSE(keyboard.released(Key::international_backslash));
+	CHECK_FALSE(keyboard.held(Key::backslash));
+	CHECK_FALSE(keyboard.released(Key::backslash));
+	keyboard.set_focused(true);
+	keyboard.poll();
+	CHECK_FALSE(keyboard.pressed(Key::international_backslash));
+	keyboard.on_key_down(Key::none);
+	keyboard.on_key_down(static_cast<Key>(255));
+	keyboard.poll();
+	CHECK_FALSE(keyboard.held(Key::international_backslash));
+	CHECK_FALSE(keyboard.held(Key::backslash));
 }
