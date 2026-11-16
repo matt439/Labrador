@@ -4,6 +4,7 @@
 #include "engine/core/state.h"
 #include "engine/scene/scene.h"
 #include "samples/local_multiplayer/arena.h"
+#include "samples/local_multiplayer/follow_camera.h"
 #include "samples/local_multiplayer/join_rules.h"
 
 #include <array>
@@ -55,6 +56,8 @@ namespace multiplayer
 		std::unique_ptr<labrador::Scene> scene_;
 		// Owned by scene_, which retains the arena for this state's lifetime.
 		Arena* arena_ = nullptr;
+		std::array<FollowCamera, Arena::player_count> cameras_;
+		std::array<labrador::Viewport, Arena::player_count> panes_;
 		labrador::TextureHandle white_;
 		labrador::FontHandle font_;
 	};

@@ -52,11 +52,6 @@ namespace multiplayer
 		return this->positions_.at(player);
 	}
 
-	Camera Arena::camera(size_t player, const Viewport& viewport) const
-	{
-		return Camera(this->position(player) - viewport.size() * 0.5f, 1.0f);
-	}
-
 	Colour Arena::player_colour(size_t player)
 	{
 		const std::array<Colour, player_count> colours = {

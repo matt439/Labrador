@@ -4,6 +4,7 @@
 
 #include "engine/render/resource_factory.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -18,6 +19,8 @@ namespace multiplayer
 		const std::array<Vector2F, Arena::player_count> smoke_directions = {
 			Vector2F(1.0f, 0.0f), Vector2F(0.0f, -1.0f)
 		};
+		constexpr float hud_height = 68.0f;
+		constexpr float minimum_camera_inset = 16.0f;
 	}
 
 	PlayState::PlayState(Application* app,
@@ -77,7 +80,21 @@ namespace multiplayer
 		{
 			const Viewport viewport = this->app_->viewport_manager()->player_viewport(
 				static_cast<int>(player));
-			this->scene_->add_view(viewport, this->arena_->camera(player, viewport));
+			this->panes_[player] = viewport;
+			// Reserve the title strip so a player near the world's top edge is
+			// not covered by the HUD when its camera stops there.
+			const float reserved = std::min(hud_height, std::max(0.0f, viewport.height - 1.0f));
+			const Viewport world_view(viewport.x, viewport.y + reserved,
+				viewport.width, viewport.height - reserved);
+			const float inset_x = std::min(world_view.width * 0.5f,
+				std::max(minimum_camera_inset, world_view.width * 0.25f));
+			const float inset_y = std::min(world_view.height * 0.5f,
+				std::max(minimum_camera_inset, world_view.height * 0.25f));
+			const RectangleF dead_zone(inset_x, inset_y,
+				world_view.width - 2.0f * inset_x, world_view.height - 2.0f * inset_y);
+			this->cameras_[player].update(this->arena_->position(player),
+				world_view.size(), dead_zone, this->arena_->bounds());
+			this->scene_->add_view(world_view, this->cameras_[player].camera());
 		}
 	}
 
@@ -86,28 +103,39 @@ namespace multiplayer
 		this->scene_->draw(renderer, [this](int view_index, DrawList& list)
 		{
 			const size_t player = static_cast<size_t>(view_index);
-			const Viewport& viewport = this->scene_->view(view_index).viewport;
+			const Viewport& viewport = this->panes_[player];
+			const Viewport& world_view = this->scene_->view(view_index).viewport;
+			const float reserved = world_view.y - viewport.y;
+			list.set_viewport(viewport);
 			list.set_camera(Camera::default_camera);
 			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
-				RectangleF(0.0f, 0.0f, viewport.width, 68.0f), Colour(12, 18, 27),
+				RectangleF(0.0f, 0.0f, viewport.width, reserved), Colour(12, 18, 27),
 				0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
-			// The smoke test joins no one, so its titles are fixed text, which
-			// its capture shows; a match names the source each player joined
-			// with.
-			std::wstring title = player == 0 ?
-				L"PLAYER 1  |  WASD / pad slot 0" : L"PLAYER 2  |  Arrows / pad slot 1";
-			if (!this->smoke_test_)
+			// Very short panes retain the world strip rather than painting
+			// instructions over it when the title cannot fit.
+			if (reserved >= hud_height)
 			{
-				title = L"PLAYER " + std::to_wstring(player + 1) + L"  |  " +
-					source_name(this->sources_[player]);
+				// The smoke test joins no one, so its titles are fixed text, which
+				// its capture shows; a match names the source each player joined
+				// with.
+				std::wstring title = player == 0 ?
+					L"PLAYER 1  |  WASD / pad slot 0" : L"PLAYER 2  |  Arrows / pad slot 1";
+				if (!this->smoke_test_)
+				{
+					title = L"PLAYER " + std::to_wstring(player + 1) + L"  |  " +
+						source_name(this->sources_[player]);
+				}
+				list.draw_text(this->font_, title, Vector2F(18.0f, 12.0f),
+					Arena::player_colour(player), 1.0f, 0.0f, Vector2F::zero, 0.0f);
+				list.draw_text(this->font_, L"One world, two cameras. Meet at the purple cross.  Esc / B: quit",
+					Vector2F(18.0f, 38.0f), Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
 			}
-			list.draw_text(this->font_, title, Vector2F(18.0f, 12.0f),
-				Arena::player_colour(player), 1.0f, 0.0f, Vector2F::zero, 0.0f);
-			list.draw_text(this->font_, L"One world, two cameras. Meet at the purple cross.  Esc / B: quit",
-				Vector2F(18.0f, 38.0f), Colour::white, 1.0f, 0.0f, Vector2F::zero, 0.0f);
-			list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
-				RectangleF(0.0f, viewport.height - 2.0f, viewport.width, 2.0f),
-				Arena::player_colour(player), 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+			if (world_view.height > 4.0f)
+			{
+				list.draw_sprite(this->white_, RectangleI(0, 0, 1, 1),
+					RectangleF(0.0f, viewport.height - 2.0f, viewport.width, 2.0f),
+					Arena::player_colour(player), 0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+			}
 		});
 	}
 

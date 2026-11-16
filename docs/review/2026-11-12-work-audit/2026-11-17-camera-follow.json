@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "base_revision": "5cff44b9",
+  "source_sha256": {
+    "samples/local_multiplayer/follow_camera.h": "97bfd764b53e4b470b17ac56a51c930e118ee9b9188b0a1bf4b54a7631d0e4a1",
+    "samples/local_multiplayer/follow_camera.cpp": "c09ad07e3e615adc86d3f18a43dbfbf4381558a09d7552d63ee1b57626d45fb6",
+    "samples/local_multiplayer/play_state.h": "d4f8195882d8258292b9126af1b8753931fee1ce4cca0a7994317d6bd63f0863",
+    "samples/local_multiplayer/play_state.cpp": "c05ff62ad6d4e59a654aa3236fb5e069e0e61b75861d609be71b4f0c87051105",
+    "tests/local_multiplayer/follow_camera_tests.cpp": "128776780ebe615fff0ff18daa00d9c0a6f3d743ed13c9420c4b5452a8575689",
+    "tests/local_multiplayer/join_state_tests.cpp": "76a59cb46c9904452eda061025d9271dcf77c44fdeae5fb58e5b4363cb85adb5"
+  },
+  "commands": {
+    "copy-v03": [
+      {
+        "argv": [
+          "cmake",
+          "--preset",
+          "x64-debug",
+          "-B",
+          "out/build/null-probe",
+          "-DLABRADOR_RENDER_BACKEND=null",
+          "-DLABRADOR_AUDIO_BACKEND=null",
+          "-DVCPKG_MANIFEST_INSTALL=OFF",
+          "-DVCPKG_INSTALLED_DIR=C:/Projects/Labrador/out/build/x64-debug/vcpkg_installed"
+        ],
+        "exit": 0,
+        "log": "copy-v03-0.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "out/build/null-probe",
+          "--target",
+          "FollowCameraCopyTests",
+          "--parallel",
+          "2"
+        ],
+        "exit": 0,
+        "log": "copy-v03-1.log"
+      },
+      {
+        "argv": [
+          "C:\\dev\\rg98-release\\out\\build\\null-probe\\FollowCameraCopyTests.exe"
+        ],
+        "exit": 0,
+        "log": "copy-v03-2.log"
+      }
+    ],
+    "wasm-debug": [
+      {
+        "argv": [
+          "cmake",
+          "--preset",
+          "wasm-debug",
+          "-DVCPKG_MANIFEST_INSTALL=OFF",
+          "-DVCPKG_INSTALLED_DIR=C:/Projects/Labrador/out/build/wasm-debug/vcpkg_installed"
+        ],
+        "exit": 0,
+        "log": "wasm-debug-0.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "--preset",
+          "wasm-debug",
+          "--parallel",
+          "2",
+          "--target",
+          "LocalMultiplayerTests",
+          "LocalMultiplayerSample"
+        ],
+        "exit": 0,
+        "log": "wasm-debug-1.log"
+      },
+      {
+        "argv": [
+          "ctest",
+          "--preset",
+          "wasm-debug",
+          "-R",
+          "^LocalMultiplayer(Tests|SmokeTests)$",
+          "--output-on-failure",
+          "--no-tests=error"
+        ],
+        "exit": 0,
+        "log": "wasm-debug-2.log"
+      }
+    ],
+    "wasm-release-null": [
+      {
+        "argv": [
+          "cmake",
+          "--preset",
+          "wasm-release",
+          "-B",
+          "out/build/wasm-release-null",
+          "-DLABRADOR_RENDER_BACKEND=null",
+          "-DLABRADOR_AUDIO_BACKEND=null",
+          "-DVCPKG_MANIFEST_INSTALL=OFF",
+          "-DVCPKG_INSTALLED_DIR=C:/Projects/Labrador/out/build/wasm-debug/vcpkg_installed"
+        ],
+        "exit": 0,
+        "log": "wasm-release-null-0.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "out/build/wasm-release-null",
+          "--parallel",
+          "2",
+          "--target",
+          "LocalMultiplayerTests",
+          "LocalMultiplayerSample"
+        ],
+        "exit": 0,
+        "log": "wasm-release-null-1.log"
+      },
+      {
+        "argv": [
+          "ctest",
+          "--test-dir",
+          "out/build/wasm-release-null",
+          "-R",
+          "^LocalMultiplayerTests$",
+          "--output-on-failure",
+          "--no-tests=error"
+        ],
+        "exit": 0,
+        "log": "wasm-release-null-2.log"
+      }
+    ],
+    "x64-debug-null": [
+      {
+        "argv": [
+          "cmake",
+          "--preset",
+          "x64-debug-null",
+          "-DVCPKG_MANIFEST_INSTALL=OFF",
+          "-DVCPKG_INSTALLED_DIR=C:/Projects/Labrador/out/build/x64-debug/vcpkg_installed"
+        ],
+        "exit": 0,
+        "log": "x64-debug-null-0.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "--preset",
+          "x64-debug-null",
+          "--parallel",
+          "2",
+          "--target",
+          "LocalMultiplayerTests",
+          "LocalMultiplayerSample"
+        ],
+        "exit": 0,
+        "log": "x64-debug-null-1.log"
+      },
+      {
+        "argv": [
+          "ctest",
+          "--preset",
+          "x64-debug-null",
+          "-R",
+          "^LocalMultiplayer(Tests|SmokeTests)$",
+          "--output-on-failure",
+          "--no-tests=error"
+        ],
+        "exit": 0,
+        "log": "x64-debug-null-2.log"
+      }
+    ],
+    "x64-debug": [
+      {
+        "argv": [
+          "cmake",
+          "--preset",
+          "x64-debug",
+          "-DVCPKG_MANIFEST_INSTALL=OFF",
+          "-DVCPKG_INSTALLED_DIR=C:/Projects/Labrador/out/build/x64-debug/vcpkg_installed"
+        ],
+        "exit": 0,
+        "log": "x64-debug-0.log"
+      },
+      {
+        "argv": [
+          "cmake",
+          "--build",
+          "--preset",
+          "x64-debug",
+          "--parallel",
+          "2",
+          "--target",
+          "LocalMultiplayerTests",
+          "LocalMultiplayerSample"
+        ],
+        "exit": 0,
+        "log": "x64-debug-1.log"
+      },
+      {
+        "argv": [
+          "ctest",
+          "--preset",
+          "x64-debug",
+          "-R",
+          "^LocalMultiplayer(Tests|SmokeTests)$",
+          "--output-on-failure",
+          "--no-tests=error"
+        ],
+        "exit": 0,
+        "log": "x64-debug-2.log"
+      },
+      {
+        "argv": [
+          "C:\\Projects\\Labrador-agent-camera-follow\\out\\build\\x64-debug\\samples\\local_multiplayer\\LocalMultiplayerSample.exe",
+          "--smoke-test",
+          "--capture",
+          "C:\\Projects\\Labrador-agent-camera-follow\\out\\camera-follow\\native.png"
+        ],
+        "exit": 0,
+        "log": "x64-debug-3.log"
+      }
+    ]
+  },
+  "browser_page_command": [
+    "ctest",
+    "--preset",
+    "wasm-debug",
+    "-R",
+    "LocalMultiplayerPageTests",
+    "--no-tests=error",
+    "--output-on-failure"
+  ],
+  "browser_page_exit": 0,
+  "capture_command": [
+    "node",
+    "tests/render/web/run_page.mjs",
+    "--browser",
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "--page",
+    "out/build/wasm-debug/samples/local_multiplayer/LocalMultiplayerSample.html",
+    "--quit-keys",
+    "Escape",
+    "--frames",
+    "60",
+    "--input",
+    "out/camera-follow/browser_capture.mjs",
+    "--timeout",
+    "60"
+  ],
+  "capture_exit": 0,
+  "images": {
+    "native.png": {
+      "sha256": "153c2ebb614bcf6bc580a6fa8d8d2e731c5768a724e7c5979ff568ad2d553020",
+      "width": 1280,
+      "height": 720,
+      "reviewed": true
+    },
+    "browser-follow.png": {
+      "sha256": "a803ced238bef721382d87f5364d03bb7b06edd3c3082452b1252e926dfcb799",
+      "width": 1280,
+      "height": 720,
+      "reviewed": true
+    },
+    "browser-small-world.png": {
+      "sha256": "6dcf35191805c3374eef48014ffb15ec91eaa9807bf1344287d03723506b19dc",
+      "width": 2560,
+      "height": 1440,
+      "reviewed": true
+    }
+  },
+  "component_cases": 14,
+  "component_assertions": 299,
+  "chrome": "157.0.8103.78",
+  "firefox": "160.0",
+  "firefox_identity_note": "sanitized renderer string; not physical device identification",
+  "website_dependency": "c625a1c1 GuideVersionNote.astro"
+}

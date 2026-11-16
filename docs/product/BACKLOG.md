@@ -1421,7 +1421,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
 
 - [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
-- [ ] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
+- [x] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
 - [x] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
 - [ ] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
 - [ ] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
@@ -2675,6 +2675,23 @@ system or camera rotation. Headless tests cover stationary targets, all dead
 zone edges, world clamps, small worlds, resizing and independent players;
 run affected native/null and browser sample checks, review the presentation
 and run the website gate.
+
+**Closed 2026-11-17:** the local-multiplayer sample's copyable `FollowCamera`
+keeps one tracking value per player in PlayState. Updates start from a centred
+view, then apply the explicit inclusive dead zone and world bounds; subsequent
+updates pan only by the excess. World bounds win at edges, smaller axes are
+centred and resize preserves the old world-space view centre before constraints.
+Queries and draw remain const. The sample reserves its HUD outside each world
+view; player movement is unchanged. Guides quote the maintained code and state
+its development-sample availability without adding an engine follow policy.
+
+The [dated record](../review/2026-11-12-work-audit/2026-11-17-camera-follow.md)
+and receipt retain source/PNG hashes and results: 14 component cases/299
+assertions; native D3D11 tests/capture, native-null 2/2, wasm-debug and
+wasm-release-null Node checks, Chrome/Firefox pages 2/2, and three reviewed
+native/browser captures. A copied-helper target also passes against v0.3.0's
+existing Camera API. Physical pad, display/pacing, phone and listening gates
+are not supplied by these checks.
 
 <a id="oca-104"></a>
 ### OCA-104. Generate grid sprite-sheet JSON deterministically

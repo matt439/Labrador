@@ -4,6 +4,7 @@
 labrador_add_test_suite(LocalMultiplayerTests
     SOURCES
         arena_tests.cpp
+        follow_camera_tests.cpp
         join_rules_tests.cpp
         joined_controls_tests.cpp
     LINKS LocalMultiplayerExample

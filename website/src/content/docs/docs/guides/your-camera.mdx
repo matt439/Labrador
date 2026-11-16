@@ -8,6 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 In the starter project the window shows a world exactly its own size, and the greeting can be
 moved off its edge and out of sight. This page makes the world bigger than the window and adds a
@@ -257,14 +258,42 @@ it in is a rule of your game, and [Add a rule and a test](/docs/guides/your-rule
 that keeps it in the window. The world must be wider and taller than the window, or the two
 limits cross; with a world 4400 pixels across, that holds for any window up to 4K.
 
-## Smoother following, and what is next
+## A copyable dead-zone follow camera
 
 This camera is locked to the greeting. Games often let the player move a little before the camera
-follows, a **dead zone**, or let the camera catch up gradually. Both are more lines of the same
-kind in `update()`. The engine has no follow camera of its own: following is a choice each game
-makes. A copyable follow camera, with a dead zone and a world edge, in the local-multiplayer
-sample is a possible future addition the owner has not decided on (`IDEA#4` in the repository's
-<RepoLink path="docs/feature-candidates.md" hash="idea4-a-bounded-dead-zone-camera-follow-component">feature candidates</RepoLink>).
+follows, a **dead zone**. The local-multiplayer sample's `FollowCamera` supplies that as
+copyable game code, with world-edge clamping. It adds no engine follow-camera policy or
+smoothing system.
+
+<GuideVersionNote kind="template" feature="the copyable FollowCamera sample helper" releaseGuide="docs/guides/your-camera/" />
+
+Copy <RepoLink path="samples/local_multiplayer/follow_camera.h">`follow_camera.h`</RepoLink>
+and <RepoLink path="samples/local_multiplayer/follow_camera.cpp">`follow_camera.cpp`</RepoLink>
+from the development sample into your game. Change the source's first include to your new
+header path and list its `.cpp` in both application build lists. The helper uses the existing
+`Camera` API; updating an engine pin alone does not change the code you copied into your game.
+The copied type is `multiplayer::FollowCamera` unless you choose another namespace.
+
+Keep one value per followed player. During `update`, give it the target's world point, the
+world view's size, a dead-zone rectangle in that view's local pixels and the world bounds.
+Then copy its camera into the scene's view list, as the maintained sample does:
+
+<SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->cameras_[player].update(this->arena_->position(player)," to="this->scene_->add_view(world_view, this->cameras_[player].camera());" />
+
+The first update starts from a centred view, then applies the zone and world constraints.
+An inclusive dead zone holds the view still until its target crosses an edge; the camera
+moves only by the excess. The world clamp wins
+near an edge, so the player can leave the zone while the view stops. A world axis no larger
+than the view is centred with equal outside space. On resize, the previous world-space view
+centre is preserved before applying the new zone and bounds. `camera()` only reads the result;
+drawing never advances following. The sample keeps a 68-pixel HUD strip outside each world
+viewport so a player at the top edge stays visible below it.
+
+The helper's <RepoLink path="samples/local_multiplayer/follow_camera.h">header</RepoLink>
+states its finite-input and positive-viewport contract. The
+<RepoLink path="tests/local_multiplayer/follow_camera_tests.cpp">headless tests</RepoLink>
+cover every edge, small worlds, resizing and independent tracking values. Gradual catch-up
+would be a separate game choice; this component does not interpolate or rotate the camera.
 
 [Two players in your game](/docs/guides/your-two-players/#split-the-screen) gives each player a
 camera of their own in half of the window.
