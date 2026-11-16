@@ -820,6 +820,24 @@ so the result shows only that the term reaches Chrome and changes nothing with
 one adapter. It says nothing about what any value selects on a hybrid laptop,
 which nobody here has measured.
 
+## WebGL adapter policy, 2026-11-16
+
+The owner's fifth decision batch retains explicit `"default"` for
+`powerPreference`; the policy choice is closed. The
+[WebGL editor's draft](https://registry.khronos.org/webgl/specs/latest/1.0/#5.2)
+describes this attribute as a hint that a browser may ignore. It may influence
+adapter selection, rather than guarantee which GPU is used. Keep the browser's
+choice until a measured hybrid-machine need justifies another policy.
+
+The preceding 2026-11-13 record is preserved as measured. Its one-enabled-GPU
+experiment establishes neither hybrid-device selection nor an energy or
+performance advantage for another hint. The source comment and the earlier
+explanatory paragraph still need their stronger "picks/chooses" wording
+aligned with the hint-only contract; that bounded follow-up remains OPEN as
+`REV#156` in [the live ledger](../review/2026-11-12-work-audit/STATUS.md).
+This clarification changes no source, context attribute or measured result
+and records no new build, browser or hardware run.
+
 ## Throttled desktop rehearsal, 2026-11-13
 
 **Desktop emulation, not phone evidence.** Chrome's DevTools CPU and network
