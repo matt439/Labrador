@@ -9,6 +9,7 @@ labrador_add_test_suite(RenderTests
         camera_tests.cpp
         colour_tests.cpp
         dds_file_tests.cpp
+        device_unavailable_tests.cpp
         draw_object_tests.cpp
         dxgi_device_kind_tests.cpp
         font_tests.cpp

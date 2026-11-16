@@ -127,6 +127,19 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Define a specific renderer-startup refusal category
+
+**New API.** `RenderDeviceUnavailable` in
+`engine/render/device_unavailable.h` derives from `std::runtime_error` and
+preserves the backend reason in `what()`. It represents genuine startup
+device/context requirement absence rather than proof of a physically missing
+GPU. Existing runtime-error handlers remain compatible; a consumer may catch
+the narrower category first to choose its own startup message or graphics
+policy. It does not select a fallback backend. Content, authored shaders,
+invalid arguments/state, unrelated API failures, audio and runtime device-loss
+recovery are outside the category. Backend classification is qualified
+separately from this additive exception type.
+
 ### 2026-11-17 - Report selected-device texture dimension limits
 
 **New API and load diagnostics.** `Renderer::texture_dimension_limit()` returns
