@@ -17,14 +17,51 @@ same name and signature, and the game's unqualified call becomes ambiguous.
 
 ## The rule
 
-A commit that touches `engine/**/*.h`, `engine/CMakeLists.txt`,
-`cmake/settings.cmake` or `vcpkg.json` either adds an entry to this file in
-the same commit or says `not consumer-visible` in its commit message. The
+A commit that touches `engine/**/*.h`, `vcpkg.json` or a consumer build input
+in the explicit inventory below either adds an entry to this file in the
+same commit or says `not consumer-visible` in its commit message. The
 merge procedure in [CONTRIBUTING.md](CONTRIBUTING.md) asks for it, and so does
 the agent brief; CI's lint job fails a commit of a pull request that neither
 touches this file, nor says `not consumer-visible`, nor is the commit this file
 names as the exception to it (`tools/check_changes_rule.py`). Whether the classification is right is
 review's and the release audit's.
+
+| Consumer build input | Where the consumer executes it |
+|---|---|
+| `CMakeLists.txt` | Configures Labrador as the game's subdirectory and wires the include wall. |
+| `engine/CMakeLists.txt` | Declares and configures the engine library and selected backends. |
+| `engine/math/CMakeLists.txt` | Declares the linked math library. |
+| `cmake/settings.cmake` | Defines the compile settings the game links. |
+| `cmake/source_revision.cmake` | Reports the engine source identity during configure. |
+| `cmake/compile_shaders.cmake` | Configures the selected backend's shader compilation. |
+| `cmake/add_material.cmake` | Defines the optional game-authored material build commands. |
+| `cmake/embed_material.cmake` | Runs those material commands' byte/source embedding step. |
+| `cmake/check_engine_includes.cmake` | Runs before the consumer's linked engine/math targets build. |
+
+This inventory follows the root's includes, `engine/` subdirectories and
+consumer build commands, including the optional material route. It does not
+govern every file under `cmake/`: the citation, brief and other standalone
+test checks run only for the engine's own top-level build. The engine's own
+presets, samples, tests and maintainer tools are outside this path rule.
+
+**Coverage expansion, 2026-11-16:** the original paths (`engine/**/*.h`,
+`engine/CMakeLists.txt`, `cmake/settings.cmake`, `vcpkg.json`) retain their
+whole-history checks. The additional inventory paths are governed after
+`f5c17f32f57205f3eea4142380845e382fcc27de`, the last commit before this
+implementation. The checker recognises that exact boundary and its ancestors;
+an unrelated repository without it uses the complete current rule. A future
+change has the same entry/declaration obligation for every inventoried path.
+
+This is a policy boundary, not a classification of older changes. Auditing
+the newly covered paths from `v0.1.0` through that boundary found nineteen
+commits without an entry or declaration. Seventeen only change root CMake
+code inside `PROJECT_IS_TOP_LEVEL` (standalone sample/test registration,
+protocol lists, keys, scheduling and timeouts); `666e3cf8` changes include-wall
+comments. `9bec49e3` changes what the consumer's include wall accepts and
+refuses, including dot paths and ownership subtrees: it is a real consumer
+build-behaviour change, not a non-visible exemption. The earlier policy did
+not require its script path to carry a declaration. No historical commit is
+rewritten or claimed to meet the expanded rule retroactively.
 
 An entry is written for someone who did not make the change and is moving a
 pin across it. It says what kind of change it is. A source break names the old

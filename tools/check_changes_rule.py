@@ -1,7 +1,7 @@
 """Check CHANGES.md's rule for each commit, not whether a change is consumer-visible.
 
-A commit that touches engine/**/*.h, engine/CMakeLists.txt,
-cmake/settings.cmake or vcpkg.json passes when it also touches CHANGES.md,
+A commit that touches engine/**/*.h, vcpkg.json or an explicitly inventoried
+consumer build input passes when it also touches CHANGES.md,
 when its message says `not consumer-visible` (any case, a line break allowed
 between the two words), or when CHANGES.md at the checked head names it as
 the exception to its rule. Whether an entry is right, or whether a .cpp
@@ -9,6 +9,9 @@ change is a behaviour change, is the release audit's reading, not this.
 
 Reads local Git objects only, with check_golden_reviews.py's scopes: --commit
 REV, or --base BASE --head HEAD for each commit the range introduces.
+The build-input inventory is RULE_PATHS below and in CHANGES.md, The rule.
+Its expanded paths apply after f5c17f32; older commits keep the original path
+coverage. The boundary does not classify those older changes as non-visible.
 """
 
 from __future__ import annotations
@@ -21,7 +24,14 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_golden_reviews as golden  # noqa: E402
 
-RULE_PATHS = ("engine/CMakeLists.txt", "cmake/settings.cmake", "vcpkg.json")
+ORIGINAL_RULE_PATHS = ("engine/CMakeLists.txt", "cmake/settings.cmake", "vcpkg.json")
+RULE_PATHS = (*ORIGINAL_RULE_PATHS, "CMakeLists.txt", "engine/math/CMakeLists.txt",
+              "cmake/source_revision.cmake", "cmake/compile_shaders.cmake",
+              "cmake/add_material.cmake", "cmake/embed_material.cmake",
+              "cmake/check_engine_includes.cmake")
+# The approved scope before the coverage expansion. Preserve the policy those
+# ancestors were reviewed under, without exempting their originally governed paths.
+EXPANDED_COVERAGE_BASE = "f5c17f32f57205f3eea4142380845e382fcc27de"
 CHANGES = "CHANGES.md"
 DECLARATION = re.compile(r"not\s+consumer-visible", re.IGNORECASE)
 # CHANGES.md's audit sentence for a release: "... says `not consumer-visible`
@@ -33,6 +43,22 @@ CheckError = golden.CheckError
 
 def is_rule_path(path: str) -> bool:
     return path in RULE_PATHS or (path.startswith("engine/") and path.endswith(".h"))
+
+
+def original_rule_path(path: str) -> bool:
+    return path in ORIGINAL_RULE_PATHS or (path.startswith("engine/") and path.endswith(".h"))
+
+
+def original_coverage_commits(repository: Path) -> set[str]:
+    """The policy boundary's ancestors, when that exact boundary is present.
+
+    Unrelated repositories, including fixtures, get the complete current rule.
+    Reading refs first distinguishes an absent boundary from a failing Git read.
+    """
+    present = golden.git(repository, "rev-list", "--all", "HEAD").decode("ascii").splitlines()
+    if EXPANDED_COVERAGE_BASE not in present:
+        return set()
+    return set(golden.git(repository, "rev-list", EXPANDED_COVERAGE_BASE).decode("ascii").splitlines())
 
 
 def declares(message: str) -> bool:
@@ -57,10 +83,12 @@ def head_changes(repository: Path, head: str) -> str:
 def unclassified(repository: Path, commits: list[str], exceptions: set[str]) -> tuple[list[tuple[str, str, list[str]]], int]:
     failures = []
     governed = 0
+    original_coverage = original_coverage_commits(repository)
     for commit in commits:
         parents, message_bytes = golden.commit_parts(repository, commit)
         paths = golden.changed_paths(repository, commit, parents)
-        rule = sorted(path for path in paths if is_rule_path(path))
+        rule = sorted(path for path in paths if is_rule_path(path) and
+                      (commit not in original_coverage or original_rule_path(path)))
         if not rule:
             continue
         governed += 1

@@ -21,14 +21,18 @@ HEADER = "engine/core/example.h"
 
 
 class RuleTests(unittest.TestCase):
-    def test_rule_paths_are_the_four_changes_md_names(self):
+    def test_rule_paths_are_the_explicit_consumer_input_inventory(self):
         for path in (HEADER, "engine/render/gl/deep/nested.h", "engine/CMakeLists.txt",
-                     "cmake/settings.cmake", "vcpkg.json"):
+                     "cmake/settings.cmake", "vcpkg.json", "CMakeLists.txt",
+                     "engine/math/CMakeLists.txt", "cmake/source_revision.cmake",
+                     "cmake/compile_shaders.cmake", "cmake/add_material.cmake",
+                     "cmake/embed_material.cmake", "cmake/check_engine_includes.cmake"):
             with self.subTest(path=path):
                 self.assertTrue(checker.is_rule_path(path))
         for path in ("engine/core/example.cpp", "engine/render/SEAM.md", "samples/minimal/main.h",
-                     "cmake/compile_shaders.cmake", "tests/CMakeLists.txt", "website/vcpkg.json",
-                     "engine/core/example.hpp"):
+                     "cmake/check_whitespace.cmake", "cmake/check_doc_citations.cmake",
+                     "cmake/check_agent_brief.cmake", "tests/CMakeLists.txt", "website/vcpkg.json",
+                     "engine/core/example.hpp", "CMakePresets.json", "tools/ci_gap_report.py"):
             with self.subTest(path=path):
                 self.assertFalse(checker.is_rule_path(path))
 
@@ -114,6 +118,38 @@ class GitFixtureTests(unittest.TestCase):
         code, output, errors = self.run_checker("--base", self.base, "--head", settings)
         self.assertEqual((code, errors), (0, ""), (entry, declared))
         self.assertIn("3 of 3 commits", output)
+
+    def test_each_expanded_path_is_strict_without_the_historical_boundary(self):
+        for index, path in enumerate(sorted(set(checker.RULE_PATHS) - set(checker.ORIGINAL_RULE_PATHS))):
+            with self.subTest(path=path):
+                missing = self.commit("Missing classification", {path: f"missing {index}\n".encode()})
+                code, _, errors = self.run_checker("--commit", missing)
+                self.assertEqual(code, 1)
+                self.assertIn(path, errors)
+                entry = self.commit("With entry", {path: f"entry {index}\n".encode(),
+                                    "CHANGES.md": f"# Changes\n\nentry {index}\n".encode()})
+                self.assertEqual(self.run_checker("--commit", entry)[0], 0)
+                declared = self.commit("Comment only\n\nnot consumer-visible",
+                                       {path: f"declared {index}\n".encode()})
+                self.assertEqual(self.run_checker("--commit", declared)[0], 0)
+
+    def test_expansion_boundary_keeps_original_paths_governed_and_new_paths_strict_after_it(self):
+        old_new_path = self.commit("Before coverage expanded", {"CMakeLists.txt": b"old\n"})
+        old_header = self.commit("Originally governed header", {HEADER: b"old\n"})
+        boundary = self.commit("Last original-policy commit")
+        new_path = self.commit("After coverage expanded", {"CMakeLists.txt": b"new\n"})
+        with mock.patch.object(checker, "EXPANDED_COVERAGE_BASE", boundary):
+            self.assertEqual(self.run_checker("--commit", old_new_path)[0], 0)
+            code, _, errors = self.run_checker("--commit", old_header)
+            self.assertEqual(code, 1)
+            self.assertIn(HEADER, errors)
+            code, _, errors = self.run_checker("--commit", new_path)
+            self.assertEqual(code, 1)
+            self.assertIn("CMakeLists.txt", errors)
+            _, _, errors = self.run_checker("--base", self.base, "--head", new_path)
+            self.assertIn(old_header, errors)
+            self.assertIn(new_path, errors)
+            self.assertNotIn(old_new_path, errors)
 
     def test_each_commit_answers_for_itself_in_a_range(self):
         forgotten = self.commit("Forgotten", {"vcpkg.json": b"{}\n"})

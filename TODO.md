@@ -119,7 +119,6 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-92` | OPEN | should | M | Expose the platform reduced-motion preference; games retain effects policy and native LineSweeper consumes it (`REV#60`). [Scope](docs/product/BACKLOG.md#oca-92). |
 | `PI-22` | OPEN | should | S | Publish CMake and public-header version facts from one canonical value, distinguishing development builds (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
 | `PI-23` | OPEN | should | S | Name missing consumer dependencies and their manifest repair while retaining CMake details (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |
-| `SM-79` | OPEN | could | XS | Extend CHANGES coverage to remaining consumer-executed build files, retaining the existing opt-out (`REV#142`). [Scope](docs/product/BACKLOG.md#sm-79). |
 | `SM-80` | OPEN | could | S | Check that tracked source files are enumerated by CMake, including conditional backend sources (`REV#51`). [Scope](docs/product/BACKLOG.md#sm-80). |
 | `SM-81` | OPEN | should | M | Qualify native MSVC Release IPO before enabling it there; browser qualification stays separate (`REV#36`). [Scope](docs/product/BACKLOG.md#sm-81). |
 | `SM-82` | OPEN | should | M | Repair dependency instrumentation and allocation-failure coverage, then add scheduled native-null ASan (`REV#49`). [Scope](docs/product/BACKLOG.md#sm-82). |

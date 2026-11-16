@@ -77,7 +77,7 @@ gh label create declined --color b60205 --description "Request declined; the clo
    [docs/product/BACKLOG.md](docs/product/BACKLOG.md) has its box ticked in the
    commit that closes it.
 3. **Say what a consumer will see.** A commit that touches `engine/**/*.h`,
-   `engine/CMakeLists.txt`, `cmake/settings.cmake` or `vcpkg.json` adds an
+   `vcpkg.json` or one of [CHANGES.md's explicit consumer build inputs](CHANGES.md#the-rule) adds an
    entry to [CHANGES.md](CHANGES.md), under its `## Unreleased` heading, in the
    same commit, or says
    `not consumer-visible` in its message. CHANGES.md's opening paragraph
@@ -86,6 +86,13 @@ gh label create declined --color b60205 --description "Request declined; the clo
    lint job fails a commit that has neither (`tools/check_changes_rule.py`);
    whether the entry or the declaration is right is review's to check before
    merging, because nothing else does.
+   The build inputs are the root, engine and math `CMakeLists.txt`, and
+   `cmake/`'s `settings.cmake`, `source_revision.cmake`,
+   `compile_shaders.cmake`, `add_material.cmake`, `embed_material.cmake` and
+   `check_engine_includes.cmake`. Other CMake scripts and maintainer tooling
+   are not implicitly included. CHANGES.md records the frozen historical
+   boundary for the paths added to coverage on 2026-11-16; the original paths
+   remain checked across history.
    A commit that changes what `samples/minimal/` does or how it builds, or an
    engine behaviour that folder depends on, in a way a copy of it would want,
    adds a dated line to the change list in

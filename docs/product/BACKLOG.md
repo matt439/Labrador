@@ -1399,7 +1399,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-92](#oca-92)** Should · M · The Outside Adopter: Read the player's reduced-motion preference on either platform
 - [ ] **[PI-22](#pi-22)** Should · S · The Pinned Submodule Integrator: Identify the engine release and a development build from code and CMake
 - [ ] **[PI-23](#pi-23)** Should · S · The Pinned Submodule Integrator: A missing engine dependency gives actionable configure advice
-- [ ] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
+- [x] **[SM-79](#sm-79)** Could · XS · The Sole Owner-Maintainer: Consumer build inputs follow the change-list rule
 - [ ] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
 - [ ] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
 - [ ] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
@@ -1831,6 +1831,17 @@ Selected from [`REV#142`](../review/2026-11-12-work-audit/FINDINGS.md#rev142).
 judgment of whether an entry is right. Offline checker fixtures prove each
 new path fails without an entry/opt-out, passes with either and excludes
 unrelated files; run the focused tooling suite, local lint and website gate.
+
+**Implemented 2026-11-16:** the rule inventories the root, engine and math
+build files and the six consumer-executed scripts in
+[CHANGES.md](../../CHANGES.md#the-rule), including the optional authored-material
+embedding command. Original paths retain whole-history checks; additional
+paths are strict after the frozen approved-scope baseline `f5c17f32`.
+The historical audit distinguishes standalone test wiring and comments from
+the consumer include-wall behaviour change in `9bec49e3`; it does not assign
+blanket non-visible exceptions. Fixtures prove every added path's missing,
+entry and opt-out cases, the old/new boundary, original-path enforcement
+before it, and strict coverage in an unrelated repository without that base.
 
 <a id="sm-80"></a>
 ### SM-80. Detect tracked C++ sources omitted from CMake
