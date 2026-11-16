@@ -41,6 +41,15 @@ namespace labrador
 		std::vector<Contact>& contacts, BroadPhase* broad_phase)
 	{
 		contacts.clear();
+		// Check the whole input before any pair is emitted, including lone
+		// objects and those whose masks would otherwise hide broken geometry.
+		for (CollisionObject* const object : objects)
+		{
+			if (object != nullptr && !object->for_deletion())
+			{
+				object->validate_finite_shape();
+			}
+		}
 
 		if (broad_phase != nullptr)
 		{
@@ -90,6 +99,8 @@ namespace labrador
 			{
 				continue;
 			}
+			contact.a->validate_finite_shape();
+			contact.b->validate_finite_shape();
 
 			// Measured again, here, because a response moves things.
 			//

@@ -19,6 +19,7 @@ add_library(LabradorEngine STATIC
     audio/sound_bank.cpp
     audio/xwb_file.cpp
     collision/broad_phase.cpp
+    collision/collision_object.cpp
     collision/contacts.cpp
     collision/narrow_phase.cpp
     collision/resolve.cpp

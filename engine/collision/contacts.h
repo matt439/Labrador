@@ -39,6 +39,11 @@ namespace labrador
 	// boxes, then narrow_phase. Objects already flagged for deletion take part
 	// in nothing.
 	//
+	// After clearing contacts, validates every non-null, non-retired object
+	// with CollisionObject::validate_finite_shape, before any pair is emitted.
+	// Invalid input throws std::invalid_argument even for a lone/masked object;
+	// contacts stays empty and objects are neither changed nor retired.
+	//
 	// With no broad phase, the pair enumeration is all-pairs, O(n^2);
 	// broad_phase.h gives the measured cost. Pass one and it enumerates only
 	// the pairs whose bounding boxes overlap, in the same order.
@@ -70,5 +75,8 @@ namespace labrador
 	//     has already separated is dropped. The depths in the list describe
 	//     the frame before anything responded to it, which is what a caller
 	//     inspecting the list wants and not what a caller acting on it does.
+	//
+	// Each live pair is validated immediately before remeasurement. Invalid
+	// geometry throws std::invalid_argument; earlier callback effects remain.
 	void dispatch_contacts(std::span<const Contact> contacts);
 }
