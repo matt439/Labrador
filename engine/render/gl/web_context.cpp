@@ -306,12 +306,10 @@ namespace labrador
 		attributes.antialias = false;
 		attributes.preserveDrawingBuffer = false;
 		attributes.failIfMajorPerformanceCaveat = false;
-		// The browser's own choice of adapter. On a machine with an
-		// integrated and a discrete GPU this term picks between them, so it
-		// is stated rather than inherited; asking for either one by name is a
-		// decision about which GPU the low tier draws on, and
-		// docs/port/web-as-built.md records what each value selected where
-		// measured.
+		// Leave adapter selection to the browser explicitly. This preference
+		// is an advisory hint that may influence a multi-GPU choice; the
+		// browser may ignore it. docs/port/web-as-built.md records the policy
+		// and the limits of the measured single-adapter results.
 		attributes.powerPreference = EM_WEBGL_POWER_PREFERENCE_DEFAULT;
 		// Presented through the page's compositor like any other canvas. A
 		// desynchronized canvas may skip it for lower latency, and may tear.

@@ -63,7 +63,7 @@ proof, and `SM-95` waits for owner-supplied public disclosure wording.
 `SM-96` refreshes release preparation for the selected candidate independently
 of the new feature queue; the November 13 report does not qualify later
 shader/material changes. Six proposals are deferred and three policies are
-settled. `REV#156` retains only its bounded hint-wording correction as open work.
+settled. `REV#156` is closed with its bounded advisory-hint wording correction.
 
 **Final acceptance and client decisions, 2026-11-16:** the last eighteen
 calls are recorded. There is no unresolved `DECISION` row. Approved physical
@@ -83,7 +83,7 @@ The earlier `OCA-79` approval gate is now clear: Later's L56 hosted starter
 proof is ready ahead of L66, under the existing return-to-earlier-ready-work
 rule. The first six selected product priorities remain the next product slice.
 
-**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs), and `REV#156`'s hint wording. The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
+**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
 **Owner-attended acceptance remains open.** Group it without restoring manual
 checklists: pad play (`OCA-48`, `OCA-45`, `PI-21`); audio/listening and endpoint
@@ -382,7 +382,6 @@ implementation scopes are stories in the batches above.
 |---|---|---|---|---|
 | `REV#150` | OPEN | should | S | CI configuration now enables software WebGL and selects all eight Firefox entries with renderer evidence. Left: verify the published CI run reaches WARP and whether audio's "Closed before resume completed" flakes there. Local evidence is in docs/port/web-to-be-tested.md. |
 | `REV#151` | OPEN | could | M | Safari and Firefox runs prove drawing and keys but read back nothing; `RenderPixelTests` and `WebWindowTests` run only in Chromium. Pixel page exit-protocol CI wiring is staged locally; hosted Safari readback, per-case drift and WebWindow input remain open. Firefox follows REV#150 (see web-to-be-tested.md). |
-| `REV#156` | OPEN | could | XS | Keep explicit default; correct remaining source/record wording to describe an advisory GPU hint rather than guaranteed selection. [Decision](docs/review/2026-11-12-work-audit/STATUS.md). |
 | `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. Pages whose keys start Web Audio or full screen now get one action list, the others one confirmed key at a time, each the form that passed there; failures print the page's keys and focus. Close after a week clean. |
 
 ## Ports

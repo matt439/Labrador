@@ -804,9 +804,9 @@ desktop build.
 
 The browser context now states `powerPreference` as `"default"` in
 `engine/render/gl/web_context.cpp`, the value it already had when left unset,
-so what the browser selects is unchanged. The term is stated because on a
-machine with an integrated and a discrete GPU it chooses between them, and
-which of the two a page should ask for is the low-tier question of
+so the requested preference is unchanged. The term is an advisory hint that
+may influence adapter selection on a machine with multiple GPUs; the browser
+may ignore it. Which preference a page should request is the low-tier question of
 [PHILOSOPHY.md](../design/PHILOSOPHY.md); choosing `"low-power"` or
 `"high-performance"` is the owner's decision.
 
@@ -832,11 +832,10 @@ choice until a measured hybrid-machine need justifies another policy.
 The preceding 2026-11-13 record is preserved as measured. Its one-enabled-GPU
 experiment establishes neither hybrid-device selection nor an energy or
 performance advantage for another hint. The source comment and the earlier
-explanatory paragraph still need their stronger "picks/chooses" wording
-aligned with the hint-only contract; that bounded follow-up remains OPEN as
-`REV#156` in [the live ledger](../review/2026-11-12-work-audit/STATUS.md).
-This clarification changes no source, context attribute or measured result
-and records no new build, browser or hardware run.
+explanatory paragraph use the same hint-only contract, closing `REV#156` in
+[the live ledger](../review/2026-11-12-work-audit/STATUS.md).
+This clarification changes no context attribute or measured result and
+records no new browser or hardware run.
 
 ## Throttled desktop rehearsal, 2026-11-13
 
