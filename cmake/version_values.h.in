@@ -1,0 +1,11 @@
+#pragma once
+
+namespace labrador::detail
+{
+	inline constexpr unsigned int version_major = @LABRADOR_VERSION_MAJOR@u;
+	inline constexpr unsigned int version_minor = @LABRADOR_VERSION_MINOR@u;
+	inline constexpr unsigned int version_patch = @LABRADOR_VERSION_PATCH@u;
+	inline constexpr const char* version_string = "@LABRADOR_VERSION_STRING@";
+#cmakedefine01 LABRADOR_VERSION_IS_DEVELOPMENT
+	inline constexpr bool version_is_development = LABRADOR_VERSION_IS_DEVELOPMENT != 0;
+}

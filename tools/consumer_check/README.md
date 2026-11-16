@@ -39,6 +39,11 @@ matched the release's ZIP from a CRLF checkout). With
 exactly the tag: `vcpkg.json`'s `version-string` must match, `HEAD` must be
 the tag's commit, and nothing may be modified or untracked. Without it, it is
 `labrador-starter-dev.zip` and its README says it is not a release.
+The release ZIP also stamps `cmake/release_identity.txt` with its verified
+commit and exact tag, so `version()` and CMake identify the release after
+extraction without Git. Its source revision remains `unknown`; the stamp is
+package identity, not a check of later manual edits. Plain unstamped source
+copies report a development version.
 CONTRIBUTING.md's *Cutting a release* attaches one to each release.
 
 CI's `consumer` job (`.github/workflows/ci.yml`) makes that ZIP on every pull

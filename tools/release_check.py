@@ -4,6 +4,8 @@ CONTRIBUTING.md's *Cutting a release* owns the procedure; this checks the
 parts of its steps 1 and 2 that can be read from the tree at --head:
 
 - the release is named vX.Y.Z, and vcpkg.json's version-string is X.Y.Z;
+- compiler-free CMake version metadata and the generated header agree with
+  that value, distinguishing unverified sources from a stamped release;
 - no tag of that name names another commit;
 - --base is a vX.Y.Z tag that the head contains, and before 1.0 the number
   moves as *The number* says: the second number for a release with a
@@ -24,8 +26,12 @@ reading, not this tool's.
 --notes prints step 5's notes body on stdout, once every check passes, and
 the report on stderr, so `> notes.md` captures the notes alone.
 
-Reads local Git objects only. It tags, pushes, uploads, fetches and writes
-nothing; the rebuild, signing and upload steps stay the owner's.
+Reads local Git objects and runs compiler-free CMake fixtures in a temporary
+directory. It changes no checkout, tag or remote; the rebuild, signing and
+upload steps stay the owner's.
+
+The head must contain the version-metadata contract this checker validates.
+For a historical release predating it, use that release's own checker.
 """
 
 from __future__ import annotations
@@ -35,7 +41,10 @@ import datetime
 import json
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 from typing import TextIO
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -59,6 +68,8 @@ SETTLE_LEAD = re.compile(r"\*\*(The API settles after .*?\.)\*\*")
 # PHILOSOPHY's settle criterion: twelve weeks and two 0.x tags without an entry.
 SETTLE_WEEKS = 12
 SETTLE_TAGS = 2
+VERSION_INPUTS = ("cmake/version.cmake", "cmake/source_revision.cmake",
+                  "cmake/version_values.h.in", "cmake/release_identity.txt")
 
 
 def parse_version(name: str) -> tuple[int, int, int] | None:
@@ -114,6 +125,60 @@ def check_version_string(vcpkg: str, release: tuple[int, int, int]) -> list[str]
     if value != expected:
         return [f"vcpkg.json's version-string is {value!r}; the release commit sets it to {expected!r} (step 2)"]
     return []
+
+
+def check_version_contract(files: dict[str, str], release: tuple[int, int, int], head: str) -> list[str]:
+    """Run the release's own CMake derivation without a compiler or repository writes."""
+    if not re.search(r'project\(Labrador\s+VERSION\s+"\$\{LABRADOR_VERSION\}"\s+LANGUAGES\s+CXX\)',
+                     files["CMakeLists.txt"]):
+        return ["CMakeLists.txt must give project(Labrador) the canonical LABRADOR_VERSION"]
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        return ["CMake is required for the compiler-free release version/header check; use the x64 tools prompt"]
+    expected = "{}.{}.{}".format(*release)
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="labrador-release-version-") as temporary:
+        root = Path(temporary)
+        for relative in (*VERSION_INPUTS, "vcpkg.json"):
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(files[relative], encoding="utf-8")
+        script = root / "check.cmake"
+        script.write_text(
+            'include("${CMAKE_CURRENT_LIST_DIR}/cmake/version.cmake")\n'
+            'labrador_set_version("${CMAKE_CURRENT_LIST_DIR}")\n'
+            'configure_file("${CMAKE_CURRENT_LIST_DIR}/cmake/version_values.h.in" '
+            '"${CMAKE_CURRENT_LIST_DIR}/values.h" @ONLY)\n'
+            'file(WRITE "${CMAKE_CURRENT_LIST_DIR}/facts.txt" '
+            '"${LABRADOR_VERSION}\\n${LABRADOR_VERSION_STRING}\\n${LABRADOR_VERSION_IS_DEVELOPMENT}\\n")\n',
+            encoding="utf-8")
+        for stamped in (False, True):
+            if stamped:
+                (root / "cmake/release_identity.txt").write_text(
+                    f"commit={head}\nrefs=tag: v{expected}\n", encoding="ascii")
+            try:
+                result = subprocess.run([cmake, "-P", str(script)], capture_output=True, timeout=30, check=False)
+            except (OSError, subprocess.TimeoutExpired) as error:
+                return [f"CMake's release version check could not run: {error}"]
+            if result.returncode:
+                failures.append("CMake's release version derivation failed: " +
+                                result.stderr.decode("utf-8", errors="replace").strip())
+                continue
+            expected_string = expected if stamped else expected + "-dev"
+            expected_development = "OFF" if stamped else "ON"
+            facts = (root / "facts.txt").read_text(encoding="utf-8").splitlines()
+            if facts != [expected, expected_string, expected_development]:
+                failures.append(f"CMake's {'stamped release' if stamped else 'unverified source'} version "
+                                f"is {facts!r}, expected {[expected, expected_string, expected_development]!r}")
+            header = (root / "values.h").read_text(encoding="utf-8")
+            for part, value in zip(("major", "minor", "patch"), release):
+                if not re.search(rf"version_{part}\s*=\s*{value}u\s*;", header):
+                    failures.append(f"the generated version header's {part} does not agree with v{expected}")
+            if f'version_string = "{expected_string}";' not in header:
+                failures.append(f"the generated version header does not report {expected_string}")
+            if f"#define LABRADOR_VERSION_IS_DEVELOPMENT {0 if stamped else 1}" not in header:
+                failures.append("the generated version header loses the release/development distinction")
+    return failures
 
 
 def check_changes(changes: str, release: str, base: str, head_date: str) -> tuple[list[str], int | None]:
@@ -356,6 +421,9 @@ def main(arguments: list[str] | None = None, *, repository: Path | None = None) 
             failures.append(f"the tag {options.release} already names {existing}, not the head")
         head_date = golden.git(location, "log", "-1", "--format=%as", head).decode("ascii").strip()
         failures += check_version_string(show(location, head, "vcpkg.json"), release)
+        version_files = {name: show(location, head, name)
+                         for name in (*VERSION_INPUTS, "vcpkg.json", "CMakeLists.txt")}
+        failures += check_version_contract(version_files, release, head)
         changes = show(location, head, changes_rule.CHANGES)
         heading_failures, entries = check_changes(changes, options.release, options.base, head_date)
         failures += heading_failures

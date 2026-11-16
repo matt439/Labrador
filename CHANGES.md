@@ -33,6 +33,9 @@ review's and the release audit's.
 | `engine/math/CMakeLists.txt` | Declares the linked math library. |
 | `cmake/settings.cmake` | Defines the compile settings the game links. |
 | `cmake/source_revision.cmake` | Reports the engine source identity during configure. |
+| `cmake/version.cmake` | Derives release/development version facts from the canonical manifest. |
+| `cmake/version_values.h.in` | Generates the version data compiled into the engine. |
+| `cmake/release_identity.txt` | Identifies an exported release package without Git. |
 | `cmake/compile_shaders.cmake` | Configures the selected backend's shader compilation. |
 | `cmake/add_material.cmake` | Defines the optional game-authored material build commands. |
 | `cmake/embed_material.cmake` | Runs those material commands' byte/source embedding step. |
@@ -116,6 +119,27 @@ not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
 ## Unreleased
+
+### 2026-11-16 - Publish release and development version identity
+
+**Additive API and configure metadata.** `engine/core/version.h` exposes
+`Version` and `version()`: numeric parts, an `X.Y.Z` or `X.Y.Z-dev` string,
+and a development flag. CMake publishes the same facts through
+`LABRADOR_VERSION`, `LABRADOR_VERSION_MAJOR`, `LABRADOR_VERSION_MINOR`,
+`LABRADOR_VERSION_PATCH`, `LABRADOR_VERSION_STRING` and
+`LABRADOR_VERSION_IS_DEVELOPMENT`, after the engine's `add_subdirectory`.
+The numeric value comes only from `vcpkg.json`'s `version-string`.
+
+A clean engine checkout exactly at its matching tag identifies the release.
+Between tags, with tracked changes, or without verifiable release metadata,
+it identifies development even while the numeric baseline stays unchanged.
+Git source archives carry exported exact-tag metadata, and the release
+starter ZIP stamps it after verifying its clean exact tag. An unstamped
+source copy is development. Archive metadata identifies the packaged release;
+it does not detect later manual edits. `LABRADOR_SOURCE_REVISION` remains
+independent and is still `unknown` without the engine's own Git metadata.
+Reconfigure after changing the pin, tracked source or tags. These facts
+promise no compatibility before 1.0; read CHANGES.md when moving a pin.
 
 ### 2026-11-16 - Validate authored sprite regions against their atlas
 

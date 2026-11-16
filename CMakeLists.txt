@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.26)
 # Labrador — a 2D game engine, its samples, its tests and its benchmarks.
 # docs/design/ARCHITECTURE.md describes the shape; this file is the whole of
 # the top-level build.
-project(Labrador LANGUAGES CXX)
+include(cmake/version.cmake)
+labrador_set_version("${CMAKE_CURRENT_SOURCE_DIR}")
+project(Labrador VERSION "${LABRADOR_VERSION}" LANGUAGES CXX)
 
 # Windows builds are 64-bit only. A 32-bit compiler, which the plain Developer
 # Command Prompt sets up, would otherwise configure and build without a word,
@@ -18,9 +20,6 @@ if(WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
         "${CMAKE_CXX_COMPILER}. Open the x64 Native Tools Command Prompt, delete the "
         "build folder ${CMAKE_BINARY_DIR} and configure again.")
 endif()
-
-include(cmake/source_revision.cmake)
-labrador_set_source_revision("${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(cmake/settings.cmake)
 include(cmake/compile_shaders.cmake)
