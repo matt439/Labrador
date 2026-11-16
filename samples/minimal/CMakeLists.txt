@@ -32,7 +32,7 @@ target_link_libraries(MinimalRules PUBLIC
 
 # The rules' tests, with doctest from vcpkg. One ctest entry however many cases
 # it holds; a new test file is listed here beside the first.
-find_package(doctest CONFIG REQUIRED)
+labrador_find_package(doctest)
 add_executable(MinimalTests
     tests/motion_tests.cpp
 )

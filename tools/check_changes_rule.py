@@ -28,6 +28,7 @@ ORIGINAL_RULE_PATHS = ("engine/CMakeLists.txt", "cmake/settings.cmake", "vcpkg.j
 RULE_PATHS = (*ORIGINAL_RULE_PATHS, "CMakeLists.txt", "engine/math/CMakeLists.txt",
               "cmake/source_revision.cmake", "cmake/compile_shaders.cmake",
               "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
+              "cmake/dependencies.cmake",
               "cmake/add_material.cmake", "cmake/embed_material.cmake",
               "cmake/check_engine_includes.cmake")
 # The approved scope before the coverage expansion. Preserve the policy those

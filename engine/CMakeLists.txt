@@ -486,7 +486,7 @@ target_include_directories(LabradorEngine SYSTEM PRIVATE
 
 # The PNG decoder behind render/png_file.cpp, on every platform and backend,
 # from the same vcpkg port the golden-image tests read their set with.
-find_package(lodepng CONFIG REQUIRED)
+labrador_find_package(lodepng)
 
 target_link_libraries(LabradorEngine
     PUBLIC LabradorMath
@@ -510,7 +510,7 @@ if(LABRADOR_AUDIO_BACKEND STREQUAL "xaudio2" OR
     LABRADOR_INPUT_BACKEND STREQUAL "xinput")
     # xaudio2redist first: directxtk's config references
     # Microsoft::XAudio2Redist but does not find it itself.
-    find_package(xaudio2redist CONFIG REQUIRED)
-    find_package(directxtk CONFIG REQUIRED)
+    labrador_find_package(xaudio2redist PORT directxtk FEATURE xaudio2redist)
+    labrador_find_package(directxtk PORT directxtk FEATURE xaudio2redist)
     target_link_libraries(LabradorEngine PRIVATE Microsoft::DirectXTK)
 endif()

@@ -34,6 +34,7 @@ review's and the release audit's.
 | `cmake/settings.cmake` | Defines the compile settings the game links. |
 | `cmake/source_revision.cmake` | Reports the engine source identity during configure. |
 | `cmake/version.cmake` | Derives release/development version facts from the canonical manifest. |
+| `cmake/dependencies.cmake` | Supplements missing selected package/tool discovery with consumer manifest advice. |
 | `cmake/version_values.h.in` | Generates the version data compiled into the engine. |
 | `cmake/release_identity.txt` | Identifies an exported release package without Git. |
 | `cmake/compile_shaders.cmake` | Configures the selected backend's shader compilation. |
@@ -119,6 +120,27 @@ not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
 ## Unreleased
+
+### 2026-11-17 - Explain missing consumer dependencies at configure
+
+**Configure diagnostics.** Missing selected config packages now name the
+consumer's manifest obligation and the engine manifest to compare, retaining
+CMake's package-failure reason, considered configurations/versions and
+directory hints. If the consumer already
+declares the port, the advice points to toolchain, triplet, feature and
+installed-package discovery instead of adding a duplicate or replacing a
+working baseline. Package declarations are inspected best-effort; no manifest
+or dependency installation is changed.
+
+The native DirectXTK/XAudio2 packages remain conditional on their selected
+backends. Missing optional material tools name host dependency objects;
+built-in-only projects gain no new tool requirement. The minimal template
+and starter use `labrador_find_package(doctest)` for the same advice on their
+rules-test dependency. A failed package lookup is never retried: a partial
+import cannot turn the failed configuration into a success. Existing
+`find_package(doctest CONFIG REQUIRED)` calls
+remain valid; a copy can opt into the additional diagnostic by replacing that
+line after moving its engine pin.
 
 ### 2026-11-16 - Publish release and development version identity
 

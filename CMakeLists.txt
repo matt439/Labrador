@@ -22,6 +22,7 @@ if(WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif()
 
 include(cmake/settings.cmake)
+include(cmake/dependencies.cmake)
 include(cmake/compile_shaders.cmake)
 
 # The module graph, enforced. Runs on every build.

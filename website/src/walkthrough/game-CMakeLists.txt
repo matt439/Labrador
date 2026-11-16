@@ -14,7 +14,7 @@ target_link_libraries(MyGameRules PUBLIC
 target_include_directories(MyGameRules PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 # The rules' tests, with doctest from vcpkg. A new test file is listed here.
-find_package(doctest CONFIG REQUIRED)
+labrador_find_package(doctest)
 add_executable(MyGameTests
     tests/motion_tests.cpp
 )
