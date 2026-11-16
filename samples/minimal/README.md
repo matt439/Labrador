@@ -41,6 +41,10 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** A browser fullscreen refusal leaves the game playing in
+  the page and reports the actual mode; Window-owned rejected requests are
+  handled. Moving the engine pin takes the fix without template edits.
+
 - **2026-11-17.** The rules-test lookup uses `labrador_find_package(doctest)`
   so a missing dependency names the game's manifest obligation alongside
   CMake's discovery details. A copy can replace `find_package(doctest CONFIG REQUIRED)`

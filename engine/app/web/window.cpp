@@ -17,14 +17,15 @@
 // THE PAGE'S HALF, which is the only JavaScript in the shell (the renderer's
 // context and the audio backend have their own). Each function
 // is one question about the canvas or one call to the page, and everything
-// else goes through Emscripten's html5 API, which names an element by a
-// string. "!canvas" is that string for the canvas the page handed over as
+// else goes through Emscripten's html5 API, except the owned full-screen
+// Promises scheduled through its gesture queue. The API names an element by
+// a string. "!canvas" is that string for the canvas the page handed over as
 // Module.canvas: the page decides which canvas, and no selector is compiled
 // in.
 //
 // Global rather than in labrador::, because EM_JS declares a C function, and
 // prefixed for the same reason.
-EM_JS_DEPS(labrador_window, "$specialHTMLTargets,$UTF8ToString,"
+EM_JS_DEPS(labrador_window, "$JSEvents,$specialHTMLTargets,$UTF8ToString,"
 	"$getWasmTableEntry,$stringToUTF8OnStack,$stackSave,$stackRestore");
 
 EM_JS(int, labrador_adopt_canvas, (), {
@@ -99,27 +100,95 @@ EM_JS(int, labrador_device_box_height, (), {
 	return Module.labradorDeviceBox ? Module.labradorDeviceBox.height : 0;
 });
 
-// A refused full-screen request has no event in the html5 API: the
-// browser rejects the request's promise and fires fullscreenerror at the
-// document. One listener notes it, and the frame takes the note.
+// The native request's Promise belongs to this window. Its rejection and the
+// document's fullscreenerror both leave a note for the frame, without handling
+// any Promise a page made itself. The callback identity and generation also
+// prevent a deferred request or late rejection from surviving its owner.
 EM_JS(void, labrador_watch_fullscreen_errors, (int on), {
-	if (on) {
-		Module.labradorFullscreenRefused = false;
-		Module.labradorOnFullscreenError = () => {
-			Module.labradorFullscreenRefused = true;
-		};
-		document.addEventListener("fullscreenerror",
-			Module.labradorOnFullscreenError);
-	} else if (Module.labradorOnFullscreenError) {
-		document.removeEventListener("fullscreenerror",
-			Module.labradorOnFullscreenError);
-		Module.labradorOnFullscreenError = null;
+	const previous = Module.labradorFullscreen;
+	if (previous) {
+		previous.active = false;
+		JSEvents.removeDeferredCalls?.(previous.request);
+		document.removeEventListener("fullscreenerror", previous.error);
+		Module.labradorFullscreen = null;
 	}
+	if (!on) {
+		return;
+	}
+	const state = { active: true, generation: 0, refused: false };
+	const canvas = specialHTMLTargets["!canvas"];
+	state.failed = (generation) => {
+		if (state.active && state.generation === generation) {
+			state.refused = true;
+		}
+	};
+	state.invoke = (operation, generation) => {
+		try {
+			const result = operation();
+			if (result && typeof result.then === "function") {
+				result.then(undefined, () => state.failed(generation));
+			}
+		} catch (error) {
+			state.failed(generation);
+		}
+	};
+	state.request = (generation) => {
+		if (!state.active || state.generation !== generation) {
+			return;
+		}
+		state.invoke(() => canvas.requestFullscreen ?
+			canvas.requestFullscreen() :
+			canvas.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT), generation);
+	};
+	state.error = () => { state.refused = true; };
+	document.addEventListener("fullscreenerror", state.error);
+	Module.labradorFullscreen = state;
+});
+
+EM_JS(int, labrador_request_fullscreen, (), {
+	const state = Module.labradorFullscreen;
+	const canvas = specialHTMLTargets["!canvas"];
+	if (!state || !state.active || !JSEvents.fullscreenEnabled() ||
+		!canvas || (!canvas.requestFullscreen && !canvas.webkitRequestFullscreen)) {
+		return 0;
+	}
+	const generation = ++state.generation;
+	if (JSEvents.canPerformEventHandlerRequests &&
+		!JSEvents.canPerformEventHandlerRequests()) {
+		JSEvents.deferCall(state.request, 1, [generation]);
+	} else {
+		state.request(generation);
+	}
+	return 1;
+});
+
+EM_JS(void, labrador_exit_fullscreen, (), {
+	const state = Module.labradorFullscreen;
+	if (!state || !state.active) {
+		return;
+	}
+	const generation = ++state.generation;
+	JSEvents.removeDeferredCalls?.(state.request);
+	if (!JSEvents.fullscreenEnabled()) {
+		return;
+	}
+	state.invoke(() => {
+		if (document.exitFullscreen) {
+			if (document.fullscreenElement) {
+				return document.exitFullscreen();
+			}
+		} else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+			return document.webkitExitFullscreen();
+		}
+	}, generation);
 });
 
 EM_JS(int, labrador_take_fullscreen_refusal, (), {
-	const refused = Module.labradorFullscreenRefused ? 1 : 0;
-	Module.labradorFullscreenRefused = false;
+	const state = Module.labradorFullscreen;
+	const refused = state?.refused ? 1 : 0;
+	if (state) {
+		state.refused = false;
+	}
 	return refused;
 });
 
@@ -255,9 +324,9 @@ namespace labrador
 			double client_y) const;
 		bool inside(const Vector2I& position) const;
 
-		// Asks for full screen, and reports a request the browser refused on
-		// the spot. One deferred to the next input event is reported by the
-		// browser's own events when it is decided.
+		// Asks for full screen and reports immediate unavailability. A deferred
+		// request runs with the next eligible activation; browser events and
+		// rejected owned Promises are reported through the frame.
 		void request_fullscreen();
 
 		// Tells the owner whether the browser has an element full screen now.
@@ -408,8 +477,8 @@ namespace labrador
 
 		this->listen(true);
 
-		// Deferred to the first key or button event, which is the only place a
-		// browser grants it. A page that may not go full screen at all - an
+		// A request without activation waits for the next eligible input event.
+		// A page that may not go full screen at all - an
 		// iframe without permission - refuses, the owner is told, and the
 		// game plays in the page.
 		if (options.fullscreen)
@@ -559,10 +628,7 @@ namespace labrador
 
 	void Window::Impl::request_fullscreen()
 	{
-		const EMSCRIPTEN_RESULT result =
-			emscripten_request_fullscreen(canvas_target, true);
-		if (result != EMSCRIPTEN_RESULT_SUCCESS &&
-			result != EMSCRIPTEN_RESULT_DEFERRED)
+		if (labrador_request_fullscreen() == 0)
 		{
 			this->report_fullscreen();
 		}
@@ -1006,7 +1072,7 @@ namespace labrador
 		// after this returns, and the next frame's measure() reports it then.
 		// The report here is of the size the canvas has now, which keeps the
 		// caller from holding the size it asked for in the meantime.
-		std::ignore = emscripten_exit_fullscreen();
+		labrador_exit_fullscreen();
 		this->impl_->report_size();
 	}
 }

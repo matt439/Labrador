@@ -57,6 +57,7 @@
 //   fractional-position step must find the snapped size.
 
 import { check_motion_preference } from './motion_preference_input.mjs';
+import { check_fullscreen_requests } from './fullscreen_input.mjs';
 
 const CANVAS = { x: 120, y: 70 };
 const OUTSIDE = { x: 650, y: 400 };
@@ -498,6 +499,7 @@ export async function drive_window(page, input) {
 	await evaluate('document.getElementById("canvas").requestFullscreen().then(() => false, () => true)');
 	await frames(3);
 	await check('a refused request is reported on the next frame', ['fullscreen 0']);
+	await check_fullscreen_requests(page, input);
 
 	// CLOSED: the page is told once, synchronously; the owner hears on_closed
 	// once, on a later task; and nothing else reaches the owner after it -

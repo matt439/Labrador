@@ -322,6 +322,39 @@ on the NVIDIA GeForce RTX 5080 through Direct3D11. The offline
 navigation and propagate activation failure. Full browser sweeps and hosted
 CI retain their own per-run results.
 
+## Window-owned fullscreen refusal (2026-11-17)
+
+The Fullscreen API rejects a refused request's Promise separately from its
+`fullscreenerror` event. The installed Emscripten 6.0.12 entry and exit helpers
+discard those Promises. The browser window invokes its own native requests,
+including the prefixed fallback, and handles only their returned rejections.
+Its callback uses the pinned SDK's existing activation queue with an explicit
+`EM_JS_DEPS` dependency. Leaving and closing remove that callback by identity;
+active-owner and request-generation checks cover already copied callbacks and
+late settlement. Page methods and page-owned Promise handling are unchanged.
+
+Focused wasm-debug `WebWindowTests`, `FirefoxWebWindowTests` and
+`ComponentsPageTests` passed 3/3 on Chrome 157.0.8103.78 and Firefox 160.0.
+The shared window driver forces immediate, prefixed and deferred refusals,
+checks actual status and continuing frames, cancels queued requests on leave
+and close/reopen while retaining unrelated activation work, and rejects an
+old in-flight request after its owner closed.
+It also refuses an owned exit while actually fullscreen and verifies that a
+page-owned rejected request still reaches `unhandledrejection`; its listener
+acknowledges only that deliberate page fixture after observing the event.
+The existing final `Module.onError` failure and teardown checks still pass.
+
+An additional Debug wasm-null build passed `AppTests`, `WebWindowTests` and
+`ComponentsPageTests` 3/3. Restoring the previous SDK entry path while keeping
+the new tests made `WebWindowTests` fail at the first forced request: the
+Promise was unhandled and no fullscreen-false callback arrived. Restoring
+the owned path returned the focused suites to green. An out-only diagnostic
+also made a genuine native request from an inactive browser view: one
+fullscreen-false callback and a continuing tick arrived, with no unhandled
+rejection. These are focused
+browser/Node results; the combined full tracks and Release runs keep their
+own receipts.
+
 ## Configurations CI cannot run
 
 CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on
