@@ -79,7 +79,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		{
 			CollisionState state(&app, true);
 			state.init();
-			for (int tick = 0; tick < smoke_route_ticks; ++tick)
+			for (int tick = 0; tick < smoke_test_ticks; ++tick)
 			{
 				state.update(smoke_step_time);
 				app.renderer()->begin_frame();

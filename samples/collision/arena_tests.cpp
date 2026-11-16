@@ -2,6 +2,7 @@
 #include <doctest/doctest.h>
 
 #include "samples/collision/arena.h"
+#include "samples/collision/entry_marker.h"
 
 #include "engine/math/circle.h"
 
@@ -149,4 +150,63 @@ TEST_CASE("a round post deflects a player that meets it off centre")
 	CHECK(arena.hit_wall());
 	CHECK(arena.player().bounds().y > 320.0f);
 	CHECK(arena.player().bounds().x > 300.0f);
+}
+
+TEST_CASE("a pending entry marker starts its lifetime only after admission and retires at end_tick")
+{
+	Scene scene(nullptr, nullptr);
+	EntryMarker* marker = scene.add(std::make_unique<EntryMarker>(Vector2F(200, 300), TextureHandle{}));
+	CHECK(scene.collision_objects().empty());
+	scene.update(EntryMarker::lifetime);
+	CHECK_FALSE(marker->for_deletion());
+	scene.end_tick();
+	REQUIRE(scene.collision_objects().size() == 1);
+	CHECK(scene.collision_objects()[0] == marker);
+
+	scene.update(EntryMarker::lifetime / 2.0f);
+	CHECK_FALSE(marker->for_deletion());
+	scene.end_tick();
+	scene.update(EntryMarker::lifetime / 2.0f);
+	CHECK(marker->for_deletion());
+	CHECK(scene.collision_objects().size() == 1);
+	scene.end_tick();
+	// The borrowed marker pointer expired. Only the scene is queried now.
+	CHECK(scene.collision_objects().empty());
+}
+
+TEST_CASE("entry markers record a bounds-sweep retirement request")
+{
+	Scene scene(nullptr, nullptr);
+	scene.set_bounds(RectangleF(0, 0, 100, 100));
+	scene.add(std::make_unique<EntryMarker>(Vector2F(200, 300), TextureHandle{}));
+	scene.end_tick();
+	REQUIRE(scene.collision_objects().size() == 1);
+	// Insertion follows retirement, so the first sweep sees it next tick.
+	scene.end_tick();
+	CHECK(scene.collision_objects().empty());
+}
+
+TEST_CASE("trigger entry spawns one marker, staying does not respawn it, and reset removes live markers")
+{
+	Arena arena;
+	const std::size_t fixed_count = arena.scene().collision_objects().size();
+	arena.player().set_position(Vector2F(920, 320));
+	arena.step(Vector2F::zero, 0.0f);
+	REQUIRE(arena.entry_marker_count() == 1);
+	CHECK(arena.markers_spawned() == 1);
+	CHECK(arena.scene().collision_objects().size() == fixed_count + 1);
+	for (int tick = 0; tick < 4; ++tick) arena.step(Vector2F::zero, 0.125f);
+	CHECK(arena.entry_marker_count() == 0);
+	CHECK(arena.markers_spawned() == 1);
+	CHECK(arena.scene().collision_objects().size() == fixed_count);
+	arena.player().set_position(Vector2F(800, 320));
+	arena.step(Vector2F::zero, 0.0f);
+	arena.player().set_position(Vector2F(920, 320));
+	arena.step(Vector2F::zero, 0.0f);
+	REQUIRE(arena.entry_marker_count() == 1);
+	CHECK(arena.markers_spawned() == 2);
+	arena.reset();
+	CHECK(arena.entry_marker_count() == 0);
+	CHECK(arena.markers_spawned() == 0);
+	CHECK(arena.scene().collision_objects().size() == fixed_count);
 }

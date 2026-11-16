@@ -21,6 +21,7 @@ namespace collision
 		case BodyKind::wall: return wall_layer;
 		case BodyKind::trigger: return trigger_layer;
 		case BodyKind::decoration: return decoration_layer;
+		case BodyKind::entry_marker: return 0u;
 		}
 		return 0u;
 	}
@@ -32,7 +33,8 @@ namespace collision
 		case BodyKind::player: return wall_layer | trigger_layer | decoration_layer;
 		case BodyKind::wall:
 		case BodyKind::trigger: return player_layer;
-		case BodyKind::decoration: return 0u;
+		case BodyKind::decoration:
+		case BodyKind::entry_marker: return 0u;
 		}
 		return 0u;
 	}
@@ -81,6 +83,7 @@ namespace collision
 			break;
 		case BodyKind::trigger: tint = Colour(24, 100, 66); break;
 		case BodyKind::decoration: tint = Colour(88, 48, 116); break;
+		case BodyKind::entry_marker: tint = Colour::goldenrod; break;
 		case BodyKind::wall: break;
 		}
 		draw_list.draw_sprite(this->texture_, RectangleI(0, 0, 1, 1),

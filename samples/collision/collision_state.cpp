@@ -104,7 +104,8 @@ namespace collision
 		this->refresh_view();
 		this->status_ = L"Contacts this tick: " +
 			std::to_wstring(this->arena_->contact_count()) + L"    Trigger entries: " +
-			std::to_wstring(this->arena_->trigger_entries());
+			std::to_wstring(this->arena_->trigger_entries()) + L"    Entry markers: " +
+			std::to_wstring(this->arena_->entry_marker_count());
 		if (this->smoke_test_)
 		{
 			++this->ticks_;
@@ -116,10 +117,11 @@ namespace collision
 		const RectangleF player = this->arena_->player().bounds();
 		if (!this->arena_->hit_wall() || this->arena_->trigger_entries() != 1 ||
 			!this->arena_->player().touching_trigger() ||
+			this->arena_->markers_spawned() != 1 || this->arena_->entry_marker_count() != 0 ||
 			std::abs(player.x - smoke_route_end.x) > 0.01f ||
 			std::abs(player.y - smoke_route_end.y) > 0.01f)
 		{
-			throw std::runtime_error("Smoke test: wall/trigger route failed");
+			throw std::runtime_error("Smoke test: wall/trigger route or marker lifetime failed");
 		}
 	}
 

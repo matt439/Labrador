@@ -10,7 +10,8 @@ namespace collision
 		player,
 		wall,
 		trigger,
-		decoration
+		decoration,
+		entry_marker
 	};
 
 	constexpr labrador::CollisionLayer player_layer = 1u << 0;

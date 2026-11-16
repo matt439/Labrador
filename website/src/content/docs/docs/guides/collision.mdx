@@ -43,6 +43,9 @@ Walk right through the purple rectangle, stop at the grey wall, then go around
 the wall into the green trigger. Gold means the player measured a wall contact
 this tick; green means it is overlapping the trigger. The HUD shows the current
 contact count and how many times the player has entered the trigger.
+An entry also leaves a small gold marker just above the entry position for
+half a second. It stays there while the player moves on; the HUD counts the
+markers still in the scene.
 
 ## Give each object a shape, layer and mask
 
@@ -121,18 +124,32 @@ so a collidable that keeps the default is never retired, by the sweep or by
 anything else that calls it. It goes on updating, drawing and colliding outside
 the world, and nothing reports it.
 
-That default is right for fixed geometry, which must not be lost that way, and
-for the sample's bodies, whose scene sets no bounds: `Body::for_deletion()`
-answers `false` and `Body` does not override `set_for_deletion`. Anything that
-can leave the world, such as a projectile, keeps the flag:
+The sample's fixed `Body` geometry keeps that default. Its small
+`EntryMarker` records the flag instead:
 
-```cpp
-bool Projectile::for_deletion() const { return this->for_deletion_; }
-void Projectile::set_for_deletion(bool for_deletion) { this->for_deletion_ = for_deletion; }
-```
+<SourceFile path="samples/collision/entry_marker.cpp" from="bool EntryMarker::for_deletion() const" to="}" />
 
-An object flagged during a tick produces no further contacts in it, and the
-pointer `Scene::add` returned for it stops being valid when that tick ends.
+Entering the trigger is the game's spawn condition. After resolving the
+player's contact, the arena adds a marker above the player without retaining
+its returned pointer:
+
+<SourceFile path="samples/collision/arena.cpp" from="void Arena::spawn_entry_marker()" to="}" />
+
+The marker is pending during that step's contact observation. Its admission at
+`end_tick` makes it drawable; its first update and collision sweep are on the
+next tick. Its layer and mask are zero, so it never changes the wall/trigger
+responses. The half-second lifetime is sample policy:
+
+<SourceFile path="samples/collision/entry_marker.cpp" from="void EntryMarker::update(" to="}" />
+
+The arena sets no world bounds, so the timer drives ordinary retirement. The
+same flag also honours a future bounds-sweep request. An object flagged during
+a tick produces no further contacts in it. `end_tick` destroys a retired
+object; pointers and references to it expire there. A callback that captured
+one must stop using it after retirement. Keep copied values when the
+observation must outlive the object.
+The arena retains only the permanent player pointer and marker counts; reset
+flags live markers and ends that tick before clearing its counters.
 
 ## Verify and adapt it
 
@@ -153,9 +170,12 @@ smoke run passed and another number when it failed. It shows no window and takes
 
 The tests run the sample's own arena without creating a window or device. They
 check separation, preserved tangential velocity, two-sided filtering, trigger
-entry and exit, and the route around the wall. The finite smoke runs the real
+entry and exit, deferred marker admission, lifetime retirement, reset and the
+route around the wall. Null-render tests also record no marker draw before
+admission, one after it and none after retirement. The finite smoke runs the real
 application hidden, loads its content, draws the scripted route and checks that
-the wall was hit and the trigger entered before exiting.
+the wall was hit and the trigger entered, then holds still until its marker
+retires before exiting.
 
 This is discrete collision, not continuous collision detection or rigid-body
 physics. At the sample's 60 Hz fixed step, its 240-unit speed moves a 32-unit

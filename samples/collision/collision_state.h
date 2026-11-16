@@ -11,10 +11,11 @@
 namespace collision
 {
 	// The smoke test's fixed step, and how many of them main.cpp runs: the
-	// route in collision_state.cpp ends where verify_smoke_test() expects only
-	// after exactly this many.
+	// route ends at smoke_route_ticks; the remaining ticks keep the player
+	// still while the trigger-entry marker expires.
 	inline constexpr float smoke_step_time = 1.0f / 60.0f;
 	inline constexpr int smoke_route_ticks = 315;
+	inline constexpr int smoke_test_ticks = smoke_route_ticks + 60;
 
 	// The sample's one screen: the arena, moved by the keys or a stick, and the
 	// labels that say what each rectangle is. main.cpp and main_web.cpp both
@@ -30,8 +31,8 @@ namespace collision
 		void update(float dt) override;
 		void draw(labrador::Renderer& renderer) const override;
 
-		// Throws unless the smoke route met the wall, entered the trigger once
-		// and ended where it should.
+		// Throws unless the route met the wall, entered the trigger once,
+		// spawned and retired its marker, and ended where it should.
 		void verify_smoke_test() const;
 
 	private:
@@ -42,7 +43,7 @@ namespace collision
 		bool smoke_test_;
 		std::unique_ptr<Arena> arena_;
 		labrador::FontHandle font_;
-		std::wstring status_ = L"Contacts this tick: 0    Trigger entries: 0";
+		std::wstring status_ = L"Contacts this tick: 0    Trigger entries: 0    Entry markers: 0";
 		int ticks_ = 0;
 	};
 }
