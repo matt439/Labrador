@@ -2,9 +2,10 @@
 
 These proposals supplement the [2026-10-27 comparison](survey/2026-10-27.md).
 They are based on this checkout, not on claims about other engines. Their
-current selection state is indexed in [TODO.md](../TODO.md); none is an
-implementation commitment. Select one, then give it a story and a place in
-[BACKLOG.md](product/BACKLOG.md) before starting it.
+current selection state is indexed in [TODO.md](../TODO.md). Selected scopes
+have stories in [BACKLOG.md](product/BACKLOG.md), which owns their accepted
+scope, acceptance and order; selection is distinct from implementation.
+Unselected proposals still need a story and a place there before starting.
 
 `IDEA#1` to `IDEA#6` came from a read of the samples and guides. `IDEA#7` to
 `IDEA#19` come from the engine review of 2026-10-31, which read every public
@@ -17,7 +18,22 @@ couch joining, working settings, pointer menus, localisation and wrapping,
 asset validation, and the new layer check and animation example. Those
 stories should not wait for a decision on these proposals.
 
+## Owner selection, 2026-11-16
+
+The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
+`IDEA#16` as the stories linked in the table below. Their implementation and
+qualification remain open. `IDEA#8` and `IDEA#18` are deferred with the named
+revisit conditions. Earlier selections `IDEA#6`, `IDEA#7` and `IDEA#10` remain
+landed.
+
+The result notes below state the selected scope where it narrows an original
+proposal. The original evidence and proposed acceptance are preserved as
+context; BACKLOG.md owns the final scope rather than those earlier sketches.
+
 ## Selection order
+
+Accepted stories follow BACKLOG.md's order. The original selection guidance
+below describes the proposals' motivation, not a second scheduling order.
 
 Start with typed text, rebinding or save recovery if the next goal is a new
 copyable capability. Choose camera following for a gameplay example, or the
@@ -30,30 +46,31 @@ game meets and are graded `should`; the rest are `could` and wait for a
 client's case, as T1 asks. `IDEA#14` is the owner's call before it is a slice,
 because the pacing records rest on the constant it would turn into a setting.
 
-| id | proposal | priority | size | prerequisite |
+| id | proposal | priority | size | selection or prerequisite |
 |---|---|---|---|---|
 | `IDEA#1` | A single-line typed-text component | could | M | Select its client and supported text scope; coordinate with OCA-42 |
 | `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Select the sample and its duplicate-binding policy |
 | `IDEA#3` | Versioned saves with recovery | could | M | Select the example's save format and recovery policy; builds on OCA-53 |
-| `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Select the local-multiplayer example's follow behavior |
-| `IDEA#5` | A grid sprite-sheet authoring command | could | S | Select the input description; builds on the existing sheet schema |
+| `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
+| `IDEA#5` | A grid sprite-sheet authoring command | could | S | Selected 2026-11-16 as [OCA-104](product/BACKLOG.md#oca-104); implementation open |
 | `IDEA#6` | Pointer interaction in the components gallery | could | S | Selected 2026-11-04 as OCA-83 and landed |
 | `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
-| `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Select the result shape and mask filter; exact tests, not swept motion |
+| `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Deferred 2026-11-16 until a concrete hitscan or region-query caller supplies the need and semantics |
 | `IDEA#9` | Contact begin and end edges | could | S | A second client needing the edge; the collision sample derives it in a few lines |
 | `IDEA#10` | Arbitrary client sizes | should | S | Selected 2026-11-04 as OCA-81 and landed; enumeration later |
-| `IDEA#11` | Sounds from WAV files and from memory | could | M | Select the seam verb's shape; compressed formats stay with GAP#2 |
+| `IDEA#11` | Sounds from WAV files and from memory | could | M | Selected 2026-11-16 as [OCA-105](product/BACKLOG.md#oca-105), bounded PCM on all three audio backends; implementation open |
 | `IDEA#12` | Animation sequences with named frames and durations | could | M | Select the JSON form; the existing strip form stays valid |
-| `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Keep OCA-50's rule that pointer policy stays in the page |
+| `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Selected 2026-11-16 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-supplied target rectangles; implementation open |
 | `IDEA#14` | Present interval and render-rate control | could | M | Owner decision: the pacing records assume today's constant interval |
-| `IDEA#15` | Display refresh rate in the device report | could | S | BDP-07 and SM-08 name the need; none for a game yet |
-| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Select the icon's default name and whether absence is loud |
+| `IDEA#15` | Display refresh rate in the device report | could | S | Selected 2026-11-16 as [SM-86](product/BACKLOG.md#sm-86), nominal monitor metadata with an explicit unknown state; implementation open |
+| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Selected 2026-11-16 as [OCA-107](product/BACKLOG.md#oca-107), preserving defaults and diagnosing an explicitly requested missing icon; implementation open |
 | `IDEA#17` | Cursor shapes | could | S | OCA-50's pointer menu or a client wanting a hand cursor |
-| `IDEA#18` | A side-by-side two-player layout | could | XS | A client or guide wanting left and right panes |
-| `IDEA#19` | Rectangle intersection and shortest-arc angle helpers | could | XS | Could ride GAP#8's easing story |
+| `IDEA#18` | A side-by-side two-player layout | could | XS | Deferred 2026-11-16 until a selected game or guide needs left and right panes |
+| `IDEA#19` | Rectangle intersection and shortest-arc angle helpers | could | XS | Selection remains open; rectangle intersection could ride GAP#5 clipping |
 
-Sizes use BACKLOG's rough grades, not delivery dates. The acceptance below is
-the proposed bound to carry into a selected story, not a final public API.
+The priority and size columns retain the proposals' estimates, not delivery
+dates; BACKLOG owns a selected story's current grade and size. The acceptance
+below is the original proposed bound, not a final public API.
 
 ## IDEA#1. A single-line typed-text component
 
@@ -110,6 +127,11 @@ future data intact until the selected policy permits replacement.
 
 ## IDEA#4. A bounded, dead-zone camera-follow component
 
+**Result, 2026-11-16:** selected as
+[OCA-103](product/BACKLOG.md#oca-103), a copyable local-multiplayer example
+with game-owned follow policy. Implementation and qualification remain open;
+the original proposal below is preserved as context.
+
 **Present evidence:** [the multiplayer arena](../samples/local_multiplayer/arena.cpp)
 already centres cameras directly. [Camera](../engine/render/camera.h) supplies
 the transform, and [the components rule](../samples/components/README.md#what-a-component-is-not)
@@ -125,6 +147,11 @@ crossing every edge, world clamps, resize, a small world and independent
 player cameras. Review the native/browser sample and keep `draw()` const.
 
 ## IDEA#5. A grid sprite-sheet authoring command
+
+**Result, 2026-11-16:** selected as
+[OCA-104](product/BACKLOG.md#oca-104), a deterministic authoring command for
+the existing grid-sheet JSON schema. Implementation and qualification remain
+open; image packing and a new runtime schema are outside the selected scope.
 
 **Present evidence:** the [sprites guide](../website/src/content/docs/docs/guides/sprites-and-text.mdx)
 shows hand-authored frame/strip data, read by
@@ -195,6 +222,11 @@ sample or its tests hold one round body; the collision guide states the
 supported pairs.
 
 ## IDEA#8. Scene queries: segment hit and region overlap
+
+**Result, 2026-11-16:** deferred until a concrete hitscan or region-query
+caller supplies the need and required semantics. Circle collision has landed,
+but that alone does not select these additional query mechanisms. The
+original proposal below remains unimplemented.
 
 **Present evidence:** [scene.h](../engine/scene/scene.h) exposes
 `collision_objects()` and nothing about where they are; its `BroadPhase` is a
@@ -271,6 +303,13 @@ custom size; CHANGES.md records the addition.
 
 ## IDEA#11. Sounds from WAV files and from memory
 
+**Result, 2026-11-16:** selected as
+[OCA-105](product/BACKLOG.md#oca-105), a bounded PCM WAV and in-memory source
+path on XAudio2, Web Audio and null. Existing XWB support stays; compressed
+formats and streaming remain separate. The earlier PNG prerequisite has
+landed. Implementation and qualification remain open, including backend-owned
+data and voice lifetime; the original proposal below is context.
+
 **Present evidence:** the only way sound enters is
 [audio_device.h](../engine/audio/audio_device.h)'s `open_wave_bank`, which
 opens an `.xwb` packed by Microsoft's XWBTool. The engine owns an `.xwb` reader
@@ -312,6 +351,13 @@ plays a non-uniform sequence; the sprites guide's animation section shows both
 forms; CHANGES.md records the schema addition.
 
 ## IDEA#13. A pointer hit test over a focus group's bounds
+
+**Result, 2026-11-16:** selected, narrowed, as
+[OCA-106](product/BACKLOG.md#oca-106): a pure query over page-supplied target
+rectangles. Pages keep padding, coordinate conversion, focus, capture and
+activation policy. A raw FocusGroup-bounds query is not the selected
+replacement for both call sites. This scope supersedes the proposed query
+below; implementation and qualification remain open.
 
 **Present evidence:** [navigation.h](../engine/ui/navigation.h) is arithmetic
 over widget bounds and [focus.h](../engine/ui/focus.h) holds the reachable set.
@@ -357,6 +403,13 @@ document states which settings its numbers assume.
 
 ## IDEA#15. Display refresh rate in the device report
 
+**Result, 2026-11-16:** selected as
+[SM-86](product/BACKLOG.md#sm-86): report the window monitor's nominal refresh
+metadata where available and record it in the frame bench, with an explicit
+unknown state elsewhere. This is not measured FPS, scan-out timing or VRR
+behaviour, and it does not close the pacing acceptance. Implementation and
+qualification remain open; BACKLOG owns the selected seam and reporting scope.
+
 **Present evidence:** nothing in `engine/` or `bench/` queries a refresh rate.
 [The pacing method](port/pacing-method.md) and LineSweeper's README leave
 display identity to an operator, and `BDP-07` needs a 60 Hz display and a
@@ -372,6 +425,13 @@ owner's desktop and absent on null and wasm; the bench's result files carry
 it; the pacing method cites it in place of the operator's note.
 
 ## IDEA#16. Window title at run time, and a diagnosed window icon
+
+**Result, 2026-11-16:** selected as
+[OCA-107](product/BACKLOG.md#oca-107): a run-time native title and an optional
+explicit icon request whose missing resource fails clearly. Existing defaults
+are preserved; the browser page owns its title and icon. This narrows the
+default-icon question in the original proposal below. Implementation and
+qualification remain open.
 
 **Present evidence:** `window_title` is read once from `ApplicationOptions`
 and nothing changes it afterwards. The Win32 window loads an icon resource
@@ -408,6 +468,10 @@ plus a sprite, which already works.
 page test; the pointer-menu guide uses the hand.
 
 ## IDEA#18. A side-by-side two-player layout
+
+**Result, 2026-11-16:** deferred until a selected game or guide needs left
+and right panes. The existing stacked default remains; no additional layout
+is selected or implemented by this decision.
 
 **Present evidence:** [viewport_manager.cpp](../engine/render/viewport_manager.cpp)
 stacks the two-player layout top and bottom, as the local-multiplayer sample

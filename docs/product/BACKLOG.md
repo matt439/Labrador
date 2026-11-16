@@ -31,6 +31,8 @@ Built from the ranked backlog after three corrections to its inputs. (a) Duplica
 | Decided 2026-11-16: defer Random's move/expansion until a math-only rules caller needs it, and defer a wasm size gate until a measured download or startup target justifies a budget. Their [live review ledger](../review/2026-11-10/STATUS.md) retains the revisit conditions; neither gets an implementation story now. | REV#35, REV#53 |
 | Decided 2026-11-16, second batch: select the fourteen bounded stories in L84 to L97. Keep vcpkg's default tool downloads; OCA-96 explains their expected output alongside its optional Visual Studio configuration route. Selection records future scope, not implementation or qualification. | OCA-93 to OCA-101, SM-84, SM-85, SRL-23, SRL-24, PI-24; REV#121 |
 | Decided 2026-11-16, second batch: defer the debug panel, extra consumption routes, prebuilt samples, fuzzing and static-analysis tooling until their named needs or evidence arise. Their [live review ledger](../review/2026-11-10/STATUS.md) retains the individual triggers; no additional implementation scope is selected. | REV#43, REV#65, REV#66, REV#67, REV#68 |
+| Decided 2026-11-16, third batch: select the eight bounded stories in L98 to L105. Keep non-Xbox controller qualification gated on a real controller; retain four native slots in this scope. Selection records future work and changes no implementation, dependency, hardware, release or service. | OCA-102 to OCA-108, SM-86 |
+| Decided 2026-11-16, third batch: defer nine proposals and decline speculative easing, a tilemap/Tiled subsystem and a runtime font subsystem. The [feature candidates](../feature-candidates.md) and [engine comparison's current ledger](../survey/2026-10-27.md) retain the individual reasons and revisit triggers; existing post-processing and authored materials remain implemented. | GAP#2, GAP#3, GAP#5, GAP#7 to GAP#13; IDEA#8, IDEA#18 |
 
 `SITE#3` closed on 2026-11-03 under [the versioning policy](../website-versioning.md):
 its qualification preceded the cut, and `v0.3.0`'s snapshot was published,
@@ -557,6 +559,19 @@ The five deferrals above retain their individual revisit triggers. All fourteen
 new story boxes stay unticked; this selection changes no build, workflow,
 installed software, release asset or runtime behaviour.
 
+**Third decision triage amendment, 2026-11-16:** L98 to L105 follow the
+eight accepted feature scopes in their agreed order, under the same
+ready-work scheduling rule as the earlier batches. Copyable debug drawing
+and camera following stay outside the engine's gameplay policy. Shared
+pointer arithmetic takes page-authored target rectangles. WAV and in-memory
+audio retain XWB support and require genuine implementation on every audio
+backend; compressed streaming remains separate. Nominal monitor-rate metadata
+is a platform-window fact, not a frame-rate measurement. OCA-108 is blocked
+until a real non-Xbox controller is available for qualification; no emulated
+pad closes that gate. Nine deferrals and three declines are recorded in their
+owners with revisit triggers. All eight new story boxes remain unticked;
+the earlier thirty-two stories and their order are unchanged.
+
 **Done when**
 
 - The page contract, the LineSweeper bundle's factory contract, browser troubleshooting and the browser notices are public
@@ -575,6 +590,9 @@ installed software, release asset or runtime behaviour.
 - A beginner can identify which guide passages need a newer engine, follow the starter's own source and setup vocabulary, and distinguish their game files from the engine's look-alike sample
 - The starter offers verified optional Visual Studio configuration and command wrappers while preserving the manual route and vcpkg's expected default downloads; a bounded guide-compilation pilot records its upkeep before expansion
 - Existing APIs have a random-number example, measured text alignment, a spawn-and-retire sample route, an honest one-shape collision limit and ISO extra-key support; Release symbols, browser debugging and build-time reporting have bounded documented procedures
+- Copyable collision outlines and bounded camera following demonstrate the existing primitives, a deterministic grid-sheet tool emits the existing schema, and pages share hit-test arithmetic while owning their target geometry and pointer policy
+- PCM WAV files and caller-supplied samples work through the three audio backends with owned lifetimes, XWB compatibility and separately recorded endpoint, browser and listening evidence
+- Platform-window metadata records the nominal monitor refresh where available, a game can set its native title and explicitly request a diagnosed icon, and a selected bought controller layer is qualified with a real non-Xbox pad while retaining the four-slot contract
 
 **Lands as**
 
@@ -675,6 +693,14 @@ installed software, release asset or runtime behaviour.
 95. L95 Keep matching symbols for an optimised Windows Release: PI-24 (`REV#91`)
 96. L96 Document browser-only C++ debugging and console output: OCA-101 (`REV#92`)
 97. L97 Report build costs without machine-dependent failure gates: SM-85 (`REV#147`)
+98. L98 Draw copyable collision-shape outlines with sprite quads: OCA-102 (`GAP#6`)
+99. L99 Follow a player through a bounded dead-zone camera component: OCA-103 (`IDEA#4`)
+100. L100 Generate grid sprite-sheet JSON deterministically: OCA-104 (`IDEA#5`)
+101. L101 Load PCM WAV files and in-memory banks on every audio backend: OCA-105 (`IDEA#11`)
+102. L102 Share hit arithmetic over page-authored pointer targets: OCA-106 (`IDEA#13`)
+103. L103 Record nominal monitor refresh through the window seam: SM-86 (`IDEA#15`)
+104. L104 Set a native window title and explicitly request an icon: OCA-107 (`IDEA#16`)
+105. L105 Qualify a bought non-Xbox controller layer with a real pad: OCA-108 (`GAP#1`, blocked on controller availability)
 
 **Stories**
 
@@ -1247,6 +1273,15 @@ installed software, release asset or runtime behaviour.
 - [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
 - [ ] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
 - [ ] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
+
+- [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
+- [ ] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
+- [ ] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
+- [ ] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
+- [ ] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
+- [ ] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
+- [ ] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
+- [ ] **[OCA-108](#oca-108)** Should · L · The Outside Adopter: Use a qualified non-Xbox controller layer on Windows — blocked until a real non-Xbox pad is available
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
@@ -1956,6 +1991,220 @@ Selected from
 policy or scheduled benchmark. Offline fixtures exercise log/dependency
 parsing, missing information, parallel tasks and comparisons; check the report
 against an existing real capture, then run local lint and the website gate.
+
+The following eight stories are the third decision batch selected on
+2026-11-16. Their implementation and qualification remain open; OCA-108 also
+waits for its physical-controller prerequisite.
+
+<a id="oca-102"></a>
+### OCA-102. Draw copyable collision-shape outlines with sprite quads
+
+Selected from `GAP#6` in
+[the engine comparison](../survey/2026-10-27.md).
+
+**Acceptance**
+
+- Provide a small copyable outline component for the supported collision
+  shapes, drawing through the existing white texture and sprite quads.
+  Circles use an explicit segment count; the caller chooses thickness,
+  colour and which shapes to show.
+- Demonstrate it in an existing sample and document copying its source and
+  tests. Drawing is const and receives the shape and presentation inputs;
+  it does not mutate collision state or advance a simulation.
+- Preserve the existing sprite pipeline and normal sample behaviour, with
+  changed sample screenshots or guide excerpts updated where applicable.
+
+**Boundaries and verification:** no filled non-quad geometry, new renderer
+primitive or automatic engine debug overlay. Headless geometry and null-draw
+tests cover each supported shape, segment counts, degenerate inputs and
+submitted quads; verify the sample natively and in its browser page, state
+visual acceptance separately, and run the website gate.
+
+<a id="oca-103"></a>
+### OCA-103. Follow a player through a bounded dead-zone camera component
+
+Selected from
+[`IDEA#4`](../feature-candidates.md#idea4-a-bounded-dead-zone-camera-follow-component).
+
+**Acceptance**
+
+- Add a copyable follow component to the local-multiplayer sample, keeping a
+  target inside an explicit dead zone and clamping the view to world bounds.
+  Define how a world smaller than the viewport is positioned and how resize
+  affects the follow state.
+- Each player owns independent tracking state. Update changes that state;
+  camera queries and draw remain const and safe for the existing view fan-out.
+- The camera guide explains the component as game-owned behaviour and quotes
+  the maintained example instead of presenting its selection as undecided.
+
+**Boundaries and verification:** no engine follow-camera policy, smoothing
+system or camera rotation. Headless tests cover stationary targets, all dead
+zone edges, world clamps, small worlds, resizing and independent players;
+run affected native/null and browser sample checks, review the presentation
+and run the website gate.
+
+<a id="oca-104"></a>
+### OCA-104. Generate grid sprite-sheet JSON deterministically
+
+Selected from
+[`IDEA#5`](../feature-candidates.md#idea5-a-grid-sprite-sheet-authoring-command).
+
+**Acceptance**
+
+- A standard-library command generates the existing unrotated sheet schema
+  from explicit image/grid dimensions, frame names and strip definitions.
+  Identical inputs produce identical JSON and ordering.
+- Refuse invalid dimensions, duplicate names, out-of-atlas frames and invalid
+  strip extents with useful diagnostics, using overflow-safe arithmetic.
+  Preserve existing authored schemas and loader semantics.
+- Reproduce the delivered animation example through the command, with guide
+  commands that remove manual rectangle arithmetic and name their inputs.
+
+**Boundaries and verification:** no image packing, new runtime schema or
+mandatory image decoder. Offline fixtures cover deterministic output and
+refusals; round-trip generated fixtures through the actual loader and check
+the copied example in native and wasm configurations. Run affected tooling,
+lint and the website gate; no tool is installed by this selection.
+
+<a id="oca-105"></a>
+### OCA-105. Load PCM WAV files and in-memory banks on every audio backend
+
+Selected from
+[`IDEA#11`](../feature-candidates.md#idea11-sounds-from-wav-files-and-from-memory).
+
+**Acceptance**
+
+- Add a shared headless RIFF/PCM reader with explicit supported sample
+  formats, channels and rates, producing the engine's checked wave data.
+  Truncated chunks, inconsistent sizes and unsupported encodings fail by
+  name before publication.
+- Add an owned in-memory-bank route through the shipping audio seam on
+  XAudio2, Web Audio and null. State data ownership, bank/voice lifetimes,
+  memory cost and loop-region behaviour, and verify that caller storage can
+  be released after the documented transfer without invalidating playback.
+- Expose the WAV asset path and a first-sound guide that needs no XWBTool.
+  Preserve existing XWB loading and playback, and update public contracts,
+  CHANGES.md, sample/template guidance and notices where dependencies change.
+
+**Boundaries and verification:** compressed codecs and streamed music remain
+with GAP#2. Reader fixtures compare supported source WAVs with their existing
+bank data and cover malformed files. Null and Node recording tests assert
+the memory-built bank's actual samples, levels, ordering and lifecycle;
+XAudio2 also receives the real backend implementation rather than a silent
+stand-in. Follow the audio verification plan and qualify native-endpoint and
+browser playback explicitly. Record listening acceptance separately under
+WEB#3, keeping any unrun endpoint, browser or listening checks open. Run
+affected consumers, tooling/lint and the website gate.
+
+<a id="oca-106"></a>
+### OCA-106. Share hit arithmetic over page-authored pointer targets
+
+Selected as the narrowed scope of
+[`IDEA#13`](../feature-candidates.md#idea13-a-pointer-hit-test-over-a-focus-groups-bounds).
+
+**Acceptance**
+
+- Provide one pure query over explicit page-authored target rectangles and
+  enabled state. Preserve first-enabled-match ordering and half-open edges;
+  state the treatment of empty or otherwise invalid target geometry.
+- Both the components gallery and LineSweeper pause menu use the shared
+  arithmetic while retaining their current expanded row bands, minimum
+  widths and coordinate transforms. Raw widget bounds do not replace those
+  page-defined targets.
+- Focus selection, capture, pointer precedence, gesture completion and target
+  expansion remain page policy. Publish the small mechanism and update its
+  callers, tests and menu guide without introducing automatic UI layout.
+
+**Boundaries and verification:** no general pointer router or implicit
+FocusGroup bounds hit test. Behavioural tests cover edges, overlapping order,
+disabled targets, degenerate geometry and misses; null/sample and browser
+pointer tests preserve both pages' existing interactions. Follow the owners
+for any public UI contract and run lint and the website gate.
+
+<a id="sm-86"></a>
+### SM-86. Record nominal monitor refresh through the window seam
+
+Selected from
+[`IDEA#15`](../feature-candidates.md#idea15-display-refresh-rate-in-the-device-report).
+
+**Acceptance**
+
+- Query the native window's current monitor through the platform-window
+  seam and expose optional nominal configured refresh metadata in neutral
+  terms, updating it when the window moves to another monitor or the mode
+  changes. An unavailable result remains explicitly unknown.
+- Keep browser and null configurations unknown where no supported monitor
+  fact exists; do not infer a monitor rate from animation-frame intervals.
+  Keep platform access behind the seam rather than introducing cross-folder
+  backend includes.
+- Retain the value and its meaning beside device/display identity in frame
+  benchmark records and update the pacing method's collection procedure.
+  Publish any added contract and CHANGES.md entry together.
+
+**Boundaries and verification:** this is nominal display metadata, not
+achieved FPS, VRR cadence or measured scan-out. Deterministic tests cover
+known/unknown records and monitor/mode updates; compare the native result
+with the selected desktop display mode in a dated session, keeping that
+qualification separate from synthetic checks. Follow the app/render owners
+for affected paths, keep unrun hardware checks explicit, and run tooling,
+lint and the website gate.
+
+<a id="oca-107"></a>
+### OCA-107. Set a native window title and explicitly request an icon
+
+Selected from
+[`IDEA#16`](../feature-candidates.md#idea16-window-title-at-run-time-and-a-diagnosed-window-icon).
+
+**Acceptance**
+
+- A game can update its native window title through the app/window seam.
+  An explicit optional icon-resource choice has a stated lookup contract
+  and fails clearly when the named resource cannot be loaded.
+- Preserve documented default icon behaviour when no explicit icon is
+  requested. The minimal template demonstrates an icon resource and the
+  release guide explains replacing and packaging it in an assembled game.
+- A browser host page retains ownership of its document title and favicon;
+  state that boundary for the native operations. Public contracts,
+  CHANGES.md and the template change list describe the addition.
+
+**Boundaries and verification:** no window manager or dynamic image-icon
+system. Hidden-window tests read back changed titles and cover explicit-icon
+success/failure and the default path; consumer packaging verifies the
+resource survives installation. Review Explorer/taskbar presentation on the
+native desktop separately from automated tests, retain browser lifecycle
+checks, and run the app verification plan, lint and website gate.
+
+<a id="oca-108"></a>
+### OCA-108. Qualify a bought non-Xbox controller layer with a real pad
+
+Selected from `GAP#1` in
+[the engine comparison](../survey/2026-10-27.md).
+
+**Prerequisite:** a real non-Xbox controller is available for qualification.
+This story is blocked until that hardware gate clears; synthetic or emulated
+pad results do not close it.
+
+**Acceptance**
+
+- Select a bought platform controller layer, such as an appropriate Windows
+  controller API or SDL's gamepad layer, behind the existing input seam.
+  Use its mapping rather than hand-writing per-device controller mappings.
+- Qualify the selected non-Xbox controller's axes, buttons, connection changes
+  and supported vibration through the shipping reader and Application path.
+  Retain the existing four-slot contract and document identity/mapping and
+  unsupported-feature behaviour.
+- Preserve the XInput and web paths and their contracts; update selected
+  backend/dependency build guidance, notices, public contracts and CHANGES.md
+  in the implementation that adds the layer.
+
+**Boundaries and verification:** more than four native pads requires a
+separate concrete caller and is not selected here. No game action map or
+input-policy framework is added. Deterministic transport/mapping and
+native-null integration checks complement a dated physical-pad session;
+real controller acceptance remains distinct from the scripted backend.
+Follow the input/app verification owners and affected consumer, dependency,
+lint and website checks. This planning decision purchases no hardware,
+installs no dependency and changes no live configuration.
 
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game
