@@ -83,6 +83,7 @@ export default defineConfig({
 					collapsed: true,
 					items: [
 						{ label: 'About the reference', link: '/docs/reference/' },
+						{ label: 'Common tasks', link: '/docs/reference/quick-reference/' },
 						// One collapsed group per module, in the order published.ts lists them.
 						...REFERENCE_MODULES.map((module) => ({
 							label: module.name,

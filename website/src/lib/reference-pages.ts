@@ -1,6 +1,6 @@
 // Declaration layout and page assembly. Only body evaluation formats comments
 // or discovers guide return links; anchor collection reads the headings alone.
-import { parseHeader, type Declaration, type Item, type TypeItem } from './cpp-header.ts';
+import { declarationSignature, parseHeader, type Declaration, type Item, type TypeItem } from './cpp-header.ts';
 import { REFERENCE_AUDIENCES, REFERENCE_HEADERS, validateReferenceAudiences, type ReferenceHeader, type ReferenceModule } from './published.ts';
 import { REVISION, commitUrl, readRepositoryFile, sourceUrl } from './repository.ts';
 import { escapeHtml, fence, link } from './reference-prose.ts';
@@ -17,36 +17,6 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 
 	function typeSignature(item: TypeItem): string {
 		return item.bases.length > 0 ? `${item.keyword} ${item.name} : ${item.bases.join(', ')}` : `${item.keyword} ${item.name}`;
-	}
-
-	// A declaration as a caller needs it: the signature, without an inline body or
-	// a constructor's initialiser list, which are implementation and name private
-	// members. `= default`, `= delete` and `= 0` stay, because they are contract.
-	function signature(text: string): string {
-		let open = text.indexOf('(');
-		if (open < 0) {
-			return text;
-		}
-		// operator() spells its own parentheses before the parameter list.
-		if (/operator\s*$/.test(text.slice(0, open)) && text.startsWith('()', open)) {
-			open = text.indexOf('(', open + 2);
-		}
-		let depth = 0;
-		let close = -1;
-		for (let index = open; index >= 0 && index < text.length; index++) {
-			if (text[index] === '(') {
-				depth++;
-			} else if (text[index] === ')' && --depth === 0) {
-				close = index;
-				break;
-			}
-		}
-		if (close < 0) {
-			return text;
-		}
-		const rest = text.slice(close + 1);
-		const cut = rest.search(/(?<!:):(?!:)|\{/);
-		return cut < 0 ? text : `${(text.slice(0, close + 1) + rest.slice(0, cut)).trimEnd()};`;
 	}
 
 	// The definition as written, without its comments: for an enumeration, the
@@ -107,7 +77,7 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 					blocks.push({ depth: 3, text: `Constants${label}`, owner: type.name, names });
 					blocks.push(() => commentHtml(item.comment));
 					blocks.push(() => item.declarations.map((declaration) =>
-						`- \`${signature(declaration.text)}\``).join('\n'));
+						`- \`${declarationSignature(declaration.text)}\``).join('\n'));
 					continue;
 				}
 				// Fields have separate link targets even when they share one comment.
@@ -119,7 +89,7 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 				for (const declarations of groups) {
 					const groupNames = [...new Set(declarations.map((declaration) => declaration.name))];
 					blocks.push({ depth: 3, text: `${groupNames.join(' · ')}${label}`, owner: type.name, names: groupNames });
-					blocks.push(() => fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
+					blocks.push(() => fence(declarations.map((declaration) => declarationSignature(declaration.text)).join('\n')));
 				}
 				blocks.push(() => commentHtml(item.comment));
 			}
@@ -263,7 +233,7 @@ export function createReferencePages(indexes: ReferenceIndexes, prose: Reference
 				const names = [...new Set(declarations.map((declaration) => declaration.name))];
 				const functions = declarations.map(freeFunctionName).filter((name): name is string => !!name);
 				blocks.push({ depth: 2, text: names.join(' · '), functions });
-				blocks.push(() => fence(declarations.map((declaration) => signature(declaration.text)).join('\n')));
+				blocks.push(() => fence(declarations.map((declaration) => declarationSignature(declaration.text)).join('\n')));
 				blocks.push(() => commentHtml(item.comment));
 			}
 		}

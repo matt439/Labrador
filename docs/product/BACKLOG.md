@@ -1446,7 +1446,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[SM-92](#sm-92)** Should · M · The Sole Owner-Maintainer: Audit current dependency alerts and qualify selected action-runtime updates
 - [ ] **[SM-93](#sm-93)** Could · M · The Sole Owner-Maintainer: Exercise the bundle's supported cross-origin iframe contract as a regression
 - [ ] **[OCA-117](#oca-117)** Could · S · The Outside Adopter: See the existing game capture in the repository and link previews
-- [ ] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
+- [x] **[SRL-25](#srl-25)** Could · M · The Sample-Reading Learner: Read a curated quick reference generated from maintained API declarations and examples
 - [x] **[OCA-118](#oca-118)** Could · XS · The Outside Adopter: Know that external platform/distribution routes are unverified and outside current support
 - [ ] **[OCA-119](#oca-119)** Could · S · The Outside Adopter: Know what Escape does when the browser owns full screen
 - [x] **[SM-94](#sm-94)** Could · XS · The Sole Owner-Maintainer: State the scope of welcome contributions without promising a response time
@@ -3505,6 +3505,26 @@ Selected from [`REV#88`](../review/2026-11-10/FINDINGS.md#rev88).
 reference. Website fixtures verify selected names, generated declarations,
 source drift and destinations; inspect the emitted page and keyboard links,
 then run local lint and the website gate.
+
+**Completed 2026-11-17.** The common-task page selects nineteen public
+operations across eight first-game tasks. The existing header reader supplies
+all overloads and default values, sharing the full reference's signature
+formatter and contract-anchor resolver. Each task links its guide/example,
+full contracts and commit-bound header lines. Published game-code audience,
+renamed/private selections, changed defaults, overloads and destinations have
+fixtures; no second parser or signature list is maintained. The page keeps
+version identity and the full reference's ownership explicit.
+
+The website gate passes 205 tests, type checks and a 187-page build with valid
+internal links. Chrome 157 inspected the emitted page through the website's
+actual directory-index server at 1280 by 900 in both themes and at 390 CSS
+pixels wide, with no document overflow. Tab reached all seventeen distinct
+contract destinations (nineteen selected names share those destinations), and
+Enter opened Application's generated run anchor. All three screenshots were
+reviewed. This is desktop-browser layout and keyboard evidence, not physical
+phone acceptance. Full local lint passes as recorded in the implementation
+commit. The existing module/header navigation remains available.
+
 
 <a id="oca-118"></a>
 ### OCA-118. State the unverified external-platform support boundary

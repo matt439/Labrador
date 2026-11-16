@@ -13,6 +13,7 @@ import { siteContentFileURL } from './markdown-plugins.ts';
 import { DESIGN_DOCUMENTS, REFERENCE_HEADERS, REFERENCE_MODULES, moduleSlug, validateReferenceAudiences, type PublishedDocument } from './published.ts';
 import { EXPLANATION_FOLDERS, explanationDependencies, forgetIndexes, moduleReferencePage, referencePage, unlistedHeaders } from './reference.ts';
 import { REVISION, absolutePath, commitUrl, editUrl, readRepositoryFile, sourceUrl } from './repository.ts';
+import { QUICK_REFERENCE_SLUG, quickReferencePage } from './quick-reference.ts';
 
 async function store(
 	context: LoaderContext,
@@ -95,6 +96,11 @@ async function loadCheckout(context: LoaderContext): Promise<void> {
 	for (let index = 0; index < REFERENCE_HEADERS.length; index++) {
 		await loadReference(context, index);
 	}
+	await store(context, QUICK_REFERENCE_SLUG, quickReferencePage(), {
+		title: 'Common-task quick reference',
+		description: 'Eight first game tasks, with declarations generated from published headers and links to full contracts and examples.',
+		editUrl: editUrl('website/src/lib/quick-reference.ts'),
+	});
 }
 
 export function labradorDocsLoader(): Loader {
