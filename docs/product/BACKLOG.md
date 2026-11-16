@@ -2283,6 +2283,15 @@ assembled wrappers from an ordinary prompt and by the advertised launch route
 in Sandbox, including a non-default Visual Studio path. Run consumer checks,
 tooling/lint and the website gate; retain the exact tested installer version.
 
+**Implementation 2026-11-17:** the assembled native launchers share one
+PowerShell discovery/environment runner, print the manual commands, preserve
+stdout/stderr and real failure codes, and use CMake's cached game name for
+play. Isolated native-process fixtures and the ordinary-prompt host consumer
+proof are in [the qualification record](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md).
+The existing consumer job exercises the optional helpers. Sandbox
+qualification at the non-default Visual Studio path, including bounded normal
+visible play, remains open; this story's box is not ticked by the host result.
+
 <a id="sm-84"></a>
 ### SM-84. Compile a three-guide pilot against the assembled starter
 

@@ -1144,6 +1144,16 @@ jobs:
           call "%VCVARS%"
           ctest --preset x64-debug
 
+      - name: Run the starter's optional native command helpers
+        working-directory: C:\dev\mygame
+        run: |
+          call build.cmd
+          if not "%errorlevel%"=="0" exit /b %errorlevel%
+          call test.cmd
+          if not "%errorlevel%"=="0" exit /b %errorlevel%
+          call play.cmd -SmokeTest
+          exit /b %errorlevel%
+
       # THE RELEASE FOLDER, as Ship a Windows release makes it: the x64-release
       # build installed into an empty folder, which must hold exactly what
       # website/src/walkthrough/release-files.txt lists - the page shows the

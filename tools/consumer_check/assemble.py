@@ -46,6 +46,14 @@ PLACED = {
     "labrador.vsconfig": "labrador.vsconfig",
 }
 
+# Optional native command wrappers share one discovery/environment runner.
+HELPERS = {
+    "build.cmd": "build.cmd",
+    "test.cmd": "test.cmd",
+    "play.cmd": "play.cmd",
+    "starter_commands.ps1": "tools/starter_commands.ps1",
+}
+
 # The page's <ConsumerManifest name="mygame" />.
 PROJECT_NAME = "mygame"
 
@@ -161,6 +169,10 @@ def project_files(engine: Path, files: list[Path] | None = None) -> dict[str, by
     for name, placed in PLACED.items():
         project[placed] = (engine / WALKTHROUGH / name).read_bytes()
         print(f"walkthrough: {name} -> {placed}")
+
+    for name, placed in HELPERS.items():
+        project[placed] = (engine / WALKTHROUGH / "helpers" / name).read_bytes()
+        print(f"optional helper: {name} -> {placed}")
 
     manifest = derived_manifest(engine / "vcpkg.json")
     project["vcpkg.json"] = (json.dumps(manifest, indent=2) + "\n").encode("utf-8")

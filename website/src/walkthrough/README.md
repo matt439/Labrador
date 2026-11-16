@@ -20,6 +20,8 @@ block in `game-CMakeLists.txt`.
 | `gitignore.txt` | `.gitignore` |
 | `ci.yml` | `.github/workflows/ci.yml`, from *Check your game in CI* (`src/content/docs/docs/guides/ci.mdx`) |
 | `labrador.vsconfig` | `labrador.vsconfig`, optional input to the Visual Studio installer; also downloaded from *Install the tools* |
+| `helpers/build.cmd`, `helpers/test.cmd`, `helpers/play.cmd` | The optional native commands at the project's root. |
+| `helpers/starter_commands.ps1` | `tools/starter_commands.ps1`, their shared Visual Studio discovery, x64 environment and command runner. |
 
 The installer configuration uses the same five-entry selection qualified in
 the [13 November 2026 isolated install](../../../docs/review/2026-11-10-first-run/2026-11-13-visual-studio-install.md)
@@ -29,6 +31,24 @@ site endpoint reads this file directly, and `test_consumer_check_starter.py`
 holds the selection and installer command to that record. A changed component
 selection needs a new isolated qualification record, rather than borrowing
 18.12.0's result. Future installer releases remain unqualified by that run.
+
+
+The optional native helpers run from an ordinary Command Prompt in the project
+folder. `build.cmd` configures and builds; `test.cmd` also runs ctest;
+`play.cmd` also launches the game. They print the same configure/build/test
+commands as the manual route and install nothing. `-Preset x64-release`
+selects Release; the default is `x64-debug`. `play.cmd -SmokeTest` runs the
+hidden startup check, which CI's consumer job exercises after the ordinary
+starter tests. The play helper reads the project name from CMake's cache, so
+the documented game rename needs no helper edit.
+
+Discovery requires Visual Studio's x64 C++ tools and CMake component. Missing
+files or an invalid explicit `VCPKG_ROOT` stop with setup advice; an unset
+root uses that installation's bundled vcpkg. x64 setup changes a child process
+environment only. The `.cmd` launchers use Windows' built-in PowerShell with
+a process-local script-policy option, without changing the user's policy.
+Native stdout/stderr and failure exit codes are retained. Browser commands
+remain in their own guide.
 
 `release-files.txt` goes nowhere: it is every file `cmake --install` puts in the
 project's release folder, which *Ship a Windows release*

@@ -41,6 +41,14 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** The assembled starter offers optional native `build.cmd`,
+  `test.cmd` and `play.cmd`, sharing `tools/starter_commands.ps1`. A source
+  copy can take these four files from `website/src/walkthrough/helpers/`
+  (the PowerShell file goes under `tools/`). They find Visual Studio's x64
+  tools and print the manual commands; existing projects can keep those
+  commands. The default is Debug; `-Preset x64-release` selects Release.
+
+
 - **2026-11-17.** Starter assembly gives `game/README.md` project instructions
   and adapts copy-specific comments to `MyGame` targets and `game/` paths.
   This source folder keeps its original comments and change list. A manual
