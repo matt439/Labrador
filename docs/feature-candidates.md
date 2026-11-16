@@ -466,12 +466,17 @@ document states which settings its numbers assume.
 
 ## IDEA#15. Display refresh rate in the device report
 
-**Result, 2026-11-16:** selected as
-[SM-86](product/BACKLOG.md#sm-86): report the window monitor's nominal refresh
-metadata where available and record it in the frame bench, with an explicit
-unknown state elsewhere. This is not measured FPS, scan-out timing or VRR
-behaviour, and it does not close the pacing acceptance. Implementation and
-qualification remain open; BACKLOG owns the selected seam and reporting scope.
+**Result, 2026-11-17:** implemented under
+[SM-86](product/BACKLOG.md#sm-86) through the platform-window seam, with
+on-demand monitor/mode queries, explicit unknown fields and before/after
+frame-benchmark snapshots. A native null renderer still has a real Win32
+window's supported OS fact; browser and windowless queries remain unknown.
+This selected window scope supersedes the original render-device/null-backend
+proposal below. The [dated qualification](performance/2026-11-17-window-display.md)
+separates synthetic monitor/mode transitions from a bounded current-mode
+query. It supplies no measured FPS, scan-out, VRR or physical pacing acceptance.
+
+The original proposal below records the gap before selection.
 
 **Present evidence:** nothing in `engine/` or `bench/` queries a refresh rate.
 [The pacing method](port/pacing-method.md) and LineSweeper's README leave

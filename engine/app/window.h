@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/app/window_display_info.h"
 #include "engine/input/keyboard.h"
 #include "engine/input/mouse.h"
 #include "engine/math/vector2i.h"
@@ -271,6 +272,16 @@ namespace labrador
 		// did. Nothing that reaches a stale handle is a valid call, and a
 		// caller holding one after run() has returned would be making one.
 		void* handle() const;
+
+		// Call on the window's owning thread. Queries its current monitor and
+		// mode on each call, so moves and mode-only changes leave no cached rate.
+		// Windows selects the largest monitor intersection, or the nearest
+		// monitor when outside all displays. Closed/windowless/browser queries
+		// return unknown. A mode lookup failure can retain the logical monitor
+		// id while leaving its nominal refresh unknown.
+		// A native null renderer still has its real Win32 window's metadata.
+		// This is nominal configuration, never measured pacing or scan-out.
+		WindowDisplayInfo display_info() const;
 
 		// The process exit code, valid once pump_until_quit has returned.
 		int exit_code() const;

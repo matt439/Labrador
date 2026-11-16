@@ -20,6 +20,7 @@ if(NOT EMSCRIPTEN)
         startup_info_tests.cpp
         system_command_tests.cpp
         window_tests.cpp
+        win32/display_info_tests.cpp
         ../../engine/app/web/dom_events.cpp
     )
 
@@ -48,6 +49,7 @@ if(NOT EMSCRIPTEN AND LABRADOR_RENDER_BACKEND STREQUAL "null"
         application_reveal_tests.cpp
         application_resize_tests.cpp
         application_scripted_pad_tests.cpp
+        win32/application_display_info_tests.cpp
     )
     add_executable(ApplicationStartupChild WIN32 startup_child.cpp)
     target_link_libraries(ApplicationStartupChild PRIVATE

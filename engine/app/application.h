@@ -407,6 +407,11 @@ namespace labrador
 		// before initialize(), like the services.
 		void* window() const;
 
+		// The current native window's nominal display metadata, queried on
+		// the application/window thread (Window::display_info). Before
+		// initialize(), after closure and in a browser it is unknown.
+		WindowDisplayInfo display_info() const;
+
 	private:
 		// DECLARATION ORDER IS LOAD-BEARING BELOW THIS LINE.
 		//

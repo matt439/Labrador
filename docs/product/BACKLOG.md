@@ -2828,6 +2828,21 @@ qualification separate from synthetic checks. Follow the app/render owners
 for affected paths, keep unrun hardware checks explicit, and run tooling,
 lint and the website gate.
 
+**Implementation and focused qualification, 2026-11-17:** `WindowDisplayInfo` and the Window/Application
+`display_info()` getters expose on-demand native monitor/current-mode facts,
+with explicit unknown fields, documented whole-Hz meaning and no guessed
+rate. A native null renderer retains its real window's supported OS fact;
+browser/windowless/closed states stay unknown. Frame results add labeled
+before/after display snapshots, collected outside retained frame timings.
+Analysis validates and retains optional metadata without changing targets,
+measured summaries, verdicts or existing pooling rules. Platform/portable,
+serialization and 39 analysis fixtures pass; [the dated session](../performance/2026-11-17-window-display.md)
+records a hidden current-mode query matching direct Windows/CIM metadata at
+2560 × 1440 / 59 on its selected logical display. Synthetic mode/monitor
+updates remain distinct from unrun physical transfer/change and pacing
+acceptance. The contract is published, CHANGES.md and collection procedures
+state the limits, and the combined app matrix remains an integration gate.
+
 <a id="oca-107"></a>
 ### OCA-107. Set a native window title and explicitly request an icon
 

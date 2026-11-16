@@ -307,6 +307,11 @@ int main()
 	try
 	{
 		window = std::make_unique<labrador::Window>(window_options(), &recorder);
+		const labrador::WindowDisplayInfo display = window->display_info();
+		if (!display.monitor_id.empty() || display.nominal_refresh_hz.has_value())
+		{
+			throw std::runtime_error("A browser window invented nominal monitor metadata");
+		}
 	}
 	catch (const std::exception& error)
 	{

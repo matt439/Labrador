@@ -476,6 +476,7 @@ def _validate_result(result: dict[str, Any], backend: dict[str, Any],
             or result.get("scope") != "linesweeper_frame_benchmark"
             or result.get("status") != "complete"):
         raise ValueError("benchmark result has the wrong schema, scope or status")
+    _validate_window_display(result)
     if result.get("run") != config["run_id"]:
         raise ValueError("benchmark run differs from the declaration")
     if result.get("release_sha256") != config["bundle"]["release_sha256"]:
@@ -578,6 +579,64 @@ def _device_identity(device: dict[str, Any], presentation_recorded: bool) -> tup
     return tuple(device.get(key) for key in fields)
 
 
+def _validate_window_display(result: dict[str, Any]) -> None:
+    """Validate optional configured-mode facts without selecting a pacing target."""
+    if "window_display" not in result:
+        return
+    display = result["window_display"]
+    if not isinstance(display, dict):
+        raise TypeError("benchmark window_display must be an object")
+    if (display.get("sampling") != "before_frame_loop_and_after_last_present"
+            or display.get("refresh_scope") != "nominal_configured_integer_hz_not_measured"):
+        raise ValueError("benchmark window_display sampling or refresh scope differs")
+    for name in ("start", "end"):
+        snapshot = display.get(name)
+        if not isinstance(snapshot, dict):
+            raise TypeError(f"benchmark window_display.{name} must be an object")
+        if not all(field in snapshot for field in ("monitor_id", "nominal_refresh_hz")):
+            raise ValueError(f"benchmark window_display.{name} needs explicit known or null fields")
+        monitor = snapshot["monitor_id"]
+        refresh = snapshot["nominal_refresh_hz"]
+        if monitor is not None and (not isinstance(monitor, str) or not monitor):
+            raise ValueError(f"benchmark window_display.{name}.monitor_id must be a nonempty string or null")
+        if refresh is not None:
+            if type(refresh) is not int or not 2 <= refresh <= 2_147_483_647:
+                raise ValueError(f"benchmark window_display.{name}.nominal_refresh_hz must be an integer from 2 to INT_MAX or null")
+            if monitor is None:
+                raise ValueError(f"benchmark window_display.{name} needs a monitor_id for a known refresh")
+
+
+def _window_display_context(observations: list[dict[str, Any]]) -> dict[str, Any]:
+    """Label display snapshots beside existing pools, without changing membership."""
+    known: set[tuple[str, int]] = set()
+    partial = []
+    different = []
+    for observation in observations:
+        display = observation.get("window_display")
+        if display is None:
+            partial.append(observation["repetition"])
+            continue
+        snapshots = (display["start"], display["end"])
+        if any(snapshot["nominal_refresh_hz"] is None for snapshot in snapshots):
+            partial.append(observation["repetition"])
+        for snapshot in snapshots:
+            if snapshot["nominal_refresh_hz"] is not None:
+                known.add((snapshot["monitor_id"], snapshot["nominal_refresh_hz"]))
+        if tuple(snapshots[0][field] for field in ("monitor_id", "nominal_refresh_hz")) != tuple(
+                snapshots[1][field] for field in ("monitor_id", "nominal_refresh_hz")):
+            different.append(observation["repetition"])
+    status = ("mixed_known_snapshots" if len(known) > 1 else
+              "unknown_or_partial" if partial or not known else "matching_known_snapshots")
+    return {"window_display_context": {
+        "status": status,
+        "pooling_policy": "existing_backend_and_cadence_rules_unchanged",
+        "known_snapshot_contexts": [{"monitor_id": monitor, "nominal_refresh_hz": refresh}
+                                    for monitor, refresh in sorted(known)],
+        "unknown_or_partial_repetitions": sorted(partial),
+        "different_snapshot_repetitions": sorted(different),
+    }}
+
+
 def _observation(repetition: int, source: str, result: dict[str, Any],
                  phases: dict[str, list[int]], target_frame_ns: int,
                  recorded: tuple[bool, bool]) -> dict[str, Any]:
@@ -588,6 +647,7 @@ def _observation(repetition: int, source: str, result: dict[str, Any],
         "finished_utc": result["finished_utc"],
         "sample_count": len(phases["whole_frame_ns"]),
         "render_device": result["render_device"],
+        **({"window_display": result["window_display"]} if "window_display" in result else {}),
         "pacing_measurement": "recorded" if recorded[0] else "unrecorded_legacy",
         "presentation_measurement": "recorded" if recorded[1] else "unrecorded_legacy",
         "timing": {key: value for key, value in result["timing"].items()
@@ -602,6 +662,7 @@ def _backend_summary(entries: list[tuple[dict[str, Any], dict[str, list[int]]]],
     """Pool one backend's repetitions, and pool them again by their lock verdict."""
     observations = [observation for observation, _ in entries]
     first = observations[0]
+    display_recorded = any("window_display" in observation for observation in observations)
     device_fields = DEVICE_FIELDS + (
         PRESENTATION_FIELDS if first["presentation_measurement"] == "recorded" else ())
     pooled: dict[str, list[int]] = {}
@@ -616,6 +677,7 @@ def _backend_summary(entries: list[tuple[dict[str, Any], dict[str, list[int]]]],
             cadence_phases.setdefault(phase, []).extend(values)
     return {
         "render_device": dict(zip(device_fields, device_identity)),
+        **(_window_display_context(observations) if display_recorded else {}),
         "pacing_measurement": first["pacing_measurement"],
         "presentation_measurement": first["presentation_measurement"],
         "sample_count": len(pooled["whole_frame_ns"]),
@@ -632,6 +694,9 @@ def _backend_summary(entries: list[tuple[dict[str, Any], dict[str, list[int]]]],
                 "repetitions": sorted(cadence_repetitions[verdict]),
                 "sample_count": len(group["whole_frame_ns"]),
                 "summary": {phase: _summary(values) for phase, values in group.items()},
+                **(_window_display_context([observation for observation in observations
+                                            if observation["presentation_lock"]["verdict"] == verdict])
+                   if display_recorded else {}),
             }
             for verdict, group in sorted(cadence_pooled.items())
         },
@@ -796,6 +861,7 @@ def _validate_local_result(result: Any) -> tuple[dict[str, list[int]], bool]:
             or result.get("scope") != "linesweeper_frame_benchmark"
             or result.get("status") != "complete"):
         raise ValueError("benchmark result has the wrong schema, scope or status")
+    _validate_window_display(result)
     if (not isinstance(result.get("run"), str) or not result["run"]
             or not isinstance(result.get("release_sha256"), str)
             or re.fullmatch(r"[0-9a-f]{64}", result["release_sha256"]) is None):

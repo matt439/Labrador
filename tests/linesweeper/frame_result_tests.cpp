@@ -228,4 +228,39 @@ TEST_SUITE("LineSweeper frame result")
 		CHECK(std::filesystem::exists(path));
 		CHECK_THROWS_AS(atomic_write(path, "second"), std::runtime_error);
 	}
+
+	TEST_CASE("nominal window display snapshots keep unknown values and never override pacing")
+	{
+		Options options;
+		options.refresh = 60;
+		options.pacing = PacingMode::presentation;
+		Result result;
+		result.samples.push_back(FrameSample{ 1, 2, 3, 4, 10, 16, 0, 0 });
+		rapidjson::Document document;
+		document.Parse(result_json(options, result).c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		const rapidjson::Value& unknown = document["window_display"];
+		CHECK(unknown["start"]["monitor_id"].IsNull());
+		CHECK(unknown["start"]["nominal_refresh_hz"].IsNull());
+		CHECK(unknown["end"]["nominal_refresh_hz"].IsNull());
+		result.display_start.monitor_id = "\\\\.\\DISPLAY2";
+		document.Parse(result_json(options, result).c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		CHECK(std::string(document["window_display"]["start"]["monitor_id"].GetString()) == "\\\\.\\DISPLAY2");
+		CHECK(document["window_display"]["start"]["nominal_refresh_hz"].IsNull());
+		result.display_start.nominal_refresh_hz = 144;
+		result.display_end.monitor_id = "\\\\.\\DISPLAY3";
+		result.display_end.nominal_refresh_hz = 59;
+		document.Parse(result_json(options, result).c_str());
+		REQUIRE_FALSE(document.HasParseError());
+		const rapidjson::Value& known = document["window_display"];
+		CHECK(std::string(known["sampling"].GetString()) == "before_frame_loop_and_after_last_present");
+		CHECK(std::string(known["refresh_scope"].GetString()) == "nominal_configured_integer_hz_not_measured");
+		CHECK(std::string(known["start"]["monitor_id"].GetString()) == "\\\\.\\DISPLAY2");
+		CHECK(known["start"]["nominal_refresh_hz"].GetInt() == 144);
+		CHECK(known["end"]["nominal_refresh_hz"].GetInt() == 59);
+		CHECK(document["workload"]["refresh_hz"].GetInt() == 60);
+		CHECK(std::string(document["timing"]["interval_scope"].GetString()) ==
+			"presentation-driven frame-start interval; not display scan-out");
+	}
 }

@@ -24,6 +24,14 @@ TEST_CASE("the defaults are valid")
 	CHECK_NOTHROW(options.validate());
 }
 
+TEST_CASE("an application without a window has unknown display metadata on every backend")
+{
+	const Application application(ApplicationOptions{});
+	const WindowDisplayInfo display = application.display_info();
+	CHECK(display.monitor_id.empty());
+	CHECK_FALSE(display.nominal_refresh_hz.has_value());
+}
+
 TEST_CASE("the original positional window fields retain their aggregate positions")
 {
 	const ApplicationOptions options{ L"FixtureClass", L"Fixture title",

@@ -247,6 +247,7 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 			['content_root.h', 'Content paths', 'game code'],
 			['motion_preference.h', 'Motion preference', 'game code'],
 			['window.h', 'Window', 'game code'],
+			['window_display_info.h', 'Window display metadata', 'game code'],
 		],
 	},
 ];

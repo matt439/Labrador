@@ -1,5 +1,6 @@
 #include "engine/app/window.h"
 #include "engine/app/modifier_sides.h"
+#include "engine/app/win32/display_info.h"
 #include "engine/app/win32/keyboard_input.h"
 #include "engine/app/win32/pointer_input.h"
 #include "engine/app/win32/system_command.h"
@@ -696,6 +697,11 @@ namespace labrador
 	void* Window::handle() const
 	{
 		return this->impl_->handle;
+	}
+
+	WindowDisplayInfo Window::display_info() const
+	{
+		return detail::query_window_display(this->impl_->handle);
 	}
 
 	int Window::exit_code() const
