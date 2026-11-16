@@ -389,6 +389,43 @@ rejection. These are focused
 browser/Node results; the combined full tracks and Release runs keep their
 own receipts.
 
+## Optimized browser stack dependencies (2026-11-17)
+
+Pinned Emscripten 6.0.12 collects native callees of JavaScript library helpers
+before native linking, then reads `EM_JS_DEPS` metadata afterwards. The window's
+pointer bridge uses `stackSave`, `stackRestore` and `stringToUTF8OnStack`.
+Debug assertion/exception tracing can retain their native operations
+incidentally; optimized null-render ES modules exposed missing
+`emscripten_stack_get_current` and `_emscripten_stack_restore` symbols.
+
+The Emscripten-only engine dependency edge loads
+`engine/app/web/window_dependencies.js` through `--js-library`. Its three
+`__force` declarations use the SDK's existing implementations and dependency
+expansion before native linking. They add no runtime/export setting override.
+`INTERFACE_LINK_DEPENDS` makes the same file an incremental input of linked
+executables. The file is explicitly covered by the consumer CHANGES rule.
+
+`WebStackDependencyTests` builds a separate Node probe with private `-O3`,
+`-g0`, `ASSERTIONS=0` and `EXCEPTION_STACK_TRACES=0` options even under Debug.
+It links the engine's usage requirements without native engine references,
+then checks a UTF-8 stack round trip and restored stack pointer. These options
+are local to the probe; ordinary Debug diagnostics remain unchanged.
+
+At `59c69c30` with this fix, the full wasm-release-null build, including
+`LineSweeperModule`, passed and all 31 registered tests passed. The optimized
+GL ES module and bundle also built; Release `LineSweeperBundlePageTests`,
+`WebWindowTests` and the stack probe passed 3/3. The bundle completed in
+94.07 s within its existing 120 s limit. The optimized probe also passed in
+the Debug GL configuration.
+
+A separate Release `add_subdirectory` consumer built and ran under Node with
+spaces in both its project and engine-source paths. Removing only the metadata
+link edge reproduced both exact missing stack symbols. Restoring the edge
+and relinking returned the probe to green. Touching only the metadata file
+caused a consumer relink with no C++ recompilation. The starter assembler's
+ordinary source-copy set includes this file. These are local link/runtime
+results; hosted CI retains its own qualification.
+
 ## Configurations CI cannot run
 
 CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on

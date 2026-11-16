@@ -76,7 +76,7 @@ Web Audio and web input.
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
 | `x64-debug-null-asan` | null / null | 24; opt-in MSVC AddressSanitizer, including a deterministic detection probe |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 36 Debug / 37 Release with Chromium, 8 more with Firefox, 19 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 37 Debug / 38 Release with Chromium, 8 more with Firefox, 20 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderPixelTestsThroughPost`,
@@ -105,6 +105,8 @@ instrument's frame protocol and exact fixture counts; it makes no physical
 pacing claim and does not run in the null-render browser configuration.
 `BrowserProtocolTests` holds Chromium and Firefox command replies and crash
 teardown to fake WebSockets under Node, with no browser or device.
+`WebStackDependencyTests` links an optimized private-stack-helper probe even
+in Debug and runs its stack/string round trip under Node, with no DOM or device.
 `LABRADOR_TEST_FIREFOX` names a Firefox. Where configure finds one and the
 render backend rasterizes, eight `Firefox*` entries run the six sample pages,
 `WebWindowTests`' sequence and the bundle page's desktop play, forced context
@@ -302,7 +304,7 @@ pull request already passed. Citation checking skips `website/`.
   It also derives the preset table's ctest counts from the inventory below and
   names the row, the stated count and the derived count when they differ. It
   checks every native count, both wasm counts with Chromium and both Firefox
-  counts. The 19 without a browser have no inventory source, and
+  counts. The 20 without a browser have no inventory source, and
   `wasm-release-null` has no row: a standalone run lists them as not checked.
   The [fixture script](cmake/check_agent_brief_fixtures.cmake)
   proves the failures. README.md's counts are not checked.
@@ -388,7 +390,7 @@ changes. A source break names old/new spellings and the sample migration diff.
 The build-input list is the root, engine and math `CMakeLists.txt`, plus
 `cmake/`'s settings, native_release_ipo, sanitizers, source_revision, version, dependencies, compile_shaders, add_material,
 embed_material and check_engine_includes scripts, version_values.h.in and
-release_identity.txt. It does not cover every
+release_identity.txt, and `engine/app/web/window_dependencies.js`. It does not cover every
 CMake script or maintainer tool. CHANGES.md records the 2026-11-16 expansion's
 frozen historical boundary; the original paths remain checked across history.
 Keep history there, never in header comments. Releases are owner-cut tags by

@@ -29,13 +29,15 @@ class RuleTests(unittest.TestCase):
                      "cmake/dependencies.cmake",
                      "cmake/compile_shaders.cmake", "cmake/add_material.cmake",
                      "cmake/embed_material.cmake", "cmake/check_engine_includes.cmake",
-                     "cmake/native_release_ipo.cmake", "cmake/sanitizers.cmake"):
+                     "cmake/native_release_ipo.cmake", "cmake/sanitizers.cmake",
+                     "engine/app/web/window_dependencies.js"):
             with self.subTest(path=path):
                 self.assertTrue(checker.is_rule_path(path))
         for path in ("engine/core/example.cpp", "engine/render/SEAM.md", "samples/minimal/main.h",
                      "cmake/check_whitespace.cmake", "cmake/check_doc_citations.cmake",
                      "cmake/check_agent_brief.cmake", "tests/CMakeLists.txt", "website/vcpkg.json",
-                     "engine/core/example.hpp", "CMakePresets.json", "tools/ci_gap_report.py"):
+                     "engine/core/example.hpp", "engine/app/web/unrelated.js",
+                     "CMakePresets.json", "tools/ci_gap_report.py"):
             with self.subTest(path=path):
                 self.assertFalse(checker.is_rule_path(path))
 

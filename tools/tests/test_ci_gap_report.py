@@ -114,20 +114,23 @@ class JunitTests(unittest.TestCase):
         self.assertEqual((result, detail),
                          ("passed", "4/4 passed; RenderPixelTests, MinimalSmokeTests and "
                                     "CollisionSmokeTests passed"))
-        # Without a browser, configure registers 19 of wasm-debug's 44 entries.
+        # Portable/Node entries alone cannot qualify the whole browser preset.
         wasm = report.GAPS[-1]
         self.assertEqual(wasm.preset, "wasm-debug")
-        self.assertEqual(len(wasm.expected), 44)
+        self.assertIn("WebStackDependencyTests", wasm.expected)
+        self.assertIn("FirefoxWebWindowTests", wasm.expected)
         headless = [name for name in wasm.expected if name not in report.INVENTORY["chromium_registered"]
                     and not name.startswith("Firefox")]
-        self.assertEqual(len(headless), 19)
+        self.assertEqual(len(headless), 20)
+        self.assertIn("WebStackDependencyTests", headless)
         result, detail = report.judge(wasm, report.junit_summary(junit(headless)))
         self.assertEqual(result, "failed")
-        self.assertIn("19/19 passed; not registered: ", detail)
+        self.assertIn(f"{len(headless)}/{len(headless)} passed; not registered: ", detail)
         self.assertIn("RenderPixelTests", detail)
         self.assertIn("FirefoxWebWindowTests", detail)
         result, detail = report.judge(wasm, report.junit_summary(junit(list(wasm.expected))))
-        self.assertEqual((result, detail), ("passed", "44/44 passed; the inventory's entries exactly"))
+        self.assertEqual((result, detail),
+                         ("passed", f"{len(wasm.expected)}/{len(wasm.expected)} passed; the inventory's entries exactly"))
 
     def test_a_whole_preset_must_register_its_inventory_list_exactly(self):
         gaps = {gap.preset: gap for gap in report.GAPS}
@@ -257,7 +260,8 @@ class MainTests(unittest.TestCase):
             self.assertTrue((Path(directory) / "evidence/wasm-debug.log").is_file())
         self.assertEqual(code, 1)
         self.assertIn("at `" + "b" * 40 + "`, working tree with 2 uncommitted change(s)", text)
-        self.assertIn("| `wasm-debug` | whole preset | passed: 44/44 passed; the inventory's entries exactly |", text)
+        self.assertIn(f"| `wasm-debug` | whole preset | passed: {len(wasm.expected)}/{len(wasm.expected)} "
+                      "passed; the inventory's entries exactly |", text)
         self.assertIn("| `x64-release-null` | whole preset | failed: 1/6 passed;", text)
         self.assertIn("\nDevices, as each preset's RenderPixelTests named them:\n"
                       "- `x64-release-null`: no test here draws on a device\n"

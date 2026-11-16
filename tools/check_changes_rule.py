@@ -30,6 +30,7 @@ RULE_PATHS = (*ORIGINAL_RULE_PATHS, "CMakeLists.txt", "engine/math/CMakeLists.tx
               "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
               "cmake/dependencies.cmake",
               "cmake/add_material.cmake", "cmake/embed_material.cmake",
+              "engine/app/web/window_dependencies.js",
               "cmake/check_engine_includes.cmake", "cmake/native_release_ipo.cmake", "cmake/sanitizers.cmake")
 # The approved scope before the coverage expansion. Preserve the policy those
 # ancestors were reviewed under, without exempting their originally governed paths.
