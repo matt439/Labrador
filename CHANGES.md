@@ -127,6 +127,28 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 — Select native and canvas cursor shapes
+
+`Window` and `Application` now offer `set_cursor_shape`/`cursor_shape` with
+`CursorShape::arrow`, `hand`, `text`, `crosshair`, `move` and `not_allowed`.
+`ApplicationOptions` and `WindowOptions` append an optional `cursor_shape`
+field with a `std::nullopt` default, preserving existing positional fields.
+The default leaves the native arrow or page-authored canvas CSS in charge;
+`std::nullopt` clears an explicit choice. Read-back is the requested choice,
+not the physical pointer or computed page style. Invalid choices throw before
+changing a live selection.
+
+Visibility and confinement remain independent. Hiding/showing retains the
+selected shape. A browser now restores the prior canvas cursor value and
+priority instead of clearing an authored inline cursor when showing again.
+Close, destruction and failure release a still-owned cursor override; a
+later page value/priority change is preserved. Code that wants an explicit
+arrow rather than page CSS can request `CursorShape::arrow`.
+
+The components gallery chooses its own hover and captured-drag cues; engine
+widgets gain no automatic pointer policy. System handles remain OS-owned,
+and these APIs change no system cursor theme or other page element.
+
 ### 2026-11-17 - Define a specific renderer-startup refusal category
 
 **New API.** `RenderDeviceUnavailable` in

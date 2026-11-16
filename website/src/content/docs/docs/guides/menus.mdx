@@ -158,6 +158,17 @@ reads touch; the mouse route is how to reuse that pattern in your own menu.
 title menu* gives the whole of it as code to paste into the starter project: a function that
 returns the row under a left click, and what to build and try.
 
+For a mouse menu, the page can also request a hand over an enabled target:
+
+```cpp
+app->set_cursor_shape(labrador::CursorShape::hand);
+```
+
+Choose that from the page's hover/capture state, independently of its focus
+group. The components gallery is the running example;
+[Pointer shapes](/docs/guides/input/#pointer-shapes) explains the six choices,
+default/restoration and version boundary. This adds no engine widget policy.
+
 ## A menu that answers
 
 The pause menu returns its choice the way any pushed state does, as a typed result:

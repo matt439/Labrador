@@ -120,6 +120,9 @@ namespace labrador
 		// a browser ignores it and leaves the host's favicon alone.
 		std::optional<std::wstring> window_icon_resource = std::nullopt;
 
+		// No explicit choice keeps the native arrow or the page's canvas style.
+		std::optional<CursorShape> cursor_shape = std::nullopt;
+
 		// Throws std::invalid_argument naming the field, rather than letting
 		// a bad number reach the code that divides by it. Application calls
 		// this before it opens a window. max_threads and target_fps are
@@ -313,6 +316,13 @@ namespace labrador
 		// the platform's (Window::set_cursor_visible).
 		void set_cursor_visible(bool visible);
 		bool cursor_visible() const;
+
+		// The requested client-area shape, independent of visibility and
+		// confinement (Window::set_cursor_shape). std::nullopt selects the native arrow
+		// or prior canvas style. Kept before initialize() as an initial option;
+		// invalid enumerators throw std::invalid_argument without changing it.
+		void set_cursor_shape(std::optional<CursorShape> shape);
+		std::optional<CursorShape> cursor_shape() const;
 
 		// Whether the pointer is kept inside the window while the window is
 		// active - on Windows; a browser cannot confine a pointer, and this

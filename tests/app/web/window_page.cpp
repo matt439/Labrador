@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <exception>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -62,6 +63,52 @@ EM_JS(void, web_window_test_remember_host_metadata, (), {
 	};
 });
 
+EM_JS(void, web_window_cursor_fixtures_begin, (), {
+	const style = Module.canvas.style;
+	Module.labradorCursorFixtures = [];
+	Module.labradorCursorFixtureErrors = [];
+	Module.labradorCursorFixtureQuits = 0;
+	Module.labradorCursorFixtureSaved = {
+		value: style.getPropertyValue('cursor'), priority: style.getPropertyPriority('cursor'),
+		error: Module.onError, quit: Module.onQuit,
+	};
+	Module.onError = (message) => Module.labradorCursorFixtureErrors.push(String(message));
+	Module.onQuit = () => ++Module.labradorCursorFixtureQuits;
+});
+
+EM_JS(void, web_window_cursor_fixture_baseline, (), {
+	const saved = Module.labradorCursorFixtureSaved;
+	if (saved.value) Module.canvas.style.setProperty('cursor', saved.value, saved.priority);
+	else Module.canvas.style.removeProperty('cursor');
+});
+
+EM_JS(void, web_window_cursor_fixture_edit, (const char* value, const char* priority), {
+	Module.canvas.style.setProperty('cursor', UTF8ToString(value), UTF8ToString(priority));
+});
+
+EM_JS(void, web_window_cursor_fixture_record, (const char* label, int shape, int status), {
+	const style = Module.canvas.style;
+	Module.labradorCursorFixtures.push({ label: UTF8ToString(label), shape, status,
+		value: style.getPropertyValue('cursor'), priority: style.getPropertyPriority('cursor') });
+});
+
+EM_JS(void, web_window_cursor_fixture_key, (), {
+	// The callback failure fixture needs no trusted gesture, focus change or
+	// application loop. The live Window's registered DOM listener receives it.
+	Module.canvas.dispatchEvent(new KeyboardEvent('keydown', {
+		code: 'ArrowLeft', key: 'ArrowLeft', bubbles: false, cancelable: true,
+	}));
+});
+
+EM_JS(void, web_window_cursor_fixtures_end, (), {
+	const saved = Module.labradorCursorFixtureSaved;
+	if (saved.value) Module.canvas.style.setProperty('cursor', saved.value, saved.priority);
+	else Module.canvas.style.removeProperty('cursor');
+	Module.onError = saved.error;
+	Module.onQuit = saved.quit;
+	delete Module.labradorCursorFixtureSaved;
+});
+
 namespace
 {
 	const char* button_name(labrador::MouseButton button)
@@ -90,6 +137,13 @@ namespace
 	class Recorder final : public labrador::WindowNotify
 	{
 	public:
+		explicit Recorder(bool quiet = false, bool throw_on_size = false) :
+			quiet_(quiet), throw_on_size_(throw_on_size)
+		{
+		}
+
+		int size_reports() const { return this->size_reports_; }
+
 		void tick() override
 		{
 			int width = 0;
@@ -143,6 +197,11 @@ namespace
 
 		void on_window_size_changed(int width, int height) override
 		{
+			++this->size_reports_;
+			if (this->throw_on_size_)
+			{
+				throw std::runtime_error("web cursor construction failure");
+			}
 			this->width_ = width;
 			this->height_ = height;
 			this->note("size " + std::to_string(width) + " " +
@@ -235,6 +294,10 @@ namespace
 		// written down again.
 		void note(const std::string& entry) const
 		{
+			if (this->quiet_)
+			{
+				return;
+			}
 			record(entry);
 			this->ticked_ = false;
 		}
@@ -244,6 +307,9 @@ namespace
 		mutable bool ticked_ = false;
 		bool throw_on_key_ = false;
 		mutable labrador::Mouse mouse_;
+		bool quiet_ = false;
+		bool throw_on_size_ = false;
+		int size_reports_ = 0;
 	};
 
 	// Static, because in a browser pump_until_quit unwinds main's stack
@@ -261,6 +327,129 @@ namespace
 		options.client_size = labrador::Vector2I(320, 200);
 		return options;
 	}
+
+	int cursor_index(const labrador::Window& observed)
+	{
+		const std::optional<labrador::CursorShape> selected = observed.cursor_shape();
+		return selected.has_value() ? static_cast<int>(*selected) : -1;
+	}
+
+	int closed_cursor_status(const labrador::Window& observed)
+	{
+		const std::optional<labrador::CursorShape> selected = observed.cursor_shape();
+		observed.set_cursor_visible(false);
+		observed.set_cursor_confined(true);
+		observed.set_cursor_shape(labrador::CursorShape::move);
+		observed.set_cursor_shape(std::nullopt);
+		try
+		{
+			observed.set_cursor_shape(static_cast<labrador::CursorShape>(99));
+		}
+		catch (const std::invalid_argument&)
+		{
+			return 0;
+		}
+		return observed.handle() == nullptr && observed.cursor_shape() == selected ? 1 : 0;
+	}
+
+	// No fixture pumps a loop. Each destroys its Window before the main page
+	// owns the canvas, including any pending on_closed notification.
+	void cursor_lifecycle_fixtures()
+	{
+		web_window_cursor_fixtures_begin();
+		labrador::WindowOptions options = window_options();
+		options.cursor_shape = labrador::CursorShape::hand;
+		Recorder quiet(true);
+		{
+			labrador::Window scoped(options, &quiet);
+			web_window_cursor_fixture_record("destructor active", cursor_index(scoped), 1);
+		}
+		web_window_cursor_fixture_record("destructor restored", -1, 1);
+		{
+			labrador::Window scoped(options, &quiet);
+			web_window_cursor_fixture_edit("zoom-in", "");
+		}
+		web_window_cursor_fixture_record("destructor keeps page edit", -1, 1);
+		web_window_cursor_fixture_baseline();
+		{
+			labrador::Window scoped(options, &quiet);
+			scoped.close();
+			web_window_cursor_fixture_record("close restored", cursor_index(scoped), closed_cursor_status(scoped));
+		}
+		{
+			labrador::Window scoped(options, &quiet);
+			web_window_cursor_fixture_edit("pointer", "");
+			scoped.close();
+			web_window_cursor_fixture_record("close keeps page priority edit", cursor_index(scoped), closed_cursor_status(scoped));
+		}
+		web_window_cursor_fixture_baseline();
+		quiet.throw_on_key();
+		{
+			labrador::Window scoped(options, &quiet);
+			web_window_cursor_fixture_key();
+			web_window_cursor_fixture_record("failure restored", cursor_index(scoped), closed_cursor_status(scoped));
+		}
+		{
+			labrador::Window scoped(options, &quiet);
+			web_window_cursor_fixture_edit("wait", "");
+			web_window_cursor_fixture_key();
+			web_window_cursor_fixture_record("failure keeps page edit", cursor_index(scoped), closed_cursor_status(scoped));
+		}
+		web_window_cursor_fixture_baseline();
+		Recorder constructor_notify(true, true);
+		int constructor_failed = 0;
+		try
+		{
+			labrador::Window scoped(options, &constructor_notify);
+		}
+		catch (const std::runtime_error& error)
+		{
+			constructor_failed = std::string(error.what()) == "web cursor construction failure" &&
+				constructor_notify.size_reports() == 1 ? 1 : 0;
+		}
+		web_window_cursor_fixture_record("constructor failure", -1, constructor_failed);
+		options.cursor_shape = static_cast<labrador::CursorShape>(99);
+		int invalid_failed = 0;
+		try
+		{
+			labrador::Window scoped(options, &quiet);
+		}
+		catch (const std::invalid_argument&)
+		{
+			invalid_failed = 1;
+		}
+		web_window_cursor_fixture_record("invalid constructor", -1, invalid_failed);
+		web_window_cursor_fixtures_end();
+	}
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_set_cursor(int shape)
+{
+	try
+	{
+		window->set_cursor_shape(shape == -1 ? std::nullopt :
+			std::optional<labrador::CursorShape>(static_cast<labrador::CursorShape>(shape)));
+		return 0;
+	}
+	catch (const std::invalid_argument&)
+	{
+		return 1;
+	}
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_cursor()
+{
+	return cursor_index(*window);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_set_cursor_visible(int visible)
+{
+	window->set_cursor_visible(visible != 0);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void web_window_test_set_cursor_confined(int confined)
+{
+	window->set_cursor_confined(confined != 0);
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE int web_window_test_poll_mouse()
@@ -326,6 +515,8 @@ int main()
 	try
 	{
 		web_window_test_remember_host_metadata();
+
+		cursor_lifecycle_fixtures();
 		window = std::make_unique<labrador::Window>(window_options(), &recorder);
 		const labrador::WindowDisplayInfo display = window->display_info();
 		if (!display.monitor_id.empty() || display.nominal_refresh_hz.has_value())

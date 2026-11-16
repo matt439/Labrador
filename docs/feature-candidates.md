@@ -88,6 +88,9 @@ concrete client need.
 | `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Implemented 2026-11-17 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-authored rectangles; capture, focus and expansion stay with each page |
 | `IDEA#14` | Present interval and render-rate control | could | M | Vsync control landed; unfocused visible-window cap deferred 2026-11-16 until measured cost or client need |
 | `IDEA#15` | Display refresh rate in the device report | could | S | Selected 2026-11-16 as [SM-86](product/BACKLOG.md#sm-86), nominal monitor metadata with an explicit unknown state; implementation open |
+| `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Selected 2026-11-16 as [OCA-107](product/BACKLOG.md#oca-107), preserving defaults and diagnosing an explicitly requested missing icon; implementation open |
+| `IDEA#17` | Cursor shapes | could | S | Implemented as [OCA-113](product/BACKLOG.md#oca-113), system/CSS choices with page-owned gallery cues; combined app verification remains |
+
 | `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Implemented through [OCA-107](product/BACKLOG.md#oca-107), focused checks passed; combined app sweep remains open |
 | `IDEA#17` | Cursor shapes | could | S | Selected 2026-11-16 as [OCA-113](product/BACKLOG.md#oca-113), system/CSS cursors with the gallery as first caller; implementation open |
 | `IDEA#18` | A side-by-side two-player layout | could | XS | Deferred 2026-11-16 until a selected game or guide needs left and right panes |
@@ -565,15 +568,17 @@ desktop; the release guide's step is followed in a copied project.
 [OCA-113](product/BACKLOG.md#oca-113), a small set of native system and browser
 CSS cursor shapes, with the components gallery as the first caller. Preserve
 pointer hiding and confinement contracts. Custom cursor images remain outside
-the selected scope. Implementation and qualification remain open.
+the selected scope. Implementation landed 2026-11-17; combined app
+qualification remains with OCA-113.
 
-**Present evidence:** the Win32 window sets the arrow or hides the pointer
-([window.cpp](../engine/app/win32/window.cpp)), and the browser sets the
-canvas's CSS cursor to default or none. A pointer menu (OCA-50) that wants a
-hand over a row, or a drag that wants a move cursor, cannot ask.
+**Current mechanism:** the window/application seam exposes an optional
+`CursorShape` request and read-back. Its six system/CSS choices preserve
+visibility and confinement independently. No explicit choice keeps the
+native arrow or authored canvas cursor; CSS overrides restore the prior
+value/priority on reset or teardown while preserving later page edits.
 
 **Proposed slice:** a small engine enum, arrow, hand, text, crosshair, move
-and not-allowed, on `Application::set_cursor`, mapped to system cursors on
+and not-allowed, on `Application::set_cursor_shape`, mapped to system cursors on
 Win32 and CSS cursor names in a browser. A custom image stays a hidden pointer
 plus a sprite, which already works.
 

@@ -447,6 +447,34 @@ still read while the pointer is hidden. `set_cursor_confined(true)` keeps the po
 window on Windows while the window is active, and lets it go while the player moves or resizes the
 window. A browser can lock a pointer but not confine one, so there it does nothing.
 
+### Pointer shapes
+
+`CursorShape` offers `arrow`, `hand`, `text`, `crosshair`, `move` and
+`not_allowed` for the native client area or the browser canvas. The shape is
+independent of hiding and confinement. No choice enables or disables input:
+
+```cpp
+app->set_cursor_shape(labrador::CursorShape::hand);
+app->set_cursor_visible(false);
+app->set_cursor_visible(true); // the selected shape is still hand
+app->set_cursor_shape(std::nullopt);
+```
+
+The default `std::nullopt` leaves the native arrow or the page's canvas cursor
+in charge. Clearing an explicit choice restores that default. In a browser,
+the engine borrows only the canvas's inline cursor property, preserving its
+prior value and priority. Closing the window releases its override while
+leaving a later page value/priority edit in place. Other elements and keyboard
+focus are unchanged. `cursor_shape()` reports the requested optional choice,
+not the physical pointer, a theme image or the computed CSS style.
+
+The components gallery chooses the hand over enabled rows, text over Name,
+move during a captured slider drag and arrow elsewhere. That is page-owned
+hover/capture policy, using the same camera and targets as clicking. Widgets
+choose no cursor themselves. These APIs were added in development after
+`v0.3.0`; [update an older starter's engine](/docs/guides/starter-update/)
+before using the new spellings.
+
 ## Touch
 
 `Touch` holds every finger on the glass, up to ten, as points with an id and a `position` in

@@ -376,6 +376,7 @@ namespace components
 
 	void GalleryState::update(float dt)
 	{
+		this->update_cursor();
 		// A browser can refuse a request or leave full screen externally.
 		// set_index follows that report without calling the request callback.
 		this->window_mode_->set_index(this->app_->fullscreen() ?
@@ -463,6 +464,7 @@ namespace components
 			}
 		}
 
+		this->update_cursor();
 		this->loop_preview_->update(dt);
 		this->once_preview_->update(dt);
 		const bool actions_enabled = !was_editing && !this->name_->editing() &&
@@ -498,6 +500,33 @@ namespace components
 		this->pointer_.cancel();
 		this->pressed_row_ = nullptr;
 		this->dragging_ = nullptr;
+	}
+
+	void GalleryState::update_cursor()
+	{
+		const Mouse& mouse = *this->app_->mouse();
+		CursorShape shape = CursorShape::arrow;
+		if (mouse.focused())
+		{
+			if (this->dragging_ != nullptr)
+			{
+				shape = CursorShape::move;
+			}
+			else
+			{
+				const std::optional<std::size_t> hit =
+					hit_pointer_target(this->pointer_targets_, this->world_point(mouse.position()));
+				if (hit.has_value())
+				{
+					shape = this->pointer_widgets_[*hit] == this->name_ ?
+						CursorShape::text : CursorShape::hand;
+				}
+			}
+		}
+		if (this->app_->cursor_shape() != shape)
+		{
+			this->app_->set_cursor_shape(shape);
+		}
 	}
 
 	void GalleryState::update_pointer()

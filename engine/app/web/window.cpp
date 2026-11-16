@@ -40,9 +40,48 @@ EM_JS(int, labrador_canvas_has_focus, (), {
 	return document.activeElement === specialHTMLTargets["!canvas"] ? 1 : 0;
 });
 
-// The canvas's own CSS cursor, so the rest of the page keeps the page's.
-EM_JS(void, labrador_show_canvas_cursor, (int visible), {
-	specialHTMLTargets["!canvas"].style.cursor = visible ? "" : "none";
+// A temporary lease of only the canvas's cursor property. Unselected visible
+// windows leave page CSS alone; teardown restores only a still-owned value.
+EM_JS(void, labrador_release_canvas_cursor, (void* owner), {
+	const state = Module.labradorWindowCursor;
+	if (!state || (owner && state.owner !== owner)) return;
+	const style = state.canvas.style;
+	if (state.applied && style.getPropertyValue('cursor') === state.applied.value &&
+		style.getPropertyPriority('cursor') === state.applied.priority) {
+		if (state.previous) style.setProperty('cursor', state.previous, state.priority);
+		else style.removeProperty('cursor');
+	}
+	Module.labradorWindowCursor = null;
+});
+
+EM_JS(void, labrador_track_canvas_cursor, (void* owner), {
+	const canvas = specialHTMLTargets["!canvas"];
+	Module.labradorWindowCursor = { owner, canvas,
+		previous: canvas.style.getPropertyValue('cursor'),
+		priority: canvas.style.getPropertyPriority('cursor'), applied: null };
+});
+
+EM_JS(void, labrador_apply_canvas_cursor, (void* owner, const char* shape, int visible), {
+	const state = Module.labradorWindowCursor;
+	if (!state || state.owner !== owner) return;
+	const style = state.canvas.style;
+	const changed = state.applied && (style.getPropertyValue('cursor') !== state.applied.value ||
+		style.getPropertyPriority('cursor') !== state.applied.priority);
+	if (!state.applied || changed) {
+		state.previous = style.getPropertyValue('cursor');
+		state.priority = style.getPropertyPriority('cursor');
+	}
+	if (visible && !shape) {
+		if (state.applied && !changed) {
+			if (state.previous) style.setProperty('cursor', state.previous, state.priority);
+			else style.removeProperty('cursor');
+		}
+		state.applied = null;
+		return;
+	}
+	style.setProperty('cursor', visible ? UTF8ToString(shape) : 'none', 'important');
+	state.applied = { value: style.getPropertyValue('cursor'),
+		priority: style.getPropertyPriority('cursor') };
 });
 
 // The canvas's corner in the page's CSS pixels, from one
@@ -265,6 +304,21 @@ namespace labrador
 	{
 		constexpr char canvas_target[] = "!canvas";
 
+		const char* canvas_cursor(std::optional<CursorShape> shape)
+		{
+			if (!shape.has_value()) { return nullptr; }
+			switch (*shape)
+			{
+			case CursorShape::arrow: return "default";
+			case CursorShape::hand: return "pointer";
+			case CursorShape::text: return "text";
+			case CursorShape::crosshair: return "crosshair";
+			case CursorShape::move: return "move";
+			case CursorShape::not_allowed: return "not-allowed";
+			}
+			throw std::invalid_argument("Window cursor shape is invalid.");
+		}
+
 		// One side of the drawing buffer: the observed device-pixel box's
 		// side while it is within a pixel of the exact product, which is as
 		// far as snapping moves it, and the product rounded otherwise. A side
@@ -411,6 +465,8 @@ namespace labrador
 		// nothing.
 		bool focused = false;
 		bool hidden = false;
+		bool cursor_visible = true;
+		std::optional<CursorShape> cursor_shape;
 		DomModifiers modifiers;
 
 		// The analogue of the Win32 window's capture count. A press that
@@ -436,8 +492,11 @@ namespace labrador
 		WindowNotify* window_notify) :
 		notify(window_notify),
 		min_width(options.min_window_width),
-		min_height(options.min_window_height)
+		min_height(options.min_window_height),
+		cursor_visible(options.cursor_visible),
+		cursor_shape(options.cursor_shape)
 	{
+		Window::validate_cursor_shape(options.cursor_shape);
 		if (labrador_adopt_canvas() == 0)
 		{
 			throw std::runtime_error("There is no canvas to draw on: the page "
@@ -465,10 +524,6 @@ namespace labrador
 		// focus it, or the player click it - so an owner that starts out
 		// assuming the keyboard, as a Win32 window has it, is told.
 		this->report_size();
-		if (!options.cursor_visible)
-		{
-			labrador_show_canvas_cursor(0);
-		}
 		this->focused = labrador_canvas_has_focus() != 0;
 		if (!this->focused)
 		{
@@ -481,9 +536,22 @@ namespace labrador
 		// A page that may not go full screen at all - an
 		// iframe without permission - refuses, the owner is told, and the
 		// game plays in the page.
-		if (options.fullscreen)
+		try
 		{
-			this->request_fullscreen();
+			if (options.fullscreen)
+			{
+				this->request_fullscreen();
+			}
+			labrador_release_canvas_cursor(nullptr);
+			labrador_track_canvas_cursor(this);
+			labrador_apply_canvas_cursor(this, canvas_cursor(this->cursor_shape),
+				this->cursor_visible ? 1 : 0);
+		}
+		catch (...)
+		{
+			labrador_release_canvas_cursor(this);
+			this->listen(false);
+			throw;
 		}
 	}
 
@@ -656,6 +724,7 @@ namespace labrador
 			this->looping = false;
 		}
 		this->listen(false);
+		labrador_release_canvas_cursor(this);
 	}
 
 	void Window::Impl::schedule_closed()
@@ -1064,7 +1133,26 @@ namespace labrador
 		{
 			return;
 		}
-		labrador_show_canvas_cursor(visible ? 1 : 0);
+		this->impl_->cursor_visible = visible;
+		labrador_apply_canvas_cursor(this->impl_.get(),
+			canvas_cursor(this->impl_->cursor_shape), visible ? 1 : 0);
+	}
+
+	void Window::set_cursor_shape(std::optional<CursorShape> shape) const
+	{
+		if (this->impl_->closed)
+		{
+			return;
+		}
+		Window::validate_cursor_shape(shape);
+		this->impl_->cursor_shape = shape;
+		labrador_apply_canvas_cursor(this->impl_.get(), canvas_cursor(shape),
+			this->impl_->cursor_visible ? 1 : 0);
+	}
+
+	std::optional<CursorShape> Window::cursor_shape() const
+	{
+		return this->impl_->cursor_shape;
 	}
 
 	// window.h: a page can lock the pointer but not confine it.

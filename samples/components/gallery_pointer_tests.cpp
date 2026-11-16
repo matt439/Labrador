@@ -194,3 +194,50 @@ TEST_CASE("the gallery's pointer rules: clicks, value halves, drags, keys and Qu
 	MSG message = {};
 	CHECK(PeekMessageW(&message, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE) != 0);
 }
+
+TEST_CASE("the gallery chooses cursor cues from its hover and captured drag state")
+{
+	ApplicationOptions options;
+	options.window_class_name = L"ComponentsCursorTestWindow";
+	options.visible = false;
+	options.view_capacity = 1;
+	options.max_threads = 1;
+	Application app(std::move(options));
+	app.initialize();
+	app.load_manifest("manifest.json");
+	GalleryState gallery(&app);
+	gallery.init();
+	Mouse& mouse = *app.mouse();
+	mouse.set_focused(true);
+	tick(app, gallery);
+	tick(app, gallery);
+	mouse.on_move(client_at(app, 20.0f, 20.0f));
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::arrow);
+	mouse.on_move(client_at(app, label_x, row_middle(0)));
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::hand);
+	mouse.on_move(client_at(app, 960.0f, 510.0f));
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::text);
+	mouse.on_move(client_at(app, value_x + 20.0f, row_middle(2)));
+	mouse.on_button_down(MouseButton::left);
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::move);
+	mouse.on_move(client_at(app, 20.0f, 20.0f));
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::move);
+	mouse.on_button_up(MouseButton::left);
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::arrow);
+	app.set_cursor_visible(false);
+	app.set_cursor_confined(true);
+	mouse.on_move(client_at(app, label_x, row_middle(0)));
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::hand);
+	CHECK_FALSE(app.cursor_visible());
+	CHECK(app.cursor_confined());
+	mouse.set_focused(false);
+	tick(app, gallery);
+	CHECK(app.cursor_shape() == CursorShape::arrow);
+}
