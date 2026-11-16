@@ -1,0 +1,85 @@
+---
+title: Copy keyboard rebinding into your game
+description: A game-owned two-action table and capture row with duplicate refusal, opener release, cancel and reset, while preserving menu and quit controls.
+sidebar:
+  order: 2.1
+---
+
+import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
+
+Bindings belong to your game. The
+<RepoLink path="samples/components/README.md">components gallery</RepoLink> demonstrates a
+small keyboard table and one capture row, using the existing keyboard state and stable key
+tokens. It does not add an engine action map or change gamepad bindings.
+
+<GuideVersionNote kind="template" feature="the copied BindingRow and GalleryBindings example files" releaseGuide="docs/guides/input/" />
+
+## Try the example
+
+Run the gallery as [Run the samples](/docs/guides/samples/) shows. The original settings and
+Quit rows remain in place. The **Rebind key** row follows Quit; Left or Right chooses
+**Restart** or **Reset difficulty**. Enter, Space, gamepad A or a click begins capture.
+Release the opener and every held key, then press one new key.
+
+Up/Down follows the page's reading order: the original settings and Quit, then Rebind key,
+then Name, wrapping at either end. The two final rows sit beside each other, so the page
+sets that order explicitly instead of relying on their screen geometry.
+
+The gallery allows letter and number-row positions only. Navigation, confirmation,
+cancellation, reset and other keys stay protected. A duplicate leaves both assignments alone
+and gives a message; release it before trying another. Escape or gamepad B cancels capture
+without quitting, and choosing another row with the pointer cancels first. Outside capture,
+the original Escape/B quit route remains available.
+
+On the idle binding row, Backspace resets both defaults: `r` restarts the previews and `d`
+resets the difficulty example to Normal. The key that commits a binding does not also run its
+action; it needs a fresh press. A key held after that press does not repeatedly fire. Name
+editing owns its letters separately, so typing an action key there does not affect the settings
+or previews behind the editor.
+
+## Take the code
+
+Copy `binding_row.h/.cpp` and `gallery_bindings.h/.cpp` from
+<RepoLink path="samples/components">`samples/components`</RepoLink>, change their namespace
+and includes, and list each `.cpp` in your game's CMake target. The row needs the engine's UI
+widgets and a loaded font, as the other [copied components](/docs/guides/your-components/) do.
+Its tests can be copied into an engine-linked test target too.
+
+`GalleryBindings` is the example's policy, with exactly two actions. Change its action names,
+default keys and allowed/protected set for your own screen. A duplicate is refused instead of
+moving another action:
+
+<SourceFile path="samples/components/gallery_bindings.cpp" from="BindingResult GalleryBindings::try_bind(" to="return BindingResult::changed;" />
+
+The page asks its keyboard whether the assigned position was pressed. It owns how that action
+changes the game; the row never polls a device or interprets typed characters as physical keys.
+The gallery's wiring is in
+<RepoLink path="samples/components/gallery_binding.cpp">`gallery_binding.cpp`</RepoLink> and
+<RepoLink path="samples/components/gallery_state.cpp">`gallery_state.cpp`</RepoLink>.
+
+## Capture without losing the menu
+
+Pass current and previous `KeyboardState` values to `BindingRow::update_capture`. Starting
+capture, and every refused candidate, waits for an entirely released snapshot before taking
+another edge. Two or more new keys in one snapshot are ambiguous and produce no candidate.
+Keyboard focus loss cancels; the gallery also cancels from `on_deactivated()`.
+
+The page handles cancel before candidates, validates a candidate through its own table, and
+keeps navigation/quit keys out of that table. While either capture or text editing owns a
+tick, ordinary menu actions and rebound shortcuts are suppressed. A mode-exit tick cancels
+pending pointer completion as well: a release arriving with Escape or the committing key
+cannot immediately reopen the editor. Keep those rules when you adapt the example.
+
+## Tokens and saved data
+
+The table's `tokens()` uses `key_name`, and `load_tokens()` parses the exact identities with
+`key_from_name`. A whole pair is validated before either value changes; invalid tokens,
+protected keys and duplicate values preserve the old table. A valid complete pair may swap
+its two distinct keys. The displayed token is a stable fallback, independent of what the
+active keyboard layout prints on that position; see [Input](/docs/guides/input/).
+
+The gallery saves nothing. Your game chooses whether to persist a table, its format, and how
+to recover a bad or old file. Keep menu cancellation and a reset route usable after every
+refusal. Physical layout labels and controller rebinding are separate mechanisms.

@@ -87,6 +87,11 @@
       "wasm-release",
       "wasm-release-null"
     ],
+    "ComponentsRebindingPageTests": [
+      "wasm-debug",
+      "wasm-release",
+      "wasm-release-null"
+    ],
     "D3D12SynchronizationTests": [
       "x64-debug-d3d12",
       "x64-release-d3d12"
@@ -245,6 +250,7 @@
     "ComponentsPageTests",
     "ComponentsPointerPageTests",
     "ComponentsTextPageTests",
+    "ComponentsRebindingPageTests",
     "LineSweeperPageTests",
     "LineSweeperReducedMotionPageTests",
     "LineSweeperPalettePageTests",

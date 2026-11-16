@@ -122,8 +122,12 @@ OCA-42; this is interaction, not another localisation story.
 duplicate binding with a clear error, ignores the opener until release,
 protects menu navigation, and supports cancel and reset. Bindings use the
 existing stable key tokens; persistence is optional and is not an engine
-action map. Implementation and qualification remain open; the original
-proposal's alternative duplicate policies are not the selected policy.
+action map. Completed 2026-11-17 in the components gallery and the
+[rebinding guide](../website/src/content/docs/docs/guides/rebinding.mdx), with
+portable capture/policy tests, native-null real-gallery fixtures and desktop
+browser input checks. [The qualification record](verification/keyboard-rebinding/2026-11-17/README.md)
+keeps the visible native checks and their keyboard-injection limit explicit.
+The original proposal's alternative duplicate policies are not the selected policy.
 
 **Present evidence:** [keyboard.h](../engine/input/keyboard.h) exposes stable
 `key_name`/`key_from_name` tokens, and [LineSweeper's state](../samples/linesweeper/states/play_state.cpp)

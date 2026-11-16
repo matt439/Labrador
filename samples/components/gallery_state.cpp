@@ -125,6 +125,18 @@ namespace components
 				row_y(row) + text_middle - row_spacing * 0.5f,
 				band_right - band_left, row_spacing);
 		}
+
+		bool any_key_pressed(const Keyboard& keyboard)
+		{
+			for (int value = 1; value < static_cast<int>(Key::count); ++value)
+			{
+				if (keyboard.pressed(static_cast<Key>(value)))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 	GalleryState::GalleryState(Application* app, StatusChanged on_status) :
@@ -161,7 +173,7 @@ namespace components
 		this->scene_->add(std::make_unique<UiText>("help",
 			L"Arrows, click or tap: choose and change   Enter/A: select   Esc/B: quit",
 			font_name, Vector2F(label_x, help_y), resources, help_colour));
-		this->scene_->add(std::make_unique<UiText>("animation_help",
+		this->animation_help_ = this->scene_->add(std::make_unique<UiText>("animation_help",
 			L"R / gamepad X: restart both animations", font_name,
 			Vector2F(label_x, animation_help_y), resources, help_colour));
 		this->scene_->add(std::make_unique<UiText>("loop_label",
@@ -230,6 +242,16 @@ namespace components
 
 		this->quit_ = this->scene_->add(std::make_unique<UiText>("quit",
 			L"Quit", font_name, Vector2F(label_x, row_y(4)), resources));
+		this->binding_ = this->scene_->add(std::make_unique<BindingRow>("binding",
+			L"Rebind key", L"Restart: r", Vector2F(label_x, row_y(5)),
+			value_x, font_name, resources));
+		this->scene_->add(std::make_unique<UiText>("binding_help",
+			L"Row: Left/Right action; Enter capture; Backspace reset", font_name,
+			Vector2F(label_x, 570.0f), resources, help_colour, false, detail_scale));
+		this->binding_status_ = this->scene_->add(std::make_unique<UiText>("binding_status",
+			L"Capture: letters/numbers; Esc/B or another row cancels", font_name,
+			Vector2F(label_x, 610.0f), resources, help_colour, false, detail_scale));
+		this->refresh_binding_value();
 		this->name_ = this->scene_->add(std::make_unique<TextField>("name",
 			L"Name", "Player", TextFieldLimits{ 12, 180.0f },
 			Vector2F(900.0f, 500.0f), 960.0f, font_name, resources));
@@ -246,18 +268,19 @@ namespace components
 			"name_status", L"Enter/click Name to edit", font_name,
 			Vector2F(900.0f, 610.0f), resources, help_colour, false, detail_scale));
 
-		// Left/right change settings rows. Quit closes the page; Name starts
-		// its desktop editing mode, whose keys the page owns.
+		// Left/right change settings rows or select an action to rebind. Quit
+		// closes the page; Binding and Name start their page-owned input modes.
 		this->focus_.add(this->difficulty_);
 		this->focus_.add(this->window_mode_);
 		this->focus_.add(this->music_);
 		this->focus_.add(this->effects_);
 		this->focus_.add(this->quit_, [this]() { this->app_->quit(); });
+		this->focus_.add(this->binding_, [this]() { this->begin_binding_capture(); });
 		this->focus_.add(this->name_, [this]() { this->begin_name_edit(); });
 
 		// The same rows, in the same order, as places a pointer can choose.
 		UiWidget* const rows[] = { this->difficulty_, this->window_mode_,
-			this->music_, this->effects_, this->quit_ };
+			this->music_, this->effects_, this->quit_, this->binding_ };
 		int row = 0;
 		for (UiWidget* widget : rows)
 		{
@@ -325,7 +348,29 @@ namespace components
 		{
 			return this->effects_->adjust(direction);
 		}
+		if (focused == this->binding_)
+		{
+			return this->adjust_binding_selection(direction);
+		}
 
+		return false;
+	}
+
+	bool GalleryState::move_row(Direction direction)
+	{
+		// The two bottom rows occupy separate columns. Their visual bounds
+		// overlap vertically, so the page supplies its reading order instead
+		// of asking spatial navigation to guess between those columns.
+		for (size_t index = 0; index < this->pointer_widgets_.size(); ++index)
+		{
+			if (this->pointer_widgets_[index] == this->focus_.focused(0))
+			{
+				const size_t count = this->pointer_widgets_.size();
+				const size_t next = direction == Direction::up ?
+					(index + count - 1) % count : (index + 1) % count;
+				return this->focus_.set_focused(0, this->pointer_widgets_[next]);
+			}
+		}
 		return false;
 	}
 
@@ -339,6 +384,8 @@ namespace components
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
 		const bool was_editing = this->name_->editing();
+		const bool was_capturing = this->binding_->capturing();
+		bool binding_owned = false;
 		if (was_editing)
 		{
 			this->update_name_edit();
@@ -346,6 +393,23 @@ namespace components
 			{
 				// A queued release on Name cannot reopen an edit just ended
 				// by Enter, Escape or keyboard-focus loss in the same poll.
+				this->pointer_.cancel();
+				this->pressed_row_ = nullptr;
+				this->dragging_ = nullptr;
+			}
+			else
+			{
+				this->update_pointer();
+			}
+		}
+		else if ((binding_owned = this->update_binding_input()))
+		{
+			// Capture owns keys before navigation and game actions. Drop any
+			// pointer gesture when a key acts, including a queued release that
+			// could otherwise reopen capture just ended by commit or cancel.
+			if (!this->binding_->capturing() || any_key_pressed(keyboard) ||
+				pads.pressed(0, GamepadButton::a) || pads.pressed(0, GamepadButton::b))
+			{
 				this->pointer_.cancel();
 				this->pressed_row_ = nullptr;
 				this->dragging_ = nullptr;
@@ -370,7 +434,7 @@ namespace components
 			// sound would hang on. This sample has no audio, so they go unused.
 			if (direction == Direction::up || direction == Direction::down)
 			{
-				this->focus_.move(0, direction);
+				this->move_row(direction);
 			}
 			else if (direction == Direction::left || direction == Direction::right)
 			{
@@ -393,18 +457,30 @@ namespace components
 				this->pressed_row_ = nullptr;
 				this->dragging_ = nullptr;
 			}
-			this->update_pointer();
+			else
+			{
+				this->update_pointer();
+			}
 		}
 
 		this->loop_preview_->update(dt);
 		this->once_preview_->update(dt);
-		if (!was_editing && !this->name_->editing() &&
-			(keyboard.pressed(Key::r) || pads.pressed(0, GamepadButton::x)))
+		const bool actions_enabled = !was_editing && !this->name_->editing() &&
+			!was_capturing && !this->binding_->capturing() && !binding_owned;
+		if (actions_enabled &&
+			(keyboard.pressed(this->bindings_.key(GalleryAction::restart_previews)) ||
+				pads.pressed(0, GamepadButton::x)))
 		{
 			// Reset after the tick's step so the next draw shows frame zero.
 			this->loop_preview_->restart();
 			this->once_preview_->restart();
 			this->set_status(L"Both animation previews restarted.");
+		}
+		if (actions_enabled &&
+			keyboard.pressed(this->bindings_.key(GalleryAction::reset_difficulty)))
+		{
+			this->difficulty_->set_index(1);
+			this->set_status(L"Difficulty reset to Normal.");
 		}
 
 		this->refresh_view();
@@ -415,6 +491,10 @@ namespace components
 	void GalleryState::on_deactivated()
 	{
 		this->cancel_name_edit();
+		if (this->binding_ != nullptr)
+		{
+			this->cancel_binding_capture(L"Binding capture cancelled: focus lost.");
+		}
 		this->pointer_.cancel();
 		this->pressed_row_ = nullptr;
 		this->dragging_ = nullptr;
@@ -443,6 +523,10 @@ namespace components
 			// Focus first, as LineSweeper's pause menu does, so whatever the
 			// release does belongs to the row the cursor is now on.
 			UiWidget* const row = this->pointer_widgets_[*hit];
+			if (row != this->binding_)
+			{
+				this->cancel_binding_capture(L"Binding capture cancelled: another row.");
+			}
 			this->focus_.set_focused(0, row);
 			this->pressed_row_ = row;
 
@@ -505,8 +589,8 @@ namespace components
 			}
 		}
 
-		// Quit and Name have actions, and activation runs the selected one.
-		if (pressed == this->quit_ || pressed == this->name_)
+		// Quit, Name and Binding have actions; activation runs the selected one.
+		if (pressed == this->quit_ || pressed == this->name_ || pressed == this->binding_)
 		{
 			this->focus_.activate(0);
 		}

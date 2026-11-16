@@ -1430,7 +1430,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-108](#oca-108)** Should · L · The Outside Adopter: Use a qualified non-Xbox controller layer on Windows — blocked until a real non-Xbox pad is available
 
 - [x] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
-- [ ] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
+- [x] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
 - [ ] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
 - [ ] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
 - [ ] **[OCA-113](#oca-113)** Could · M · The Outside Adopter: Choose a native or canvas cursor shape for the current page interaction
@@ -2961,6 +2961,20 @@ framework. Persistence is a separate example-owned choice. Tests cover capture,
 opener release, duplicate refusal, invalid tokens, reset, cancellation and
 usable navigation afterwards; exercise native/browser sample flows and run
 affected sample checks, lint and the website gate.
+
+**Completed 2026-11-17:** the components gallery's copied `BindingRow` emits
+keyboard candidates; its game-owned `GalleryBindings` table refuses duplicate
+or protected positions without changing another action. Capture waits for
+held keys and the Enter/Space/A opener, cancels on focus loss, and keeps menu
+cancel/reset and the original navigation/quit routes usable. The table uses
+exact stable tokens and validates a complete loaded pair before mutation;
+the gallery persists nothing. Portable policy/capture tests, real native-null
+gallery cases with synthetic input and scripted pad snapshots, D3D11 component
+checks and visible capture/cancellation, desktop Chrome rebinding plus existing
+text/pointer routes, and the website gate passed. [The dated record](../verification/keyboard-rebinding/2026-11-17/README.md)
+retains identities, screenshots, commands and the native input qualification
+limits. The [public guide](../../website/src/content/docs/docs/guides/rebinding.mdx)
+explains how to copy and adapt the page-owned policy.
 
 <a id="oca-111"></a>
 ### OCA-111. Show best-effort keyboard-layout labels for rebinding

@@ -13,6 +13,7 @@ namespace components
 {
 	void GalleryState::begin_name_edit()
 	{
+		this->cancel_binding_capture(L"Binding capture cancelled: another row.");
 		if (this->name_->begin_edit())
 		{
 			this->set_name_status(L"Name editing: " + widen(this->name_->draft()));

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "samples/components/animation_preview.h"
+#include "samples/components/binding_row.h"
+#include "samples/components/gallery_bindings.h"
 #include "samples/components/option_row.h"
 #include "samples/components/pointer_capture.h"
 #include "samples/components/slider.h"
@@ -22,7 +24,7 @@
 namespace components
 {
 	// Every component on one settings screen, so each can be seen and played
-	// with: two option rows, two sliders, two animations, a text field and a way out.
+	// with: option rows, sliders, animations, text and binding entry and a way out.
 	// main.cpp and main_web.cpp both run it.
 	//
 	// It is also the page half a component leaves to its game. A component
@@ -58,6 +60,7 @@ namespace components
 		// matching it here needs no cast and no table. A page with many rows
 		// of one kind would loop over a list of them instead.
 		bool adjust_focused(labrador::Direction direction);
+		bool move_row(labrador::Direction direction);
 
 		// What one tick's pointer did to the rows: a press focuses the row
 		// under it and starts dragging a slider; a release completes a click
@@ -67,6 +70,12 @@ namespace components
 		void cancel_name_edit();
 		void update_name_edit();
 		void set_name_status(const std::wstring& text);
+		void begin_binding_capture();
+		void cancel_binding_capture(const std::wstring& reason);
+		void refresh_binding_value();
+		void set_binding_status(const std::wstring& text);
+		bool adjust_binding_selection(labrador::Direction direction);
+		bool update_binding_input();
 
 		// The world point under a client pixel, through the camera the page
 		// draws with.
@@ -94,10 +103,15 @@ namespace components
 		Slider* music_ = nullptr;
 		Slider* effects_ = nullptr;
 		labrador::UiText* status_ = nullptr;
+		labrador::UiText* animation_help_ = nullptr;
+		BindingRow* binding_ = nullptr;
+		labrador::UiText* binding_status_ = nullptr;
+		GalleryBindings bindings_;
+		GalleryAction binding_action_ = GalleryAction::restart_previews;
 		TextField* name_ = nullptr;
 		labrador::UiText* name_status_ = nullptr;
 
-		// A completed click/tap closes the gallery. Name has a separate edit action.
+		// A completed click/tap closes the gallery. Name and Binding have separate actions.
 		labrador::UiText* quit_ = nullptr;
 
 		labrador::FocusGroup focus_;
