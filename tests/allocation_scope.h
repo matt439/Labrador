@@ -3,7 +3,10 @@
 // Counts the Debug CRT's normal-block allocation attempts on one thread, for
 // the warmed-frame tests that hold per-frame code to no heap allocation
 // (docs/design/PHILOSOPHY.md, Performance), and can refuse one chosen attempt
-// for the backends' allocation-failure regressions. Only a Debug build
+// for the backends' allocation-failure regressions. ASan builds instead
+// observe their intercepted allocator and refuse C++ new through the test
+// executable's replacement operators. A requested raw-C refusal there marks
+// a conflict: its post-allocation hook cannot refuse that call. Only a Debug build
 // against the DLL CRT has the hook; elsewhere this header declares nothing,
 // and the tests that use it compile out with it.
 //
@@ -15,10 +18,15 @@
 
 #include <doctest/doctest.h>
 
+#if defined(LABRADOR_ASAN)
+#include "tests/asan_allocation.h"
+#endif
+
 #include <crtdbg.h>
 
 #include <atomic>
 #include <cstddef>
+#include <cstdlib>
 #include <stdexcept>
 #include <vector>
 
@@ -45,9 +53,11 @@ namespace labrador_tests
 	};
 
 	inline thread_local AllocationSample* active_sample = nullptr;
+	inline std::atomic_flag hook_owned = ATOMIC_FLAG_INIT;
+
+#if !defined(LABRADOR_ASAN)
 	inline std::atomic<_CRT_ALLOC_HOOK> previous_hook = nullptr;
 	static_assert(std::atomic<_CRT_ALLOC_HOOK>::is_always_lock_free);
-	inline std::atomic_flag hook_owned = ATOMIC_FLAG_INIT;
 
 	inline int __cdecl observe_allocation(int operation, void* data, size_t bytes,
 		int block_type, long request, const unsigned char* file, int line)
@@ -136,6 +146,82 @@ namespace labrador_tests
 		AllocationSample& sample_;
 		_CRT_ALLOC_HOOK previous_ = nullptr;
 	};
+#else
+	inline bool observe_asan_new(size_t bytes) noexcept
+	{
+		if (active_sample == nullptr) return true;
+		AllocationSample& sample = *active_sample;
+		++sample.attempts;
+		sample.bytes += bytes;
+		if (sample.watched_bytes != 0 && bytes == sample.watched_bytes)
+		{
+			++sample.watched_attempts;
+			sample.watched_attempt = sample.attempts;
+		}
+		if (sample.attempts != sample.refused_attempt) return true;
+		++sample.refused;
+		sample.refused_bytes = bytes;
+		return false;
+	}
+
+	inline void observe_asan_malloc(size_t bytes) noexcept
+	{
+		if (!observe_asan_new(bytes))
+		{
+			// Allocation already succeeded. Refusing a raw C allocation is
+			// unsupported; flag it so the test cannot trust this failpoint.
+			active_sample->hook_conflict = true;
+		}
+	}
+
+	class AllocationScope
+	{
+	public:
+		explicit AllocationScope(AllocationSample& sample) : sample_(sample)
+		{
+			if (hook_owned.test_and_set(std::memory_order_acquire))
+			{
+				throw std::logic_error("Allocation probes cannot overlap");
+			}
+			try
+			{
+				this->previous_ = asan_allocation_hooks();
+				if (this->previous_ != AsanAllocationHooks{})
+				{
+					throw std::logic_error("Unexpected ASan allocation probe hook");
+				}
+				set_asan_allocation_hooks({ observe_asan_new, observe_asan_malloc });
+				active_sample = &sample;
+			}
+			catch (...)
+			{
+				hook_owned.clear(std::memory_order_release);
+				throw;
+			}
+		}
+
+		~AllocationScope()
+		{
+			active_sample = nullptr;
+			if (asan_allocation_hooks() == AsanAllocationHooks{ observe_asan_new, observe_asan_malloc })
+			{
+				set_asan_allocation_hooks(this->previous_);
+			}
+			else
+			{
+				this->sample_.hook_conflict = true;
+			}
+			hook_owned.clear(std::memory_order_release);
+		}
+
+		AllocationScope(const AllocationScope&) = delete;
+		AllocationScope& operator=(const AllocationScope&) = delete;
+
+	private:
+		AllocationSample& sample_;
+		AsanAllocationHooks previous_;
+	};
+#endif
 
 	// Runs `work` inside one scope and returns what it counted, after
 	// requiring that the hook was this probe's alone and is restored.
@@ -143,6 +229,9 @@ namespace labrador_tests
 	AllocationSample count_allocations(Work&& work)
 	{
 		const _CRT_ALLOC_HOOK initial = _CrtGetAllocHook();
+#if defined(LABRADOR_ASAN)
+		const AsanAllocationHooks initial_asan = asan_allocation_hooks();
+#endif
 		AllocationSample sample;
 		{
 			AllocationScope scope(sample);
@@ -150,6 +239,9 @@ namespace labrador_tests
 		}
 		REQUIRE_FALSE(sample.hook_conflict);
 		REQUIRE(_CrtGetAllocHook() == initial);
+#if defined(LABRADOR_ASAN)
+		REQUIRE(asan_allocation_hooks() == initial_asan);
+#endif
 		return sample;
 	}
 
@@ -170,6 +262,21 @@ namespace labrador_tests
 		REQUIRE(calibration.attempts > 0);
 		REQUIRE(calibration.bytes >= 32 * sizeof(size_t));
 		REQUIRE(control_value == 7);
+#if defined(LABRADOR_ASAN)
+		// A new-only probe could report a false zero for a frame using malloc.
+		// Check the runtime's allocator hook independently of replacement new.
+		AllocationSample raw_calibration;
+		void* raw = nullptr;
+		{
+			AllocationScope scope(raw_calibration);
+			raw = std::malloc(71);
+		}
+		std::free(raw);
+		REQUIRE(raw != nullptr);
+		REQUIRE_FALSE(raw_calibration.hook_conflict);
+		REQUIRE(raw_calibration.attempts > 0);
+		REQUIRE(raw_calibration.bytes >= 71);
+#endif
 	}
 }
 

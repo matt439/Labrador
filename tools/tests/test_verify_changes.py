@@ -265,9 +265,13 @@ class PlanTests(unittest.TestCase):
     def test_native_host_condition_is_inherited_without_filtering_default_planning(self):
         document = json.loads((self.root / "CMakePresets.json").read_text(encoding="utf-8"))
         index = planner.preset_index(document, "configurePresets")
-        self.assertEqual({name for name in index if name.startswith("x64-")}, set(planner.NATIVE_PRESETS))
+        # The sanitizer qualification is deliberately separate from a render
+        # sweep, but it inherits the same native-host guard.
+        qualifications = {"x64-debug-null-asan"}
+        self.assertEqual({name for name in index if name.startswith("x64-")},
+                         set(planner.NATIVE_PRESETS) | qualifications)
         self.assertEqual(len(planner.NATIVE_PRESETS), 10)
-        for name in planner.NATIVE_PRESETS:
+        for name in (*planner.NATIVE_PRESETS, *qualifications):
             self.assertEqual(planner.configure_preset(index, name)["condition"], planner.NATIVE_HOST_CONDITION)
         for name in ("wasm-debug", "wasm-release"):
             self.assertNotIn("condition", planner.configure_preset(index, name))

@@ -100,6 +100,22 @@
       }
     },
     {
+      "name": "x64-debug-null-asan",
+      "displayName": "x64 Debug (null, AddressSanitizer)",
+      "inherits": "x64-debug-null",
+      "cacheVariables": {
+        "LABRADOR_ASAN": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc /fsanitize=address",
+        "CMAKE_CXX_FLAGS_DEBUG": "/Ob0 /Od",
+        "CMAKE_EXE_LINKER_FLAGS_DEBUG": "/debug /INCREMENTAL:NO",
+        "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "/debug /INCREMENTAL:NO",
+        "CMAKE_MODULE_LINKER_FLAGS_DEBUG": "/debug /INCREMENTAL:NO",
+        "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/triplets",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-asan"
+      }
+    },
+    {
       "name": "common",
       "hidden": true,
       "generator": "Ninja",
@@ -143,6 +159,7 @@
     { "name": "x64-release-vulkan", "configurePreset": "x64-release-vulkan" },
     { "name": "x64-debug-null", "configurePreset": "x64-debug-null" },
     { "name": "x64-release-null", "configurePreset": "x64-release-null" },
+    { "name": "x64-debug-null-asan", "configurePreset": "x64-debug-null-asan" },
     { "name": "wasm-debug", "configurePreset": "wasm-debug" },
     { "name": "wasm-release", "configurePreset": "wasm-release" }
   ],
@@ -157,6 +174,12 @@
     { "name": "x64-release-vulkan", "configurePreset": "x64-release-vulkan", "inherits": "test-base" },
     { "name": "x64-debug-null", "configurePreset": "x64-debug-null", "inherits": "test-base" },
     { "name": "x64-release-null", "configurePreset": "x64-release-null", "inherits": "test-base" },
+    {
+      "name": "x64-debug-null-asan",
+      "configurePreset": "x64-debug-null-asan",
+      "inherits": "test-base",
+      "environment": { "ASAN_OPTIONS": "detect_container_overflow=1" }
+    },
     { "name": "wasm-debug", "configurePreset": "wasm-debug", "inherits": "test-base" },
     { "name": "wasm-release", "configurePreset": "wasm-release", "inherits": "test-base" },
     {

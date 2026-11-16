@@ -12,7 +12,8 @@
     "x64-release-null",
     "wasm-debug",
     "wasm-release",
-    "wasm-release-null"
+    "wasm-release-null",
+    "x64-debug-null-asan"
   ],
   "every_configuration": [
     "AppTests",
@@ -35,6 +36,9 @@
     "UiTests"
   ],
   "some_configurations": {
+    "AsanDetectionTests": [
+      "x64-debug-null-asan"
+    ],
     "AudioPageTests": [
       "wasm-debug",
       "wasm-release",
@@ -42,7 +46,8 @@
     ],
     "AudioSmokeTests": [
       "x64-debug-null",
-      "x64-release-null"
+      "x64-release-null",
+      "x64-debug-null-asan"
     ],
     "BrowserProtocolTests": [
       "wasm-debug",
@@ -64,7 +69,8 @@
       "x64-debug-vulkan",
       "x64-release-vulkan",
       "x64-debug-null",
-      "x64-release-null"
+      "x64-release-null",
+      "x64-debug-null-asan"
     ],
     "ComponentsPageTests": [
       "wasm-debug",
@@ -141,7 +147,8 @@
     ],
     "LocalMultiplayerSmokeTests": [
       "x64-debug-null",
-      "x64-release-null"
+      "x64-release-null",
+      "x64-debug-null-asan"
     ],
     "MinimalLoadFailurePageTests": [
       "wasm-debug",
@@ -163,11 +170,13 @@
       "x64-debug-vulkan",
       "x64-release-vulkan",
       "x64-debug-null",
-      "x64-release-null"
+      "x64-release-null",
+      "x64-debug-null-asan"
     ],
     "MinimalStateTests": [
       "x64-debug-null",
-      "x64-release-null"
+      "x64-release-null",
+      "x64-debug-null-asan"
     ],
     "RenderContextLossTests": [
       "wasm-debug",

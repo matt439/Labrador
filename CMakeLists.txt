@@ -23,6 +23,7 @@ endif()
 
 include(cmake/settings.cmake)
 include(cmake/dependencies.cmake)
+include(cmake/sanitizers.cmake)
 include(cmake/compile_shaders.cmake)
 
 # The module graph, enforced. Runs on every build.

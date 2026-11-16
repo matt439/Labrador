@@ -1,5 +1,10 @@
 # Running a verification sweep
 
+The separate opt-in [native-null AddressSanitizer qualification](verification-asan.md)
+uses `x64-debug-null-asan`, its own dependency triplet and a full configured
+suite with a deterministic detection probe. It is not an additional render
+track selected by `verify_changes.py` or a replacement for real-driver checks.
+
 `tools/verify_changes.py` prints the verification plan for the render, audio,
 input or app area of the engine.
 Every configure/build/test phase remains `not-run` unless `--execute` is explicit.

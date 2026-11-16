@@ -1,5 +1,16 @@
 labrador_find_package(doctest)
 
+# Test-only allocator interception; never linked into the engine or a sample.
+# Detection probes use this helper too, so they prove the same allocation path
+# retains ASan's heap and container red zones.
+function(labrador_asan_test_allocations target)
+    if(LABRADOR_ASAN)
+        target_sources(${target} PRIVATE
+            "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/asan_allocation.cpp")
+        target_compile_definitions(${target} PRIVATE LABRADOR_ASAN=1)
+    endif()
+endfunction()
+
 # One doctest executable, registered with ctest under its own name. Every
 # suite shares test_main.cpp beside this file, so a suite's folder holds only
 # its cases; LINKS names what the cases are tested against, which is not
@@ -26,6 +37,7 @@ function(labrador_add_test_suite name)
         doctest::doctest
         labrador_settings
     )
+    labrador_asan_test_allocations(${name})
     add_test(NAME ${name} COMMAND ${name})
     set_tests_properties(${name} PROPERTIES TIMEOUT ${suite_TIMEOUT})
 endfunction()
@@ -43,3 +55,4 @@ add_subdirectory(minimal)
 add_subdirectory(render)
 add_subdirectory(scene)
 add_subdirectory(ui)
+add_subdirectory(asan)
