@@ -107,9 +107,10 @@ loss, quit and replay over WebDriver BiDi
 `-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` and runs all eight entries.
 The option puts Firefox on ANGLE/WARP in a disposable profile; each sample
 refuses a renderer other than Microsoft's Direct3D11 Basic Render Driver.
-Verbose CI output retains the browser/device evidence. Hosted execution of
-this configuration remains to be verified after publication; local WARP is
-not physical-GPU or audible-audio acceptance.
+Verbose CI output retains the browser/device evidence. Hosted Firefox 159.0.1
+passed all eight entries on WARP in runs recorded in
+[web-to-be-tested.md](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16);
+software rendering is not physical-GPU or audible-audio acceptance.
 CI's `safari` job, on macos-latest, runs the six sample pages and the bundle
 page plus the pixel readback exit protocol from the `wasm` job's artifacts in desktop Safari through
 [run_safari.mjs](tests/render/web/run_safari.mjs) and safaridriver; it is not
