@@ -13,6 +13,7 @@ if(WIN32 AND LABRADOR_RENDER_BACKEND STREQUAL "null"
     set(minimal_dir "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/minimal")
     add_executable(MinimalStateTests
         state_tests.cpp
+        close_request_tests.cpp
         "${minimal_dir}/states/confirm_state.cpp"
         "${minimal_dir}/states/hello_state.cpp"
     )

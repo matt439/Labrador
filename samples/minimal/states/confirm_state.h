@@ -30,6 +30,9 @@ public:
 	// keeps drawing and this appears on top of it.
 	bool covers_screen() const override { return false; }
 
+	// A repeated native close leaves this question open for its own answer.
+	bool on_close_requested() override { return false; }
+
 private:
 	labrador::Application* app_ = nullptr;
 	std::wstring question_;

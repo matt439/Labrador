@@ -48,8 +48,8 @@ checked at the pop. This is how the minimal sample asks before quitting:
 
 <SourceFile
 	path="samples/minimal/states/hello_state.cpp"
-	from="this->context()->push<bool>("
-	to="return;"
+	from="void HelloState::ask_to_quit()"
+	to="}"
 />
 
 The question, `ConfirmState`, knows nothing about the screen below it. It answers by popping,
@@ -92,6 +92,26 @@ itself. The minimal sample dims its greeting:
 
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="void HelloState::on_suspend()" to="}" />
 
+## When the player closes the native window
+
+The X button, Alt+F4 and the native system menu ask the top state's
+`on_close_requested()`. Its default answer is `true`, which closes immediately.
+Return `false` to keep running while your game asks a question or saves its work.
+The development minimal template uses the same question as Escape:
+
+<SourceFile path="samples/minimal/states/hello_state.cpp" from="bool HelloState::on_close_requested()" to="}" />
+
+The stack keeps that state alive until the callback returns, then applies its pushes,
+pops and transitions. Later requests ask the new top; `ConfirmState` returns `false`
+so repeated X presses leave one question open. Recursive requests during the callback
+or its stack changes are ignored. Once the player answers yes, `Application::quit()`
+closes without asking again. Destruction also asks nothing.
+
+This hook is for native close requests. It cannot veto browser tab closure, page
+navigation, session shutdown or forced termination. The browser game's own Quit button
+still calls `quit()` and lets the host page decide what follows. This API is newer than
+the v0.3.0 starter; [move the engine pin](/docs/guides/move-pin/) before adding it to that release.
+
 ## When the window loses focus
 
 Alt-tab, minimising and the machine going to sleep are a different question from being covered.
@@ -128,7 +148,7 @@ and has not left, so the pads go on reading and no state is told.
   updated, so a developer console or a frame-time overlay that must run whatever is on top is
   not pushed. It is the one state on the application's stack, and it owns a `StateContext` that
   holds the game's: its `update()` runs its own code and then the game's, its `draw()` draws the
-  game and then draws over it, and it forwards activation. The engine's own tests hold this
+  game and then draws over it, and it forwards activation and close requests. The engine's own tests hold this
   shape, below.
 
 <SourceFile path="tests/core/state_context_tests.cpp" from="class RootState : public State" to="};" />

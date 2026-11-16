@@ -41,6 +41,12 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-16.** Native X, Alt+F4 and system-menu Close ask the same quit
+  question as Escape or B. `HelloState::on_close_requested()` opens it and
+  `ConfirmState` declines repeat close requests; answering yes still calls
+  final `Application::quit()`. Existing copies can retain immediate close
+  or copy these overrides and the shared `ask_to_quit()` helper. The browser
+  cannot veto tab closure or navigation through this hook.
 - **2026-11-15.** Web Audio now owns pending resume requests during fast quit.
   A browser game moving its engine pin needs no template changes; concurrent
   activation gestures share a request, and intentional close handles only

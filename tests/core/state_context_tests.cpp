@@ -83,6 +83,14 @@ namespace
 				this->on_deactivation_();
 			}
 		}
+		bool on_close_requested() override
+		{
+			this->log_->push_back(this->name_ + ":close-enter");
+			const bool allow_close = this->on_close_ ? this->on_close_() :
+				State::on_close_requested();
+			this->log_->push_back(this->name_ + ":close-exit");
+			return allow_close;
+		}
 
 		void on_init(std::function<void()> action)
 		{
@@ -110,6 +118,10 @@ namespace
 		{
 			this->on_resumption_ = std::move(action);
 		}
+		void on_close(std::function<bool()> action)
+		{
+			this->on_close_ = std::move(action);
+		}
 
 	private:
 		std::string name_;
@@ -119,6 +131,7 @@ namespace
 		std::function<void()> on_deactivation_;
 		std::function<void()> on_suspension_;
 		std::function<void()> on_resumption_;
+		std::function<bool()> on_close_;
 		bool covers_screen_ = true;
 		bool touched_ = false;
 	};
@@ -181,6 +194,7 @@ namespace
 
 		void on_activated() override { this->game_.notify_activation(true); }
 		void on_deactivated() override { this->game_.notify_activation(false); }
+		bool on_close_requested() override { return this->game_.notify_close_requested(); }
 
 	private:
 		std::vector<std::string>* log_ = nullptr;
@@ -982,4 +996,84 @@ TEST_CASE("a root built while the application is inactive leaves its stack inact
 	// The root missed the edge by being younger than it, and its init()
 	// asked for the level instead, so the stack it owns starts out knowing.
 	CHECK_FALSE(root->game().active());
+}
+
+TEST_CASE("close requests allow by default and ask only the current top")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	CHECK(context.notify_close_requested());
+	context.transition_to(std::make_unique<RecordingState>("base", &log));
+	CHECK(context.notify_close_requested());
+	std::unique_ptr<RecordingState> question = std::make_unique<RecordingState>("question", &log);
+	question->on_close([]() { return false; });
+	context.push(std::move(question));
+	log.clear();
+	CHECK_FALSE(context.notify_close_requested());
+	CHECK_FALSE(context.notify_close_requested());
+	CHECK(log == std::vector<std::string>{"question:close-enter", "question:close-exit",
+		"question:close-enter", "question:close-exit"});
+	CHECK(context.depth() == 2);
+}
+
+TEST_CASE("close callbacks keep their state alive through transitions and nested notification")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	std::unique_ptr<RecordingState> state = std::make_unique<RecordingState>("a", &log);
+	state->on_close([&]()
+		{
+			context.transition_to(std::make_unique<RecordingState>("b", &log));
+			CHECK_FALSE(context.notify_close_requested());
+			CHECK(context.depth() == 1);
+			return false;
+		});
+	context.transition_to(std::move(state));
+	CHECK_FALSE(context.notify_close_requested());
+	CHECK(ran_before(log, "a:close-exit", "a:dtor"));
+	CHECK(ran_before(log, "a:dtor", "b:init"));
+	CHECK(context.notify_close_requested());
+}
+
+TEST_CASE("a close request inside update preserves the enclosing state's lifetime")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	std::unique_ptr<RecordingState> state = std::make_unique<RecordingState>("a", &log);
+	state->on_close([&]()
+		{
+			context.transition_to(std::make_unique<RecordingState>("b", &log));
+			return false;
+		});
+	state->on_update([&]() { CHECK_FALSE(context.notify_close_requested()); });
+	context.transition_to(std::move(state));
+	context.update(0.0f);
+	CHECK(ran_before(log, "a:close-exit", "a:update-exit"));
+	CHECK(ran_before(log, "a:update-exit", "a:dtor"));
+}
+
+TEST_CASE("a throwing close callback restores notification and stack deferral")
+{
+	std::vector<std::string> log;
+	StateContext context;
+	std::unique_ptr<RecordingState> state = std::make_unique<RecordingState>("a", &log);
+	state->on_close([]() -> bool { throw std::runtime_error("close failed"); });
+	context.transition_to(std::move(state));
+	CHECK_THROWS_WITH_AS(context.notify_close_requested(), "close failed", std::runtime_error);
+	context.transition_to(std::make_unique<RecordingState>("b", &log));
+	CHECK(log.back() == "b:init");
+	CHECK(context.notify_close_requested());
+}
+
+TEST_CASE("a root forwards close requests to its owned stack")
+{
+	std::vector<std::string> log;
+	StateContext application;
+	std::unique_ptr<RootState> state = std::make_unique<RootState>(&log);
+	RootState* root = state.get();
+	application.transition_to(std::move(state));
+	std::unique_ptr<RecordingState> question = std::make_unique<RecordingState>("question", &log);
+	question->on_close([]() { return false; });
+	root->game().transition_to(std::move(question));
+	CHECK_FALSE(application.notify_close_requested());
 }

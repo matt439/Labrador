@@ -113,7 +113,7 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-88` | OPEN | should | S | API, guide and regressions implemented; finish the remaining render-matrix and website qualification (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
 | `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
 | `OCA-89` | OPEN | could | XS | Parser and native/wasm regressions pass; close after the combined website gate (`REV#34`). [Scope](docs/product/BACKLOG.md#oca-89). |
-| `OCA-90` | OPEN | should | M | Let games answer native close requests, defaulting to immediate close; browser tab closure has a separate limit (`REV#39`). [Scope](docs/product/BACKLOG.md#oca-90). |
+| `OCA-90` | OPEN | should | M | Native request hooks and template confirmation pass native/wasm focused checks; combined app-matrix and browser lifecycle qualification remain. [Scope](docs/product/BACKLOG.md#oca-90). |
 | `SM-78` | OPEN | should | M | Provide a construction-time scripted/recording pad source beside the configured shipping backend in the same library (`REV#40`, issue #122). [Scope](docs/product/BACKLOG.md#sm-78). |
 | `OCA-91` | OPEN | should | S | Offer a small replaceable diagnostic callback with stderr default and defined threading/lifetime (`REV#41`). [Scope](docs/product/BACKLOG.md#oca-91). |
 | `OCA-92` | OPEN | should | M | Expose the platform reduced-motion preference; games retain effects policy and native LineSweeper consumes it (`REV#60`). [Scope](docs/product/BACKLOG.md#oca-92). |
