@@ -80,6 +80,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Report malformed hex colours explicitly
+
+**Additive API.** `colour_from_hex(std::string_view)` returns a colour for
+exactly six `RRGGBB` or eight `RRGGBBAA` hex digits, accepting either case,
+or no value for malformed input. Prefixes, whitespace and shortened forms
+are refused. Six digits are opaque; eight use the final byte as straight
+alpha, with `00` transparent and `ff` opaque. The existing `Colour` hex
+constructor and `set_from_hex` retain their opaque-black fallback.
+
 ### 2026-11-16 - Query loaded texture dimensions through RenderResources
 
 **New API.** `RenderResources::texture_size(TextureHandle)` returns the current
