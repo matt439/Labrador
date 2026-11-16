@@ -1422,7 +1422,7 @@ No new removal API or stale-handle guarantee is implied.
 
 - [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
 - [ ] **[OCA-103](#oca-103)** Could · S · The Outside Adopter: Copy a camera that follows through a dead zone and respects world bounds
-- [ ] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
+- [x] **[OCA-104](#oca-104)** Could · S · The Outside Adopter: Generate grid sprite-sheet JSON without hand-calculating every rectangle
 - [ ] **[OCA-105](#oca-105)** Should · L · The Outside Adopter: Play a PCM WAV or caller-supplied samples through any audio backend
 - [ ] **[OCA-106](#oca-106)** Could · S · The Outside Adopter: Share pointer hit arithmetic without giving up page-owned target geometry
 - [ ] **[SM-86](#sm-86)** Could · M · The Sole Owner-Maintainer: Record the window monitor's nominal refresh without inferring achieved frame rate
@@ -2681,6 +2681,35 @@ and run the website gate.
 
 Selected from
 [`IDEA#5`](../feature-candidates.md#idea5-a-grid-sprite-sheet-authoring-command).
+
+**Completed 2026-11-17.** `tools/grid_sheet.py` uses only the standard library
+to generate the existing unrotated JSON from image/grid dimensions, named
+cells and horizontal strips. Output has fixed key/table order, UTF-8/LF and
+no machine or time fields. Validation uses unbounded integer arithmetic,
+checks emitted signed-int fields and the loader's strip-count limit, and
+replaces output only after the definition and temporary write succeed.
+Empty-strip geometry and finite timing retain the loader's semantics; the
+tool's positive cells and per-table duplicate refusal leave hand-authored
+signed rectangles and the runtime schema unchanged.
+
+Sixteen offline fixtures passed, including actual CLI output, deterministic
+bytes, refusals preserving existing output and a standalone copy with no
+checkout or extra package. The documented command reproduced the delivered
+`animation_preview.json` exactly after checkout-newline normalization.
+`AssetsTests` and `ComponentsTests` passed in native Debug null and wasm
+Debug null, using installed dependencies: the generated fixture traverses
+the real reader, the existing atlas traverses ResourceLoader/null resources
+and recorded UVs, and the copied example checks looping/one-shot playback.
+No image was generated or edited, no new ctest entry was added and no visual
+acceptance claim is made.
+
+The authoring contract is [Grid sheets](../grid-sheets.md); the animation
+guide has the copyable generation route and keeps manual JSON for released
+starters without the new tool. The website gate passed check, 200 tests,
+build and release assembly. The broad lint run at the requested `5cff44b9`
+base passed its first eleven steps; its 412-test Python suite retained only
+the previously identified scripted-pad CI retry-inventory failure, with one
+skip. That integration repair remains separate from this authoring story.
 
 **Acceptance**
 

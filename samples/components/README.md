@@ -127,6 +127,12 @@ are MIT-licensed; keep `animation_preview.LICENSE.txt` when copying them.
 [The source record](source/README.md) describes the pixels and regeneration
 command. No image tool or Python is required to build the checked-in content.
 
+To author only the JSON for a uniform grid, use
+[`tools/grid_sheet.py`](../../tools/grid_sheet.py), with explicit image/grid
+dimensions, named cells and horizontal strips. The
+[grid-sheet instructions](../../docs/grid-sheets.md) reproduce this sample's
+two strips without regenerating its artwork or changing the runtime schema.
+
 The [Sprites and text guide](https://labradorengine.com/docs/guides/sprites-and-text/#sprites-from-a-sheet)
 quotes the named resolution, sample clock and public `frame_rect` draw path.
 Timing tests use in-memory sheets, reader tests inspect the checked-in pair,

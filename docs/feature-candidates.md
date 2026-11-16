@@ -21,8 +21,8 @@ owns the implementation stories and their prerequisites.
 ## Owner selection, 2026-11-16
 
 The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
-`IDEA#16` as the stories linked in the table below. Their implementation and
-qualification remain open. `IDEA#8` and `IDEA#18` are deferred with the named
+`IDEA#16` as the stories linked in the table below. Their individual result
+notes state implementation and qualification. `IDEA#8` and `IDEA#18` are deferred with the named
 revisit conditions. Earlier selections `IDEA#6`, `IDEA#7` and `IDEA#10` remain
 landed.
 
@@ -61,7 +61,7 @@ concrete client need.
 | `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Selected 2026-11-16 as [OCA-110](product/BACKLOG.md#oca-110), duplicate refusal and protected navigation; implementation open |
 | `IDEA#3` | Versioned saves with recovery | could | M | Selected 2026-11-16 as [OCA-112](product/BACKLOG.md#oca-112), game-owned recovery preserving previous valid and malformed/future data; implementation open |
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
-| `IDEA#5` | A grid sprite-sheet authoring command | could | S | Selected 2026-11-16 as [OCA-104](product/BACKLOG.md#oca-104); implementation open |
+| `IDEA#5` | A grid sprite-sheet authoring command | could | S | Implemented through [OCA-104](product/BACKLOG.md#oca-104), 2026-11-17: deterministic standard-library command, existing schema, native/wasm loader proof |
 | `IDEA#6` | Pointer interaction in the components gallery | could | S | Selected 2026-11-04 as OCA-83 and landed |
 | `IDEA#7` | Circle collision in the narrow phase | should | S | Selected 2026-11-04 as OCA-80 and landed |
 | `IDEA#8` | Scene queries: segment hit and region overlap | could | M | Deferred 2026-11-16 until a concrete hitscan or region-query caller supplies the need and semantics |
@@ -181,10 +181,13 @@ player cameras. Review the native/browser sample and keep `draw()` const.
 
 ## IDEA#5. A grid sprite-sheet authoring command
 
-**Result, 2026-11-16:** selected as
-[OCA-104](product/BACKLOG.md#oca-104), a deterministic authoring command for
-the existing grid-sheet JSON schema. Implementation and qualification remain
-open; image packing and a new runtime schema are outside the selected scope.
+**Result, 2026-11-17:** implemented through
+[OCA-104](product/BACKLOG.md#oca-104) by `tools/grid_sheet.py`, with the
+[authoring contract](grid-sheets.md). Sixteen offline fixtures, native-null
+and wasm-null reader/resource/example checks and the website gate passed.
+The delivered animation JSON is reproduced without changing its pixels.
+Image packing and a new runtime schema remain outside the selected scope;
+the story records the separate baseline lint integration failure.
 
 **Present evidence:** the [sprites guide](../website/src/content/docs/docs/guides/sprites-and-text.mdx)
 shows hand-authored frame/strip data, read by

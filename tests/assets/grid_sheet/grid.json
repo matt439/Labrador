@@ -1,0 +1,64 @@
+{
+    "sprite_frames": [
+        {
+            "name": "top_left",
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "size": {
+                "w": 16,
+                "h": 16
+            }
+        },
+        {
+            "name": "bottom_right",
+            "position": {
+                "x": 48,
+                "y": 16
+            },
+            "size": {
+                "w": 16,
+                "h": 16
+            }
+        }
+    ],
+    "animation_strips": [
+        {
+            "name": "row_once",
+            "first_frame": {
+                "x": 0,
+                "y": 16,
+                "w": 16,
+                "h": 16
+            },
+            "frame_count": 4,
+            "frame_time": 0.125,
+            "looping": false
+        },
+        {
+            "name": "row_loop",
+            "first_frame": {
+                "x": 16,
+                "y": 0,
+                "w": 16,
+                "h": 16
+            },
+            "frame_count": 3,
+            "frame_time": 0.25,
+            "looping": true
+        },
+        {
+            "name": "empty",
+            "first_frame": {
+                "x": 16000,
+                "y": 16000,
+                "w": 16,
+                "h": 16
+            },
+            "frame_count": 0,
+            "frame_time": 0.5,
+            "looping": false
+        }
+    ]
+}
