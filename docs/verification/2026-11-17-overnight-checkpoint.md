@@ -8,8 +8,10 @@ It does not qualify later changes merely because they share the work branch.
 
 ## Sources and results
 
-All runs used the Windows desktop, Visual Studio Community 2026 18.12 and
-the configured vcpkg toolchain. Native rasterizing tests used the RTX 5080;
+All runs used the Windows desktop, Visual Studio Community 2026 installation
+`18.9.12120.119`, its `14.51.36231` MSVC toolset and the configured vcpkg
+toolchain. The isolated Sandbox installer's 18.12 version is a separate
+environment, not the desktop toolchain. Native rasterizing tests used the RTX 5080;
 the null configurations use no graphics/audio device. Browser builds used
 Emscripten 6.0.12 and its Node 24.19.0. Chrome was 157.0.8103.78; the local
 Firefox runs used 160.0. These are local results, separate from hosted
