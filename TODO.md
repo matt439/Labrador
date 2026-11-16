@@ -127,13 +127,13 @@ five deferred review rows below keep their individual revisit triggers.
 **Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L98 to L105, owns the
 eight selected scopes and their acceptance. The [comparison selection record](docs/survey/2026-10-27.md#selection-record-of-2026-11-16)
 and [Feature candidates](docs/feature-candidates.md) own the deferrals,
-declines and remaining boundaries. These are planned stories, not results.
+declines and remaining boundaries. The table below indexes the remaining open stories;
+their owners hold completed results.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-102` | OPEN | could | S | Copyable collision-shape outlines using existing white-texture quads; no filled-geometry renderer expansion (`GAP#6`). [Scope](docs/product/BACKLOG.md#oca-102). |
 | `OCA-103` | OPEN | could | S | Add game-owned dead-zone camera following and world-edge clamps in the local-multiplayer sample (`IDEA#4`). [Scope](docs/product/BACKLOG.md#oca-103). |
-| `OCA-104` | OPEN | could | S | Generate deterministic grid-sheet JSON with the existing schema and round-trip it through the loader (`IDEA#5`). [Scope](docs/product/BACKLOG.md#oca-104). |
 | `OCA-105` | OPEN | should | L | Add bounded PCM WAV and memory-bank sound input across all three audio backends while preserving XWB (`IDEA#11`). [Scope](docs/product/BACKLOG.md#oca-105). |
 | `OCA-106` | OPEN | could | S | Share a pure hit test over page-supplied target rectangles, preserving enlarged touch targets and page policy (`IDEA#13`). [Scope](docs/product/BACKLOG.md#oca-106). |
 | `SM-86` | OPEN | could | M | Record the window monitor's nominal refresh rate with explicit unknown values; keep measured pacing separate (`IDEA#15`). [Scope](docs/product/BACKLOG.md#sm-86). |

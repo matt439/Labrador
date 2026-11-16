@@ -4,12 +4,17 @@
 labrador_add_test_suite(AssetsTests
     SOURCES
         asset_manifest_loader_tests.cpp
+        grid_sheet_loader_tests.cpp
         json_tests.cpp
         resource_loader_tests.cpp
         sound_bank_loader_tests.cpp
         sprite_sheet_loader_tests.cpp
         string_table_text_tests.cpp
     LINKS LabradorEngine
+)
+target_compile_definitions(AssetsTests PRIVATE
+    LABRADOR_GRID_SHEET_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/grid_sheet/"
+    LABRADOR_GRID_ANIMATION_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../samples/components/content/textures/"
 )
 
 # Drawing recordings and loaded-atlas integration use null render only.

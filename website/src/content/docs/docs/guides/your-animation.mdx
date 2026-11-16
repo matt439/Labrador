@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
 
 A sprite sheet is one picture holding several smaller ones, with a JSON file beside it that
 says where each of them is. An animation is a row of same-sized pictures in a sheet, shown one
@@ -60,13 +61,48 @@ cd /d C:\dev\mygame
    [Put a picture in your game](/docs/guides/your-picture/). The numbers after
    `reading lamp.png (` are the sheet's width and height.
 
-   **If you drew your own sheet**, work out a frame's size from them: its height is the sheet's
-   height, and its width is the sheet's width divided by the number of frames. The steps below
-   assume 32 by 32 and four frames. Use your numbers in place of every `32` in steps 3 and 6 and
-   of the `4` in step 3, and in step 6 put the animation at 1280 minus the frame width minus 48
-   across, in place of `1200.0f`, so that it fits in the window.
+   **If you drew your own sheet**, use its actual dimensions for `--image` and its number of
+   columns and rows for `--grid` in step 3's generator command; it calculates each cell's
+   rectangle. For the manual JSON alternative and the still picture's size in step 6, a
+   frame's height is this one-row sheet's height, and its width is the sheet's width divided by
+   the number of frames. The example below uses 32 by 32 and four frames. In step 6, put your
+   animation at 1280 minus its frame width minus 48 across, instead of `1200.0f`, so it fits.
 
 3. **Describe the sheet.** The JSON file goes beside the `.dds`, with the same name:
+
+   <a id="generate-the-grid-definition"></a>**Generate the grid definition** if your checkout
+   contains <RepoLink path="tools/grid_sheet.py">`tools/grid_sheet.py`</RepoLink>. This is new
+   development tooling, not a file in the `v0.3.0` starter; that starter can use the manual JSON
+   alternative below. The command itself uses only Python's standard library and can also run
+   as a standalone copy, with the same original JSON format. No engine change is required to
+   load its output.
+
+   It needs Python 3.10 or newer. Check it:
+
+   ```bat
+   python --version
+   ```
+
+   If Python is missing or older, follow only step 1 of
+   [Install Emscripten](/docs/guides/browser/#install-emscripten), then return here after
+   Python runs. From your project's folder, run this one command:
+
+   ```bat
+   python external\labrador\tools\grid_sheet.py --image 128 32 --grid 4 1 --frame red 0 0 --strip cycle 0 0 4 0.25 true --output game\content\textures\lamp.json
+   ```
+
+   `--image` supplies the actual 128 by 32 image size; `--grid 4 1` says it has four columns
+   and one row, so the tool works out 32 by 32 cells. `--frame red 0 0` names the first cell.
+   `--strip cycle 0 0 4 0.25 true` starts in that same cell, takes four horizontal frames,
+   gives each a quarter of a second and marks the strip as looping. Cell columns and rows
+   start at zero. Repeat either flag to name more frames or strips. The tool refuses invalid
+   or duplicate entries before replacing `lamp.json` and prints the file it wrote. If it says
+   the image dimensions do not divide evenly into the grid, correct those inputs; it does not
+   resize or repack the picture. Its <RepoLink path="docs/grid-sheets.md">full contract</RepoLink>
+   covers empty strips and the frame-count limit.
+
+   That command produces the JSON shown below. If you used it, continue at step 4.
+   **To write the file yourself instead**, open it:
 
    ```bat
    if not exist game\content\textures\lamp.json type nul > game\content\textures\lamp.json
@@ -96,14 +132,17 @@ cd /d C:\dev\mygame
      it has `frame_count` 4 frames, the next ones each directly to the right of the one before.
      Each shows for `frame_time` 0.25 seconds. `looping` says whether it starts again after the
      last; the file must have it, but the class in step 5 always starts again, whatever it says.
-     `frame_time` must be more than 0 and `frame_count` at least 1, and the sheet must be wide
-     enough for that many frames. The engine does not check those numbers when it loads the
-     file, and step 5's class needs them.
+     `frame_time` must be more than 0 and `frame_count` at least 1 for step 5's player, and the
+     sheet must be wide enough for those frames. Current development loaders check the count
+     limit and sampled rectangles when loading. Empty strips remain valid metadata, and
+     finite zero/negative timing values can be loaded, but this looping player needs those
+     stronger conditions. The generator preserves the loader's metadata contract; use the
+     positive count and duration shown here for this example.
 
    Positions count pixels from the sheet's top-left corner, with `y` growing downwards. Both
-   lists must be there, even if one is empty: `"sprite_frames": []`. The engine checks every
-   name in the file and stops the game naming any it does not know, so a misspelling does not
-   go unnoticed.
+   lists must be there, even if one is empty: `"sprite_frames": []`. Frame and strip names are
+   yours to choose; use their exact spellings in the game. Looking up a missing name fails
+   with that name, and an unknown JSON field such as `frame_cont` fails with its path and key.
 
 4. **List the sheet in the manifest.** Open it:
 
