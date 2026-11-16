@@ -57,6 +57,11 @@ carry it.
   final `Application::quit()`. Existing copies can retain immediate close
   or copy these overrides and the shared `ask_to_quit()` helper. The browser
   cannot veto tab closure or navigation through this hook.
+
+- **2026-11-16.** A native MSVC Release game may explicitly select engine IPO
+  with `LABRADOR_NATIVE_RELEASE_IPO`; its own target IPO properties remain the
+  game's choice. [The recipe](../../docs/performance/native-release-ipo.md)
+  retains Debug and browser defaults and the supported opt-out.
 - **2026-11-15.** Web Audio now owns pending resume requests during fast quit.
   A browser game moving its engine pin needs no template changes; concurrent
   activation gestures share a request, and intentional close handles only

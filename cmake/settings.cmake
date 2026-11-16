@@ -4,6 +4,8 @@
 # solution this build replaced.
 add_library(labrador_settings INTERFACE)
 
+include("${CMAKE_CURRENT_LIST_DIR}/native_release_ipo.cmake")
+
 target_compile_features(labrador_settings INTERFACE cxx_std_20)
 
 # The standard language, not a vendor's dialect of it: CMake otherwise asks
