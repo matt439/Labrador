@@ -6,6 +6,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -47,6 +48,7 @@ FIXTURE = {
     "website/src/walkthrough/CMakePresets.json": b"{}\n",
     "website/src/walkthrough/gitignore.txt": b"out/\n",
     "website/src/walkthrough/ci.yml": b"name: ci\n",
+    "website/src/walkthrough/labrador.vsconfig": b'{"version":"1.0","components":["Fixture.Cpp"]}\n',
     ".gitignore": b"out/\n",
 }
 
@@ -92,11 +94,18 @@ class StarterZipTests(unittest.TestCase):
         self.assertEqual(sorted(files), [
             ".github/workflows/ci.yml", ".gitignore", "CMakeLists.txt", "CMakePresets.json",
             "game/CMakeLists.txt", "game/README.md", "game/content/greeting.json", "game/main.cpp",
-            "game/rules/motion.h", "game/states/hello.h", "vcpkg.json",
+            "game/rules/motion.h", "game/states/hello.h", "labrador.vsconfig", "vcpkg.json",
         ])
         self.assertEqual(files["game/CMakeLists.txt"], b"game\n")
         self.assertEqual(files["game/README.md"], FIXTURE["website/src/walkthrough/game-README.md"])
         self.assertEqual(files["CMakeLists.txt"], b"root\n")
+
+    def test_optional_installer_config_is_copied_unchanged_without_changing_presets(self):
+        files = self.quietly(assemble.project_files, self.engine)
+        self.assertEqual(files["labrador.vsconfig"], FIXTURE["website/src/walkthrough/labrador.vsconfig"])
+        self.assertEqual(files["CMakePresets.json"], FIXTURE["website/src/walkthrough/CMakePresets.json"])
+        with zipfile.ZipFile(self.write("starter.zip")) as archive:
+            self.assertEqual(archive.read("mygame/labrador.vsconfig"), files["labrador.vsconfig"])
 
     def test_includes_are_edited_and_line_endings_kept(self):
         files = self.quietly(assemble.project_files, self.engine)
@@ -275,12 +284,50 @@ class StarterGitignoreTests(unittest.TestCase):
             git(project, "init", "--quiet")
             ignored = ["out/build/x64-debug/game/MyGame.exe", ".vs/slnx.sqlite", ".vs/mygame/v18/.wsuo"]
             kept = ["game/main.cpp", "game/states/hello_state.cpp", "CMakePresets.json", "vcpkg.json",
-                    "external/labrador/engine/core/state.h", ".github/workflows/ci.yml", ".gitignore"]
+                    "labrador.vsconfig", "external/labrador/engine/core/state.h", ".github/workflows/ci.yml", ".gitignore"]
             result = subprocess.run(
                 ["git", "-C", str(project), "check-ignore", "--no-index", "--stdin"],
                 input="".join(path + "\n" for path in ignored + kept).encode("utf-8"), capture_output=True,
             )
             self.assertEqual(result.stdout.decode("utf-8").split(), ignored, result.stderr)
+
+
+class InstallerSelectionTests(unittest.TestCase):
+    def test_optional_configuration_and_command_match_the_isolated_install_record(self):
+        record = (REPOSITORY / "docs/review/2026-11-10-first-run/2026-11-13-visual-studio-install.md").read_text(encoding="utf-8")
+        recorded = re.search(r"```json\n(.*?)\n```", record, re.DOTALL)
+        self.assertIsNotNone(recorded)
+        actual = (REPOSITORY / assemble.WALKTHROUGH / "labrador.vsconfig").read_text(encoding="utf-8")
+        self.assertEqual(json.loads(actual), json.loads(recorded.group(1)))
+        command = "VisualStudioSetup.exe --passive --wait --norestart --config labrador.vsconfig"
+        guide = (REPOSITORY / "website/src/content/docs/docs/get-started/prerequisites.mdx").read_text(encoding="utf-8")
+        self.assertIn(command, record)
+        self.assertIn('start "" /wait ' + command, guide)
+
+    @unittest.skipUnless(sys.platform == "win32" and Path(sys.executable).with_name("pythonw.exe").is_file(),
+                         "the Windows GUI stand-in requires pythonw.exe")
+    def test_documented_shell_wrapper_waits_for_gui_exit_and_preserves_installer_arguments(self):
+        guide = (REPOSITORY / "website/src/content/docs/docs/get-started/prerequisites.mdx").read_text(encoding="utf-8")
+        command = next(line.strip() for line in guide.splitlines() if line.strip().startswith('start "" /wait VisualStudioSetup.exe'))
+        with tempfile.TemporaryDirectory(prefix="labrador-setup-wait-") as folder:
+            root = Path(folder)
+            standin = root / "standin.py"
+            receipt = root / "receipt.json"
+            standin.write_text(
+                "import json,sys,time\nfrom pathlib import Path\ntime.sleep(0.1)\n"
+                "Path(sys.argv[1]).write_text(json.dumps(sys.argv[2:]))\nsys.exit(37)\n", encoding="utf-8")
+            executable = Path(sys.executable).with_name("pythonw.exe")
+            wrapped = command.replace("VisualStudioSetup.exe",
+                                      '"%LABRADOR_SETUP_TEST_EXE%" "%LABRADOR_SETUP_TEST_SCRIPT%" "%LABRADOR_SETUP_TEST_RECEIPT%"', 1)
+            script = root / "wait.cmd"
+            script.write_text('@echo off\n' + wrapped + '\necho RESULT:%errorlevel%\n', encoding="ascii")
+            environment = {**os.environ, "LABRADOR_SETUP_TEST_EXE": str(executable),
+                           "LABRADOR_SETUP_TEST_SCRIPT": str(standin), "LABRADOR_SETUP_TEST_RECEIPT": str(receipt)}
+            run = subprocess.run(["cmd", "/d", "/c", str(script)], capture_output=True, text=True,
+                                 timeout=10, check=True, env=environment)
+            self.assertIn("RESULT:37", run.stdout)
+            self.assertEqual(json.loads(receipt.read_text()),
+                             ["--passive", "--wait", "--norestart", "--config", "labrador.vsconfig"])
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ PLACED = {
     "CMakePresets.json": "CMakePresets.json",
     "gitignore.txt": ".gitignore",
     "ci.yml": ".github/workflows/ci.yml",
+    "labrador.vsconfig": "labrador.vsconfig",
 }
 
 # The page's <ConsumerManifest name="mygame" />.

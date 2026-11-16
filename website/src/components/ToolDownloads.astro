@@ -1,0 +1,29 @@
+---
+import { Code } from '@astrojs/starlight/components';
+
+const examples = [
+	'A suitable version of cmake was not found (required v4.3.2).',
+	'A suitable version of powershell-core was not found (required v7.5.4).',
+].join('\n');
+---
+
+<p>
+	Before building those libraries, vcpkg checks the tools it uses. It may download its own CMake
+	and PowerShell 7 even though <code>cmake --version</code> worked: its package cache depends on
+	specific tool versions, and Visual Studio does not install PowerShell 7. Lines like these announce
+	normal tool downloads, rather than a failure to configure the build:
+</p>
+<Code code={examples} lang="text" title="Example output, 13 November 2026" />
+<p>
+	Those examples came from Visual Studio 2026's bundled vcpkg on 13 November 2026. That run
+	downloaded about 53 MB of CMake and 117 MB of PowerShell. Other Visual Studio or vcpkg versions
+	can select different tools and print different versions or an order unlike this example. A clean
+	Windows Sandbox run that day fetched CMake 4.4.3, PowerShell 7.6.6 and 7-Zip 26.03; a tool's
+	downloaded version can exceed the minimum the message names.
+</p>
+<p>
+	Keep vcpkg's default tool selection. You do not need to install PowerShell 7 separately or
+	change a setting to force system tools. Let the downloads finish and check for the final
+	<code>Configuring done</code> and <code>Generating done</code> lines below. Later configures
+	reuse the downloaded tools and built libraries while their caches remain available.
+</p>

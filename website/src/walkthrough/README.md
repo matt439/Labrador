@@ -19,6 +19,16 @@ block in `game-CMakeLists.txt`.
 | `CMakePresets.json` | `CMakePresets.json` |
 | `gitignore.txt` | `.gitignore` |
 | `ci.yml` | `.github/workflows/ci.yml`, from *Check your game in CI* (`src/content/docs/docs/guides/ci.mdx`) |
+| `labrador.vsconfig` | `labrador.vsconfig`, optional input to the Visual Studio installer; also downloaded from *Install the tools* |
+
+The installer configuration uses the same five-entry selection qualified in
+the [13 November 2026 isolated install](../../../docs/review/2026-11-10-first-run/2026-11-13-visual-studio-install.md)
+on Visual Studio Community 2026 18.12.0. Its presence installs nothing and does
+not configure CMake; the manual prerequisite route remains available. The
+site endpoint reads this file directly, and `test_consumer_check_starter.py`
+holds the selection and installer command to that record. A changed component
+selection needs a new isolated qualification record, rather than borrowing
+18.12.0's result. Future installer releases remain unqualified by that run.
 
 `release-files.txt` goes nowhere: it is every file `cmake --install` puts in the
 project's release folder, which *Ship a Windows release*

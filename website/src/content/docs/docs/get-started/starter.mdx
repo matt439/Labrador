@@ -5,6 +5,7 @@ description: Download a game project with Labrador inside it, extract it, build 
 
 import { FileTree, Steps } from '@astrojs/starlight/components';
 import StarterDownload from '~/components/StarterDownload.astro';
+import ToolDownloads from '~/components/ToolDownloads.astro';
 
 Each Labrador release comes with a **starter ZIP**: a game project of your own, made from the
 engine's minimal sample, with the engine inside it. You download it, extract it, build it and
@@ -65,6 +66,11 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    vcpkg.json
    ```
 
+   This is the released `v0.3.0` ZIP's listing. Development starter ZIPs also include
+   `labrador.vsconfig`, an optional Visual Studio setup file described in
+   [Install the tools](/docs/get-started/prerequisites/#optional-visual-studio-configuration).
+   It changes none of the commands below.
+
    If the box prints `C:\dev\mygame already exists. Nothing was extracted.`, you already have a
    project called `mygame`, and the box left it as it was: follow
    [A second project](#a-second-project) in place of this step and the next. If `tar` says
@@ -108,15 +114,15 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
 
    The first time, vcpkg downloads and builds the libraries the engine uses: DirectX Tool Kit
    and the DirectXMath library it uses, the XAudio2 redistributable, the lodepng image library
-   and the doctest test framework. It may also download a CMake of its own, when Visual Studio's
-   is older than the one vcpkg asks for, and a PowerShell 7, which Visual Studio does not
-   install. If Git is not installed, it prints
+   and the doctest test framework. If Git is not installed, it prints
    `A suitable version of git was not found` and downloads a private copy of Git, about 60 MB,
    which it uses only to read its list of package versions. That is expected, and you never run
    Git yourself. With nothing cached, on a fast desktop, this configure took 2 minutes 8
    seconds, a minute of it building DirectX Tool Kit, and downloaded about 400 MB. A slower
    machine can take much longer; leave the window alone until the prompt comes back. vcpkg
    keeps what it downloaded and built, so later configures are quick.
+
+   <ToolDownloads />
 
    It has worked when the last lines are these:
 

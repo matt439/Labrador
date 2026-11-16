@@ -127,7 +127,6 @@ five deferred review rows below keep their individual revisit triggers.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-96` | OPEN | could | M | Offer optional .vsconfig setup and explain expected first-configure downloads while retaining vcpkg defaults (`REV#63`, `REV#121`). [Scope](docs/product/BACKLOG.md#oca-96). |
 | `OCA-97` | OPEN | could | M | Provide optional build/test/play helpers sharing Visual Studio discovery and the documented commands (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
 | `SM-84` | OPEN | could | M | Compile finished rule, screen and collision guide examples in a three-guide consumer pilot (`REV#133`). [Scope](docs/product/BACKLOG.md#sm-84). |
 | `OCA-98` | OPEN | could | S | Teach state-owned Random using today's API and pass plain generated values into tested rules (`REV#136`). [Scope](docs/product/BACKLOG.md#oca-98). |

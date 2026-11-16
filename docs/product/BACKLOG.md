@@ -1408,7 +1408,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
 - [x] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
 - [x] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
-- [ ] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
+- [x] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
 - [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
 - [ ] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
 - [ ] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
@@ -2237,6 +2237,28 @@ or prebuilt dependency cache. Check configuration contents, starter assembly
 and guide commands together; retain the isolated install/build evidence and
 run affected tooling tests, lint and the website gate. REV#121 has no separate
 implementation story: its documentation follow-up is owned here.
+
+**Completed 2026-11-16.** The canonical
+`website/src/walkthrough/labrador.vsconfig` uses the same five-entry selection
+qualified in the [13 November isolated install](../review/2026-11-10-first-run/2026-11-13-visual-studio-install.md)
+on Visual Studio Community 2026 18.12.0. Assembly places it at the project
+root, and the website downloads those same bytes. The optional prerequisite
+route retains manual selection and uses the recorded bootstrapper arguments
+inside `start "" /wait`, matching
+[Microsoft's wait guidance](https://learn.microsoft.com/en-us/visualstudio/install/command-line-parameter-examples#using---wait).
+A GUI stand-in verifies shell waiting, argument forwarding and exit status
+without executing an installer. The guide states the measured download,
+disk/time costs and the limits of that dated qualification; later installer
+versions, a real PC's timing, UAC and restart behaviour are not claimed.
+The component IDs were rechecked in Microsoft's current component/config
+references and the installed 18.9 catalog without changing the installation.
+A shared first-configure explanation shows the recorded normal CMake and
+PowerShell messages and explains differing minimum/downloaded versions while
+keeping vcpkg defaults. It adds no PowerShell prerequisite.
+Starter/rename tooling tests pass. Real assembly, a development ZIP extracted
+with Windows tar, and the built website endpoint have identical configuration
+bytes, while presets and manifests remain ordinary. The website gate passes.
+No install, update, system setting or deployment was performed.
 
 <a id="oca-97"></a>
 ### OCA-97. Wrap the starter's documented build, test and play commands

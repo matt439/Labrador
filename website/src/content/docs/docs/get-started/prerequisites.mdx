@@ -5,6 +5,7 @@ description: Visual Studio with the C++ workload, Git if you take the Git route,
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 import StarterGate from '~/components/StarterGate.astro';
+import { sitePath } from '~/lib/site-path';
 
 Labrador builds on **Windows**, with the Microsoft C++ compiler, the program that translates
 your C++ code into compiled parts of the game. Everything the Windows build
@@ -80,6 +81,10 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
 
 1. **Install Visual Studio 2022 or newer**, with the **Desktop development with C++**
    workload, a named group of related tools in the installer. The free Community edition is enough.
+
+   These are the manual steps. For a new Visual Studio Community 2026 installation, the
+   [optional configuration route](#optional-visual-studio-configuration) selects the same
+   prerequisites with a file and an installer command.
 
    Open [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/) and,
    under **Visual Studio Community**, click **Free download**. Your browser saves
@@ -303,6 +308,62 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
    ```
 
 </Steps>
+
+## Optional Visual Studio configuration
+
+For a **new Visual Studio Community 2026 installation**, you can use
+<a href={sitePath('/labrador.vsconfig')} download="labrador.vsconfig">Download labrador.vsconfig</a>
+instead of ticking components in step 1. Save it in **Downloads**. It selects the C++ desktop
+workload, the x64/x86 compiler, CMake tools, vcpkg and the Windows 11 SDK. The file is input to
+Microsoft's installer: saving it alone installs nothing, and it does not configure your game
+or replace the later CMake commands. The manual steps above remain available.
+
+1. Download `VisualStudioSetup.exe` from **Free download** under **Visual Studio Community**
+   on [Microsoft's downloads page](https://visualstudio.microsoft.com/downloads/), as step 1
+   describes. Keep it beside `labrador.vsconfig` in **Downloads**; do not open it yet.
+2. Open Start, type `Command Prompt`, right-click **Command Prompt**, choose **Run as
+   administrator**, and approve Windows' prompt. This is an ordinary administrator command
+   prompt, used only for the installation; Visual Studio's x64 prompt does not exist yet.
+   Run these two lines:
+
+   ```bat
+   cd /d "%USERPROFILE%\Downloads"
+   start "" /wait VisualStudioSetup.exe --passive --wait --norestart --config labrador.vsconfig
+   ```
+
+   The installer shows progress without asking which components to select. `start /wait`
+   keeps this prompt waiting for the program, and the installer's `--wait` keeps the program
+   waiting until installation finishes. A requested restart is delayed. When the prompt
+   returns, run:
+
+   ```bat
+   echo %errorlevel%
+   ```
+
+   `0` means it completed successfully. `3010` means it completed but needs a restart before
+   use: save your work and restart Windows. Other numbers mean the install did not complete;
+   use step 1's failure advice and Microsoft's
+   [installer exit codes](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio#error-codes).
+3. Close that prompt and continue at [step 2](#install-git), where Git is optional for the
+   starter route, then open the x64 Native Tools Command Prompt and run step 4's checks.
+
+**Already have Visual Studio?** Keep step 1's **Modify** route. Microsoft also documents
+**More > Import configuration** in the
+[Visual Studio Installer](https://learn.microsoft.com/en-us/visualstudio/install/import-export-installation-configurations),
+followed by reviewing the selection and choosing **Modify**. The command above was checked
+for a new installation, not for modifying an existing one.
+
+**What was measured:** on 13 November 2026 that five-entry selection and installer arguments installed
+Visual Studio Community 2026 **18.12.0** on a clean Windows 11 Sandbox, with exit code `0`.
+It downloaded **2.45 GB**, used **10.53 GB** of disk and took **206 minutes** on the sandbox's
+slow disk; the Windows SDK accounted for more than two hours of fixed waits. The `v0.3.0`
+starter then built, passed both tests and ran in **93 seconds**, with no Git or Python installed.
+This qualifies that version and selection. The download link can supply a later version;
+that run does not qualify a later installer or predict a real PC's time. The administrator
+prompt and a restart request were not observed in the sandbox.
+
+Development starter ZIPs also contain `labrador.vsconfig` beside `CMakePresets.json`.
+The released `v0.3.0` starter does not; its readers can use the download above.
 
 ## If VCPKG_ROOT is not set
 

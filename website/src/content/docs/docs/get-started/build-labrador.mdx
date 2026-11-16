@@ -5,6 +5,7 @@ description: Clone the engine, configure it with a preset, build it and run its 
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 import ReleaseNote from '~/components/ReleaseNote.astro';
+import ToolDownloads from '~/components/ToolDownloads.astro';
 
 This page, [Run the minimal sample](/docs/get-started/run-minimal/) and
 [Start your own project](/docs/get-started/your-project/) are the route for people who use Git.
@@ -47,14 +48,14 @@ Every command on this page runs in the x64 Native Tools Command Prompt from
 
    The first time you run this, vcpkg downloads and builds Labrador's dependencies: DirectX Tool
    Kit and the DirectXMath library it uses, the XAudio2 redistributable, the doctest test
-   framework and the lodepng image library. It may also download a CMake of its own, when
-   Visual Studio's is older than the one vcpkg asks for, and a PowerShell 7, which Visual Studio
-   does not install. With nothing cached, the first configure downloads
+   framework and the lodepng image library. With nothing cached, the first configure downloads
    about 330 MB in all.
    On a fast desktop with an empty cache that configure took 2 minutes 17 seconds, 1.2 minutes of
    it vcpkg building seven packages, and vcpkg keeps the results, so later configures are quick.
    A slower machine can take much longer; leave the window alone until the prompt comes back.
    The whole build folder, `out`, comes to about 1.3 GB once the next two steps have run.
+
+   <ToolDownloads />
 
    It has worked when the last lines are these, with your own folder in the last one:
 
