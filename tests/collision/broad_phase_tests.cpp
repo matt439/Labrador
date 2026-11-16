@@ -13,6 +13,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -312,9 +313,10 @@ TEST_SUITE("BroadPhaseTests")
 
 	// Converting a NaN or an out-of-range value to a cell coordinate is
 	// undefined behaviour, so these boxes are the ones a grid gets wrong
-	// quietly. The sweep is still the specification: NaN boxes intersect
-	// nothing, infinite and enormous ones intersect what they cover.
-	TEST_CASE("the grid agrees with the sweep on NaN, infinite and enormous boxes")
+	// quietly. The raw box predicates remain total: NaN boxes intersect
+	// nothing, infinite and enormous ones intersect what they cover. The
+	// higher-level contact sweep explicitly refuses nonfinite defining fields.
+	TEST_CASE("the grid stays total while contacts refuse NaN and infinite defining fields")
 	{
 		const float nan = std::numeric_limits<float>::quiet_NaN();
 		const float inf = std::numeric_limits<float>::infinity();
@@ -377,13 +379,48 @@ TEST_SUITE("BroadPhaseTests")
 			}
 
 			const std::vector<CollisionObject*> objects = pointers(boxes);
+			std::vector<std::pair<int, int>> expected;
+			for (size_t first = 0; first < objects.size(); ++first)
+			{
+				for (size_t second = first + 1; second < objects.size(); ++second)
+				{
+					if (objects[first]->shape()->bounding_boxes_intersect(*objects[second]->shape()))
+					{
+						expected.emplace_back(static_cast<int>(first), static_cast<int>(second));
+					}
+				}
+			}
+			BroadPhase raw_grid;
+			std::vector<std::pair<int, int>> raw_pairs;
+			raw_grid.find_pairs(objects, raw_pairs);
+			CHECK(raw_pairs == expected);
+
+			std::vector<CollisionObject*> finite_objects;
+			for (CollisionObject* object : objects)
+			{
+				try
+				{
+					object->validate_finite_shape();
+					finite_objects.push_back(object);
+				}
+				catch (const std::invalid_argument&)
+				{
+					// Deliberately malformed fixtures still exercise the raw grid
+					// above, but cannot participate in the contact boundary.
+				}
+			}
 
 			std::vector<Contact> swept;
-			find_contacts(objects, swept);
+			if (finite_objects.size() != objects.size())
+			{
+				CHECK_THROWS_AS(find_contacts(objects, swept), std::invalid_argument);
+				CHECK(swept.empty());
+			}
+			find_contacts(finite_objects, swept);
 
 			BroadPhase broad_phase;
 			std::vector<Contact> indexed;
-			find_contacts(objects, indexed, &broad_phase);
+			find_contacts(finite_objects, indexed, &broad_phase);
 
 			CHECK(same(swept, indexed));
 			CHECK(std::isfinite(broad_phase.cell_size()));

@@ -1403,7 +1403,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-80](#sm-80)** Could · S · The Sole Owner-Maintainer: A tracked C++ source cannot silently miss its CMake list
 - [x] **[SM-81](#sm-81)** Should · M · The Sole Owner-Maintainer: Qualify IPO for native MSVC Release builds before enabling it by default
 - [x] **[SM-82](#sm-82)** Should · M · The Sole Owner-Maintainer: Establish a consistently instrumented ASan lane without dropping failure coverage
-- [ ] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
+- [x] **[SM-83](#sm-83)** Should · S · The Sole Owner-Maintainer: Invalid collider data has an observable boundary result
 
 - [ ] **[OCA-93](#oca-93)** Should · S · The Outside Adopter: Know when a guide passage needs an engine newer than my starter
 - [ ] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
@@ -2041,6 +2041,23 @@ non-finite coordinates/extents with and without scene bounds, signal timing
 and valid controls; run native and wasm portable cases, relevant null scene
 integration checks and the website gate. A diagnostic sink does not replace
 the boundary's explicit result.
+
+**Completed 2026-11-16.** `CollisionObject::validate_finite_shape()` throws
+`std::invalid_argument` naming the collider tag, shape kind and field. The
+contact sweep validates every active object before emitting any pair, even
+for lone or masked objects; dispatch validates again before each live pair's
+remeasurement. A dispatch failure retains earlier callback effects.
+`Scene::in_bounds` checks with or without world bounds. `end_tick` expires
+contacts, then validates live and pending colliders before bounds retirement
+or admission. Rejection keeps ownership, pending additions and removal
+requests without new deletion flags; repair the data or explicitly remove
+it, then retry. Already flagged and requested removals are excluded.
+The low-level predicates and direct broad-phase NaN/infinity oracle remain
+unchanged, and finite huge circles with overflowing derived boxes remain
+supported. Native Debug default/null CollisionTests and SceneTests pass,
+including null culling/fan-out and allocation checks. The same portable
+suites pass under wasm-debug and wasm-release-null; the website gate checks
+the published caller contracts.
 
 The following fourteen stories are the second decision batch selected on
 2026-11-16. Their acceptance describes future work; implementation and

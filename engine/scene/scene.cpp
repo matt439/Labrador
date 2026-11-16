@@ -112,6 +112,7 @@ namespace labrador
 
 	bool Scene::in_bounds(const CollisionObject& object) const
 	{
+		object.validate_finite_shape();
 		if (!this->bounds_.has_value())
 		{
 			return true;
@@ -154,6 +155,29 @@ namespace labrador
 		// before any participant can be destroyed, even when none retires.
 		this->contacts_.clear();
 
+		// Sort requests before checking who will survive. std::less orders
+		// unrelated pointers; requested removals may discard invalid objects,
+		// including still-pending additions.
+		std::sort(this->removals_.begin(), this->removals_.end(),
+			std::less<const GameObject*>());
+		const auto validate = [this](const std::unique_ptr<CollisionObject>& object)
+		{
+			if (!object->for_deletion() && !std::binary_search(
+				this->removals_.begin(), this->removals_.end(),
+				static_cast<const GameObject*>(object.get()), std::less<const GameObject*>()))
+			{
+				object->validate_finite_shape();
+			}
+		};
+		for (const std::unique_ptr<CollisionObject>& object : this->collision_objects_)
+		{
+			validate(object);
+		}
+		for (const std::unique_ptr<CollisionObject>& object : this->pending_collision_objects_)
+		{
+			validate(object);
+		}
+
 		// Mark out-of-bounds objects for the same retirement pass as explicit
 		// requests. Each collision object decides whether it records the flag.
 		if (this->bounds_.has_value())
@@ -161,7 +185,10 @@ namespace labrador
 			for (const std::unique_ptr<CollisionObject>& object :
 				this->collision_objects_)
 			{
-				if (!object->for_deletion() && !this->in_bounds(*object))
+				if (!object->for_deletion() &&
+					!std::binary_search(this->removals_.begin(), this->removals_.end(),
+						static_cast<const GameObject*>(object.get()), std::less<const GameObject*>()) &&
+					!this->bounds_->intersects(object->shape()->bounding_box()))
 				{
 					object->set_for_deletion(true);
 				}
@@ -183,10 +210,6 @@ namespace labrador
 		// before the adds below could admit it.
 		if (!this->removals_.empty())
 		{
-			// std::less, because operator< between unrelated pointers is
-			// not an order the standard promises and std::less is.
-			std::sort(this->removals_.begin(), this->removals_.end(),
-				std::less<const GameObject*>());
 			erase_named(this->objects_, this->removals_);
 			erase_named(this->collision_objects_, this->removals_);
 			erase_named(this->pending_objects_, this->removals_);

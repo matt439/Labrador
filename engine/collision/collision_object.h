@@ -29,6 +29,14 @@ namespace labrador
 		// GameObject::bounds(). Never null.
 		virtual const Shape* shape() const = 0;
 
+		// Throws std::invalid_argument when shape() is null, has no supported
+		// type, or its defining coordinates/extents contain a NaN or infinity.
+		// The message names this object's tag, shape kind and offending field.
+		// Reads only; never changes or retires the object.
+		// Finite degenerate/negative geometry keeps its predicate semantics;
+		// overflow in a finite shape's derived bounding box is not rejected.
+		void validate_finite_shape() const;
+
 		virtual CollisionLayer layer() const = 0;
 		virtual CollisionMask mask() const = 0;
 		virtual CollisionTag tag() const = 0;

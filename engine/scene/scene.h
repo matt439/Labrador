@@ -102,6 +102,9 @@ namespace labrador
 
 		// Takes ownership, and does not insert yet: the object is pending until
 		// the next end_tick().
+		// A pending collider's defining fields are validated by that end_tick(),
+		// before admission. Invalid data throws there and leaves it pending;
+		// the returned pointer can repair it, or remove() can discard it.
 		//
 		// Deferral is not tidiness. Objects enter the world mid-tick - a weapon
 		// fires, a piece spawns - from inside an update() the scene is running,
@@ -203,7 +206,9 @@ namespace labrador
 		const std::optional<RectangleF>& bounds() const;
 
 		// Whether the object is inside the bounds above, which is always true
-		// while they are unset. Public because "my player left the world" is a
+		// while they are unset. Validates the object's defining fields first,
+		// even without bounds; invalid data throws std::invalid_argument.
+		// Public because "my player left the world" is a
 		// simulation failure the game wants to report loudly rather than a
 		// retirement it wants performed quietly, and both readings come off the
 		// same rectangle.
@@ -236,6 +241,10 @@ namespace labrador
 		// scene destruction. end_tick() clears all contacts, including pairs
 		// whose participants survive; inspection after it needs copied values
 		// such as geometry, not participant pointers.
+		// Validates all live colliders before finding contacts, including lone
+		// and masked objects. Invalid input on entry throws std::invalid_argument
+		// with an empty contact list and no callbacks. Dispatch revalidates each pair;
+		// if a callback corrupts geometry, earlier callback effects remain.
 		void resolve();
 		std::span<const Contact> contacts() const;
 
@@ -265,6 +274,12 @@ namespace labrador
 		// A scene that has just been populated has a tick to end before it has
 		// had one, because the frame drawn before the first update() is a real
 		// frame. Whoever fills the scene calls this once.
+		//
+		// Contacts expire first. Before bounds checks, retirement or admission,
+		// validates live and pending colliders unless already flagged or named
+		// in remove(). Invalid data throws std::invalid_argument; ownership,
+		// pending additions and removal requests remain, with no new deletion
+		// flags. Repair or remove the invalid object and retry end_tick().
 		void end_tick();
 
 		// Appends this scene after earlier draws in the frame. Its first view

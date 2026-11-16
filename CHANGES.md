@@ -123,6 +123,30 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Refuse non-finite collider data at scene and contact boundaries
+
+**Behaviour change.** `find_contacts` now throws `std::invalid_argument`
+for non-finite defining coordinates or extents in any active collider,
+including lone objects and objects with non-colliding masks. It clears the
+contact list before validating the whole input, so failure emits no partial
+contacts. The message names the object's tag, shape kind and field.
+`CollisionObject::validate_finite_shape()` exposes the same read-only check.
+Finite negative/degenerate geometry and overflow in a finite shape's derived
+bounding box retain their existing semantics; low-level `BroadPhase`,
+`narrow_phase` and intersection predicates retain their total behaviour.
+
+`Scene::in_bounds` validates even without world bounds. `Scene::end_tick`
+expires contacts first, then validates live and pending colliders before
+bounds retirement or admission. A failure keeps ownership, pending additions
+and removal requests, without setting new deletion flags: repair the object
+or call `remove` and retry. Already flagged or explicitly removed objects are
+excluded. Invalid pending additions are diagnosed at `end_tick`, rather than
+at `add`. `Scene::resolve` uses the checked contact sweep; dispatch also
+validates before each pair's remeasurement, and earlier callback effects are
+not rolled back if a callback corrupts geometry. Games that intentionally
+used NaN/infinity to disable a collider must instead change its collision mask
+with finite geometry, or retire/remove it.
+
 ### 2026-11-17 - Enable qualified standalone native MSVC Release IPO
 
 **Build default.** Fresh standalone native MSVC Release configurations now

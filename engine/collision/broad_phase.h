@@ -46,6 +46,8 @@ namespace labrador
 	// field or a negative extent is tested against every other object, as
 	// an oversized object is, and cell coordinates beyond the 32-bit range
 	// clamp to its edge.
+	// This low-level enumeration remains total for those boxes; find_contacts
+	// validates colliders' defining fields before entering either enumeration.
 	class BroadPhase
 	{
 	public:
