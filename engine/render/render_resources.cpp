@@ -16,7 +16,7 @@ namespace labrador
 	//
 	// WHAT IS WRITTEN ONCE PER BACKEND, and it is the honest remainder rather
 	// than an oversight: the constructor, the destructor, the moves,
-	// resolve_texture and release_device_resources. Every one of them either
+	// resolve_texture, texture_size and release_device_resources. Each either
 	// touches the texture table or needs Impl complete in order to make or
 	// destroy one, which is the rule this class states.
 

@@ -2,6 +2,7 @@
 
 #include "engine/core/registry.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/camera.h"
 #include "engine/render/d3d12/device_resources.h"
 #include "engine/render/d3d12/sprite_pipeline.h"
@@ -68,6 +69,11 @@ namespace labrador
 		D3D12Texture& operator=(const D3D12Texture&) = delete;
 
 		int slot() const { return this->slot_; }
+		Vector2I texel_size() const
+		{
+			return Vector2I(this->width_, this->height_);
+		}
+
 		Vector2F size() const;
 
 		// Borrowed for backend operations; callers preserve the shader-resource

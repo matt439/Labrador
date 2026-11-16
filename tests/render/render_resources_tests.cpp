@@ -18,6 +18,18 @@
 using labrador::FontHandle;
 using labrador::RenderResources;
 
+TEST_CASE("texture sizes reject unresolved handles without a device")
+{
+	const RenderResources resources;
+	CHECK_THROWS_AS(resources.texture_size(labrador::TextureHandle()),
+		std::out_of_range);
+	CHECK_THROWS_AS(resources.texture_size(labrador::TextureHandle(0)),
+		std::out_of_range);
+	CHECK_THROWS_AS(resources.texture_size(
+		labrador::TextureHandle(std::numeric_limits<int>::max())),
+		std::out_of_range);
+}
+
 TEST_CASE("the font queries read through the same handle contract as the rest")
 {
 	// Constructible with no device, which is what the pimpl seam bought. This

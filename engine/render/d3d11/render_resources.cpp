@@ -61,6 +61,11 @@ namespace labrador
 			this->impl_->textures.resolve(texture_name).index());
 	}
 
+	Vector2I RenderResources::texture_size(TextureHandle texture) const
+	{
+		return this->impl_->texture(texture)->texel_size();
+	}
+
 	// Textures, and this backend has no second kind. The fonts and the sheets
 	// stay: each one's device half is a texture handle, and that slot is
 	// refilled by the reload rather than remade.

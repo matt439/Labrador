@@ -1584,6 +1584,17 @@ handles and retained handles, including null; check every render backend and
 wasm under the render verification plan, plus the website gate. SM-77 uses
 this query rather than adding a second source of texture dimensions.
 
+**Implementation and qualification, 2026-11-16:**
+`RenderResources::texture_size(TextureHandle)` returns exact integer texel
+dimensions through each backend's validated resource lookup. The first-picture
+guide derives its source rectangle and extent from that query, and marks the
+development API's release boundary. Native-null RenderTests and D3D11
+RenderTests, RenderPixelTests and RenderPixelTestsThroughPost passed, including
+non-square replacement dimensions and retained handles. The public-header
+reference parser, citation, include-wall and whitespace checks passed. Remaining
+qualification is the other native backends, wasm tracks and website gate;
+the story stays open until those checks pass.
+
 <a id="sm-77"></a>
 ### SM-77. Validate sprite-sheet frames against the atlas
 
