@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Labrador browser debugging probe</title>
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <h1>Browser C++ debugging probe</h1>
+  <p id="status" role="status">Loading the Debug module...</p>
+  <button id="run" disabled>Calculate score for two players</button>
+  <pre id="result"></pre>
+  <script>
+    var Module = {
+      onRuntimeInitialized() {
+        document.getElementById('status').textContent = 'Ready. Open DevTools Sources before calculating.';
+        document.getElementById('run').disabled = false;
+      },
+      onAbort() {
+        document.getElementById('status').textContent = 'The Debug module could not load; read the Console and Network panels.';
+      }
+    };
+    document.getElementById('run').onclick = () => {
+      document.getElementById('result').textContent = 'Expected 20; actual ' + Module._browser_score(2);
+    };
+  </script>
+  <script src="browser_fault.js"></script>
+</body>
+</html>

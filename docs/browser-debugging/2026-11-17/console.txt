@@ -1,0 +1,14 @@
+Window: "Labrador browser debugging probe - Google Chrome for Testing", App: LabradorDebugBrowser.exe.
+1148 group stdout: browser debugging example ready
+1149 group stdout: browser debugging example ready Stack table collapsed
+1153 text stdout: browser debugging example ready
+1154 group (log) stderr: intentional diagnostic example
+1156 group stderr: intentional diagnostic example Stack table collapsed
+1160 text stderr: intentional diagnostic example
+1166 group [C/C++ DevTools Support (DWARF)] Loaded debug symbols for http://127.0.0.1:49907/browser_fault.wasm, found 91 source file(s)
+1167 group [C/C++ DevTools Support (DWARF)] Loaded debug symbols for http://127.0.0.1:49907/browser_fault.wasm, found 91 source file(s) Stack table collapsed
+1169 text [C/C++ DevTools Support (DWARF)] Loaded debug symbols for
+1172 group score: 2 players produced 20 points
+1173 group score: 2 players produced 20 points Stack table collapsed
+1177 text score: 2 players produced 20 points
+1115 text Expected 20; actual 20

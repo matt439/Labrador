@@ -1417,7 +1417,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
 - [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
 - [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
-- [ ] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
+- [x] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
 - [x] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
 
 - [ ] **[OCA-102](#oca-102)** Could · S · The Outside Adopter: Copy collision-shape outline drawing built from existing sprites
@@ -2542,6 +2542,20 @@ Selected from [`REV#92`](../review/2026-11-10/FINDINGS.md#rev92).
 flag change. Follow the documented route on the named browser/toolchain,
 retain that evidence and check the guide's commands, snippets and links;
 run the website gate. This adds no cross-browser debugging-support claim.
+
+**Completed 2026-11-17.** The browser guide directs portable defects to native
+debugging first, explains stdout/stderr and pre-C++ loader failures, then links
+the isolated DWARF probe and exact recipe in `tools/browser_debug/`. On
+Emscripten 6.0.12, Chrome for Testing 151.0.7922.34 and official DWARF extension
+0.2.5854.1, the actual Sources UI paused at `browser_fault.cpp:7`, showed named
+parameters/locals, and stepped to line 8 with `total_points: 12`. Correcting the
+operator and rebuilding produced 20 at the same C++ step. Console output and a
+missing-wasm HTTP 404/abort were also observed. [The dated evidence](../browser-debugging/2026-11-17/README.md)
+retains inspected images, accessibility text and source/module/tool hashes.
+The helper prepares only the pinned official extension in an empty requested
+folder; the verification browser used a separate disposable profile. No default
+Release or bundle input changes. The website gate passes its type check, all
+200 tests, internal links and 180-page build.
 
 <a id="sm-85"></a>
 ### SM-85. Report build costs without a hard timing gate

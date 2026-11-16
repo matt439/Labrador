@@ -8,6 +8,7 @@ sidebar:
 import { Code, Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import GuideVersionNote from '~/components/GuideVersionNote.astro';
+import RepoLink from '~/components/RepoLink.astro';
 import { EMSDK_VERSION } from '~/lib/emscripten';
 
 The game you started from the [starter project](/docs/get-started/starter/) or
@@ -419,6 +420,67 @@ files that make it link again:
   [Put a picture in your game](/docs/guides/your-picture/) gives the line.
 - **`web\shell.html`, `content\manifest.json` and the starter's font** are in that list already:
   a change to any of them rebuilds the page.
+
+## Debug a browser-only problem
+
+Start with the native debugger for a defect in portable rules or ordinary C++:
+[Edit and debug in Visual Studio](/docs/get-started/debug-your-game/) gives the breakpoint,
+step and variable workflow. Use the browser route when the problem only reproduces in the
+browser, such as page loading, input or a browser API boundary.
+
+### Read output and loader errors
+
+Open DevTools **Console** with **Ctrl+Shift+J** in Chrome. `std::printf("message\n")` reaches
+ordinary console output, and `std::fprintf(stderr, "reason\n")` reaches the error channel.
+Keep the newline: stdout is line buffered. The starter's page does not override either channel.
+A C++ startup failure is also sent through `Module.onError` to the page's status line.
+
+A `.wasm` or loader script that cannot download fails before C++ runs. Read the failed URL
+and HTTP status in **Console**, then its request in **Network**; rebuilding the C++ does not
+repair a 404. The starter's loader-failure line is intentionally simpler than the console's
+reason. The page runner below treats console warnings/errors as failures, including deliberately
+printed stderr; ordinary stdout alone does not fail it.
+
+### Step through original C++
+
+One Windows route was verified with **Emscripten 6.0.12**, **Chrome for Testing
+151.0.7922.34** and the official **C/C++ DevTools Support (DWARF) 0.2.5854.1** extension.
+The <RepoLink path="tools/browser_debug/README.md">separate probe and exact setup recipe</RepoLink>
+prepare an isolated testing-browser profile and an ignored build folder. They do not change
+your normal browser or the game's Release build. Regular Chrome and Edge no longer accept
+the extension-loading command-line flags used by that recipe; use its testing browser.
+
+The small probe deliberately adds where it should multiply:
+
+<SourceFile path="tools/browser_debug/browser_fault.cpp" from={'extern "C" EMSCRIPTEN_KEEPALIVE'} to="}" />
+
+With its source and HTML copied into a separate folder, the verified Debug command is:
+
+```bat
+em++ browser_fault.cpp -g -O0 -fdebug-compilation-dir=. -sERROR_ON_WASM_CHANGES_AFTER_LINK=1 -sEXIT_RUNTIME=0 -o browser_fault.js
+```
+
+Serve that folder as the recipe describes. Full `-g` at compilation and linking retains
+**DWARF**, which describes C++ source lines, types and variables. The relative compilation
+directory lets the debugger fetch this probe's source beside its wasm over loopback HTTP.
+`-gsource-map` alone maps locations and does not establish named C++ variable inspection.
+
+In **Sources**, open `browser_fault.cpp`, set a gutter breakpoint on the `total_points`
+assignment, then click the page's **Calculate score for two players**. The verified run
+paused in `browser_score` with `player_count: 2` and `points_per_player: 10` in **Scope**.
+**Step over** (**F10** with DevTools focused) advances to `printf` and shows `total_points: 12`.
+The storage shown for that variable before its assignment is not an initialized C++ result.
+Resume, replace `+` with `*` in the copied source, rebuild and hard reload: the same step then
+shows `20`. A wasm instruction listing alone means this source-debugging setup is incomplete.
+
+The recipe links the recorded breakpoint, step and console evidence, with the tested tool
+versions and extension hash. It qualifies this pair, not every browser or extension version.
+Larger game sources use the same DWARF requirement; the existing `wasm-debug` configuration
+passes `-g`, while optimised variables can be unavailable or moved between source lines.
+
+Keep the source, Debug wasm, extension and profile out of the normal distributable. Continue
+to package `wasm-release`; this exercise changes no Release flag or bundle target. Source maps
+or separate DWARF files are extra developer artifacts only when you explicitly choose them.
 
 ## Check the page loads and quits
 

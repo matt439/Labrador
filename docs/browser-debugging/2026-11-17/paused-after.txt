@@ -1,0 +1,7 @@
+Window: "Labrador browser debugging probe - Google Chrome for Testing", App: LabradorDebugBrowser.exe.
+725 text field (edit) (settable, string) Code editor Value: #include <emscripten/emscripten.h> #include <cstdio> extern "C" EMSCRIPTEN_KEEPALIVE int browser_score(int player_count) { int points_per_player = 10; int total_points = player_count + points_per_player; std::printf("score: %d players produced %d points\n", player_count, total_points); return total_points; } int main() { std::printf("stdout: browser debugging example ready\n"); std::fprintf(stderr, "stderr: intentional diagnostic example\n"); return 0; }
+872 text Debugger paused
+904 tree item (selectable) player_count : 2 Open in Memory inspector panel
+909 tree item (selectable) points_per_player : 10 Open in Memory inspector panel
+911 tree item (selectable) total_points : 12 Open in Memory inspector panel
+913 list item (option) (selectable) ::browser_score(int) browser_fault.cpp:8

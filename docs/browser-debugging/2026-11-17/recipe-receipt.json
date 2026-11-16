@@ -1,0 +1,38 @@
+{
+  "server_command": [
+    "python",
+    "-m",
+    "http.server",
+    "8765",
+    "--bind",
+    "127.0.0.1"
+  ],
+  "responses": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "content_type": "text/html",
+      "sha256": "70c49b50aa4d8d0303d4def2b6d0b074c509c7c815fc9cdd0cfbe673822e2260"
+    },
+    {
+      "file": "browser_fault.cpp",
+      "status": 200,
+      "content_type": "text/plain",
+      "sha256": "590195b74d3a723b2926375e9c3c6c911d64947aed56f7260525335864278d85"
+    },
+    {
+      "file": "browser_fault.js",
+      "status": 200,
+      "content_type": "text/javascript",
+      "sha256": "8b13a1e16f6219a31be7f3f057a2e0878ec54484c511fe65fe226b0d51b1da57"
+    },
+    {
+      "file": "browser_fault.wasm",
+      "status": 200,
+      "content_type": "application/wasm",
+      "sha256": "61dc0928dc12c070810c6bd9b364eaa1e6b25da5a41759b68bd074ad414bbdb2"
+    }
+  ],
+  "server_stopped": true,
+  "command_representation": "Executable path shortened to its command name; all remaining recorded arguments are unchanged."
+}

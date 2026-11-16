@@ -54,7 +54,7 @@ it reads:
 | A reference page for every public header | `engine/<module>/*.h` | `/docs/reference/<module>/...` |
 | An overview listing each module's public headers | `src/lib/published.ts` | `/docs/reference/<module>/` |
 | Which samples and tests include each header | `samples/`, `tests/` | the foot of its reference page |
-| Quoted passages of code | `samples/`, `tests/` | wherever a page uses `<SourceFile>` |
+| Quoted passages of code | `samples/`, `tests/`, bounded examples in `tools/` | wherever a page uses `<SourceFile>` |
 | The `vcpkg.json` a new project needs | `vcpkg.json` | Get Started |
 | The include lines a copied sample must change | `samples/minimal/` | Get Started |
 | The revision all of it describes | `git rev-parse HEAD` | every page's footer |
