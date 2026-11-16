@@ -1,0 +1,121 @@
+{
+  "directory": "C:\\Projects\\Labrador-agent-release-rebuild\\out\\v030-final-2026-11-17",
+  "files": {
+    "checkout-eol.txt": {
+      "bytes": 89340,
+      "sha256": "cbde5feb9fba247262eb8e1cf803cac202e2cd347a89004a1b0f7f7e5da2183d"
+    },
+    "docs-build.stderr.log": {
+      "bytes": 122,
+      "sha256": "114066ce4c2d3a616edada378d48722db93385f02d8c31dceae329e21d6fb63a"
+    },
+    "docs-build.stdout.log": {
+      "bytes": 84051,
+      "sha256": "76d38c4dd527a3c8fb0f3016bcf4e0b435c937615e438eedcec3a605ea73ed17"
+    },
+    "docs-pack.stderr.log": {
+      "bytes": 125,
+      "sha256": "deec02ad1ecc6e2d39ce802892303f42693329e9bc5742544ae3c1f58f900997"
+    },
+    "docs-pack.stdout.log": {
+      "bytes": 368,
+      "sha256": "0cbb6caff5395e20b9f7ab1df65d810e344c18d3930ef1a8b1becd75dc998cee"
+    },
+    "git-version.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "git-version.stdout.log": {
+      "bytes": 29,
+      "sha256": "9d9d8a49f3de42d6e7b569bf28bd8db3ea3384c44386d6f2de4655e4ca41ff26"
+    },
+    "node-components.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "node-components.stdout.log": {
+      "bytes": 459,
+      "sha256": "126cf2f144f1cc4146b7fba655cc0a08a8714b7e424f3fe19044497764dd7a8b"
+    },
+    "node-version.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "node-version.stdout.log": {
+      "bytes": 10,
+      "sha256": "db3d2feb713e4945f390f5d41fb44fd8aaf6b8d4c564a2af9e63262172fb5a98"
+    },
+    "npm-ci.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "npm-ci.stdout.log": {
+      "bytes": 27,
+      "sha256": "edf31c5878b397470a1490273ad03febc81d31883cefda5b8dd55d3efd324104"
+    },
+    "npm-version.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "npm-version.stdout.log": {
+      "bytes": 7,
+      "sha256": "d9f29f5aab43c8c1a8d6acc856e258b89735f541aa5e1f07b39a62f28bfa8d06"
+    },
+    "originals/labrador-docs-v0.3.0.tar.gz": {
+      "bytes": 8853554,
+      "sha256": "c61377d4f4cb67d9b83d65e160cf14192f75ded07771a252b6a4c02fdab46602"
+    },
+    "originals/labrador-starter-v0.3.0.zip": {
+      "bytes": 9265469,
+      "sha256": "25db98b280e50648831ca896dad5bbd7b51788a8051dd29089ce3faa410f5869"
+    },
+    "rebuilt/labrador-docs-v0.3.0.tar.gz": {
+      "bytes": 8853554,
+      "sha256": "c61377d4f4cb67d9b83d65e160cf14192f75ded07771a252b6a4c02fdab46602"
+    },
+    "rebuilt/labrador-starter-v0.3.0.zip": {
+      "bytes": 9265469,
+      "sha256": "25db98b280e50648831ca896dad5bbd7b51788a8051dd29089ce3faa410f5869"
+    },
+    "release.json": {
+      "bytes": 6750,
+      "sha256": "84e57753a88b0039f7c9bc1d4871e4f29bfd2a18eae3bcc3219d3f813aa4cd83"
+    },
+    "report.json": {
+      "bytes": 9863,
+      "sha256": "e4ecd355ad5bb300241dbc41883b861f3cacd1fda73d6891be054d247e4a261c"
+    },
+    "source-after.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-after.stdout.log": {
+      "bytes": 169,
+      "sha256": "d7f25dd006d9a9e6980d6b71ce0901338667aab352ce92fba6ced9a6f4486746"
+    },
+    "source-before.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-before.stdout.log": {
+      "bytes": 169,
+      "sha256": "d7f25dd006d9a9e6980d6b71ce0901338667aab352ce92fba6ced9a6f4486746"
+    },
+    "starter.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "starter.stdout.log": {
+      "bytes": 1113,
+      "sha256": "c89ce40a3ed332eeb57b691c3048622818e377e094b83f54509e9d0e4c6be7b2"
+    },
+    "tag-object.json": {
+      "bytes": 660,
+      "sha256": "03847a9fe95f11765e91827f0a0d0cb54e867176faab2c4c89acf927a17f81c3"
+    },
+    "tag-ref.json": {
+      "bytes": 327,
+      "sha256": "2b0a585d99a5d8ed060da2bb50cf17f1f525936a4a114bbe7b34d3a600fa9b54"
+    }
+  }
+}

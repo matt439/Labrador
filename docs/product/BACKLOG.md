@@ -1440,7 +1440,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-88](#sm-88)** Could · S · The Sole Owner-Maintainer: Request a read-only report of CI failures by step, ref and attempt
 - [ ] **[SM-89](#sm-89)** Could · M · The Sole Owner-Maintainer: Exercise five extra configurations weekly as non-required checks — after SM-81
 - [ ] **[SM-90](#sm-90)** Should · XS · The Sole Owner-Maintainer: Invoke a small aggregate traffic/download snapshot when cutting a release
-- [ ] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
+- [x] **[SM-91](#sm-91)** Could · M · The Sole Owner-Maintainer: Compare a release rebuild with its recorded digests without publishing or replacing assets
 
 - [x] **[OCA-116](#oca-116)** Could · M · The Outside Adopter: Opt into a verified starter browser build/test workflow — after OCA-79
 - [ ] **[SM-92](#sm-92)** Should · M · The Sole Owner-Maintainer: Audit current dependency alerts and qualify selected action-runtime updates
@@ -3180,6 +3180,17 @@ creation, signing, attestation, key management or automatic scheduling.
 Offline fixtures prove match, mismatch and missing-input handling; qualify
 an explicitly requested tag rebuild separately. Update the release/rebuild
 guide and run affected tooling, lint and the website gate.
+
+**Completed 2026-11-17:** the explicitly invoked
+[compare-only tool and recipe](../release-rebuild.md) verify a named immutable
+release's remote/local tag and source, preserve downloaded originals and
+rebuilt starter/docs assets, and report exact matches, mismatches or incomplete
+runs with source, toolchain, EOL and command evidence. Twenty offline fixtures
+cover the refusal/failure and comparison boundaries. The
+[fresh v0.3.0 CRLF run](../verification/release-rebuild/2026-11-17/README.md)
+matched both immutable originals by full SHA-256. The earlier 2026-11-13
+comparison remains unchanged; signing, publication and replacement are outside
+this procedure.
 
 The following eleven stories are the fifth decision batch selected on
 2026-11-16. Their entries track implementation and qualification; SM-95

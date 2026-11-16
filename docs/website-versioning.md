@@ -646,6 +646,16 @@ build was not run. Whether the documentation snapshot depends on line endings
 too was not tested. The comparison was made once, by hand. No workflow
 repeats it, and the tag stays unsigned.
 
+### Explicit rebuild procedure
+
+SM-91 adds the [compare-only manual tool](release-rebuild.md), qualified for
+v0.3.0 again on [2026-11-17](verification/release-rebuild/2026-11-17/README.md).
+It retains immutable downloaded originals and rebuilt assets, verifies the
+source/tag and recorded digests, and records tool versions, checkout EOLs,
+commands and hash outcomes. The 2026-11-13 comparison above remains a
+historical result with its original CRLF/LF limitations. Neither result
+authorizes publication, asset replacement or a manifest change.
+
 ## Work required for v0.3.0
 
 Qualify the versioned build before cutting `v0.3.0`, then publish the first

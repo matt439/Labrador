@@ -460,6 +460,14 @@ cut once PHILOSOPHY's settle criterion has run.
    above the release's heading, and `version-string` stays as it is until the
    next release commit changes it.
 
+## Compare an existing release
+
+[Compare a release rebuild](docs/release-rebuild.md) is the manually invoked,
+compare-only procedure for a named immutable release. It preserves downloaded
+originals and rebuilt bytes, records source/toolchain/checkout conventions,
+and classifies exact hash matches, mismatches and incomplete runs. It does
+not repeat the publication commands above or change accepted asset digests.
+
 ## Commit messages
 
 An imperative subject with no full stop, then a prose body that gives the

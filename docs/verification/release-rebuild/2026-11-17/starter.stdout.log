@@ -1,0 +1,16 @@
+include: game/main.cpp: #include "game/states/hello_state.h"
+include: game/main_web.cpp: #include "game/states/hello_state.h"
+include: game/rules/motion.cpp: #include "game/rules/motion.h"
+include: game/states/confirm_state.cpp: #include "game/states/confirm_state.h"
+include: game/states/hello_state.cpp: #include "game/states/hello_state.h"
+include: game/states/hello_state.cpp: #include "game/states/confirm_state.h"
+include: game/states/hello_state.h: #include "game/rules/motion.h"
+include: game/tests/motion_tests.cpp: #include "game/rules/motion.h"
+walkthrough: root-CMakeLists.txt -> CMakeLists.txt
+walkthrough: game-CMakeLists.txt -> game/CMakeLists.txt
+walkthrough: CMakePresets.json -> CMakePresets.json
+walkthrough: gitignore.txt -> .gitignore
+walkthrough: ci.yml -> .github/workflows/ci.yml
+vcpkg.json: directxtk, doctest
+engine: 1124 files from C:\Projects\Labrador-release-v030-sm91-final
+C:\Projects\Labrador-agent-release-rebuild\out\v030-final-2026-11-17\rebuilt\labrador-starter-v0.3.0.zip: 9265469 bytes, sha256 25db98b280e50648831ca896dad5bbd7b51788a8051dd29089ce3faa410f5869
