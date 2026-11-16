@@ -39,9 +39,17 @@ this host. The story does not copy those unrelated fixes. The profiles were
 temporary runner profiles, not the owner's normal Chrome profile.
 
 The website gate passed: 81 checked files with zero errors/warnings/hints,
-200 tests, 180 generated pages and valid internal links. Compiler-free lint
-and the offline tooling suites are checked by `tools/lint_local.py` for the
-containing commit; the source files are explicitly enumerated in CMake.
+200 tests, 180 generated pages and valid internal links. The full
+`python tools/lint_local.py --base 5cff44b9` sweep passed its declaration,
+CMake and Node stages. Its 396-test Python suite found two report expectations
+fixed at the old browser inventory size and one pre-existing CI-build-wrapper
+fixture failure. The report checks now require the text page and derive the
+total from the inventory; all 73 gap-report, inventory and planner cases pass.
+The unrelated CI wrapper repair is validation dependency
+`85c9fb630e3c7e6686981a32c2e1b78a00cc0bd5` (integrated in the root as
+`3aef3f82`); it is not duplicated in this story. Final combined-root lint
+includes that repair. The current compiler-free source-enumeration tool also
+passed all 371 tracked C++ sources in this worktree.
 
 ## Visible appearance
 
