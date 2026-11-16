@@ -1,12 +1,59 @@
 # The web port — what is still to be tested
 
-Everything in `web.md`'s milestones that can be written and checked on this
-desktop has been, in headless Chrome (and headless Firefox for LineSweeper's
-drawing, the other five sample pages and `WebWindowTests`), under every preset, with the pixel tests on the RTX 5080, WARP and
-SwiftShader. What follows needs a person, hardware this machine does not have,
-a browser it does not run, or a push. Tick a box in the commit that checks it,
+This ledger combines dated results and open acceptance from `web.md`'s
+milestones. Each result applies to its recorded revision, browser and device;
+an earlier desktop or headless pass does not qualify later code or physical
+hardware. What remains needs a person, hardware, another browser or a hosted
+run. Tick a box in the commit that checks it,
 add the result to [web-as-built.md](web-as-built.md) under its milestone, and
 update `web.md` §9's status summary, milestone row or risk row.
+
+## Approved acceptance actions, 2026-11-16
+
+The owner approved the remaining acceptance scopes in the final decision
+batch. Approval records what to do; it supplies no play, listening, display,
+phone, driver or live-service result. [BACKLOG.md](../product/BACKLOG.md) owns
+the story acceptance, and [TODO.md](../../TODO.md) indexes the next actions.
+
+In TODO, `BLOCKED` on the hardware rows means approved work awaiting owner
+attendance or a physical prerequisite, not an undecided policy. `WAITING`
+on the two deploy checks means awaiting their distinct outside events.
+Listable checks stay automated; the owner's contribution remains informal
+play, listening and observations on the real devices.
+
+| Approved session | Remaining evidence and boundary |
+|---|---|
+| Pad: `OCA-48`, `OCA-45`, `PI-21`, with `BDP-06` | Informal native and Chrome play with the owned XInput pad, including background-input behaviour and how vibration feels. Record date, source and device identity with observations. Automated mapping and slot tests remain their own evidence; this session does not imply a second pad or an observed unplug-slot-0 path. |
+| MacBook Air: `SM-09` | Informal Safari play on the Air, with its actual OS/browser and played revision recorded. The earlier version ceiling and hosted Safari runs remain distinct from this unperformed acceptance. |
+| iPhone and LAN: `SM-14`, then `SM-13` | Try and correct the LAN-serving draft in the real iPhone session; retain the phone's layout, touch and measurement limits. The phone gate stays closed until its existing acceptance is met; optional Android evidence remains separate. |
+| Listening and recovery: `WEB#3`, `REV#8` | Listen through real output and observe endpoint loss/reappearance, retained-bank playback and suspension/resume. Wave recordings, fake endpoints and analyser values do not establish audible output or recovery on a physical endpoint. |
+| Displays: `BDP-07`, `REV#3`, `OCA-66` | Record physical 60/144 Hz pacing observations, the real display-change case for the D3D11 same-size factory-refresh question, and template play at actual 150% Windows scaling. Callback timing, source inspection and emulated scale do not replace visible judder, driver behaviour or the real scaled display. |
+| Radeon: `SM-01`, before `SM-07` | The already approved owner-attended BIOS enablement, AMD driver and display-path/adapter checks precede low-tier measurement. Record the actual driver and created Radeon device; a cross-adapter present or the RTX/L4 cannot supply this evidence. No current hardware state or new measurement is claimed here. |
+
+`SITE#4` waits for the next **Labrador documentation-site** deployment before
+the owner's informal iPhone search. `WEB#12` waits for the next
+**PersonalWebsite-hosted LineSweeper demo** deployment before running
+`check_live.mjs` with the intended deployed commit and retaining dated output.
+These are different deploy events. Neither deployment is performed or newly
+scheduled by this record, and the existing dated results below remain intact.
+
+`OCA-79` is approved `OPEN` work for one bounded current-release starter
+proof: plain engine files in a dedicated public test repository, its first
+push and a green copied workflow recorded in the guides. Read current account
+and repository state before that action. This approval does not extend to
+pushing the Labrador work branch, deploying a site or creating a recurring
+publication bot. No push or hosted result accompanies this planning record.
+
+`SM-30` is approved `OPEN` work to read the current Labrador documentation
+site's Cloudflare settings and reconcile only differences from
+`npm ci && npm run gate`, Node from `.node-version`, and no `NODE_VERSION`
+override. The next normal production log must show Node 24 and the gate
+before closure; no forced deployment or setting change occurs here.
+
+Labrador's `PI-14` coordination story is closed as delegated to ColourWars.
+Its candidate acceptance remains in that repository, with the previously
+recorded candidate ZIP and Sandbox limitations preserved. Delegation does not
+certify a current client release, physical pad, audible audio or Radeon run.
 
 ## Needs a push (CI)
 

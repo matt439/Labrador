@@ -65,13 +65,38 @@ of the new feature queue; the November 13 report does not qualify later
 shader/material changes. Six proposals are deferred and three policies are
 settled. `REV#156` retains only its bounded hint-wording correction as open work.
 
+**Final acceptance and client decisions, 2026-11-16:** the last eighteen
+calls are recorded. There is no unresolved `DECISION` row. Approved physical
+acceptance is `BLOCKED` on owner attendance or hardware; deploy-dependent
+checks are `WAITING`. Those statuses preserve the required evidence and do
+not tick acceptance boxes. `OCA-79` and `SM-30` are ready for their bounded
+approved work, with live-state/payload inspection before any write.
+
+`PI-14` is closed here as delegated coordination, not as new ColourWars
+qualification. Client changes are selected in BACKLOG's L129 to L131;
+`SM-78` is amended to supply a construction-time scripted/recording source
+beside the configured shipping backend in the same engine library. Configured
+null alone does not meet issue #122. Registry name recycling is declined;
+the durable name/slot and resource-lifetime boundaries remain.
+
+The earlier `OCA-79` approval gate is now clear: Later's L56 hosted starter
+proof is ready ahead of L66, under the existing return-to-earlier-ready-work
+rule. The first six selected product priorities remain the next product slice.
+
 **Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs), and `REV#156`'s hint wording. The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
 
-**Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
-- Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
-- Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `SM-30` (set Cloudflare's build command to `npm ci && npm run gate` and delete its `NODE_VERSION` variable).
-- Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy), `SITE#4` (search on the iPhone after the next deploy).
-- Client reports: `REV#105`, the verdicts on issues #122 to #124, and `REV#104`, the fix for issue #125, in [the reports table](docs/review/colourwars-reports/README.md).
+**Owner-attended acceptance remains open.** Group it without restoring manual
+checklists: pad play (`OCA-48`, `OCA-45`, `PI-21`); audio/listening and endpoint
+recovery (`WEB#3`, `REV#8`); display, DPI and pacing (`BDP-07`, `REV#3`,
+`OCA-66`); the Air/iPhone sessions (`SM-09`, `SM-14` with `SM-13`); and the
+Radeon's firmware/driver/display-path step (`SM-01`). Mapping, transport and
+listable checks stay automated; the owner's part stays informal real-device
+use and the observations that only that use can supply.
+
+**External events:** `SITE#4` waits for the documentation-site deployment;
+`WEB#12` waits for the separately hosted demo's deployment and its verifier
+receipt. `SM-30` reads and reconciles current documentation-site settings,
+then closes on a normal production log; it does not force a deployment.
 
 ## Accepted decision batch of 2026-11-16
 
@@ -90,7 +115,7 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
 | `OCA-89` | OPEN | could | XS | Add an explicit-failure hex-colour parser while preserving the existing constructor's black fallback (`REV#34`). [Scope](docs/product/BACKLOG.md#oca-89). |
 | `OCA-90` | OPEN | should | M | Let games answer native close requests, defaulting to immediate close; browser tab closure has a separate limit (`REV#39`). [Scope](docs/product/BACKLOG.md#oca-90). |
-| `SM-78` | OPEN | should | M | Add a scripted null pad backend that drives Application tests and records vibration (`REV#40`). [Scope](docs/product/BACKLOG.md#sm-78). |
+| `SM-78` | OPEN | should | M | Provide a construction-time scripted/recording pad source beside the configured shipping backend in the same library (`REV#40`, issue #122). [Scope](docs/product/BACKLOG.md#sm-78). |
 | `OCA-91` | OPEN | should | S | Offer a small replaceable diagnostic callback with stderr default and defined threading/lifetime (`REV#41`). [Scope](docs/product/BACKLOG.md#oca-91). |
 | `OCA-92` | OPEN | should | M | Expose the platform reduced-motion preference; games retain effects policy and native LineSweeper consumes it (`REV#60`). [Scope](docs/product/BACKLOG.md#oca-92). |
 | `PI-22` | OPEN | should | S | Publish CMake and public-header version facts from one canonical value, distinguishing development builds (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
@@ -187,14 +212,27 @@ scope; it does not publish a release, change settings or claim acceptance.
 | `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |
 | `SM-97` | OPEN | could | M | Pilot LineSweeper on iOS Simulator by explicit invocation, measuring reliability before recurring coverage (`REV#152`). [Scope](docs/product/BACKLOG.md#sm-97). |
 
+## Final accepted client changes of 2026-11-16
+
+**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L129 to L131, and
+[the client-report decisions](docs/review/colourwars-reports/README.md).
+The input request amends `SM-78` above; the Registry rider is declined in its
+owner. These verdicts are planned work, not implementation or remote issue closure.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `SM-98` | OPEN | should | M | Refuse known software by default in Direct3D Release; keep a labelled explicit software-test route and default-refusal coverage (`REV#104`). [Scope](docs/product/BACKLOG.md#sm-98). |
+| `OCA-120` | OPEN | should | M | Add a backend-neutral typed device-unavailable error for genuine renderer startup/capability absence, preserving detailed causes (issue #123). [Scope](docs/product/BACKLOG.md#oca-120). |
+| `PI-25` | OPEN | should | M | Make contact's other participant mutable with exact dispatch/lifetime contracts and a documented source-break migration (issue #124). [Scope](docs/product/BACKLOG.md#pi-25). |
+
 ## Input, menus, settings and saves
 
 **Owner:** [STORIES.md](docs/product/STORIES.md); order in [BACKLOG.md](docs/product/BACKLOG.md), Next X13/X14 and Later L19/L20.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-45` | DECISION | should | S | Headless coverage landed (2026-11-04): minimal's `combine_pads` rule and its MinimalTests case for a pad alone in slot 1 or 3 and slot 0 emptied. Left: the owner's informal one-pad play, in `OCA-48`'s session; the unplug-slot-0 path stays unseen on hardware. [Decision](docs/product/BACKLOG.md#next). |
-| `PI-21` | DECISION | should | S | Browser-transport test landed 2026-11-04 (`dual-rumble` played, reset on stop, suspension and teardown, against a fake actuator under Node). Left: the owner's informal pad play, natively and in Chrome, in `OCA-48`'s session. [Re-plan](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
+| `OCA-45` | BLOCKED | should | S | Owner-attended slot acceptance shares OCA-48's pad play; headless cases stand, no second pad is required and physical unplug-slot-0 remains unverified. [Scope](docs/product/BACKLOG.md#next). |
+| `PI-21` | BLOCKED | should | M | Physical native/Chrome rumble acceptance shares the pad session; automated transport evidence does not establish output or feel. [Scope](docs/review/colourwars-reports/vibration.md#acceptance-and-evidence). |
 
 ## Website and the hosted demo
 
@@ -202,10 +240,10 @@ scope; it does not publish a release, change settings or claim acceptance.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SITE#4` | DECISION | should | S | The search form no longer has Pagefind's `javascript:` action; acceptance check 15 holds it. The Simulator never reproduced the empty page. Left: the owner's informal search on the iPhone after the next deploy. |
-| `OCA-79` | DECISION | should | S | Push a current-release starter project, as *Put your project on GitHub* says, to a public test repository under the owner's account (owner's authorisation), and record its green `ci.yml` run in the guides. [Story](docs/product/BACKLOG.md#oca-79). |
-| `WEB#12` | DECISION | could | S | `check_live.mjs` passes against the host's Worker on loopback; cloud sessions cannot reach the site. Left: run it against the live demo after the next deploy and keep its dated output in [M5](docs/port/web-to-be-tested.md) in place of the manual ticks. |
-| `SM-30` | DECISION | could | S | `npm run gate` and `website/.node-version` landed; CI runs both. Left: the owner sets Cloudflare's build command to `npm ci && npm run gate` and deletes `NODE_VERSION`; the next production log showing Node 24 and the gate closes it. [Story](docs/product/BACKLOG.md#later). |
+| `SITE#4` | WAITING | should | S | After the documentation-site deploy, retain real-iPhone search observation with deployed revision/browser/date; the source fix and Simulator alone do not close it. |
+| `OCA-79` | OPEN | should | S | Approved: review a current-release starter payload, use a dedicated public test repository and retain green hosted CI; no Labrador work-branch push is authorised. [Scope](docs/product/BACKLOG.md#oca-79). |
+| `WEB#12` | WAITING | could | S | After the separately hosted demo deploy, run check_live.mjs for the intended commit and retain dated output/failures; loopback evidence is separate. [Scope](docs/port/web-to-be-tested.md). |
+| `SM-30` | OPEN | could | S | Reconcile current documentation-site Cloudflare settings to the approved gate/Node-file policy; close on a normal production log, with no forced deploy. [Scope](docs/product/BACKLOG.md#later). |
 
 ## Performance
 
@@ -213,7 +251,7 @@ scope; it does not publish a release, change settings or claim acceptance.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SM-01` | DECISION | should | S | Owner session (decided 2026-11-03, no re-plan): re-enable the integrated Radeon in the BIOS at the next reboot, install AMD's driver, then run the bench's adapter check on it. [SM-01](docs/product/BACKLOG.md#next). |
+| `SM-01` | BLOCKED | should | S | Owner attends Radeon firmware/driver setup, then adapter and display-path proof before SM-07 measurements; other hardware acceptance is unchanged. [Scope](docs/product/BACKLOG.md#next). |
 | `SM-07` | BLOCKED | should | M | Low-tier CPU-phase and cadence p99s plus separate pipeline-latency evidence under the four-core hold (D3D12/Vulkan). Needs `SM-01`'s run on the Radeon; EC2 runs do not count. See the held Vulkan pairing in [the procedure](docs/performance/local-frame-bench.md). |
 
 ## Browsers, phones and hardware
@@ -222,11 +260,11 @@ scope; it does not publish a release, change settings or claim acceptance.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-48` | DECISION | should | S | Informal play with the physical XInput pad: an `x64-release` sample, noting whether pad input reached it with another window focused, and the pad in Chrome (`BDP-06`). Mapping is SM-40's test; `BDP-06`'s Firefox half runs as `FirefoxLineSweeperBundlePageTests`. |
-| `SM-09` | DECISION | should | S | Ceiling recorded: Safari 27.0.1 on macOS 27.0.1, above the 18.4 floor. Left: the owner's informal play on the Air. CI's `safari` job plays the bundle and the six sample pages in Safari 26.6 ([record](docs/port/web-to-be-tested.md#safari-sample-checks-web1)). |
-| `SM-14` | DECISION | should | S | Drafted, untried: [lan-serve.md](docs/port/lan-serve.md) and `tools/lan_serve.py` (LAN binding, secure context, mkcert HTTPS, Web Inspector, Android Chrome). Left: follow it in `SM-13`'s iPhone session, correct it, tick the box. |
-| `WEB#3` | DECISION | should | S | Hear the audio sample through speakers (each sound, pan, pitch, volume, held keys), the first-gesture unlock in each browser, resume after a hidden tab, and `ping_adpcm.xwb` on XAudio2. Nobody has listened yet. |
-| `BDP-07` | DECISION | could | M | R5, M3's second open term: collect `requestAnimationFrame` intervals by script at 60 Hz (four screens) and 144 Hz (one screen, three unplugged); the owner judges only visible judder. [Method](docs/port/pacing-method.md). |
+| `OCA-48` | BLOCKED | should | S | Shared owner-attended native Release/Chrome pad play, retaining actual focus/background observations; mapping remains automated. [Scope](docs/product/BACKLOG.md#next). |
+| `SM-09` | BLOCKED | should | S | Keep the remaining informal Air/Safari acceptance; preserve the brief recorded play and automated Safari checks as separate evidence. [Scope](docs/product/BACKLOG.md#next). |
+| `SM-14` | BLOCKED | should | S | Use and correct the LAN-serving draft during SM-13's real-iPhone session; optional Android paths do not gate iPhone acceptance. [Scope](docs/port/lan-serve.md). |
+| `WEB#3` | BLOCKED | should | S | Keep real native/browser listening, sharing the audio/recovery session; record only output actually heard and leave unavailable paths unverified. [Scope](docs/port/web-to-be-tested.md). |
+| `BDP-07` | BLOCKED | could | M | Automate real 60/144 Hz capture while the owner judges judder; nominal refresh and frame intervals do not prove scan-out. [Scope](docs/port/pacing-method.md). |
 | `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN); R6 by [the method](docs/port/pacing-method.md). |
 | `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13`; `BDP-09`'s layout is in place. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
 | `SM-44` | DEFERRED | could | S | Optional future real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is accessible. Does not gate iPhone acceptance. |
@@ -239,31 +277,21 @@ scope; it does not publish a release, change settings or claim acceptance.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#8` | DECISION | could | S | Bounded XAudio2 recovery and deterministic policy tests implemented; record real endpoint loss/reappearance, retained-bank playback and suspension/resume. gpt6 opportunity 4. |
-| `REV#3` | DECISION | could | M | Check factory refresh in a real display-change session. [STATUS](docs/review/d3d12/STATUS.md) records bounded descriptor-query measurements, profile evidence, allocation reuse and full patterned mip read-back. |
+| `REV#8` | BLOCKED | could | S | In the attended audio session, observe actual endpoint disappearance/reappearance and retained-bank playback recovery; policy tests stay separate. [Scope](docs/review/INDEX.md#remaining-verification-and-hardware). |
+| `REV#3` | BLOCKED | could | M | Record real monitor/topology-change recovery, including D3D11's same-size factory-refresh case, in the display session. [Scope](docs/review/d3d12/STATUS.md). |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
 | `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it, and no report asks for it; pad replay also needs a scriptable `GamepadReader` (issue #122), which `REV#40` proposes. |
 | `REV#10` | DEFERRED | could | M | A frame-time overlay: the distribution, sprites submitted, particles dropped (gpt6 opportunity 5). T1: waits for a client that needs it. The measurement under it is `Application::frame_timings()` (PI-19); the overlay itself still waits. |
 
-## ColourWars and the pin
-
-**Owner:** [docs/product/STORIES.md](docs/product/STORIES.md); the drafts in ColourWars' `docs/review/engine-reports.md`, in its own repository. [docs/review/colourwars-reports/](docs/review/colourwars-reports/README.md) records the original fifteen answers, the two newer drafts and the four issues filed on 2026-11-05; its table is kept current.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `PI-14` | DECISION | should | M | Sandbox run at `v0.2.0` reached a keyboard match. Radeon criterion: not run, none available; the pad match is informal play. Run and record are ColourWars'. Owner: close as delegated, or await its `v0.3.0` run. [BACKLOG](docs/product/BACKLOG.md#next). |
-| `REV#104` | DECISION | should | S | Direct3D now reports an unflagged Basic Render Driver as `software` (issue #125); selection still reads DXGI's flag alone, so whether a release build refuses that adapter (T6, and CI's release D3D runs) is the owner's call. |
-| `REV#105` | DECISION | should | S | Verdicts on issues #123 and #124 ([draft](docs/review/colourwars-reports/contact.md)), and whether `REV#40` meets #122, whose tests link the shipping build. [Table](docs/review/colourwars-reports/README.md). |
-
 ## Records and design decisions
 
-**Owner:** each row's document; the owner's open decisions are [BACKLOG.md's table](docs/product/BACKLOG.md#decisions-only-the-owner-can-make).
+**Owner:** each row's document; [BACKLOG.md's table](docs/product/BACKLOG.md#decisions-only-the-owner-can-make) records owner choices and their acceptance boundaries.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Waits on that pin move. [Scope](docs/product/BACKLOG.md#later). |
-| `OCA-66` | DECISION | could | S | DPI declaration implemented, and CI reads it from each sample and the installed Get Started game. Closes when the owner has informally played the template on a screen at 150% scaling. [Re-plan](docs/product/BACKLOG.md#later). |
+| `OCA-66` | BLOCKED | could | S | Keep informal template acceptance at actual 150% scaling in the display session; completed manifest checks do not prove appearance. [Scope](docs/product/BACKLOG.md#later). |
 
 ## Features other engines have
 
@@ -372,6 +400,7 @@ A new row for one of these gets its section back.
 
 | area | owner | a row returns with |
 |---|---|---|
+| Client coordination/intake | [BACKLOG](docs/product/BACKLOG.md#next) and [reports](docs/review/colourwars-reports/README.md) | a new report/coordination choice; selected implementations are indexed above |
 | Game-authored post materials | [OCA-84](docs/product/BACKLOG.md#oca-84) and [effects.md §16](docs/effects.md#16) | a regression or another shader-authoring requirement |
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
@@ -415,9 +444,9 @@ Rules for writing it: read them before editing a row, not before picking one.
 
 **`status`**, a closed list:
 - `OPEN`: ready to work.
-- `DECISION`: the next step needs the owner: a call, a repository setting, a deploy, or a session with hardware the owner has. Always listed in NOW.
-- `WAITING`: waits for an event outside the work: a PR merging, a deploy.
-- `BLOCKED`: cannot be worked today: a prerequisite story is open, or it needs hardware that is not to hand.
+- `DECISION`: an unresolved choice or authorisation needs the owner. Once its scope is approved, execution and acceptance use the statuses below. Always listed in NOW.
+- `WAITING`: waits for a defined event outside the work, such as a PR merging or the relevant deployment; approval supplies no event result.
+- `BLOCKED`: cannot be worked today because a prerequisite is open, required hardware or owner attendance is unavailable, or explicitly required owner input is missing. An approved attended session stays open here until its observation is recorded.
 - `DEFERRED`: paused on purpose, until the condition in its clause holds.
 
 **`pri`:** the story's MoSCoW priority as BACKLOG.md gives it: `must` · `should` · `could`. A row with no story gets the grade its owner implies, and what the backlog put in Won't this time never gets a row.

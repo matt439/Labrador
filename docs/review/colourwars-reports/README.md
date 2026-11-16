@@ -60,17 +60,19 @@ with no client exhibit content; the client's own ledger remains its own.
 Four reports arrived as GitHub issues on 5 November 2026, after `PI-09`'s
 queue closed, through the route [CONTRIBUTING.md](../../../CONTRIBUTING.md)
 gives every consumer. They are numbered by issue, not by the client's ledger.
-**All four are open and none is decided.** The verdicts on #122, #123 and
-#124 are the owner's; #125 is a defect report whose fix is not yet made. A
-row here is ticked in the commit that answers its issue, as in the table
-below.
+**The owner selected verdicts on 2026-11-16.** The pad source, typed renderer
+refusal, mutable contact counterpart and remaining software-selection policy
+have implementation owners below. The Registry name-removal rider is
+declined with its lifetime rationale. Selection does not implement those
+changes or file their tracker responses: the issue checkboxes stay unticked
+until the implementation or recorded answer lands.
 
-| | Issue | Engine-focused claim | State on 2026-11-10 |
+| | Issue | Engine-focused claim | Owner selection, 2026-11-16 |
 |---|---|---|---|
-| [ ] | [#122](https://github.com/matt439/Labrador/issues/122) | Request. A consumer's tests cannot put a chosen `GamepadState` into a slot or see what was asked of a pad without replacing `GamepadReader`'s members at link time; `LABRADOR_INPUT_BACKEND` has no headless choice. A rider asks for a way to remove a name from a `Registry`. | Open, undecided. No decision file. The pad half is the owner's decision `REV#40` in [TODO.md](../../../TODO.md). That row describes a `null` value for `LABRADOR_INPUT_BACKEND`; the issue says a reader chosen at configure time does not meet its need, because its tests link the engine build the game ships with, and asks for one that sits beside the configured backend. The `Registry` rider has no row of its own. |
-| [ ] | [#123](https://github.com/matt439/Labrador/issues/123) | Request. A game can recognise "no usable graphics device" only by comparing an exception's message, and each render backend words its refusal differently. | Open, undecided. No decision file and no draft. |
-| [ ] | [#124](https://github.com/matt439/Labrador/issues/124) | Request. `CollisionObject::on_contact` receives `const CollisionObject& other`, so a response has no defined way to change the other participant. | Open, undecided. [contact.md](contact.md) is a draft: evidence, four options and a recommendation, with the verdict left to the owner. |
-| [ ] | [#125](https://github.com/matt439/Labrador/issues/125) | Bug. The Direct3D backends report a CPU rasteriser that lacks `DXGI_ADAPTER_FLAG_SOFTWARE` as `RenderDeviceKind::hardware`, and a release build starts on it. | Part 1 fixed in *Classify an unflagged Basic Render Driver as a software device*: both Direct3D backends classify through the shared headless `engine/render/dxgi_device_kind.h`, which answers `software` for DXGI's software flag, the Basic Render Driver's `0x1414`/`0x8c` pair or its name, tested in `RenderTests` in every configuration; CI's device step now prints the name and kind for the Direct3D entries too. Adapter selection still reads the flag alone, so a release build still starts on an unflagged CPU rasteriser and now reports it as `software`; whether it should refuse there is the owner's call ([device-kind.md](device-kind.md) part 2). No GPU-less machine was run. |
+| [ ] | [#122](https://github.com/matt439/Labrador/issues/122) | Request. A consumer's tests cannot put a chosen `GamepadState` into a slot or see what was asked of a pad without replacing `GamepadReader`'s members at link time; `LABRADOR_INPUT_BACKEND` has no headless choice. A rider asks for a way to remove a name from a `Registry`. | Accept the pad request through revised [SM-78](../../product/BACKLOG.md#sm-78): a construction-time scripted/recording source sits beside the configured shipping backend in the same engine library; configured null alone is insufficient. [scripted-pad.md](scripted-pad.md) owns the accepted seam and the declined Registry name-removal rider. Implementation, qualification and tracker response remain open. |
+| [ ] | [#123](https://github.com/matt439/Labrador/issues/123) | Request. A game can recognise "no usable graphics device" only by comparing an exception's message, and each render backend words its refusal differently. | Accept [OCA-120](../../product/BACKLOG.md#oca-120): one runtime_error-derived renderer-unavailable category preserves details and distinguishes genuine startup/device-capability absence from unrelated failures. [device-unavailable.md](device-unavailable.md) owns the scope. Implementation, qualification and tracker response remain open. |
+| [ ] | [#124](https://github.com/matt439/Labrador/issues/124) | Request. `CollisionObject::on_contact` receives `const CollisionObject& other`, so a response has no defined way to change the other participant. | Accept [PI-25](../../product/BACKLOG.md#pi-25): mutable `other` with deterministic dispatch, both halves once, one pre-response measurement and deferred lifetime rules. [contact.md](contact.md) owns the deliberate source break and migration scope. Implementation, qualification and tracker response remain open. |
+| [ ] | [#125](https://github.com/matt439/Labrador/issues/125) | Bug. The Direct3D backends report a CPU rasteriser that lacks `DXGI_ADAPTER_FLAG_SOFTWARE` as `RenderDeviceKind::hardware`, and a release build starts on it. | Reporting is already fixed in *Classify an unflagged Basic Render Driver as a software device*: both Direct3D backends use the shared headless classifier and CI prints the selected name/kind. Selection still reads only DXGI's software flag. Accept its remaining change as [SM-98](../../product/BACKLOG.md#sm-98): ordinary Release refuses known software, with explicit software-test opt-in and coverage of default refusal plus Release pixel/installed-consumer execution. [device-kind.md](device-kind.md) owns the current decision and preserved source evidence. Selection implementation, qualification and tracker response remain open. |
 
 The workarounds behind #122 to #124 are described in the issues by the
 client itself, on this repository's public tracker. The files here restate
@@ -87,8 +89,10 @@ only the engine-side claim, as the boundary above requires.
 | [content.md](content.md) | 6, 12, 15 | Above the audio seam, in `assets/json`, and in the template's CMake. Three independent PRs. |
 | [resize.md](resize.md) | 23 | The size-only Win32 path and its hidden-window activation regression. |
 | [vibration.md](vibration.md) | 25 | A narrowed output-transport decision; PI-21 owns implementation. |
-| [contact.md](contact.md) | Issue #124 | A draft, not a decision: what `on_contact` may do to the other participant. |
-| [device-kind.md](device-kind.md) | Issue #125 | A source check, not a fix: how the Direct3D backends derive `RenderDeviceKind`. |
+| [scripted-pad.md](scripted-pad.md) | Issue #122 and its Registry rider | Revised SM-78 accepts a same-library scripted source beside the configured backend; name forgetting/recycling is declined under Registry's retained-slot contract. |
+| [device-unavailable.md](device-unavailable.md) | Issue #123 | OCA-120 selects a typed renderer-startup/device-capability refusal without absorbing unrelated failures or audio policy. |
+| [contact.md](contact.md) | Issue #124 | PI-25 selects mutable `other` with dispatch/lifetime rules and a documented source migration; the original draft remains dated context. |
+| [device-kind.md](device-kind.md) | Issue #125 | Reporting is fixed; SM-98 selects default Release refusal of known software and an explicit software-test opt-in, with qualification open. |
 
 ## The decisions
 

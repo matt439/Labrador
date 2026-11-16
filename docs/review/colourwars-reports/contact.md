@@ -1,5 +1,37 @@
 # Contact responses that reach the other party: issue #124
 
+## Current decision, 2026-11-16
+
+**Accept option B as [PI-25](../../product/BACKLOG.md#pi-25).** The selected
+signature is `on_contact(CollisionObject& other, ...)`: a response may change
+the other participant during resolution. Implementation, migration and
+qualification remain open; the selection records no tracker response or
+closure.
+
+The implementation preserves and states the dispatch rules together:
+
+- A dispatched pair calls both participants once, in input order; Scene's
+  input order is its maintained collision-object registration order.
+- Both halves receive the one overlap measured immediately before either
+  responds, with opposite normals. The first response's changes do not
+  replace the measurement handed to the second.
+- Retirement suppresses later pairs, not the other half of a pair already
+  being dispatched. Scene removal/destruction remains deferred to the tick's
+  lifetime boundary; a response must not destroy participants during dispatch.
+
+The public signature change is a deliberate source break. PI-25 owns the
+override/sample/test/benchmark/guide migration and the CHANGES.md entry with
+old/new spellings and the sample migration. Drawing remains const; this
+selection adds no second response virtual, dispatch-history list or contact
+point parameter. The existing contact-list inspection route and its
+pre-response membership limits remain documented separately.
+
+The original draft below is preserved as dated context. Its undecided
+statements, options and recommendations describe the state before this
+selection; BACKLOG.md owns the accepted scope and acceptance.
+
+## Original draft, 2026-11-10
+
 **Draft, 2026-11-10. No verdict.** This file sets out the evidence, the
 options and a recommendation for
 [issue #124](https://github.com/matt439/Labrador/issues/124). The decision is
