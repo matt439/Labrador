@@ -22,7 +22,6 @@ namespace multiplayer
 		labrador::RectangleF bounds() const override;
 
 		labrador::Vector2F position(size_t player) const;
-		labrador::Camera camera(size_t player, const labrador::Viewport& viewport) const;
 		static labrador::Colour player_colour(size_t player);
 
 		// The two shared landmarks' colour, drawn in both views so the two

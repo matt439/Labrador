@@ -7,6 +7,7 @@ sidebar:
 
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 The <RepoLink path="samples/local_multiplayer">local multiplayer sample</RepoLink> starts with a
 two-player join screen, then puts both players in one arena. The top pane follows the cyan player and the bottom pane follows the
@@ -102,22 +103,41 @@ contact detection and resolution, continue with [Collision](/docs/guides/collisi
 
 ## Follow each player with a camera
 
+<GuideVersionNote kind="template" feature="the copyable FollowCamera sample helper" releaseGuide="docs/guides/local-multiplayer/" />
+
 `ViewportManager`'s `two_player` layout makes top and bottom panes from the current window
-size. The sample clears and refills the scene's view list after movement, so cameras track the
-new positions and the layout follows window resizing:
+size. The sample reserves the 68-pixel HUD strip outside each world view, then clears and
+refills the scene's view list after movement. Each player owns a separate tracking value:
 
 <SourceFile path="samples/local_multiplayer/play_state.cpp" from="void PlayState::rebuild_views()" to="}" />
 
-The camera's translation is the player's world position minus half the pane size. At scale 1,
-this puts the player at the pane centre:
+`FollowCamera` is copyable game code in this sample. Its first update starts centred, then
+applies the same zone and world constraints as later updates. It pans only enough to bring
+a target outside its inclusive dead zone back to the nearest edge.
+The sample chooses the central half of the world view, with a minimum 16-pixel inset.
+The engine supplies the unit-scale transform; it chooses no following policy:
 
-<SourceFile path="samples/local_multiplayer/arena.cpp" from="Camera Arena::camera" to="}" />
+<SourceFile path="samples/local_multiplayer/follow_camera.cpp" from="Camera FollowCamera::camera() const" to="}" />
 
 The viewport's back-buffer offset is separate. In particular, the bottom player's camera does
-not add the bottom pane's y-offset: the camera maps into pane coordinates, and the viewport
-places that pane on the buffer. Near an arena edge the camera shows the empty space beyond it;
-[A camera that follows the player](/docs/guides/your-camera/#stop-at-the-edge-of-the-world)
-stops a camera at the world's edge.
+not add the bottom pane's y-offset: the camera maps into world-view-local coordinates, and
+the viewport places that view below its HUD. World bounds take priority over the dead zone
+near an edge. An axis smaller than the view is centred rather than given reversed clamp limits:
+
+<SourceFile path="samples/local_multiplayer/follow_camera.cpp" from="if (world_size <= size)" to="}" />
+
+For a larger world axis, the first and last possible view positions bound its origin:
+
+<SourceFile path="samples/local_multiplayer/follow_camera.cpp" from="const double last = static_cast<double>(world_start) +" to="next = std::clamp(next, static_cast<double>(world_start), last);" />
+
+Resizing preserves each old world-space view centre before following and clamping again.
+Only `update` changes the helper; its camera query and all drawing are const. To use it in
+your game, copy the <RepoLink path="samples/local_multiplayer/follow_camera.h">header</RepoLink>
+and <RepoLink path="samples/local_multiplayer/follow_camera.cpp">source</RepoLink>, edit the
+source's first include to the header's new path and list the `.cpp` in both game targets.
+The copied type is `multiplayer::FollowCamera` unless you choose another namespace.
+[A camera that follows the player](/docs/guides/your-camera/#a-copyable-dead-zone-follow-camera)
+explains that optional component after its simpler starter example.
 
 `ApplicationOptions::view_capacity` is 2, reserving exactly the two recordings the layout needs.
 The thread pool ceiling is a separate choice, capped at two workers for this sample:
@@ -131,8 +151,8 @@ own worker. Both workers call `Arena::draw` on the same object. That method is `
 temporary drawing values are locals, and positions change only in `update`.
 
 The HUD runs after the world, on that view's worker. It selects the player from `view_index`
-and switches the list to the identity camera, keeping text fixed in its pane while the world
-moves beneath it:
+and restores the full pane's viewport and identity camera, keeping text outside the world
+view and fixed in its pane:
 
 <SourceFile path="samples/local_multiplayer/play_state.cpp" from="this->scene_->draw(renderer, [this]" to="list.set_camera(Camera::default_camera);" />
 

@@ -8,6 +8,7 @@
 
 #include <array>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -57,6 +58,11 @@ namespace
 			this->hold(key, false);
 		}
 
+		void ticks(int count)
+		{
+			for (int tick = 0; tick < count; ++tick) this->step();
+		}
+
 		void hold(Key key, bool down)
 		{
 			if (down) this->app_.keyboard()->on_key_down(key);
@@ -82,6 +88,18 @@ namespace
 		StateContext context_;
 		JoinState* state_ = nullptr;
 	};
+
+	const RecordedSprite& landmark(const std::vector<RecordedSprite>& sprites, int view)
+	{
+		for (const RecordedSprite& sprite : sprites)
+		{
+			if (sprite.view == view && sprite.corners[0].colour == Arena::landmark_colour)
+			{
+				return sprite;
+			}
+		}
+		throw std::runtime_error("no landmark in the expected player view");
+	}
 }
 
 TEST_CASE("couch menu routes each keyboard half to its assigned focus slot")
@@ -156,4 +174,73 @@ TEST_CASE("both couch players choosing ready replaces the menu with the shared a
 	}
 	CHECK(landmarks[0] == 2);
 	CHECK(landmarks[1] == 2);
+}
+
+TEST_CASE("the real play state follows each player independently and keeps world edges below its HUD")
+{
+	Menu menu;
+	menu.press(Key::f);
+	menu.press(Key::enter);
+	menu.press(Key::f);
+	menu.press(Key::enter);
+	const Vector2I size(1280, 720);
+	const std::vector<RecordedSprite> before = menu.draw_at(size);
+	const RecordedSprite first_before = landmark(before, 0);
+	const RecordedSprite second_before = landmark(before, 1);
+	CHECK(first_before.viewport == Viewport(0, 68, 1280, 292));
+	CHECK(second_before.viewport == Viewport(0, 428, 1280, 292));
+
+	menu.hold(Key::d, true);
+	menu.ticks(19);
+	const std::vector<RecordedSprite> inside = menu.draw_at(size);
+	CHECK(landmark(inside, 0).corners[0].position == first_before.corners[0].position);
+	CHECK(landmark(inside, 1).corners[0].position == second_before.corners[0].position);
+	menu.ticks(100);
+	menu.hold(Key::d, false);
+	const std::vector<RecordedSprite> followed = menu.draw_at(size);
+	CHECK(landmark(followed, 0).corners[0].position.x < first_before.corners[0].position.x);
+	CHECK(landmark(followed, 1).corners[0].position == second_before.corners[0].position);
+
+	menu.hold(Key::up, true);
+	menu.ticks(160);
+	menu.hold(Key::up, false);
+	const std::vector<RecordedSprite> at_top = menu.draw_at(size);
+	bool saw_top_player = false;
+	for (const RecordedSprite& sprite : at_top)
+	{
+		if (sprite.view == 1 && sprite.viewport.height == 292.0f &&
+			sprite.corners[0].colour == Arena::player_colour(1))
+		{
+			saw_top_player = true;
+			CHECK(sprite.corners[0].position.y == 0.0f);
+			CHECK(sprite.viewport.y == 428.0f);
+		}
+	}
+	CHECK(saw_top_player);
+
+	const std::vector<RecordedSprite> resized = menu.draw_at(Vector2I(1000, 801));
+	const RecordedSprite first_resized = landmark(resized, 0);
+	CHECK(first_resized.viewport == Viewport(0, 68, 1000, 332.5f));
+	const std::vector<RecordedSprite> repeated = menu.draw_at(Vector2I(1000, 801));
+	CHECK(landmark(repeated, 0).corners[0].position == first_resized.corners[0].position);
+
+	// A tiny pane still keeps its last world pixel outside the HUD. These
+	// are layout coordinates, not acceptance of a physical display at this size.
+	const std::vector<RecordedSprite> short_panes = menu.draw_at(Vector2I(320, 120));
+	int hud_rectangles = 0;
+	for (const RecordedSprite& sprite : short_panes)
+	{
+		if (sprite.viewport.height == 60.0f)
+		{
+			++hud_rectangles;
+			CHECK(sprite.corners[0].colour == Colour(12, 18, 27));
+			for (const SpriteVertex& corner : sprite.corners) CHECK(corner.position.y <= 59.0f);
+		}
+		else
+		{
+			CHECK(sprite.viewport.height == 1.0f);
+			CHECK(sprite.viewport.y == (sprite.view == 0 ? 59.0f : 119.0f));
+		}
+	}
+	CHECK(hud_rectangles == 2);
 }

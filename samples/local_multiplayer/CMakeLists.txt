@@ -7,6 +7,7 @@
 add_library(LocalMultiplayerExample STATIC
     arena.cpp
     controls.cpp
+    follow_camera.cpp
     join_rules.cpp
     join_state.cpp
     play_state.cpp

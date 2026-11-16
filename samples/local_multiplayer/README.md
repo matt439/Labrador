@@ -48,9 +48,21 @@ player manager, rebinding layer or persistent controller identity.
 `Arena` is the one `GameObject` holding both players. `Scene::update` runs once
 per tick; drawing the same arena twice never steps it twice. The state rebuilds
 the view list after movement using `ViewportManager`'s current window size.
-Each `Camera` puts its player at the centre of its own pane. The camera can see
-outside the arena near an edge; player positions remain inside it. Boundary
-clamping is sample movement policy, not collision handling.
+Each player has an independent `FollowCamera` value. Its first update starts
+centred, then applies the zone and world constraints; later updates pan only
+when that point leaves the explicit dead zone. The sample uses the central
+half of the world viewport, with a minimum
+16-pixel inset. The 68-pixel title strip is reserved outside that world view,
+so a player at the world's top edge is not covered by the HUD. Player movement
+and its boundary clamp are unchanged; they are sample policy, not collision handling.
+
+The view stops at each world edge, even when that puts the player outside its
+dead zone. On an axis where the world is no larger than the viewport, the
+world is centred with equal space outside it. Resizing preserves the previous
+world-space view centre, then applies the new dead zone and world clamp.
+`FollowCamera::update` is the only writer; `camera()` and `draw()` are const.
+The state updates tracking before copying the two cameras into the scene's
+view list. The HUD selects the full pane again after the world has drawn.
 
 The scene borrows the shell's thread pool and partitioner to demonstrate
 per-view fan-out. `Arena::draw` and the HUD callback read shared state and write
@@ -101,13 +113,16 @@ instead.
 ## Verification
 
 `LocalMultiplayerTests` covers separate keyboard/stick routing, simultaneous
-movement, speed limits, world bounds and camera centring after a resize. Under
+movement, speed limits and world bounds. Its follow-component cases cover
+inclusive dead-zone edges, minimal pans, all world edges, smaller/zero-size
+worlds, resizing and independent values; refused inputs leave tracking
+unchanged. Under
 a null preset it also draws the actual arena through both serial and parallel
 scenes, compares their recordings and checks that each player appears in both
 views without changing positions.
 
 The join reducer has 12 device-free cases covering source ownership, competing
-joins, per-player choices and disconnects. Three more cases check joined
+joins, per-player choices and disconnects. Four more cases check joined
 movement routing. Native null render/audio adds four real-menu cases with a
 hidden Application and synthetic keyboard input: independent focus slots,
 held-direction gating, resized recordings and the READY-to-arena transition.
@@ -116,6 +131,12 @@ API device. Under null render `LocalMultiplayerSmokeTests` runs the smoke test
 below, which records the draws without a device. These recordings do not establish
 appearance: the join screen is looked at on a desktop build and in a browser.
 No physical pad has driven the menu.
+
+A native-null real-state case moves only the first player through and beyond
+its zone, checks that the second camera stays put, then drives the second
+player to the top edge and checks that its world draw begins below the HUD.
+The existing serial/parallel arena recording comparison uses the same follow
+component and leaves player positions unchanged across drawing.
 
 `--smoke-test` bypasses the join menu, opens a hidden window and renders 120 fixed ticks of independent
 scripted movement and checks final positions and the view count before exiting.
@@ -132,6 +153,13 @@ The capture uses the existing PNG writer from `tools/linesweeper_capture/` and
 reads between `submit` and `end_frame`. Its parent directory must exist.
 
 ## What it borrows from outside this folder
+
+`follow_camera.h` and `follow_camera.cpp` are the copyable component. Copy both,
+change the source's first include to the header's new project path, and list
+the `.cpp` in the game's native and browser targets. It uses the existing
+engine `Camera` transform; following, dead-zone choice, world bounds and
+resize policy remain the game's. `Arena::camera`'s direct-centre formula is
+replaced by the state-owned tracking array in `PlayState::rebuild_views`.
 
 Everything else is in this folder or in the engine. A copy that leaves the
 repository has these to deal with:

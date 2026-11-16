@@ -7,7 +7,9 @@
 #include "engine/render/resource_factory.h"
 #include "engine/scene/scene.h"
 #include "samples/local_multiplayer/arena.h"
+#include "samples/local_multiplayer/follow_camera.h"
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -32,10 +34,13 @@ TEST_CASE("both views draw the same shared players and parallel draw preserves t
 		scene.end_tick();
 		arena->set_directions({ Vector2F(1, 0), Vector2F(0, -1) });
 		scene.update(0.5f);
+		std::array<FollowCamera, Arena::player_count> cameras;
 		for (size_t player = 0; player < Arena::player_count; ++player)
 		{
 			const Viewport viewport(0, static_cast<float>(player) * 360.0f, 1280, 360);
-			scene.add_view(viewport, arena->camera(player, viewport));
+			const RectangleF dead_zone(320.0f, 90.0f, 640.0f, 180.0f);
+			cameras[player].update(arena->position(player), viewport.size(), dead_zone, arena->bounds());
+			scene.add_view(viewport, cameras[player].camera());
 		}
 		return arena;
 	};

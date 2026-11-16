@@ -21,6 +21,9 @@ owns the implementation stories and their prerequisites.
 ## Owner selection, 2026-11-16
 
 The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
+`IDEA#16` as the stories linked in the table below. Their owners record current
+implementation and qualification. `IDEA#8` and `IDEA#18` are deferred with the named
+
 `IDEA#16` as the stories linked in the table below. Their individual result
 notes state implementation and qualification. `IDEA#8` and `IDEA#18` are deferred with the named
 revisit conditions. Earlier selections `IDEA#6`, `IDEA#7` and `IDEA#10` remain
@@ -60,6 +63,9 @@ concrete client need.
 | `IDEA#1` | A single-line typed-text component | could | M | Selected 2026-11-16 as [OCA-109](product/BACKLOG.md#oca-109), desktop text with length/font checks and conversion on edits; implementation open |
 | `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Selected 2026-11-16 as [OCA-110](product/BACKLOG.md#oca-110), duplicate refusal and protected navigation; implementation open |
 | `IDEA#3` | Versioned saves with recovery | could | M | Selected 2026-11-16 as [OCA-112](product/BACKLOG.md#oca-112), game-owned recovery preserving previous valid and malformed/future data; implementation open |
+| `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Landed 2026-11-17 as [OCA-103](product/BACKLOG.md#oca-103): copyable per-player tracking, world bounds and explicit resize/small-world policy |
+| `IDEA#5` | A grid sprite-sheet authoring command | could | S | Selected 2026-11-16 as [OCA-104](product/BACKLOG.md#oca-104); implementation open |
+
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Selected 2026-11-16 as [OCA-103](product/BACKLOG.md#oca-103); implementation open |
 | `IDEA#5` | A grid sprite-sheet authoring command | could | S | Implemented through [OCA-104](product/BACKLOG.md#oca-104), 2026-11-17: deterministic standard-library command, existing schema, native/wasm loader proof |
 | `IDEA#6` | Pointer interaction in the components gallery | could | S | Selected 2026-11-04 as OCA-83 and landed |
@@ -160,10 +166,15 @@ future data intact until the selected policy permits replacement.
 
 ## IDEA#4. A bounded, dead-zone camera-follow component
 
-**Result, 2026-11-16:** selected as
+**Result, 2026-11-17:** landed as
 [OCA-103](product/BACKLOG.md#oca-103), a copyable local-multiplayer example
-with game-owned follow policy. Implementation and qualification remain open;
-the original proposal below is preserved as context.
+with game-owned follow policy, independent per-player state and const queries.
+World bounds override the zone at edges, smaller axes are centred and resize
+preserves the old world-space view centre before constraints. The
+[verification record](review/2026-11-12-work-audit/2026-11-17-camera-follow.md)
+retains native/null/wasm tests, browser pages and presentation captures.
+The original proposal below is preserved as context; smoothing and rotation
+are not selected by this result.
 
 **Present evidence:** [the multiplayer arena](../samples/local_multiplayer/arena.cpp)
 already centres cameras directly. [Camera](../engine/render/camera.h) supplies

@@ -5,6 +5,7 @@
 #include "engine/scene/scene.h"
 #include "samples/local_multiplayer/arena.h"
 #include "samples/local_multiplayer/controls.h"
+#include "samples/local_multiplayer/follow_camera.h"
 
 #include <array>
 #include <memory>
@@ -71,13 +72,17 @@ TEST_CASE("each camera centres its own player in pane coordinates after a resize
 	ResolutionManager resolution;
 	ViewportManager viewports(&resolution);
 	viewports.set_layout(ScreenLayout::two_player);
+	std::array<FollowCamera, Arena::player_count> cameras;
 	for (const Vector2F size : { Vector2F(1280, 720), Vector2F(1000, 801) })
 	{
 		resolution.set_resolution_exactly(Vector2I(static_cast<int>(size.x), static_cast<int>(size.y)));
 		for (size_t player = 0; player < Arena::player_count; ++player)
 		{
 			const Viewport viewport = viewports.player_viewport(static_cast<int>(player));
-			const Camera camera = arena.camera(player, viewport);
+			const RectangleF dead_zone(viewport.width * 0.25f, viewport.height * 0.25f,
+				viewport.width * 0.5f, viewport.height * 0.5f);
+			cameras[player].update(arena.position(player), viewport.size(), dead_zone, arena.bounds());
+			const Camera camera = cameras[player].camera();
 			CHECK(camera.calculate_view_position(arena.position(player)) == viewport.size() * 0.5f);
 			CHECK(viewport.y == (player == 0 ? 0.0f : size.y * 0.5f));
 		}
