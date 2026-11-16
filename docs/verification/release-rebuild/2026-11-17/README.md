@@ -85,7 +85,10 @@ identities, fresh output, plan-only behavior, download limits, incomplete
 builds and timeout output/owned-tree cleanup. A real child-process fixture
 also checks output and exit capture. The maintenance website gate passed:
 86 files with zero diagnostics, its tests, 186 generated pages and valid
-internal links. Full local lint is recorded in this change's handoff.
+internal links. `python tools/lint_local.py --base ad711c05` passed all 13
+stages, including 517 Python tests (three skipped). The loaded host's full
+Python suite took about 511 seconds; this is execution context, not a timing
+threshold.
 
 This run adds no LF-checkout result, other release/toolchain/platform claim,
 signature or attestation. The
