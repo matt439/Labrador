@@ -62,6 +62,9 @@ namespace components
 	//   for a platform that does not.
 	// - A contact that goes away without a release - the window lost focus,
 	//   the platform cancelled the touch - ends cancelled, never released.
+	// - A mouse click completed between polls is pressed now and released
+	//   next tick at its sampled position, as a short touch is. Cancellation
+	//   before that next tick still prevents completion.
 	class PointerCapture
 	{
 	public:
@@ -85,6 +88,8 @@ namespace components
 
 		Owner owner_ = Owner::none;
 		uint32_t touch_id_ = 0;
+		uint64_t mouse_epoch_ = 0;
+		std::optional<labrador::Vector2I> mouse_release_;
 
 		// Ticks left in which a mouse press is still too close to a finger.
 		int quiet_ticks_ = 0;

@@ -71,6 +71,9 @@ and all of it is page policy rather than a component's:
   press in the tick a finger lifts or the tick after is ignored, and a
   contact that goes away without being let go - the window lost focus, the
   platform cancelled it - ends cancelled, so nothing completes.
+  A mouse click completed between polls becomes a press followed by a release
+  next tick at the sampled position, as a short tap does. The page, focus loss
+  or capture cancellation can still cancel that pending completion.
 - Each row is a band as tall as the row spacing, from just left of the label
   to past the slider's number, and `hit_target` finds the first enabled one
   under the point, through the camera the page draws with

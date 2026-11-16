@@ -33,21 +33,25 @@ namespace labrador
 	bool pressed(const MouseState& now, const MouseState& before,
 		MouseButton button)
 	{
-		if (!now.focused || !before.focused || now.button_epoch != before.button_epoch)
+		if (!is_button(button) || !now.focused || !before.focused ||
+			now.button_epoch != before.button_epoch)
 		{
 			return false;
 		}
-		return now.is_down(button) && !before.is_down(button);
+		return (now.pressed_buttons & bit_of(button)) != 0 ||
+			(now.is_down(button) && !before.is_down(button));
 	}
 
 	bool released(const MouseState& now, const MouseState& before,
 		MouseButton button)
 	{
-		if (!now.focused || !before.focused || now.button_epoch != before.button_epoch)
+		if (!is_button(button) || !now.focused || !before.focused ||
+			now.button_epoch != before.button_epoch)
 		{
 			return false;
 		}
-		return !now.is_down(button) && before.is_down(button);
+		return (now.released_buttons & bit_of(button)) != 0 ||
+			(!now.is_down(button) && before.is_down(button));
 	}
 
 	Vector2I motion(const MouseState& now, const MouseState& before)
@@ -79,20 +83,24 @@ namespace labrador
 
 	void Mouse::on_button_down(MouseButton button)
 	{
-		if (!is_button(button))
+		if (!is_button(button) || this->live_.is_down(button))
 		{
 			return;
 		}
+		this->live_.pressed_buttons = static_cast<uint8_t>(
+			this->live_.pressed_buttons | bit_of(button));
 		this->live_.buttons = static_cast<uint8_t>(
 			this->live_.buttons | bit_of(button));
 	}
 
 	void Mouse::on_button_up(MouseButton button)
 	{
-		if (!is_button(button))
+		if (!is_button(button) || !this->live_.is_down(button))
 		{
 			return;
 		}
+		this->live_.released_buttons = static_cast<uint8_t>(
+			this->live_.released_buttons | bit_of(button));
 		this->live_.buttons = static_cast<uint8_t>(
 			this->live_.buttons & ~bit_of(button));
 	}
@@ -100,6 +108,8 @@ namespace labrador
 	void Mouse::cancel_buttons()
 	{
 		this->live_.buttons = 0;
+		this->live_.pressed_buttons = 0;
+		this->live_.released_buttons = 0;
 		++this->live_.button_epoch;
 	}
 
@@ -122,7 +132,7 @@ namespace labrador
 			// Buttons go up, as keys do on focus loss: the button-up after
 			// the cursor leaves is delivered elsewhere, so a bit left set here
 			// stays set.
-			this->live_.buttons = 0;
+			this->cancel_buttons();
 
 			// And the wheel accumulated but not yet polled is dropped. It was
 			// turned at this window; delivering it on the frame focus returns
@@ -140,11 +150,9 @@ namespace labrador
 		this->previous_ = this->current_;
 		this->current_ = this->live_;
 
-		// THE WHEEL RESETS AND THE REST DOES NOT, which is the one asymmetry
-		// in this class. Position and buttons are states that persist until
-		// something changes them; the wheel is a count of what happened during
-		// one frame, so the next frame starts from nothing or every frame
-		// reports the sum of every frame before it.
+		// Held state persists; transitions and wheel input belong to one update.
+		this->live_.pressed_buttons = 0;
+		this->live_.released_buttons = 0;
 		this->live_.wheel = 0.0f;
 		this->live_.wheel_horizontal = 0.0f;
 	}

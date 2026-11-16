@@ -763,6 +763,45 @@ TEST_CASE("modifier sides belong to each window")
 	CHECK(second_notify.last_up == Key::shift);
 }
 
+TEST_CASE("a native click between polls keeps both edges and no held button")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.mouse.set_focused(true);
+	notify.mouse.poll();
+	notify.mouse.poll();
+	SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
+	SendMessageW(hwnd(window), WM_LBUTTONUP, 0, 0);
+	notify.mouse.poll();
+	CHECK(notify.mouse.pressed(MouseButton::left));
+	CHECK(notify.mouse.released(MouseButton::left));
+	CHECK_FALSE(notify.mouse.held(MouseButton::left));
+	CHECK(GetCapture() == nullptr);
+	notify.mouse.poll();
+	CHECK_FALSE(notify.mouse.pressed(MouseButton::left));
+	CHECK_FALSE(notify.mouse.released(MouseButton::left));
+}
+
+TEST_CASE("native capture cancellation discards a short click before its poll")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	notify.mouse.set_focused(true);
+	notify.mouse.poll();
+	notify.mouse.poll();
+	SendMessageW(hwnd(window), WM_LBUTTONDOWN, MK_LBUTTON, 0);
+	SendMessageW(hwnd(window), WM_LBUTTONUP, 0, 0);
+	SendMessageW(hwnd(window), WM_RBUTTONDOWN, MK_RBUTTON, 0);
+	SendMessageW(hwnd(window), WM_CANCELMODE, 0, 0);
+	notify.mouse.poll();
+	for (const MouseButton button : { MouseButton::left, MouseButton::right })
+	{
+		CHECK_FALSE(notify.mouse.pressed(button));
+		CHECK_FALSE(notify.mouse.released(button));
+		CHECK_FALSE(notify.mouse.held(button));
+	}
+}
+
 TEST_CASE("capture cancellation and transfer clear buttons without a normal release")
 {
 	RecordingNotify notify;

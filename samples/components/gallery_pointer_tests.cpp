@@ -116,7 +116,15 @@ TEST_CASE("the gallery's pointer rules: clicks, value halves, drags, keys and Qu
 	click(app, gallery, value_x + 200.0f, row_middle(0));
 	REQUIRE(heard.size() == 2);
 	CHECK(heard.back() == L"Difficulty is now Hard");
-	click(app, gallery, value_x + 8.0f, row_middle(0));
+	// A completed click between polls gets the same two-tick gesture as a
+	// short tap. Its completion stays at the sampled point if the cursor moves.
+	mouse.on_move(client_at(app, value_x + 8.0f, row_middle(0)));
+	mouse.on_button_down(MouseButton::left);
+	mouse.on_button_up(MouseButton::left);
+	tick(app, gallery);
+	CHECK(heard.size() == 2);
+	mouse.on_move(client_at(app, value_x + 200.0f, row_middle(3)));
+	tick(app, gallery);
 	REQUIRE(heard.size() == 3);
 	CHECK(heard.back() == L"Difficulty is now Normal");
 

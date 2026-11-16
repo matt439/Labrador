@@ -416,6 +416,11 @@ and `x2`, and also reports `position()` in window pixels, `motion()` since the l
 `wheel()` and `wheel_horizontal()` in notches. While a button is held the mouse keeps reporting
 movement outside the window, so a drag is one gesture.
 
+A click pressed and released between fixed updates reports both edges on the next update,
+while `held` still says the button is up. Several clicks in that interval coalesce: the edges
+do not count clicks or preserve their order. Losing focus or capture cancels pending edges,
+so returning to the game does not invent a click or release.
+
 A game played with a pad usually hides the pointer: `app->set_cursor_visible(false)`, or
 `cursor_visible = false` in `ApplicationOptions` to hide it from the first frame. The mouse is
 still read while the pointer is hidden. `set_cursor_confined(true)` keeps the pointer inside the

@@ -1379,7 +1379,7 @@ No new removal API or stale-handle guarantee is implied.
 
 - [x] **[OCA-85](#oca-85)** Should · S · The Outside Adopter: Refuse a camera scale the engine cannot render correctly
 - [x] **[SM-76](#sm-76)** Should · S · The Sole Owner-Maintainer: Refuse undefined integer conversions and division
-- [ ] **[OCA-86](#oca-86)** Should · S · The Outside Adopter: A short mouse click reaches the next fixed update
+- [x] **[OCA-86](#oca-86)** Should · S · The Outside Adopter: A short mouse click reaches the next fixed update
 - [ ] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
 - [ ] **[OCA-88](#oca-88)** Should · S · The Outside Adopter: Read a loaded texture's dimensions
 - [ ] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
@@ -1542,6 +1542,24 @@ adds no general event queue or gesture policy. InputTests cover short,
 held and repeated clicks, multiple buttons, focus and cancellation; native
 and browser window tests cover the feeds under the input verification plan.
 Synthetic coverage makes no claim about physical click frequency.
+
+**Completed 2026-11-16.** Mouse snapshots retain coalesced down/up masks for
+one poll while held state stays live. Focus loss or capture cancellation
+clears those masks and ends the gesture epoch, including a loss and return
+between polls. InputTests and native AppTests cover the contracts and real
+Win32 message feed; WebWindowTests samples its real window-to-Mouse feed at
+runner-selected boundaries. Native Debug default/null InputTests and
+AppTests pass; wasm-debug InputTests, AppTests, ComponentsTests and
+FirefoxWebWindowTests pass. The wasm-release-null InputTests, AppTests and
+ComponentsTests pass. The copyable pointer
+capture presents a short mouse click as a press then a release next tick,
+retaining its sampled position and respecting intervening cancellation.
+Component tests and the native-null gallery integration cover that consumer.
+Both local Chromium window runs pass the new mouse checks and then fail
+at the existing full-screen request with `TypeError: not granted`; they are not recorded as
+passing suites. The published mouse contract, input guide and CHANGES.md
+explain the coincident edges. Full combined matrix and physical input rates
+are separate verification.
 
 <a id="oca-87"></a>
 ### OCA-87. Reveal a normally visible window after its first completed frame

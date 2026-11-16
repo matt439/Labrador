@@ -40,6 +40,17 @@ namespace components
 
 		if (this->owner_ == Owner::mouse)
 		{
+			if (!mouse.focused() || mouse.state().button_epoch != this->mouse_epoch_)
+			{
+				this->cancel();
+				return { PointerPhase::cancelled, Vector2I() };
+			}
+			if (this->mouse_release_)
+			{
+				const Vector2I position = *this->mouse_release_;
+				this->cancel();
+				return { PointerPhase::released, position };
+			}
 			if (mouse.held(MouseButton::left))
 			{
 				return { PointerPhase::held, mouse.position() };
@@ -66,6 +77,11 @@ namespace components
 		if (mouse_allowed && mouse.pressed(MouseButton::left))
 		{
 			this->owner_ = Owner::mouse;
+			this->mouse_epoch_ = mouse.state().button_epoch;
+			if (mouse.released(MouseButton::left) && !mouse.held(MouseButton::left))
+			{
+				this->mouse_release_ = mouse.position();
+			}
 			return { PointerPhase::pressed, mouse.position() };
 		}
 
@@ -76,6 +92,7 @@ namespace components
 	{
 		this->owner_ = Owner::none;
 		this->touch_id_ = 0;
+		this->mouse_release_.reset();
 	}
 
 	bool PointerCapture::active() const

@@ -41,6 +41,18 @@ namespace
 
 TEST_SUITE("MouseTests")
 {
+	TEST_CASE("the positional snapshot initializer retains its original fields")
+	{
+		const MouseState state{ true, Vector2I(10, 20), 0, 7, 1.0f, 2.0f };
+		CHECK(state.focused);
+		CHECK(state.position == Vector2I(10, 20));
+		CHECK(state.button_epoch == 7);
+		CHECK(state.wheel == 1.0f);
+		CHECK(state.wheel_horizontal == 2.0f);
+		CHECK(state.pressed_buttons == 0);
+		CHECK(state.released_buttons == 0);
+	}
+
 	TEST_CASE("a button is down or it is not")
 	{
 		const MouseState state = at(10, 20,
@@ -59,10 +71,19 @@ TEST_SUITE("MouseTests")
 		// bit is set, so only the bounds check can answer no.
 		MouseState state = at(0, 0, {});
 		state.buttons = 0xFF;
+		state.pressed_buttons = 0xFF;
+		state.released_buttons = 0xFF;
 
 		CHECK(state.is_down(MouseButton::left));
 		CHECK_FALSE(state.is_down(MouseButton::none));
 		CHECK_FALSE(state.is_down(MouseButton::count));
+		const MouseState before = at(0, 0, {});
+		for (const MouseButton button : { MouseButton::none, MouseButton::count,
+			static_cast<MouseButton>(255) })
+		{
+			CHECK_FALSE(pressed(state, before, button));
+			CHECK_FALSE(released(state, before, button));
+		}
 	}
 
 	TEST_CASE("every button gets its own bit")
@@ -158,6 +179,126 @@ TEST_SUITE("MouseTests")
 
 		mouse.on_button_up(MouseButton::left);
 		mouse.poll();
+		CHECK(mouse.released(MouseButton::left));
+	}
+
+	TEST_CASE("a short click reports both edges once with the button up")
+	{
+		Mouse mouse;
+		settle(mouse);
+		mouse.on_button_down(MouseButton::left);
+		mouse.on_button_up(MouseButton::left);
+		CHECK_FALSE(mouse.pressed(MouseButton::left));
+		CHECK_FALSE(mouse.released(MouseButton::left));
+		mouse.poll();
+		CHECK(mouse.pressed(MouseButton::left));
+		CHECK(mouse.released(MouseButton::left));
+		CHECK_FALSE(mouse.held(MouseButton::left));
+		CHECK(pressed(mouse.state(), mouse.previous_state(), MouseButton::left));
+		CHECK(released(mouse.state(), mouse.previous_state(), MouseButton::left));
+		mouse.poll();
+		CHECK_FALSE(mouse.pressed(MouseButton::left));
+		CHECK_FALSE(mouse.released(MouseButton::left));
+	}
+
+	TEST_CASE("several clicks coalesce per button without changing the live held state")
+	{
+		Mouse mouse;
+		settle(mouse);
+		for (int click = 0; click < 3; ++click)
+		{
+			mouse.on_button_down(MouseButton::left);
+			mouse.on_button_up(MouseButton::left);
+		}
+		mouse.on_button_down(MouseButton::left);
+		mouse.on_button_down(MouseButton::right);
+		mouse.on_button_up(MouseButton::right);
+		mouse.poll();
+		CHECK(mouse.pressed(MouseButton::left));
+		CHECK(mouse.released(MouseButton::left));
+		CHECK(mouse.held(MouseButton::left));
+		CHECK(mouse.pressed(MouseButton::right));
+		CHECK(mouse.released(MouseButton::right));
+		CHECK_FALSE(mouse.held(MouseButton::right));
+		CHECK_FALSE(mouse.pressed(MouseButton::middle));
+		CHECK_FALSE(mouse.released(MouseButton::middle));
+		mouse.poll();
+		CHECK(mouse.held(MouseButton::left));
+		CHECK_FALSE(mouse.pressed(MouseButton::left));
+		CHECK_FALSE(mouse.released(MouseButton::left));
+		CHECK_FALSE(mouse.pressed(MouseButton::right));
+		CHECK_FALSE(mouse.released(MouseButton::right));
+	}
+
+	TEST_CASE("duplicate down and up messages add no edges")
+	{
+		Mouse mouse;
+		settle(mouse);
+		mouse.on_button_up(MouseButton::left);
+		mouse.poll();
+		CHECK_FALSE(mouse.released(MouseButton::left));
+		mouse.on_button_down(MouseButton::left);
+		mouse.poll();
+		REQUIRE(mouse.pressed(MouseButton::left));
+		mouse.on_button_down(MouseButton::left);
+		mouse.poll();
+		CHECK(mouse.held(MouseButton::left));
+		CHECK_FALSE(mouse.pressed(MouseButton::left));
+		mouse.on_button_up(MouseButton::left);
+		mouse.poll();
+		REQUIRE(mouse.released(MouseButton::left));
+		mouse.on_button_up(MouseButton::left);
+		mouse.poll();
+		CHECK_FALSE(mouse.released(MouseButton::left));
+	}
+
+	TEST_CASE("a release and repress between polls preserves held and both edges")
+	{
+		Mouse mouse;
+		settle(mouse);
+		mouse.on_button_down(MouseButton::x2);
+		mouse.poll();
+		mouse.on_button_up(MouseButton::x2);
+		mouse.on_button_down(MouseButton::x2);
+		mouse.poll();
+		CHECK(mouse.held(MouseButton::x2));
+		CHECK(mouse.pressed(MouseButton::x2));
+		CHECK(mouse.released(MouseButton::x2));
+		mouse.poll();
+		CHECK(mouse.held(MouseButton::x2));
+		CHECK_FALSE(mouse.pressed(MouseButton::x2));
+		CHECK_FALSE(mouse.released(MouseButton::x2));
+	}
+
+	TEST_CASE("focus loss and capture cancellation discard pending clicks")
+	{
+		Mouse mouse;
+		settle(mouse);
+		mouse.on_button_down(MouseButton::left);
+		mouse.on_button_up(MouseButton::left);
+		mouse.on_button_down(MouseButton::right);
+		SUBCASE("focus leaves and returns before the next poll")
+		{
+			mouse.set_focused(false);
+			mouse.set_focused(true);
+		}
+		SUBCASE("capture is cancelled while focus stays")
+		{
+			mouse.cancel_buttons();
+		}
+		mouse.poll();
+		CHECK(mouse.focused());
+		for (const MouseButton button : { MouseButton::left, MouseButton::right })
+		{
+			CHECK_FALSE(mouse.held(button));
+			CHECK_FALSE(mouse.pressed(button));
+			CHECK_FALSE(mouse.released(button));
+		}
+		mouse.poll();
+		mouse.on_button_down(MouseButton::left);
+		mouse.on_button_up(MouseButton::left);
+		mouse.poll();
+		CHECK(mouse.pressed(MouseButton::left));
 		CHECK(mouse.released(MouseButton::left));
 	}
 
