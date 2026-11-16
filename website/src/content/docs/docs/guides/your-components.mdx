@@ -58,8 +58,8 @@ cd /d C:\dev\mygame
    `engine/ui/widget.h`, which your game already reaches, and each `.cpp` includes only its own
    header and engine headers. The slider's bar is a small class called `Bar`, and it is inside
    `slider.h` and `slider.cpp`, so it comes with them. The rest of the folder is the sample's
-   own screen, its tests, which [step 7](#copy-the-tests) copies if you want them, and two other
-   components, the nine-slice and the animation preview, which this page does not use.
+   own screen, its tests, which [step 7](#copy-the-tests) copies if you want them, and other
+   pieces such as the nine-slice, animation preview and desktop text field.
 
    The `\` at the end of each `copy` line matters. With it, `copy` stops with an error if
    `game\components` is not there. Without it, `copy` would make a *file* called `components`
@@ -576,6 +576,44 @@ width and its height, in pixels. The number is drawn 16 pixels after the bar's r
 stretches and tints to draw its bar, so the bar needs no picture of your own. The slider has its
 own code-on-change at the end too; this page leaves it out and reads `value()` on every step
 instead.
+
+## A separate desktop name field
+
+The repository's newer <RepoLink path="samples/components/text_field.h">TextField</RepoLink>
+is another piece to copy. It is separate from the option-row/slider exercise above and need
+not be present in an older starter ZIP. Take `text_field.h` and `text_field.cpp` from the
+current components example, rewrite the `.cpp`'s first include to your copy, and list it in
+both native and browser game targets. If you want its portable tests, also copy
+`text_field_tests.cpp`, rewrite its same include, and add the copied component and test `.cpp`
+to your component-test target. Its in-memory font fixture needs no device or asset file.
+
+The gallery constructs the field with its loaded font and resource table:
+
+<SourceFile path="samples/components/gallery_state.cpp"
+  from={'this->name_ = this->scene_->add(std::make_unique<TextField>("name",'}
+  to={'Vector2F(900.0f, 500.0f), 960.0f, font_name, resources));'} />
+
+It stores UTF-8, shows an end caret while editing and converts to the existing wide rendering
+text with `widen` when an edit changes the display. The page reads `Keyboard::typed()` and
+decides when to call `begin_edit`, `append`, `backspace`, `confirm` and `cancel`; the component
+does not poll devices or decide bindings. The gallery's
+<RepoLink path="samples/components/gallery_text.cpp">input wiring</RepoLink> gives those keys
+priority over its normal menu actions, ignores the opening input snapshot, and cancels on
+state deactivation, observed keyboard-focus loss or an outside press. It also drops pending
+pointer completion when a keyboard command ends an edit.
+
+A batch is accepted or refused as a whole. Limits count code points rather than bytes, and
+the width includes the drawn caret so trailing spaces cannot silently overflow it. The
+gallery allows 12 characters with its actual ASCII font; an unsupported character is refused,
+even though that font could otherwise draw a stand-in question mark. A font with suitable BMP
+glyphs can accept precomposed accents and punctuation, as the field's two/three-byte deletion
+tests demonstrate. The existing `Font` language limits still apply: this adds no shaping,
+combining-mark placement or right-to-left layout.
+
+This is desktop code-point editing. It has no middle caret, selection, clipboard, IME-composition
+API or phone keyboard support. Backspace removes one point on a new press; it does not repeat
+while held. The <RepoLink path="samples/components/README.md" hash="desktop-text-entry">component's contract</RepoLink>
+states confirm/cancel, same-poll command precedence, refusal and copied-test details.
 
 ## Changing the rows
 

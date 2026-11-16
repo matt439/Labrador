@@ -4,6 +4,7 @@
 #include "samples/components/option_row.h"
 #include "samples/components/pointer_capture.h"
 #include "samples/components/slider.h"
+#include "samples/components/text_field.h"
 
 #include "engine/app/application.h"
 #include "engine/core/state.h"
@@ -21,7 +22,7 @@
 namespace components
 {
 	// Every component on one settings screen, so each can be seen and played
-	// with: two option rows, two sliders, two animations and a way out.
+	// with: two option rows, two sliders, two animations, a text field and a way out.
 	// main.cpp and main_web.cpp both run it.
 	//
 	// It is also the page half a component leaves to its game. A component
@@ -43,6 +44,7 @@ namespace components
 		void init() override;
 		void update(float dt) override;
 		void draw(labrador::Renderer& renderer) const override;
+		void on_deactivated() override;
 
 	private:
 		// Which way the player is pushing, from the arrows and either pad
@@ -61,6 +63,10 @@ namespace components
 		// under it and starts dragging a slider; a release completes a click
 		// or a tap only on the row it began on (pointer_capture.h).
 		void update_pointer();
+		void begin_name_edit();
+		void cancel_name_edit();
+		void update_name_edit();
+		void set_name_status(const std::wstring& text);
 
 		// The world point under a client pixel, through the camera the page
 		// draws with.
@@ -88,9 +94,10 @@ namespace components
 		Slider* music_ = nullptr;
 		Slider* effects_ = nullptr;
 		labrador::UiText* status_ = nullptr;
+		TextField* name_ = nullptr;
+		labrador::UiText* name_status_ = nullptr;
 
-		// The one row with an action: a click or a tap that completes on it
-		// activates it.
+		// A completed click/tap closes the gallery. Name has a separate edit action.
 		labrador::UiText* quit_ = nullptr;
 
 		labrador::FocusGroup focus_;

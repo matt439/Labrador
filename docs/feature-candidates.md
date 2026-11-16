@@ -60,7 +60,7 @@ concrete client need.
 
 | id | proposal | priority | size | selection or prerequisite |
 |---|---|---|---|---|
-| `IDEA#1` | A single-line typed-text component | could | M | Selected 2026-11-16 as [OCA-109](product/BACKLOG.md#oca-109), desktop text with length/font checks and conversion on edits; implementation open |
+| `IDEA#1` | A single-line typed-text component | could | M | Landed 2026-11-17 as [OCA-109](product/BACKLOG.md#oca-109): copyable desktop field with length/font checks and conversion on edits |
 | `IDEA#2` | A game-owned keyboard rebinding screen | could | M | Selected 2026-11-16 as [OCA-110](product/BACKLOG.md#oca-110), duplicate refusal and protected navigation; implementation open |
 | `IDEA#3` | Versioned saves with recovery | could | M | Selected 2026-11-16 as [OCA-112](product/BACKLOG.md#oca-112), game-owned recovery preserving previous valid and malformed/future data; implementation open |
 | `IDEA#4` | A bounded, dead-zone camera-follow component | could | S | Landed 2026-11-17 as [OCA-103](product/BACKLOG.md#oca-103): copyable per-player tracking, world bounds and explicit resize/small-world policy |
@@ -94,12 +94,14 @@ below is the original proposed bound, not a final public API.
 explicit font-coverage and length checks. Reuse the existing text-widening
 conversion when an edit changes the displayed text, rather than converting
 it on every draw. Mobile text entry and new composition machinery remain
-outside this scope. Implementation and qualification remain open; the
-original proposal below is preserved as context.
+outside this scope. Implemented and qualified on desktop native/browser routes
+on 2026-11-17; the [dated evidence](verification/desktop-text-field/2026-11-17/README.md)
+records the font, input and snapshot limits. The original proposal below is
+preserved as context.
 
 **Present evidence:** [Keyboard::typed](../engine/input/keyboard.h) supplies
 UTF-8 text, while the [components gallery](../samples/components/README.md)
-has no editable text example. Text rendering's language limits are stated in
+now has a bounded, game-owned editable text example. Text rendering's language limits are stated in
 [font.h](../engine/render/font.h); a text field does not remove them.
 
 **Proposed slice:** a copyable name/label field in the gallery, driven by the

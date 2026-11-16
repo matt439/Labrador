@@ -2,12 +2,14 @@
 
 Small pieces a game copies into its own tree, rather than links. Each is a
 header and a source file, small enough to read in one sitting, with its tests
-beside it. The gallery shows menu rows and two animation previews on one screen.
+beside it. The gallery shows menu rows, two animation previews and a desktop
+name field on one screen.
 
 | Component | Files | What it is |
 | --- | --- | --- |
 | Option row | `option_row.h`, `option_row.cpp` | A label and a value picked from a fixed list with left and right: a difficulty, a window mode. Wraps or stops at the ends. |
 | Slider | `slider.h`, `slider.cpp` | A label, a bar and a number for an integer in a range: a volume, a sensitivity. Clamps, never wraps. A pointer's x maps to a value for dragging. |
+| Text field | `text_field.h`, `text_field.cpp` | A single-line UTF-8 value with an end caret, append/code-point backspace, transactional input batches and explicit confirm/cancel. The page owns focus and keys. |
 | Pointer capture | `pointer_capture.h`, `pointer_capture.cpp` | One contact at a time, from the mouse or one finger, followed from press to release or cancellation, and a hit test over a page's targets. |
 | Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 | Animation preview | `animation_preview.h`, `animation_preview.cpp` | Game-owned elapsed time, looping, one-shot completion and restart over a named animation strip. Drawing reads the current frame without advancing it. |
@@ -35,6 +37,11 @@ When both native render and audio backends are null, two gallery integration
 cases use a hidden window and synthetic input: one checks the real overlay
 and R restart binding, the other the pointer rules. They run no Application
 loop or API device.
+The text field's portable cases use a small in-memory font with ASCII, a
+two-byte accent and a three-byte punctuation glyph. Native-null recording
+checks the caret after trailing spaces in repeated views. A separate hidden
+gallery case checks editing, cancellation, font refusal and queued pointer
+release versus Enter/Escape.
 
 ## Why these are copied and not linked
 
@@ -93,6 +100,56 @@ and all of it is page policy rather than a component's:
 hangs on. Focus colours the label, and the slider's fill as well. The value
 keeps a colour of its own, so the player can tell what is selected from what
 the cursor is on.
+
+## Desktop text entry
+
+`TextField` keeps a committed UTF-8 `value()` and a UTF-8 `draft()`.
+`begin_edit()` starts an edit without changing the committed value. `append()`
+accepts an entire valid batch or refuses it without keeping a fitting prefix;
+`backspace()` removes one code point at the end. `confirm()` commits and ends
+editing; `cancel()` restores the prior value and ends editing. Input commands
+on an inactive field do nothing. Repeated begin does not reset a draft.
+
+Limits count code points, not bytes. Width is in unscaled font texels and
+reserves the drawn ASCII `|` end caret even while inactive, so opening editing
+does not overflow the field. A trailing space advances that caret; measuring
+the text alone is not a reliable caret position. The font must contain the
+label, value and a caret cell with positive width/height. Conversion through
+`widen`, validation and measurement happen on edits/state changes; drawing
+only reads the cached wide string and appends nothing.
+
+The field refuses malformed UTF-8, controls/line separators, non-BMP characters,
+missing glyphs and length/width overflow. It checks the font's real glyphs,
+independently of its stand-in: it never silently accepts a value as question
+marks. Matching glyphs still have `Font`'s existing language/layout limits;
+there is no shaping, combining-mark placement or bidi support. Backspace is
+code-point editing, not grapheme editing, and there is no middle caret,
+selection, clipboard, IME-composition API or mobile soft-keyboard promise.
+
+The gallery's field is below the animation previews on the right. It uses the
+actual delivered ASCII font, a 12-code-point limit and a 180-texel width budget.
+Enter/Space/A or a completed click/tap on Name opens editing; that opening
+snapshot is ignored. While editing, R and ordinary letters are text and the
+menu's navigation/restart/quit bindings do not run. Escape/B cancels first;
+Backspace deletes once per new press and takes precedence over the typed bucket
+of that poll. Otherwise command control bytes are removed, the remaining typed
+batch is admitted, and Enter/A confirms only if admission succeeds. These
+separate keyboard buckets do not claim chronological editing of simultaneous
+commands. Holding Backspace does not add repetition.
+
+State deactivation, keyboard focus loss observed by the next update, or a press
+outside Name cancels the draft. A pending release cannot reopen an edit ended
+by a keyboard command in the same poll. The page owns that policy in
+`gallery_text.cpp`; the component reads no device or focus group. The desktop
+browser test feeds real canvas keydown/focus events; it is not an IME or phone
+test.
+
+To copy the field, take `text_field.h`, `text_field.cpp` and optionally
+`text_field_tests.cpp`. Rewrite their `samples/components/text_field.h` include
+to your new path, and add each copied `.cpp` to its game/test target. The tests'
+font fixture is inside that test file; no delivered font, window or device is
+needed. Gallery integration and null-recorder cases belong to this sample and
+are not required for a copied field's portable tests.
 
 The nine-slice is not a row: it has no value and takes no focus, and a page
 adds it to a scene before whatever it frames, because a scene draws in the
@@ -168,8 +225,12 @@ ctest --preset x64-debug -R "^ComponentsTests$"
 | Click or tap a row | Choose it; on a value, the left half steps back and the right half on |
 | Drag a slider's track | Set it, clamped at either end |
 | Enter, Space or gamepad A on Quit | Quit |
-| R or gamepad X | Restart both animation previews |
-| Escape or gamepad B | Quit |
+| Enter, Space, gamepad A or click/tap on Name | Start desktop text editing |
+| Typed text / new Backspace press while editing | Append / remove one end code point |
+| Enter/A while editing | Save the accepted draft |
+| Escape/B while editing | Cancel and retain the committed value |
+| R or gamepad X outside editing | Restart both animation previews |
+| Escape or gamepad B outside editing | Quit |
 
 The Window row offers **Windowed** and **Full screen**, the two modes
 Application can request. On Windows, full screen is already borderless; it is
@@ -218,6 +279,11 @@ past its end, lets go of a press on another row, taps the left half of the
 difficulty's value and checks it stepped once, and taps Quit. It reads each
 change from the console line `main_web.cpp` writes for every status. Emulated
 touch is not a touchscreen: a real phone's tap is an open check.
+
+`ComponentsTextPageTests` separately checks desktop Name editing through real
+canvas key/focus events, including save/cancel, missing-glyph and length refusal,
+outside presses and focus loss. The [2026-11-17 desktop record](../../docs/verification/desktop-text-field/2026-11-17/README.md)
+retains native/browser appearance images, commands and font/input limits.
 
 ## What a component is not
 

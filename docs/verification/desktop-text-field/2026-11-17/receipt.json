@@ -1,0 +1,55 @@
+{
+  "date_local": "2026-11-17 Australia/Brisbane",
+  "source_base": "5cff44b9c6da777479229832abb40bfc0fc6e65c",
+  "source_sha256": {
+    "cmake/settings.cmake": "3beec9414017377bdeef6142ecf441ab8c364259e8a4afa6131cd73a34937f21",
+    "CMakeLists.txt": "260488d438d23bb03b5248f6876513ed7df3ee35221515e51af8881ed3778519",
+    "CMakePresets.json": "606faae86c4f7b9ea57cfc8c12fe1cad16f6adb31beeeba29468a407d478ebe2",
+    "engine/input/keyboard.cpp": "501e1796716e677761ec1653fa80f4509b481cda3eddc5b8b977bf2b40444335",
+    "engine/render/font.cpp": "ed08af773ce4b37b41f15c0dd6df8b351808397125b543ecebf1bbf8222c5bc7",
+    "engine/render/font.h": "68e1d61c238a8fb7e414cfb99d97d6c11f0bcc922f37f465255e5fd85d4333b2",
+    "engine/render/text_encoding.cpp": "77a880b808772e289b60db17bb51f0dc7f178b6a5cfb3d2f67d7771e31857dcd",
+    "samples/components/CMakeLists.txt": "468fea6adc01567ba2eb2b6ff21573e9bf9bef0ebedd4b72c5104bab996dfecc",
+    "samples/components/content/manifest.json": "ce807f99e95cadcbb467d629b2db5456301b9af1dc9c3f3b6ab8fb2375a1ff53",
+    "samples/components/gallery_state.cpp": "bc2ed6908b3127d0901f14fe25f23552f4adaaaa56420ff3e870a993deec33f9",
+    "samples/components/gallery_state.h": "ceec6223b844417d0e5ad1f934e2956c9252302a7dccc2e3741f4aad8f2dfbb6",
+    "samples/components/gallery_text.cpp": "a895b3dd22551857fa9bd8544ca6df1989c63a8691bf5f2b7935392a0511aaeb",
+    "samples/components/gallery_text_tests.cpp": "32244bf990335e94acdc46f2c9b8f3de93a51c235e4d1edf53a246b543678be1",
+    "samples/components/text_field.cpp": "e19628096edfd592094ada1d00da0a98117cc3a4e1b4c320eeff45646ba40481",
+    "samples/components/text_field.h": "afbf38e3ec3edc214ec2a73b6db985be51f2e4a25be9964da82fce5299ea5e3a",
+    "samples/components/text_field_null_tests.cpp": "a58308a8a977a2efc879d410a646e5fd8a3ede6a0548c1e460a2fac90a17ad59",
+    "samples/components/text_field_tests.cpp": "9a4c68c525c737430d5b9318abe1c597288020b4c9e61ce0a229709369e86758",
+    "samples/components/web/text_field_input.mjs": "73030e306452c7f2e37687bcd4c8a3ca5463671ed3ff1a9f204ad446742bc3b2",
+    "samples/minimal/content/fonts/jetbrains_mono_bold_16.spritefont": "4eed8bab40cd7c21856e9da166a42a956a63910c57051145571f13d25e7b95b1",
+    "vcpkg.json": "435e882976349988b43c997912b2327a4bf4d2b3f2ef6aa4b29c8432f44a229b"
+  },
+  "output_sha256": {
+    "out/build/x64-debug/samples/components/ComponentsGallery.exe": "24d89ae17d612292b7830031e73db8a1ec3eb89f32490424f8e23f8992f82fab",
+    "out/build/wasm-debug/samples/components/ComponentsGallery.js": "b247a9b99195b50107faca2642c3f66a5129c3fb2708259f6e3f29bc3b4506d1",
+    "out/build/wasm-debug/samples/components/ComponentsGallery.wasm": "2515dd681d6b94bb350909929ff536e998a3191775c59b678cf9dc8b63b02cdb"
+  },
+  "image_sha256": {
+    "browser-cancelled.png": "1165bdc26395729d153021bdbdc0fe40c04b8ef9f1039a1467c04cec14771b7a",
+    "browser-edit.png": "f2f9f5f99845d667dceedfcfd7a8b21b5bb905aed90fd54dc26256257f5832e6",
+    "native-cancelled.png": "6567668f1f7cea5afc557fc3ac2b6be69c4bf6586b046528c3d56a2a41b820f3",
+    "native-edit-limit.png": "92514b5cae2bc201f3064b79a18c2a03600b00dd7bcca2fe4b612851f52d3330"
+  },
+  "validation_runner": {
+    "path": "C:\\Projects\\Labrador\\tests\\render\\web\\run_page.mjs",
+    "sha256": "d268a9c828ec64b5898de29e6945377caf7062eade3b40396b3a16361fcb6c34",
+    "read_only": true,
+    "dependencies": [
+      "foreground target activation",
+      "scoped CalculateNativeWinOcclusion disable flag"
+    ]
+  },
+  "automated_browser": "Chrome/157.0.8103.78",
+  "visual_browser": "Chrome for Testing/151.0.7922.34; isolated out/text-ui/profile",
+  "emscripten": "6.0.12",
+  "node": "24.19.0",
+  "native_preset": "x64-debug (D3D11)",
+  "null_preset": "x64-debug-null",
+  "browser_preset": "wasm-debug (WebGL2)",
+  "automated_renderer": "ANGLE NVIDIA GeForce RTX 5080 D3D11",
+  "observations": "Unedited owned-window PNG snapshots, checked for caret/value/helper fit and pointer cancellation. No physical keyboard, IME, phone, controller, touchscreen or display pacing claim."
+}

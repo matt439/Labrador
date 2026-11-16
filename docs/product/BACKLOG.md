@@ -1429,7 +1429,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-107](#oca-107)** Should · M · The Outside Adopter: Change my native window title and give an explicitly requested icon a clear failure
 - [ ] **[OCA-108](#oca-108)** Should · L · The Outside Adopter: Use a qualified non-Xbox controller layer on Windows — blocked until a real non-Xbox pad is available
 
-- [ ] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
+- [x] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
 - [ ] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
 - [ ] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
 - [ ] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
@@ -2927,6 +2927,17 @@ soft-keyboard promise. Headless tests cover multi-byte deletion, limits,
 confirm/cancel, unfocused input and unsupported glyphs; native/browser gallery
 checks exercise the documented path. Update copied-test instructions and
 run affected sample checks, lint and the website gate.
+
+**Completed 2026-11-17:** the copyable `TextField` in `samples/components`
+stores UTF-8 and caches wide text on edits. The gallery owns its modal keys,
+focus-loss cancellation and input priority, and states its ASCII/font and
+12-character limit on screen. Portable cases cover multi-byte deletion,
+transactional refusal, length/width/caret bounds, confirm/cancel and inactive
+input; native-null cases exercise the real gallery and repeated const draws.
+Native D3D11, native-null and wasm component checks, desktop Chrome text and
+existing pointer routes, visible native/browser layout inspection and the
+website gate passed. [The dated record](../verification/desktop-text-field/2026-11-17/README.md)
+retains source/output identities, images, commands and the desktop/font limits.
 
 <a id="oca-110"></a>
 ### OCA-110. Copy game-owned keyboard rebinding with duplicate refusal
