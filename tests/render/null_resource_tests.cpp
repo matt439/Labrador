@@ -131,6 +131,23 @@ namespace
 	}
 }
 
+TEST_CASE("a retained texture handle reports its replacement's dimensions")
+{
+	Harness harness;
+	const ScratchDirectory scratch("size");
+	scratch.write("hero.png", png_of(3, 5));
+	load_texture_asset(harness.renderer(), harness.resources(),
+		scratch.directory(), "hero");
+	const TextureHandle hero = harness.resources().resolve_texture("hero");
+	CHECK(harness.resources().texture_size(hero) == Vector2I(3, 5));
+
+	scratch.write("hero.png", png_of(7, 2));
+	load_texture_asset(harness.renderer(), harness.resources(),
+		scratch.directory(), "hero");
+	CHECK(harness.resources().resolve_texture("hero") == hero);
+	CHECK(harness.resources().texture_size(hero) == Vector2I(7, 2));
+}
+
 TEST_CASE("a texture may be a .png, read through the same load path as a .dds")
 {
 	Harness harness;
@@ -140,6 +157,7 @@ TEST_CASE("a texture may be a .png, read through the same load path as a .dds")
 	load_texture_asset(harness.renderer(), harness.resources(),
 		scratch.directory(), "hero");
 	const TextureHandle hero = harness.resources().resolve_texture("hero");
+	CHECK(harness.resources().texture_size(hero) == Vector2I(4, 2));
 
 	// The whole of a 4x2 source spans texture coordinates 0 to 1, which is
 	// how a recording shows the size the backend was given.
@@ -222,8 +240,11 @@ TEST_CASE("a handle resolved before release_device_resources draws after the rel
 	// call is the first half of a device loss and not a way to drop textures;
 	// what follows it here is the reload, which is the shape the shell uses.
 	const TextureHandle before = harness.resources().resolve_texture("quad");
+	CHECK(harness.resources().texture_size(before) == Vector2I(2, 2));
 
 	harness.resources().release_device_resources();
+	CHECK_THROWS_WITH_AS(harness.resources().texture_size(before),
+		"Texture 'quad' has been released.", std::out_of_range);
 
 	// The name is still there - it is the resource behind it that went - so a
 	// resolve answers, and it answers the same slot.
@@ -234,6 +255,7 @@ TEST_CASE("a handle resolved before release_device_resources draws after the rel
 	// The reload, through the same load path a device restore uses.
 	load_texture_asset(harness.renderer(), harness.resources(), "./content/",
 		"quad");
+	CHECK(harness.resources().texture_size(before) == Vector2I(2, 2));
 
 	const TextureHandle after_reload =
 		harness.resources().resolve_texture("quad");

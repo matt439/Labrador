@@ -6,6 +6,7 @@
 #include "engine/render/renderer.h"
 #include "engine/render/sprite_sheet.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 
 #include <memory>
 #include <string>
@@ -151,6 +152,12 @@ namespace labrador
 		FontHandle resolve_sprite_font(const std::string& font_name) const;
 		SpriteSheetHandle resolve_sprite_sheet(
 			const std::string& sprite_sheet_name) const;
+
+		// The current texture's width and height in texels. Safe for concurrent
+		// reads while resources are unchanged. Throws std::out_of_range for an
+		// unresolved handle or a released slot. A retained handle reads the
+		// replacement texture's dimensions after a reload refills its slot.
+		Vector2I texture_size(TextureHandle texture) const;
 
 		// A frame and the sheet it was resolved against, which only
 		// resolve_sheet_frame can make - so the pair cannot be mismatched: a

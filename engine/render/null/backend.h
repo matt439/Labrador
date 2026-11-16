@@ -2,6 +2,7 @@
 
 #include "engine/core/registry.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/camera.h"
 #include "engine/render/material_table.h"
 #include "engine/render/null/recording.h"
@@ -38,6 +39,11 @@ namespace labrador
 	{
 	public:
 		NullTexture(int width, int height) : width_(width), height_(height) {}
+
+		Vector2I texel_size() const
+		{
+			return Vector2I(this->width_, this->height_);
+		}
 
 		Vector2F size() const
 		{

@@ -80,6 +80,15 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Query loaded texture dimensions through RenderResources
+
+**New API.** `RenderResources::texture_size(TextureHandle)` returns the current
+texture's width and height as a `Vector2I` in texels on every render backend.
+Unresolved or released handles throw `std::out_of_range`; a handle retained
+across a reload reads the replacement texture's dimensions. The first-picture
+guide uses this query in place of manually copied dimensions. Existing code
+needs no migration.
+
 ### 2026-11-16 - Refuse unsupported camera scales when consumed
 
 **Behaviour change.** Camera transforms now throw `std::invalid_argument`

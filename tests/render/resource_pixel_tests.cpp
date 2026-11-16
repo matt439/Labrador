@@ -57,6 +57,30 @@ namespace
 	}
 }
 
+TEST_CASE("a texture size follows the loaded resource through a retained handle")
+{
+	Harness harness;
+	CHECK(harness.resources().texture_size(harness.quad) == Vector2I(2, 2));
+	CHECK_THROWS_AS(harness.resources().texture_size(TextureHandle()),
+		std::out_of_range);
+	CHECK_THROWS_AS(harness.resources().texture_size(TextureHandle(1000000)),
+		std::out_of_range);
+
+	add_texture_asset(harness.renderer(), harness.resources(), "sized",
+		flat_texture(255, 255, 255));
+	const TextureHandle retained = harness.resources().resolve_texture("sized");
+	CHECK(harness.resources().texture_size(retained) == Vector2I(2, 2));
+	TextureData replacement;
+	replacement.width = 3;
+	replacement.height = 5;
+	replacement.levels.push_back(texture_level(replacement.format, 3, 5, 0));
+	replacement.pixels.resize(replacement.levels[0].size, 255);
+	add_texture_asset(harness.renderer(), harness.resources(), "sized",
+		replacement);
+	CHECK(harness.resources().resolve_texture("sized") == retained);
+	CHECK(harness.resources().texture_size(retained) == Vector2I(3, 5));
+}
+
 TEST_CASE("CONTRACT: a BC2 texture draws the texels its blocks encode")
 {
 	Harness harness;

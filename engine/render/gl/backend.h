@@ -94,6 +94,11 @@ namespace labrador
 		GlTexture& operator=(const GlTexture&) = delete;
 
 		GLuint name() const { return this->name_; }
+		Vector2I texel_size() const
+		{
+			return Vector2I(this->width_, this->height_);
+		}
+
 		Vector2F size() const;
 
 	private:

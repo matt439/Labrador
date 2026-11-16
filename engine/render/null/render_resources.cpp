@@ -61,6 +61,11 @@ namespace labrador
 			this->impl_->textures.resolve(texture_name).index());
 	}
 
+	Vector2I RenderResources::texture_size(TextureHandle texture) const
+	{
+		return this->impl_->texture(texture)->texel_size();
+	}
+
 	void RenderResources::release_device_resources()
 	{
 		this->impl_->release_all_textures();

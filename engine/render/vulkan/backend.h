@@ -2,6 +2,7 @@
 
 #include "engine/core/registry.h"
 #include "engine/math/vector2f.h"
+#include "engine/math/vector2i.h"
 #include "engine/render/camera.h"
 #include "engine/render/font.h"
 #include "engine/render/material_table.h"
@@ -100,6 +101,11 @@ namespace labrador
 		VulkanTexture& operator=(const VulkanTexture&) = delete;
 
 		VkImageView view() const { return this->view_; }
+		Vector2I texel_size() const
+		{
+			return Vector2I(this->width_, this->height_);
+		}
+
 		Vector2F size() const;
 
 	private:
