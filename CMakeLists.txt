@@ -280,7 +280,7 @@ if(PROJECT_IS_TOP_LEVEL)
         labrador_page_test(MinimalLoadFailurePageTests
             PAGE "$<TARGET_FILE:MinimalSample>"
             ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/render/web/load_failure_input.mjs")
-        labrador_sample_page_test(CollisionPageTests CollisionSample "Escape")
+        labrador_sample_page_test(CollisionPageTests CollisionSample "KeyO,KeyO,Escape")
         # A grants activation and plays the direct WAV. S stops any loop;
         # Escape grants no activation and is only the way out. The separate
         # Web Audio driver observes the native graph and natural source end.

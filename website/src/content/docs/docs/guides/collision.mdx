@@ -7,6 +7,8 @@ sidebar:
 
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import { Image } from 'astro:assets';
+import outlineCapture from '~/assets/captures/collision-outlines.png';
 
 The collision sample puts a blue player in an arena with grey walls, a green
 trigger and a purple rectangle that deliberately rejects contacts. Move into a
@@ -32,7 +34,7 @@ out\build\x64-debug\samples\collision\CollisionSample.exe
 ```
 
 Use **WASD, arrows or the left stick** to move, **R or gamepad Y** to reset,
-and **Escape or gamepad B** to quit. Every gamepad slot counts, so a pad Windows has put in
+**O** to show or hide shape outlines, and **Escape or gamepad B** to quit. Every gamepad slot counts, so a pad Windows has put in
 another slot, as it can after another pad is unplugged, works as one in slot 0 would;
 [A single-player game accepts every slot](/docs/guides/input/#a-single-player-game-accepts-every-slot)
 explains why the starter reads all four the same way. The content is copied beside the executable,
@@ -46,6 +48,42 @@ contact count and how many times the player has entered the trigger.
 An entry also leaves a small gold marker just above the entry position for
 half a second. It stays there while the player moves on; the HUD counts the
 markers still in the scene.
+
+## Show the collision boundaries when you choose
+
+The sample's outline overlay starts off. O toggles it in the state, and the
+game chooses which shapes it draws: every currently registered collision
+object here, including the purple rectangle whose mask rejects contacts.
+
+<Image src={outlineCapture} alt="Yellow outlines mark the arena walls, mask-zero box, trigger and player inside the trigger." />
+
+This scripted D3D11 capture shows the sample with outlines enabled. It checks
+one rectangle-based scene; the component's geometry and null-recording tests
+cover the other supported shapes without claiming their visual acceptance.
+
+It resolves the engine's existing `white_texture_name` once, then reads shapes
+in the const drawing path:
+
+<SourceFile path="samples/collision/collision_state.cpp" from="void CollisionState::draw_outlines(DrawList& draw_list) const" to="}" />
+
+The `ShapeOutline` component is game code to copy. Take
+<RepoLink path="samples/components/shape_outline.h">shape_outline.h</RepoLink>,
+<RepoLink path="samples/components/shape_outline.cpp">shape_outline.cpp</RepoLink>
+and <RepoLink path="samples/components/shape_outline_tests.cpp">its geometry tests</RepoLink>;
+the <RepoLink path="samples/components/README.md" hash="drawing-collision-shape-outlines">components instructions</RepoLink>
+explain include paths, the engine-linked test target and optional null-render draw tests.
+The component is added after the v0.3.0 starter. This example and its tests
+use the engine revision named by the source links; use that checkout or the
+release that carries it before copying. [Update a starter](/docs/guides/starter-update/)
+and [Move your engine pin](/docs/guides/move-pin/) explain the update routes.
+
+It supports the five shapes the narrow phase measures. Circles use an explicit
+3..1024 chord count, and zero-length edges draw nothing. Thickness is in world
+units, not a fixed number of screen pixels. Every stroke is an ordinary white
+sprite quad: corners can overlap, the sprite path quantizes edges before
+rotation, and a small view can collapse a thin stroke. Colour, thickness,
+quality and visibility remain the game's choices. No collision state changes
+and no engine debug overlay or filled-geometry primitive are introduced.
 
 ## Give each object a shape, layer and mask
 

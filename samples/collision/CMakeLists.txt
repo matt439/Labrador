@@ -2,7 +2,8 @@
 # and the capture, and main_web.cpp is a browser's main. The arena, its bodies
 # and the state are the same files, and CollisionSampleTests links the arena
 # in every build.
-add_library(CollisionExample STATIC body.cpp arena.cpp entry_marker.cpp pads.cpp)
+add_library(CollisionExample STATIC body.cpp arena.cpp entry_marker.cpp pads.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/../components/shape_outline.cpp")
 target_link_libraries(CollisionExample PUBLIC LabradorEngine labrador_settings)
 
 if(EMSCRIPTEN)
@@ -69,6 +70,11 @@ if(LABRADOR_RENDER_BACKEND STREQUAL "null")
 endif()
 target_link_libraries(CollisionSampleTests PRIVATE
     CollisionExample doctest::doctest labrador_settings)
+if(WIN32 AND LABRADOR_RENDER_BACKEND STREQUAL "null"
+    AND LABRADOR_AUDIO_BACKEND STREQUAL "null")
+    target_sources(CollisionSampleTests PRIVATE outlines_state_tests.cpp collision_state.cpp)
+    add_dependencies(CollisionSampleTests collision_content)
+endif()
 # Under Node, as every other browser-build test runs. The root's link options
 # for that are set after this folder is added, because the page above must not
 # take them, so the test names the one it needs: it reads no files.

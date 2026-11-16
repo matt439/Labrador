@@ -9,6 +9,7 @@
 #include <shellapi.h>
 
 #include <cstdio>
+#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <memory>
@@ -53,18 +54,22 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 	{
 		const std::vector<std::wstring> arguments = command_arguments();
 		smoke_test = !arguments.empty() && arguments[0] == L"--smoke-test";
+		std::size_t next = 1;
+		const bool show_outlines = smoke_test && arguments.size() > next &&
+			arguments[next] == L"--outlines";
+		if (show_outlines) { ++next; }
 		std::filesystem::path capture_path;
-		if (smoke_test && arguments.size() == 3 && arguments[1] == L"--capture")
+		if (smoke_test && arguments.size() == next + 2 && arguments[next] == L"--capture")
 		{
-			if (arguments[2].empty()) throw std::invalid_argument("Capture path must not be empty");
-			capture_path = arguments[2];
+			if (arguments[next + 1].empty()) throw std::invalid_argument("Capture path must not be empty");
+			capture_path = arguments[next + 1];
 #ifndef COLLISION_SAMPLE_CAPTURE
 			throw std::invalid_argument("The null renderer cannot capture pixels");
 #endif
 		}
-		else if (!arguments.empty() && !(smoke_test && arguments.size() == 1))
+		else if (!arguments.empty() && !(smoke_test && arguments.size() == next))
 		{
-			throw std::invalid_argument("usage: CollisionSample [--smoke-test [--capture path.png]]");
+			throw std::invalid_argument("usage: CollisionSample [--smoke-test [--outlines] [--capture path.png]]");
 		}
 		ApplicationOptions options;
 		options.window_class_name = L"CollisionSampleWindow";
@@ -77,7 +82,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		app.load_manifest("./manifest.json");
 		if (smoke_test)
 		{
-			CollisionState state(&app, true);
+			CollisionState state(&app, true, show_outlines);
 			state.init();
 			for (int tick = 0; tick < smoke_test_ticks; ++tick)
 			{

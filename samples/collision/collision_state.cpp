@@ -52,8 +52,9 @@ namespace collision
 		}
 	}
 
-	CollisionState::CollisionState(Application* app, bool smoke_test) :
-		app_(app), smoke_test_(smoke_test)
+	CollisionState::CollisionState(Application* app, bool smoke_test,
+		bool show_outlines) :
+		app_(app), smoke_test_(smoke_test), show_outlines_(show_outlines)
 	{
 	}
 
@@ -61,7 +62,9 @@ namespace collision
 	{
 		RenderResources* resources = this->app_->render_resources();
 		this->font_ = resources->resolve_sprite_font("jetbrains_mono_bold_16");
-		this->arena_ = std::make_unique<Arena>(resources->resolve_texture(white_texture_name));
+		const TextureHandle white = resources->resolve_texture(white_texture_name);
+		this->arena_ = std::make_unique<Arena>(white);
+		this->outlines_ = components::ShapeOutline(white);
 		this->refresh_view();
 	}
 
@@ -86,6 +89,10 @@ namespace collision
 		if (keyboard.pressed(Key::r) || pad_input.reset_requested)
 		{
 			this->arena_->reset();
+		}
+		if (keyboard.pressed(Key::o))
+		{
+			this->show_outlines_ = !this->show_outlines_;
 		}
 		Vector2F direction = keyboard_direction(keyboard) + pad_input.stick;
 		if (this->smoke_test_)
@@ -129,6 +136,10 @@ namespace collision
 	{
 		this->arena_->scene().draw(renderer, [this](int, DrawList& draw_list)
 		{
+			if (this->show_outlines_)
+			{
+				this->draw_outlines(draw_list);
+			}
 			// The overlay keeps the world's camera so its labels resize with
 			// the arena, in the same fitted 1280x720 coordinates.
 			const auto line = [this, &draw_list](const std::wstring& text,
@@ -138,7 +149,7 @@ namespace collision
 					1.0f, 0.0f, Vector2F::zero, 0.0f);
 			};
 			line(L"COLLISION / move, resolve, observe", 40.0f, 30.0f, Colour::white);
-			line(L"WASD / arrows / left stick: move    R / Y: reset    Esc / B: quit",
+			line(L"WASD / arrows / left stick: move    R / Y: reset    O: outlines    Esc / B: quit",
 				40.0f, 60.0f, Colour(180, 195, 215));
 			line(this->status_, 40.0f, 94.0f, Colour::white);
 			line(L"MASK = 0", 348.0f, 276.0f, Colour(190, 150, 225));
@@ -147,6 +158,19 @@ namespace collision
 			line(L"Blue: player   Gold: wall contact   Green: inside trigger",
 				40.0f, 682.0f, Colour(180, 195, 215));
 		});
+	}
+
+	void CollisionState::draw_outlines(DrawList& draw_list) const
+	{
+		// The game chooses every registered collider, including mask-zero
+		// decoration. Drawing reads the same shapes the sweep sees.
+		for (const CollisionObject* object : this->arena_->scene().collision_objects())
+		{
+			if (const Shape* shape = object->shape())
+			{
+				this->outlines_.draw(draw_list, *shape, 2.0f, Colour::yellow, 32);
+			}
+		}
 	}
 
 	void CollisionState::refresh_view()
