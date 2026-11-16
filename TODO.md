@@ -165,7 +165,7 @@ scope; it does not publish a release, change settings or claim acceptance.
 |---|---|---|---|---|
 | `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
 | `SM-93` | OPEN | could | M | Cross-site bundle focus, fullscreen-policy, quit/replay and loader-failure regression passes Chromium and protocol/site checks; finish combined-root lint (`REV#72`). [Scope and evidence](docs/product/BACKLOG.md#sm-93). |
-| `OCA-119` | OPEN | could | S | Observe actual browser Escape/fullscreen routing; automate only a faithful interaction and document the result (`REV#93`). [Scope](docs/product/BACKLOG.md#oca-119). |
+| `OCA-119` | BLOCKED | could | S | Await a qualified trusted-key or informal human browser observation. Computer Use stopped before any trusted input; no Escape behaviour is claimed. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |
 | `SM-97` | OPEN | could | M | Pilot LineSweeper on iOS Simulator by explicit invocation, measuring reliability before recurring coverage (`REV#152`). [Scope](docs/product/BACKLOG.md#sm-97). |

@@ -3676,6 +3676,17 @@ engine binding policy is selected. Retain the actual observation/driver
 evidence, run any runner fixtures and qualified page test, and finish with
 lint and the website gate; this planning record observes no browser session.
 
+**Blocked, 2026-11-17:** the [headed attempt](../port/2026-11-17-browser-escape-attempt.md)
+started an isolated Chrome 157.0.8103.78 window, but Computer Use could not
+determine its URL confidently enough to enforce policy and stopped before
+any trusted click or Escape. No full-screen session, browser exit or game-key
+delivery was observed. Owned processes were closed; no alternate OS-input
+route was attempted. A bounded headed runner option and offline argument
+fixtures are retained for attended inspection, without claiming physical
+input from DevTools keys. The observer prototype is not a qualified test.
+Acceptance still awaits a qualified trusted-key route or informal human
+browser observation; the story remains unchecked.
+
 <a id="sm-94"></a>
 ### SM-94. State a bounded outside-contribution policy
 

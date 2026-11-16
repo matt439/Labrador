@@ -1,5 +1,6 @@
-// Runs one page of a browser build in headless Chromium, and exits with its
-// exit code. A command line it cannot run exits 2, with the usage below,
+// Runs one page of a browser build in Chromium and exits with its exit code.
+// Headless by default; --browser-mode headed opens an attended test window.
+// A command line it cannot run exits 2, with the usage below,
 // before anything is started.
 //
 //   node run_page.mjs --browser <chrome> --page <dir/Name.html>
@@ -14,7 +15,10 @@
 //
 // Either form also takes [--emulate-media <feature>=<value>],
 // [--expect-console <text>], [--root <folder>], [--cpu-throttle <rate>],
-// [--network <profile>] and [--query <name=value&...>].
+// [--network <profile>], [--query <name=value&...>] and
+// [--browser-mode headless|headed]. Headed mode opens a disposable visible
+// browser for an attended check; DevTools-dispatched keys do
+// not thereby become operating-system input or evidence of browser Escape.
 //
 // ctest's command for RenderPixelTests and RenderContextLossTests in the
 // wasm-* presets (tests/render/CMakeLists.txt), for WebWindowTests
@@ -56,7 +60,8 @@
 // makes the input real rather than an event the page made of itself;
 // send_browser(method, params), the same on the browser's own session, for
 // Target.createTarget or Browser.crashGpuProcess, with target_id naming the
-// page's tab; and wait(ms). The script asserts by throwing. When it returns the run has
+// page's tab; browser_mode names the selected headless/headed launch mode,
+// not the input's provenance; and wait(ms). The script asserts by throwing. When it returns the run has
 // passed and is over, whether or not the page has exited, and a throw is a
 // failure naming its message. A page that aborts or exits with a failure
 // first ends the run as it would without one; one that exits cleanly first
@@ -123,8 +128,8 @@
 //
 // WHAT IT DOES, IN ORDER. Serves the page's folder over HTTP on a loopback
 // port, because a browser will not compile a module read from file://. Starts
-// the browser headless with a profile of its own, on a DevTools port the
-// browser chooses, and drives it over the DevTools protocol with Node's own
+// the browser (headless by default) with a profile of its own, on a DevTools
+// port the browser chooses, and drives it over the DevTools protocol with Node's own
 // WebSocket - no package, so there is nothing to install and nothing to pin.
 // Writes every console message the page logs to stdout or stderr, which is
 // where doctest's report arrives. Waits on window.labradorExit, which the
@@ -165,7 +170,7 @@ let timeout_ms;
 // ignored, so a misspelt option reaches the usage message.
 const OPTION_NAMES = new Set(['browser', 'page', 'collect', 'timeout', 'browser-warnings',
 	'hide-extension', 'input', 'quit-keys', 'frames', 'sample-input', 'emulate-media',
-	'expect-console', 'root', 'cpu-throttle', 'network', 'query']);
+	'expect-console', 'root', 'cpu-throttle', 'network', 'query', 'browser-mode']);
 
 // --network's profiles: latency in ms, throughput in bytes per second. The
 // figures are Chrome DevTools' presets of the same names (its
@@ -190,7 +195,7 @@ export const USAGE =
 	'[--sample-input fixed-step]\n' +
 	'  either form: [--emulate-media <feature>=<value>] [--expect-console <text>] ' +
 	'[--root <folder>] [--cpu-throttle <rate>] [--network <profile>] ' +
-	'[--query <name=value&...>]\n';
+	'[--query <name=value&...>] [--browser-mode headless|headed]\n';
 
 // A command line the runner cannot run: it exits 2 with USAGE, before
 // anything is started.
@@ -214,6 +219,10 @@ export function parse_arguments(argv) {
 	if (!parsed.browser || !parsed.page) {
 		fail_usage('--browser and --page are required');
 	}
+	if (parsed['browser-mode'] !== undefined && !['headless', 'headed'].includes(parsed['browser-mode'])) {
+		fail_usage('--browser-mode takes headless or headed');
+	}
+	parsed.headed = parsed['browser-mode'] === 'headed';
 	if (parsed['browser-warnings'] !== undefined &&
 		parsed['browser-warnings'] !== 'fail') {
 		fail_usage('--browser-warnings takes one value, "fail"');
@@ -334,16 +343,16 @@ function serve(directory) {
 	});
 }
 
-export function chromium_arguments(profile, extra = [], platform = process.platform) {
+export function chromium_arguments(profile, extra = [], platform = process.platform, headed = false) {
 	return [
-		'--headless=new',
+		...(headed ? [] : ['--headless=new']),
 		'--remote-debugging-port=0',
 		`--user-data-dir=${profile}`,
 		'--no-first-run',
 		'--no-default-browser-check',
 		'--disable-extensions',
 		'--enable-unsafe-swiftshader',
-		...(platform === 'win32' ? ['--disable-features=CalculateNativeWinOcclusion'] : []),
+		...(platform === 'win32' && !headed ? ['--disable-features=CalculateNativeWinOcclusion'] : []),
 		...extra,
 		'about:blank',
 	];
@@ -351,10 +360,10 @@ export function chromium_arguments(profile, extra = [], platform = process.platf
 
 // The browser, and the DevTools endpoint it prints on stderr once it is
 // listening. The port is the browser's choice, so two runs never collide.
-function launch(browser, profile) {
+function launch(browser, profile, headed) {
 	const extra = (process.env.LABRADOR_TEST_BROWSER_ARGS ?? '')
 		.split(' ').filter((argument) => argument.length > 0);
-	const child = spawn(browser, chromium_arguments(profile, extra),
+	const child = spawn(browser, chromium_arguments(profile, extra, process.platform, headed),
 		{ stdio: ['ignore', 'ignore', 'pipe'] });
 
 	// The last 16 KiB the browser wrote to stderr: where its endpoint is
@@ -417,7 +426,7 @@ export async function activate_page(send, session) {
 // Child frames can live in another renderer process. Binding their commands
 // and events explicitly keeps them out of the top document's execution context,
 // while retaining their diagnostics in the same run.
-export function driver_page_api(devtools, session, target_id, monitored_sessions) {
+export function driver_page_api(devtools, session, target_id, monitored_sessions, browser_mode = 'headless') {
 	monitored_sessions.add(session);
 	return {
 		evaluate: (expression, { user_gesture = false } = {}) =>
@@ -425,6 +434,7 @@ export function driver_page_api(devtools, session, target_id, monitored_sessions
 		send: (method, params = {}) => devtools.send(method, params, session),
 		send_browser: (method, params = {}) => devtools.send(method, params),
 		target_id,
+		browser_mode,
 		on: (listener) => devtools.on((message) => {
 			if (message.sessionId === session) { listener(message); }
 		}),
@@ -432,7 +442,7 @@ export function driver_page_api(devtools, session, target_id, monitored_sessions
 			if (typeof child !== 'string' || child.length === 0) {
 				throw new Error('child_session needs an attached session id');
 			}
-			return driver_page_api(devtools, child, undefined, monitored_sessions);
+			return driver_page_api(devtools, child, undefined, monitored_sessions, browser_mode);
 		},
 		wait,
 	};
@@ -710,7 +720,8 @@ async function run() {
 	const server = await serve(root);
 	const url = `http://127.0.0.1:${server.address().port}/${page_name}`;
 	const profile = mkdtempSync(join(tmpdir(), 'labrador-browser-'));
-	const { child, endpoint, diagnostics } = launch(options.browser, profile);
+	const { child, endpoint, diagnostics } = launch(options.browser, profile, options.headed);
+	process.stdout.write(`run_page: browser mode: ${options.headed ? 'headed' : 'headless'}\n`);
 
 	let exit_code = 1;
 	const browser_complaints = [];
@@ -751,7 +762,8 @@ async function run() {
 		const { sessionId: session } = await setup('Target.attachToTarget',
 			{ targetId: page.targetId, flatten: true });
 		const monitored_sessions = new Set();
-		const page_api = driver_page_api(devtools, session, page.targetId, monitored_sessions);
+		const page_api = driver_page_api(devtools, session, page.targetId, monitored_sessions,
+			options.headed ? 'headed' : 'headless');
 		const complaint = (source, level, text, detail = {}) => {
 			if (input_driver?.expected_complaint?.({ source, level, text, ...detail }) === true) {
 				process.stdout.write(`run_page: expected ${source} diagnostic: ${text}\n`);

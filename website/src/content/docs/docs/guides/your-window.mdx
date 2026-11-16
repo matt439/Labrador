@@ -8,6 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import GuideVersionNote from '~/components/GuideVersionNote.astro';
+import RepoLink from '~/components/RepoLink.astro';
 
 This page changes how the game from [Get the starter project](/docs/get-started/starter/) looks:
 the greeting's colour, its size and where it starts, the size of the window, full screen, what
@@ -295,6 +296,15 @@ To leave it:
 Delete the line again to go back to a window. The line is in `main.cpp`, so it changes the
 Windows game only; `main_web.cpp` has no such line, and a page can go full screen only after the
 player presses a key or clicks.
+
+In browser full screen, **the interaction between Escape and the game's quit question
+still needs a real-browser observation**. The
+<RepoLink path="docs/port/2026-11-17-browser-escape-attempt.md">17 November 2026 attempt</RepoLink>
+stopped before any trusted click or Escape, so it established neither full-screen exit
+nor whether the game receives that key. Headless key tests and explicit
+`document.exitFullscreen()` calls do not answer that question. The remaining check is a
+qualified trusted-key route or informal human browser observation, with its browser and
+version recorded; this page does not promise what one Escape press will do there.
 
 ## Full screen with F11
 
