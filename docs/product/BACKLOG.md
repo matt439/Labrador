@@ -1416,7 +1416,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
 - [x] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
 - [x] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
-- [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
+- [x] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
 - [x] **[OCA-101](#oca-101)** Could · S · The Outside Adopter: Find browser output and debug a browser-only C++ fault
 - [x] **[SM-85](#sm-85)** Could · S · The Sole Owner-Maintainer: Read reproducible build-cost reports without a hard timing gate
 
@@ -2538,6 +2538,20 @@ Selected from [`REV#91`](../review/2026-11-10/FINDINGS.md#rev91).
 policy. Build a consumer with the recipe, verify debugger symbol loading and
 optimised build flags, and check install contents with the existing release
 procedure. Run affected configuration/tooling checks and the website gate.
+
+Closed 2026-11-17: the optional copied `release-symbols.cmake` and
+[release-symbols guide](../../website/src/content/docs/docs/guides/release-symbols.mdx)
+preserve optimization, floating-point, runtime and IPO choices while adding
+full native MSVC Release PDBs. The default starter/Release path does not
+enable or place the recipe. [Qualification](../performance/2026-11-17-release-symbols.md)
+records two real consumer policies, actual compile/link flags, matching
+executable/PDB GUID-age and source-checksum loading, real one-shot source
+breakpoints and smoke exit zero. The installed game retained exactly its
+twenty files and no PDB. Local tooling preserves exact working-tree source
+bytes and hashes privately, with relocation, mismatch, timeout and
+nonreplacement checks. No dump writer, upload, signing, publication or host
+debugger setting change was added; optimized-local and other-platform limits
+remain explicit.
 
 <a id="oca-101"></a>
 ### OCA-101. Explain browser output and browser-only C++ debugging

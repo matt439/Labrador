@@ -121,7 +121,6 @@ five deferred review rows below keep their individual revisit triggers.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-97` | OPEN | could | M | Native helpers implemented; finish ordinary-prompt Sandbox qualification at a non-default Visual Studio path, including normal play (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
-| `PI-24` | OPEN | could | S | Provide an opt-in optimized Release symbols recipe with matching executable/PDB/source identity (`REV#91`). [Scope](docs/product/BACKLOG.md#pi-24). |
 
 ## Third accepted decision batch of 2026-11-16
 

@@ -127,6 +127,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Retain matching symbols for optimised Release builds
+
+**Optional copied build recipe.** A game can include
+`website/src/walkthrough/release-symbols.cmake` before its engine/game
+subdirectories and select `MYGAME_RELEASE_SYMBOLS=ON` for native MSVC Release.
+It adds `/Zi /ZH:SHA_256` and full PDB linking with explicit Release
+elimination/folding and non-incremental choices. It preserves optimization,
+precise floating-point, runtime and IPO selections. The assembler and ordinary
+Release path do not enable it, and install rules do not distribute PDBs.
+The guide and explicit local tooling cover matching executable/PDB/source
+checks and private retention, with no crash upload, signing or publication.
+
 ### 2026-11-17 - Declare browser stack dependencies before optimized linking
 
 **Build fix.** Browser consumers retain the private stack helpers used by the

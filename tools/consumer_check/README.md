@@ -1,5 +1,19 @@
 # The consumer check
 
+The optional [Release-symbols procedure](../../website/src/content/docs/docs/guides/release-symbols.mdx)
+is separate from the ordinary starter. Its copied recipe preserves native
+MSVC Release optimization, runtime and IPO choices; compiler-free fixtures
+are `test_release_symbols_recipe.py`. The standalone
+[symbol probe](symbol_probe/README.md) verifies the actual local PDB/image,
+preserved source checksum, a real one-shot breakpoint and own-child smoke
+exit. `retain_symbols.py` captures the explicitly selected pair and working
+source bytes privately, excluding generated/VCS directories without changing
+line endings. It records hashes, not a claim that arbitrary selected PDBs
+match; run the probe separately. Its fixtures are `test_retain_symbols.py`.
+The [dated consumer qualification](../../docs/performance/2026-11-17-release-symbols.md)
+records the default/full-IPO proofs and installed-folder check. No probe or
+private capture is added to the normal installed game.
+
 `assemble.py` builds, in an empty folder, the project that Get Started's
 *Start your own project* page
 (`website/src/content/docs/docs/get-started/your-project.mdx`) tells a reader

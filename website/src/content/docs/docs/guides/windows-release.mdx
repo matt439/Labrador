@@ -99,6 +99,10 @@ tar -a -c -f C:\dev\mygame-release.zip -C C:\dev mygame-release
 Installing a debug build stops with `Install the x64-release build.`, because a debug build loads
 the debug MSVC runtime, which Microsoft does not let you redistribute.
 
+To keep matching symbols for a failure that appears only in the optimized game, use the
+optional [Release-symbols recipe](/docs/guides/release-symbols/). It preserves the Release
+choices and keeps the PDB and source evidence privately, outside the installed game folder.
+
 ## The MSVC runtime
 
 The game and `DirectXTK.dll` are built with Visual Studio, and they load its runtime:
