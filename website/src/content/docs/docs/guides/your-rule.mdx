@@ -7,6 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
+import RepoLink from '~/components/RepoLink.astro';
 import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 In the game from [Get the starter project](/docs/get-started/starter/), the arrow keys can steer
@@ -803,5 +804,5 @@ the current development starter and compiles and runs it with native null
 rendering and audio. It runs the guide's rules tests and the game's smoke
 check. This automation does not qualify the released v0.3.0 starter, browser
 pages, visual appearance, or the optional edits after the numbered procedure.
-The [pilot procedure](https://github.com/matt439/Labrador/blob/master/tools/consumer_check/README.md#compiled-guide-pilot)
+The <RepoLink path="tools/consumer_check/README.md" hash="compiled-guide-pilot">pilot procedure</RepoLink>
 records its scope and measured cost.
