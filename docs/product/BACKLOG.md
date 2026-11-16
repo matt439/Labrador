@@ -1392,7 +1392,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-87](#oca-87)** Should · M · The Outside Adopter: My normally visible game first shows a completed frame
 - [ ] **[OCA-88](#oca-88)** Should · S · The Outside Adopter: Read a loaded texture's dimensions
 - [ ] **[SM-77](#sm-77)** Should · S · The Sole Owner-Maintainer: Refuse sprite-sheet frames outside their atlas — after OCA-88
-- [ ] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
+- [x] **[OCA-89](#oca-89)** Could · XS · The Outside Adopter: Know whether a hex colour parsed successfully
 - [ ] **[OCA-90](#oca-90)** Should · M · The Outside Adopter: Answer the player's request to close my native game
 - [ ] **[SM-78](#sm-78)** Should · M · The Sole Owner-Maintainer: Construct scripted pad input alongside configured shipping input in the same engine library
 - [ ] **[OCA-91](#oca-91)** Should · S · The Outside Adopter: Capture the engine's non-fatal diagnostics
@@ -1650,6 +1650,10 @@ check the website gate. This does not reopen the separate texture-limit API.
 
 <a id="oca-89"></a>
 ### OCA-89. Parse a hex colour with an explicit failure result
+
+**Closed 2026-11-16:** parser, contract and native/wasm regressions are
+implemented. The combined website gate at `f8108044` passed its type check,
+200 tests, 177-page build, internal links and immutable release assembly.
 
 Selected from [`REV#34`](../review/2026-11-10/FINDINGS.md#rev34).
 
