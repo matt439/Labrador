@@ -1413,7 +1413,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
 - [x] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
 - [x] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
-- [ ] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
+- [x] **[SRL-23](#srl-23)** Could · M · The Sample-Reading Learner: Read a compiled example that spawns and retires a scene object during play
 - [ ] **[SRL-24](#srl-24)** Could · XS · The Sample-Reading Learner: Know that one CollisionObject carries one shape
 - [ ] **[OCA-100](#oca-100)** Could · S · The Outside Adopter: Receive the ISO extra key on Windows and in the browser
 - [ ] **[PI-24](#pi-24)** Could · S · The Pinned Submodule Integrator: Retain matching symbols for my optimised Windows release
@@ -2428,6 +2428,16 @@ Selected from [`REV#44`](../review/2026-11-10/FINDINGS.md#rev44).
 Headless/null sample tests pin spawn, deferred visibility and retirement;
 native smoke and browser page checks still quit through their bounded routes.
 Run affected sample/tooling checks and the website gate.
+
+**Implemented, 2026-11-17:** trigger entry creates a scene-owned EntryMarker
+with a half-second timer and a recorded retirement flag. The guide quotes its
+compiled spawn, update and flag methods. Portable cases pin pending admission,
+timer/bounds retirement and reset; null drawing records the admission and
+retirement boundaries. The original 315-step native smoke route is followed
+by 60 stationary steps and checks one spawn and completed retirement.
+Native Debug and null sample/smoke checks, wasm Debug Node cases and the Chrome
+and Firefox collision pages pass; the website gate passes. The route-end
+native capture was inspected, separately from the null recording assertions.
 
 <a id="srl-24"></a>
 ### SRL-24. State the one-shape-per-CollisionObject limit

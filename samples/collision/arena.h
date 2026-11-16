@@ -29,13 +29,19 @@ namespace collision
 		std::size_t contact_count() const;
 		int trigger_entries() const;
 		bool hit_wall() const;
+		std::size_t entry_marker_count() const;
+		int markers_spawned() const;
 
 	private:
+		void spawn_entry_marker();
+
 		labrador::Scene scene_{ nullptr, nullptr };
+		labrador::TextureHandle texture_;
 		// Borrowed from scene_, which owns and retains the player for its life.
 		Body* player_ = nullptr;
 		std::size_t contact_count_ = 0;
 		int trigger_entries_ = 0;
+		int markers_spawned_ = 0;
 		bool was_in_trigger_ = false;
 		bool hit_wall_ = false;
 	};

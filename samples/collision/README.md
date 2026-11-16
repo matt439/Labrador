@@ -53,11 +53,24 @@ though the player's mask accepts its layer. The grey wall stops the player,
 turning it gold while a contact is measured. Move diagonally against it to slide
 along it. Walk around it and into the green trigger: contacts turn the player
 green and count entries without separating it.
+Each entry leaves a small gold marker just above the entry position for half
+a second. The marker stays there while the player moves on.
+The HUD counts the markers still admitted to the scene.
 
 `Arena::step` runs update, resolve, reads the contacts, then ends the tick.
 Contacts borrow their participants and expire at `end_tick`; the HUD retains
 only their count. Trigger entry is game policy, computed from this step's
 overlap and the previous step's overlap. It is not an engine event subscription.
+
+`Arena::spawn_entry_marker` adds one scene-owned `EntryMarker` after observing
+an entry. The marker is pending until that step's `end_tick`, so the first
+draw can show it before it receives its first update on the next tick. Its
+zero layer/mask adds no contacts. The marker's game-owned timer records a
+deletion flag after half a second; `Scene::end_tick` destroys it. Its
+`set_for_deletion` also records a bounds-sweep request, although this arena
+sets no bounds. Keep no pointer, reference or callback capture after that
+retirement. Arena keeps only counts, and reset retires admitted markers before
+clearing its counters.
 
 The scene owns the bodies. Their `RectangleF` is both the collision shape and
 the drawn rectangle, so moving it cannot leave an old collider behind.
@@ -79,17 +92,20 @@ Every pad slot counts, as in the template: the system need not put the only
 pad in slot 0. `pads.h` combines the slots, summing the sticks and taking Y
 or B from any of them.
 
-`CollisionSampleTests` runs the same `Arena` and `Body`, and the pad
+`CollisionSampleTests` runs the same `Arena`, `Body` and `EntryMarker`, and the pad
 combination, without a window, graphics device or loaded content. It runs on
-every backend. To exercise the
+every backend. Null render adds a recording check: no marker before admission,
+one after admission and none after retirement. To exercise the
 application, manifest and drawing too, launch `CollisionSample.exe --smoke-test`.
-It runs hidden for 315 fixed steps, follows a route into the wall and around it
-to the trigger, checks the result and exits with code zero on success.
+It runs hidden for 375 fixed steps: the original 315-step route into the wall
+and around it to the trigger, then 60 stationary steps. It checks the route,
+one marker spawn and its completed retirement, and exits zero on success.
 `CollisionSmokeTests` runs it on every Windows preset, as `MinimalSmokeTests`
 runs the template's; like that one it needs the selected renderer's device.
 Use a rasterising preset to inspect pixels.
-Add `--capture path.png` after `--smoke-test` to write its final frame through
-the existing PNG writer. Capture is available on rasterising presets only.
+Add `--capture path.png` after `--smoke-test` to write the route's final frame,
+before the stationary retirement wait, through the existing PNG writer.
+Capture is available on rasterising presets only.
 
 ## What it borrows from outside this folder
 

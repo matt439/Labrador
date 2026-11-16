@@ -2,7 +2,7 @@
 # and the capture, and main_web.cpp is a browser's main. The arena, its bodies
 # and the state are the same files, and CollisionSampleTests links the arena
 # in every build.
-add_library(CollisionExample STATIC body.cpp arena.cpp pads.cpp)
+add_library(CollisionExample STATIC body.cpp arena.cpp entry_marker.cpp pads.cpp)
 target_link_libraries(CollisionExample PUBLIC LabradorEngine labrador_settings)
 
 if(EMSCRIPTEN)
@@ -64,6 +64,9 @@ endif()
 
 find_package(doctest CONFIG REQUIRED)
 add_executable(CollisionSampleTests arena_tests.cpp pads_tests.cpp)
+if(LABRADOR_RENDER_BACKEND STREQUAL "null")
+    target_sources(CollisionSampleTests PRIVATE null/entry_marker_draw_tests.cpp)
+endif()
 target_link_libraries(CollisionSampleTests PRIVATE
     CollisionExample doctest::doctest labrador_settings)
 # Under Node, as every other browser-build test runs. The root's link options
