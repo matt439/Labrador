@@ -150,6 +150,15 @@ namespace
 		Result take_result()
 		{
 			Result result;
+			if (this->options_.process_observations)
+			{
+				result.process_observations = native_process_observation::capture(
+					this->first_completed_frame_utc_,
+					"after_frame_loop_before_benchmark_destruction_and_result_assembly");
+			}
+#ifdef LABRADOR_OBSERVATION_SOURCE_REVISION
+			result.source_revision = LABRADOR_OBSERVATION_SOURCE_REVISION;
+#endif
 			result.samples = std::move(this->samples_);
 			result.device = this->renderer_.device_info();
 			result.display_start = std::move(this->display_start_);
@@ -333,6 +342,10 @@ namespace
 
 				this->renderer_.end_frame();
 				const Clock::time_point present_end = Clock::now();
+				const std::optional<std::chrono::system_clock::time_point> first_completed =
+					this->options_.process_observations && this->completed_frames_ == 0
+					? std::optional<std::chrono::system_clock::time_point>(
+						std::chrono::system_clock::now()) : std::nullopt;
 
 				if (this->failure_)
 				{
@@ -352,6 +365,10 @@ namespace
 						nanoseconds(frame_start - pacing_start),
 						this->pacer_ ? nanoseconds(frame_start - deadline) : 0,
 					});
+				}
+				if (first_completed)
+				{
+					this->first_completed_frame_utc_ = first_completed;
 				}
 
 				++this->completed_frames_;
@@ -464,6 +481,7 @@ namespace
 		std::string measurement_class_;
 		std::string started_utc_;
 		std::string finished_utc_;
+		std::optional<std::chrono::system_clock::time_point> first_completed_frame_utc_;
 	};
 
 	class ComApartment final

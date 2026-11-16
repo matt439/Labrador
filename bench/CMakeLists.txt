@@ -68,6 +68,8 @@ if(WIN32)
         LabradorEngine
         labrador_settings
     )
+    target_compile_definitions(LineSweeperFrameBench PRIVATE
+        LABRADOR_OBSERVATION_SOURCE_REVISION="${LABRADOR_SOURCE_REVISION}")
     target_include_directories(LineSweeperFrameBench SYSTEM PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
     )

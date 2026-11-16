@@ -8,6 +8,7 @@ labrador_add_test_suite(AppTests
         application_options_tests.cpp
         content_root_tests.cpp
         frame_timer_tests.cpp
+        native_process_observation_tests.cpp
         motion_preference_tests.cpp
         web/dom_events_tests.cpp
     LINKS LabradorEngine

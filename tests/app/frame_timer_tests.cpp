@@ -61,6 +61,65 @@ TEST_CASE("frame_timings is all zero until the first frame is published")
 	CHECK(timings.draw_time == nanoseconds::zero());
 	CHECK(timings.submit_time == nanoseconds::zero());
 	CHECK(timings.end_frame_time == nanoseconds::zero());
+	CHECK_FALSE(timings.first_completed_frame_utc.has_value());
+}
+
+TEST_CASE("the first publication retains its UTC endpoint across later clock changes")
+{
+	FrameTimer timer;
+	FrameTimings timings;
+	FrameMarks first = marks_from(100, 1);
+	const std::chrono::system_clock::time_point endpoint(std::chrono::seconds(123));
+	first.first_completed_frame_utc = endpoint;
+	timer.begin(at(100));
+	timer.publish(first, timings);
+	CHECK(timings.first_completed_frame_utc == endpoint);
+
+	FrameMarks later = marks_from(117, 1);
+	later.first_completed_frame_utc = endpoint - std::chrono::hours(1);
+	timer.begin(at(117));
+	timer.publish(later, timings);
+	CHECK(timings.first_completed_frame_utc == endpoint);
+
+	timer.discontinuity();
+	run_tick(timer, timings, 3000, 1);
+	CHECK(timings.interval == nanoseconds::zero());
+	CHECK(timings.first_completed_frame_utc == endpoint);
+}
+
+TEST_CASE("an unpublished first-frame endpoint leaves the retained endpoint unknown")
+{
+	FrameTimer timer;
+	FrameTimings timings;
+	FrameMarks abandoned = marks_from(100, 1);
+	abandoned.first_completed_frame_utc =
+		std::chrono::system_clock::time_point(std::chrono::seconds(123));
+	timer.begin(at(100));
+	CHECK_FALSE(timings.first_completed_frame_utc.has_value());
+	timer.discontinuity();
+	CHECK_FALSE(timings.first_completed_frame_utc.has_value());
+
+	FrameMarks completed = marks_from(200, 1);
+	completed.first_completed_frame_utc =
+		std::chrono::system_clock::time_point(std::chrono::seconds(456));
+	timer.begin(at(200));
+	timer.publish(completed, timings);
+	CHECK(timings.first_completed_frame_utc == completed.first_completed_frame_utc);
+	CHECK(timings.first_completed_frame_utc != abandoned.first_completed_frame_utc);
+}
+
+TEST_CASE("an unknown first-frame endpoint is not replaced with a later frame's time")
+{
+	FrameTimer timer;
+	FrameTimings timings;
+	run_tick(timer, timings, 100, 1);
+	CHECK_FALSE(timings.first_completed_frame_utc.has_value());
+	FrameMarks later = marks_from(117, 1);
+	later.first_completed_frame_utc =
+		std::chrono::system_clock::time_point(std::chrono::seconds(456));
+	timer.begin(at(117));
+	timer.publish(later, timings);
+	CHECK_FALSE(timings.first_completed_frame_utc.has_value());
 }
 
 TEST_CASE("each phase is the bracket around it, and frame counts published frames")
@@ -217,4 +276,12 @@ TEST_CASE("a step already owed, or no step at all, is no wait")
 	CHECK(labrador::minimized_wait(step + 1, step) == nanoseconds::zero());
 	CHECK(labrador::minimized_wait(0, 0) == nanoseconds::zero());
 	CHECK(labrador::minimized_wait(5, 0) == nanoseconds::zero());
+}
+
+TEST_CASE("the original frame record aggregate prefixes keep unknown startup endpoints")
+{
+	const labrador::FrameTimings timings{ 0, 0, {}, {}, {}, {}, {}, {} };
+	const labrador::FrameMarks marks{ 0, {}, {}, {}, {}, {} };
+	CHECK_FALSE(timings.first_completed_frame_utc);
+	CHECK_FALSE(marks.first_completed_frame_utc);
 }

@@ -166,6 +166,13 @@ namespace labrador
 		std::chrono::nanoseconds submit_time{};
 
 		std::chrono::nanoseconds end_frame_time{};
+
+		// UTC observed immediately after the first successful end_frame in
+		// this Application's loop, retained only when that frame is published.
+		// Unknown until then; resets and suspension do not replace it. This
+		// system-clock endpoint can reflect wall-clock adjustments and is not
+		// a steady duration, GPU-completion time or display-latency measurement.
+		std::optional<std::chrono::system_clock::time_point> first_completed_frame_utc = std::nullopt;
 	};
 
 	// The machinery every game needs and no game should write: a window, a device,

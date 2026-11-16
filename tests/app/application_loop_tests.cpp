@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -199,10 +200,12 @@ TEST_CASE("quitting in update finishes owed steps without drawing or publishing 
 	if (wait_for_frame)
 	{
 		CHECK(observation.frame_at_quit > 0);
+		CHECK(app.frame_timings().first_completed_frame_utc.has_value());
 	}
 	else
 	{
 		CHECK(observation.frame_at_quit == 0);
+		CHECK_FALSE(app.frame_timings().first_completed_frame_utc.has_value());
 		CHECK(observation.updates_after_quit > 0);
 	}
 }
@@ -224,6 +227,7 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 	TimingState* state = owned.get();
 
 	CHECK(app.frame_timings().frame == 0);
+	CHECK_FALSE(app.frame_timings().first_completed_frame_utc.has_value());
 	CHECK(app.run(std::move(owned)) == 0);
 
 	REQUIRE(seen.size() == static_cast<size_t>(TimingState::update_count));
@@ -231,6 +235,10 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 
 	// The first update runs before any frame has been rendered.
 	CHECK(seen.front().frame == 0);
+	CHECK_FALSE(seen.front().first_completed_frame_utc.has_value());
+	const std::optional<std::chrono::system_clock::time_point> first_completed =
+		app.frame_timings().first_completed_frame_utc;
+	REQUIRE(first_completed.has_value());
 
 	// Every one of the loop's draws is the frame after the last published,
 	// so consecutive draws see consecutive counts: up by exactly one. One
@@ -259,11 +267,17 @@ TEST_CASE("frame_timings follows the loop's own frames and no others")
 		CHECK(timings.draw_time.count() >= 0);
 		CHECK(timings.submit_time.count() >= 0);
 		CHECK(timings.end_frame_time.count() >= 0);
+		if (timings.frame > 0)
+		{
+			CHECK(timings.first_completed_frame_utc == first_completed);
+		}
 	}
 
 	// The final update still sees the last completed frame.
 	CHECK(seen.back().frame > 0);
 	CHECK(app.frame_timings().frame >= seen.back().frame);
+	app.reset_elapsed_time();
+	CHECK(app.frame_timings().first_completed_frame_utc == first_completed);
 }
 
 TEST_CASE("step_position is published before each of the loop's draws")
@@ -413,6 +427,8 @@ namespace
 		int draws_at_restore = -1;
 		std::uint64_t frame_at_minimize = 0;
 		std::uint64_t frame_at_restore = 0;
+		std::optional<std::chrono::system_clock::time_point> first_frame_at_minimize_utc;
+		std::optional<std::chrono::system_clock::time_point> first_frame_at_restore_utc;
 
 		// The updates that ran between the two, whether each saw the stack
 		// inactive, and the times of the first and last.
@@ -520,6 +536,8 @@ namespace
 			this->observation_->draws_at_minimize = this->observation_->draws;
 			this->observation_->frame_at_minimize =
 				this->app_->frame_timings().frame;
+			this->observation_->first_frame_at_minimize_utc =
+				this->app_->frame_timings().first_completed_frame_utc;
 			this->phase_ = Phase::minimized;
 		}
 
@@ -528,6 +546,8 @@ namespace
 			this->observation_->draws_at_restore = this->observation_->draws;
 			this->observation_->frame_at_restore =
 				this->app_->frame_timings().frame;
+			this->observation_->first_frame_at_restore_utc =
+				this->app_->frame_timings().first_completed_frame_utc;
 			this->phase_ = Phase::restored;
 		}
 
@@ -562,6 +582,8 @@ TEST_CASE("a minimised window keeps its updates at their rate and draws nothing"
 	REQUIRE(observation.draws_at_restore >= 0);
 	CHECK(observation.draws_at_restore == observation.draws_at_minimize);
 	CHECK(observation.frame_at_restore == observation.frame_at_minimize);
+	REQUIRE(observation.first_frame_at_minimize_utc.has_value());
+	CHECK(observation.first_frame_at_restore_utc == observation.first_frame_at_minimize_utc);
 
 	// And every update still ran, on a stack that had been told.
 	CHECK(observation.minimized_updates ==
@@ -582,4 +604,6 @@ TEST_CASE("a minimised window keeps its updates at their rate and draws nothing"
 	CHECK(observation.saw_first_frame_back);
 	CHECK(observation.first_interval_back == std::chrono::nanoseconds::zero());
 	CHECK(observation.draws > observation.draws_at_restore);
+	CHECK(app.frame_timings().first_completed_frame_utc ==
+		observation.first_frame_at_minimize_utc);
 }

@@ -76,6 +76,14 @@ add_executable(MinimalSample WIN32
     ${minimal_sources}
     dpi_aware.manifest
 )
+
+option(LABRADOR_SAMPLE_PROCESS_OBSERVATIONS
+    "Report native process observations after MinimalSample --smoke-test" OFF)
+if(LABRADOR_SAMPLE_PROCESS_OBSERVATIONS)
+    target_compile_definitions(MinimalSample PRIVATE
+        LABRADOR_SAMPLE_PROCESS_OBSERVATIONS=1
+        LABRADOR_OBSERVATION_SOURCE_REVISION="${LABRADOR_SOURCE_REVISION}")
+endif()
 target_link_libraries(MinimalSample PRIVATE
     MinimalRules
     LabradorEngine

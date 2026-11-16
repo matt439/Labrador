@@ -398,10 +398,11 @@ namespace labrador
 		return this->step_position_;
 	}
 
-	// SIX CLOCK READS A RENDERED TICK, whatever the frame holds: one at each
+	// SIX STEADY CLOCK READS A RENDERED TICK: one at each
 	// phase boundary and none per view or per object
 	// (T8). In a browser each is a call out to performance.now(), so the
-	// number is fixed here rather than grown by whoever adds a phase.
+	// number is fixed here rather than grown by whoever adds a phase. The
+	// first completed frame also takes one UTC endpoint before publication.
 	void Application::tick()
 	{
 		this->frame_timer_.begin(std::chrono::steady_clock::now());
@@ -499,6 +500,10 @@ namespace labrador
 		marks.submitted = std::chrono::steady_clock::now();
 
 		this->renderer_->end_frame();
+		if (this->frame_timings_.frame == 0)
+		{
+			marks.first_completed_frame_utc = std::chrono::system_clock::now();
+		}
 		marks.frame_ended = std::chrono::steady_clock::now();
 		this->window_->frame_completed();
 

@@ -15,11 +15,13 @@ for which column supports which claim.
 | Argument | Value here | Why |
 |---|---|---|
 | `--output` | `out/performance/local/<date>/<run>.json` | Required. Must end in `.json`; the bench refuses a path that exists, so evidence is never overwritten. |
-| `--run` | `local-<commit>-<backend>-<repetition>` | Required. ASCII letters, digits, `.`, `_`, `-`. The JSON records no commit, so the identifier carries it. |
+| `--run` | `local-<commit>-<backend>-<repetition>` | Required. ASCII letters, digits, `.`, `_`, `-`. Names the repetition; `build.source_revision` also records the configure-time source identity. |
 | `--release-hash` | SHA-256 of the `LineSweeperFrameBench.exe` that runs | Required, 64 hex characters, stored as `release_sha256`. Locally it binds the exact executable; the EC2 lane passes its bundle's release-manifest hash instead. |
 | `--warmup` | `1800` | Frames drawn and discarded first (the default). |
 | `--sample` | `3600` | Frames retained (the default): a minute at 60 Hz. |
 | `--pacing` | `presentation` | Synchronised presentation paces the frames; the benchmark adds no limiter. This is the measurement decision's choice. `software` reproduces the ratchet's two-clock state and is for that investigation only. |
+
+Optional `--process-observations on` adds the defined memory and startup report in [native-process-observations.md](native-process-observations.md). It is off by default and changes no performance threshold.
 
 `--refresh` sets the software pacer's rate and does not affect timing under
 presentation pacing, so it is not passed. Its default still lands in the JSON

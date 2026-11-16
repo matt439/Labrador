@@ -182,7 +182,7 @@ namespace linesweeper_frame_bench
 		std::fwprintf(stderr,
 			L"Usage: LineSweeperFrameBench --output FILE.json --run ID "
 			L"--release-hash SHA256 [--warmup FRAMES] [--sample FRAMES] "
-			L"[--refresh HZ] [--pacing software|presentation]\n"
+			L"[--refresh HZ] [--pacing software|presentation] [--process-observations on|off]\n"
 			L"ID is 1 to %zu ASCII letters, digits, '.', '_' or '-'.\n",
 			max_run_length);
 	}
@@ -197,6 +197,7 @@ namespace linesweeper_frame_bench
 		bool sample_seen = false;
 		bool refresh_seen = false;
 		bool pacing_seen = false;
+		bool process_observations_seen = false;
 
 		for (int index = 1; index < argc; index += 2)
 		{
@@ -208,7 +209,16 @@ namespace linesweeper_frame_bench
 
 			const std::wstring name = argv[index];
 			const std::wstring value = argv[index + 1];
-			if (name == L"--output" && !output_seen)
+			if (name == L"--process-observations" && !process_observations_seen)
+			{
+				if (value != L"on" && value != L"off")
+				{
+					throw std::invalid_argument("--process-observations must be on or off.");
+				}
+				options.process_observations = value == L"on";
+				process_observations_seen = true;
+			}
+			else if (name == L"--output" && !output_seen)
 			{
 				options.output = value;
 				output_seen = true;
@@ -307,7 +317,13 @@ namespace linesweeper_frame_bench
 #endif
 		writer.Key("render_backend");
 		writer.String(device.backend.c_str());
+		writer.Key("source_revision");
+		writer.String(result.source_revision.c_str());
 		writer.EndObject();
+		writer.Key("process_observations");
+		const std::string observation_json =
+			native_process_observation::json(result.process_observations);
+		writer.RawValue(observation_json.c_str(), observation_json.size(), rapidjson::kObjectType);
 		writer.Key("measurement_class");
 		writer.String(result.measurement_class.c_str());
 

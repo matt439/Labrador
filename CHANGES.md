@@ -127,6 +127,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Report defined native process memory and startup endpoints
+
+**Additive timing API and optional reports.** `FrameTimings::first_completed_frame_utc`
+records the UTC system-clock endpoint taken just after the first successful
+`end_frame`, latched only when that frame is published. It remains unknown
+until then and is retained across resets and suspension. It is neither a
+steady duration nor GPU completion or display latency; original aggregate
+prefixes still compile.
+
+`LineSweeperFrameBench --process-observations on` and the minimal sample's
+off-by-default `LABRADOR_SAMPLE_PROCESS_OBSERVATIONS` build option report
+native peak resident working set, private committed bytes at a named
+live-process exit endpoint and process-creation-to-first-completed-frame
+timing. Missing/failed observations stay explicit. No hard limits, new
+package or scheduled collection are added.
+[The procedure and bounded collection](docs/performance/native-process-observations.md)
+define the clocks, endpoints, provenance and comparison limits.
+
 ### 2026-11-17 - Report nominal window display metadata
 
 **New API and additive benchmark metadata.** `Window::display_info()` and

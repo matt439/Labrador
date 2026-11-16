@@ -1132,6 +1132,33 @@ class LocalAnalysisTests(unittest.TestCase):
         self.assertEqual(report["analysis_withheld"], "result_validation_failed")
         self.assertIn("window_display", report["error"])
 
+    def test_process_observations_are_retained_without_changing_pacing(self):
+        document = capture(frames(120, update=300_000, record=900_000, present=200_000))
+        path = self.write("process.json", document)
+        baseline = analysis.analyze_local([path])["backends"]["vulkan"]
+        self.assertIsNone(baseline["repetitions"][0]["process_observations"])
+        document["build"]["source_revision"] = "fixture-dirty"
+        document["process_observations"] = {
+            "requested": True, "memory_status": "observed", "startup_status": "observed",
+            "peak_working_set_bytes": 8000, "private_bytes_at_exit_endpoint": 12000,
+            "process_creation_utc_100ns": 100, "first_completed_frame_utc_100ns": 125,
+            "process_start_to_first_completed_frame_100ns": 25,
+        }
+        path = self.write("process.json", document)
+        backend = analysis.analyze_local([path])["backends"]["vulkan"]
+        first = backend["repetitions"][0]
+        self.assertEqual(first["build"]["source_revision"], "fixture-dirty")
+        self.assertEqual(first["process_observations"], document["process_observations"])
+        self.assertEqual(first["presentation_lock"], baseline["repetitions"][0]["presentation_lock"])
+        self.assertEqual(backend["summary"], baseline["summary"])
+        for field, value in (("private_bytes_at_exit_endpoint", True),
+                             ("process_start_to_first_completed_frame_100ns", 99)):
+            bad = copy.deepcopy(document)
+            bad["process_observations"][field] = value
+            report = analysis.analyze_local([self.write("process.json", bad)])
+            self.assertFalse(report["complete"])
+            self.assertEqual(report["analysis_withheld"], "result_validation_failed")
+
     def test_radeon_capture_without_nvidia_identity_gets_a_verdict_and_pooled_p99s(self):
         waiting = self.write("wait.json", capture(
             frames(120, update=300_000, record=900_000, present=200_000)))

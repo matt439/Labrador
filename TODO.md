@@ -155,7 +155,7 @@ decision to keep the current rendering-text API. Implementation is open.
 | `OCA-113` | OPEN | could | M | Add native/CSS cursor shapes with gallery pointer use, preserving visibility and confinement (`IDEA#17`). [Scope](docs/product/BACKLOG.md#oca-113). |
 | `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
 | `OCA-115` | OPEN | could | S | Report the selected device's texture-size limit and include it in oversized-upload diagnostics (`REV#33`). [Scope](docs/product/BACKLOG.md#oca-115). |
-| `SM-87` | OPEN | could | S | Report defined native memory and startup observations with context and no hard thresholds (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
+| `SM-87` | OPEN | could | S | Observations and focused native/wasm checks implemented; finish the combined app matrix and website qualification (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
 | `SM-89` | WAITING | could | M | Five non-required weekly selections and exact-inventory checks are staged; retain the first hosted results after owner publication (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
 | `SM-90` | OPEN | should | XS | Add an owner-invoked release-time aggregate counter snapshot with reporting-window limits (`REV#54`). [Scope](docs/product/BACKLOG.md#sm-90). |
 
