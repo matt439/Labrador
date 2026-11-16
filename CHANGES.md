@@ -187,8 +187,9 @@ fullscreen entry or exit is handled and reported through
 `on_fullscreen_changed` with the actual status on a later frame. It leaves
 the game running, without an unhandled Promise rejection. A deferred entry
 still waits for eligible user activation. Leaving or closing cancels that
-window's queued request, and a late rejection from a closed window cannot
-notify its replacement. Page-owned requests keep their own rejection handling;
+window's queued request, and late owned Promise settlement cannot notify its
+closed owner. Current window listeners still report actual platform fullscreen
+events, which carry no request identity. Page-owned requests keep their own rejection handling;
 other page errors and `Module.onError` remain visible. Games moving their
 engine pin need no API or template changes.
 

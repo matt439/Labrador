@@ -365,7 +365,10 @@ including the prefixed fallback, and handles only their returned rejections.
 Its callback uses the pinned SDK's existing activation queue with an explicit
 `EM_JS_DEPS` dependency. Leaving and closing remove that callback by identity;
 active-owner and request-generation checks cover already copied callbacks and
-late settlement. Page methods and page-owned Promise handling are unchanged.
+owned Promise settlement after closure. The current window's document listeners
+still observe platform fullscreen events; those events carry no request ID and
+cannot be attributed by Promise generation. Page methods and page-owned
+Promise handling are unchanged.
 
 Focused wasm-debug `WebWindowTests`, `FirefoxWebWindowTests` and
 `ComponentsPageTests` passed 3/3 on Chrome 157.0.8103.78 and Firefox 160.0.
