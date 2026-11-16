@@ -52,6 +52,9 @@ def names(tag: str) -> tuple[str, str]:
 
 def local_source(source: Path, tag: str) -> dict:
     names(tag)
+    # Git may print a long Windows path when the caller used an 8.3 alias.
+    # Compare filesystem identities while still requiring the actual root.
+    source = source.resolve()
     def git(*arguments):
         return git_local.git(source, *arguments, text=True).stdout.strip()
     if Path(git("rev-parse", "--show-toplevel")).resolve() != source:

@@ -22,6 +22,34 @@ import unittest
 REPOSITORY = Path(__file__).resolve().parents[2]
 
 
+def windows_short_path(path: Path) -> Path:
+    """A real, distinct 8.3 alias, skipping only when this host supplies none."""
+    if os.name != "nt":
+        raise unittest.SkipTest("A real 8.3 alias requires Windows")
+    import ctypes
+
+    canonical = path.resolve(strict=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    get_short = kernel32.GetShortPathNameW
+    get_short.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+    get_short.restype = ctypes.c_uint32
+    size = get_short(str(canonical), None, 0)
+    if size == 0:
+        raise ctypes.WinError(ctypes.get_last_error())
+    buffer = ctypes.create_unicode_buffer(size)
+    written = get_short(str(canonical), buffer, size)
+    if written == 0:
+        raise ctypes.WinError(ctypes.get_last_error())
+    if written >= size:
+        raise AssertionError("GetShortPathNameW exceeded its queried buffer size")
+    alias = Path(buffer.value)
+    if alias == canonical:
+        raise unittest.SkipTest("This path has no distinct 8.3 alias on this host")
+    if not alias.samefile(canonical) or alias.resolve() != canonical:
+        raise AssertionError("The 8.3 alias does not identify the original filesystem object")
+    return alias
+
+
 def load_tool(relative: str) -> ModuleType:
     """The script at a repository-relative path, imported under its file name."""
     path = (REPOSITORY / relative).resolve()

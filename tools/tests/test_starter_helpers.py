@@ -12,6 +12,8 @@ import tempfile
 import textwrap
 import unittest
 
+from tools.tests.tool_fixtures import windows_short_path
+
 REPOSITORY = Path(__file__).resolve().parents[2]
 HELPERS = REPOSITORY / "website/src/walkthrough/helpers"
 POWERSHELL = shutil.which("powershell")
@@ -59,10 +61,11 @@ class StarterHelperTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.compiled = tempfile.TemporaryDirectory(prefix="labrador-helper-tool-")
-        cls.binary = Path(cls.compiled.name) / "tool.exe"
-        source = Path(cls.compiled.name) / "tool.cs"
+        compiled_root = Path(cls.compiled.name).resolve()
+        cls.binary = compiled_root / "tool.exe"
+        source = compiled_root / "tool.cs"
         source.write_text(FAKE_TOOL, encoding="utf-8")
-        compile_script = Path(cls.compiled.name) / "compile.ps1"
+        compile_script = compiled_root / "compile.ps1"
         compile_script.write_text(
             "$ErrorActionPreference = 'Stop'\n"
             "Add-Type -Path $args[0] -OutputAssembly $args[1] -OutputType ConsoleApplication\n", encoding="utf-8")
@@ -79,7 +82,7 @@ class StarterHelperTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="labrador-helper-")
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
+        self.root = Path(temporary.name).resolve()
         self.project = self.root / "Project & %literal% with spaces"
         self.project.mkdir()
         self.installation = self.root / "Non default VS & %literal%"
@@ -132,17 +135,34 @@ class StarterHelperTests(unittest.TestCase):
     def phases(self):
         return [] if not self.log.exists() else [line.split("|", 1)[0] for line in self.log.read_text(encoding="utf-8").splitlines()]
 
+    def assert_project_calls(self):
+        calls = self.log.read_text(encoding="utf-8").splitlines()
+        self.assertTrue(calls)
+        for call in calls:
+            fields = call.split("|")
+            self.assertEqual(len(fields), 4, call)
+            self.assertEqual(Path(fields[2]).resolve(), self.project.resolve())
+            self.assertEqual(Path(fields[2]).name, "Project & %literal% with spaces")
+            self.assertEqual(fields[3], "activated %literal% & equals=value")
+
     def test_build_uses_shared_discovery_x64_environment_and_literal_project_path(self):
         result = self.run_helper("build")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.phases(), ["configure", "build"])
-        calls = self.log.read_text(encoding="utf-8")
-        self.assertIn(str(self.project), calls)
-        self.assertIn("activated %literal% & equals=value", calls)
+        self.assert_project_calls()
         self.assertIn("> cmake --preset x64-debug", result.stdout)
         self.assertIn("> cmake --build --preset x64-debug", result.stdout)
         self.assertIn("stdout: configure", result.stdout)
         self.assertIn("stderr: configure", result.stderr)
+
+    def test_real_short_parent_alias_preserves_the_literal_project_leaf(self):
+        # Shorten only the parent: the real invocation must still carry the
+        # spaces, percent signs and ampersand in the project's own name.
+        self.project = windows_short_path(self.root) / self.project.name
+        result = self.run_helper("build")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.phases(), ["configure", "build"])
+        self.assert_project_calls()
 
     def test_release_tests_and_renamed_game_play_use_the_selected_preset(self):
         result = self.run_helper("test", "-Preset", "x64-release")

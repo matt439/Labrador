@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from tools.tests.tool_fixtures import isolate_repository, isolated_git_environment, load_tool
+from tools.tests.tool_fixtures import isolate_repository, isolated_git_environment, load_tool, windows_short_path
 
 rebuild = load_tool("tools/release_rebuild.py")
 TAG = "v0.3.0"
@@ -281,7 +281,7 @@ class Source(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
+        self.root = Path(temporary.name).resolve()
         self.environment, hooks = isolated_git_environment(self.root, "rebuild-fixture")
         def git(*args):
             return subprocess.run(["git", "-C", str(self.root), *args], env=self.environment,
@@ -314,6 +314,27 @@ class Source(unittest.TestCase):
         (self.root / "website/package-lock.json").write_bytes(b"changed")
         with self.assertRaisesRegex(rebuild.Refusal, "clean"):
             rebuild.local_source(self.root, TAG)
+
+    def test_a_nested_directory_is_not_the_release_root(self):
+        with self.assertRaisesRegex(rebuild.Refusal, "own root"):
+            rebuild.local_source(self.root / "website", TAG)
+
+    def test_a_commit_after_the_tag_is_not_the_requested_release(self):
+        (self.root / "website/package-lock.json").write_bytes(b"changed")
+        self.git("add", "website/package-lock.json")
+        self.git("commit", "-qm", "later source")
+        with self.assertRaisesRegex(rebuild.Refusal, "HEAD is not"):
+            rebuild.local_source(self.root, TAG)
+
+    def test_a_real_short_alias_keeps_root_identity_and_source_guards(self):
+        alias = windows_short_path(self.root)
+        self.assertNotEqual(alias, self.root)
+        self.assertEqual(rebuild.local_source(alias, TAG), rebuild.local_source(self.root, TAG))
+        with self.assertRaisesRegex(rebuild.Refusal, "own root"):
+            rebuild.local_source(alias / "website", TAG)
+        (self.root / "website/package-lock.json").write_bytes(b"changed")
+        with self.assertRaisesRegex(rebuild.Refusal, "clean"):
+            rebuild.local_source(alias, TAG)
 
 
 if __name__ == "__main__":
