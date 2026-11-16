@@ -304,3 +304,50 @@ non-default tool paths, project paths with spaces and shell characters,
 environment activation, both output streams, renamed-game selection and
 each failure's actual exit code. It installs nothing. Real ordinary-prompt
 and Sandbox evidence is recorded with OCA-97 in BACKLOG.md.
+
+## Compiled guide pilot
+
+`guide_check.py` applies the numbered main procedures in **Add a rule and a
+test**, **Add a screen to your game**, and **Add a collision object** to a copy
+of an extracted development starter. From the same developer prompt as the
+ordinary consumer check, with an existing extracted starter at `C:\dev\mygame`:
+
+```bat
+python tools\consumer_check\guide_check.py C:\dev\guide-pilot --from C:\dev\mygame --check-broken
+```
+
+The destination must be new or empty. The input starter is read only. The
+copy uses `x64-debug` with null render/audio overrides: first the unchanged
+starter's two tests, then each independent finished guide example. The rule
+uses its guide's own tests. Screen tests press Enter and Escape against the
+actual title state; collision tests drive the actual HelloState and inspect
+its recorded wall stopping, sliding and contact tint. Each example also runs
+the game's smoke test. The native consumer job runs this after its baseline,
+release and rename checks, before its other fixtures, in the same required
+job. Those checks and the distributed starter remain separate.
+
+The complete new files are read from the guides' titled C++ blocks. Build
+list replacements, insertions and entry-point edits use their numbered
+procedure's code blocks and SourceFile excerpts; missing or ambiguous
+selectors fail with the guide's name. Optional changes after the procedure
+are excluded. `--check-broken` misspells the generated bounds rule's rectangle
+constructor, requires a compiler failure naming that source and typo,
+restores its exact bytes and rebuilds and retests it. An unbuilt source or a
+missing tool cannot pass that proof. Offline tooling tests cover recipe
+refusals, leaked engine tests, command failure and source restoration.
+
+`out/guide-pilot/BUILD.json` in the copy records each configure/build/inventory/
+test command, exit status and elapsed seconds, input guide and tool hashes,
+generated source hashes and the number of checked selectors. Its sibling
+folders preserve the finished changed sources and full command logs. CI
+keeps that folder as the `compiled-guide-pilot` artifact, including failures.
+The copy's source bytes are restored on exit; its build cache still describes
+the last example, so configure and build before using it again.
+
+Local installed packages may be reused explicitly with repeatable
+`--configure-arg=-Dname=value` arguments. CI uses the normal vcpkg manifest
+and its existing binary cache. The initial pilot has no browser build,
+visual or physical-input acceptance, does not qualify the released v0.3.0
+starter, and does not check every intermediate or optional edit. Its measured
+cost and expansion boundary are in the
+[2026-11-17 record](../../docs/review/2026-11-12-work-audit/2026-11-17-guide-pilot.md).

@@ -128,7 +128,6 @@ five deferred review rows below keep their individual revisit triggers.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-97` | OPEN | could | M | Native helpers implemented; finish ordinary-prompt Sandbox qualification at a non-default Visual Studio path, including normal play (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
-| `SM-84` | OPEN | could | M | Compile finished rule, screen and collision guide examples in a three-guide consumer pilot (`REV#133`). [Scope](docs/product/BACKLOG.md#sm-84). |
 | `OCA-98` | OPEN | could | S | Teach state-owned Random using today's API and pass plain generated values into tested rules (`REV#136`). [Scope](docs/product/BACKLOG.md#oca-98). |
 | `OCA-99` | OPEN | should | S | Add a measured-text alignment helper with explicit pixel snapping and preserved fractional positions (`REV#32`). [Scope](docs/product/BACKLOG.md#oca-99). |
 | `SRL-23` | OPEN | could | M | Spawn and retire one transient object in the existing collision sample and quote its compiled source (`REV#44`). [Scope](docs/product/BACKLOG.md#srl-23). |
