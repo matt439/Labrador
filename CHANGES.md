@@ -80,6 +80,29 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Build and use game-authored post-processing materials
+
+**New API and optional build dependencies.** `labrador_add_material(target
+name SOURCE path DEPENDS ...)` wraps one HLSL pixel function in the engine's
+post frame and generates `materials/name.h`, exposing `labrador::name` as a
+`MaterialSource` for the configured backend. `Renderer::add_material` copies
+the source and returns a `MaterialHandle` owned for that renderer's lifetime;
+`set_post_material(handle)` selects it and
+`set_post_values(handle, values)` supplies its eight `float4` parameters.
+Selecting built-in effects switches back to the built-in chain. Materials
+are recreated after device or context loss and run before overlay views.
+
+GL and WebGL2 materials are compiled through dxc to SPIR-V and translated
+with spirv-cross. The opt-in vcpkg `materials` feature supplies both host
+tools; starter projects enable neither by default. The standalone desktop GL
+and WebGL2 test builds now compile authored fixtures and require these host tools;
+configure with `-DVCPKG_MANIFEST_FEATURES=materials` or select installed tools.
+Direct3D uses
+the existing fxc and Vulkan the existing SPIR-V compiler path. The
+[authoring guide](website/src/content/docs/docs/guides/your-shader.mdx) gives
+the build and C++ steps. This provides one custom post pass; game render
+targets and multi-pass effects retain their separate milestones.
+
 ### 2026-11-15 - Own pending Web Audio resume during fast quit
 
 **Behaviour change.** Web Audio coalesces concurrent resume requests and handles

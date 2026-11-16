@@ -464,6 +464,17 @@ page. The post stage's `render/post_frame.hlsli` and its materials are compiled
 by the same three backends under the same rule, and GL carries both shaders as
 hand transliterations beside each other in its folder.
 
+A game's post material follows the same frame. `labrador_add_material` wraps
+one HLSL pixel function and generates a `MaterialSource` byte header for the
+selected backend: fxc produces Direct3D bytecode, dxc produces SPIR-V, and
+spirv-cross translates that SPIR-V to desktop GLSL or GLSL ES for WebGL2.
+These tools run on the build host, including when the game targets wasm;
+the optional vcpkg `materials` feature supplies dxc and spirv-cross. A game
+that uses only built-in effects needs neither new tool. The renderer copies
+each source and owns its `MaterialHandle` and backend pipeline for its lifetime,
+including recreating it after device or context loss. No backend type enters
+the game's C++.
+
 **There are five backends**: `render/d3d11/`, `render/d3d12/`, `render/gl/`,
 `render/vulkan/` and `render/null/`, chosen by `LABRADOR_RENDER_BACKEND` at
 configure time. The first four are held to the same `RenderPixelTests` and to
@@ -614,7 +625,7 @@ For readers arriving from Unreal, the translation:
 | Blueprint | C++ against the engine API (T10) |
 
 A project is an ordinary C++ application that links two static
-libraries. There is no project file format, no code generation, no
+libraries. There is no project file format, no generated game C++, no
 module manifest — the `CMakeLists.txt` names the sources, links the
 engine and the shared settings, and puts the content beside the program,
 which is all that building and running the game needs, and it registers
@@ -637,6 +648,9 @@ Its anatomy is the sample's anatomy:
   whatever granularity the game chooses.
 - **`content/`** — definitions, levels, tuning, assets. Data says *which*
   and *how much*; the code says *how* (T7).
+- **optional `shaders/`** — HLSL pixel functions for post-processing. The
+  build wraps each in the engine's material frame and embeds compiled bytes;
+  the game owns the look and C++ chooses when to apply it.
 - **rules and tests** — the game's rules in a library that links the
   maths and not the engine, a doctest target that runs them with no
   window and no device, and a `--smoke-test` switch that starts the game

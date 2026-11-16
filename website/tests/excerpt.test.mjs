@@ -4,7 +4,7 @@ import { excerpt } from '../src/lib/excerpt.ts';
 
 test('an excerpt drops the indentation its lines share, whether spaces or tabs', () => {
 	// vcpkg.json is indented with spaces; its features list sits six deep.
-	const spaces = excerpt('vcpkg.json', '"features"', '],');
+	const spaces = excerpt('vcpkg.json', '"features": [', '],');
 	const json = spaces.code.split('\n');
 	assert.equal(spaces.whole, false);
 	assert.equal(json[0], '"features": [');

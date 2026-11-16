@@ -4,6 +4,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/font.h"
+#include "engine/render/material_table.h"
 #include "engine/render/post_effect.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
@@ -200,6 +201,9 @@ namespace labrador
 		// Each effect's values, by PostEffect, as set_post_values last gave.
 		std::array<PostValues, post_effect_count> post_values{};
 
+		MaterialTable materials;
+		std::vector<VkPipeline> material_pipelines;
+
 		// The post frame's layout: b0, t0, s0 and s1 at bindings 0, 1, 5 and
 		// 6 (docs/effects.md#6.3), and one pipeline per material, made with
 		// the device whether or not a chain is set.
@@ -213,6 +217,7 @@ namespace labrador
 		// The post stage's layouts and pipelines; part of
 		// create_device_dependent_resources.
 		void create_post_resources();
+		VkPipeline create_post_pipeline(const MaterialSource& source);
 
 		// Views [first, last) into whichever pass is open, in order.
 		// `transform_slot` and `vertex_base` carry on from the views before

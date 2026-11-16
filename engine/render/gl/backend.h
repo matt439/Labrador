@@ -5,6 +5,7 @@
 #include "engine/render/camera.h"
 #include "engine/render/font.h"
 #include "engine/render/gl/gl_functions.h"
+#include "engine/render/material_table.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/sprite_geometry.h"
@@ -253,6 +254,15 @@ namespace labrador
 
 		// Each effect's values, by PostEffect, as set_post_values last gave.
 		std::array<PostValues, post_effect_count> post_values{};
+
+		// Sources and values survive a context loss; the program names do not.
+		MaterialTable materials;
+		struct MaterialProgram
+		{
+			GLuint program = 0;
+			std::array<GLint, 11> frame_uniforms{};
+		};
+		std::vector<MaterialProgram> material_programs;
 
 		// The full-screen pass: the identity material's program and the
 		// CRT material's, the location of each one's eleven-vec4 frame, and

@@ -199,6 +199,18 @@ compile it — at `4_0` on D3D11, whose sprite profile has no `SV_VertexID`,
 transliteration in `gl/post_shader.h` under the same by-eye rule as the sprite
 pair. [docs/effects.md](../../docs/effects.md) is the design.
 
+Game-authored materials use that same frame and the backend's existing
+full-screen vertex shader. `labrador_add_material` compiles one HLSL pixel
+function, translating its SPIR-V through spirv-cross for GL and WebGL2,
+and embeds the result in a `MaterialSource`. There is no runtime HLSL compiler.
+`Renderer::add_material` copies the bytes outside a frame after device
+creation, builds the backend pipeline, and returns a renderer-owned
+`MaterialHandle`. Sources survive a device or context loss so the backend can
+rebuild those pipelines; callers keep their handles and values. A source's
+kind must match the configured backend, and empty GPU bytes or an invalid handle
+is refused rather than silently drawing identity. Null keeps the same source,
+handle and parameter contract while recording the selected material.
+
 ## 5. What is on which side of the line
 
 **Nothing a backend does decides where a pixel goes.** Every decision that shows
@@ -289,6 +301,14 @@ context, D3D12 in the frame list between the processed and overlay lists,
 Vulkan in a render pass on the output image that present copies, GL between
 the scene's framebuffer and framebuffer 0. With no chain, none of it exists
 and every view draws into the back buffer as before.
+
+`set_post_material` selects one game material instead of the built-in chain;
+`set_post_effects` switches back to built-ins. Both change selection outside
+a frame. `set_post_values(MaterialHandle, PostValues)` fills the selected material's eight
+`float4` values as a built-in effect, without changing the selection. A custom
+material processes the scene once and leaves overlay views flat. This adds
+neither game render targets nor multi-pass chains: those are separate
+milestones in [the effects plan](../../docs/effects.md#13).
 
 ### What `submit` costs
 

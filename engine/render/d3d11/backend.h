@@ -4,6 +4,7 @@
 #include "engine/math/vector2f.h"
 #include "engine/render/camera.h"
 #include "engine/render/d3d11/device_resources.h"
+#include "engine/render/material_table.h"
 #include "engine/render/renderer.h"
 #include "engine/render/render_resources.h"
 #include "engine/render/sprite_vertex.h"
@@ -293,6 +294,8 @@ namespace labrador
 		// overlay view executes. With none, nothing below is made and every
 		// view binds the back buffer as it always has.
 		std::vector<PostEffect> post_effects;
+		MaterialTable materials;
+		std::vector<Microsoft::WRL::ComPtr<ID3D11PixelShader>> material_shaders;
 
 		// Each effect's values, by PostEffect, as set_post_values last gave.
 		std::array<PostValues, post_effect_count> post_values{};

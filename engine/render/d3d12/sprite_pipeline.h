@@ -5,6 +5,9 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
+#include <span>
+#include <string_view>
+
 // The sprite root signature and pipeline state, the pair every draw this
 // backend makes binds, and the post stage's pair beside them.
 //
@@ -57,7 +60,7 @@ namespace labrador
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state_;
 	};
 
-	// The post stage's root signature and one pipeline state a material
+	// The post stage's root signature and built-in material pipeline states
 	// (docs/effects.md#5): identity and the CRT. Each is one full-screen
 	// triangle from the vertex index, no input layout, and blending off,
 	// because a full-screen pass replaces what it covers. Both materials
@@ -81,8 +84,9 @@ namespace labrador
 		// How many 32-bit values the frame is: eleven float4s.
 		static constexpr UINT frame_constants = 44;
 
-		// Builds the root signature, then each material's pipeline state
-		// against it, with the same failure terms as SpritePipeline::create.
+		// Builds the root signature, then each built-in material's pipeline
+		// state. A failed state creation preserves that state's old member;
+		// the root signature and any earlier created state stay until reset.
 		void create(ID3D12Device* device, DXGI_FORMAT target_format);
 
 		// Releases the pipeline states, then the root signature.
@@ -102,6 +106,12 @@ namespace labrador
 		{
 			return this->crt_state_.Get();
 		}
+
+		// A pixel material against the same frame, vertex shader and root
+		// signature as the built-ins. The caller owns the returned state.
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> create_material(
+			ID3D12Device* device, DXGI_FORMAT target_format,
+			std::span<const unsigned char> bytecode, std::string_view name) const;
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature_;

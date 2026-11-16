@@ -335,6 +335,13 @@ namespace labrador
 			: this->impl_->view_count;
 		for (const PostEffect effect : this->impl_->post_effects)
 		{
+			if (this->impl_->materials.has_selection())
+			{
+				this->impl_->passes.push_back(RecordedPass{ PostEffect::identity,
+					this->impl_->materials.values(), processed, this->impl_->width,
+					this->impl_->height, this->impl_->materials.selected() });
+				continue;
+			}
 			const PostValues& values =
 				this->impl_->post_values[static_cast<size_t>(effect)];
 			// The material a device backend draws: identity for a CRT with
@@ -352,12 +359,36 @@ namespace labrador
 	{
 		check_post_chain(effects, this->impl_->frame_begun);
 		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->materials.clear_selection();
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
+		if (this->impl_->materials.has_selection())
+		{
+			throw std::invalid_argument("set_post_values was given a built-in "
+				"effect while a user material is selected.");
+		}
 		check_post_values(this->impl_->post_effects, effect, values);
 		this->impl_->post_values[static_cast<size_t>(effect)] = values;
+	}
+
+	MaterialHandle Renderer::add_material(const MaterialSource& source)
+	{
+		return this->impl_->materials.add(source, MaterialKind::null,
+			this->impl_->device_created, this->impl_->frame_begun);
+	}
+
+	void Renderer::set_post_material(MaterialHandle material)
+	{
+		std::vector<PostEffect> chain{ PostEffect::identity };
+		this->impl_->materials.select(material, this->impl_->frame_begun);
+		this->impl_->post_effects.swap(chain);
+	}
+
+	void Renderer::set_post_values(MaterialHandle material, const PostValues& values)
+	{
+		this->impl_->materials.set_values(material, values);
 	}
 
 	void Renderer::begin_overlay()

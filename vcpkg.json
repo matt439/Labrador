@@ -12,5 +12,14 @@
     "doctest",
     "lodepng"
   ],
-  "builtin-baseline": "d92484ed3c5020c6679d095ad3e5add907887b62"
+  "builtin-baseline": "d92484ed3c5020c6679d095ad3e5add907887b62",
+  "features": {
+    "materials": {
+      "description": "Host shader tools for user-authored post materials",
+      "dependencies": [
+        { "name": "directx-dxc", "host": true },
+        { "name": "spirv-cross", "host": true }
+      ]
+    }
+  }
 }

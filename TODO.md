@@ -127,7 +127,7 @@ the player* links, waits on the owner.
 |---|---|---|---|---|
 | `GAP#1` | DECISION | should | L | PlayStation, Switch and generic pads on Windows, and more than four: built on Windows.Gaming.Input or GameInput, or SDL's gamepad layer bought (T9). |
 | `GAP#2` | DECISION | should | L | Streamed, compressed music (Ogg or MP3) on XAudio2, Web Audio and null. `OCA-40` has stated what PCM music costs; the 2026-11-04 recommendation is to defer until a client ships a track. |
-| `GAP#3` | DECISION | could | L | Render to texture: integer-scaled pixel art, transitions, minimaps; five backends and new goldens. Scoped with a post stage and a CRT effect in [effects.md](docs/effects.md), whose §12 holds the open decisions. |
+| `GAP#3` | DECISION | could | L | Game render targets: integer-scaled pixel art, transitions and minimaps on five backends, with new goldens. The post stage, CRT and shader authoring are implemented; [effects.md](docs/effects.md) P4 and §12 own what remains. |
 | `GAP#5` | DECISION | could | M | A clip rectangle inside a view, for scrolling lists and panels. |
 | `GAP#6` | DECISION | could | M | Circles, polygons and debug drawing of collision shapes; rectangles and lines already draw from `engine:white`. Its gate, circle collision (`IDEA#7`, OCA-80), has landed; the recommended slice is debug drawing. |
 | `GAP#7` | DECISION | could | M | Let a game make or update a texture from pixels at run time; `resource_factory.h` already has the backend half. |
@@ -292,6 +292,7 @@ A new row for one of these gets its section back.
 
 | area | owner | a row returns with |
 |---|---|---|
+| Game-authored post materials | [OCA-84](docs/product/BACKLOG.md#oca-84) and [effects.md §16](docs/effects.md#16) | a regression or another shader-authoring requirement |
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
 | Code hygiene (L36 to L54) | [Code hygiene](docs/code-hygiene.md) and [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new bounded repair or review story reaching the front |

@@ -452,6 +452,19 @@ namespace labrador
 			this->post_crt_shader.ReleaseAndGetAddressOf()),
 			"The CRT post shader could not be created");
 
+		this->material_shaders.clear();
+		for (std::size_t i = 0; i < this->materials.size(); ++i)
+		{
+			const MaterialSource source = this->materials.source(i);
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> shader;
+			const std::string what = "The post material '" +
+				std::string(source.name) + "' could not be restored";
+			ThrowIfFailed(device->CreatePixelShader(source.bytes.data(),
+				source.bytes.size(), nullptr, shader.GetAddressOf()),
+				what.c_str());
+			this->material_shaders.push_back(std::move(shader));
+		}
+
 		D3D11_BUFFER_DESC post_constants_description = {};
 		post_constants_description.ByteWidth = sizeof(PostFrameConstants);
 		post_constants_description.Usage = D3D11_USAGE_DYNAMIC;
@@ -660,6 +673,7 @@ namespace labrador
 		this->post_vertex_shader.Reset();
 		this->post_identity_shader.Reset();
 		this->post_crt_shader.Reset();
+		this->material_shaders.clear();
 		this->post_constants.Reset();
 		this->scene_view.Reset();
 		this->scene_target.Reset();
@@ -755,8 +769,9 @@ namespace labrador
 		// One material a chain until multi-pass chains exist
 		// (docs/effects.md#13), so the chain's one effect is the pass.
 		const PostEffect effect = this->post_effects.front();
-		const PostValues& values =
-			this->post_values[static_cast<size_t>(effect)];
+		const PostValues& values = this->materials.has_selection()
+			? this->materials.values()
+			: this->post_values[static_cast<size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
 
@@ -765,7 +780,12 @@ namespace labrador
 		// and resampling through the CRT's arithmetic is not exact on every
 		// device (docs/effects.md#7).
 		ID3D11PixelShader* material_shader = this->post_identity_shader.Get();
-		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		if (this->materials.has_selection())
+		{
+			material_shader = this->material_shaders[static_cast<std::size_t>(
+				this->materials.selected().index())].Get();
+		}
+		else if (effect == PostEffect::crt && !crt_values_are_neutral(values))
 		{
 			material_shader = this->post_crt_shader.Get();
 		}
@@ -1067,16 +1087,59 @@ namespace labrador
 		}
 	}
 
+	MaterialHandle Renderer::add_material(const MaterialSource& source)
+	{
+		Impl& impl = *this->impl_;
+		const MaterialHandle handle = impl.materials.add(source,
+			MaterialKind::d3d11, impl.has_device(), impl.frame_begun);
+		try
+		{
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> shader;
+			const std::string what = "The post material '" +
+				std::string(source.name) + "' could not be created";
+			ThrowIfFailed(impl.device_resources.GetD3DDevice()->CreatePixelShader(
+				source.bytes.data(), source.bytes.size(), nullptr,
+				shader.GetAddressOf()), what.c_str());
+			impl.material_shaders.push_back(std::move(shader));
+		}
+		catch (...)
+		{
+			impl.materials.remove_last();
+			throw;
+		}
+		return handle;
+	}
+
+	void Renderer::set_post_material(MaterialHandle material)
+	{
+		std::vector<PostEffect> chain{ PostEffect::identity };
+		this->impl_->materials.select(material, this->impl_->frame_begun);
+		this->impl_->post_effects.swap(chain);
+		this->impl_->create_scene_target();
+	}
+
+	void Renderer::set_post_values(MaterialHandle material,
+		const PostValues& values)
+	{
+		this->impl_->materials.set_values(material, values);
+	}
+
 	void Renderer::set_post_effects(std::span<const PostEffect> effects)
 	{
 		check_post_chain(effects, this->impl_->frame_begun);
 
 		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->materials.clear_selection();
 		this->impl_->create_scene_target();
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
+		if (this->impl_->materials.has_selection())
+		{
+			throw std::invalid_argument("set_post_values requires the selected "
+				"MaterialHandle while a custom material is set.");
+		}
 		check_post_values(this->impl_->post_effects, effect, values);
 		this->impl_->post_values[static_cast<size_t>(effect)] = values;
 	}

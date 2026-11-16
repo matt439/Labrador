@@ -758,8 +758,9 @@ namespace labrador
 		// One material a chain until multi-pass chains exist
 		// (docs/effects.md#13), so the chain's one effect is the pass.
 		const PostEffect effect = this->post_effects.front();
-		const PostValues& values =
-			this->post_values[static_cast<size_t>(effect)];
+		const PostValues& values = this->materials.has_selection()
+			? this->materials.values()
+			: this->post_values[static_cast<size_t>(effect)];
 		std::memcpy(constants.material_values, values.values.data(),
 			sizeof(constants.material_values));
 
@@ -769,7 +770,12 @@ namespace labrador
 		// device (docs/effects.md#7).
 		ID3D12PipelineState* material_state =
 			this->post_pipeline.identity_state();
-		if (effect == PostEffect::crt && !crt_values_are_neutral(values))
+		if (this->materials.has_selection())
+		{
+			material_state = this->material_states[static_cast<std::size_t>(
+				this->materials.selected().index())].Get();
+		}
+		else if (effect == PostEffect::crt && !crt_values_are_neutral(values))
 		{
 			material_state = this->post_pipeline.crt_state();
 		}
@@ -822,6 +828,14 @@ namespace labrador
 		// pipeline state.
 		this->post_pipeline.create(device,
 			DeviceResources::back_buffer_format);
+		this->material_states.clear();
+		for (std::size_t i = 0; i < this->materials.size(); ++i)
+		{
+			const MaterialSource source = this->materials.source(i);
+			this->material_states.push_back(this->post_pipeline.create_material(
+				device, DeviceResources::back_buffer_format, source.bytes,
+				source.name));
+		}
 
 		// --- The descriptor heaps -------------------------------------------
 
@@ -1047,6 +1061,7 @@ namespace labrador
 		this->next_texture_slot = 0;
 
 		// The chain itself is kept; on_device_restored remakes its target.
+		this->material_states.clear();
 		this->post_pipeline.reset();
 		this->scene_texture.Reset();
 		this->post_target_heap.Reset();
@@ -1493,16 +1508,56 @@ namespace labrador
 
 	// --- the post stage (docs/effects.md#5) ------------------------------------
 
+	MaterialHandle Renderer::add_material(const MaterialSource& source)
+	{
+		Impl& impl = *this->impl_;
+		const MaterialHandle handle = impl.materials.add(source,
+			MaterialKind::d3d12, impl.device_resources.device() != nullptr,
+			impl.frame_begun);
+		try
+		{
+			impl.material_states.push_back(impl.post_pipeline.create_material(
+				impl.device_resources.device(), DeviceResources::back_buffer_format,
+				source.bytes, source.name));
+		}
+		catch (...)
+		{
+			impl.materials.remove_last();
+			throw;
+		}
+		return handle;
+	}
+
+	void Renderer::set_post_material(MaterialHandle material)
+	{
+		std::vector<PostEffect> chain{ PostEffect::identity };
+		this->impl_->materials.select(material, this->impl_->frame_begun);
+		this->impl_->post_effects.swap(chain);
+		this->impl_->create_scene_target();
+	}
+
+	void Renderer::set_post_values(MaterialHandle material,
+		const PostValues& values)
+	{
+		this->impl_->materials.set_values(material, values);
+	}
+
 	void Renderer::set_post_effects(std::span<const PostEffect> effects)
 	{
 		check_post_chain(effects, this->impl_->frame_begun);
 
 		this->impl_->post_effects.assign(effects.begin(), effects.end());
+		this->impl_->materials.clear_selection();
 		this->impl_->create_scene_target();
 	}
 
 	void Renderer::set_post_values(PostEffect effect, const PostValues& values)
 	{
+		if (this->impl_->materials.has_selection())
+		{
+			throw std::invalid_argument("set_post_values requires the selected "
+				"MaterialHandle while a custom material is set.");
+		}
 		check_post_values(this->impl_->post_effects, effect, values);
 		this->impl_->post_values[static_cast<size_t>(effect)] = values;
 	}

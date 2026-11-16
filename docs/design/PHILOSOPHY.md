@@ -191,6 +191,12 @@ failed on its own terms — the fix is simplifying the API, never adding a
 scripting language on top. Nor for logic smuggled into JSON (T7): a
 homemade DSL in data files is a second language through the back door.
 
+A post-processing material is pixel presentation rather than game behaviour.
+A game may write its pixel function in HLSL, built ahead of time through the
+engine's fixed material frame. Input, state changes and the choice of when to
+apply it stay in C++. Learning HLSL is an optional rendering topic, with its
+own guide; it is outside the introductory C++ series.
+
 ### T11. The stack over the heap
 
 Objects are values. They live on the stack or inline in the containers that
@@ -249,6 +255,11 @@ reading an engine header meets classes, templates and the standard library,
 and nothing they must learn *this engine* to parse — which matters most
 precisely because there is no scripting layer to hide behind (T10): if the
 only language is C++, it had better be C++.
+
+This rule concerns the C++ a reader writes and reads. Compiling a shader and
+embedding its bytes in a generated header is a build step at a file-format
+boundary, as it is for the engine's shaders. It generates data, never game
+classes, members or behaviour, and adds no annotations to the game's C++.
 
 Unreal is the anti-example, and a fair one. `UCLASS()`, `UPROPERTY()` and
 `GENERATED_BODY()` are not C++ but annotations for a separate tool that emits
@@ -788,7 +799,8 @@ engine API to depend on.
   answer to "C++ is too hard" is teaching it, not wrapping it. The
   game-facing API is the series' subject matter — and its acceptance test:
   a feature that can't be explained in an introductory series has an API
-  that is too hard.
+  that is too hard. Optional HLSL pixel functions have a separate rendering
+  guide; selecting and setting a material in C++ meets the same beginner bar.
 - **Releases are versioned, and before 1.0 a release promises a record, not
   compatibility.** A release is a tag on `master`, and its notes link
   CHANGES.md. A 0.x tag promises one thing about the tag before it: every
@@ -884,7 +896,8 @@ Named so their absence is deliberate. Four of them are permanent: online play,
   editor are the toolchain, and what tooling there is runs from the command
   line.
 - **A scripting layer. Permanent.** Behaviour is C++ (T10); there is no second
-  language, visual or textual, for a game's logic to live in.
+  language, visual or textual, for a game's logic to live in. HLSL post
+  materials describe pixels within the fixed rendering frame, not game logic.
 - **Framework maximalism.** Composition where it pays, not an ECS for its
   own sake (T4).
 - **Every genre.** The engine serves 2D sprite-based games and generalises

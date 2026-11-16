@@ -99,7 +99,7 @@ the game wrote to standard error, which reaches the file only through
 `start`'s `/b`. Install into a folder that does not exist yet, or
 an empty one: the install never deletes a file.
 
-**Under another name.** The job's last step is `rename_check.py`, which makes
+**Under another name.** After the release checks, `rename_check.py` makes
 the project of *Rename your game*
 (`website/src/content/docs/docs/guides/your-name.mdx`). It reads three things
 out of the guide itself, so that the line a reader pastes and the line checked
@@ -188,6 +188,41 @@ ctest --preset wasm-release
 
 ctest runs `MyGameTests` alone, under Node, and the last command must end
 `Module.onQuit was called` and exit 0.
+
+**With a game-authored shader.** After those baseline checks, both consumer
+jobs run `material_fixture.py` on the assembled copy. It writes a game-owned
+HLSL pixel function, calls `labrador_add_material` from the project's root
+after `game/` exists, and registers and selects its `MaterialSource` after
+`app.initialize()` in both entry points. The function samples the scene with
+a parameter set by the game. The native smoke test and browser page then draw
+through it. Pixel semantics are asserted separately by `RenderPixelTests`;
+these consumer runs check the generated header, paths, build tools and
+runtime handover in a project outside the engine's own build.
+
+Each job then runs the fixture's `--check-invalid-shader <build-directory>`
+mode. It replaces the copied shader with malformed HLSL, requires the build
+to fail with that shader's file, line and column in a compiler diagnostic,
+then restores the original bytes and rebuilds the material, including when
+the diagnostic check fails. A missing compiler alone cannot pass this check.
+
+The fixture changes the assembled copy, so use it after the release-folder
+and rename checks. It refuses a changed starter or a second application
+before writing. To run the native pass from that project's folder:
+
+```bat
+python <engine>\tools\consumer_check\material_fixture.py .
+cmake --preset x64-debug
+cmake --build --preset x64-debug
+ctest --preset x64-debug
+python <engine>\tools\consumer_check\material_fixture.py . --check-invalid-shader out\build\x64-debug
+```
+
+For a separate browser starter, run the script with `--host-tools`, then the
+browser configure, build, ctest and page commands above again. That option
+adds the consumed engine's optional `materials` host dependencies to this
+fixture's manifest: dxc with SPIR-V support and spirv-cross. The default
+starter's manifest and build remain unchanged. An existing tool installation
+can instead be named by the shader guide's CMake cache overrides.
 
 `--engine <path>` consumes another engine tree than the checkout either script
 is in. `assemble.py`'s folder must be new or empty; delete it to assemble

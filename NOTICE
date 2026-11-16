@@ -125,6 +125,16 @@ this repository.
 - **lodepng** — zlib, Lode Vandevenne. The engine decodes PNG textures with
   it (`engine/render/png_file.cpp`), and `RenderPixelTests` reads and writes
   its golden PNGs with it.
+- **DirectX Shader Compiler** (`directx-dxc`), in the optional `materials`
+  feature — the LLVM-derived compiler's licence and its third-party notices
+  are installed by vcpkg as `share/directx-dxc/copyright`.
+- **SPIRV-Cross** (`spirv-cross`), in the same feature — Apache License 2.0,
+  Khronos Group; vcpkg installs `share/spirv-cross/copyright`.
+
+The last two are host build tools for game-authored shaders. Their code is
+neither linked into a game nor copied to its release folder; the generated
+shader bytes do not ship either compiler. A game using built-in effects only
+does not enable the feature.
 
 What a game built on Labrador carries to its players, and the file that
 carries each notice, is the website's *Ship a Windows release* guide

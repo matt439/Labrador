@@ -536,7 +536,12 @@ Under Emscripten, C++ exceptions **are not catchable by default.** Build with
 `check_doc_citations.cmake` run under `cmake -P` and read source text, so the
 host and the target do not matter. The include check *helps*: once
 `app/win32/` and `app/web/` exist, it enforces D3 for free.
-`compile_shaders.cmake` is never reached on `gl`.
+Built-in GL shaders need no offline compilation. Game-authored post materials
+use `labrador_add_material` from `compile_shaders.cmake`: host dxc emits
+SPIR-V and spirv-cross translates it to GLSL ES 300 for WebGL2. The optional
+`materials` vcpkg feature supplies those tools; the default starter does not
+enable it. The [shader guide](../../website/src/content/docs/docs/guides/your-shader.mdx)
+describes the consumer's manifest and tool overrides.
 
 **Tests.** Emscripten's toolchain sets `CMAKE_CROSSCOMPILING_EMULATOR` to
 Node, so `add_test` runs a doctest `.js` under Node without changing any test
