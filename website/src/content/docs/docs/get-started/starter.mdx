@@ -343,6 +343,49 @@ another name, then this box again. Then build the new project from step 5. The p
 the project are explained on [Start your own project](/docs/get-started/your-project/), and
 [Rename your game](/docs/guides/your-name/) changes them to your game's name.
 
+## Optional commands from an ordinary prompt
+
+These helpers belong to the development starter after `v0.3.0`; that release's
+ZIP uses the manual steps above. [Move a starter project to a newer Labrador](/docs/guides/starter-update/)
+explains how to take a release that carries new starter files.
+
+If your project has `build.cmd`, `test.cmd` and `play.cmd`, you can use them
+from an ordinary Command Prompt. Open **Start**, type `cmd`, and open
+**Command Prompt**. Go to the project folder, using your folder's name if
+you chose another:
+
+```bat
+cd /d C:\dev\mygame
+```
+
+Run one command at a time:
+
+```bat
+build.cmd
+test.cmd
+play.cmd
+```
+
+`build.cmd` configures and builds. `test.cmd` does both and then runs the game's
+tests. `play.cmd` does both and then opens the game. The three share the
+`tools\starter_commands.ps1` file, find Visual Studio's x64 tools, and print
+each manual command before running it. Keep all four files in the project.
+They install nothing and keep the command's output and failure code. If a
+step fails, later steps stop; read its output and use the matching repair in
+[Build problems](/docs/get-started/build-errors/).
+
+They choose `x64-debug` unless you ask for Release:
+
+```bat
+test.cmd -Preset x64-release
+```
+
+`play.cmd -SmokeTest` runs the hidden startup check and returns to the prompt.
+For browser builds, follow [Build for the browser](/docs/guides/browser/).
+The x64 Native Tools prompt and manual commands above remain available.
+The ordinary-prompt route still needs the tools from
+[Install the tools](/docs/get-started/prerequisites/).
+
 ## What was checked
 
 On 30 October 2026, a starter ZIP made by the same tool from the change that added this page

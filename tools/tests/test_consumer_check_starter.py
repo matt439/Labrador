@@ -49,6 +49,10 @@ FIXTURE = {
     "website/src/walkthrough/gitignore.txt": b"out/\n",
     "website/src/walkthrough/ci.yml": b"name: ci\n",
     "website/src/walkthrough/labrador.vsconfig": b'{"version":"1.0","components":["Fixture.Cpp"]}\n',
+    "website/src/walkthrough/helpers/build.cmd": b"build helper\n",
+    "website/src/walkthrough/helpers/test.cmd": b"test helper\n",
+    "website/src/walkthrough/helpers/play.cmd": b"play helper\n",
+    "website/src/walkthrough/helpers/starter_commands.ps1": b"shared discovery\n",
     ".gitignore": b"out/\n",
 }
 
@@ -93,12 +97,23 @@ class StarterZipTests(unittest.TestCase):
         files = self.quietly(assemble.project_files, self.engine)
         self.assertEqual(sorted(files), [
             ".github/workflows/ci.yml", ".gitignore", "CMakeLists.txt", "CMakePresets.json",
-            "game/CMakeLists.txt", "game/README.md", "game/content/greeting.json", "game/main.cpp",
-            "game/rules/motion.h", "game/states/hello.h", "labrador.vsconfig", "vcpkg.json",
+            "build.cmd",
+            "game/CMakeLists.txt",
+            "game/README.md",
+            "game/content/greeting.json",
+            "game/main.cpp",
+            "game/rules/motion.h",
+            "game/states/hello.h",
+            "labrador.vsconfig",
+            "play.cmd",
+            "test.cmd",
+            "tools/starter_commands.ps1",
+            "vcpkg.json",
         ])
         self.assertEqual(files["game/CMakeLists.txt"], b"game\n")
         self.assertEqual(files["game/README.md"], FIXTURE["website/src/walkthrough/game-README.md"])
         self.assertEqual(files["CMakeLists.txt"], b"root\n")
+        self.assertEqual(files["tools/starter_commands.ps1"], b"shared discovery\n")
 
     def test_optional_installer_config_is_copied_unchanged_without_changing_presets(self):
         files = self.quietly(assemble.project_files, self.engine)

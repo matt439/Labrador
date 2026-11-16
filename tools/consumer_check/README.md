@@ -287,3 +287,20 @@ ctest --preset x64-debug -R "^ScriptedPadConsumerTests$" --no-tests=error --outp
 Use the browser preset and Emscripten environment for the same test under
 Node. This fixture qualifies the consumer construction boundary; it does
 not qualify physical mapping or rumble.
+
+## Optional native command helpers
+
+The assembled project also carries `build.cmd`, `test.cmd`, `play.cmd` and
+their shared `tools/starter_commands.ps1`. From an ordinary Command Prompt
+whose current folder is the project, `build.cmd` configures/builds,
+`test.cmd` configures/builds/tests, and `play.cmd` configures/builds/plays.
+`-Preset x64-release` chooses Release; `play.cmd -SmokeTest` starts the hidden
+startup check. The manual commands above remain the underlying route.
+
+The existing consumer CI job exercises all three helpers before changing the
+project for its extra fixtures. `tools/tests/test_starter_helpers.py` uses
+isolated native executable stand-ins to pin Visual Studio discovery,
+non-default tool paths, project paths with spaces and shell characters,
+environment activation, both output streams, renamed-game selection and
+each failure's actual exit code. It installs nothing. Real ordinary-prompt
+and Sandbox evidence is recorded with OCA-97 in BACKLOG.md.
