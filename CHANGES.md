@@ -80,6 +80,18 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-16 - Refuse unsupported camera scales when consumed
+
+**Behaviour change.** Camera transforms now throw `std::invalid_argument`
+unless the camera scale is finite and greater than zero. This includes
+forward rectangle, position and scale transforms, inverse transforms, and
+the drawing and scene-culling paths that consume them. Directly assigning
+the public `scale` field is checked when the value is used. Previously a
+negative scale could silently cull a view or produce mirrored geometry;
+zero and non-finite forward transforms could reach draw calculations.
+Keep camera zoom finite and positive. Camera mirroring is unsupported;
+`SpriteFlip` remains available to flip a sprite's texture.
+
 ### 2026-11-16 - Check integer geometry conversions and division
 
 **Behaviour change.** Float constructors of `Vector2I` and `RectangleI` now

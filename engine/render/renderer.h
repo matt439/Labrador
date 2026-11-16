@@ -151,6 +151,8 @@ namespace labrador
 		// The identity is Camera::default_camera, which is what a list starts
 		// with, so a caller that only ever wanted screen space never mentions a
 		// camera at all.
+		// The next draw validates its scale before transforming geometry and
+		// throws std::invalid_argument unless the scale is finite and positive.
 		void set_camera(const Camera& camera);
 
 		// The camera the next draw on this list is mapped through: the last

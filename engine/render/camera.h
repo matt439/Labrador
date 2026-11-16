@@ -17,6 +17,9 @@ namespace labrador
 	struct Camera
 	{
 		Vector2F translation = Vector2F::zero;
+		// Transform operations throw std::invalid_argument unless this is
+		// finite and positive, including after direct assignment. Negative
+		// scales do not represent a mirrored view.
 		float scale = 1.0f;
 
 		Camera() = default;
@@ -58,9 +61,8 @@ namespace labrador
 		// reports a visible region 31 times too small in each axis and a cull
 		// built on it throws away almost everything on screen.
 		//
-		// Throws std::invalid_argument for a zero or non-finite scale, which
-		// is not a viewpoint but a division by nothing or by infinity.
-		// Camera::frame cannot produce one; a hand-built camera can.
+		// Throws std::invalid_argument unless scale is finite and positive.
+		// Camera::frame always returns a supported scale.
 		RectangleF visible_rectangle(const Viewport& viewport) const;
 
 		// The world point under a back-buffer pixel seen through `viewport`
@@ -76,7 +78,7 @@ namespace labrador
 		// answers the world point the camera would put there, and which pane
 		// a pointer is in is the caller's question.
 		//
-		// Throws std::invalid_argument for a zero or non-finite scale, as
+		// Throws std::invalid_argument unless scale is finite and positive, as
 		// visible_rectangle does.
 		Vector2F world_position(const Vector2I& buffer_point,
 			const Viewport& viewport) const;

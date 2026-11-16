@@ -25,7 +25,9 @@
 #include "tests/render/null_synthetic_harness.h"
 
 #include <cmath>
+#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -227,6 +229,30 @@ TEST_CASE("fractional world sprites survive translated zoomed camera culling")
 		RectangleF(0.1f, 0.1f, 0.8f, 0.8f), harness.resources()));
 	scene.end_tick();
 	CHECK(harness.sprites_drawn(scene) == 1);
+}
+
+TEST_CASE("scene culling refuses a directly mutated invalid camera scale")
+{
+	Harness harness;
+	std::unique_ptr<Scene> scene = harness.scene_seeing_ninety();
+	scene->add(std::make_unique<Visual>("sheet", "plain",
+		RectangleF(10.0f, 20.0f, 20.0f, 20.0f), harness.resources()));
+	scene->end_tick();
+	for (const float scale : { 0.0f, -1.0f,
+		std::numeric_limits<float>::quiet_NaN(),
+		std::numeric_limits<float>::infinity() })
+	{
+		Camera camera;
+		camera.scale = scale;
+		scene->clear_views();
+		scene->add_view(Viewport(0, 0, 90, 90), camera);
+		CHECK_THROWS_WITH_AS(harness.sprites_drawn(*scene),
+			"Camera::visible_rectangle: the camera's scale must be finite and positive",
+			std::invalid_argument);
+	}
+	scene->clear_views();
+	scene->add_view(Viewport(0, 0, 90, 90));
+	CHECK(harness.sprites_drawn(*scene) == 1);
 }
 
 TEST_CASE("rotated UI textures and container unions follow current geometry")
