@@ -90,6 +90,7 @@ if(WIN32 AND LABRADOR_RENDER_BACKEND STREQUAL "null" AND
         LABRADOR_AUDIO_BACKEND STREQUAL "null")
     target_sources(LineSweeperViewTests PRIVATE
         focus_pause_tests.cpp
+        touch_pause_tests.cpp
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/states/play_state.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../samples/linesweeper/states/pause_state.cpp"
     )

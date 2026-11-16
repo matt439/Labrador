@@ -632,6 +632,9 @@ engine API to depend on.
 - Layout is manual: the game positions widgets explicitly. There is no
   autolayout engine — the widget machine stays small, cheap and teachable
   (T4, T10).
+- Pointer hit arithmetic is a pure query over game-authored rectangles and
+  enabled state. The game supplies enlarged targets and coordinate transforms;
+  capture, input precedence, gesture completion and activation remain its policy.
 - Widgets draw through the renderer interface like everything else, so
   menus are headlessly testable. Styling and content belong to the game.
 - Accessibility follows that boundary (T1). The engine supplies keyboard,

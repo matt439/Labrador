@@ -75,6 +75,7 @@ add_library(LabradorEngine STATIC
     ui/button.cpp
     ui/focus.cpp
     ui/navigation.cpp
+    ui/pointer_target.cpp
     ui/widget.cpp
 )
 # The include root, relative to this file and not to the top-level project.

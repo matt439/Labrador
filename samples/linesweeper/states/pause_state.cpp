@@ -11,6 +11,7 @@
 #include "engine/render/renderer.h"
 #include "engine/render/text_alignment.h"
 #include "engine/render/viewport.h"
+#include "engine/ui/pointer_target.h"
 #include "samples/linesweeper/presentation/assets.h"
 #include "samples/linesweeper/presentation/palette.h"
 #if defined(LABRADOR_DEVELOPMENT_TEST_INPUT)
@@ -245,20 +246,21 @@ namespace linesweeper
 			const Vector2F tap = this->arrangement_.camera.world_position(
 				point.position, this->arrangement_.viewport);
 
-			for (UiText* row : this->rows_)
+			std::array<PointerTarget, 4> targets;
+			for (size_t index = 0; index < this->rows_.size(); ++index)
 			{
+				const UiText* row = this->rows_[index];
 				const RectangleF bounds = row->bounds();
 				const Vector2F centre = bounds.center();
 				const float half_width = std::max(row_tap_half_width,
 					bounds.width * 0.5f + row_tap_margin);
 
-				if (tap.x >= centre.x - half_width &&
-					tap.x < centre.x + half_width &&
-					tap.y >= centre.y - row_spacing * 0.5f &&
-					tap.y < centre.y + row_spacing * 0.5f)
-				{
-					return row;
-				}
+				targets[index] = PointerTarget{
+					RectangleF(centre, half_width, row_spacing * 0.5f), true };
+			}
+			if (const std::optional<size_t> hit = hit_pointer_target(targets, tap))
+			{
+				return this->rows_[*hit];
 			}
 		}
 

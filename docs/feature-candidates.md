@@ -21,6 +21,10 @@ owns the implementation stories and their prerequisites.
 ## Owner selection, 2026-11-16
 
 The owner selected `IDEA#4`, `IDEA#5`, `IDEA#11`, `IDEA#13`, `IDEA#15` and
+`IDEA#16` as the stories linked in the table below. Their current implementation
+and qualification states are recorded in BACKLOG.md and the result notes.
+`IDEA#8` and `IDEA#18` are deferred with the named
+
 `IDEA#16` as the stories linked in the table below. Their owners record current
 implementation and qualification. `IDEA#8` and `IDEA#18` are deferred with the named
 
@@ -75,7 +79,7 @@ concrete client need.
 | `IDEA#10` | Arbitrary client sizes | should | S | Selected 2026-11-04 as OCA-81 and landed; enumeration later |
 | `IDEA#11` | Sounds from WAV files and from memory | could | M | Selected 2026-11-16 as [OCA-105](product/BACKLOG.md#oca-105), bounded PCM on all three audio backends; implementation open |
 | `IDEA#12` | Animation sequences with named frames and durations | could | M | Deferred 2026-11-16 until a client needs nonuniform timing or exported named-frame animation |
-| `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Selected 2026-11-16 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-supplied target rectangles; implementation open |
+| `IDEA#13` | A pointer hit test over a focus group's bounds | could | S | Implemented 2026-11-17 as [OCA-106](product/BACKLOG.md#oca-106), narrowed to page-authored rectangles; capture, focus and expansion stay with each page |
 | `IDEA#14` | Present interval and render-rate control | could | M | Vsync control landed; unfocused visible-window cap deferred 2026-11-16 until measured cost or client need |
 | `IDEA#15` | Display refresh rate in the device report | could | S | Selected 2026-11-16 as [SM-86](product/BACKLOG.md#sm-86), nominal monitor metadata with an explicit unknown state; implementation open |
 | `IDEA#16` | Window title at run time, and a diagnosed window icon | could | S | Selected 2026-11-16 as [OCA-107](product/BACKLOG.md#oca-107), preserving defaults and diagnosing an explicitly requested missing icon; implementation open |
@@ -418,7 +422,13 @@ forms; CHANGES.md records the schema addition.
 rectangles. Pages keep padding, coordinate conversion, focus, capture and
 activation policy. A raw FocusGroup-bounds query is not the selected
 replacement for both call sites. This scope supersedes the proposed query
-below; implementation and qualification remain open.
+below.
+
+**Implemented, 2026-11-17:** `PointerTarget` and `hit_pointer_target` in
+`engine/ui/pointer_target.h` share only the pure arithmetic. The gallery and
+pause menu retain their expanded bands, transforms and interaction policy.
+Portable, native-null state and browser pointer tests qualify the bounded
+scope; [OCA-106](product/BACKLOG.md#oca-106) records the results and limits.
 
 **Present evidence:** [navigation.h](../engine/ui/navigation.h) is arithmetic
 over widget bounds and [focus.h](../engine/ui/focus.h) holds the reachable set.

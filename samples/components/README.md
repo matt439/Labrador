@@ -85,7 +85,7 @@ and all of it is page policy rather than a component's:
   next tick at the sampled position, as a short tap does. The page, focus loss
   or capture cancellation can still cancel that pending completion.
 - Each row is a band as tall as the row spacing, from just left of the label
-  to past the slider's number, and `hit_target` finds the first enabled one
+  to past the slider's number, and the engine's `hit_pointer_target` finds the first enabled one
   under the point, through the camera the page draws with
   (`Camera::world_position`). A disabled band is passed over.
 - A press focuses the row under it, as LineSweeper's pause menu does. On a

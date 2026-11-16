@@ -264,6 +264,9 @@ if(PROJECT_IS_TOP_LEVEL)
             "Escape,ArrowDown,ArrowDown,ArrowLeft,ArrowLeft,ArrowRight,Enter,Enter,ArrowDown,Enter"
             --sample-input fixed-step
             --expect-console "LineSweeper: palette Protanomaly / Protanopia")
+        labrador_page_test(LineSweeperPointerPageTests
+            PAGE "$<TARGET_FILE:LineSweeperSample>"
+            ARGS --input "${CMAKE_CURRENT_SOURCE_DIR}/samples/linesweeper/web/pointer_input.mjs")
         labrador_sample_page_test(LocalMultiplayerPageTests
             LocalMultiplayerSample "Escape")
         # Escape asks, and Enter answers yes.

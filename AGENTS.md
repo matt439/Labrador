@@ -76,7 +76,7 @@ Web Audio and web input.
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
 | `x64-debug-null-asan` | null / null | 24; opt-in MSVC AddressSanitizer, including a deterministic detection probe |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 39 Debug / 40 Release with Chromium, 8 more with Firefox, 20 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 40 Debug / 41 Release with Chromium, 8 more with Firefox, 20 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderPixelTestsThroughPost`,

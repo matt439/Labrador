@@ -127,6 +127,24 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-17 - Share pointer hit arithmetic over authored targets
+
+**New API.** `PointerTarget` and `hit_pointer_target` in
+`engine/ui/pointer_target.h` provide a pure query over a page's explicit
+rectangles and enabled state. The first enabled match wins, with left/top
+edges included and right/bottom edges excluded; the returned index remains
+in the original span. Nonfinite points miss. Targets with nonpositive
+dimensions or nonfinite coordinates, dimensions or computed endpoints are
+skipped. Negative origins remain valid.
+
+The components gallery and LineSweeper pause menu use the same query while
+keeping their existing expanded row bands, minimum widths and camera
+transforms. Capture, input precedence, focus and gesture completion remain
+game policy. A new copy of the gallery uses the engine query instead of the
+sample-local `components::PointerTarget` and `components::hit_target`;
+`GalleryState` shows the migration to the engine names. `PointerCapture`
+still supplies only the copyable gesture policy. Existing engine callers need no migration.
+
 - The components sample now includes a copyable keyboard capture row and a
   game-owned two-action table. The gallery refuses duplicate or protected
   keys, waits for held keys to release, supports cancel/reset and uses stable

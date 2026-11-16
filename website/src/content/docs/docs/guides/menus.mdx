@@ -101,13 +101,26 @@ whatever the cursor is on.
 
 ## Choosing a row with a click or tap
 
-`engine/ui` has no pointer-input or coordinate-selection entry point. Your
-game reads mouse/touch input, decides which view and row it belongs to, then
-uses the existing focus and activation operations. This keeps target sizes,
+`hit_pointer_target` in `engine/ui/pointer_target.h` compares a point with an
+explicit span of `PointerTarget` rectangles and returns the first enabled hit's
+index, or no match. Your game reads mouse/touch input, authors the targets,
+maps the point into their space, then uses the focus and activation operations.
+This keeps target sizes,
 input priority and pointer behavior with the game
 ([T1](/docs/design/philosophy/#t1-mechanism-over-policy)).
 
-LineSweeper's touch helper, `tapped_row()`, shows that hit test:
+The query ignores targets with nonpositive dimensions or nonfinite
+coordinates, dimensions or computed endpoints; a nonfinite point misses.
+Negative origins are valid. It
+includes left/top edges and excludes right/bottom edges, skips disabled
+targets without hiding a later match, and returns indices in the original
+span. It performs no expansion, layout, focus change or pointer capture.
+
+This query is in the development engine after `v0.3.0`. A released starter
+needs the version that carries it; [updating a starter](/docs/guides/starter-update/)
+and [moving an engine pin](/docs/guides/move-pin/) describe the two update routes.
+
+LineSweeper's touch helper, `tapped_row()`, supplies its own row bands:
 
 <SourceFile path="samples/linesweeper/states/pause_state.cpp" from="UiText* PauseState::tapped_row() const" to="}" />
 

@@ -120,6 +120,7 @@ class JunitTests(unittest.TestCase):
         self.assertIn("WebStackDependencyTests", wasm.expected)
         self.assertIn("FirefoxWebWindowTests", wasm.expected)
         self.assertIn("ComponentsTextPageTests", wasm.expected)
+        self.assertIn("LineSweeperPointerPageTests", wasm.expected)
         headless = [name for name in wasm.expected if name not in report.INVENTORY["chromium_registered"]
                     and not name.startswith("Firefox")]
         self.assertEqual(len(headless), 20)

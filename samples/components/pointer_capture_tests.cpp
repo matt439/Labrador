@@ -4,23 +4,17 @@
 
 #include "engine/input/mouse.h"
 #include "engine/input/touch.h"
-#include "engine/math/rectanglef.h"
-#include "engine/math/vector2f.h"
 #include "engine/math/vector2i.h"
 
 #include <optional>
 #include <vector>
 
-using components::hit_target;
 using components::PointerCapture;
 using components::PointerPhase;
 using components::PointerSample;
-using components::PointerTarget;
 using labrador::Mouse;
 using labrador::MouseButton;
-using labrador::RectangleF;
 using labrador::Touch;
-using labrador::Vector2F;
 using labrador::Vector2I;
 
 namespace
@@ -257,26 +251,4 @@ TEST_CASE("a page's cancel drops the contact, so its release does nothing")
 	CHECK_FALSE(devices.capture.active());
 	devices.mouse.on_button_up(MouseButton::left);
 	check(devices.tick(), PointerPhase::none);
-}
-
-TEST_CASE("a hit is the first enabled target, inside its left and top edges")
-{
-	const std::vector<PointerTarget> targets = {
-		{ RectangleF(0.0f, 0.0f, 100.0f, 50.0f), true },
-		{ RectangleF(0.0f, 50.0f, 100.0f, 50.0f), false },
-		{ RectangleF(0.0f, 50.0f, 200.0f, 50.0f), true },
-	};
-
-	CHECK(hit_target(targets, Vector2F(0.0f, 0.0f)) == std::optional<size_t>(0));
-	CHECK(hit_target(targets, Vector2F(99.5f, 49.5f)) == std::optional<size_t>(0));
-
-	// The shared edge belongs to the row below, and the disabled row there
-	// neither answers nor hides the enabled one under it.
-	CHECK(hit_target(targets, Vector2F(10.0f, 50.0f)) == std::optional<size_t>(2));
-	CHECK(hit_target(targets, Vector2F(150.0f, 60.0f)) == std::optional<size_t>(2));
-
-	CHECK_FALSE(hit_target(targets, Vector2F(100.0f, 10.0f)).has_value());
-	CHECK_FALSE(hit_target(targets, Vector2F(-0.5f, 10.0f)).has_value());
-	CHECK_FALSE(hit_target(targets, Vector2F(10.0f, 100.0f)).has_value());
-	CHECK_FALSE(hit_target({}, Vector2F(10.0f, 10.0f)).has_value());
 }

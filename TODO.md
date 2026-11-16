@@ -134,7 +134,6 @@ their owners hold completed results.
 |---|---|---|---|---|
 | `OCA-102` | OPEN | could | S | Copyable collision-shape outlines using existing white-texture quads; no filled-geometry renderer expansion (`GAP#6`). [Scope](docs/product/BACKLOG.md#oca-102). |
 | `OCA-105` | OPEN | should | L | Add bounded PCM WAV and memory-bank sound input across all three audio backends while preserving XWB (`IDEA#11`). [Scope](docs/product/BACKLOG.md#oca-105). |
-| `OCA-106` | OPEN | could | S | Share a pure hit test over page-supplied target rectangles, preserving enlarged touch targets and page policy (`IDEA#13`). [Scope](docs/product/BACKLOG.md#oca-106). |
 | `SM-86` | OPEN | could | M | Query and report implemented; finish combined app-matrix qualification (`IDEA#15`). [Scope](docs/product/BACKLOG.md#sm-86). |
 | `OCA-107` | OPEN | should | M | Add runtime titles and explicit optional icon selection with a starter/release recipe and clear missing-icon refusal (`IDEA#16`). [Scope](docs/product/BACKLOG.md#oca-107). |
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend on real non-Xbox pads; keep four slots. Waits for hardware access (`GAP#1`). [Scope](docs/product/BACKLOG.md#oca-108). |

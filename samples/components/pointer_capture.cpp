@@ -100,19 +100,4 @@ namespace components
 		return this->owner_ != Owner::none;
 	}
 
-	std::optional<size_t> hit_target(std::span<const PointerTarget> targets,
-		const Vector2F& point)
-	{
-		for (size_t index = 0; index < targets.size(); ++index)
-		{
-			const PointerTarget& target = targets[index];
-			const RectangleF& box = target.bounds;
-			if (target.enabled && point.x >= box.x && point.y >= box.y &&
-				point.x < box.x + box.width && point.y < box.y + box.height)
-			{
-				return index;
-			}
-		}
-		return std::nullopt;
-	}
 }

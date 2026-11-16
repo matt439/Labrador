@@ -114,6 +114,15 @@ settings to choose one. The palettes were chosen by simulation, and no player
 with a colour-vision deficiency has checked them yet
 (*Colour-vision palettes*, below).
 
+The pause menu authors its own touch row bands: a full 44-unit row gap and
+at least 160 units to each side, or the measured text half-width plus a
+16-unit margin. `hit_pointer_target` only compares those rectangles with the
+camera-transformed point. A newly pressed touch chooses the first matching
+row; holding or releasing it adds no activation. Cancel and keyboard/pad
+confirm retain priority. Native-null state tests and
+`LineSweeperPointerPageTests` cover the interaction; browser touch emulation
+does not establish real-glass acceptance.
+
 `LineSweeperBundlePageTests` checks that the note is visible and referenced
 before play and on the first and replay canvases, and that Tab moves focus
 from the game to a page link. These automated checks do not establish physical

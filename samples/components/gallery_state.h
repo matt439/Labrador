@@ -13,6 +13,7 @@
 #include "engine/input/direction.h"
 #include "engine/scene/scene.h"
 #include "engine/ui/focus.h"
+#include "engine/ui/pointer_target.h"
 #include "engine/ui/widget.h"
 
 #include <functional>
@@ -119,7 +120,7 @@ namespace components
 
 		// The rows a pointer can choose, in focus order, and the widget each
 		// one is; pointer_widgets_[i] answers for pointer_targets_[i].
-		std::vector<PointerTarget> pointer_targets_;
+		std::vector<labrador::PointerTarget> pointer_targets_;
 		std::vector<labrador::UiWidget*> pointer_widgets_;
 
 		// The one contact followed, and the row it began on.
