@@ -1,0 +1,50 @@
+---
+title: Setup words
+description: Short explanations of the tool and build vocabulary used by Get Started.
+---
+
+Look up a word when you meet it in [Get Started](/docs/get-started/). You can carry on with
+the instructions without reading this page first. The surrounding steps tell you what to
+type, what to expect and how to recover when a command fails.
+
+## The tools and the command window
+
+| Word | Meaning on this route |
+| --- | --- |
+| **Visual Studio** | The Windows application that installs the C++ tools. It can also edit your code and help find bugs. Visual Studio Code is a different application. |
+| **IDE** | An application that brings editing, building and debugging together. Visual Studio is one. You can use Notepad for the first changes. |
+| **Workload** | A named group of tools in Visual Studio Installer. Choose **Desktop development with C++** so the tools the steps need are installed together. |
+| **Compiler** | The program that translates your C++ source into compiled parts of the game. The linker joins those parts and libraries into the executable you run. |
+| **CMake** | The program that checks the project's build settings and prepares instructions for the build tool. You run it for both configure and build commands. |
+| **Ninja** | The build tool CMake selects here. It runs the needed compile and link steps and prints their numbered progress lines. |
+| **vcpkg** | The package manager that downloads and builds libraries Labrador uses. The project's `vcpkg.json` names those libraries and the package-version list to use. |
+| **Library / dependency** | Reusable code a program needs. A dependency is something the project relies on; vcpkg supplies the libraries listed for this build. |
+| **Windows SDK** | Microsoft's Software Development Kit: Windows headers and libraries, plus tools such as the shader compiler. The installer supplies it. |
+| **Shader compiler** | A tool that translates the engine's small drawing programs for the graphics device. The starter build calls it; you do not write a shader to make your first change. |
+| **Command prompt** | A window where you type a command and press Enter to run it. These instructions use the **x64 Native Tools Command Prompt**, which makes the installed build tools available. |
+| **PATH** | The list of folders the command prompt searches when you type a program's name, such as `cmake`. The x64 tools prompt prepares it for you. |
+| **VCPKG_ROOT** | A named setting holding the folder where vcpkg is installed. The x64 tools prompt sets it; CMake uses it to find vcpkg's build support. |
+| **x64 / 64-bit** | The processor and tool setup these Windows steps use. The similarly named x86 or 32-bit prompt selects different tools and does not meet this project's build requirement. |
+
+## Building and running
+
+| Word | Meaning on this route |
+| --- | --- |
+| **Source / header** | Source is the code you edit. A `.cpp` file supplies instructions; a `.h` header declares types and functions those instructions use. [Read your starter's C++](/docs/concepts/read-your-code/) follows the three main files. |
+| **Project folder** | The folder containing your top-level `CMakeLists.txt`, `CMakePresets.json`, `game` and `external`. Commands on the starter route run from there. |
+| **Preset** | A named set of build choices in `CMakePresets.json`, such as `x64-debug`. It keeps the commands short and puts each configuration's output in its own folder. |
+| **Configure** | Prepare the build: check tools, obtain required libraries and write the build instructions. This is `cmake --preset x64-debug`. It does not yet make the game executable. |
+| **Build / rebuild** | Compile and link the project to make an executable. After an edit, building again remakes the parts that need to change. Quit the running game first so Windows can replace its executable. |
+| **Debug build** | A build prepared for finding problems while developing. It includes information a debugger uses to stop at a source line. It is not the optimized Release build used to send a finished game. |
+| **Warnings are errors** | The compiler's warnings flag suspicious code. This project treats a warning as a reason to stop the build, so it must be fixed before the new game is made. |
+| **Executable / `.exe`** | The program Windows runs, here `MyGame.exe`. It is build output; change the source and rebuild to change the program. |
+| **Renderer / Direct3D 11** | The renderer turns the game's drawing requests into an image. The default Windows build uses Microsoft's Direct3D 11 interface to do that. |
+| **Test / smoke test** | A test checks a particular result. The starter's smoke test opens the game hidden, loads its content, draws its first frames and quits, checking that startup works. `ctest` runs the project's registered tests. |
+| **Manifest** | A list of content to load. The starter's `game/content/manifest.json` names its font; the build copies the content beside the game. |
+| **Frame / step** | A frame is one drawn image. A simulation step updates the game's data. Drawing and updating can happen at different rates. |
+| **Constant / radians** | A constant is a value the code keeps unchanged. `spin_speed` is measured in radians per second; one full turn is about 6.28 radians. Keep the `f` suffix when editing a `float` number. |
+| **Window class name / title** | The class name identifies the kind of native window this program creates. The title is the text the player sees along the top of the window. |
+
+For an error message, go to [Read a build error](/docs/get-started/build-errors/) or
+[Troubleshooting](/docs/troubleshooting/). For the punctuation inside the game files, use
+[Read your starter's C++](/docs/concepts/read-your-code/).

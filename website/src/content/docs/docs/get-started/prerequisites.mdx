@@ -6,13 +6,17 @@ description: Visual Studio with the C++ workload, Git if you take the Git route,
 import { Steps, Aside } from '@astrojs/starlight/components';
 import StarterGate from '~/components/StarterGate.astro';
 
-Labrador builds on **Windows**, with the Microsoft C++ compiler. Everything the Windows build
+Labrador builds on **Windows**, with the Microsoft C++ compiler, the program that translates
+your C++ code into compiled parts of the game. Everything the Windows build
 needs comes with one install, Visual Studio. Git is a second, needed only if you take
 [the Git route](/docs/get-started/#if-you-use-git) or later
 [put your project in Git](/docs/guides/starter-to-git/); the starter project does not need it.
 The browser build needs Emscripten, and Python 3 to install it with, but not Git;
 [Build for the browser](/docs/guides/browser/#install-emscripten) covers both when you get
 there, and nothing in Get Started needs them.
+
+[Setup words](/docs/get-started/glossary/) is a short lookup page for the tool names and build
+terms used here. You do not need to read it first.
 
 ## Before you install
 
@@ -75,7 +79,7 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
 <Steps>
 
 1. **Install Visual Studio 2022 or newer**, with the **Desktop development with C++**
-   workload. The free Community edition is enough.
+   workload, a named group of related tools in the installer. The free Community edition is enough.
 
    Open [visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads/) and,
    under **Visual Studio Community**, click **Free download**. Your browser saves
@@ -103,6 +107,11 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
 
    Current versions tick all three by default. That workload brings the compiler, CMake, Ninja,
    vcpkg and the Windows SDK, whose shader compiler the build needs.
+
+   CMake prepares the build instructions; Ninja runs the compile and link steps. vcpkg
+   downloads and builds libraries the engine uses. The SDK, Microsoft's Software Development
+   Kit, supplies Windows headers, libraries and tools. Its shader compiler translates the
+   engine's drawing programs; you do not write one to make your first change.
 
    Before you click **Install**, look at the bottom right of the installer's window: **Total space
    required** is the space the selection needs. With Visual Studio Community 2026 on a clean
@@ -197,7 +206,9 @@ If you already use Visual Studio, Git and a command prompt, skim the headings an
 
    The version numbers differ with your Visual Studio. It has to be the **x64** prompt. It puts
    the 64-bit compiler, CMake, Ninja and the shader compiler on your `PATH` and points
-   `VCPKG_ROOT` at the copy of vcpkg that Visual Studio installed. Other windows look similar
+   `VCPKG_ROOT` at the copy of vcpkg that Visual Studio installed. `PATH` is the list of folders
+   searched when you type a tool's name; `VCPKG_ROOT` is a setting holding vcpkg's folder.
+   The prompt prepares both for you. Other windows look similar
    and are wrong for this guide:
 
    - **Developer Command Prompt** and **Developer PowerShell** set up 32-bit tools. They print

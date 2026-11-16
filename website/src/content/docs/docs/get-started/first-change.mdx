@@ -80,6 +80,8 @@ you installed with the tools, is a better editor once this page works:
 3. **Make it spin faster.** How the greeting moves is your game's rules, in
    `game\rules\motion.h`, and the speed is a constant beside the rules it configures:
 
+   A constant is a value the code keeps unchanged while the program runs.
+
    ```bat
    notepad game\rules\motion.h
    ```
@@ -93,9 +95,12 @@ you installed with the tools, is a better editor once this page works:
    />
 
    Change `1.2f` to `3.0f`, keeping the `f` and the semicolon after it. The unit is radians per
-   second. Save and close Notepad.
+   second; one full turn is about 6.28 radians. Save and close Notepad.
 
 4. **Name the window.** In `game\main.cpp`, change the window's class name and title:
+
+   The class name identifies the native window this program creates. The title is the text
+   the player sees along its top.
 
    ```bat
    notepad game\main.cpp
@@ -279,11 +284,18 @@ plain `copy` without the second line was also tried, and the build did not compi
 
 ## Where to go next
 
-The comments in `hello_state.cpp` explain why each part of it is written the way it is, and they
-are the best next thing to read. [Reading the C++ in minimal](/docs/concepts/reading-minimal/)
-explains the language features, ownership and rendering terms used there. After that:
+Choose another small change below, or [read your starter's C++](/docs/concepts/read-your-code/)
+to understand the files that start the game and show the greeting. That reading route explains
+the syntax as it appears, for someone with very little programming experience. You can keep making
+changes with the step-by-step guides without reading it first.
+
+The source comments explain design choices and sometimes use engine vocabulary.
+[Reading the C++ in minimal](/docs/concepts/reading-minimal/) is the optional companion for
+readers who already write C++ and want those details. [Setup words](/docs/get-started/glossary/)
+is there whenever a tool or build term needs explaining.
 
 <CardGrid>
+	<LinkCard title="Read your starter's C++" description="Follow main.cpp and the two HelloState files in order, with the syntax explained beside the code." href="/docs/concepts/read-your-code/" />
 	<LinkCard title="Put a picture in your game" description="Convert a PNG into a texture and draw it beside the greeting, step by step." href="/docs/guides/your-picture/" />
 	<LinkCard title="Edit and debug in Visual Studio" description="Open your project in Visual Studio, build and read the Error List, stop at a breakpoint, and find the line behind an error box or a crash." href="/docs/get-started/debug-your-game/" />
 	<LinkCard title="Colours, the window and the background" description="Change the greeting's colour and size, the window's size, go full screen, and draw a background." href="/docs/guides/your-window/" />

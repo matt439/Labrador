@@ -121,13 +121,12 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 ## Second accepted decision batch of 2026-11-16
 
 **Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L84 to L97. These
-fourteen stories follow the first batch and remain unimplemented. `OCA-96`
+fourteen selected stories follow the first batch; the remaining open rows are below. `OCA-96`
 also owns the documentation follow-up to the settled `REV#121` policy; the
 five deferred review rows below keep their individual revisit triggers.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-94` | OPEN | should | M | Explain the starter's three files at the agreed beginner floor and add a focused setup glossary (`REV#119`). [Scope](docs/product/BACKLOG.md#oca-94). |
 | `OCA-96` | OPEN | could | M | Offer optional .vsconfig setup and explain expected first-configure downloads while retaining vcpkg defaults (`REV#63`, `REV#121`). [Scope](docs/product/BACKLOG.md#oca-96). |
 | `OCA-97` | OPEN | could | M | Provide optional build/test/play helpers sharing Visual Studio discovery and the documented commands (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
 | `SM-84` | OPEN | could | M | Compile finished rule, screen and collision guide examples in a three-guide consumer pilot (`REV#133`). [Scope](docs/product/BACKLOG.md#sm-84). |

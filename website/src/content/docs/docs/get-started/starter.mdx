@@ -94,12 +94,17 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
 
 5. **Configure the build:**
 
+   Configure prepares the build: it checks the tools, obtains the libraries the project
+   needs and writes the build instructions. It does not yet make the game executable.
+
    ```bat
    cmake --preset x64-debug
    ```
 
    A *preset* is a named configuration in the project's `CMakePresets.json`. `x64-debug` is a
-   64-bit debug build using the Direct3D 11 renderer, with its output in `out\build\x64-debug`.
+   64-bit debug build, prepared for finding problems while developing, using the Direct3D 11
+   renderer, the part that turns drawing requests into an image. Its output is in
+   `out\build\x64-debug`. [Setup words](/docs/get-started/glossary/) explains these terms.
 
    The first time, vcpkg downloads and builds the libraries the engine uses: DirectX Tool Kit
    and the DirectXMath library it uses, the XAudio2 redistributable, the lodepng image library
@@ -139,7 +144,8 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    This compiles the engine and your game, which took 7 seconds on the same desktop. Ninja
    numbers each step as it goes, such as `[57/97]`, and a build that worked stops at the last
    number with no line saying `FAILED`. Warnings are errors in this project, so a successful
-   build has none.
+   build has none. A compiler warning flags suspicious code; here it must be fixed before
+   the new game can be made.
 
    If a line says `FAILED`, the build stopped there. The lines under it name the reason: skip
    the long line that starts with the compiler's path, find the first line with `error` in it,

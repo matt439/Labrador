@@ -10,6 +10,9 @@ import StarterGate from '~/components/StarterGate.astro';
 This path takes you from a Windows machine with nothing installed to a project of your own that
 builds against Labrador, runs, and shows a change you made. It has three steps, and each page
 ends where the next begins.
+
+If a tool or build word is unfamiliar, [Setup words](/docs/get-started/glossary/) explains it.
+It is a lookup page; you do not need to read it before starting.
 <StarterGate when="available">You do not need Git: the project comes as a ZIP file.</StarterGate>
 <StarterGate when="missing">The project comes as a ZIP file that needs no Git, attached to each
 release from `v0.3.0`. No release these pages know of has one yet: if
@@ -71,10 +74,14 @@ do when you see something else.
 them. If you already use Visual Studio, Git and a command prompt, skim the explanations and run
 the boxes.
 
-Going further than the [first change](/docs/get-started/first-change/) means writing C++, and
-these pages do not teach the language.
-[Reading the C++ in minimal](/docs/concepts/reading-minimal/) explains what the copied sample
-uses. To learn C++ itself, use a language introduction alongside your project. Practise with a
+The [first change](/docs/get-started/first-change/) and the step-by-step guides explain their
+edits as you make them. [Read your starter's C++](/docs/concepts/read-your-code/) follows the
+three main files in order and explains the syntax they use, for the same beginner audience.
+[Reading the C++ in minimal](/docs/concepts/reading-minimal/) is the optional programmer
+companion for readers who already write small functions and classes.
+
+These focused guides are not a general C++ course. To learn C++ itself, use a language
+introduction alongside your project. Practise with a
 small console program: use variables, a loop, a function and a class, then change and rebuild
 it. Learn what pointers and references refer to and when an object is destroyed. If you have
 not programmed before, choose an introduction that teaches programming fundamentals too. The
@@ -82,9 +89,8 @@ not programmed before, choose an introduction that teaches programming fundament
 
 ### Companion introduction status
 
-The companion C++ introduction is in pre-production, with its storyboard, demo code and
-shooting plans prepared; rehearsal and recording remain. It covers memory, pointers,
-lifetime and ownership for people who already program, and is not yet available to watch.
+The companion C++ introduction is not yet available to watch. These guides do not depend on
+it, and it is not a prerequisite for the first-change or beginner reading route.
 The [design philosophy](/docs/design/philosophy/) describes the engine API's teaching goals.
 
 ## What it was checked against
