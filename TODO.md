@@ -22,9 +22,10 @@ BACKLOG's L36 to L54 let it run alongside product work.
 **The original beginner-guide audit is closed:** every `GUIDE#` unit of
 [Beginner guides](docs/beginner-guides.md) has closed. What the runs could not
 check is in its *Not verified by the audit*; `GUIDE#12` left saving through
-IDBFS from the starter unguided, and `IDEA#4`, which *A camera that follows
-the player* links, waits on the owner. The second decision batch below selects
-new guide and onboarding work independently of that completed audit.
+IDBFS from the starter unguided. The second decision batch below selects new
+guide and onboarding work independently of that completed audit; the third
+selects `OCA-103` for the camera-follow component linked by *A camera that
+follows the player*.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
@@ -43,18 +44,22 @@ proposals are deferred with triggers. `REV#121`'s policy is settled: retain
 vcpkg's default tool downloads; `OCA-96` owns the expected-download explanation.
 `OCA-98` teaches today's Random API without reopening `REV#35`'s deferral.
 
+The [third batch](#third-accepted-decision-batch-of-2026-11-16) adds eight
+scopes in BACKLOG's L98 to L105 after those stories. `OCA-108` is blocked on
+access to a real non-Xbox pad for qualification; scripted input cannot close
+that hardware gate. Nine proposals are deferred and three are declined in
+their owners, with explicit revisit conditions.
+
 **Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; and `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before this selection.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
 - Later: `SM-14` (try the LAN-serve draft with the iPhone, then `SM-13`), `WEB#3` (listen to the audio sample), `OCA-66` (look at the template at 150% scaling), `BDP-07` (judge judder at 60 Hz and at 144 Hz), `OCA-79` (authorise the starter project's first push to GitHub), `SM-30` (set Cloudflare's build command to `npm ci && npm run gate` and delete its `NODE_VERSION` variable).
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy), `SITE#4` (search on the iPhone after the next deploy).
-- Not yet placed: `GAP#1` to `GAP#13` except `GAP#4` (OCA-82), whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
-- [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below; the calls stay the owner's.
 - Review of 2026-11-10: every remaining `DECISION` row of [that section](#review-of-2026-11-10), 29 between `REV#33` and `REV#94`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md. Four of them (`REV#33`, `REV#37`, `REV#70`, `REV#72`) had their measurement or brief done on 2026-11-13.
 - Work audit of 2026-11-12: `REV#149` (the v0.4.0 release commit and tag; everything before them is prepared), `REV#152` and `REV#156` in [that section](#work-audit-of-2026-11-12).
 - Client reports: `REV#105`, the verdicts on issues #122 to #124, and `REV#104`, the fix for issue #125, in [the reports table](docs/review/colourwars-reports/README.md).
-- New proposals: `IDEA#1` to `IDEA#5` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following and grid-sheet authoring. `IDEA#8` to `IDEA#19`, except `IDEA#10`, from the engine review of 2026-10-31: scene queries, contact edges, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
+- Remaining feature proposals in [Feature candidates](docs/feature-candidates.md): `IDEA#1`, `IDEA#2`, `IDEA#3`, `IDEA#9`, `IDEA#12`, `IDEA#14`, `IDEA#17` and `IDEA#19`: typed text, rebinding, save recovery, contact edges, named-frame animations, an unfocused render-rate cap, cursor shapes and small math helpers. [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) are dated advice; the current owner records hold selections and deferrals.
 
 ## Accepted decision batch of 2026-11-16
 
@@ -107,6 +112,24 @@ five deferred review rows below keep their individual revisit triggers.
 | `PI-24` | OPEN | could | S | Provide an opt-in optimized Release symbols recipe with matching executable/PDB/source identity (`REV#91`). [Scope](docs/product/BACKLOG.md#pi-24). |
 | `OCA-101` | OPEN | could | S | Document console output and one freshly verified browser-only C++ debugging route (`REV#92`). [Scope](docs/product/BACKLOG.md#oca-101). |
 | `SM-85` | OPEN | could | S | Report compilation costs and comparable build baselines, separating compiler work from wall time (`REV#147`). [Scope](docs/product/BACKLOG.md#sm-85). |
+
+## Third accepted decision batch of 2026-11-16
+
+**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L98 to L105, owns the
+eight selected scopes and their acceptance. The [comparison selection record](docs/survey/2026-10-27.md#selection-record-of-2026-11-16)
+and [Feature candidates](docs/feature-candidates.md) own the deferrals,
+declines and remaining boundaries. These are planned stories, not results.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-102` | OPEN | could | S | Copyable collision-shape outlines using existing white-texture quads; no filled-geometry renderer expansion (`GAP#6`). [Scope](docs/product/BACKLOG.md#oca-102). |
+| `OCA-103` | OPEN | could | S | Add game-owned dead-zone camera following and world-edge clamps in the local-multiplayer sample (`IDEA#4`). [Scope](docs/product/BACKLOG.md#oca-103). |
+| `OCA-104` | OPEN | could | S | Generate deterministic grid-sheet JSON with the existing schema and round-trip it through the loader (`IDEA#5`). [Scope](docs/product/BACKLOG.md#oca-104). |
+| `OCA-105` | OPEN | should | L | Add bounded PCM WAV and memory-bank sound input across all three audio backends while preserving XWB (`IDEA#11`). [Scope](docs/product/BACKLOG.md#oca-105). |
+| `OCA-106` | OPEN | could | S | Share a pure hit test over page-supplied target rectangles, preserving enlarged touch targets and page policy (`IDEA#13`). [Scope](docs/product/BACKLOG.md#oca-106). |
+| `SM-86` | OPEN | could | M | Record the window monitor's nominal refresh rate with explicit unknown values; keep measured pacing separate (`IDEA#15`). [Scope](docs/product/BACKLOG.md#sm-86). |
+| `OCA-107` | OPEN | should | M | Add runtime titles and explicit optional icon selection with a starter/release recipe and clear missing-icon refusal (`IDEA#16`). [Scope](docs/product/BACKLOG.md#oca-107). |
+| `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend on real non-Xbox pads; keep four slots. Waits for hardware access (`GAP#1`). [Scope](docs/product/BACKLOG.md#oca-108). |
 
 ## Input, menus, settings and saves
 
@@ -188,22 +211,21 @@ five deferred review rows below keep their individual revisit triggers.
 
 ## Features other engines have
 
-**Owner:** [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md), which holds what each involves and what was left out; [the comparison of 2026-11-10](docs/survey/2026-11-10.md) re-checks its counts against sources and adds six C and C++ frameworks. Every row is the owner's call; a yes becomes a story in [BACKLOG.md](docs/product/BACKLOG.md) before the work starts.
+**Owner:** [the comparison's selection record](docs/survey/2026-10-27.md#selection-record-of-2026-11-16)
+holds the current dispositions and revisit conditions. Its original comparison
+and [the re-check of 2026-11-10](docs/survey/2026-11-10.md) remain historical
+evidence. Selected scopes are stories above; declined proposals remain in
+the owner record rather than as closed rows here.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `GAP#1` | DECISION | should | L | PlayStation, Switch and generic pads on Windows, and more than four: built on Windows.Gaming.Input or GameInput, or SDL's gamepad layer bought (T9). |
-| `GAP#2` | DECISION | should | L | Streamed, compressed music (Ogg or MP3) on XAudio2, Web Audio and null. `OCA-40` has stated what PCM music costs; the 2026-11-04 recommendation is to defer until a client ships a track. |
-| `GAP#3` | DECISION | could | L | Game render targets: integer-scaled pixel art, transitions and minimaps on five backends, with new goldens. The post stage, CRT and shader authoring are implemented; [effects.md](docs/effects.md) P4 and §12 own what remains. |
-| `GAP#5` | DECISION | could | M | A clip rectangle inside a view, for scrolling lists and panels. |
-| `GAP#6` | DECISION | could | M | Circles, polygons and debug drawing of collision shapes; rectangles and lines already draw from `engine:white`. Its gate, circle collision (`IDEA#7`, OCA-80), has landed; the recommended slice is debug drawing. |
-| `GAP#7` | DECISION | could | M | Let a game make or update a texture from pixels at run time; `resource_factory.h` already has the backend half. |
-| `GAP#8` | DECISION | could | S | Easing functions. The premise is false: neither LineSweeper nor ColourWars hand-rolls an easing curve (checked 2026-11-12), and the 2026-11-04 recommendation declines it (T1). |
-| `GAP#9` | DECISION | could | M | Camera rotation, with culling's visible rectangle grown to cover it. |
-| `GAP#10` | DECISION | could | S | LineSweeper's particle field as a component, if a second client would copy it. |
-| `GAP#11` | DECISION | could | M | Tilemaps and Tiled import; waits for a client that uses tiles. |
-| `GAP#12` | DECISION | could | L | TrueType and OpenType fonts. `OCA-43` has closed, so there is nothing to fold it into; a yes is a story of its own. |
-| `GAP#13` | DECISION | could | M | Relative mouse motion: Win32 raw input, and a browser pointer lock granted only inside an input event. |
+| `GAP#2` | DEFERRED | should | L | Until a game has a track with a demonstrated download or memory need; streaming stays separate from PCM WAV input. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
+| `GAP#3` | DEFERRED | could | L | P4 waits for a selected offscreen-view, minimap or integer-scaling use case; completed post/material work and the roadmap stand. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
+| `GAP#5` | DEFERRED | could | M | Until a game needs scrolling content; then define nested/empty clips and view coordinates together. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
+| `GAP#7` | DEFERRED | could | M | Additional pixel-texture APIs wait for a procedural/update caller; public creation and between-frame replacement already exist. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
+| `GAP#9` | DEFERRED | could | M | Until a client needs rotating views; transforms and culling must be designed together. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
+| `GAP#10` | DEFERRED | could | S | Until a second client would copy the particle field; keep LineSweeper's workload choices local. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
+| `GAP#13` | DEFERRED | could | M | Until a real client needs unbounded mouse motion; raw-input/pointer-lock lifecycle is then part of the scope. [Decision](docs/survey/2026-10-27.md#selection-record-of-2026-11-16). |
 
 ## New feature proposals
 
@@ -217,18 +239,12 @@ ready queue above.
 | `IDEA#1` | DECISION | could | M | A copyable single-line typed-text field using Keyboard::typed and documented font limits. |
 | `IDEA#2` | DECISION | could | M | A game-owned keyboard rebinding screen with capture, cancel, reset and duplicate handling. |
 | `IDEA#3` | DECISION | could | M | A versioned save/recovery example that preserves prior data on write or migration failure. |
-| `IDEA#4` | DECISION | could | S | A dead-zone/bounded camera-follow component in the local-multiplayer sample. |
-| `IDEA#5` | DECISION | could | S | A deterministic grid-sheet JSON authoring command using the current asset schema. |
-| `IDEA#8` | DECISION | could | M | Scene queries: the first collision object along a segment, and every object overlapping a rectangle, mask-filtered and allocation-free. Its gate, IDEA#7, has landed (OCA-80). Segment hits need math that reports where, and BroadPhase has no region query, so M may be low. |
+| `IDEA#8` | DEFERRED | could | M | Until a concrete hitscan or region-query caller; circle collision has landed, but nearest-hit geometry and spatial queries still need design. [Decision](docs/feature-candidates.md#idea8-scene-queries-segment-hit-and-region-overlap). |
 | `IDEA#9` | DECISION | could | S | A contact begin/continue/end helper over two ticks' contact lists; the collision sample derives trigger entry by hand. Needs a second client. |
-| `IDEA#11` | DECISION | could | M | Sounds from WAV files and from in-memory PCM through one new seam verb on all three audio backends, so a first sound needs no XWBTool. The recommended gate, `GAP#4` (OCA-82), has landed; selection is the owner's. |
 | `IDEA#12` | DECISION | could | M | Animation sequences of named frames with per-frame durations beside today's horizontal, uniformly timed strips. |
-| `IDEA#13` | DECISION | could | S | A pointer hit test over a focus group's enabled bounds. Two copies now exist, LineSweeper's pause menu and the components gallery's `hit_target` (OCA-83): the components README's promotion test. The 2026-11-04 decline predates the second. |
 | `IDEA#14` | DECISION | could | S | An unfocused render-rate cap. The requested present interval has landed (`ApplicationOptions::vsync`, `Renderer::set_vsync`); what an unfocused, shown window costs has not been measured. |
-| `IDEA#15` | DECISION | could | S | The display's refresh rate on RenderDeviceInfo and in the frame bench's record, in place of the pacing method's operator note. |
-| `IDEA#16` | DECISION | could | S | A run-time window title, and a window icon named in options, diagnosed when absent, in the template's resource file and the release guide. |
 | `IDEA#17` | DECISION | could | S | System cursor shapes (hand, text, crosshair, move) on Win32 and the canvas; today the pointer is the arrow or hidden. |
-| `IDEA#18` | DECISION | could | XS | A side-by-side two-player layout in ViewportManager, which stacks the panes today. |
+| `IDEA#18` | DEFERRED | could | XS | Until a selected game or guide needs left/right panes; retain today's top/bottom layout. [Decision](docs/feature-candidates.md#idea18-a-side-by-side-two-player-layout). |
 | `IDEA#19` | DECISION | could | XS | RectangleF::intersection_of and shortest-arc angle helpers; the 2026-11-04 recommendation defers them to ride `GAP#5`, whose clip rectangle wants `intersection_of` first. |
 
 ## Review of 2026-11-10

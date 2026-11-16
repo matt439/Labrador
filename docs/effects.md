@@ -45,6 +45,7 @@ maps its total onto them in §13.
 14. [Out of scope, on purpose](#14-out-of-scope-on-purpose)
 15. [The documents this amends](#15-the-documents-this-amends)
 16. [Game-material implementation amendment](#16-game-material-implementation-amendment)
+17. [Game-target decision amendment, 2026-11-16](#17-game-target-decision-amendment-2026-11-16)
 
 ---
 
@@ -1647,3 +1648,23 @@ PNG changed. No release, client pin move or deployment is part of this story.
 selected handle and values through WebGL context restoration, then updates
 the same handle's values and checks the output again. Identity remains in
 the pixel suite; this context lane registers no additional ctest entry.
+
+## 17. Game-target decision amendment, 2026-11-16
+
+The owner deferred `GAP#3`'s P4 game-owned target implementation in the
+[third decision batch](survey/2026-10-27.md#selection-record-of-2026-11-16).
+P4 retains its roadmap place and its original design questions. Reopen its
+implementation scope when a concrete offscreen view, minimap or integer-scaled
+scene needs a target that the game can draw into and later sample.
+
+This answers the current scheduling call for P4 without reversing E1's
+accepted shader-authoring scope or E16's accepted client effects demand.
+The existing scene target, post stage, CRT and P6 game-material implementation
+remain as recorded in their owners, with their existing qualification limits.
+P6's completion in section 16 does not require P4 to be implemented, and this
+selection adds no multi-pass chain, bloom or history target.
+
+The original P4 API sketch and target lifetime/restore recommendations remain
+historical design material for that future selection. This amendment changes
+no implementation, completed acceptance or measured evidence, and records no
+new build, device run, release or deployment.
