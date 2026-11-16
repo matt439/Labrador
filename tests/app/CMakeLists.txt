@@ -77,6 +77,19 @@ endif()
 #
 # Not built against any one render backend: a window draws nothing.
 if(EMSCRIPTEN)
+    # Exercise optimized native dependency retention even in a Debug matrix.
+    # Debug JS assertions/exception tracing otherwise retain the stack helpers
+    # incidentally and can hide an incomplete EM_JS dependency declaration.
+    add_executable(WebStackDependencyProbe web/stack_dependency_probe.cpp)
+    target_link_libraries(WebStackDependencyProbe PRIVATE LabradorEngine labrador_settings)
+    set_target_properties(WebStackDependencyProbe PROPERTIES SUFFIX ".js")
+    target_compile_options(WebStackDependencyProbe PRIVATE -O3 -g0)
+    target_link_options(WebStackDependencyProbe PRIVATE
+        -O3 -g0 -sASSERTIONS=0 -sEXCEPTION_STACK_TRACES=0 -sENVIRONMENT=node)
+    add_test(NAME WebStackDependencyTests
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} "$<TARGET_FILE:WebStackDependencyProbe>")
+    set_tests_properties(WebStackDependencyTests PROPERTIES TIMEOUT 60)
+
     add_executable(WebWindowTests web/window_page.cpp)
     target_link_libraries(WebWindowTests PRIVATE
         LabradorEngine

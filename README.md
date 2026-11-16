@@ -314,8 +314,8 @@ Direct3D 12 presets have 23, with a synchronization test of their own. The
 `-null` presets have 23: the pixel tests need a device and are left out, and
 the local multiplayer and audio samples' start-up checks, which record calls
 instead of drawing or playing, and the minimal sample's states driven by keys
-in a hidden window are added. A `wasm-*` build has 19 without
-a Chromium and, where one is found, 36 in Debug and 37 in Release, the extra
+in a hidden window are added. A `wasm-*` build has 20 without
+a Chromium and, where one is found, 37 in Debug and 38 in Release, the extra
 ones being pages run in headless Chrome, one for each sample among them, and no
 start-up check, because a page has no command line. Where configure also finds
 a Firefox, eight `Firefox*` entries run the same pages in it.

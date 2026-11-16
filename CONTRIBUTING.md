@@ -91,7 +91,8 @@ gh label create declined --color b60205 --description "Request declined; the clo
    `source_revision.cmake`, `version.cmake`, `dependencies.cmake`,
    `compile_shaders.cmake`, `add_material.cmake`, `embed_material.cmake` and
    `check_engine_includes.cmake`, plus `version_values.h.in` and
-   `release_identity.txt`. Other CMake scripts and maintainer tooling
+   `release_identity.txt`, and `engine/app/web/window_dependencies.js`. Other
+   CMake scripts and maintainer tooling
    are not implicitly included. CHANGES.md records the frozen historical
    boundary for the paths added to coverage on 2026-11-16; the original paths
    remain checked across history.

@@ -106,6 +106,15 @@ if(EMSCRIPTEN)
         app/web/motion_preference.cpp
         app/web/window.cpp
     )
+    # EM_JS_DEPS arrives after optimized native dependency retention in the
+    # pinned SDK. This metadata roots only the window bridge's private stack
+    # helpers before that link; no runtime export setting is changed.
+    set(labrador_window_dependencies
+        "${CMAKE_CURRENT_SOURCE_DIR}/app/web/window_dependencies.js")
+    target_link_options(LabradorEngine INTERFACE
+        "--js-library=${labrador_window_dependencies}")
+    set_property(TARGET LabradorEngine APPEND PROPERTY INTERFACE_LINK_DEPENDS
+        "${labrador_window_dependencies}")
 elseif(WIN32)
     target_sources(LabradorEngine PRIVATE
         app/win32/keyboard_input.cpp

@@ -218,6 +218,11 @@
       "wasm-debug",
       "wasm-release",
       "wasm-release-null"
+    ],
+    "WebStackDependencyTests": [
+      "wasm-debug",
+      "wasm-release",
+      "wasm-release-null"
     ]
   },
   "chromium_registered": [

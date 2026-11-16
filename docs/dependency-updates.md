@@ -126,6 +126,9 @@ Check the imported guide value and hand-written references. The SDK cache key
 contains the selected SDK version; ccache's compiler check is
 `string:emsdk-<version>`. Verify both clean and warm-cache browser builds, and
 record the actual compiler/SDK Node versions and produced bundle identity.
+Recheck the private browser-window helper metadata and its optimized Node
+probe as well as the optimized LineSweeper ES-module link; Debug's incidental
+runtime dependencies must not be their only qualification.
 
 **Mesa:** change MESA_VERSION and MESA_SHA256 together, from the release's
 asset list, and take the MinGW archive: mesa-dist-win's 26.2.6 MSVC archive has

@@ -43,6 +43,7 @@ review's and the release audit's.
 | `cmake/add_material.cmake` | Defines the optional game-authored material build commands. |
 | `cmake/embed_material.cmake` | Runs those material commands' byte/source embedding step. |
 | `cmake/check_engine_includes.cmake` | Runs before the consumer's linked engine/math targets build. |
+| `engine/app/web/window_dependencies.js` | Declares the browser window's private JavaScript/native link dependencies. |
 
 This inventory follows the root's includes, `engine/` subdirectories and
 consumer build commands, including the optional material route. It does not
@@ -57,6 +58,9 @@ whole-history checks. The additional inventory paths are governed after
 implementation. The checker recognises that exact boundary and its ancestors;
 an unrelated repository without it uses the complete current rule. A future
 change has the same entry/declaration obligation for every inventoried path.
+
+The browser-window JavaScript metadata joins the inventory with its first
+introduction on 2026-11-17; the frozen boundary and earlier audit stay intact.
 
 This is a policy boundary, not a classification of older changes. Auditing
 the newly covered paths from `v0.1.0` through that boundary found nineteen
@@ -122,6 +126,16 @@ not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
 ## Unreleased
+
+### 2026-11-17 - Declare browser stack dependencies before optimized linking
+
+**Build fix.** Browser consumers retain the private stack helpers used by the
+window's pointer callback bridge before optimized native linking. This fixes
+undefined stack-operation symbols in Release null-render and ES-module
+consumers, which Debug exception tracing could hide. The engine supplies the
+exact SDK helper metadata through `--js-library`, including an incremental
+link dependency on that file. Existing runtime/export settings and strict
+undefined-symbol checks remain in effect. No API migration or new tool is needed.
 
 ### 2026-11-17 — Name the ISO extra keyboard position
 
