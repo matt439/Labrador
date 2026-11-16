@@ -10,9 +10,9 @@ An index of open work, one row per item; each row points to the document that ow
 
 **Aim:** finish Next's remaining acceptance while taking ready Later work in
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
-allows. Next's hardware and release gates remain open. Apart from the
-re-planned rows below, what remains in Later waits on the owner, on another
-story or on an outside event.
+allows. Next's hardware and release gates remain open. The accepted decision
+batch below supplies ready Later work; its own dependencies and qualification
+gates still apply.
 
 Otherwise follow Later's order and each story's prerequisites; an open hardware
 gate does not block unrelated work.
@@ -27,7 +27,16 @@ the player* links, waits on the owner.
 
 **Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
 
-**Open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; and `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The review of 2026-11-10 has no `OPEN` row left. Later and the hygiene lane have no ready item ([the audit](docs/review/2026-11-12-work-audit/README.md)).
+**Next ready stories:** the owner accepted eighteen scopes on 2026-11-16 in
+[the decision batch below](#accepted-decision-batch-of-2026-11-16), ordered as
+BACKLOG's L66 to L83. Start with `OCA-85`, `SM-76` and `OCA-86`; the first six
+stories are the initial priorities. `SM-77` waits for `OCA-88`'s texture-size
+query. `SM-81` qualifies native MSVC Release IPO before enabling it there;
+`SM-82` repairs the sanitizer configuration before adding scheduled ASan.
+The two deferred scopes, `REV#35` and `REV#53`, retain
+their revisit triggers. Acceptance is recorded; implementation is open.
+
+**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; and `REV#150`, `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` waits for a week of CI runs). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before this selection.
 
 **Decisions and sessions only the owner can do.** Every `DECISION` row below, in the order of the backlog's horizons:
 - Next: `OCA-48` + `BDP-06` (informal play with the physical pad, which can also feel `PI-21`'s vibration, play `PI-14`'s pad match and close `OCA-45`) · `SM-09` (informal play on the current MacBook Air) · `SM-01` (re-enable the Radeon in the BIOS at the next reboot, install AMD's driver, then the bench's adapter check) · `PI-14` (close as delegated to ColourWars, or wait for its `v0.3.0` run).
@@ -35,11 +44,39 @@ the player* links, waits on the owner.
 - Other acceptance: `REV#3` (display change), `REV#8` (audio endpoint loss/recovery), `WEB#12` (run the live-demo check after the next deploy), `SITE#4` (search on the iPhone after the next deploy).
 - Not yet placed: `GAP#1` to `GAP#13` except `GAP#4` (OCA-82), whether to take up each feature the engine comparison found; a yes becomes a story in BACKLOG.md.
 - [Recommendations of 2026-11-04](docs/2026-11-04-decision-recommendations.md) give options and one verdict for every `GAP#` and `IDEA#` row below; the calls stay the owner's.
-- Review of 2026-11-10: every `DECISION` row of [that section](#review-of-2026-11-10), 58 between `REV#30` and `REV#94`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md. Ten of them (`REV#33`, `REV#36`, `REV#37`, `REV#49`, `REV#53`, `REV#63`, `REV#68`, `REV#70`, `REV#72`, `REV#80`) had their measurement or brief done on 2026-11-13.
-- Work audit of 2026-11-12: `REV#149` (the v0.4.0 release commit and tag; everything before them is prepared), `REV#124` (whether a negative camera scale is supported), `REV#130`, `REV#133`, `REV#136`, `REV#142`, `REV#147`, `REV#152`, `REV#156` and `REV#158` in [that section](#work-audit-of-2026-11-12).
+- Review of 2026-11-10: every remaining `DECISION` row of [that section](#review-of-2026-11-10), 42 between `REV#32` and `REV#94`: whether to take up each gap [the review](docs/review/2026-11-10/README.md) verified, stories and owner's calls first, then low priority; a yes becomes a story in BACKLOG.md. Seven of them (`REV#33`, `REV#37`, `REV#63`, `REV#68`, `REV#70`, `REV#72`, `REV#80`) had their measurement or brief done on 2026-11-13.
+- Work audit of 2026-11-12: `REV#149` (the v0.4.0 release commit and tag; everything before them is prepared), `REV#133`, `REV#136`, `REV#147`, `REV#152` and `REV#156` in [that section](#work-audit-of-2026-11-12).
 - First-run review of 2026-11-10: `REV#118` to `REV#121` in [that section](#first-run-review-of-2026-11-10), and its run evidence for `REV#62`, `REV#63` and `REV#66`.
 - Client reports: `REV#105`, the verdicts on issues #122 to #124, and `REV#104`, the fix for issue #125, in [the reports table](docs/review/colourwars-reports/README.md).
 - New proposals: `IDEA#1` to `IDEA#5` in [Feature candidates](docs/feature-candidates.md): typed text, rebinding, save recovery, camera following and grid-sheet authoring. `IDEA#8` to `IDEA#19`, except `IDEA#10`, from the engine review of 2026-10-31: scene queries, contact edges, WAV and in-memory sounds, named-frame animations, a focus hit test, the present interval, the refresh rate, title and icon, cursor shapes, a side-by-side split and small math helpers.
+
+## Accepted decision batch of 2026-11-16
+
+**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L66 to L83, holds the
+accepted scope, acceptance and scheduling order. The original findings remain
+historical; their live review ledgers link to these stories. Each row below
+replaces its selected `REV#` row rather than duplicating its implementation.
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `OCA-85` | OPEN | should | S | Reject negative camera scales explicitly; mirroring waits for a real caller (`REV#124`). [Scope](docs/product/BACKLOG.md#oca-85). |
+| `SM-76` | OPEN | should | S | Check float-to-int geometry conversions, zero divisors and division overflow without partial mutation (`REV#130`). [Scope](docs/product/BACKLOG.md#sm-76). |
+| `OCA-86` | OPEN | should | S | Preserve short mouse-click edges between updates, truthful held state and focus-loss cancellation (`REV#38`). [Scope](docs/product/BACKLOG.md#oca-86). |
+| `OCA-87` | OPEN | should | M | Reveal a normally visible native window after its first completed frame; qualify every native renderer and full screen (`REV#158`). [Scope](docs/product/BACKLOG.md#oca-87). |
+| `OCA-88` | OPEN | should | S | Expose texture dimensions across all five render backends and use them in the first-picture guide (`REV#31`). [Scope](docs/product/BACKLOG.md#oca-88). |
+| `SM-77` | BLOCKED | should | S | Validate sampled atlas bounds at load while preserving valid signed rectangles; after `OCA-88` (`REV#30`). [Scope](docs/product/BACKLOG.md#sm-77). |
+| `OCA-89` | OPEN | could | XS | Add an explicit-failure hex-colour parser while preserving the existing constructor's black fallback (`REV#34`). [Scope](docs/product/BACKLOG.md#oca-89). |
+| `OCA-90` | OPEN | should | M | Let games answer native close requests, defaulting to immediate close; browser tab closure has a separate limit (`REV#39`). [Scope](docs/product/BACKLOG.md#oca-90). |
+| `SM-78` | OPEN | should | M | Add a scripted null pad backend that drives Application tests and records vibration (`REV#40`). [Scope](docs/product/BACKLOG.md#sm-78). |
+| `OCA-91` | OPEN | should | S | Offer a small replaceable diagnostic callback with stderr default and defined threading/lifetime (`REV#41`). [Scope](docs/product/BACKLOG.md#oca-91). |
+| `OCA-92` | OPEN | should | M | Expose the platform reduced-motion preference; games retain effects policy and native LineSweeper consumes it (`REV#60`). [Scope](docs/product/BACKLOG.md#oca-92). |
+| `PI-22` | OPEN | should | S | Publish CMake and public-header version facts from one canonical value, distinguishing development builds (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
+| `PI-23` | OPEN | should | S | Name missing consumer dependencies and their manifest repair while retaining CMake details (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |
+| `SM-79` | OPEN | could | XS | Extend CHANGES coverage to remaining consumer-executed build files, retaining the existing opt-out (`REV#142`). [Scope](docs/product/BACKLOG.md#sm-79). |
+| `SM-80` | OPEN | could | S | Check that tracked source files are enumerated by CMake, including conditional backend sources (`REV#51`). [Scope](docs/product/BACKLOG.md#sm-80). |
+| `SM-81` | OPEN | should | M | Qualify native MSVC Release IPO before enabling it there; browser qualification stays separate (`REV#36`). [Scope](docs/product/BACKLOG.md#sm-81). |
+| `SM-82` | OPEN | should | M | Repair dependency instrumentation and allocation-failure coverage, then add scheduled native-null ASan (`REV#49`). [Scope](docs/product/BACKLOG.md#sm-82). |
+| `SM-83` | OPEN | should | S | Diagnose invalid collider data at the scene/collision boundary while retaining low-level predicate semantics (`REV#57`). [Scope](docs/product/BACKLOG.md#sm-83). |
 
 ## Input, menus, settings and saves
 
@@ -170,37 +207,23 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#30` | DECISION | should | S | `sprite_sheet_loader.cpp` checks no frame or strip against the atlas size or for sign and zero area; a refusal rewrites the negative-rectangle cases SM-71 kept, and needs a texture size at the loader. |
-| `REV#31` | DECISION | should | S | `RenderResources` has no texture-size accessor although every backend holds the size, so the guides make a game type width and height by hand; a whole-texture scene object is a separate engine-or-component call. |
 | `REV#32` | DECISION | should | S | `font.h` measures and wraps but offers no aligned origin for a measured line; LineSweeper centres text by hand at three sites, one of them without the floor the other two apply. |
 | `REV#33` | DECISION | could | S | No backend queries the device's texture size limit; D3D12's 256-name cap is now in the Sprites and text guide. Querying the limit, naming it in the GL refusal and a capability field stay the owner's. |
-| `REV#34` | DECISION | could | XS | `Colour::set_from_hex` turns any malformed string, including one with a leading `#`, into opaque black; an optional-returning `colour_from_hex` beside `colour_from_name` is additive, a constructor change a source break. |
-| `REV#35` | DECISION | should | S | Random (engine/core/random.h) is in LabradorEngine, so a rules library linking only LabradorMath, as minimal's does, cannot use it; it has no shuffle and no way to derive a second stream. Move and extend, or leave. |
-| `REV#36` | DECISION | should | S | Measured 2026-11-13 (docs/performance/2026-11-13-ipo-update-phase.md): MSVC IPO cut the bench's update_ns p50 from 136.6 to 25.9 µs and record_submit from 633 to 378 µs. The owner chooses: enable IPO, inline Vector2F in its header, or neither. |
+| `REV#35` | DEFERRED | should | S | Owner deferred 2026-11-16 until a real math-only rules caller needs Random; no speculative move, shuffle or derived streams. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#37` | DECISION | should | S | No display-sleep hold while a game is shown (`win32/window.cpp`, `web/window.cpp`). No-input run and headless Chrome wake-lock check recorded 2026-11-13: no display request either way. Left: a pad-only run with the owner's pad, then whether to add a hold. |
-| `REV#38` | DECISION | should | XS | `Mouse` drops a press and release that both arrive between two polls, where `Touch` keeps the tap; `engine/input/mouse.h` now states the limit as `keyboard.h` does. Whether to latch a click as touch does is the owner's call (a silent behaviour change needing a CHANGES.md entry). |
-| `REV#39` | DECISION | should | S | `engine/app/win32/window.cpp` has no `WM_CLOSE` case and `WindowNotify` and `State` have no close-request hook, so the X button and Alt+F4 bypass `samples/minimal`'s ConfirmState; the game can neither ask nor decline. |
-| `REV#40` | DECISION | should | M | A `null` pad backend for `LABRADOR_INPUT_BACKEND`: a GamepadReader that answers scripted GamepadStates and records vibration requests, so native tests can drive pads through Gamepads and Application. |
-| `REV#41` | DECISION | should | S | The engine has no diagnostic sink: 13 OutputDebugString sites in the Direct3D and Vulkan backends and 5 stderr sites write where a game cannot redirect them; one replaceable function, default destination the owner's call. |
 | `REV#42` | DECISION | could | S | Record peak working set, private bytes at exit and process start to first `end_frame` in `bench/linesweeper_frame_result.h`, and print them from `--smoke-test`, before the SM-01 and SM-07 Radeon session. |
 | `REV#43` | DECISION | could | S | `samples/components` has no debug readout (frame time from `Application::frame_timings()` plus caller lines) and no guide shows a running value on screen; taking it partly reopens `REV#10`'s deferral. |
 | `REV#44` | DECISION | could | M | No sample adds or removes a Scene object during play, and collision.mdx's Projectile snippet is not compiled source; decide between a small spawn-and-retire sample and one retiring object in the collision sample. |
-| `REV#45` | DECISION | should | S | `CMakeLists.txt` declares no project VERSION and `engine/core` has no version header, so a consumer cannot test which release it builds against; the value between tags and the release procedure's bump step are the owner's. |
-| `REV#46` | DECISION | should | S | `engine/CMakeLists.txt` names no missing vcpkg dependency when the engine is not top level: a consumer manifest lacking one stops at a bare `find_package`. The install helper stays PI-11, parked. |
 | `REV#48` | DECISION | could | M | `website/src/walkthrough/ci.yml` has no wasm or Pages job; `your-web-page.mdx` publishes by hand into a second repository. A copyable deploy workflow would follow OCA-79 and state the public-repository trade. |
-| `REV#49` | DECISION | should | M | ASan as a scheduled job is the owner's call; it amends SECURITY.md and the inventory. The local x64-debug-null run is recorded: lodepng links only with _DISABLE_STL_ANNOTATION, there are no reports, and the CRT-hook audio suite fails under ASan. |
 | `REV#50` | DECISION | could | S | Owner call: a `tools/` report over `gh` run data that counts failed job-steps by name and ref, with offline tests; no tool aggregates failures today and `ci.yml:56-63` holds one hand-measured rate. |
-| `REV#51` | DECISION | could | S | Owner call: a compiler-free lint, with failing fixtures, that every tracked `.cpp` under `engine/`, `tests/`, `samples/` and `bench/` is named by its CMake file. A check on 2026-11-12 found none unlisted, so it guards a regression only. |
 | `REV#52` | DECISION | could | S | Owner call: build the four other release presets and `wasm-debug` on `ci.yml`'s weekly schedule as non-required jobs; needs `tests/ctest_inventory.json` lists and `ci_gap_report`'s gap definition changed together. |
-| `REV#53` | DECISION | should | S | The brief (docs/review/2026-11-10/2026-11-13-wasm-size-budget-brief.md) gives three figures for linesweeper.wasm (487,806 bytes): a 512,000 ceiling, a +1 % ratchet, or 450,000 after keeping PNG decoding out. Which, if any, is the owner's. |
+| `REV#53` | DEFERRED | should | S | Owner deferred 2026-11-16 until a measured download/startup target or demonstrated size regression justifies a hard budget; keep reporting sizes. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#54` | DECISION | should | XS | v0.3.0's counters, 2026-10-29 to 2026-11-11, are recorded beside the review. Left: whether `CONTRIBUTING.md`'s release procedure gains a step recording views, unique visitors and the starter ZIP's downloads; the traffic API needs the owner's access. |
 | `REV#55` | DECISION | could | M | Texture repeat addressing: `TextureFilter` is the seam's whole sampler vocabulary and every backend clamps; a wrap mode costs goldens on four rasterisers, works only for whole textures, and has no caller yet. |
 | `REV#56` | DECISION | could | L | Whether the public text type stays `std::wstring` while `Keyboard::typed()` returns UTF-8; SEAM.md decides the wide entry point, so a change is a source break best settled with `PORT#2` and `IDEA#1`. |
-| `REV#57` | DECISION | could | S | A CollisionObject whose shape holds a NaN forms no pair and, with Scene bounds set, is flagged for retirement; nothing throws, counts or is tested. Whether resolve() reports it is undecided. |
 | `REV#58` | DECISION | could | M | No layout-label query beside `key_name` in `engine/input/keyboard.h`; sample help text prints fixed US letters. Decide with `IDEA#2`, its only real caller, with a stated fallback for Firefox and Safari. |
 | `REV#59` | DECISION | could | M | `GamepadState` carries no pad identity, so a browser build with a PlayStation or Switch pad still shows the samples' fixed Xbox letters. Decide with `GAP#1`; native builds would always answer Xbox. |
 | `OCA-76` | DEFERRED | could | S | Waits for a second caller. The IDBFS walk of the starter was done on 2026-11-13 (beginner-guides GUIDE#12): it needs flushSave or autoPersist to survive a reload. An engine JSON writer needs README's boundary amended. |
-| `REV#60` | DECISION | could | S | A read-only reduced-motion fact on Application or the window, read from the browser media query and from Windows' client-area animation setting; LineSweeper's native `main.cpp` ignores the setting today. |
 | `REV#61` | DECISION | could | M | Whether the engine offers a shared fatal-error report (title, message) for `samples/minimal/main.cpp` and `main_web.cpp`, or a run helper; the two-file anatomy is ARCHITECTURE's stated design and would be amended. |
 | `REV#62` | DECISION | could | M | Five guides use features newer than the starter's release with no note at the passage ([run in a v0.3.0 starter](docs/review/2026-11-10-first-run/FINDINGS.md#rev62)); choose a banner or per-passage notes without reopening the 2026-10-27 default. |
 | `REV#63` | DECISION | could | M | Whether the starter or Install the tools ships the measured .vsconfig and its one installer command (10.5 GB, 2.4 GB download; 2026-11-13 record), against the 2026-10-30 'no bundled installer' decision. |
@@ -263,18 +286,14 @@ ready queue above.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#124` | DECISION | should | S | Non-finite and zero/non-finite-scale refusals landed. Left for the owner: is a negative (mirroring) `Camera` scale supported? A hand-built one gives a negative-extent `visible_rectangle`, and Scene's cull (`engine/scene/scene.cpp`) then intersects nothing, so the view goes blank without any signal. |
-| `REV#130` | DECISION | could | S | RectangleI's and Vector2I's float conversions are undefined for NaN or out-of-range input, and Vector2I division has no zero or `INT_MIN / -1` guard. Refuse with `invalid_argument` (T2) or state a precondition; SM-71 left it to its own decision. |
 | `REV#133` | DECISION | could | M | The day-two guides teach by about 150 inline C++ blocks nothing compiles; each rests on one dated agent run. Compiling a finished copy per guide in the consumer job is a lasting maintenance and CI cost; REV#44 is one instance. |
 | `REV#136` | DECISION | could | S | `random.h` is published and explains why `<random>`'s distributions differ between MSVC and the browser, but no guide uses it. A guide's main paragraph depends on REV#35 (whether Random moves to LabradorMath), so sequence it after that call. |
-| `REV#142` | DECISION | could | XS | `check_changes_rule.py` covers engine headers, `engine/CMakeLists.txt`, `settings.cmake` and `vcpkg.json`, but a consumer's configure also runs the root CMakeLists, three `cmake/` scripts and `engine/math/CMakeLists.txt`. Widening it is the owner's policy. |
 | `REV#147` | DECISION | could | S | PHILOSOPHY.md:863-864 calls a build-time regression a defect, but nothing measures one. A report over `.ninja_log` and depfiles is agent work; recording baselines per release or warning in CI is the owner's. |
 | `REV#149` | DECISION | should | S | v0.4.0 is prepared ([record](docs/review/2026-11-12-work-audit/2026-11-13-v0.4.0-preparation.md)): gap report green bar two local full-screen entries, change-list ids and four CHANGES entries added. Left: the owner's release commit and tag. |
 | `REV#150` | OPEN | should | S | CI configuration now enables software WebGL and selects all eight Firefox entries with renderer evidence. Left: verify the published CI run reaches WARP and whether audio's "Closed before resume completed" flakes there. Local evidence is in docs/port/web-to-be-tested.md. |
 | `REV#151` | OPEN | could | M | Safari and Firefox runs prove drawing and keys but read back nothing; `RenderPixelTests` and `WebWindowTests` run only in Chromium. Pixel page exit-protocol CI wiring is staged locally; hosted Safari readback, per-case drift and WebWindow input remain open. Firefox follows REV#150 (see web-to-be-tested.md). |
 | `REV#152` | DECISION | could | M | Every phone check of the game is Chrome emulation; the website already drives Safari on the iOS Simulator, but the game does not. A second Simulator lane adds the flakiness CI already retries around, so it is the owner's call. |
 | `REV#156` | DECISION | could | XS | powerPreference is now stated as "default", and web-as-built.md records that Chrome picks the same GPU under every value on this one-GPU desktop. Left: the owner's choice of value, and a measurement on a hybrid laptop. |
-| `REV#158` | DECISION | could | S | ColourWars report 19's evidence is in window.md (2026-11-13): a visible launch shows the white brush for about 225 to 305 ms before the first present; showing a hidden window after its first frames shows none. Owner decides whether to land the engine-side show-after-first-frame shape. |
 | `REV#159` | OPEN | should | S | CI's `safari` job lost quit keys on several sample pages. Pages whose keys start Web Audio or full screen now get one action list, the others one confirmed key at a time, each the form that passed there; failures print the page's keys and focus. Close after a week clean. |
 
 ## Ports
