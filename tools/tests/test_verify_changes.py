@@ -134,11 +134,12 @@ class PlanTests(unittest.TestCase):
         plan = self.plan(paths=["engine/render/vulkan/renderer.cpp"])
         gl = plan["configurations"][-2]
         for name in ("RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderContextLossTests", "WebWindowTests",
-                     "ComponentsPageTests", "LineSweeperBundlePageTests"):
+                     "ComponentsPageTests", "LineSweeperBundlePageTests", "LineSweeperIframePageTests"):
             self.assertIn(name, gl["required_browser_test_names"])
         self.assertIn("ComponentsPointerPageTests", gl["required_browser_test_names"])
         self.assertIn("ComponentsPointerPageTests", plan["configurations"][-1]["conditional_browser_test_names"])
         self.assertNotIn("LineSweeperBundlePageTests", plan["configurations"][-1]["conditional_browser_test_names"])
+        self.assertIn("LineSweeperIframePageTests", plan["configurations"][-1]["forbidden_test_names"])
         self.assertIn("D3D12SynchronizationTests", plan["configurations"][1]["required_test_names"])
         for configuration in plan["configurations"][:4]:
             for name in ("RenderPixelTests", "MinimalSmokeTests", "CollisionSmokeTests"):
@@ -381,17 +382,18 @@ class PlanTests(unittest.TestCase):
         source = original.decode("utf-8")
         self.assertIn("labrador_page_test(LineSweeperPacingPageTests", source)
         for registration in ("labrador_page_test(LineSweeperPacingPageTests",
+                             "labrador_page_test(LineSweeperIframePageTests",
                              "labrador_page_test(LineSweeperBundlePageTests"):
             with self.subTest(registration=registration):
                 path.write_text(source.replace(registration, "labrador_page_test(LineSweeperOtherPageTests"),
                                 encoding="utf-8")
-                with self.assertRaisesRegex(planner.PlanError, "null bundle/pacing exclusions changed"):
+                with self.assertRaisesRegex(planner.PlanError, "null bundle/iframe/pacing exclusions changed"):
                     self.plan()
                 path.write_bytes(original)
         unguarded = source.replace('if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")',
                                    'if(LABRADOR_RENDER_BACKEND)')
         path.write_text(unguarded, encoding="utf-8")
-        with self.assertRaisesRegex(planner.PlanError, "null bundle/pacing exclusions changed"):
+        with self.assertRaisesRegex(planner.PlanError, "null bundle/iframe/pacing exclusions changed"):
             self.plan()
         path.write_bytes(original)
 

@@ -65,7 +65,11 @@
 // labradorExit. A host-page driver can export a `ready` expression instead,
 // and prepare(page), called before navigation to install hooks or emulation.
 // page.on(listener) subscribes to session events and returns an unsubscribe
-// function. A driver exporting strict_complaints = true fails on every
+// function. page.child_session(session_id) binds the same API to a flattened
+// child session acquired through Target.setAutoAttach; that session's console,
+// browser errors and exceptions join the run's strict complaint checks.
+// An optional cleanup() runs even after preparation or the driver fails.
+// A driver exporting strict_complaints = true fails on every
 // console/browser complaint; expected_complaint({ source, level, text }) may
 // recognize a diagnostic its deliberate failure injection requires. Keep such
 // expectations specific to that case, and assert that the failure occurred.
@@ -410,6 +414,72 @@ export async function activate_page(send, session) {
 	await send('Page.bringToFront', {}, session);
 }
 
+// Child frames can live in another renderer process. Binding their commands
+// and events explicitly keeps them out of the top document's execution context,
+// while retaining their diagnostics in the same run.
+export function driver_page_api(devtools, session, target_id, monitored_sessions) {
+	monitored_sessions.add(session);
+	return {
+		evaluate: (expression, { user_gesture = false } = {}) =>
+			evaluate(devtools, session, expression, true, user_gesture),
+		send: (method, params = {}) => devtools.send(method, params, session),
+		send_browser: (method, params = {}) => devtools.send(method, params),
+		target_id,
+		on: (listener) => devtools.on((message) => {
+			if (message.sessionId === session) { listener(message); }
+		}),
+		child_session: (child) => {
+			if (typeof child !== 'string' || child.length === 0) {
+				throw new Error('child_session needs an attached session id');
+			}
+			return driver_page_api(devtools, child, undefined, monitored_sessions);
+		},
+		wait,
+	};
+}
+
+// Uses the same diagnostic path for the top page and explicitly registered
+// out-of-process frames. The protocol tests supply sinks without a browser.
+export function page_diagnostic(message, monitored_sessions, { complaint, console_heard,
+	write_out, write_error, crashed }) {
+	if (!monitored_sessions.has(message.sessionId)) return;
+	if (message.method === 'Runtime.consoleAPICalled') {
+		const text = console_text(message.params.args) + '\n';
+		const type = message.params.type;
+		console_heard.push(text);
+		if (type === 'error' || type === 'warning' || type === 'assert') {
+			write_error(text);
+			complaint('console', type, text.trimEnd());
+		} else {
+			write_out(text);
+		}
+	} else if (message.method === 'Runtime.exceptionThrown') {
+		const details = message.params.exceptionDetails;
+		const text = details.exception?.description ?? details.text;
+		write_error(`run_page: uncaught: ${text}\n`);
+		complaint('exception', 'error', text);
+	} else if (message.method === 'Inspector.targetCrashed') {
+		crashed('the page crashed');
+	} else if (message.method === 'Log.entryAdded') {
+		const entry = message.params.entry;
+		const where = entry.url ? ` (${entry.url})` : '';
+		write_error(`run_page: browser ${entry.level}: ${entry.text}${where}\n`);
+		if ((entry.level === 'warning' || entry.level === 'error') && !PERFORMANCE_NOTE.test(entry.text)) {
+			complaint('browser', entry.level, entry.text, { url: entry.url });
+		}
+	}
+}
+
+export async function cleanup_input_driver(driver, write_error) {
+	try {
+		await driver?.cleanup?.();
+		return true;
+	} catch (error) {
+		write_error(`run_page: input cleanup: ${error.message}\n`);
+		return false;
+	}
+}
+
 // The files under `folder` in the page's file system, base64-encoded. Empty if
 // the folder was never made, which is the passing case.
 //
@@ -680,19 +750,10 @@ async function run() {
 		}
 		const { sessionId: session } = await setup('Target.attachToTarget',
 			{ targetId: page.targetId, flatten: true });
-		const page_api = {
-			evaluate: (expression, { user_gesture = false } = {}) =>
-				evaluate(devtools, session, expression, true, user_gesture),
-			send: (method, params = {}) => devtools.send(method, params, session),
-			send_browser: (method, params = {}) => devtools.send(method, params),
-			target_id: page.targetId,
-			on: (listener) => devtools.on((message) => {
-				if (message.sessionId === session) { listener(message); }
-			}),
-			wait,
-		};
-		const complaint = (source, level, text) => {
-			if (input_driver?.expected_complaint?.({ source, level, text }) === true) {
+		const monitored_sessions = new Set();
+		const page_api = driver_page_api(devtools, session, page.targetId, monitored_sessions);
+		const complaint = (source, level, text, detail = {}) => {
+			if (input_driver?.expected_complaint?.({ source, level, text, ...detail }) === true) {
 				process.stdout.write(`run_page: expected ${source} diagnostic: ${text}\n`);
 				return;
 			}
@@ -700,37 +761,12 @@ async function run() {
 			if (source === 'browser') { browser_complaints.push(text); }
 		};
 
-		devtools.on((message) => {
-			if (message.sessionId !== session) {
-				return;
-			}
-			if (message.method === 'Runtime.consoleAPICalled') {
-				const text = console_text(message.params.args) + '\n';
-				const type = message.params.type;
-				console_heard.push(text);
-				if (type === 'error' || type === 'warning' || type === 'assert') {
-					process.stderr.write(text);
-					complaint('console', type, text.trimEnd());
-				} else {
-					process.stdout.write(text);
-				}
-			} else if (message.method === 'Runtime.exceptionThrown') {
-				const details = message.params.exceptionDetails;
-				process.stderr.write(`run_page: uncaught: ${details.exception?.description ?? details.text}\n`);
-				complaint('exception', 'error', details.exception?.description ?? details.text);
-			} else if (message.method === 'Inspector.targetCrashed') {
-				// Nothing waiting on the page will be answered now.
-				devtools.refuse_all('the page crashed');
-			} else if (message.method === 'Log.entryAdded') {
-				const entry = message.params.entry;
-				const where = entry.url ? ` (${entry.url})` : '';
-				process.stderr.write(`run_page: browser ${entry.level}: ${entry.text}${where}\n`);
-				if ((entry.level === 'warning' || entry.level === 'error') &&
-					!PERFORMANCE_NOTE.test(entry.text)) {
-					complaint('browser', entry.level, entry.text);
-				}
-			}
-		});
+		devtools.on((message) => page_diagnostic(message, monitored_sessions, {
+			complaint, console_heard,
+			write_out: (text) => process.stdout.write(text),
+			write_error: (text) => process.stderr.write(text),
+			crashed: (why) => devtools.refuse_all(why),
+		}));
 		await setup('Inspector.enable', {}, session);
 		await setup('Runtime.enable', {}, session);
 		await setup('Log.enable', {}, session);
@@ -902,6 +938,7 @@ async function run() {
 		process.stderr.write(`run_page: browser receipt: ${diagnostics()}`);
 		exit_code = 1;
 	} finally {
+		if (!await cleanup_input_driver(input_driver, (text) => process.stderr.write(text))) exit_code = 1;
 		if (devtools) {
 			await Promise.race([devtools.send('Browser.close').catch(() => {}), wait(3000)]);
 		}

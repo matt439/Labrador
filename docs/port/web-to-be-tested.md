@@ -10,6 +10,11 @@ update `web.md` §9's status summary, milestone row or risk row.
 
 ## Approved acceptance actions, 2026-11-16
 
+The independently scoped `SM-93` iframe regression is
+[locally qualified](2026-11-17-cross-origin-iframe.md) in headless Chromium.
+It leaves the physical, headed, other-browser and external-host acceptance
+in this ledger open.
+
 The owner approved the remaining acceptance scopes in the final decision
 batch. Approval records what to do; it supplies no play, listening, display,
 phone, driver or live-service result. [BACKLOG.md](../product/BACKLOG.md) owns

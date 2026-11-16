@@ -2,10 +2,98 @@
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { NETWORK_PROFILES, USAGE, UsageError, activate_page, chromium_arguments, heap_line, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
+import { NETWORK_PROFILES, USAGE, UsageError, activate_page, chromium_arguments, cleanup_input_driver, driver_page_api, heap_line, page_diagnostic, parse_arguments, unexcused_browser_complaints } from './run_page.mjs';
+import { prepare as prepare_iframe } from './iframe_input.mjs';
 
 const page = join('build', 'samples', 'minimal', 'MinimalSample.html');
 const sample = ['--browser', 'chrome', '--page', page, '--quit-keys', 'Escape,Enter'];
+
+test('driver cleanup runs once and a cleanup failure cannot leave a successful exit', async () => {
+	let cleanups = 0;
+	const errors = [];
+	assert.equal(await cleanup_input_driver(undefined, (text) => errors.push(text)), true);
+	assert.equal(await cleanup_input_driver({ cleanup: async () => { cleanups++; } }, (text) => errors.push(text)), true);
+	assert.equal(cleanups, 1);
+	assert.equal(await cleanup_input_driver({ cleanup: async () => { throw new Error('owned server did not close'); } },
+		(text) => errors.push(text)), false);
+	assert.deepEqual(errors, ['run_page: input cleanup: owned server did not close\n']);
+});
+
+test('child console, exception, browser errors and crashes retain the top-page failure path', () => {
+	const heard = [];
+	const complaints = [];
+	const crashes = [];
+	const output = [];
+	const sinks = { console_heard: heard, complaint: (...args) => complaints.push(args),
+		crashed: (why) => crashes.push(why), write_out: (text) => output.push(text), write_error: (text) => output.push(text) };
+	const messages = [
+		{ method: 'Runtime.consoleAPICalled', params: { type: 'error', args: [{ type: 'string', value: 'child console error' }] } },
+		{ method: 'Runtime.exceptionThrown', params: { exceptionDetails: { exception: { description: 'child exception' } } } },
+		{ method: 'Log.entryAdded', params: { entry: { level: 'error', text: 'child missing file', url: 'http://127.0.0.1/child.js' } } },
+		{ method: 'Inspector.targetCrashed', params: {} },
+	];
+	for (const sessionId of ['child', 'unrelated']) {
+		for (const message of messages) page_diagnostic({ ...message, sessionId }, new Set(['parent', 'child']), sinks);
+	}
+	assert.deepEqual(complaints, [['console', 'error', 'child console error'],
+		['exception', 'error', 'child exception'], ['browser', 'error', 'child missing file', { url: 'http://127.0.0.1/child.js' }]]);
+	assert.deepEqual(crashes, ['the page crashed']);
+	assert.deepEqual(heard, ['child console error\n']);
+	assert.equal(output.length, 3);
+});
+
+test('a child session keeps commands and events in its own renderer and joins diagnostic monitoring', async () => {
+	const commands = [];
+	const listeners = new Set();
+	const monitored = new Set();
+	const devtools = {
+		send: async (method, params, session) => {
+			commands.push({ method, params, session });
+			return { result: { value: 'child result' } };
+		},
+		on: (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
+	};
+	const parent = driver_page_api(devtools, 'parent', 'page-target', monitored);
+	const child = parent.child_session('iframe');
+	assert.deepEqual([...monitored], ['parent', 'iframe']);
+	assert.equal(await child.evaluate('location.origin'), 'child result');
+	assert.equal(commands[0].session, 'iframe');
+	assert.equal(commands[0].params.awaitPromise, true);
+	assert.equal(commands[0].params.userGesture, false);
+	await child.send('Log.enable');
+	assert.equal(commands[1].session, 'iframe');
+	await child.send_browser('Target.getTargets');
+	assert.equal(commands[2].session, undefined);
+	const heard = [];
+	const unsubscribe = child.on((event) => heard.push(event.method));
+	for (const sessionId of ['parent', 'iframe', 'unrelated']) {
+		for (const listener of listeners) listener({ sessionId, method: 'Runtime.exceptionThrown' });
+	}
+	assert.deepEqual(heard, ['Runtime.exceptionThrown']);
+	unsubscribe();
+	assert.equal(listeners.size, 0);
+	for (const invalid of ['', null, undefined, 1]) assert.throws(() => parent.child_session(invalid), /session id/);
+});
+
+test('the iframe is paused until its diagnostics, prelude and factory observation are installed', async () => {
+	let attached;
+	const commands = [];
+	const child = { send: async (method) => commands.push(method), on() {} };
+	await prepare_iframe({ on: (listener) => { attached = listener; },
+		child_session: (id) => { assert.equal(id, 'child'); return child; },
+		send: async (method, params) => {
+			if (method === 'Emulation.setDeviceMetricsOverride') {
+				assert.deepEqual(params, { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
+				return;
+			}
+			assert.equal(method, 'Target.setAutoAttach');
+			assert.deepEqual(params, { autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
+		} });
+	attached({ method: 'Target.attachedToTarget', params: { sessionId: 'child', targetInfo: { type: 'iframe' } } });
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.deepEqual(commands, ['Runtime.enable', 'Log.enable', 'Inspector.enable', 'Page.enable',
+		'Page.addScriptToEvaluateOnNewDocument', 'Fetch.enable', 'Runtime.runIfWaitingForDebugger']);
+});
 
 test('only Windows headless profiles disable native-window occlusion tracking', () => {
 	const flag = '--disable-features=CalculateNativeWinOcclusion';

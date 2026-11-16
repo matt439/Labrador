@@ -165,7 +165,7 @@ scope; it does not publish a release, change settings or claim acceptance.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
-| `SM-93` | OPEN | could | M | Add cross-origin iframe focus/input/permission regressions; host-specific guide and precompression stay deferred (`REV#72`). [Scope](docs/product/BACKLOG.md#sm-93). |
+| `SM-93` | OPEN | could | M | Cross-site bundle focus, fullscreen-policy, quit/replay and loader-failure regression passes Chromium and protocol/site checks; finish combined-root lint (`REV#72`). [Scope and evidence](docs/product/BACKLOG.md#sm-93). |
 | `OCA-119` | OPEN | could | S | Observe actual browser Escape/fullscreen routing; automate only a faithful interaction and document the result (`REV#93`). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |

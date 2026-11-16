@@ -244,11 +244,11 @@ def read_rules(root: Path) -> tuple[dict, dict[str, dict], list[str], list[str],
         elif kind == "endif" and guards:
             guards.pop()
         elif kind in {"add_test", "labrador_page_test"} and 'NOT LABRADOR_RENDER_BACKEND STREQUAL "null"' in guards:
-            match = re.match(r"(?:NAME\s+)?(LineSweeper(?:Bundle|Pacing)PageTests)\b", arguments)
+            match = re.match(r"(?:NAME\s+)?(LineSweeper(?:Bundle|Iframe|Pacing)PageTests)\b", arguments)
             if match:
                 guarded.add(match[1])
-    if guarded != {"LineSweeperBundlePageTests", "LineSweeperPacingPageTests"}:
-        raise PlanError("null bundle/pacing exclusions changed; review forbidden registrations")
+    if guarded != {"LineSweeperBundlePageTests", "LineSweeperIframePageTests", "LineSweeperPacingPageTests"}:
+        raise PlanError("null bundle/iframe/pacing exclusions changed; review forbidden registrations")
     return document, index, chromium, null_chromium, registered
 
 
@@ -338,7 +338,7 @@ def build_plan(root: Path, *, paths: list[str] | None = None, areas: list[str] |
                                "forbidden_test_names":
                                    ["RenderPixelTests", "RenderPixelTestsWithoutS3tc", "RenderPixelTestsThroughPost", "RenderContextLossTests",
                                     "RenderContextLossWithPostTests",
-                                    "LineSweeperBundlePageTests", "LineSweeperPacingPageTests"]
+                                    "LineSweeperBundlePageTests", "LineSweeperIframePageTests", "LineSweeperPacingPageTests"]
                                    if render == "null" else []})
     vulkan = any(path == "engine/render/vulkan" or path.startswith("engine/render/vulkan/") for path in selected)
     sync = "required" if vulkan else "conditional"

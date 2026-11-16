@@ -76,7 +76,7 @@ Web Audio and web input.
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
 | `x64-debug-null-asan` | null / null | 24; opt-in MSVC AddressSanitizer, including a deterministic detection probe |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 40 Debug / 41 Release with Chromium, 8 more with Firefox, 20 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 41 Debug / 42 Release with Chromium, 8 more with Firefox, 20 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderPixelTestsThroughPost`,
@@ -85,7 +85,7 @@ all six sample `*PageTests`,
 `LineSweeperReducedMotionPageTests`, `LineSweeperPalettePageTests`,
 `ComponentsPointerPageTests`, `ComponentsTextPageTests`, `ComponentsRebindingPageTests`,
 `MinimalLoadFailurePageTests` and
-`LineSweeperBundlePageTests` registered. `MinimalLoadFailurePageTests` answers
+`LineSweeperBundlePageTests` and `LineSweeperIframePageTests` registered. `MinimalLoadFailurePageTests` answers
 the template page's `.wasm` with 404 and asserts its failure line and the
 loader's console error; a failed loader script or `.data` file is untested.
 `RenderContextLossWithPostTests` selects a game-authored material and checks
@@ -93,7 +93,11 @@ its selected handle and values across context restoration; identity is still
 covered by the pixel suite. The bundle test loads `web-dist/linesweeper/index.html`, plays and
 replays, checks the touch gate, restores a context after a forced loss and a
 GPU process crash, switches tabs and asserts failure UI.
-It requires a rasterizing backend. `LineSweeperHostPageTests` drives the
+It requires a rasterizing backend. The cross-site iframe regression uses
+independent loopback origins, real routed input, default/delegated fullscreen
+policy, quit/replay and loader failure.
+It checks Chromium only; external hosts, other browsers and headed fullscreen
+remain separate evidence. `LineSweeperHostPageTests` drives the
 host site's own page the same way, registered only when `LABRADOR_HOST_SITE`
 names a host checkout's `public/`; CI has no such checkout. The second pixel run hides
 S3TC to test CPU block decoding. The page runner

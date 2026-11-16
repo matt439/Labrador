@@ -4,6 +4,38 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
+import { host_page, iframe_complaint } from './iframe_input.mjs';
+
+test('only the deliberately refused iframe loader can excuse its exact network/import diagnostics', () => {
+	const url = 'http://127.0.0.1:1234/linesweeper.js';
+	const state = { phase: 'download failure', loader_refused: true, loader_url: url, expected_diagnostics: [] };
+	const network = { source: 'browser', level: 'error', url,
+		text: 'Failed to load resource: the server responded with a status of 404 (Not Found)' };
+	assert.equal(iframe_complaint(state, network), true);
+	assert.equal(iframe_complaint(state, { ...network, url: 'http://127.0.0.1:1234/poster.png' }), false);
+	assert.equal(iframe_complaint(state, { ...network, text: 'unrelated failure' }), false);
+	assert.equal(iframe_complaint(state, { ...network, level: 'warning' }), false);
+	const runtime = { source: 'console', level: 'error', text: 'LineSweeper failure: TypeError: Failed to fetch dynamically imported module: ' + url };
+	assert.equal(iframe_complaint(state, runtime), true);
+	assert.equal(iframe_complaint(state, { ...runtime, source: 'exception' }), false);
+	assert.equal(iframe_complaint({ ...state, phase: 'delegated iframe' }, network), false);
+	assert.equal(iframe_complaint({ ...state, loader_refused: false }, network), false);
+	assert.equal(state.expected_diagnostics.length, 2);
+});
+
+test('cross-origin host fixture makes fullscreen delegation explicit without an implicit allowfullscreen', () => {
+	const source = 'http://127.0.0.1:1234/index.html?a=1&b=2';
+	const denied = host_page(source, false);
+	const allowed = host_page(source, true);
+	assert.match(denied, /src="http:\/\/127\.0\.0\.1:1234\/index\.html\?a=1&amp;b=2"/);
+	assert.doesNotMatch(denied, /allow=|allowfullscreen/);
+	assert.match(allowed, /allow="fullscreen; gamepad; autoplay"/);
+	assert.doesNotMatch(allowed, /allowfullscreen/);
+	assert.match(denied, /id="outside"/);
+	for (const refused of ['https://example.com/game', 'http://localhost:1234/index.html', 'file:///game.html']) {
+		assert.throws(() => host_page(refused, true), /loopback game origin/);
+	}
+});
 
 const html = readFileSync(new URL('../../../samples/linesweeper/web/index.html', import.meta.url), 'utf8');
 const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];

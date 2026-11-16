@@ -103,6 +103,29 @@ C:\dev\emsdk\emsdk_env.bat
 
 </Steps>
 
+## In an iframe
+
+An iframe may load the bundle's example page from another origin. Keyboard
+input reaches it after a click into the game; the Play button supplies that
+click. Focus moving to the embedding page pauses LineSweeper, and clicking its
+canvas gives the game the keyboard again. Without fullscreen delegation the
+example hides its Full screen button. A host that wants to offer it can use:
+
+```html
+<iframe title="LineSweeper" src="https://your-game.example/linesweeper/" width="960" height="720"
+        allow="fullscreen; gamepad; autoplay"></iframe>
+```
+
+The host's Permissions Policy can impose further restrictions. Those tokens
+do not grant a connected pad, audible playback or automatic fullscreen;
+fullscreen still starts from the page's button click. The maintained Chromium
+regression checks two local origins, including host/frame focus, quit/replay
+and loader-failure recovery. It does not qualify an external hosting service,
+Firefox/Safari iframe behavior, real pads or headed fullscreen/Escape. Keep
+saved data's origin and browser partitioning in mind if a game adds storage;
+LineSweeper saves nothing. An itch.io guide and precompressed bundle output
+remain outside this checked route.
+
 ## The factory
 
 **`createLineSweeper` is the default ES-module export of `linesweeper.js`.** Import that default,
