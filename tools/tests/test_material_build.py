@@ -181,6 +181,33 @@ endif()
 ''', encoding="utf-8")
         self.assert_success(self.run_cmake("-P", str(script)))
 
+    def test_missing_selected_material_tools_name_host_manifest_repairs(self):
+        self.fixture("labrador_add_material(game example SOURCE pixel.hlsl)")
+        game = self.directory / "game/CMakeLists.txt"
+        original = game.read_text(encoding="utf-8")
+        search = '''set(LABRADOR_RENDER_BACKEND gl)
+set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH FALSE)
+set(CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH FALSE)
+set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH FALSE)
+set(ENV{VULKAN_SDK} "")
+set(VCPKG_INSTALLED_DIR "${CMAKE_CURRENT_BINARY_DIR}/empty-packages")
+'''
+        for missing in ("directx-dxc", "spirv-cross"):
+            with self.subTest(missing=missing):
+                tools = ('set(LABRADOR_MATERIAL_DXC LABRADOR_MATERIAL_DXC-NOTFOUND)\n'
+                         if missing == "directx-dxc" else
+                         f'set(LABRADOR_MATERIAL_DXC "{Path(self.cmake).as_posix()}")\n'
+                         'set(LABRADOR_SPIRV_CROSS LABRADOR_SPIRV_CROSS-NOTFOUND)\n')
+                game.write_text(search + tools + original, encoding="utf-8")
+                result = self.run_cmake("-S", str(self.directory), "-B", str(self.directory / f"build-{missing}"))
+                self.assertNotEqual(result.returncode, 0)
+                output = result.stdout + result.stderr
+                self.assertIn(f'"name": "{missing}"', output)
+                self.assertIn('"host": true', " ".join(output.split()))
+                self.assertIn("consumer", output)
+                self.assertIn(REPOSITORY.as_posix() + "/vcpkg.json", output)
+                self.assertIn("Material example needs", output)
+
 
 if __name__ == "__main__":
     unittest.main()

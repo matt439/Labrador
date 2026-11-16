@@ -293,7 +293,7 @@ that is meant to repeat. The starter project already has it, in the engine's fol
 
    The build first runs CMake again, because `game\CMakeLists.txt` changed. That prints
    `[0/1] Re-running CMake...` and about 30 lines from vcpkg and CMake, including a list of
-   packages and lines such as `find_package(doctest CONFIG REQUIRED)`; they are expected, not
+   packages and package-lookup lines; they are expected, not
    errors. Then it copies the sounds and compiles `hello_state.cpp` and `main.cpp`, which include
    the files you changed. On a fast desktop the build and the tests together took 8 seconds. It ends like this:
 

@@ -1,3 +1,5 @@
+include("${CMAKE_CURRENT_LIST_DIR}/dependencies.cmake")
+
 # vcpkg may choose its host triplet without publishing VCPKG_HOST_TRIPLET to
 # CMake. Respect the explicit and environment selections, then use its native
 # architecture/OS default rather than a cross-build's target triplet.
@@ -112,7 +114,8 @@ function(labrador_add_material target name)
             NO_CMAKE_FIND_ROOT_PATH
             DOC "DXC with SPIR-V support, for authored post materials")
         if(NOT LABRADOR_MATERIAL_DXC)
-            message(FATAL_ERROR "Material ${name} needs DXC with SPIR-V support. Enable the vcpkg materials feature (-DVCPKG_MANIFEST_FEATURES=materials), install the Vulkan SDK, or set LABRADOR_MATERIAL_DXC to dxc.")
+            labrador_dependency_advice(advice "host tool DXC (dxc)" directx-dxc HOST)
+            message(FATAL_ERROR "Material ${name} needs DXC with SPIR-V support. Enable the engine manifest's materials feature (-DVCPKG_MANIFEST_FEATURES=materials), install the Vulkan SDK, or set LABRADOR_MATERIAL_DXC to dxc. ${advice}")
         endif()
         set(binary "${work}/pixel.spv")
         set(compile_spirv "${LABRADOR_MATERIAL_DXC}" -nologo -spirv
@@ -130,7 +133,8 @@ function(labrador_add_material target name)
                 HINTS "${host_tools}/spirv-cross" "$ENV{VULKAN_SDK}/Bin"
                 NO_CMAKE_FIND_ROOT_PATH DOC "SPIRV-Cross, for authored post materials")
             if(NOT LABRADOR_SPIRV_CROSS)
-                message(FATAL_ERROR "Material ${name} needs spirv-cross. Enable the vcpkg materials feature (-DVCPKG_MANIFEST_FEATURES=materials), install the Vulkan SDK, or set LABRADOR_SPIRV_CROSS to spirv-cross.")
+                labrador_dependency_advice(advice "host tool spirv-cross" spirv-cross HOST)
+                message(FATAL_ERROR "Material ${name} needs spirv-cross. Enable the engine manifest's materials feature (-DVCPKG_MANIFEST_FEATURES=materials), install the Vulkan SDK, or set LABRADOR_SPIRV_CROSS to spirv-cross. ${advice}")
             endif()
             if(EMSCRIPTEN)
                 set(dialect --es --version 300)

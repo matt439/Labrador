@@ -166,14 +166,26 @@ after `git`, or write long output to a file in your `%TEMP%` folder and open it 
      before the engine decoded PNG textures has no `lodepng` line; copy it in if the engine's
      list has one. Copy an entry the engine gained, with its `{ }`
      and `features` if it has them, into your list, and put a comma after the entry before it.
-   - Your `builtin-baseline` is the engine's, exactly: copy its 40 characters between the
-     quotation marks.
+   - The engine's `builtin-baseline` is the tested default: copy its 40 characters between the
+     quotation marks, unless you already maintain a different working baseline that supplies
+     the selected dependencies. Configure does not require those strings to match.
    - Leave your `name` and `version-string` as they are.
 
    The `vcpkg.json` [Start your own project](/docs/get-started/your-project/) shows is derived
    from this site's revision, not from your pin, so compare with the engine's file at the tag, not
    with that page. Step 6's configure checks the result: a missing comma stops it with an error
    naming `vcpkg.json` and the line.
+
+   In the development engine after `v0.3.0`, a missing selected package also names your
+   manifest's obligation and the engine manifest to compare alongside CMake's recorded
+   failure reason, considered configurations and directory hints. `xaudio2redist` is a
+   CMake package supplied through the engine's
+   `directxtk` dependency and its `xaudio2redist` feature; copy that dependency object rather
+   than inventing a new package entry. If your manifest already declares the port, check
+   the selected toolchain, triplet and installed-package paths before adding a duplicate.
+   An error about the compiler, Windows SDK or Vulkan SDK is a toolchain problem and does
+   not ask you to change the manifest. Optional [material tools](/docs/guides/your-shader/)
+   are host dependencies needed only when your game writes those shaders.
 
 4. **See what changed in the template.** Your `game` folder began as a copy of
    `samples/minimal`, and your project's own files as copies of the files in the engine's

@@ -1,4 +1,4 @@
-find_package(doctest CONFIG REQUIRED)
+labrador_find_package(doctest)
 
 # One doctest executable, registered with ctest under its own name. Every
 # suite shares test_main.cpp beside this file, so a suite's folder holds only

@@ -26,6 +26,7 @@ class RuleTests(unittest.TestCase):
                      "cmake/settings.cmake", "vcpkg.json", "CMakeLists.txt",
                      "engine/math/CMakeLists.txt", "cmake/source_revision.cmake",
                      "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
+                     "cmake/dependencies.cmake",
                      "cmake/compile_shaders.cmake", "cmake/add_material.cmake",
                      "cmake/embed_material.cmake", "cmake/check_engine_includes.cmake"):
             with self.subTest(path=path):

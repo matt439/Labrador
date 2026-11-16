@@ -41,6 +41,11 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-17.** The rules-test lookup uses `labrador_find_package(doctest)`
+  so a missing dependency names the game's manifest obligation alongside
+  CMake's discovery details. A copy can replace `find_package(doctest CONFIG REQUIRED)`
+  with that line after moving its engine pin; the ordinary CMake call still works.
+
 - **2026-11-16.** A native game stays hidden until its first completed frame,
   including content loading and the first draw. The engine reveals a normally
   visible window itself; no platform show call is needed. Explicit hidden smoke

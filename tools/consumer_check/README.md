@@ -46,6 +46,16 @@ package identity, not a check of later manual edits. Plain unstamped source
 copies report a development version.
 CONTRIBUTING.md's *Cutting a release* attaches one to each release.
 
+The consumer owns its top-level manifest; adding the engine as a subdirectory
+does not install the engine's manifest. Selected package failures name the
+missing CMake package, its port/feature obligation and the engine manifest to
+compare, while retaining CMake's package reason, considered configurations
+and versions, and directory/search hints. A declared-but-missing
+port points to toolchain/triplet/discovery repair rather than a duplicate
+entry. A different working baseline is accepted. Optional materials need host
+tools only when a material is selected. The starter's doctest lookup uses the
+same `labrador_find_package` advice; ordinary CMake package lookup remains valid.
+
 CI's `consumer` job (`.github/workflows/ci.yml`) makes that ZIP on every pull
 request and every push CI builds, from that run's own checkout, extracts it
 to `C:\dev\mygame` with Windows' own `tar`, and keeps it as the run's
