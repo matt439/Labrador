@@ -33,7 +33,7 @@ follows the player*.
 [the decision batch below](#accepted-decision-batch-of-2026-11-16), ordered as
 BACKLOG's L66 to L83. The remaining first-six stories in the batch below
 are the initial priorities. `SM-77` waits for `OCA-88`'s texture-size
-query. `SM-81` qualifies native MSVC Release IPO before enabling it there;
+query. `SM-81` has qualified native MSVC Release IPO and its standalone default;
 `SM-82` repairs the sanitizer configuration before adding scheduled ASan.
 The two deferred scopes, `REV#35` and `REV#53`, retain
 their revisit triggers. Acceptance is recorded; implementation is open.
@@ -52,7 +52,7 @@ their owners, with explicit revisit conditions.
 
 The [fourth batch](#fourth-accepted-decision-batch-of-2026-11-16) adds twelve
 scopes in BACKLOG's L106 to L117. `OCA-111` follows `OCA-110`'s rebinding
-example; `SM-89` follows `SM-81`'s native Release qualification. Seven proposals
+example; `SM-89` is ready after `SM-81`'s native Release qualification. Seven proposals
 are deferred. `REV#56` is settled: retain the wide rendering API and use the
 existing UTF-8 conversion boundary. Every current `GAP#` and `IDEA#` selection
 call is now recorded; deferred scopes retain their own revisit triggers.
@@ -116,7 +116,6 @@ replaces its selected `REV#` row rather than duplicating its implementation.
 | `OCA-92` | OPEN | should | M | Query and LineSweeper integration implemented; complete the combined seven-track app sweep (`REV#60`). [Scope and focused evidence](docs/product/BACKLOG.md#oca-92). |
 | `PI-22` | OPEN | should | S | Version API, exact-tag/archive identity and consumer checks pass; close after the combined website gate (`REV#45`). [Scope](docs/product/BACKLOG.md#pi-22). |
 | `PI-23` | OPEN | should | S | Selected dependency diagnostics and configure fixtures pass; close after the combined website gate (`REV#46`). [Scope](docs/product/BACKLOG.md#pi-23). |
-| `SM-81` | OPEN | should | M | Opt-in native Release IPO is guarded; qualify clean/incremental/consumer builds and current-source costs before changing the standalone default (`REV#36`). [Scope](docs/product/BACKLOG.md#sm-81). |
 | `SM-82` | OPEN | should | M | Repair dependency instrumentation and allocation-failure coverage, then add scheduled native-null ASan (`REV#49`). [Scope](docs/product/BACKLOG.md#sm-82). |
 | `SM-83` | OPEN | should | S | Diagnose invalid collider data at the scene/collision boundary while retaining low-level predicate semantics (`REV#57`). [Scope](docs/product/BACKLOG.md#sm-83). |
 
@@ -180,7 +179,7 @@ decision to keep the current rendering-text API. Implementation is open.
 | `OCA-115` | OPEN | could | S | Report the selected device's texture-size limit and include it in oversized-upload diagnostics (`REV#33`). [Scope](docs/product/BACKLOG.md#oca-115). |
 | `SM-87` | OPEN | could | S | Report defined native memory and startup observations with context and no hard thresholds (`REV#42`). [Scope](docs/product/BACKLOG.md#sm-87). |
 | `SM-88` | OPEN | could | S | Manually report CI failures by workflow, ref, step and attempt without inferring flakiness from counts (`REV#50`). [Scope](docs/product/BACKLOG.md#sm-88). |
-| `SM-89` | BLOCKED | could | M | Add five weekly non-required configurations after `SM-81`'s Release qualification; keep real-driver checks (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
+| `SM-89` | OPEN | could | M | Add five weekly non-required configurations with native Release IPO qualified; keep real-driver checks (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
 | `SM-90` | OPEN | should | XS | Add an owner-invoked release-time aggregate counter snapshot with reporting-window limits (`REV#54`). [Scope](docs/product/BACKLOG.md#sm-90). |
 | `SM-91` | OPEN | could | M | Manually rebuild an explicit release tag and compare immutable-asset hashes; signing remains deferred (`REV#70`). [Scope](docs/product/BACKLOG.md#sm-91). |
 

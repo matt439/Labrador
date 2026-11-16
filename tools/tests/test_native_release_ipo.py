@@ -19,7 +19,8 @@ CMAKE = shutil.which("cmake")
 @unittest.skipUnless(CMAKE, "CMake is required for the compiler-free policy fixtures")
 class NativeReleaseIpoTests(unittest.TestCase):
     def configure(self, *, enabled="ON", compiler="MSVC", windows=True,
-                  browser=False, supported=True, inherited=None):
+                  browser=False, supported=True, inherited=None,
+                  standalone=False, configuration="Release", compiler_flags=""):
         temporary = tempfile.TemporaryDirectory(prefix="labrador-ipo-policy-")
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -39,22 +40,53 @@ class NativeReleaseIpoTests(unittest.TestCase):
             "project(IpoPolicyFixture LANGUAGES NONE)\n"
             "list(PREPEND CMAKE_MODULE_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/modules\")\n"
             f"set(CMAKE_CXX_COMPILER_ID {compiler})\n"
+            f"set(CMAKE_BUILD_TYPE {configuration})\n"
+            f'set(CMAKE_CXX_FLAGS "{compiler_flags}")\n'
             f"set(WIN32 {'TRUE' if windows else 'FALSE'})\n"
             f"set(EMSCRIPTEN {'TRUE' if browser else 'FALSE'})\n"
             + (f"set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE {inherited})\n"
                if inherited is not None else "")
-            + "add_subdirectory(child)\n"
-            "file(WRITE \"${CMAKE_BINARY_DIR}/parent.txt\" "
+            + (f'include("{MODULE}")\n'
+               'file(WRITE "${CMAKE_BINARY_DIR}/child.txt" '
+               '"${CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE}")\n'
+               if standalone else "add_subdirectory(child)\n")
+            + "file(WRITE \"${CMAKE_BINARY_DIR}/parent.txt\" "
             "\"${CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE}\")\n", encoding="utf-8")
         (root / "child/CMakeLists.txt").write_text(
+            'project(LabradorFixture LANGUAGES NONE)\n'
             f'include("{MODULE}")\n'
             'file(WRITE "${CMAKE_BINARY_DIR}/child.txt" '
             '"${CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE}")\n', encoding="utf-8")
+        selection = [f"-DLABRADOR_NATIVE_RELEASE_IPO={enabled}"] if enabled else []
         result = subprocess.run(
-            [CMAKE, "-S", str(root), "-B", str(root / "build"),
-             f"-DLABRADOR_NATIVE_RELEASE_IPO={enabled}"],
+            [CMAKE, "-S", str(root), "-B", str(root / "build"), *selection],
             capture_output=True, text=True, timeout=30)
         return result, root / "build"
+
+    def test_only_standalone_native_msvc_release_enables_the_default(self):
+        result, build = self.configure(enabled=None, standalone=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((build / "child.txt").read_text(), "ON")
+        for options in ({"standalone": False}, {"standalone": True, "configuration": "Debug"},
+                        {"standalone": True, "compiler": "Clang"},
+                        {"standalone": True, "browser": True},
+                        {"standalone": True, "windows": False}):
+            with self.subTest(options=options):
+                result, build = self.configure(enabled=None, **options)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual((build / "child.txt").read_text(), "")
+
+    def test_standalone_default_has_an_explicit_opt_out(self):
+        result, build = self.configure(enabled="OFF", standalone=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((build / "child.txt").read_text(), "")
+
+    def test_debug_asan_default_does_not_probe_ipo(self):
+        result, build = self.configure(enabled=None, standalone=True,
+                                       configuration="Debug", supported=False,
+                                       compiler_flags="/fsanitize=address /Zi")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((build / "child.txt").read_text(), "")
 
     def test_enabled_policy_stays_inside_engine_directory(self):
         result, build = self.configure()

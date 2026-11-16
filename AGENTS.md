@@ -36,6 +36,11 @@ explains the lookup and errors. The three APIs compile one `sprite.hlsl`, and
 the post stage's `post_frame.hlsli` with its materials, at their profiles; GL
 compiles hand-written GLSL for both at device creation.
 
+Fresh standalone native MSVC Release configurations enable capability-checked
+IPO. `-DLABRADOR_NATIVE_RELEASE_IPO=OFF` opts out; Debug, browser and consumer
+parent policy remain unchanged. [The policy and dated qualification](docs/performance/native-release-ipo.md)
+record build/relink costs, executable sizes and the consumer boundary.
+
 Game-authored post materials use `labrador_add_material(target name SOURCE
 path DEPENDS ...)` and one HLSL pixel function in the engine frame. GL/WebGL2
 authoring needs host dxc with SPIR-V support and spirv-cross; the optional
@@ -380,7 +385,7 @@ in the commit message, which the lint job checks per commit
 (`tools/check_changes_rule.py`). The rule includes silent behaviour and dependency/flag
 changes. A source break names old/new spellings and the sample migration diff.
 The build-input list is the root, engine and math `CMakeLists.txt`, plus
-`cmake/`'s settings, source_revision, version, dependencies, compile_shaders, add_material,
+`cmake/`'s settings, native_release_ipo, source_revision, version, dependencies, compile_shaders, add_material,
 embed_material and check_engine_includes scripts, version_values.h.in and
 release_identity.txt. It does not cover every
 CMake script or maintainer tool. CHANGES.md records the 2026-11-16 expansion's

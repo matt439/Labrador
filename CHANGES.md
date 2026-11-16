@@ -32,6 +32,7 @@ review's and the release audit's.
 | `engine/CMakeLists.txt` | Declares and configures the engine library and selected backends. |
 | `engine/math/CMakeLists.txt` | Declares the linked math library. |
 | `cmake/settings.cmake` | Defines the compile settings the game links. |
+| `cmake/native_release_ipo.cmake` | Checks and selects opt-in native Release IPO inside the engine's directory. |
 | `cmake/source_revision.cmake` | Reports the engine source identity during configure. |
 | `cmake/version.cmake` | Derives release/development version facts from the canonical manifest. |
 | `cmake/dependencies.cmake` | Supplements missing selected package/tool discovery with consumer manifest advice. |
@@ -120,6 +121,19 @@ not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
 ## Unreleased
+
+### 2026-11-17 - Enable qualified standalone native MSVC Release IPO
+
+**Build default.** Fresh standalone native MSVC Release configurations now
+enable capability-checked IPO (`/GL` and `/LTCG`), preserving `/fp:precise`.
+The five native Release backends, complete and incremental builds, ordinary
+and IPO consumer links and installed game startup were qualified on the named
+Windows desktop. Compile/link costs and executable sizes vary; the measured
+record includes the larger test executable and longer one-file rebuild.
+`-DLABRADOR_NATIVE_RELEASE_IPO=OFF` retains ordinary compilation when no
+separate CMake IPO override is set. Existing cache selections persist. Debug,
+browser, other compiler and consumer-parent defaults are unchanged; games
+choose their own IPO policy. See [the policy and evidence](docs/performance/native-release-ipo.md).
 
 ### 2026-11-16 - Add explicit native MSVC Release IPO selection
 

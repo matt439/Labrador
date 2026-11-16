@@ -28,7 +28,8 @@ class RuleTests(unittest.TestCase):
                      "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
                      "cmake/dependencies.cmake",
                      "cmake/compile_shaders.cmake", "cmake/add_material.cmake",
-                     "cmake/embed_material.cmake", "cmake/check_engine_includes.cmake"):
+                     "cmake/embed_material.cmake", "cmake/check_engine_includes.cmake",
+                     "cmake/native_release_ipo.cmake"):
             with self.subTest(path=path):
                 self.assertTrue(checker.is_rule_path(path))
         for path in ("engine/core/example.cpp", "engine/render/SEAM.md", "samples/minimal/main.h",
