@@ -54,7 +54,7 @@ import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 export { SAMPLES };
 
 // The keys a sample run and the bundle's steps press.
-const KEY_VALUES = key_table(['Escape', 'Enter', 'Tab', 'KeyS', 'KeyR', 'KeyA',
+const KEY_VALUES = key_table(['Escape', 'Enter', 'Tab', 'KeyS', 'KeyR', 'KeyA', 'KeyO',
 	'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']);
 
 export function parse_options(arguments_) {
