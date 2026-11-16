@@ -159,10 +159,19 @@ function sample_hook(sampled = false) {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false,
 		clears: 0, draw_calls: 0, elements: 0, lost: 0, restored: 0,
 		raw_api: null, raw_renderer: null, unmasked_renderer: null,
-		frames: 0, longest_frame_gap_ms: 0, last_frame_ms: null, keys: [], logs: [], audio: [], focus: [] };
+		frames: 0, longest_frame_gap_ms: 0, last_frame_ms: null, keys: [], quit_key_count: null,
+		logs: [], audio: [], focus: [] };
 	window.labradorSafari = heard;
 	${sampled ? `heard.input = ${SAMPLE_INPUT_HOOK}; window.labradorRun = heard;` : ''}
-	${module_hook('labradorSafariHooked', sampled ? 'value.labradorTestInput = heard.input;' : '')}
+	${module_hook('labradorSafariHooked', `
+		${sampled ? 'value.labradorTestInput = heard.input;' : ''}
+		if (typeof value.onQuit === 'function') {
+			const on_quit = value.onQuit;
+			value.onQuit = function (...args) {
+				if (heard.quit_key_count === null) heard.quit_key_count = heard.keys.length;
+				return on_quit.apply(this, args);
+			};
+		}`)}
 	// What a failed run reports: whether frames kept coming and how far apart,
 	// which key events the page received, and the page's last console lines.
 	if (typeof requestAnimationFrame === 'function') {
@@ -368,6 +377,46 @@ export function held_expression(frames, ms) {
 	})`;
 }
 
+// Collision toggles outlines twice before quitting. Inspect only this action
+// list's events before the first real onQuit, so stale or late keys cannot
+// make an early quit look exercised. Repeated downs while already held are
+// not fresh press edges; each O cycle still requires its own actual release.
+export function assert_collision_keys(heard, before) {
+	if (heard.quit !== true || !Array.isArray(heard.keys) || !Number.isInteger(before) || before < 0 ||
+		!Number.isInteger(heard.quit_key_count) || heard.quit_key_count < before || heard.quit_key_count > heard.keys.length) {
+		throw new Error('Collision has no valid first-onQuit key boundary.');
+	}
+	const held_before = new Set();
+	for (const entry of heard.keys.slice(0, before)) {
+		const event = typeof entry === 'string' ? /^([+-])(KeyO|Escape)@\d+$/.exec(entry) : null;
+		if (event?.[1] === '+') held_before.add(event[2]);
+		else if (event) held_before.delete(event[2]);
+	}
+	if (held_before.size !== 0) throw new Error('Collision started its action list with a held test key.');
+	const expected = ['+KeyO', '-KeyO', '+KeyO', '-KeyO', '+Escape'];
+	const edges = [];
+	let held = null;
+	for (const entry of heard.keys.slice(before, heard.quit_key_count)) {
+		const event = typeof entry === 'string' ? /^([+-])(KeyO|Escape)@\d+$/.exec(entry) : null;
+		if (!event) throw new Error(`Collision received an unexpected key before onQuit: ${JSON.stringify(entry)}`);
+		const [, sign, code] = event;
+		if (sign === '+' && held === code) continue;
+		if ((sign === '+' && held !== null) || (sign === '-' && held !== code)) {
+			throw new Error(`Collision received an out-of-order key before onQuit: ${entry}`);
+		}
+		held = sign === '+' ? code : null;
+		const edge = sign + code;
+		if (edge !== expected[edges.length] && !(edges.length === expected.length && edge === '-Escape')) {
+			throw new Error(`Collision did not receive both O press/release cycles before quit: ${JSON.stringify(edges.concat(edge))}`);
+		}
+		edges.push(edge);
+	}
+	if (edges.length < expected.length) {
+		throw new Error(`Collision did not receive both O press/release cycles before quit: ${JSON.stringify(edges)}`);
+	}
+	return edges;
+}
+
 // The same trusted quit sequence as Chromium, with real sampled menu rows.
 // The existing development-only state gate permits one UI update per level;
 // a delayed action or reply cannot add repeat moves before the next release.
@@ -469,6 +518,9 @@ export async function drive_sample(session, url, sample,
 	//   Driver round trips can stretch a hold beyond menu repeat's delay.
 	// - Other simple quit sequences confirm each press and release in the
 	//   page's key log, then hold it for frames past that observation.
+	// - Collision's two outline toggles and quit use one action list, with
+	//   both O cycles proved before the first genuine onQuit. Separate
+	//   commands lost O's release on hosted Safari despite continued frames.
 	// - One action list for a page whose keys start Web Audio (the audio
 	//   sample) or full screen (the components gallery): after either, keys
 	//   sent in separate actions went missing, while one list passed. Their
@@ -477,8 +529,14 @@ export async function drive_sample(session, url, sample,
 	//   any row, its second Escape covering one spent leaving full screen.
 	// Every resend is logged, so none is silent.
 	progress.phase = 'pressing the quit keys';
+	let collision_before = null;
 	if (sample === SAMPLES.linesweeper) {
 		await sampled_linesweeper_quit(session, evaluate, { log, label });
+	} else if (sample === SAMPLES.collision) {
+		const before = await state();
+		if (before.quit) throw new Error('The collision sample quit before its action list.');
+		collision_before = before.keys.length;
+		await session.perform(key_actions(sample.keys));
 	} else if (sample === SAMPLES.audio || sample === SAMPLES.components) {
 		await session.perform(key_actions(sample.keys));
 		if (sample === SAMPLES.components) {
@@ -508,6 +566,10 @@ export async function drive_sample(session, url, sample,
 		heard = await until((value) => value.quit);
 	} catch (error) {
 		throw new Error(`${error.message} The keys did not quit the sample; page ${await focus_state().catch(() => 'unreadable')}`);
+	}
+	if (collision_before !== null) {
+		const edges = assert_collision_keys(heard, collision_before);
+		log(`${label}: collision keys before first onQuit: ${edges.join(',')}`);
 	}
 	progress.phase = 'drawing after the quit';
 	await evaluate(frames_expression(10));

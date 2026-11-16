@@ -9,7 +9,7 @@ import vm from 'node:vm';
 import { pixel_diagnostics } from './pixel_diagnostics.mjs';
 import { PRELUDE } from './bundle_page.mjs';
 import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, SAMPLED_SAMPLE_HOOK, WebDriverError, artifact_files, bundle_input,
-	assert_test_exit, drive_test, TEST_LOG_HOOK, capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
+	assert_collision_keys, assert_test_exit, drive_test, TEST_LOG_HOOK, capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
 	safari_tabs_to_links, sampled_linesweeper_quit, session_commands, substitute, webdriver_command } from './run_safari.mjs';
 import { SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 
@@ -211,7 +211,10 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 	const canvas = new Canvas();
 	const other = new WebGL2RenderingContext(new Canvas());
 	const quits = [];
-	sandbox.Module = { canvas, onQuit: () => quits.push('original'), onError: () => 'handled' };
+	sandbox.Module = { canvas, onQuit: () => {
+		sandbox.labradorSafari.keys.push('+Escape@9');
+		quits.push('original');
+	}, onError: () => 'handled' };
 	const heard = sandbox.labradorSafari;
 	assert.equal(heard.has_quit, true);
 	sandbox.Module.onRuntimeInitialized();
@@ -230,6 +233,10 @@ test('the sample hook hears Module\'s callbacks and counts live draws on its can
 	assert.deepEqual(Array.from(heard.errors), ['boom']);
 	sandbox.Module.onQuit();
 	assert.deepEqual([heard.quit, quits], [true, ['original']]);
+	assert.equal(heard.quit_key_count, 0);
+	heard.keys.push('+KeyO@1', '-KeyO@2');
+	sandbox.Module.onQuit();
+	assert.equal(heard.quit_key_count, 0, 'a later callback cannot replace the first quit boundary');
 	// A Module with no onQuit is recorded as such rather than given one.
 	sandbox.Module = {};
 	assert.equal(heard.has_quit, false);
@@ -275,7 +282,7 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 		if (lost || (heard.restored > 0 && !draws_after_restore)) return;
 		heard.clears += 1; heard.draw_calls += 2; heard.elements += 12;
 	};
-	return { log, session: {
+	return { heard, log, session: {
 		navigate: async (url) => { log.push(['navigate', url]); heard.initialized = true; },
 		set_timeouts: async () => {},
 		execute_async: async (script, [expression]) => {
@@ -321,6 +328,108 @@ function sample_session({ complaint = null, error = null, draws_after_restore = 
 		release: async () => { log.push(['release']); if (pressed && quits) heard.quit = true; },
 	} };
 }
+
+// One W3C command can quit while its action list is still executing. Events
+// here are DOM codes, not WebDriver values; pauses emit no keyboard event.
+function collision_session({ events, stale = [], quit_after = 5, second_quit = false,
+	reply = async () => {}, error = null, complaint = null } = {}) {
+	const run = sample_session({ quits: false });
+	run.heard.quit_key_count = null;
+	run.heard.keys.push(...stale);
+	let performed = false;
+	const evaluate = run.session.execute_async;
+	run.session.execute_async = async (script, args) => {
+		if (performed && complaint && args[0].includes('labradorComplaints')) {
+			return JSON.stringify({ value: [complaint] });
+		}
+		return evaluate(script, args);
+	};
+	const quit = () => {
+		if (run.heard.quit_key_count === null) run.heard.quit_key_count = run.heard.keys.length;
+		run.heard.quit = true;
+	};
+	run.session.perform = async (sources) => {
+		performed = true;
+		const actions = sources[0].actions;
+		run.log.push(['perform', actions.length]);
+		assert.equal(actions.length, 12, 'collision must remain one complete action command');
+		assert.deepEqual(actions.filter((action) => action.type === 'pause').map((action) => action.duration),
+			Array(6).fill(150));
+		const requested = actions.filter((action) => action.type !== 'pause').map((action) => {
+			const code = action.value === 'o' ? 'KeyO' : action.value === '\uE00C' ? 'Escape' : null;
+			assert.notEqual(code, null);
+			return (action.type === 'keyDown' ? '+' : '-') + code;
+		});
+		assert.deepEqual(requested, ['+KeyO', '-KeyO', '+KeyO', '-KeyO', '+Escape', '-Escape']);
+		for (const [index, event] of (events ?? requested).entries()) {
+			run.heard.keys.push(event + '@' + index);
+			if (index + 1 === quit_after) quit();
+		}
+		if (second_quit) quit();
+		if (error) run.heard.errors.push(error);
+		await reply();
+	};
+	return run;
+}
+
+test('collision uses one action list and proves both O cycles before a mid-list quit, despite a delayed reply', async () => {
+	let acknowledge;
+	let entered;
+	const waiting = new Promise((resolve) => { acknowledge = resolve; });
+	const executing = new Promise((resolve) => { entered = resolve; });
+	const run = collision_session({ reply: async () => { entered(); await waiting; } });
+	const lines = [];
+	const pending = drive_sample(run.session, 'u', SAMPLES.collision,
+		{ pause: async () => {}, log: (line) => lines.push(line) });
+	await executing;
+	assert.equal(run.heard.keys.length, 6);
+	assert.equal(run.heard.quit_key_count, 5, 'Escape release can follow the real quit');
+	assert.equal(run.log.some(([kind]) => kind === 'release'), false, 'wait for the one action reply before cleanup');
+	acknowledge();
+	const heard = await pending;
+	assert.equal(heard.quit, true);
+	assert.deepEqual(run.log.filter(([kind]) => kind === 'perform'), [['perform', 12]]);
+	assert.match(lines[0], /collision keys before first onQuit: \+KeyO,-KeyO,\+KeyO,-KeyO,\+Escape/);
+	assert.deepEqual(assert_collision_keys({ ...heard, quit_key_count: 6 }, 0),
+		['+KeyO', '-KeyO', '+KeyO', '-KeyO', '+Escape', '-Escape']);
+});
+
+test('collision refuses missing, reordered, wrong or stale O edges without resending its list', async () => {
+	const complete = ['+KeyO', '-KeyO', '+KeyO', '-KeyO', '+Escape', '-Escape'];
+	for (const options of [
+		{ events: ['+KeyO', '+KeyO', '-KeyO', '+Escape', '-Escape'], quit_after: 4 },
+		{ events: ['+KeyO', '-KeyO', '+KeyO', '+Escape', '-Escape'], quit_after: 4 },
+		{ events: ['-KeyO', '+KeyO', '+KeyO', '-KeyO', '+Escape'], quit_after: 5 },
+		{ events: ['+KeyA', '-KeyA', '+KeyA', '-KeyA', '+Escape'], quit_after: 5 },
+		{ stale: complete.map((event) => event + '@0'), events: ['+Escape', '-Escape'], quit_after: 1 },
+		{ stale: ['+KeyO@0'] },
+		{ quit_after: 1, second_quit: true },
+	]) {
+		const run = collision_session(options);
+		await assert.rejects(drive_sample(run.session, 'u', SAMPLES.collision,
+			{ pause: async () => {}, log: () => {} }), /Collision/);
+		assert.deepEqual(run.log.filter(([kind]) => kind === 'perform'), [['perform', 12]]);
+	}
+});
+
+test('collision accepts held-key repeats only within two complete release-separated O cycles', () => {
+	const keys = ['+KeyO', '+KeyO', '-KeyO', '+KeyO', '+KeyO', '-KeyO', '+Escape'];
+	assert.deepEqual(assert_collision_keys({ quit: true, keys: keys.map((key) => key + '@0'), quit_key_count: 7 }, 0),
+		['+KeyO', '-KeyO', '+KeyO', '-KeyO', '+Escape']);
+	const balanced = ['+KeyO@0', '-KeyO@0', ...keys.map((key) => key + '@0')];
+	assert.deepEqual(assert_collision_keys({ quit: true, keys: balanced, quit_key_count: balanced.length }, 2),
+		['+KeyO', '-KeyO', '+KeyO', '-KeyO', '+Escape']);
+	assert.throws(() => assert_collision_keys({ quit: true, keys: [], quit_key_count: null }, 0), /boundary/);
+});
+
+test('collision cannot accept complete keys without genuine quit, or hide late complaints and onError', async () => {
+	await assert.rejects(drive_sample(collision_session({ quit_after: null }).session, 'u', SAMPLES.collision,
+		{ pause: async () => {}, log: () => {}, timeout_ms: 200 }), /deadline expired.*did not quit the sample/);
+	await assert.rejects(drive_sample(collision_session({ error: 'late abort' }).session, 'u', SAMPLES.collision,
+		{ pause: async () => {}, log: () => {} }), /Module.onError: late abort/);
+	await assert.rejects(drive_sample(collision_session({ complaint: 'warn: after keys' }).session, 'u', SAMPLES.collision,
+		{ pause: async () => {}, log: () => {} }), /Page complaints: warn: after keys/);
+});
 
 test('a sample run draws, survives a forced context loss, quits on its keys and reports the renderer', async () => {
 	const { log, session } = sample_session();
@@ -537,7 +646,7 @@ test('a key release the page never receives is sent again behind a repeated pres
 	assert.equal(performed, SAMPLES.minimal.keys.length * 2 + 2);
 });
 
-test('the audio and components samples\' keys go as one action list, every other sample\'s one level at a time', async () => {
+test('audio and components retain one action list while minimal confirms each level', async () => {
 	for (const sample of [SAMPLES.audio, SAMPLES.components]) {
 		const run = sample_session();
 		await drive_sample(run.session, 'u', sample, { pause: async () => {}, log: () => {} });
