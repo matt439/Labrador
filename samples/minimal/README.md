@@ -41,7 +41,7 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
-- **2026-11-17.** `GAME_ICON_FILE` optionally embeds an icon supplied by the
+- **2026-11-17, `986c12cb`.** `GAME_ICON_FILE` optionally embeds an icon supplied by the
   game owner. Copy `game_icon.rc`, the native CMake block and main.cpp's
   `GAME_HAS_ICON_RESOURCE` block together; the latter explicitly selects
   `GAME_ICON`. An empty option preserves the ordinary default and supplies no
@@ -50,14 +50,14 @@ carry it.
   with the host page. [The recipe](../../docs/window-icons.md) gives the build
   and install commands.
 
-- **2026-11-17.** Development engines can load a required PCM WAV as a `wave`
+- **2026-11-17, `971ab6b1`.** Development engines can load a required PCM WAV as a `wave`
   manifest asset, with one bank, wave and effect sharing the asset's name.
   [Play a sound in your game](https://labradorengine.com/docs/guides/your-sound/)
   shows copying a WAV, the build/install lines and resolving it in HelloState;
   no XWBTool is needed for that path. The default template still has no sounds,
   and the released `v0.3.0` starter uses the retained XWB bank guide.
 
-- **2026-11-17.** Optional native smoke-process reporting is enabled by
+- **2026-11-17, `bfba0010`.** Optional native smoke-process reporting is enabled by
   `-DLABRADOR_SAMPLE_PROCESS_OBSERVATIONS=ON`, off by default. Its copied
   `native_process_report.h` reports the Application's first published UTC
   endpoint and Windows memory counters before Application destruction.
@@ -66,71 +66,71 @@ carry it.
   [procedure](../../docs/performance/native-process-observations.md) defines
   the measurements and their limits.
 
-- **2026-11-17.** The optional
+- **2026-11-17, `20cc147b`.** The optional
   [Release-symbols recipe](https://labradorengine.com/docs/guides/release-symbols/)
   adds full native MSVC Release PDBs without changing optimization, runtime
   or IPO choices. Existing copies can opt in with the copied CMake file;
   private EXE/PDB/source retention stays outside the installed game folder.
 
-- **2026-11-17.** The shared project CMake file selects the dependency helper
+- **2026-11-17, `9708fafa`.** The shared project CMake file selects the dependency helper
   only when the engine provides it, keeping that build file usable with
   `v0.3.0` too. A copy with an unconditional `labrador_find_package(doctest)`
   call can take the conditional block from
   `website/src/walkthrough/game-CMakeLists.txt`; ordinary `find_package`
   calls need no change.
 
-- **2026-11-17.** The assembled starter offers optional native `build.cmd`,
+- **2026-11-17, `f0ca2838`.** The assembled starter offers optional native `build.cmd`,
   `test.cmd` and `play.cmd`, sharing `tools/starter_commands.ps1`. A source
   copy can take these four files from `website/src/walkthrough/helpers/`
   (the PowerShell file goes under `tools/`). They find Visual Studio's x64
   tools and print the manual commands; existing projects can keep those
   commands. The default is Debug; `-Preset x64-release` selects Release.
 
-- **2026-11-17.** Starter assembly gives `game/README.md` project instructions
+- **2026-11-17, `817fd2c0`.** Starter assembly gives `game/README.md` project instructions
   and adapts copy-specific comments to `MyGame` targets and `game/` paths.
   This source folder keeps its original comments and change list. A manual
   copy still has this README until its owner rewrites it; assembled projects
   link to the full original at `external/labrador/samples/minimal/README.md`.
   Executable code and display-name placeholders are unchanged.
 
-- **2026-11-17.** A browser fullscreen refusal leaves the game playing in
+- **2026-11-17, `fc59a32a`.** A browser fullscreen refusal leaves the game playing in
   the page and reports the actual mode; Window-owned rejected requests are
   handled. Moving the engine pin takes the fix without template edits.
 
-- **2026-11-17.** The rules-test lookup uses `labrador_find_package(doctest)`
+- **2026-11-17, `819bc599`.** The rules-test lookup uses `labrador_find_package(doctest)`
   so a missing dependency names the game's manifest obligation alongside
   CMake's discovery details. A copy can replace `find_package(doctest CONFIG REQUIRED)`
   with that line after moving its engine pin; the ordinary CMake call still works.
 
-- **2026-11-16.** Development starter ZIPs include an optional
+- **2026-11-16, `742a00de`.** Development starter ZIPs include an optional
   `labrador.vsconfig` at the project root. A copy can download the same file
   from *Install the tools* to select the Visual Studio prerequisites; the
   manual route and vcpkg's default tool downloads stay the same. The file
   installs nothing by itself and does not change the CMake project.
-- **2026-11-16.** A native game stays hidden until its first completed frame,
+- **2026-11-16, `166d5b3f`.** A native game stays hidden until its first completed frame,
   including content loading and the first draw. The engine reveals a normally
   visible window itself; no platform show call is needed. Explicit hidden smoke
   startup stays hidden, including when the launcher requests a visible window.
 
-- **2026-11-16.** Native X, Alt+F4 and system-menu Close ask the same quit
+- **2026-11-16, `b6883b17`.** Native X, Alt+F4 and system-menu Close ask the same quit
   question as Escape or B. `HelloState::on_close_requested()` opens it and
   `ConfirmState` declines repeat close requests; answering yes still calls
   final `Application::quit()`. Existing copies can retain immediate close
   or copy these overrides and the shared `ask_to_quit()` helper. The browser
   cannot veto tab closure or navigation through this hook.
 
-- **2026-11-16.** A native MSVC Release game may explicitly select engine IPO
+- **2026-11-16, `2c23049a`.** A native MSVC Release game may explicitly select engine IPO
   with `LABRADOR_NATIVE_RELEASE_IPO`; its own target IPO properties remain the
   game's choice. [The recipe](../../docs/performance/native-release-ipo.md)
   retains Debug and browser defaults and the supported opt-out.
 
-- **2026-11-16.** The optional
+- **2026-11-16, `f9a5ef1e`.** The optional
   [browser CI recipe](https://labradorengine.com/docs/guides/browser-ci/)
   adds a separate `.github/workflows/browser.yml` to a game's repository.
   It builds and tests the browser game, packages its runtime and notices,
   checks the packaged page in Chrome and keeps a download artifact. Existing
   copies can opt in; their native workflow and manual publication stay as they are.
-- **2026-11-15.** Web Audio now owns pending resume requests during fast quit.
+- **2026-11-15, `0c4d8e3a`.** Web Audio now owns pending resume requests during fast quit.
   A browser game moving its engine pin needs no template changes; concurrent
   activation gestures share a request, and intentional close handles only
   Firefox's known resume-cancellation error. Other audio errors remain visible.
@@ -154,6 +154,11 @@ carry it.
   the markers wants the member and the comparison. `tests/motion_tests.cpp`
   now checks the two-pad state before slot 0 is emptied, which a copy can
   take as it is.
+- **2026-11-04, `843ba27`.** Copies using positional `ApplicationOptions{...}`
+  construction need the [named-field migration](#constructing-application-options)
+  when moving past the `vsync` insertion and `97637102`'s `client_size`
+  insertion. The template already sets fields by name; copies that changed
+  that pattern need the migration when moving their engine pin.
 - **2026-11-04, `a6ae08f`.** The engine reads PNG textures and links `lodepng`, so the
   project's `vcpkg.json` names it beside `doctest`. A copy adds `"lodepng"` to
   its `dependencies`, with a comma after the entry before it; without it,
@@ -329,6 +334,37 @@ carry it.
   created at startup and never used.
 
 Labrador adds a line here in the commit that makes such a change.
+
+### Constructing application options
+
+Use the named assignments in `main.cpp` and `main_web.cpp`. They keep a field's
+meaning when a member is added to `ApplicationOptions`. A positional aggregate
+from `v0.3.0` can fail to compile or initialize different fields after the
+November 4 `vsync` and `client_size` insertions; the leading string members do
+not prevent positional construction. `CHANGES.md` records both changes.
+
+For a copy that used the old positional spelling, this is the migration:
+
+```diff
+-ApplicationOptions options{ L"MyGameWindowClass", L"My game",
+-    ScreenResolution::s_1280_720, false, true, true, false, 60, 1, 4 };
++ApplicationOptions options;
++options.window_class_name = L"MyGameWindowClass";
++options.window_title = L"My game";
++options.resolution = ScreenResolution::s_1280_720;
++options.fullscreen = false;
++options.visible = true;
++options.cursor_visible = true;
++options.cursor_confined = false;
++options.target_fps = 60;
++options.min_threads = 1;
++options.max_threads = 4;
+```
+
+This preserves the old fields' values and leaves the new members at their
+defaults. Set `options.client_size` or `options.vsync` by name when the game
+wants to select them. The template's source already uses this pattern and
+needs no executable change.
 
 ## The font, and its licence
 
