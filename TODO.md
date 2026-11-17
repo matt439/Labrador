@@ -10,7 +10,7 @@ awaiting integration. Resume only on the owner's next instruction.
 
 **The only ordering in this file.** Keep every `DECISION` row here. Keep this block to the current aim and the next few actions; results go in their owners, and a closed story is a ticked box in BACKLOG.md.
 
-**Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0`, `v0.2.0` and `v0.3.0` are cut.
+**Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0`, `v0.2.0`, `v0.3.0` and `v0.4.0` are cut.
 
 **Aim:** finish Next's remaining acceptance while taking ready Later work in
 parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
@@ -65,9 +65,10 @@ call is now recorded; deferred scopes retain their own revisit triggers.
 The [fifth batch](#fifth-accepted-decision-batch-of-2026-11-16) adds eleven
 scopes in BACKLOG's L118 to L128. `SM-95` waits for owner-supplied public
 disclosure wording.
-`SM-96` refreshes release preparation for the selected candidate independently
-of the new feature queue; the November 13 report does not qualify later
-shader/material changes. Six proposals are deferred and three policies are
+`SM-96` is complete: [v0.4.0 qualification](docs/verification/releases/v0.4.0.md)
+covers the released `f525bc6c` source and custom-material consumers. The release
+was published on 2026-11-17; the November 13 preparation remains historical.
+Six proposals are deferred and three policies are
 settled. `REV#156` is closed with its bounded advisory-hint wording correction.
 
 **Final acceptance and client decisions, 2026-11-16:** the last eighteen
@@ -164,7 +165,6 @@ scope; it does not publish a release, change settings or claim acceptance.
 | `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
 | `OCA-119` | BLOCKED | could | S | Await a qualified trusted-key or informal human browser observation. Computer Use stopped before any trusted input; no Escape behaviour is claimed. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
-| `SM-96` | OPEN | should | M | Refresh v0.4.0 qualification against the actual candidate; future stories need not finish, and tagging/publication stay owner-cut (`REV#149`). [Scope](docs/product/BACKLOG.md#sm-96). |
 | `SM-97` | OPEN | could | M | Pilot LineSweeper on iOS Simulator by explicit invocation, measuring reliability before recurring coverage (`REV#152`). [Scope](docs/product/BACKLOG.md#sm-97). |
 
 ## Final accepted client changes of 2026-11-16
