@@ -125,7 +125,7 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
-## Unreleased
+## v0.4.0 (2026-11-17)
 
 ### 2026-11-17 — Select native and canvas cursor shapes
 
@@ -644,6 +644,16 @@ the existing fxc and Vulkan the existing SPIR-V compiler path. The
 the build and C++ steps. This provides one custom post pass; game render
 targets and multi-pass effects retain their separate milestones.
 
+### 2026-11-15 - Await owned asynchronous close before classifying resume cancellation
+
+**Behaviour fix.** Firefox can reject a pending Web Audio resume before its
+context reports `closed`. Commit `13ccb040` waits for the engine's own close
+Promise before treating the exact known resume-cancellation error as intentional
+teardown. If that pending close Promise rejects, an `AggregateError` preserves
+both resume and close errors; a context that remains open does not suppress
+the resume failure. Other resume errors remain observable. A browser game
+moving its engine pin needs no API or template change.
+
 ### 2026-11-15 - Own pending Web Audio resume during fast quit
 
 **Behaviour change.** Web Audio coalesces concurrent resume requests and handles
@@ -934,7 +944,30 @@ the field, and a refused `set_resolution` changes nothing. A size past the
 monitor's comes back clamped and the layout follows it. Leaving full screen
 returns to the size last asked for, and `set_resolution(ScreenResolution)`
 clears it. `ResolutionManager::resolution()` keeps the preset last asked for
-unless the size is one of the four. A game that sets neither sees no change.
+unless the size is one of the four. Default construction and named assignments
+that set neither retain the existing behaviour.
+
+**Source break for positional construction.** `client_size` was inserted
+immediately after `resolution`. A positional `ApplicationOptions{...}` whose
+fourth argument supplied `fullscreen` no longer names that member and cannot
+convert its `bool` to `std::optional<Vector2I>`. Replace positional construction
+with default construction and named assignments, as
+[the minimal sample's migration diff](samples/minimal/README.md#constructing-application-options)
+shows. Existing member names remain available; the engine does not reinterpret
+the old positional spelling.
+
+### 2026-11-04 - Let a client turn vsync off with Renderer::set_vsync
+
+**Source break for positional construction.** Commit `843ba27` adds
+`ApplicationOptions::vsync` between `target_fps` and `min_threads`. A positional
+aggregate initializer that continued with thread settings can now fail a
+narrowing check or initialize different members: an old min/max pair `1, 4`
+can become `vsync=true, min_threads=4` with the default `max_threads`.
+Default construction and named assignments retain the existing default vsync.
+Replace positional `ApplicationOptions{...}` construction with the named-field
+pattern in [the minimal sample's migration diff](samples/minimal/README.md#constructing-application-options).
+`Renderer::set_vsync(bool)` and `vsync()` provide the new requested setting;
+browser presentation remains browser-owned.
 
 ### 2026-11-04 - Collide circles in the narrow phase
 
