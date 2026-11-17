@@ -1451,7 +1451,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[OCA-119](#oca-119)** Could · S · The Outside Adopter: Know what Escape does when the browser owns full screen
 - [x] **[SM-94](#sm-94)** Could · XS · The Sole Owner-Maintainer: State the scope of welcome contributions without promising a response time
 - [ ] **[SM-95](#sm-95)** Could · XS · The Sole Owner-Maintainer: Publish accurate owner-supplied agent-use wording — blocked until the wording is provided
-- [ ] **[SM-96](#sm-96)** Should · M · The Sole Owner-Maintainer: Refresh preparation for the actual v0.4.0 candidate independently of queued feature stories
+- [x] **[SM-96](#sm-96)** Should · M · The Sole Owner-Maintainer: Refresh preparation for the actual v0.4.0 candidate independently of queued feature stories
 - [ ] **[SM-97](#sm-97)** Could · M · The Sole Owner-Maintainer: Invoke an iOS Simulator game pilot without adding a recurring acceptance lane
 
 - [ ] **[SM-98](#sm-98)** Should · M · The Sole Owner-Maintainer: Refuse known software Direct3D by default while preserving explicit, truthfully labelled software CI coverage
@@ -3800,6 +3800,18 @@ ci_gap_report and required candidate checks under their execution contracts,
 keeping real-driver, browser, full-screen and human acceptance limits clear.
 Run relevant tooling/lint and the website gate and retain the refreshed packet
 against the exact final candidate.
+
+**Done 2026-11-17:** [v0.4.0 qualification](../verification/releases/v0.4.0.md)
+records the actual release source,
+`f525bc6cac7029e3e4575308620a9b6126f95af9`, its source/change-list audit,
+required CI, the 183-entry real-driver sweep and custom-material consumer
+coverage. [The immutable release](https://github.com/matt439/Labrador/releases/tag/v0.4.0)
+was published at `2026-11-17T03:09:08Z` with verified starter and documentation
+assets. The record retains the failed CI attempt, interactive-review block and
+unrun human/device acceptance separately. The November 13 preparation remains
+historical and does not qualify later materials. Unimplemented stories remain
+open; the published-version manifest/deployment follow-up belongs to the
+publication PR, and no live deployment observation is claimed here.
 
 <a id="sm-97"></a>
 ### SM-97. Invoke an iOS Simulator game pilot
