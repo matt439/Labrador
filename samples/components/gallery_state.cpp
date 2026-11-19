@@ -1,5 +1,6 @@
 #include "samples/components/gallery_state.h"
 #include "samples/components/nine_slice.h"
+#include "samples/components/touch_demo_state.h"
 
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
@@ -16,6 +17,7 @@
 #include "engine/render/resource_factory.h"
 #include "engine/render/viewport.h"
 
+#include <array>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -55,6 +57,13 @@ namespace components
 		constexpr float panel_scale = 2.0f;
 		const RectangleF panel_bounds(120.0f, 90.0f, 1040.0f, 570.0f);
 		const RectangleF name_target(880.0f, 490.0f, 260.0f, 40.0f);
+		const RectangleF touch_target(880.0f, 170.0f, 280.0f, 45.0f);
+
+		bool hits_touch_entry(const Vector2F& point)
+		{
+			const std::array<PointerTarget, 1> targets = { PointerTarget{ touch_target, true } };
+			return hit_pointer_target(targets, point).has_value();
+		}
 
 		// The window row's choices, in the order init() lists them.
 		constexpr size_t windowed_choice = 0;
@@ -178,6 +187,9 @@ namespace components
 		this->animation_help_ = this->scene_->add(std::make_unique<UiText>("animation_help",
 			L"R / gamepad X: restart both animations", font_name,
 			Vector2F(label_x, animation_help_y), resources, help_colour));
+		this->touch_entry_ = this->scene_->add(std::make_unique<UiText>("touch_entry",
+			L"Touch controls (F2)", font_name, Vector2F(900.0f, 180.0f),
+			resources, Colour(55, 215, 235)));
 		this->scene_->add(std::make_unique<UiText>("loop_label",
 			L"Loop", font_name, preview_label_position(loop_preview_bounds),
 			resources, help_colour));
@@ -382,6 +394,7 @@ namespace components
 	void GalleryState::update(float dt)
 	{
 		this->update_cursor();
+		this->touch_requested_ = false;
 		// A browser can refuse a request or leave full screen externally.
 		// set_index follows that report without calling the request callback.
 		this->window_mode_->set_index(this->app_->fullscreen() ?
@@ -497,6 +510,11 @@ namespace components
 		this->refresh_view();
 		this->scene_->update(dt);
 		this->scene_->end_tick();
+		if (actions_enabled && (keyboard.pressed(Key::f2) || this->touch_requested_))
+		{
+			// Copy the reporter; the covered Gallery keeps its existing status.
+			this->context()->push(std::make_unique<TouchDemoState>(this->app_, this->on_status_));
+		}
 	}
 
 	void GalleryState::on_deactivated()
@@ -521,6 +539,10 @@ namespace components
 			{
 				shape = CursorShape::move;
 			}
+			else if (hits_touch_entry(this->world_point(mouse.position())))
+			{
+				shape = CursorShape::hand;
+			}
 			else
 			{
 				const std::optional<std::size_t> hit =
@@ -538,14 +560,53 @@ namespace components
 		}
 	}
 
+	void GalleryState::on_suspend()
+	{
+		this->on_deactivated();
+		this->pointer_wait_for_clear_ = true;
+		this->repeat_.start_held(this->held_direction());
+	}
+
+	void GalleryState::on_resume()
+	{
+		this->pointer_.cancel();
+		this->pressed_row_ = nullptr;
+		this->dragging_ = nullptr;
+		this->pointer_wait_for_clear_ = true;
+		this->repeat_.start_held(this->held_direction());
+		this->update_cursor();
+	}
+
 	void GalleryState::update_pointer()
 	{
+		if (this->pointer_wait_for_clear_)
+		{
+			if (this->app_->touch()->points().empty() &&
+				!this->app_->mouse()->held(MouseButton::left))
+			{
+				this->pointer_wait_for_clear_ = false;
+			}
+			return;
+		}
 		const PointerSample sample =
 			this->pointer_.update(*this->app_->mouse(), *this->app_->touch());
 
 		if (sample.phase == PointerPhase::pressed)
 		{
 			const Vector2F point = this->world_point(sample.position);
+			if (hits_touch_entry(point))
+			{
+				const bool modal = this->name_->editing() || this->binding_->capturing();
+				this->cancel_name_edit();
+				this->cancel_binding_capture(L"Binding capture cancelled: another page.");
+				if (modal)
+				{
+					this->pointer_.cancel();
+					return;
+				}
+				this->pressed_row_ = this->touch_entry_;
+				return;
+			}
 			const std::optional<size_t> hit =
 				hit_pointer_target(this->pointer_targets_, point);
 			if (this->name_->editing() &&
@@ -608,6 +669,11 @@ namespace components
 		// A click or a tap completes only on the row it began on: letting go
 		// anywhere else is the player changing their mind.
 		const Vector2F point = this->world_point(sample.position);
+		if (pressed == this->touch_entry_)
+		{
+			this->touch_requested_ = hits_touch_entry(point);
+			return;
+		}
 		const std::optional<size_t> hit =
 			hit_pointer_target(this->pointer_targets_, point);
 		if (!hit.has_value() || this->pointer_widgets_[*hit] != pressed)

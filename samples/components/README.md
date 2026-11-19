@@ -3,7 +3,8 @@
 Small pieces a game copies into its own tree, rather than links. Each is a
 header and a source file, small enough to read in one sitting, with its tests
 beside it. The gallery shows menu rows, two animation previews and a desktop
-name field and a keyboard binding row on one screen.
+name field and a keyboard binding row on one screen, plus an internal held-touch
+controls page entered with F2 or its separate clickable heading.
 
 | Component | Files | What it is |
 | --- | --- | --- |
@@ -13,6 +14,8 @@ name field and a keyboard binding row on one screen.
 | Pointer capture | `pointer_capture.h`, `pointer_capture.cpp` | One contact at a time, from the mouse or one finger, followed from press to release or cancellation, and a hit test over a page's targets. |
 | Binding capture row | `binding_row.h`, `binding_row.cpp` | A label/value row that emits one physical-key candidate from page-supplied snapshots, waits for held keys to release and cancels on lost keyboard focus. |
 | Binding label policy | `binding_label.h`, `binding_label.cpp` | Page-owned UTF-8 conversion, font/width checks and stable-token fallback for an optional platform label. |
+| Held touch button | `touch_button.h`, `touch_button.cpp` | One page-supplied contact holds a rectangle, keeps ownership outside it and returns to neutral on end/cancel. |
+| Virtual stick | `touch_stick.h`, `touch_stick.cpp` | One page-supplied contact produces a radially bounded vector around a fixed region centre, including while outside it. |
 | Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 | Animation preview | `animation_preview.h`, `animation_preview.cpp` | Game-owned elapsed time, looping, one-shot completion and restart over a named animation strip. Drawing reads the current frame without advancing it. |
 | Shape outline | `shape_outline.h`, `shape_outline.cpp` | Collision boundaries drawn as ordinary white-texture sprite quads. The collision sample chooses when and which shapes to show. |
@@ -31,6 +34,9 @@ links the engine, because the components use its widgets and drawing types. The
 website's *Copy the components into your game* guide does this for the option
 row and the slider as an optional last step, with a `MyGameComponentTests`
 target. Widget and timing cases need no window, device or files. The
+two touch values also have independent portable tests; [Held touch controls](TOUCH.md)
+gives their copy commands, test target, coordinate conversion and routing policy.
+They read no device, draw nothing and choose no action binding. The
 animation reader case reads the delivered DDS/JSON pair; the build stages it
 beside the native test executable or embeds it in the Node module. Native-null
 cases also record what the nine-slice, the bar, the slider, the previews and outlines
@@ -333,6 +339,7 @@ ctest --preset x64-debug -R "^ComponentsTests$"
 | Escape/B during capture | Cancel without changing the binding table |
 | Backspace on the idle Rebind key row | Restore R/D defaults |
 | Assigned Restart key (default R) or gamepad X outside editing/capture | Restart both animation previews |
+| F2 or click/tap Touch controls outside editing/capture | Open the separate held-touch controls page |
 | Assigned Reset difficulty key (default D) outside editing/capture | Set the difficulty example to Normal |
 | Escape or gamepad B outside editing/capture | Quit |
 
@@ -381,7 +388,13 @@ Chromium's touch emulation through the canvas's CSS box
 (`web/pointer_input.mjs`): it drags the music slider from the track's middle
 past its end, lets go of a press on another row, taps the left half of the
 difficulty's value and checks it stepped once, and taps Quit. It reads each
-change from the console line `main_web.cpp` writes for every status. Emulated
+change from the console line `main_web.cpp` writes for every status. It also
+opens the internal touch page and checks simultaneous emulated contacts,
+stable ownership, outside movement, individual cancel, focus loss, resize,
+mouse preview and return navigation (`web/touch_controls_input.mjs`). Native-null
+fixtures drive the corresponding Application feeds, modal entry guards and
+const drawing. [Held touch controls](TOUCH.md) defines the exact release and
+cancellation policies and the separate real-hardware acceptance. Emulated
 touch is not a touchscreen: a real phone's tap is an open check.
 
 `ComponentsTextPageTests` separately checks desktop Name editing through real
