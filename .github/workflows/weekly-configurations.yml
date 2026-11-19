@@ -58,15 +58,16 @@ jobs:
         shell: cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          allow-unsafe-pr-checkout: false
 
       - name: Set up the MSVC environment
         uses: ./.github/actions/msvc-env
 
       - name: Cache vcpkg binaries
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -74,7 +75,7 @@ jobs:
 
       - name: Cache the Vulkan SDK installer and Mesa
         if: (matrix.vulkan_sdk || matrix.software_device == 'llvmpipe')
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: C:\ci-downloads
           key: ci-downloads-${{ matrix.preset }}-${{ env.VULKAN_SDK_SHA256 }}-${{ env.MESA_SHA256 }}
@@ -190,15 +191,16 @@ jobs:
 
       - name: Keep the frames a golden check rejected
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: weekly-golden-actual-${{ matrix.preset }}
           path: out/build/${{ matrix.preset }}/tests/render/golden-actual/
           if-no-files-found: ignore
+          archive: true
 
       - name: Keep the native test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: weekly-results-${{ matrix.preset }}
           path: |
@@ -207,6 +209,7 @@ jobs:
             out/build/${{ matrix.preset }}/tests/render/device.txt
           if-no-files-found: ignore
           retention-days: 14
+          archive: true
 
   browser:
     name: weekly browser (wasm-debug)
@@ -216,13 +219,14 @@ jobs:
       run:
         shell: cmd
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          allow-unsafe-pr-checkout: false
       - name: Set up the MSVC environment
         uses: ./.github/actions/msvc-env
       - name: Cache vcpkg binaries
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -266,7 +270,7 @@ jobs:
           ctest --preset wasm-debug --parallel 1 --output-on-failure --no-tests=error --test-output-size-passed 1048576 --output-junit "${{ github.workspace }}/out/build/wasm-debug/weekly-results.xml" -V
       - name: Keep the browser test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: weekly-results-wasm-debug
           path: |
@@ -275,3 +279,4 @@ jobs:
             out/build/wasm-debug/tests/render/golden-actual/
           if-no-files-found: ignore
           retention-days: 14
+          archive: true

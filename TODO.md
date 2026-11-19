@@ -42,7 +42,7 @@ what shipped.
 | `OCA-111` | OPEN | could | M | Integrate and qualify best-effort layout labels and stable-token fallback in the rebinding sample. [Scope](docs/product/BACKLOG.md#oca-111). |
 | `OCA-114` | OPEN | could | M | Integrate and qualify the gallery's held buttons and virtual stick. WEB#5 and SM-13 cover physical touch. [Scope](docs/product/BACKLOG.md#oca-114). |
 | `SM-89` | WAITING | could | M | Retain the first hosted results for all five configurations of the published weekly workflow. [Qualification](docs/verification-weekly.md). |
-| `SM-92` | OPEN | should | M | Integrate the reviewed Action and website dependency changes and qualify them in their workflows. The alerts-only setting is verified. [Scope](docs/product/BACKLOG.md#sm-92). |
+| `SM-92` | WAITING | should | M | Retain fresh hosted results for the integrated Action pins and website dependencies. Local selector, site and diagram checks passed. [Scope](docs/product/BACKLOG.md#sm-92). |
 | `OCA-119` | BLOCKED | could | S | Record actual Escape behaviour from a trusted key in a headed browser. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add the AI-use disclosure when the owner supplies public wording and review/authorship claims. [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-97` | BLOCKED | could | M | Run the integrated pilot on a Mac with Xcode, safaridriver and an available iPhone Simulator. [Pilot](docs/port/ios-simulator-pilot.md). |

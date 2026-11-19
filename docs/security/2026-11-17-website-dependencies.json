@@ -1,0 +1,1065 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-16T20:24:32.215Z",
+  "scope": "26 npm advisories returned by the first bounded repository alert read; no exploitability or future-advisory completeness claim",
+  "sourceCommit": "455d7be4f8c522c637f1cca485bd509772bce8dd",
+  "beforeLockSha256": "9c39d31bb2ca834dedf4860c8c80c561e825936d057beb52d12256f60b8e3bb6",
+  "afterLockSha256": "c42cfe3b98769da59b1d823285e9106321999adcd642e994485b1652ccb71625",
+  "runtime": {
+    "node": "24.14.0",
+    "undici": "7.21.0",
+    "npm": "11.9.0"
+  },
+  "comparison": "Every resolved package path, including nested copies, checked with semver.satisfies(version, primary advisory range with comma separators removed, includePrerelease=true). All 26 matched before; none matched after.",
+  "advisories": [
+    {
+      "id": "GHSA-238p-pmpm-9mq7",
+      "summary": "KaTeX: Existing prototype pollution can bypass trust restrictions",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-238p-pmpm-9mq7",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "katex"
+          },
+          "range": ">= 0.11.0, < 0.18.2",
+          "first_patched": "0.18.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/katex",
+          "version": "0.16.47",
+          "range": ">= 0.11.0, < 0.18.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-2m5v-pch6-74hx",
+      "summary": "undici vulnerable to TLS certificate validation bypass via dropped tls options in Agent",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-2m5v-pch6-74hx",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 4.0.0, < 6.29.1",
+          "first_patched": "6.29.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.0.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-333x-w4r6-6crp",
+      "summary": "fast-uri vulnerable to scheme injection via an unescaped first-segment colon in suffix references",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-333x-w4r6-6crp",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": "< 2.4.8",
+          "first_patched": "2.4.8"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 3.0.0, < 3.1.9",
+          "first_patched": "3.1.9"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 4.0.0, < 4.2.3",
+          "first_patched": "4.2.3"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/fast-uri",
+          "version": "3.1.8",
+          "range": ">= 3.0.0, < 3.1.9"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-4qv8-2p9j-2685",
+      "summary": "undici vulnerable to Denial of Service via unbounded memory in the EventSource parser",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-4qv8-2p9j-2685",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 6.5.0, < 6.29.1",
+          "first_patched": "6.29.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.0.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-4w7w-5xrc-9h26",
+      "summary": "undici vulnerable to cache poisoning and cross-user disclosure via cross-origin redirects",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-4w7w-5xrc-9h26",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.0.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-55wc-3pg8-jfw6",
+      "summary": "undici vulnerable to Denial of Service via unhandled exception in the decompress interceptor",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-55wc-3pg8-jfw6",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.15.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-587h-7wmj-h5pm",
+      "summary": "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-587h-7wmj-h5pm",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "launch-editor"
+          },
+          "range": "<= 2.14.1",
+          "first_patched": "2.14.2"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.3.0, <= 8.3.2",
+          "first_patched": "8.3.3"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.2.0, <= 8.2.3",
+          "first_patched": "8.2.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.0.0, <= 8.1.5",
+          "first_patched": "8.1.6"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 7.0.0, <= 7.3.6",
+          "first_patched": "7.3.7"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": "<= 6.4.3",
+          "first_patched": "6.4.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite-plus"
+          },
+          "range": "<= 1.0.0",
+          "first_patched": "1.1.0"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/vite",
+          "version": "8.3.2",
+          "range": ">= 8.3.0, <= 8.3.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-698v-4r3x-3vcv",
+      "summary": "launch-editor: escapeCmdArgs() omits % escaping on Windows",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-698v-4r3x-3vcv",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "launch-editor"
+          },
+          "range": "<= 2.14.1",
+          "first_patched": "2.14.2"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.3.0, <= 8.3.2",
+          "first_patched": "8.3.3"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.2.0, <= 8.2.3",
+          "first_patched": "8.2.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.0.0, <= 8.1.5",
+          "first_patched": "8.1.6"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 7.0.0, <= 7.3.6",
+          "first_patched": "7.3.7"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": "<= 6.4.3",
+          "first_patched": "6.4.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite-plus"
+          },
+          "range": "<= 1.0.0",
+          "first_patched": "1.1.0"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/vite",
+          "version": "8.3.2",
+          "range": ">= 8.3.0, <= 8.3.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-9fm3-97px-rjf6",
+      "summary": "undici WebSocket client vulnerable to Denial of Service via unbounded automatic PONG buffering",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-9fm3-97px-rjf6",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 5.15.0, < 6.29.1",
+          "first_patched": "6.29.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.0.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-9jrq-w75r-8gcw",
+      "summary": "Vite: Cross origin script execution through Vite custom middleware",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-9jrq-w75r-8gcw",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.3.0, <= 8.3.2",
+          "first_patched": "8.3.3"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.2.0, <= 8.2.3",
+          "first_patched": "8.2.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.0.0, <= 8.1.5",
+          "first_patched": "8.1.6"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 7.0.0, <= 7.3.6",
+          "first_patched": "7.3.7"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": "<= 6.4.3",
+          "first_patched": "6.4.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite-plus"
+          },
+          "range": "<= 1.0.0",
+          "first_patched": "1.1.0"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/vite",
+          "version": "8.3.2",
+          "range": ">= 8.3.0, <= 8.3.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-c6gr-qvv4-5v3f",
+      "summary": "DOMPurify: SMIL attributeName=href guard is skipped when PARSER_MEDIA_TYPE is application/xhtml+xml",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-c6gr-qvv4-5v3f",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "range": "<= 3.4.16",
+          "first_patched": "3.4.17"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.16",
+          "range": "<= 3.4.16"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-cg2g-xh64-v4q7",
+      "summary": "DOMPurify SAFE_FOR_TEMPLATES bypass: split template expressions survive in attached shadow root content on DOM output modes",
+      "severity": "critical",
+      "url": "https://github.com/advisories/GHSA-cg2g-xh64-v4q7",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "range": ">= 3.4.4, <= 3.4.16",
+          "first_patched": "3.4.17"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.16",
+          "range": ">= 3.4.4, <= 3.4.16"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-f72v-6w45-q472",
+      "summary": "undici vulnerable to Subresource Integrity bypass via non-lowercase algorithm tokens",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-f72v-6w45-q472",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.15.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-mh32-jxcr-mh9f",
+      "summary": "Astro: XSS via attribute injection in dynamic tag names",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-mh32-jxcr-mh9f",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "astro"
+          },
+          "range": "<= 7.4.4",
+          "first_patched": "7.4.5"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/astro",
+          "version": "7.3.5",
+          "range": "<= 7.4.4"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "summary": "Zod can exhaust memory while validating oversized constrained collections",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "zod"
+          },
+          "range": "< 4.6.6",
+          "first_patched": "4.6.6"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/zod",
+          "version": "4.6.5",
+          "range": "< 4.6.6"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-mrv2-3pqr-j5jr",
+      "summary": "DOMPurify IN_PLACE: hook that removes a parent or sibling leaves the detached subtree's event handlers armed (incomplete fix for GHSA-p98j-92pf-mc4p)",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "dompurify"
+          },
+          "range": "<= 3.4.16",
+          "first_patched": "3.4.17"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/dompurify",
+          "version": "3.4.16",
+          "range": "<= 3.4.16"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-qrxm-fqhp-jwvm",
+      "summary": "undici vulnerable to Denial of Service via TLS 1.2 certificate-changing renegotiation",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-qrxm-fqhp-jwvm",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 4.2.1, < 6.29.1",
+          "first_patched": "6.29.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.0.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-r3h5-4585-7x3w",
+      "summary": "Astro: Image endpoint in @astrojs/node can read files from a case-variant sibling of the output directory on case-sensitive filesystems",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-r3h5-4585-7x3w",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "@astrojs/node"
+          },
+          "range": "<= 11.1.11",
+          "first_patched": null
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "astro"
+          },
+          "range": ">= 5.14.3, <= 7.4.6",
+          "first_patched": "7.4.7"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/astro",
+          "version": "7.3.5",
+          "range": ">= 5.14.3, <= 7.4.6"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-r825-w8mm-5pxw",
+      "summary": "launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-r825-w8mm-5pxw",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "launch-editor"
+          },
+          "range": "<= 2.14.1",
+          "first_patched": "2.14.2"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.3.0, <= 8.3.2",
+          "first_patched": "8.3.3"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.2.0, <= 8.2.3",
+          "first_patched": "8.2.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.0.0, <= 8.1.5",
+          "first_patched": "8.1.6"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 7.0.0, <= 7.3.6",
+          "first_patched": "7.3.7"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": "<= 6.4.3",
+          "first_patched": "6.4.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite-plus"
+          },
+          "range": "<= 1.0.0",
+          "first_patched": "1.1.0"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/vite",
+          "version": "8.3.2",
+          "range": ">= 8.3.0, <= 8.3.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-rj75-hqrm-r3gf",
+      "summary": "PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "postcss-selector-parser"
+          },
+          "range": ">= 7.0.0, < 7.1.6",
+          "first_patched": "7.1.6"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "postcss-selector-parser"
+          },
+          "range": "< 6.1.5",
+          "first_patched": "6.1.5"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/postcss-selector-parser",
+          "version": "6.1.4",
+          "range": "< 6.1.5"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-rq7h-c2jc-7f22",
+      "summary": "Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-rq7h-c2jc-7f22",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.3.0, <= 8.3.2",
+          "first_patched": "8.3.3"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.2.0, <= 8.2.3",
+          "first_patched": "8.2.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.0.0, <= 8.1.5",
+          "first_patched": "8.1.6"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 7.0.0, <= 7.3.6",
+          "first_patched": "7.3.7"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": "<= 6.4.3",
+          "first_patched": "6.4.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite-plus"
+          },
+          "range": "<= 1.0.0",
+          "first_patched": "1.1.0"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/vite",
+          "version": "8.3.2",
+          "range": ">= 8.3.0, <= 8.3.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-vfpm-58rq-9qcg",
+      "summary": "Vite: First 4 bytes of files outside of `server.fs` setting is exposed by `?vite-wasm-instance`",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-vfpm-58rq-9qcg",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.3.0, <= 8.3.2",
+          "first_patched": "8.3.3"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite"
+          },
+          "range": ">= 8.2.0, <= 8.2.3",
+          "first_patched": "8.2.4"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "vite-plus"
+          },
+          "range": ">= 0.2.8, <= 1.0.0",
+          "first_patched": "1.1.0"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/vite",
+          "version": "8.3.2",
+          "range": ">= 8.3.0, <= 8.3.2"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-w74x-v6f9-j3xg",
+      "summary": "fast-uri vulnerable to URI scheme spoofing via percent-encoded scheme decoding",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-w74x-v6f9-j3xg",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": "< 2.4.8",
+          "first_patched": "2.4.8"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 3.0.0, < 3.1.9",
+          "first_patched": "3.1.9"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 4.0.0, < 4.2.3",
+          "first_patched": "4.2.3"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/fast-uri",
+          "version": "3.1.8",
+          "range": ">= 3.0.0, < 3.1.9"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-wjr9-j795-jxcr",
+      "summary": "fast-uri vulnerable to host confusion via unchecked WHATWG host canonicalization",
+      "severity": "medium",
+      "url": "https://github.com/advisories/GHSA-wjr9-j795-jxcr",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 2.4.2, < 2.4.8",
+          "first_patched": "2.4.8"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 3.1.3, < 3.1.9",
+          "first_patched": "3.1.9"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 4.0.1, < 4.2.3",
+          "first_patched": "4.2.3"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/fast-uri",
+          "version": "3.1.8",
+          "range": ">= 3.1.3, < 3.1.9"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-xhq7-xmqj-769h",
+      "summary": "fast-uri vulnerable to improper path equivalence in relative reference normalization",
+      "severity": "low",
+      "url": "https://github.com/advisories/GHSA-xhq7-xmqj-769h",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": "< 2.4.8",
+          "first_patched": "2.4.8"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 3.0.0, < 3.1.9",
+          "first_patched": "3.1.9"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "fast-uri"
+          },
+          "range": ">= 4.0.0, < 4.2.3",
+          "first_patched": "4.2.3"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/fast-uri",
+          "version": "3.1.8",
+          "range": ">= 3.0.0, < 3.1.9"
+        }
+      ],
+      "afterMatches": []
+    },
+    {
+      "id": "GHSA-xjj6-f33q-929c",
+      "summary": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings",
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
+      "vulnerabilities": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 6.23.0, < 6.29.1",
+          "first_patched": "6.29.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 7.18.0, < 7.30.1",
+          "first_patched": "7.30.1"
+        },
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "undici"
+          },
+          "range": ">= 8.0.0, < 8.12.2",
+          "first_patched": "8.12.2"
+        }
+      ],
+      "beforeMatches": [
+        {
+          "path": "node_modules/undici",
+          "version": "8.11.2",
+          "range": ">= 8.0.0, < 8.12.2"
+        }
+      ],
+      "afterMatches": []
+    }
+  ],
+  "lockHashBytes": "Git blob bytes (LF), not an autocrlf checkout representation"
+}

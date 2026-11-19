@@ -301,7 +301,7 @@ class CliAndWorkflowTests(unittest.TestCase):
     def test_existing_lint_job_uses_full_history_and_event_scope_arguments(self):
         workflow = (REPOSITORY / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         lint = workflow.split("\n  lint:\n", 1)[1].split("\n  windows:\n", 1)[0]
-        self.assertIn("uses: actions/checkout@v4\n        with:\n          fetch-depth: 0", lint)
+        self.assertRegex(lint, r"uses: actions/checkout@[^\n]+\n        with:\n          fetch-depth: 0")
         self.assertIn("PR_BASE: ${{ github.event.pull_request.base.sha }}", lint)
         self.assertIn("PR_HEAD: ${{ github.event.pull_request.head.sha }}", lint)
         self.assertIn('--base "$env:PR_BASE" --head "$env:PR_HEAD"', lint)

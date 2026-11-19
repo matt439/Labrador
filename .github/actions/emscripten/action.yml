@@ -37,7 +37,7 @@ runs:
     - name: Cache Emscripten
       id: save
       if: inputs.save-sdk == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: C:\emsdk
         key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
@@ -45,7 +45,7 @@ runs:
     - name: Restore Emscripten
       id: restore
       if: inputs.save-sdk != 'true'
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: C:\emsdk
         key: emsdk-${{ env.EMSDK_VERSION }}-${{ runner.os }}
@@ -78,7 +78,7 @@ runs:
         echo "CCACHE_COMPILERCHECK=string:emsdk-$env:EMSDK_VERSION" >> $env:GITHUB_ENV
 
     - name: Cache compiled objects
-      uses: actions/cache@v4
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ env.CCACHE_DIR }}
         key: ccache-${{ inputs.objects }}-${{ github.run_id }}-${{ github.run_attempt }}

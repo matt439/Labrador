@@ -6,8 +6,9 @@ then qualify the resulting engine and consumer. A version label in a proposed
 command is not an installation or test result.
 
 The inventory below was read on 29 October 2026, its rapidjson row on
-13 November 2026. Its linked source files own
-the values; update this record if a bump makes a displayed value false.
+13 November 2026 and its Action/settings and website npm rows on
+17 November 2026. Its linked source files own the values; update this record
+if a bump makes a displayed value false.
 SM-25's SDK pin, browser logging and weekly schedule are in place, and a
 scheduled run has been observed passing; [BACKLOG](product/BACKLOG.md#next)
 records it. This procedure does not establish that any new toolchain has
@@ -17,7 +18,7 @@ passed the checks below.
 
 | Input | Source of truth and current selection | Meaning |
 | --- | --- | --- |
-| Engine packages | [vcpkg.json](../vcpkg.json): builtin-baseline `d92484ed3c5020c6679d095ad3e5add907887b62`; directxtk with xaudio2redist on Windows, doctest and lodepng | The full baseline commit fixes the registry baseline used to resolve the manifest. There are currently no top-level overrides or features. |
+| Engine packages | [vcpkg.json](../vcpkg.json): builtin-baseline `d92484ed3c5020c6679d095ad3e5add907887b62`; directxtk with xaudio2redist on Windows, doctest and lodepng | The full baseline commit fixes the registry baseline. There are no top-level overrides. The optional `materials` feature adds host directx-dxc and spirv-cross for authored GL/WebGL2 materials; ordinary starters do not opt in. |
 | Vendored rapidjson | [external/rapidjson/README.md](../external/rapidjson/README.md): upstream Tencent/rapidjson commit `24b5e7a8b27f42fa16b96fc70aade9106cf7102f` (2025-02-05), copied 2026-08-06 | Exact commit of the checked-in `include/rapidjson/` and `license.txt`; not fetched or resolved by vcpkg. Upstream has tagged nothing since 1.1.0, so a move names a commit, not a release. |
 | Installed vcpkg | [CMakePresets.json](../CMakePresets.json): VCPKG_ROOT; CI uses VCPKG_INSTALLATION_ROOT | A toolchain location, not an exact installed vcpkg version. |
 | Emscripten | [.github/workflows/ci.yml](../.github/workflows/ci.yml): EMSDK_VERSION, currently 6.0.12 | Exact SDK release shared by the browser jobs. |
@@ -27,10 +28,10 @@ passed the checks below.
 | ccache | ci.yml: CCACHE_VERSION, currently 4.14.1, and CCACHE_SHA256; installed by the local Emscripten action | Exact Windows x86_64 archive and checked digest. |
 | Native build requirements | [CMakeLists.txt](../CMakeLists.txt), [engine/CMakeLists.txt](../engine/CMakeLists.txt), [cmake/settings.cmake](../cmake/settings.cmake) | CMake 3.26 minimum, C++20 and Vulkan 1.2 minimum are requirements, not installed tool versions. |
 | Runner images | ci.yml and [website.yml](../.github/workflows/website.yml): windows-latest and ubuntu-latest | Moving labels. Visual Studio/MSVC, Windows SDK, CMake, Ninja, vcpkg, Python and installed Chrome may change with the image. Chrome's version also sets the SwiftShader the Vulkan job draws on. |
-| Remote Actions | Both workflows and the local Emscripten action use checkout, cache, cache/restore, upload-artifact and setup-node at @v4 where applicable; the local [msvc-env](../.github/actions/msvc-env/action.yml) action uses none | Major tags, not immutable action commit references. Both local composite actions, emscripten and msvc-env, come from this checkout. |
+| Remote Actions | Repository workflows/composites and optional starter recipes use the full commit selectors in [.github/action-versions.json](../.github/action-versions.json): checkout 7.0.1, cache 6.1.0, setup-node 7.1.0, upload-artifact 7.0.2 and download-artifact 8.0.2 | Reviewed Node 24/ESM source, with explicit migration guards; the local composites come from this checkout. [The dated audit](action-runtime-updates.md) retains source identities, settings receipts and hosted gates. |
 | Website Node major | [website/.node-version](../website/.node-version), currently 24; every setup-node step in website.yml reads it with node-version-file, and Cloudflare's build reads it in the root directory | A major-version selector, not an exact patch. |
 | Screen-reader job tools | website.yml's acceptance-screen-reader job: `npm install --no-save` of `@guidepup/guidepup` and `@guidepup/setup` at exact versions, currently 0.40.0 and 0.29.3 | Exact npm versions installed outside the website's manifest and lock, so no integrity value is recorded for them. Update the two together. |
-| Supported website Node | [package.json](../website/package.json) and the lock's root engines: `^22.18.0 || >=24.0.0` | A compatibility range, stated beside .node-version's major. There is no .nvmrc or packageManager/npm version pin. |
+| Supported website Node | [package.json](../website/package.json) and the lock's root engines: `^22.23.4 || >=24.0.0` | A compatibility range, stated beside .node-version's major. There is no .nvmrc or packageManager/npm version pin. |
 | Website packages | package.json and [package-lock.json](../website/package-lock.json) | Ranges express requested versions; the version-3 lock records the exact graph, resolved archives and integrity values used by npm ci. Neither pins Node/npm itself. |
 | Production Node/deploy tool | [website/README.md](../website/README.md#hosting-and-deployment): recorded build command `npm ci && npm run gate`, no NODE_VERSION build variable, and npx wrangler deploy | Owner/provider settings and a deployment-tool selection. Wrangler is not a dependency in the website's manifest/lock. This file does not establish the dashboard's current state or pin the fetched tool. |
 | Worker compatibility | [wrangler.jsonc](../website/wrangler.jsonc): compatibility_date 2026-10-08 | Worker compatibility configuration, distinct from the build Node version. |
@@ -186,6 +187,12 @@ archives, integrity fields and changed output. Do not hand-edit the transitive
 graph. Validate the checked-in result with `npm ci`, then `npm run gate` (the
 check, the tests and the build) from website/. `npm ci` consumes the chosen lock;
 it is not the step that selects updated dependency versions.
+
+The [2026-11-17 website triage](website-dependency-triage.md) records the first
+26 alerts, compatible current-graph repairs and browser diagram qualification.
+Node's bundled dependencies and immutable archived-site JavaScript remain
+separate from the current npm lock. Its named runtime/archive follow-ups stay
+open until their own evidence or owner decision is recorded.
 
 Do not rewrite existing entries in
 [published-versions.json](../website/published-versions.json) to match the new

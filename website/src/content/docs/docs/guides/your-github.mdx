@@ -251,9 +251,10 @@ workflow and each of its steps are explained in [Check your game in CI](/docs/gu
    second run took under two minutes. Your connection, runner and project affect these times.
 
 3. **Read it.** Click the run's name. Its page shows one job, **windows**; click it. The job's
-   steps are listed in order, each with a tick or a cross, and a step that never ran in grey:
+   steps are listed in order, each with a tick or a cross, and a step that never ran in grey.
+   This example is from the v0.3.0 starter run:
 
-   ```text title="The windows job's steps"
+   ```text title="The v0.3.0 windows job's steps"
    Set up job
    Run actions/checkout@v4
    Point at the runner's vcpkg
@@ -279,10 +280,9 @@ workflow and each of its steps are explained in [Check your game in CI](/docs/gu
    100% tests passed out of 2
    ```
 
-   `D:\a\mygame\mygame` is where the runner keeps your project. The run's summary page may also
-   show a yellow note that `actions/checkout@v4` and `actions/cache@v4` target Node.js 20, which
-   GitHub now runs on Node.js 24. It is about those two steps, not your game, and nothing fails
-   because of it.
+   `D:\a\mygame\mygame` is where the runner keeps your project. The v0.3.0 run showed a
+   warning that checkout and cache targeted Node.js 20. The development recipe pins newer
+   Action commits that target Node.js 24, so its checkout step displays the pinned commit.
 
 </Steps>
 

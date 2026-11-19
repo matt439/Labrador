@@ -102,6 +102,12 @@ carry it.
   CMake's discovery details. A copy can replace `find_package(doctest CONFIG REQUIRED)`
   with that line after moving its engine pin; the ordinary CMake call still works.
 
+- **2026-11-20.** The native and optional browser CI recipes use reviewed
+  Action commits for the Node 24 runtime, with explicit checkout, cache and
+  artifact inputs. A copied workflow can take the current recipe from
+  `website/src/walkthrough/`. The selected Actions require Runner 2.327.1 or
+  newer. Fresh hosted results for the new selectors are pending.
+
 - **2026-11-16, `742a00de`.** Development starter ZIPs include an optional
   `labrador.vsconfig` at the project root. A copy can download the same file
   from *Install the tools* to select the Visual Studio prerequisites; the
