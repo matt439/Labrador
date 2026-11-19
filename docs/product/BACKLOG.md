@@ -3861,6 +3861,11 @@ invoked Simulator run, retain the evidence and integration limits, and run
 affected tooling, lint and the website gate. No Simulator session starts as
 part of this planning record.
 
+**Integrated 2026-11-20.** The [pilot record](../port/ios-simulator-pilot.md)
+retains the protocol fixtures and Windows refusal. Play, quit and lifecycle
+qualification require an available iPhone Simulator with SafariDriver on a
+Mac with Xcode. That run remains the acceptance gate.
+
 The final acceptance batch of 2026-11-16 selected the following three stories.
 v0.4.0 ships OCA-120's public exception type. The
 [November 17 handoff](../2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
