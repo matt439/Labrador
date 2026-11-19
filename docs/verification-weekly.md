@@ -13,7 +13,7 @@ contexts are non-required; the twenty required contexts in
 | `x64-release-gl` | 22 | Mesa llvmpipe, checked by name. |
 | `x64-release-vulkan` | 22 | Chrome's SwiftShader, checked by name. |
 | `x64-release-null` | 23 | Recorded render/audio; no graphics or audio API device. |
-| `wasm-debug` | 49 | Chromium pages and all eight Firefox entries, with Firefox on ANGLE/WARP. |
+| `wasm-debug` | 52 | Chromium pages and eleven Firefox entries, with Firefox on ANGLE/WARP. |
 
 Each job checks its exact existing `tests/ctest_inventory.json` selection
 before running the whole configured suite, without CTest filters or

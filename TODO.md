@@ -16,10 +16,6 @@ Start with these stories in [BACKLOG order](docs/product/BACKLOG.md#later).
    contacts, drag, release and cancellation in the combined source.
    [Acceptance](docs/product/BACKLOG.md#oca-114)
 
-Alongside the product stories, [REV#151](#work-audit-of-2026-11-12) can
-start by reporting pixel drift on passing frames. The browser ledger also
-tracks Safari failure diagnostics, WebWindow input and Firefox pixel coverage.
-
 All Now batches are complete. Next's five unchecked stories require owner
 attendance or hardware. The [scheduling amendment](docs/product/BACKLOG.md#later)
 allows ready Later work in parallel. Owner-attended sessions and external
@@ -207,7 +203,7 @@ The [first-run findings](docs/review/2026-11-10-first-run/FINDINGS.md) identify 
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#151` | OPEN | could | M | Hosted Safari pixel readback passes. Left: passing-frame drift, Safari rejected-frame extraction and WebWindow input, and Firefox pixel variants/CI. [Evidence](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16). |
+| `REV#151` | WAITING | could | M | Record hosted Safari WebWindow and pixel drift, and the three Firefox pixel variants. Local Chromium, Firefox and classic WebDriver checks passed. [Evidence](docs/port/web-to-be-tested.md#browser-comparison-and-window-checks-2026-11-20). |
 | `REV#159` | WAITING | should | S | Observe a clean week after the November 17 SafariDriver bundle-session failure. Review every executed attempt, including retries. [Evidence](docs/port/web-to-be-tested.md#hosted-safari-stability-2026-11-20). |
 
 ## Ports

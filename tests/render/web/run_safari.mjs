@@ -1,4 +1,4 @@
-// The six development sample pages and LineSweeper's bundle page in desktop
+// The development sample, LineSweeper bundle and test pages in desktop
 // Safari, through safaridriver's classic W3C WebDriver (web-to-be-tested.md,
 // "Needs Safari"). CI's `safari` job runs it on macos-latest against the
 // pages the `wasm` job built; it is not a ctest entry, because no Windows
@@ -8,6 +8,8 @@
 //   [--timeout 60] [--frames 60]
 // node tests/render/web/run_safari.mjs --bundle <build>/web-dist/linesweeper [--timeout 120]
 // node tests/render/web/run_safari.mjs --test-page <build>/tests/render/RenderPixelTests.html
+//   [--pixel-output <directory>]
+// node tests/render/web/run_safari.mjs --window-page <build>/tests/app/WebWindowTests.html
 // node tests/render/web/run_safari.mjs --renderer
 //
 // --pages names a folder holding <sample>/<Target>.{html,js,wasm}: a build's
@@ -20,6 +22,8 @@
 // replies; this checks sampled actions, not natural held-key timing.
 // --bundle runs bundle_page.mjs's desktop play, forced context
 // loss and restore, quit and replay, as the Chromium and Firefox entries do.
+// --window-page runs the shared WebWindow input assertions with WebDriver
+// mouse, wheel and key actions, and page fixtures for touch and DPR.
 // --renderer prints Safari's masked RENDERER and the unmasked string
 // WEBGL_debug_renderer_info gives.
 //
@@ -40,6 +44,7 @@
 // this runner too.
 import { createHash } from 'node:crypto';
 import { pixel_diagnostics } from './pixel_diagnostics.mjs';
+import { PIXEL_FILES, save_pixel_files } from './pixel_artifacts.mjs';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -50,6 +55,7 @@ import { BUNDLE_FILES, PRELUDE, READY, bundle_state, bundle_substitute, steps } 
 import { SAMPLES, WEBDRIVER_OPTION, close_server, deadline_after, frames_expression,
 	key_actions as webdriver_key_actions, key_table, module_hook, serve_files } from './page_harness.mjs';
 import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
+import { SAFARI_WINDOW_HOOK, drive_safari_window } from './safari_window.mjs';
 
 export { SAMPLES };
 
@@ -59,7 +65,8 @@ const KEY_VALUES = key_table(['Escape', 'Enter', 'Tab', 'KeyS', 'KeyR', 'KeyA', 
 
 export function parse_options(arguments_) {
 	const options = {};
-	const valued = new Set(['pages', 'sample', 'bundle', 'timeout', 'frames', 'driver', 'browser-name', 'test-page']);
+	const valued = new Set(['pages', 'sample', 'bundle', 'timeout', 'frames', 'driver', 'browser-name',
+		'test-page', 'pixel-output', 'window-page']);
 	for (let index = 0; index < arguments_.length; index++) {
 		const name = arguments_[index].replace(/^--/, '');
 		if (!arguments_[index].startsWith('--') || Object.hasOwn(options, name)) {
@@ -71,17 +78,25 @@ export function parse_options(arguments_) {
 		}
 		options[name] = arguments_[++index];
 	}
-	const modes = [options.sample !== undefined, options.bundle !== undefined, options.renderer === true, options['test-page'] !== undefined];
+	const test_page = options['test-page'] ?? options['window-page'];
+	const modes = [options.sample !== undefined, options.bundle !== undefined, options.renderer === true,
+		options['test-page'] !== undefined, options['window-page'] !== undefined];
 	const valid = modes.filter(Boolean).length === 1 && (
-		options['test-page'] !== undefined ? /\.html$/.test(options['test-page']) && options.pages === undefined && options.frames === undefined :
+		test_page !== undefined ? /\.html$/.test(test_page) && options.pages === undefined && options.frames === undefined :
 		options.sample !== undefined ? Object.hasOwn(SAMPLES, options.sample) && options.pages !== undefined :
 		options.bundle !== undefined ? options.bundle !== '' && options.pages === undefined && options.frames === undefined :
 		options.pages === undefined && options.frames === undefined);
 	const browser_name = options['browser-name'] ?? 'safari';
+	if (options['pixel-output'] !== undefined) {
+		if (options['test-page'] === undefined || options['pixel-output'] === '') {
+			throw new Error('--pixel-output requires --test-page and a directory.');
+		}
+		options.pixel_output = resolve(options['pixel-output']);
+	}
 	if (!valid || !['safari', 'firefox'].includes(browser_name)) {
 		throw new Error(`One of: --pages <samples folder> with --sample (${Object.keys(SAMPLES).join('/')}); ` +
 			'--bundle <web-dist/linesweeper folder> (without --pages or --frames); or --renderer. ' +
-			'--test-page <RenderPixelTests.html> without --pages or --frames is also supported. ' +
+			'--test-page <RenderPixelTests.html> or --window-page <WebWindowTests.html>, without --pages or --frames. ' +
 			'--browser-name is safari (the default) or firefox.');
 	}
 	options.browser_name = browser_name;
@@ -121,7 +136,7 @@ export function session_commands(base, session_id, send = command) {
 // JSON. A thrown error or a rejection comes back as an error naming it.
 export const EVALUATE_SCRIPT = `const done = arguments[arguments.length - 1];
 (async () => JSON.stringify({ value: await (0, eval)(arguments[0]) }))().then(done,
-	(error) => done(JSON.stringify({ error: String(error && error.stack || error) })));`;
+	(error) => done(JSON.stringify({ error: String(error) + (error?.stack ? '\\n' + error.stack : '') })));`;
 
 export function evaluator(session, remaining) {
 	return async (expression) => {
@@ -625,7 +640,7 @@ export function assert_test_exit(result) {
 }
 
 export async function drive_test(session, url, { timeout_ms = 120000, log = console.log,
-	label = 'Safari' } = {}) {
+	label = 'Safari', pixel_output } = {}) {
 	const evaluate = evaluator(session, deadline_after(timeout_ms, label + ' test', timeout_ms));
 	await session.navigate(url);
 	// An unrecognised page must fail rather than appear to pass.
@@ -638,6 +653,11 @@ export async function drive_test(session, url, { timeout_ms = 120000, log = cons
 	for (const line of lines) log(label + ' test: ' + line);
 	// Emit before complaints/exit validation so failed readbacks retain diagnostics.
 	log(label + ' pixel diagnostics: ' + JSON.stringify(pixel_diagnostics(lines)));
+	if (pixel_output !== undefined) {
+		const files = JSON.parse(await evaluate(PIXEL_FILES));
+		save_pixel_files(files, pixel_output);
+		log(`${label} pixel artifacts: ${Object.keys(files).length}; output=${pixel_output}`);
+	}
 	await complaints_of(evaluate);
 	assert_test_exit(result);
 	log(label + ' test page exited zero; no physical-device acceptance.');
@@ -669,8 +689,9 @@ export async function report_renderer(session, url, { timeout_ms = 60000, log = 
 
 export function artifact_files(options) {
 	if (options.renderer) return [];
-	if (options['test-page'] !== undefined) {
-		const stem = resolve(options['test-page']).slice(0, -5);
+	const test_page = options['test-page'] ?? options['window-page'];
+	if (test_page !== undefined) {
+		const stem = resolve(test_page).slice(0, -5);
 		return ['html', 'js', 'wasm'].map((extension) => stem + '.' + extension);
 	}
 	if (options.bundle !== undefined) return BUNDLE_FILES.map((name) => join(resolve(options.bundle), name));
@@ -682,6 +703,7 @@ export function artifact_files(options) {
 // The page's hooks, per mode.
 export function page_scripts(options) {
 	if (options['test-page'] !== undefined) return [COMPLAINT_HOOK, TEST_LOG_HOOK];
+	if (options['window-page'] !== undefined) return [COMPLAINT_HOOK, SAFARI_WINDOW_HOOK];
 	if (options.bundle !== undefined) return [COMPLAINT_HOOK, PRELUDE + ';'];
 	return [COMPLAINT_HOOK, options.sample === 'linesweeper' ? SAMPLED_SAMPLE_HOOK : SAMPLE_HOOK];
 }
@@ -751,9 +773,13 @@ export async function main(options) {
 		session = opened.session;
 		const { browserName, browserVersion, platformName } = opened.created.capabilities ?? {};
 		console.log(`Session ${session.id}: ${browserName} ${browserVersion} on ${platformName}`);
-		const option_tab = options['test-page'] === undefined && options.browser_name === 'safari' && !(await safari_tabs_to_links());
+		const needs_tab = options.bundle !== undefined || options['window-page'] !== undefined;
+		const option_tab = needs_tab && options.browser_name === 'safari' && !(await safari_tabs_to_links());
+		const evaluate_window = evaluator(session, deadline_after(options.timeout_ms, options.label + ' WebWindow', options.timeout_ms));
 		const driven = options.renderer ? report_renderer(session, service.url, options) :
 			options['test-page'] !== undefined ? drive_test(session, service.url, options) :
+			options['window-page'] !== undefined ? drive_safari_window(session, service.url, evaluate_window,
+				{ ...options, option_tab, pause: wait }) :
 			options.bundle !== undefined ? drive_bundle(session, service.url, { ...options, option_tab }) :
 				drive_sample(session, service.url, SAMPLES[options.sample], { ...options, progress });
 		let timer;
@@ -765,6 +791,7 @@ export async function main(options) {
 		const { label } = options;
 		console.log(options.renderer ? `${label} renderer: reported.` :
 			options['test-page'] !== undefined ? `${label} test: exit protocol passed.` :
+			options['window-page'] !== undefined ? `${label} WebWindow: input assertions passed with the recorded fixture inputs.` :
 			options.bundle !== undefined ? `${label} bundle: page protocol passed. No listening or physical-device acceptance.` :
 				`${label} ${options.sample}: page protocol passed. No WebWindow, listening or physical-device acceptance.`);
 	} catch (error) {

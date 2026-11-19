@@ -158,6 +158,7 @@ import { CONTENT_TYPES } from '../../../website/acceptance/server.mjs';
 import { DevTools, browser_version } from './devtools.mjs';
 import { exited, module_hook } from './page_harness.mjs';
 import { press_sample_key, SAMPLE_INPUT_HOOK } from './sample_key.mjs';
+import { hide_extension_script } from './webgl_extension.mjs';
 
 // The run's options, and the paths and deadline that follow from them: set
 // from the command line at the bottom of this file, before run() starts.
@@ -519,26 +520,6 @@ function collect_expression(folder) {
 		}
 		return out;
 	})()`;
-}
-
-// A script for Page.addScriptToEvaluateOnNewDocument that makes `name` absent
-// from every WebGL context the page makes, as a device without it would.
-function hide_extension_script(name) {
-	return `(() => {
-		const hidden = ${JSON.stringify(name)};
-		for (const type of [self.WebGLRenderingContext, self.WebGL2RenderingContext]) {
-			if (!type) { continue; }
-			const get = type.prototype.getExtension;
-			type.prototype.getExtension = function (wanted) {
-				return wanted === hidden ? null : get.call(this, wanted);
-			};
-			const list = type.prototype.getSupportedExtensions;
-			type.prototype.getSupportedExtensions = function () {
-				const names = list.call(this);
-				return names ? names.filter((each) => each !== hidden) : names;
-			};
-		}
-	})();`;
 }
 
 // Whether a context made now still offers `name`.

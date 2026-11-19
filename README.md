@@ -335,7 +335,8 @@ in a hidden window are added. A `wasm-*` build has 20 without
 a Chromium and, where one is found, 41 in Debug and 42 in Release, the extra
 ones being pages run in headless Chrome, one for each sample among them, and no
 start-up check, because a page has no command line. Where configure also finds
-a Firefox, eight `Firefox*` entries run the same pages in it.
+a Firefox, eleven `Firefox*` entries cover the samples, window, bundle and
+three pixel variants in it.
 [`tests/ctest_inventory.json`](tests/ctest_inventory.json) lists the entries
 each configuration registers, with both browsers. CI fails when one of its own
 configurations differs, and `tools/ci_gap_report.py` when one it runs does.

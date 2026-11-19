@@ -2,14 +2,14 @@
 // to it: the input half of WebWindowTests, run by
 // tests/render/web/run_page.mjs --input against window_page.cpp's page in
 // Chromium, and by tests/render/web/run_firefox.mjs --test WebWindowTests in
-// Firefox.
+// Firefox, and by tests/render/web/run_safari.mjs --window-page in Safari.
 //
-// ONE SEQUENCE, TWO PROTOCOLS. drive_window holds every step and what it
-// must produce; an input object puts each step through one browser's own
-// event dispatch. The default export hands it devtools_input, the DevTools
+// drive_window holds every step and what it must produce. The default
+// export hands it devtools_input, the DevTools
 // protocol's Input and Emulation domains; the Firefox runner hands it its
-// WebDriver BiDi input. Either way focus moves because a click moved it, a
-// default is prevented or kept because the canvas's listener said so, and a
+// WebDriver BiDi input and the Safari runner hands it classic WebDriver.
+// Focus moves because a click moved it, a default is prevented or kept
+// because the canvas's listener said so, and a
 // touch makes - or does not make - the mouse events a browser makes of a
 // touch. Where a protocol cannot produce an input, its input object says so
 // and the step that needs it states what was done instead.
@@ -43,7 +43,8 @@
 // - key(name, { control }): a key from KEYS pressed and released, with
 //   Control held if asked. presses_modifiers is true where Control can only
 //   be held by pressing it as a key, so its own key_down and key_up reach the
-//   page around the chord.
+//   page around the chord. option_tab is true when the browser uses Option-Tab
+//   to focus the next element.
 // - device_pixel_ratio(ratio): sets the page's device pixel ratio, and null
 //   returns it to the ratio of one that prepare() started from.
 // - touch(type, points): touchStart, touchMove, touchEnd or touchCancel in
@@ -54,7 +55,8 @@
 //   cancels_touch is false where the protocol has no way to make the browser
 //   cancel a touch. touch_slack is how many client pixels a touch's reported
 //   position may be from the one sent, which is none where the browser
-//   delivers a touch where it was sent.
+//   delivers a touch where it was sent. synthetic_touch is true for a DOM
+//   fixture that cannot check browser-generated compatibility mouse events.
 // - snaps_device_box: true where the browser's device-pixel-content-box at
 //   the starting ratio of one is the box it snaps the canvas to, so the
 //   fractional-position step must find the snapped size.
@@ -490,8 +492,10 @@ export async function drive_window(page, input) {
 	await check('a click gives the canvas the keyboard back',
 		['mouse_move 100 50', 'button_down left', 'keyboard_gained', 'button_up left']);
 	await key('Tab');
+	const tab_keys = input.option_tab ? ['key_down alt', 'key_down tab'] : ['key_down tab'];
+	const tab_defaults = input.option_tab ? ['keydown AltLeft kept', 'keydown Tab kept'] : ['keydown Tab kept'];
 	await check('Tab is the browser\'s, and takes the keyboard away',
-		['key_down tab', 'keyboard_lost'], ['keydown Tab kept']);
+		[...tab_keys, 'keyboard_lost'], tab_defaults);
 
 	// VISIBILITY, the page's foreground. A repeat says nothing.
 	await set_hidden(true);
@@ -540,15 +544,21 @@ export async function drive_window(page, input) {
 		const canvas = document.getElementById('canvas');
 		canvas.style.top = '20.25px';
 		canvas.style.height = '302.4px';
-		new ResizeObserver((entries) => {
+		const observer = new ResizeObserver((entries) => {
 			const sizes = entries[entries.length - 1].devicePixelContentBoxSize;
 			window.labradorDeviceBox = sizes && sizes[0] ?
 				[sizes[0].inlineSize, sizes[0].blockSize] : 'unreported';
-		}).observe(canvas, { box: 'device-pixel-content-box' });
+		});
+		try {
+			observer.observe(canvas, { box: 'device-pixel-content-box' });
+		} catch (error) {
+			if (!(error instanceof TypeError)) throw error;
+			window.labradorDeviceBox = 'unreported';
+		}
 		return true;
 	})()`);
 	await frames(4);
-	await pass('at a fractional device-pixel position the buffer is the snapped box', async (what) => {
+	await pass('at a fractional device-pixel position the buffer follows the reported box or rounded scale', async (what) => {
 		const box = await evaluate('JSON.stringify(window.labradorDeviceBox)').then(JSON.parse);
 		const ratio = await evaluate('devicePixelRatio');
 		const sizes = (await take()).filter((entry) => entry.startsWith('size '));
@@ -606,6 +616,7 @@ export async function drive_window(page, input) {
 	};
 	const by_point = (point) => (a, b) => Number(point(a)) - Number(point(b));
 
+	if (input.synthetic_touch) console.log('Touch checks use synthetic DOM pointers. Browser touch and compatibility mouse generation are untested.');
 	await input.touch_begin();
 	await touch('touchStart', [[120, 70, 0]]);
 	const [one] = await pass('a touch goes down and focuses the canvas', async (what) =>
@@ -635,7 +646,7 @@ export async function drive_window(page, input) {
 		await touch('touchCancel', []);
 		// Twice: pointercancel, then the capture it lost, which Touch ignores
 		// for a point already gone (dom_events.h).
-		await check('the browser taking the second is a cancel',
+		await check(input.synthetic_touch ? 'a synthetic cancel retires the second point' : 'the browser taking the second is a cancel',
 			[`touch_cancel ${two}`, `touch_cancel ${two}`]);
 	} else {
 		// No cancel to send: the second lifts as the first did, so that the
@@ -648,7 +659,7 @@ export async function drive_window(page, input) {
 	await touch('touchStart', [[120, 70, 2]]);
 	await touch('touchEnd', []);
 	await frames(3);
-	await pass('a tap is a touch and nothing the mouse hears', async (what) =>
+	await pass(input.synthetic_touch ? 'a synthetic tap reaches the touch listener' : 'a tap is a touch and nothing the mouse hears', async (what) =>
 		touches(what, await take(),
 			[['touch_down', null, 100, 50], ['touch_up', null, 100, 50], ['touch_cancel', null]]));
 	await input.touch_end();

@@ -76,7 +76,7 @@ Web Audio and web input.
 | `x64-debug-vulkan`, `x64-release-vulkan` | Vulkan / XAudio2 | 22; SDK and driver |
 | `x64-debug-null`, `x64-release-null` | null / null | 23; no graphics/audio API; no RenderPixelTests |
 | `x64-debug-null-asan` | null / null | 24; opt-in MSVC AddressSanitizer, including a deterministic detection probe |
-| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 41 Debug / 42 Release with Chromium, 8 more with Firefox, 20 without; Node plus browser pages |
+| `wasm-debug`, `wasm-release` | WebGL2 / Web Audio | 41 Debug / 42 Release with Chromium, 11 more with Firefox, 20 without; Node plus browser pages |
 
 `LABRADOR_TEST_BROWSER` names a Chromium. Only when configure finds one are
 `RenderPixelTests`, `RenderPixelTestsWithoutS3tc`, `RenderPixelTestsThroughPost`,
@@ -112,19 +112,19 @@ teardown to fake WebSockets under Node, with no browser or device.
 `WebStackDependencyTests` links an optimized private-stack-helper probe even
 in Debug and runs its stack/string round trip under Node, with no DOM or device.
 `LABRADOR_TEST_FIREFOX` names a Firefox. Where configure finds one and the
-render backend rasterizes, eight `Firefox*` entries run the six sample pages,
-`WebWindowTests`' sequence and the bundle page's desktop play, forced context
-loss, quit and replay over WebDriver BiDi
+render backend rasterizes, eleven `Firefox*` entries run the six sample pages,
+`WebWindowTests`' sequence, the bundle page's desktop play and replay, and
+all three pixel test variants over WebDriver BiDi
 ([run_firefox.mjs](tests/render/web/run_firefox.mjs)). CI opts into
-`-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` and runs all eight entries.
-The option puts Firefox on ANGLE/WARP in a disposable profile; each sample
-refuses a renderer other than Microsoft's Direct3D11 Basic Render Driver.
+`-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` and runs the Firefox entries.
+The option puts Firefox on ANGLE/WARP in a disposable profile. The sample
+and pixel runs require Microsoft's Direct3D11 Basic Render Driver.
 Verbose CI output retains the browser/device evidence. Hosted Firefox 159.0.1
-passed all eight entries on WARP in runs recorded in
+passed the six samples, window and bundle on WARP in runs recorded in
 [web-to-be-tested.md](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16);
 software rendering is not physical-GPU or audible-audio acceptance.
-CI's `safari` job, on macos-latest, runs the six sample pages and the bundle
-page plus the pixel readback exit protocol from the `wasm` job's artifacts in desktop Safari through
+CI's `safari` job, on macos-latest, runs the six sample pages, bundle, pixel
+readback and supported WebWindow input from the `wasm` job's artifacts in desktop Safari through
 [run_safari.mjs](tests/render/web/run_safari.mjs) and safaridriver; it is not
 a ctest entry. Locally, `--driver geckodriver --browser-name firefox` checks
 the runner, not Safari.
