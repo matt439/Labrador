@@ -263,6 +263,10 @@ export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 		'The native SDK translation and injectable fixture boundary behind Keyboard::label; game code reads the platform-neutral keyboard.h contract.',
 	],
 	[
+		'engine/render/direct3d_startup.h',
+		"Startup-only HRESULT classification private to the Direct3D backends; callers catch RenderDeviceUnavailable from device_unavailable.h.",
+	],
+	[
 		'engine/render/material_table.h',
 		'Renderer-internal ownership, selection and validation shared by the backends; callers use MaterialSource and MaterialHandle through renderer.h.',
 	],

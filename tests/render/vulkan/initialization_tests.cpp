@@ -2,7 +2,9 @@
 #include "tests/render/test_window.h"
 #include "tests/render/vulkan/loader_function.h"
 
+#include "engine/render/device_unavailable.h"
 #include "engine/render/renderer.h"
+#include "engine/render/vulkan/device_resources.h"
 
 #include <vulkan/vulkan.h>
 #include <windows.h>
@@ -33,6 +35,13 @@ namespace
 	struct InstanceProbe
 	{
 		VkResult failure = VK_SUCCESS;
+		VkResult enumeration_failure = VK_SUCCESS;
+		VkResult surface_failure = VK_SUCCESS;
+		bool no_devices = false;
+		bool old_api = false;
+		bool no_presentation = false;
+		bool no_timeline = false;
+		int selection_injections = 0;
 		int calls = 0;
 		int injected = 0;
 		int forwarded = 0;
@@ -173,6 +182,85 @@ extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(
 	return result;
 }
 
+extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(
+	VkInstance instance, uint32_t* count, VkPhysicalDevice* devices)
+{
+	if (active_probe != nullptr)
+	{
+		if (active_probe->enumeration_failure != VK_SUCCESS)
+		{
+			++active_probe->selection_injections;
+			return active_probe->enumeration_failure;
+		}
+		if (active_probe->no_devices)
+		{
+			++active_probe->selection_injections;
+			*count = 0;
+			return VK_SUCCESS;
+		}
+	}
+	static const PFN_vkEnumeratePhysicalDevices enumerate =
+		loader_function<PFN_vkEnumeratePhysicalDevices>("vkEnumeratePhysicalDevices");
+	return enumerate(instance, count, devices);
+}
+
+extern "C" VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceProperties(
+	VkPhysicalDevice device, VkPhysicalDeviceProperties* properties)
+{
+	static const PFN_vkGetPhysicalDeviceProperties read =
+		loader_function<PFN_vkGetPhysicalDeviceProperties>("vkGetPhysicalDeviceProperties");
+	read(device, properties);
+	if (active_probe != nullptr && active_probe->old_api)
+	{
+		++active_probe->selection_injections;
+		properties->apiVersion = VK_API_VERSION_1_1;
+	}
+}
+
+extern "C" VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceSupportKHR(
+	VkPhysicalDevice device, uint32_t family, VkSurfaceKHR surface, VkBool32* supported)
+{
+	if (active_probe != nullptr)
+	{
+		if (active_probe->surface_failure != VK_SUCCESS)
+		{
+			++active_probe->selection_injections;
+			return active_probe->surface_failure;
+		}
+		if (active_probe->no_presentation)
+		{
+			++active_probe->selection_injections;
+			*supported = VK_FALSE;
+			return VK_SUCCESS;
+		}
+	}
+	static const PFN_vkGetPhysicalDeviceSurfaceSupportKHR read =
+		loader_function<PFN_vkGetPhysicalDeviceSurfaceSupportKHR>(
+			"vkGetPhysicalDeviceSurfaceSupportKHR");
+	return read(device, family, surface, supported);
+}
+
+extern "C" VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFeatures2(
+	VkPhysicalDevice device, VkPhysicalDeviceFeatures2* features)
+{
+	static const PFN_vkGetPhysicalDeviceFeatures2 read =
+		loader_function<PFN_vkGetPhysicalDeviceFeatures2>("vkGetPhysicalDeviceFeatures2");
+	read(device, features);
+	if (active_probe == nullptr || !active_probe->no_timeline)
+		return;
+	VkBaseOutStructure* next = static_cast<VkBaseOutStructure*>(features->pNext);
+	while (next != nullptr)
+	{
+		if (next->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES)
+		{
+			++active_probe->selection_injections;
+			reinterpret_cast<VkPhysicalDeviceVulkan12Features*>(next)->timelineSemaphore =
+				VK_FALSE;
+		}
+		next = next->pNext;
+	}
+}
+
 // The probe invokes the copied callback at each API boundary. These markers
 // test registration and callback lifetime, not actual layer-generated messages
 // or the debugger's output. The real loader still creates/destroys the instance.
@@ -244,12 +332,20 @@ TEST_CASE("Vulkan initialization identifies instance creation and its failed res
 	probe.failure = failure;
 	probe.inspect_callbacks = true;
 	bool runtime_error = false;
+	bool unavailable = false;
 	std::string actual;
 	{
 		ProbeScope scope(probe);
 		try
 		{
 			renderer.create_device(window.handle(), 64, 64, 1);
+		}
+		catch (const labrador::RenderDeviceUnavailable& error)
+		{
+			unavailable = true;
+			const std::runtime_error& base = error;
+			runtime_error = true;
+			actual = base.what();
 		}
 		catch (const std::runtime_error& error)
 		{
@@ -258,6 +354,8 @@ TEST_CASE("Vulkan initialization identifies instance creation and its failed res
 		}
 	}
 	CHECK(runtime_error);
+	CHECK(unavailable == (failure == VK_ERROR_EXTENSION_NOT_PRESENT ||
+		failure == VK_ERROR_INCOMPATIBLE_DRIVER));
 	CHECK(actual == expected);
 	CHECK(probe.calls == 1);
 	CHECK(probe.injected == 1);
@@ -267,4 +365,116 @@ TEST_CASE("Vulkan initialization identifies instance creation and its failed res
 	CHECK(probe.creation_callbacks == (probe.validation_enabled ? 1 : 0));
 	CHECK(probe.destruction_callbacks == 0);
 	CHECK(probe.destructions == 0);
+}
+
+TEST_CASE("Vulkan startup classifies an absent or incapable physical device")
+{
+	InstanceProbe probe;
+	const char* reason = "Vulkan loader but no Vulkan device";
+	SUBCASE("no physical devices") { probe.no_devices = true; }
+	SUBCASE("API below the required version")
+	{
+		probe.old_api = true;
+		reason = "Vulkan 1.1, and this backend needs 1.2";
+	}
+	SUBCASE("no queue can present")
+	{
+		probe.no_presentation = true;
+		reason = "no queue family both draws and presents";
+	}
+	SUBCASE("required timeline feature absent")
+	{
+		probe.no_timeline = true;
+		reason = "no timelineSemaphore";
+	}
+
+	render_tests::TestWindow window(64, 64);
+	labrador::Renderer renderer;
+	bool unavailable = false;
+	{
+		ProbeScope scope(probe);
+		try
+		{
+			renderer.create_device(window.handle(), 64, 64, 1);
+		}
+		catch (const labrador::RenderDeviceUnavailable& error)
+		{
+			unavailable = true;
+			const std::runtime_error& base = error;
+			CHECK(std::string(base.what()).find(reason) != std::string::npos);
+		}
+	}
+	CHECK(unavailable);
+	CHECK(probe.selection_injections > 0);
+}
+
+TEST_CASE("Vulkan physical-device query failures keep their API-error meaning")
+{
+	InstanceProbe probe;
+	const char* reason = "could not be listed (VK_ERROR_OUT_OF_HOST_MEMORY)";
+	SUBCASE("enumeration allocation failure")
+	{
+		probe.enumeration_failure = VK_ERROR_OUT_OF_HOST_MEMORY;
+	}
+	SUBCASE("surface query failure")
+	{
+		probe.surface_failure = VK_ERROR_SURFACE_LOST_KHR;
+		reason = "presentation support could not be queried (VK_ERROR_SURFACE_LOST_KHR)";
+	}
+
+	render_tests::TestWindow window(64, 64);
+	labrador::Renderer renderer;
+	bool failed = false;
+	{
+		ProbeScope scope(probe);
+		try
+		{
+			renderer.create_device(window.handle(), 64, 64, 1);
+		}
+		catch (const labrador::RenderDeviceUnavailable&)
+		{
+			FAIL("an API query failure was classified as device unavailability");
+		}
+		catch (const std::runtime_error& error)
+		{
+			failed = true;
+			CHECK(std::string(error.what()).find(reason) != std::string::npos);
+		}
+	}
+	CHECK(failed);
+	CHECK(probe.selection_injections > 0);
+}
+
+TEST_CASE("Vulkan recovery keeps capability refusals as ordinary runtime errors")
+{
+	render_tests::TestWindow window(64, 64);
+	labrador::DeviceResources device;
+	device.set_window(static_cast<HWND>(window.handle()), 64, 64);
+	device.create_device_resources(true);
+
+	InstanceProbe probe;
+	SUBCASE("instance extension becomes unavailable")
+	{
+		probe.failure = VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+	SUBCASE("physical devices become unavailable") { probe.no_devices = true; }
+	SUBCASE("required API becomes unavailable") { probe.old_api = true; }
+	bool failed = false;
+	{
+		ProbeScope scope(probe);
+		try
+		{
+			device.handle_device_lost();
+		}
+		catch (const labrador::RenderDeviceUnavailable&)
+		{
+			FAIL("a runtime recovery failure was classified as startup absence");
+		}
+		catch (const std::runtime_error&)
+		{
+			failed = true;
+		}
+	}
+	CHECK(failed);
+	CHECK((probe.injected > 0 || probe.selection_injections > 0));
 }

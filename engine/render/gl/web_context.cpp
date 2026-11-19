@@ -12,16 +12,73 @@
 #include "engine/render/gl/backend.h"
 
 #include "engine/math/vector2i.h"
+#include "engine/render/device_unavailable.h"
 
 #include <emscripten/em_js.h>
 #include <emscripten/html5.h>
 
 #include <cstdlib>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
+
+EM_JS_DEPS(labrador_web_context, "$findCanvasEventTarget,$getWasmTableEntry,"
+	"$lengthBytesUTF8,$stringToUTF8");
+
+EM_JS(int, labrador_is_canvas_target, (const char* target), {
+	const found = findCanvasEventTarget(target);
+	const canvas = found?.canvas ?? found;
+	return canvas && ((typeof HTMLCanvasElement !== "undefined" && canvas instanceof HTMLCanvasElement) ||
+		(typeof OffscreenCanvas !== "undefined" && canvas instanceof OffscreenCanvas)) ? 1 : 0;
+});
+
+EM_JS(int, labrador_has_webgl2_api, (), {
+	return typeof WebGL2RenderingContext === "function" ? 1 : 0;
+});
+
+// Observe only the actual creation attempt and retain its native diagnostic.
+// Neither null nor a creation-error event proves device absence: a canvas
+// already bound to an incompatible context can produce both.
+EM_JS(int, labrador_create_observed_webgl_context,
+	(const char* target, const void* attributes, uintptr_t create_context), {
+	const found = findCanvasEventTarget(target);
+	const canvas = found?.canvas ?? found;
+	const result = { error: false, message: "" };
+	Module.labradorWebglCreation = result;
+	const failed = (event) => {
+		result.error = true;
+		result.message = event.statusMessage ?? "";
+	};
+	canvas.addEventListener("webglcontextcreationerror", failed);
+	let completed = false;
+	try {
+		const handle = getWasmTableEntry(create_context)(target, attributes);
+		completed = true;
+		return handle;
+	} finally {
+		canvas.removeEventListener("webglcontextcreationerror", failed);
+		if (!completed) {
+			delete Module.labradorWebglCreation;
+		}
+	}
+});
+
+EM_JS(int, labrador_webgl_creation_error_size, (), {
+	const result = Module.labradorWebglCreation;
+	return result?.error ? lengthBytesUTF8(result.message) + 1 : 0;
+});
+
+EM_JS(void, labrador_take_webgl_creation_error, (char* text, int capacity), {
+	const result = Module.labradorWebglCreation;
+	if (text && result) {
+		stringToUTF8(result.message, text, capacity);
+	}
+	delete Module.labradorWebglCreation;
+});
 
 // The page's two optional hooks for a lost context, asked for by name on
 // Module exactly as the window's onQuit and onError are, and called only when
@@ -288,6 +345,16 @@ namespace labrador
 
 		std::unique_ptr<Context> made = std::make_unique<Context>();
 		made->target = static_cast<const char*>(native_window);
+		if (labrador_is_canvas_target(made->target.c_str()) == 0)
+		{
+			throw std::invalid_argument("Renderer::create_device was given a "
+				"missing or non-canvas html5 target '" + made->target + "'.");
+		}
+		if (labrador_has_webgl2_api() == 0)
+		{
+			throw RenderDeviceUnavailable("This browser does not expose the "
+				"WebGL2RenderingContext API required by the OpenGL renderer.");
+		}
 
 		// Every term the browser's getContext receives is stated, rather than
 		// left at Emscripten's defaults, because each is part of what the seam
@@ -324,17 +391,37 @@ namespace labrador
 		// the list is the code's rather than Emscripten's.
 		attributes.enableExtensionsByDefault = false;
 
-		made->handle = emscripten_webgl_create_context(made->target.c_str(),
-			&attributes);
+		made->handle = labrador_create_observed_webgl_context(made->target.c_str(),
+			&attributes, reinterpret_cast<uintptr_t>(&emscripten_webgl_create_context));
 		// Zero is the only failure: the handle is unsigned, and Emscripten
 		// reports no reason beyond the browser console.
 		if (made->handle == 0)
 		{
-			throw std::runtime_error("This browser would not give the canvas "
+			std::string message = "This browser would not give the canvas "
 				"a WebGL2 context. WebGL2 is in every current desktop browser; "
 				"it can be turned off, and a GPU the browser has blocked takes "
-				"it away.");
+				"it away.";
+			const int error_size = labrador_webgl_creation_error_size();
+			if (error_size > 0)
+			{
+				std::vector<char> native_message(static_cast<size_t>(error_size));
+				labrador_take_webgl_creation_error(native_message.data(), error_size);
+				if (native_message[0] != '\0')
+				{
+					message += " Browser context-creation error: ";
+					message += native_message.data();
+				}
+				throw std::runtime_error(message +
+					" A canvas already bound to another context is one possible cause.");
+			}
+			labrador_take_webgl_creation_error(nullptr, 0);
+			// Both a bare null and an error event can arise from an already-bound
+			// canvas. Neither establishes system/device absence.
+			throw std::runtime_error(message +
+				" No context-creation error was reported; an incompatible "
+				"existing canvas context is one possible cause.");
 		}
+		labrador_take_webgl_creation_error(nullptr, 0);
 		if (emscripten_webgl_make_context_current(made->handle) !=
 			EMSCRIPTEN_RESULT_SUCCESS)
 		{

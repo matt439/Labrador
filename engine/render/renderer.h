@@ -294,11 +294,18 @@ namespace labrador
 		// backend casts it back, and the null backend ignores it (SEAM.md#6).
 		//
 		// Throws std::invalid_argument for a view capacity below one, before it
-		// touches a window. The GL backend on Windows requires
-		// WGL_EXT_swap_control and throws std::runtime_error if requesting its
-		// swap interval fails; in a browser there is no interval to request,
-		// and it throws std::invalid_argument for a null canvas handle and
-		// std::runtime_error if the canvas gives it no WebGL2 context.
+		// touches a window. Genuine startup device/context requirement refusal
+		// throws RenderDeviceUnavailable (device_unavailable.h), preserving the
+		// backend's reason and native details. It remains a std::runtime_error;
+		// content, shaders, unrelated API errors and runtime recovery are outside
+		// that category. No fallback backend is selected.
+		//
+		// GL requires WGL_EXT_swap_control on Windows; an interval setter failure
+		// remains an ordinary runtime error. Browser GL rejects missing/noncanvas
+		// targets with std::invalid_argument. Only a missing WebGL2 API proves
+		// capability absence. Null results and creation-error events can both
+		// arise from incompatible existing canvas state and remain ordinary
+		// std::runtime_error; this category is not exhaustive in a browser.
 		void create_device(void* native_window, int width, int height,
 			int view_capacity);
 

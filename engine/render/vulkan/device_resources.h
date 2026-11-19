@@ -299,7 +299,9 @@ namespace labrador
 		// Called when the shell hands its window over, before anything else.
 		void set_window(HWND window, int width, int height);
 
-		void create_device_resources();
+		// Startup classifies unmet device requirements separately. Recovery
+		// leaves those failures under the existing runtime-error contract.
+		void create_device_resources(bool startup = false);
 		void create_window_size_dependent_resources();
 
 		// Whether anything was rebuilt, which is what the seam asks for.
@@ -538,8 +540,8 @@ namespace labrador
 		// decide what to wait for and what a failure means.
 		VkResult wait_for_value(uint64_t value) noexcept;
 
-		void create_instance();
-		void select_physical_device();
+		void create_instance(bool startup);
+		void select_physical_device(bool startup);
 		void create_logical_device();
 		void create_frames();
 		VkRenderPass create_render_pass(VkAttachmentLoadOp load) const;

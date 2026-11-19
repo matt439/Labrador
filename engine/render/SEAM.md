@@ -179,6 +179,19 @@ A format's name in a refusal is `format_name` in
 [`texture_format.h`](texture_format.h). Each is a plain function a backend
 calls, not a base class it overrides.
 
+Startup absence is a semantic decision at a backend's explicit requirement
+refusal, represented by `RenderDeviceUnavailable` in
+[`device_unavailable.h`](device_unavailable.h). It remains a
+`std::runtime_error` and retains the native reason. A blanket catch around
+device construction would also absorb authored shaders and unrelated API
+failures, so each qualifying branch assigns the category. Shared Direct3D
+and Vulkan recreation paths distinguish the initial call from automatic
+device-loss recovery; that recovery keeps its own failure contract.
+Browser context refusal can be ambiguous with caller-owned canvas state;
+only a missing WebGL2 API is a proven capability absence. An otherwise
+unclassified null context preserves its browser diagnostic as an ordinary
+runtime error. The category is not an exhaustive browser-availability test.
+
 **The second file is where they diverge least.** `render_resources.cpp` is a
 constructor, a destructor, two moves and two lookups. The rest is
 `engine/render/render_resources.cpp` — a shared file with a backend sibling's

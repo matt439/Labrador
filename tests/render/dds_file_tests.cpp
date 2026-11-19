@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 
 #include "engine/render/dds_file.h"
+#include "engine/render/device_unavailable.h"
 #include "engine/core/byte_reader.h"
 #include "engine/render/texture_data.h"
 #include "engine/render/texture_format.h"
@@ -79,6 +80,7 @@ namespace
 		}
 		catch (const std::runtime_error& error)
 		{
+			CHECK(dynamic_cast<const labrador::RenderDeviceUnavailable*>(&error) == nullptr);
 			const std::string message = error.what();
 			CHECK(message.find(file.path()) != std::string::npos);
 			return message;

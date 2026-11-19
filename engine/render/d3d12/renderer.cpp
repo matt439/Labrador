@@ -1110,7 +1110,7 @@ namespace labrador
 
 		this->impl_->device_resources.set_window(
 			static_cast<HWND>(native_window), width, height);
-		this->impl_->device_resources.create_device_resources();
+		this->impl_->device_resources.create_device_resources(true);
 
 		this->impl_->views.clear();
 		this->impl_->views.reserve(static_cast<size_t>(view_capacity));

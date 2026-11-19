@@ -870,7 +870,7 @@ namespace labrador
 
 		this->impl_->device_resources.SetWindow(
 			static_cast<HWND>(native_window), width, height);
-		this->impl_->device_resources.CreateDeviceResources();
+		this->impl_->device_resources.CreateDeviceResources(true);
 
 		this->impl_->views.clear();
 		this->impl_->views.reserve(static_cast<size_t>(view_capacity));

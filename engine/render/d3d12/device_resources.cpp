@@ -1,6 +1,8 @@
 #include "engine/render/d3d12/device_resources.h"
 
 #include "engine/core/diagnostic.h"
+#include "engine/render/device_unavailable.h"
+#include "engine/render/direct3d_startup.h"
 #include "engine/render/throw_if_failed.h"
 
 #include <algorithm>
@@ -65,8 +67,14 @@ namespace labrador
 				return false;
 			}
 
-			return SUCCEEDED(D3D12CreateDevice(adapter, min_feature_level,
-				__uuidof(ID3D12Device), nullptr));
+			const HRESULT result = D3D12CreateDevice(adapter, min_feature_level,
+				__uuidof(ID3D12Device), nullptr);
+			if (result == DXGI_ERROR_UNSUPPORTED)
+			{
+				return false;
+			}
+			ThrowIfFailed(result, "An adapter's Direct3D 12 capability could not be checked");
+			return true;
 		}
 	}
 
@@ -162,57 +170,55 @@ namespace labrador
 		ComPtr<IDXGIAdapter1> candidate;
 
 		// By GPU preference where the factory offers it, and in DXGI's own
-		// order where it does not. Both walks see the same adapters, so the
-		// second runs only when the first is unavailable. A walk that ends
-		// without a match leaves `candidate` null, because its last
-		// enumeration failed into it.
+		// order where it does not. Only NOT_FOUND exhausts the list: another
+		// API failure must not masquerade as a missing usable device.
 		ComPtr<IDXGIFactory6> factory6;
-		if (SUCCEEDED(this->factory_.As(&factory6)))
+		const HRESULT query = this->factory_.As(&factory6);
+		if (FAILED(query) && query != E_NOINTERFACE)
 		{
-			for (UINT index = 0;
-				SUCCEEDED(factory6->EnumAdapterByGpuPreference(index,
+			ThrowIfFailed(query, "The DXGI adapter enumeration interface could not be queried");
+		}
+		for (UINT index = 0; ; index++)
+		{
+			const HRESULT result = factory6
+				? factory6->EnumAdapterByGpuPreference(index,
 					DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-					IID_PPV_ARGS(candidate.ReleaseAndGetAddressOf())));
-				index++)
+					IID_PPV_ARGS(candidate.ReleaseAndGetAddressOf()))
+				: this->factory_->EnumAdapters1(index,
+					candidate.ReleaseAndGetAddressOf());
+			if (result == DXGI_ERROR_NOT_FOUND)
 			{
-				if (acceptable_adapter(candidate.Get()))
-				{
-					return candidate;
-				}
+				return nullptr;
+			}
+			ThrowIfFailed(result, "A Direct3D 12 adapter could not be enumerated");
+			if (acceptable_adapter(candidate.Get()))
+			{
+				return candidate;
 			}
 		}
-		else
-		{
-			for (UINT index = 0;
-				SUCCEEDED(this->factory_->EnumAdapters1(index,
-					candidate.ReleaseAndGetAddressOf()));
-				index++)
-			{
-				if (acceptable_adapter(candidate.Get()))
-				{
-					return candidate;
-				}
-			}
-		}
-
-		return nullptr;
 	}
 
-	void DeviceResources::create_device_resources()
+	void DeviceResources::create_device_resources(bool startup)
 	{
 		this->create_factory();
 
 		ComPtr<IDXGIAdapter1> adapter = this->hardware_adapter();
 
 		HRESULT hr = E_FAIL;
+		bool missing_capability = !adapter;
 		if (adapter)
 		{
 			hr = D3D12CreateDevice(adapter.Get(), min_feature_level,
 				IID_PPV_ARGS(this->device_.ReleaseAndGetAddressOf()));
+			missing_capability = hr == DXGI_ERROR_UNSUPPORTED;
 		}
 #ifndef _DEBUG
 		else
 		{
+			if (startup)
+			{
+				throw RenderDeviceUnavailable("No Direct3D 12 hardware device found");
+			}
 			throw std::runtime_error("No Direct3D 12 hardware device found");
 		}
 #else
@@ -224,8 +230,11 @@ namespace labrador
 			// rasteriser, which draws against the same golden images as every
 			// other backend. Release has no fallback.
 			ComPtr<IDXGIAdapter1> warp;
-			if (SUCCEEDED(this->factory_->EnumWarpAdapter(
-				IID_PPV_ARGS(warp.GetAddressOf()))))
+			const HRESULT warp_result = this->factory_->EnumWarpAdapter(
+				IID_PPV_ARGS(warp.GetAddressOf()));
+			check_direct3d_warp_adapter(warp_result, startup && missing_capability,
+				"The Direct3D 12 WARP adapter could not be found");
+			if (SUCCEEDED(warp_result))
 			{
 				hr = D3D12CreateDevice(warp.Get(), min_feature_level,
 					IID_PPV_ARGS(this->device_.ReleaseAndGetAddressOf()));
@@ -239,8 +248,8 @@ namespace labrador
 		}
 #endif
 
-		ThrowIfFailed(hr,
-			"The Direct3D 12 device could not be created");
+		check_direct3d_creation(hr, startup && missing_capability,
+			"The Direct3D 12 device (minimum feature level 11.0) could not be created");
 
 		// Kept for device_info, which names the adapter the device is on
 		// rather than finding it again.

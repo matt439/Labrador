@@ -5,6 +5,7 @@
 #include "engine/render/gl/backend.h"
 
 #include "engine/math/vector2i.h"
+#include "engine/render/device_unavailable.h"
 #include "engine/render/gl/gl_functions.h"
 
 #include <cstdint>
@@ -114,50 +115,73 @@ namespace labrador
 		}
 	}
 
+	namespace
+	{
+		[[noreturn]] void throw_context_requirement(const std::string& message, bool startup)
+		{
+			if (startup)
+			{
+				throw RenderDeviceUnavailable(message);
+			}
+			throw std::runtime_error(message);
+		}
+
+		int configure_context_interval(HDC device_context, int interval, bool startup)
+		{
+			using SwapInterval = BOOL(WINAPI*)(int);
+			using CurrentSwapInterval = int(WINAPI*)();
+			if (!has_wgl_extension(device_context, "WGL_EXT_swap_control"))
+			{
+				throw_context_requirement("The OpenGL renderer requires "
+					"WGL_EXT_swap_control to configure its presentation interval.", startup);
+			}
+			const SwapInterval swap_interval = reinterpret_cast<SwapInterval>(
+				load_entry_point("wglSwapIntervalEXT"));
+			const CurrentSwapInterval current_swap_interval =
+				reinterpret_cast<CurrentSwapInterval>(
+					load_entry_point("wglGetSwapIntervalEXT"));
+			if (swap_interval == nullptr || current_swap_interval == nullptr)
+			{
+				throw_context_requirement("The OpenGL driver advertises "
+					"WGL_EXT_swap_control but lacks its setter or getter.", startup);
+			}
+			if (swap_interval(interval) == FALSE)
+			{
+				const DWORD error = GetLastError();
+				throw std::runtime_error("wglSwapIntervalEXT(" +
+					std::to_string(interval) + ") failed with Windows error " +
+					std::to_string(error) + ".");
+			}
+			return current_swap_interval();
+		}
+
+		void load_context_functions(bool startup)
+		{
+#define LABRADOR_GL_LOAD(result, name, parameters)                            \
+			name = reinterpret_cast<result (APIENTRY*) parameters>(                \
+				load_entry_point(#name));                                          \
+			if (name == nullptr)                                                   \
+			{                                                                      \
+				throw_context_requirement(std::string("This driver has no ") +      \
+					#name + ". The renderer needs an OpenGL 3.3 core context, "    \
+					"and the context it was given does not provide one of the " +  \
+					std::to_string(gl_function_count()) +                          \
+					" entry points in gl_functions.h.", startup);                  \
+			}
+			LABRADOR_GL_FUNCTIONS(LABRADOR_GL_LOAD)
+#undef LABRADOR_GL_LOAD
+		}
+
+	}
+
 	int configure_swap_interval(HDC device_context, int interval)
 	{
-		using SwapInterval = BOOL(WINAPI*)(int);
-		using CurrentSwapInterval = int(WINAPI*)();
-		if (!has_wgl_extension(device_context, "WGL_EXT_swap_control"))
-		{
-			throw std::runtime_error("The OpenGL renderer requires "
-				"WGL_EXT_swap_control to configure its presentation interval.");
-		}
-		const SwapInterval swap_interval = reinterpret_cast<SwapInterval>(
-			load_entry_point("wglSwapIntervalEXT"));
-		const CurrentSwapInterval current_swap_interval =
-			reinterpret_cast<CurrentSwapInterval>(
-				load_entry_point("wglGetSwapIntervalEXT"));
-		if (swap_interval == nullptr || current_swap_interval == nullptr)
-		{
-			throw std::runtime_error("The OpenGL driver advertises "
-				"WGL_EXT_swap_control but lacks its setter or getter.");
-		}
-		if (swap_interval(interval) == FALSE)
-		{
-			const DWORD error = GetLastError();
-			throw std::runtime_error("wglSwapIntervalEXT(" +
-				std::to_string(interval) + ") failed with Windows error " +
-				std::to_string(error) + ".");
-		}
-		return current_swap_interval();
+		return configure_context_interval(device_context, interval, false);
 	}
 
 	void load_gl_functions()
 	{
-#define LABRADOR_GL_LOAD(result, name, parameters)                            \
-		name = reinterpret_cast<result (APIENTRY*) parameters>(                \
-			load_entry_point(#name));                                          \
-		if (name == nullptr)                                                   \
-		{                                                                      \
-			throw std::runtime_error(std::string("This driver has no ") +      \
-				#name + ". The renderer needs an OpenGL 3.3 core context, "    \
-				"and the context it was given does not provide one of the " +  \
-				std::to_string(gl_function_count()) +                          \
-				" entry points in gl_functions.h.");                           \
-		}
-		LABRADOR_GL_FUNCTIONS(LABRADOR_GL_LOAD)
-#undef LABRADOR_GL_LOAD
+		load_context_functions(false);
 	}
 
 	bool has_gl_extension(const char* extension)
@@ -290,6 +314,11 @@ namespace labrador
 	{
 		std::unique_ptr<Context> made = std::make_unique<Context>();
 		made->window = static_cast<HWND>(native_window);
+		if (made->window == nullptr || IsWindow(made->window) == FALSE)
+		{
+			throw std::invalid_argument("Renderer::create_device requires a valid "
+				"native window for its OpenGL context.");
+		}
 		made->device_context = GetDC(made->window);
 		if (made->device_context == nullptr)
 		{
@@ -356,7 +385,7 @@ namespace labrador
 			given.cRedBits < 8 || given.cGreenBits < 8 ||
 			given.cBlueBits < 8 || given.cAlphaBits < 8)
 		{
-			throw std::runtime_error("This window's OpenGL pixel format is "
+			throw RenderDeviceUnavailable("This window's OpenGL pixel format is "
 				"r" + std::to_string(given.cRedBits) +
 				"g" + std::to_string(given.cGreenBits) +
 				"b" + std::to_string(given.cBlueBits) +
@@ -387,11 +416,18 @@ namespace labrador
 		// create a 3.3 core one is the thing being fetched.
 		BootstrapContext legacy(made->device_context,
 			wglCreateContext(made->device_context));
-		if (legacy.get() == nullptr ||
-			!wglMakeCurrent(made->device_context, legacy.get()))
+		if (legacy.get() == nullptr)
 		{
-			throw std::runtime_error(
-				"This machine has no OpenGL driver at all.");
+			const DWORD error = GetLastError();
+			throw std::runtime_error("wglCreateContext could not create the "
+				"bootstrap OpenGL context, with Windows error " +
+				std::to_string(error) + ".");
+		}
+		if (!wglMakeCurrent(made->device_context, legacy.get()))
+		{
+			const DWORD error = GetLastError();
+			throw std::runtime_error("The bootstrap OpenGL context could not "
+				"be made current, with Windows error " + std::to_string(error) + ".");
 		}
 
 		// Through load_entry_point like every other entry point here, so a
@@ -401,7 +437,7 @@ namespace labrador
 				load_entry_point("wglCreateContextAttribsARB"));
 		if (create_context_attribs == nullptr)
 		{
-			throw std::runtime_error("This driver has no "
+			throw RenderDeviceUnavailable("This driver has no "
 				"WGL_ARB_create_context, so it cannot make an OpenGL 3.3 core "
 				"context. It is an OpenGL 2.1 driver or a software fallback.");
 		}
@@ -413,23 +449,39 @@ namespace labrador
 			WGL_CONTEXT_PROFILE_MASK_ARB_, WGL_CONTEXT_CORE_PROFILE_BIT_ARB_,
 			0
 		};
+		SetLastError(ERROR_SUCCESS);
 		made->gl_context = create_context_attribs(made->device_context,
 			nullptr, attributes);
 
+		// Capture creation's native reason before releasing the bootstrap can
+		// replace this thread's last-error value.
+		const DWORD create_error = made->gl_context == nullptr ? GetLastError() : ERROR_SUCCESS;
 		legacy.release();
 
-		if (made->gl_context == nullptr ||
-			!wglMakeCurrent(made->device_context, made->gl_context))
+		if (made->gl_context == nullptr)
 		{
-			throw std::runtime_error("This driver refused an OpenGL 3.3 core "
+			const std::string message = "This driver refused an OpenGL 3.3 core "
 				"context. 3.3 is 2010 hardware and is the floor this engine "
-				"builds against.");
+				"builds against. Windows error " + std::to_string(create_error) + ".";
+			// WGL_ARB_create_context defines these two errors specifically for
+			// an unsupported requested version or profile. Other failures may
+			// be caller state, resource exhaustion or unrelated platform errors.
+			const DWORD invalid_version = 0x2095;
+			const DWORD invalid_profile = 0x2096;
+			throw_context_requirement(message,
+				create_error == invalid_version || create_error == invalid_profile);
+		}
+		if (!wglMakeCurrent(made->device_context, made->gl_context))
+		{
+			const DWORD error = GetLastError();
+			throw std::runtime_error("The OpenGL 3.3 core context could not be "
+				"made current, with Windows error " + std::to_string(error) + ".");
 		}
 
 		// Loaded against the core context and not the bootstrap one:
 		// wglGetProcAddress answers for whatever is current, and the 1.1
 		// context has none of these.
-		load_gl_functions();
+		load_context_functions(true);
 
 		// What this context answers. The swap interval is asked for here
 		// because it is a property of the context rather than of a frame, and
@@ -437,8 +489,8 @@ namespace labrador
 		this->device_info.present_mode = "wgl_swap_interval";
 		this->device_info.requested_swap_interval = this->vsync ? 1 : 0;
 		this->swap_interval_stale = false;
-		this->device_info.reported_swap_interval = configure_swap_interval(
-			made->device_context, *this->device_info.requested_swap_interval);
+		this->device_info.reported_swap_interval = configure_context_interval(
+			made->device_context, *this->device_info.requested_swap_interval, true);
 		this->block_compression =
 			has_gl_extension("GL_EXT_texture_compression_s3tc");
 		this->shader_prelude = desktop_shader_prelude;

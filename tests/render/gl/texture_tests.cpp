@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 #include "tests/render/device_fixture.h"
 #include "engine/render/resource_factory.h"
+#include "engine/render/device_unavailable.h"
 #include "engine/render/texture_data.h"
 
 // The GL a test may call directly, which is the context's own header: GLES 3.0
@@ -104,6 +105,10 @@ TEST_CASE("GL refuses a format outside TextureFormat by name, before allocating"
 	{
 		add_texture_asset(fixture.renderer, fixture.resources, "unknown_format",
 			texture);
+	}
+	catch (const RenderDeviceUnavailable&)
+	{
+		FAIL("an invalid texture format became device unavailability");
 	}
 	catch (const std::runtime_error& error)
 	{

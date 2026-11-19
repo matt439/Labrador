@@ -273,19 +273,57 @@ program's name, `MyGame.exe`, and every other place the name is. What the messag
 | Renderer | When | The message |
 | --- | --- | --- |
 | Direct3D 11 | No graphics adapter except Windows' software one | `No Direct3D hardware device found` |
-| Direct3D 11 | An adapter that cannot do feature level 10_0 | `Failure with HRESULT of` and Direct3D's error code |
+| Direct3D 11 | Device creation reports unsupported feature level 10_0 | `The Direct3D 11 device (minimum feature level 10.0) could not be created` and the HRESULT |
 | Direct3D 12 | No adapter that can do Direct3D 12 at feature level 11_0 | `No Direct3D 12 hardware device found` |
-| OpenGL | No OpenGL driver at all | `This machine has no OpenGL driver at all.` |
+| OpenGL | Bootstrap context creation fails | `wglCreateContext could not create the bootstrap OpenGL context` and the Windows error |
 | OpenGL | Only an OpenGL 2.1 driver, or Windows' own software OpenGL, which is all a machine with no vendor graphics driver has | `This driver has no WGL_ARB_create_context, so it cannot make an OpenGL 3.3 core context. It is an OpenGL 2.1 driver or a software fallback.` |
-| OpenGL | A driver that can make contexts, but not OpenGL 3.3 core | `This driver refused an OpenGL 3.3 core context. 3.3 is 2010 hardware and is the floor this engine builds against.` |
+| OpenGL | A driver that refuses OpenGL 3.3 core | `This driver refused an OpenGL 3.3 core context` and the Windows error |
 | OpenGL | A 3.3 core context, but no WGL_EXT_swap_control | `The OpenGL renderer requires WGL_EXT_swap_control to configure its presentation interval.` |
 | OpenGL | WGL_EXT_swap_control advertised without its entry points | `The OpenGL driver advertises WGL_EXT_swap_control but lacks its setter or getter.` |
 | Vulkan | No Vulkan driver at all | Windows refuses to start the program, naming `vulkan-1.dll`, because the program is linked against it |
-| Vulkan | `vulkan-1.dll` present, but no installed driver supports Vulkan, so no instance can be made | `There is no usable Vulkan loader on this machine` and Vulkan's error code |
+| Vulkan | `vulkan-1.dll` present, but instance creation reports an incompatible driver | `The Vulkan instance could not be created` and Vulkan's error code |
 | Vulkan | An instance, but no Vulkan device at all | `This machine has a Vulkan loader but no Vulkan device.` |
 | Vulkan | Devices, but none at Vulkan 1.2 with timeline semaphores | `No Vulkan device on this machine can run this backend:` and a line for each device saying why |
 
 The OpenGL renderer has a few rarer refusals the table leaves out: a window that cannot be given a 32-bit pixel format or that refuses the one chosen for it, a 3.3 core context missing one of the functions the engine loads (each names the function), and `wglSwapIntervalEXT` failing with a Windows error. Each says what it is in the same message box.
+
+### Catch a graphics requirement refusal separately
+
+**Development after v0.3.0.** Include `engine/render/device_unavailable.h`
+to catch `labrador::RenderDeviceUnavailable` before the template's existing
+`std::exception` handler. It derives from `std::runtime_error`, and `what()`
+retains the backend reason and any native error code. For example, replace
+the final handler with these two handlers, leaving the existing `try` body:
+
+```cpp
+catch (const labrador::RenderDeviceUnavailable& error)
+{
+    MessageBoxA(nullptr, error.what(), "MyGame - graphics unavailable", MB_ICONERROR);
+    return 1;
+}
+catch (const std::exception& error)
+{
+    MessageBoxA(nullptr, error.what(), "MyGame - startup failure", MB_ICONERROR);
+    return 1;
+}
+```
+
+The narrower handler recognises an unmet startup requirement, such as no
+acceptable Direct3D adapter, unsupported device creation, missing required
+OpenGL context capabilities, or Vulkan devices without the required API,
+presentation queue or timeline semaphores. It does not establish that the
+machine physically has no GPU. The game chooses the wording and response;
+the exception does not start another renderer.
+
+Keep the broad handler: malformed content, authored shaders, invalid
+arguments/state, allocation and unrelated API errors, audio, and runtime
+device-loss recovery are outside this category. In a browser, a missing
+WebGL2 API is a capability refusal, but a null context can also mean the
+page already bound its canvas to another context type. Those ambiguous
+null/context-creation diagnostics remain ordinary runtime errors. The
+category is deliberately not an exhaustive detector of every unavailable
+browser situation; do not treat an arbitrary runtime error as optional
+graphics.
 
 A release build has no software fallback. A debug build's Direct3D renderers fall back to WARP,
 Windows' software rasteriser, when there is no hardware adapter, which is why a debug build can

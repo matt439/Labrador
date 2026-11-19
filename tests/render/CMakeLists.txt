@@ -154,12 +154,19 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
         target_sources(RenderPixelTests PRIVATE
             d3d11/texture_limit_lifecycle_tests.cpp
+            d3d11/startup_tests.cpp
             "$<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/d3d11/diagnostic_tests.cpp>")
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "gl")
         target_sources(RenderPixelTests PRIVATE gl/texture_tests.cpp
             gl/material_tests.cpp)
+        if(NOT EMSCRIPTEN)
+            target_sources(RenderPixelTests PRIVATE gl/context_unavailable_tests.cpp)
+        else()
+            target_sources(RenderPixelTests PRIVATE gl/web_context_unavailable_tests.cpp)
+        endif()
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "d3d12")
         target_sources(RenderPixelTests PRIVATE
+            d3d12/startup_tests.cpp
             d3d12/submit_allocation_tests.cpp
             d3d12/texture_upload_tests.cpp
             d3d12/texture_replacement_tests.cpp
