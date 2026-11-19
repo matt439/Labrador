@@ -187,6 +187,10 @@ its illegible HUD needs no fix. Zoom down to 67% stays readable.
 
 ## Needs real phones (M7b)
 
+The explicitly invoked [iOS Simulator pilot](ios-simulator-pilot.md) has offline-qualified
+tooling but no actual Simulator run yet. It is separate from the checks below
+and cannot close them or lift the phone gate.
+
 **Owner decision, 2026-10-27 (`BDP-10`):** recorded iPhone evidence (`SM-13`)
 and the host page's phone layout (`BDP-09`) are sufficient to lift the phone
 gate. It stays closed until both are complete. No Android phone is available;

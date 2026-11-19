@@ -154,7 +154,7 @@ export const COMPLAINT_HOOK = `(() => {
 
 // The sample page's Module callbacks, its real WebGL2 submissions on the
 // module's canvas, its context events and the renderer strings it drew with.
-function sample_hook(sampled = false) {
+export function sample_hook(sampled = false, extra = '') {
 	return `(() => {
 	const heard = { initialized: false, quit: false, errors: [], has_quit: false,
 		clears: 0, draw_calls: 0, elements: 0, lost: 0, restored: 0,
@@ -171,7 +171,8 @@ function sample_hook(sampled = false) {
 				if (heard.quit_key_count === null) heard.quit_key_count = heard.keys.length;
 				return on_quit.apply(this, args);
 			};
-		}`)}
+		}
+		${extra}`)}
 	// What a failed run reports: whether frames kept coming and how far apart,
 	// which key events the page received, and the page's last console lines.
 	if (typeof requestAnimationFrame === 'function') {

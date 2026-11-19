@@ -186,8 +186,8 @@ export function chooseIosDevice(list) {
 	return null;
 }
 
-async function simctl(args, timeoutMs) {
-	const { stdout } = await execFileAsync('xcrun', ['simctl', ...args], { timeout: timeoutMs, maxBuffer: 16 * 1024 * 1024 });
+async function simctl(args, timeoutMs, signal) {
+	const { stdout } = await execFileAsync('xcrun', ['simctl', ...args], { timeout: timeoutMs, maxBuffer: 16 * 1024 * 1024, signal });
 	return stdout;
 }
 
@@ -199,12 +199,19 @@ function findDevice(list, udid) {
 	return null;
 }
 
+// An optional caller budget bounds every setup command across retries.
+export function withinBudget(timeoutMs, remaining) {
+	const left = remaining ? remaining() : timeoutMs;
+	if (!Number.isFinite(left) || left <= 0) throw new Error('Browser setup deadline expired.');
+	return Math.max(1, Math.min(timeoutMs, Math.floor(left)));
+}
+
 // A hosted runner's first simctl command can wait on CoreSimulator starting
 // and outlast its timeout with nothing on stderr; it is asked again.
-async function listSimulators(log) {
+async function listSimulators(log, remaining) {
 	for (let attempt = 1; ; attempt += 1) {
 		try {
-			return JSON.parse(await simctl(['list', 'devices', 'available', '--json'], SIMULATOR_LIST_TIMEOUT_MS));
+			return JSON.parse(await simctl(['list', 'devices', 'available', '--json'], withinBudget(SIMULATOR_LIST_TIMEOUT_MS, remaining), remaining?.signal));
 		} catch (error) {
 			if (attempt >= SIMULATOR_LIST_ATTEMPTS) {
 				throw new Error(`Listing the simulators failed in ${SIMULATOR_LIST_ATTEMPTS} attempts: ${error.message}`, { cause: error });
@@ -216,8 +223,8 @@ async function listSimulators(log) {
 }
 
 // Chooses and boots the simulator, returning { udid, name, runtime }.
-export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, log = () => {} } = {}) {
-	const list = await listSimulators(log);
+export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, log = () => {}, remaining } = {}) {
+	const list = await listSimulators(log, remaining);
 	const device = udid ? findDevice(list, udid) : chooseIosDevice(list);
 	if (!device) {
 		throw new Error(udid ? `No available simulator has UDID ${udid}.` : 'No available iPhone simulator was found.');
@@ -227,34 +234,34 @@ export async function prepareSimulator({ udid = process.env.LABRADOR_IOS_UDID, l
 	// shut down and booted again.
 	for (let attempt = 1; ; attempt += 1) {
 		try {
-			if (attempt > 1 || device.state !== 'Booted') await simctl(['boot', device.udid], 120_000).catch((error) => {
+			if (attempt > 1 || device.state !== 'Booted') await simctl(['boot', device.udid], withinBudget(120_000, remaining), remaining?.signal).catch((error) => {
 				if (!/current state: Booted/i.test(String(error.stderr ?? error.message))) throw error;
 			});
-			await simctl(['bootstatus', device.udid, '-b'], SIMULATOR_BOOT_TIMEOUT_MS);
+			await simctl(['bootstatus', device.udid, '-b'], withinBudget(SIMULATOR_BOOT_TIMEOUT_MS, remaining), remaining?.signal);
 			break;
 		} catch (error) {
 			if (attempt >= SIMULATOR_BOOT_ATTEMPTS) {
 				throw new Error(`The simulator did not boot in ${SIMULATOR_BOOT_ATTEMPTS} attempts: ${error.message}`, { cause: error });
 			}
 			log(`boot attempt ${attempt} failed (${error.message.split('\n')[0]}); shutting the simulator down and booting it again`);
-			await simctl(['shutdown', device.udid], 120_000).catch(() => {});
+			await simctl(['shutdown', device.udid], withinBudget(120_000, remaining), remaining?.signal).catch(() => {});
 		}
 	}
 	// A freshly booted simulator's first Safari launch can outlast
 	// safaridriver's own connection timeout; launching it once here takes
 	// that cost before the session is asked for.
-	await simctl(['launch', device.udid, 'com.apple.mobilesafari'], 120_000)
+	await simctl(['launch', device.udid, 'com.apple.mobilesafari'], withinBudget(120_000, remaining), remaining?.signal)
 		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
 	return device;
 }
 
 // Quits the simulator's Safari and starts it again.
-export async function restartSimulatorSafari(udid, log = () => {}) {
-	await simctl(['terminate', udid, 'com.apple.mobilesafari'], 60_000)
+export async function restartSimulatorSafari(udid, log = () => {}, remaining) {
+	await simctl(['terminate', udid, 'com.apple.mobilesafari'], withinBudget(60_000, remaining), remaining?.signal)
 		.catch((error) => log(`quitting Safari in the simulator failed: ${error.message}`));
-	await simctl(['launch', udid, 'com.apple.mobilesafari'], 120_000)
+	await simctl(['launch', udid, 'com.apple.mobilesafari'], withinBudget(120_000, remaining), remaining?.signal)
 		.catch((error) => log(`launching Safari in the simulator failed: ${error.message}`));
-	await new Promise((resolve) => setTimeout(resolve, SAFARI_RELAUNCH_PAUSE_MS));
+	await new Promise((resolve) => setTimeout(resolve, withinBudget(SAFARI_RELAUNCH_PAUSE_MS, remaining)));
 }
 
 // Types text on the hardware keyboard that the Simulator app connects to the
@@ -364,10 +371,12 @@ export async function killDriver(child, { log = () => {} } = {}) {
 // Spawns the driver and waits until GET /status reports it ready. Returns
 // { url, child, output() }; on failure the process is killed. `target` picks
 // the command line; msedgedriver takes chromedriver's.
-export async function startDriver(executable, target, { log = () => {}, readyTimeoutMs = DRIVER_READY_TIMEOUT_MS } = {}) {
+export async function startDriver(executable, target, { log = () => {}, readyTimeoutMs = DRIVER_READY_TIMEOUT_MS, remaining } = {}) {
 	let lastError;
 	for (let attempt = 1; attempt <= DRIVER_START_ATTEMPTS; attempt += 1) {
+		if (remaining) remaining();
 		const port = await freePort();
+		const allowance = withinBudget(readyTimeoutMs, remaining);
 		const url = `http://127.0.0.1:${port}`;
 		const child = spawn(executable, driverArguments(target, port), {
 			stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, detached: process.platform !== 'win32',
@@ -382,14 +391,16 @@ export async function startDriver(executable, target, { log = () => {}, readyTim
 		child.once('error', (error) => {
 			spawnError = error;
 		});
-		const deadline = Date.now() + readyTimeoutMs;
+		const deadline = Date.now() + allowance;
 		while (Date.now() < deadline) {
+			try { if (remaining) remaining(); }
+			catch (error) { await killDriver(child, { log }); throw error; }
 			if (spawnError) {
 				throw new Error(`Could not start ${executable}: ${spawnError.message}`, { cause: spawnError });
 			}
 			if (child.exitCode !== null || child.signalCode !== null) break;
 			try {
-				const value = await status(url);
+				const value = await status(url, { timeoutMs: remaining ? Math.max(1, Math.min(2000, deadline - Date.now())) : 2000 });
 				if (value?.ready === true) {
 					log(`${path.basename(executable)} ready at ${url}`);
 					return { url, child, output: () => output };
@@ -416,18 +427,18 @@ export async function startDriver(executable, target, { log = () => {}, readyTim
 // the simulator for the ios target.
 export async function startBrowser(target, {
 	driver, binary, udid, window = DEFAULT_WINDOW, log = () => {},
-	readyTimeoutMs = DRIVER_READY_TIMEOUT_MS, sessionTimeoutMs = DEFAULT_SESSION_TIMEOUT_MS, commandTimeoutMs,
+	readyTimeoutMs = DRIVER_READY_TIMEOUT_MS, sessionTimeoutMs = DEFAULT_SESSION_TIMEOUT_MS, commandTimeoutMs, remaining,
 } = {}) {
 	const flags = TARGETS[target];
 	if (!flags) throw new Error(`Unknown target "${target}"; expected one of ${Object.keys(TARGETS).join(', ')}.`);
-	const device = target === 'ios' ? await prepareSimulator({ udid, log }) : null;
+	const device = target === 'ios' ? await prepareSimulator({ udid, log, remaining }) : null;
 	const capabilities = targetCapabilities(target, { binary, udid: device?.udid, window });
 	const executable = resolveDriver(target, { driver });
 	const tabKey = target === 'safari' && !(await safariTabsToLinks()) ? [Keys.Alt, Keys.Tab] : Keys.Tab;
 	// safaridriver can take far longer to report ready while a simulator
 	// that has just booted is still opening Safari.
 	const readyFor = target === 'ios' ? Math.max(readyTimeoutMs, IOS_DRIVER_READY_TIMEOUT_MS) : readyTimeoutMs;
-	const started = await startDriver(executable, target, { log, readyTimeoutMs: readyFor });
+	const started = await startDriver(executable, target, { log, readyTimeoutMs: readyFor, remaining });
 	const stopDriver = () => killDriver(started.child, { log });
 	let session;
 	try {
@@ -436,14 +447,14 @@ export async function startBrowser(target, {
 		// attempt usually connects.
 		for (let attempt = 1; ; attempt += 1) {
 			try {
-				session = await newSession(started.url, capabilities, { timeoutMs: sessionTimeoutMs, commandTimeoutMs });
+				session = await newSession(started.url, capabilities, { timeoutMs: withinBudget(sessionTimeoutMs, remaining), commandTimeoutMs });
 				break;
 			} catch (error) {
 				if (attempt >= SESSION_ATTEMPTS || error?.code !== 'session not created') throw error;
 				log(`session attempt ${attempt} failed (${error.message}); trying again`);
 				// A simulator's Safari that never became ready for the driver
 				// is quit and started again before the next attempt.
-				if (device) await restartSimulatorSafari(device.udid, log);
+				if (device) await restartSimulatorSafari(device.udid, log, remaining);
 			}
 		}
 		if (flags.setWindowRect) await session.setWindowRect({ width: window.width, height: window.height });
