@@ -371,8 +371,9 @@ project for its extra fixtures. `tools/tests/test_starter_helpers.py` uses
 isolated native executable stand-ins to pin Visual Studio discovery,
 non-default tool paths, project paths with spaces and shell characters,
 environment activation, both output streams, renamed-game selection and
-each failure's actual exit code. It installs nothing. Real ordinary-prompt
-and Sandbox evidence is recorded with OCA-97 in BACKLOG.md.
+each failure's actual exit code. It installs nothing. The installed-tool
+desktop run and the retired Sandbox attempt are recorded in
+[OCA-97's qualification](../../docs/review/2026-11-10-first-run/2026-11-17-starter-helpers.md).
 
 ## Compiled guide pilot
 

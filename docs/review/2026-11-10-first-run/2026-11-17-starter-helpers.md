@@ -68,17 +68,32 @@ mismatch: six explicit native builds against a fixture expecting five. The
 separate CI repair and combined-branch lint remain integration work. The
 OpenSSL-dependent fixture is skipped because OpenSSL is absent.
 
-## Remaining acceptance
+## Retired Sandbox attempt
 
-The dedicated Sandbox qualification is still open: an ordinary prompt,
-Visual Studio at a non-default path with spaces, all three launchers and
-bounded normal visible play followed by the game's own close flow. The
-hidden startup route is a separate automated case. Provisioning uses the
+The original plan called for an ordinary prompt, Visual Studio at a
+non-default path with spaces, all three launchers and bounded visible play.
+The owner retired the fresh-install gate on November 17 in favor of
+installed-tool qualification and discovery/path fixtures. The Sandbox
+provisioning attempt used the
 Microsoft-signed `18.12.12405.243` bootstrapper from the
 [documented VS 18 channel](https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=community&channel=Stable&version=VS18)
 in a disposable 16 GiB guest. The downloaded file is 5,996,752 bytes, SHA-256
 `00086cd3243139a1430effa4cf8341dea8f5163eb050012e70ff66d95cee5810`,
 with a Valid Authenticode signature from Microsoft Corporation.
-No Sandbox result or installed guest
-version is claimed by this implementation record. The live story remains
-unticked until its receipt is recorded.
+The guest install did not yield a qualifying launch result.
+
+## Ordinary-prompt desktop run, 2026-11-20
+
+The development ZIP at `acafccea2f5369b93401a18f44716cedef23ffbb` was
+extracted under a path containing spaces. Its SHA-256 was
+`a1accee805c737c0b5a25d38afb75e0fc534036326b07d18213f152d250d9bca`.
+The wrappers ran from an ordinary Command Prompt. Discovery selected
+Visual Studio `18.9.12120.119`, MSVC `19.51.36256.0`, CMake `4.3.1-msvc1`
+and Ninja `1.13.2`. `build.cmd` exited zero and `test.cmd` passed both
+`MyGameTests` and `MyGameSmokeTests` before exiting zero.
+
+The unmodified `play.cmd` launched the visible game on the RTX 5080. It
+drew the greeting and controls. The native close button displayed the
+game's `Really quit?` confirmation. The desktop tool's brief Enter
+presses left the prompt open. A manual Enter and the launcher exit status
+remain to be recorded. Local receipts sit under `out/todo-20261120/starter/`.

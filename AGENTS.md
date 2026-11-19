@@ -402,7 +402,8 @@ in the commit message, which the lint job checks per commit
 (`tools/check_changes_rule.py`). The rule includes silent behaviour and dependency/flag
 changes. A source break names old/new spellings and the sample migration diff.
 The build-input list is the root, engine and math `CMakeLists.txt`, plus
-`cmake/`'s settings, native_release_ipo, sanitizers, source_revision, version, dependencies, compile_shaders, add_material,
+`cmake/`'s settings, native_release_ipo, sanitizers, d3d_software_test,
+source_revision, version, dependencies, compile_shaders, add_material,
 embed_material and check_engine_includes scripts, version_values.h.in and
 release_identity.txt, and `engine/app/web/window_dependencies.js`. It does not cover every
 CMake script or maintainer tool. CHANGES.md records the 2026-11-16 expansion's
