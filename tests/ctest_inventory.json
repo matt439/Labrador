@@ -124,6 +124,18 @@
       "wasm-debug",
       "wasm-release"
     ],
+    "FirefoxRenderPixelTests": [
+      "wasm-debug",
+      "wasm-release"
+    ],
+    "FirefoxRenderPixelTestsThroughPost": [
+      "wasm-debug",
+      "wasm-release"
+    ],
+    "FirefoxRenderPixelTestsWithoutS3tc": [
+      "wasm-debug",
+      "wasm-release"
+    ],
     "FirefoxWebWindowTests": [
       "wasm-debug",
       "wasm-release"

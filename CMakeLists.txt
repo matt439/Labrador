@@ -356,9 +356,10 @@ if(PROJECT_IS_TOP_LEVEL)
     # what it does not claim). Each sample's page is loaded, drawn and quit
     # by its own keys; the window's page runs window_input.mjs's sequence;
     # the bundle page is played, its context lost and restored, quit and
-    # played again with bundle_page.mjs's assertions. Only with a rasterizing
-    # backend, because a sample's run counts real WebGL draws. Named Firefox*
-    # so the CI steps that run Chromium's pages can leave them out.
+    # played again with bundle_page.mjs's assertions. The pixel page compares
+    # readback with the same goldens under each of its three configurations.
+    # Only with a rasterizing backend. Named Firefox* so the CI steps that run
+    # Chromium's pages can leave them out.
     if(EMSCRIPTEN AND LABRADOR_TEST_FIREFOX
         AND NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         set(labrador_firefox_runner
@@ -392,6 +393,17 @@ if(PROJECT_IS_TOP_LEVEL)
                 ${labrador_firefox_software_webgl}
         )
         set_tests_properties(FirefoxWebWindowTests PROPERTIES TIMEOUT 90)
+        foreach(pixel_test RenderPixelTests RenderPixelTestsWithoutS3tc RenderPixelTestsThroughPost)
+            add_test(NAME Firefox${pixel_test}
+                COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} "${labrador_firefox_runner}"
+                    --browser "${LABRADOR_TEST_FIREFOX}"
+                    --build-dir "${CMAKE_BINARY_DIR}"
+                    --test ${pixel_test}
+                    --timeout 120
+                    ${labrador_firefox_software_webgl}
+            )
+            set_tests_properties(Firefox${pixel_test} PROPERTIES TIMEOUT 150)
+        endforeach()
         add_test(NAME FirefoxLineSweeperBundlePageTests
             COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} "${labrador_firefox_runner}"
                 --browser "${LABRADOR_TEST_FIREFOX}"

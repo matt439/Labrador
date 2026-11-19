@@ -13,6 +13,9 @@
 #include <emscripten.h>
 #endif
 
+#if defined(__EMSCRIPTEN__)
+#include <cstdio>
+#endif
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -549,6 +552,15 @@ void golden::check_frame(int width, int height,
 				std::to_string(rgba[first + 3]) + ")\n  golden " +
 				expected_file.string();
 		}
+#if defined(__EMSCRIPTEN__)
+		else
+		{
+			// Report the already measured comparison on passes as well. Browser
+			// logs can show drift even when it stays inside the allowance.
+			std::printf("golden pass: %s, %zu pixels, %zu differing, allowance %d, worst channel %d\n",
+				slug.c_str(), byte_count / 4, differing, allowed_channel_drift, worst);
+		}
+#endif
 	}
 
 	if (!report.empty())

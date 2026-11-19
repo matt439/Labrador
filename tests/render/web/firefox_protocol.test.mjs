@@ -9,8 +9,9 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { FirefoxProtocol } from './firefox_protocol.mjs';
 import { FACTORY_WRAPPER, PRELUDE } from './bundle_page.mjs';
+import { PIXEL_FILES, save_pixel_files } from './pixel_artifacts.mjs';
 import { SAMPLES, SAMPLE_HOOK, SOFTWARE_WEBGL_PREFERENCES, WINDOW_HOOK, bidi_endpoint, bundle_input,
-	bundle_substitute, drive_bundle, drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox,
+	bundle_substitute, drive_bundle, drive_pixels, drive_sample, drive_window_page, firefox_arguments, key_actions, launch_firefox,
 	assert_software_renderer, parse_options, remove_stale_profiles, user_js, window_input } from './run_firefox.mjs';
 
 class FixtureSocket extends EventTarget {
@@ -739,10 +740,9 @@ test('sample software mode checks observed renderer before accepting input or co
 	assert.equal(protocol.input, false);
 	assert.equal(protocol.removed, true);
 });
-import { drive_pixels, PIXEL_FILES, save_pixel_files } from './run_firefox.mjs';
-
 test('pixel driver accepts baseline, preserves files and rejects failed exit/backend/complaints', async () => {
-	async function run({ result = {code: 0}, renderer = 'Microsoft Basic Render Driver Direct3D11', complaint } = {}) {
+	async function run({ result = { code: 0 }, renderer = 'Microsoft Basic Render Driver Direct3D11', complaint,
+		test, s3tc } = {}) {
 		let listener, unsubscribed = false, saved;
 		const protocol = {
 			on(fn) { listener = fn; return () => { unsubscribed = true; }; },
@@ -751,15 +751,15 @@ test('pixel driver accepts baseline, preserves files and rejects failed exit/bac
 					listener({method: 'log.entryAdded', params: {level: 'error', text: complaint}});
 			},
 			async evaluate(_context, expression) {
-			if (expression === 'document.hasFocus()') return true;
+				if (expression === 'document.hasFocus()') return true;
 				if (expression.includes('await window.labradorExit')) return JSON.stringify(result);
-				if (expression.includes('labradorPixelDevices')) return JSON.stringify([{renderer}]);
+				if (expression.includes('labradorPixelDevices')) return JSON.stringify([{ renderer, s3tc }]);
 				assert.equal(expression, PIXEL_FILES);
 				return JSON.stringify({'failed.png': 'eA=='});
 			},
 		};
 		try {
-			await drive_pixels(protocol, 'tab', 'http://fixture', {software_webgl: true, log() {},
+			await drive_pixels(protocol, 'tab', 'http://fixture', { test, software_webgl: true, log() {},
 				save(files) { saved = files; }});
 		} finally {
 			assert.equal(unsubscribed, true);
@@ -772,9 +772,65 @@ test('pixel driver accepts baseline, preserves files and rejects failed exit/bac
 	await assert.rejects(run({result: {code: '0'}}), /pixel exit/);
 	await assert.rejects(run({renderer: 'NVIDIA'}), /requested WARP/);
 	await assert.rejects(run({complaint: 'WebGL failure'}), /complaints/);
+	for (const s3tc of [true, undefined, null]) {
+		await assert.rejects(run({ test: 'RenderPixelTestsWithoutS3tc', s3tc }), /WEBGL_compressed_texture_s3tc absence/);
+	}
 	assert.throws(() => save_pixel_files({'../escape.png': 'eA=='}, 'unused'), /Invalid pixel artifact/);
-	assert.equal(parse_options(['--browser', 'firefox', '--build-dir', 'build', '--test', 'RenderPixelTests']).test,
-		'RenderPixelTests');
+});
+
+test('Firefox pixel variants install the appropriate WebGL preloader and navigate to the shared pixel page', async () => {
+	const extension = 'WEBGL_compressed_texture_s3tc';
+	const options = ['--browser', 'firefox', '--build-dir', 'build', '--test'];
+	for (const [name, masked, through_post] of [
+		['RenderPixelTests', false, false],
+		['RenderPixelTestsWithoutS3tc', true, false],
+		['RenderPixelTestsThroughPost', false, true],
+	]) {
+		class WebGL2RenderingContext {
+			getParameter() { return 'test renderer'; }
+			getExtension(name) { return { name }; }
+			getSupportedExtensions() { return [extension, 'other']; }
+		}
+		class HTMLCanvasElement {
+			#context = new WebGL2RenderingContext();
+			getContext() { return this.#context; }
+		}
+		const page = vm.createContext({ WebGL2RenderingContext, HTMLCanvasElement });
+		page.self = page;
+		page.window = page;
+		page.labradorExit = Promise.resolve({ code: 0 });
+		let preload;
+		const protocol = {
+			on() { return () => {}; },
+			async send(method, params) {
+				if (method === 'script.addPreloadScript') preload = params.functionDeclaration;
+				if (method === 'browsingContext.navigate') {
+					const target = new URL(params.url);
+					assert.equal(target.pathname, '/RenderPixelTests.html');
+					assert.equal(target.searchParams.has('through_post'), through_post);
+					vm.runInContext(`(${preload})()`, page);
+					const canvas = new HTMLCanvasElement();
+					const gl = canvas.getContext('webgl2');
+					assert.equal(canvas.getContext('webgl2'), gl);
+					assert.deepEqual(gl.getExtension(extension), masked ? null : { name: extension });
+					assert.deepEqual(gl.getExtension('other'), { name: 'other' });
+					assert.equal(gl.getSupportedExtensions().includes(extension), !masked);
+					assert.equal(page.labradorPixelDevices.length, 1);
+					assert.equal(page.labradorPixelDevices[0].s3tc, !masked);
+				}
+			},
+			async evaluate(_context, expression) {
+				if (expression === 'document.hasFocus()') return true;
+				if (expression === PIXEL_FILES) return '{}';
+				return vm.runInContext(expression, page);
+			},
+		};
+		const parsed = parse_options([...options, name]);
+		assert.equal(parsed.test, name);
+		assert.deepEqual(await drive_pixels(protocol, 'tab', 'http://fixture/RenderPixelTests.html',
+			{ ...parsed, log() {} }), { code: 0 });
+	}
+	assert.throws(() => parse_options([...options, 'RenderPixelTestsUnknown']), /--browser and one of/);
 });
 
 test('pixel page rejects a missing exit protocol and releases its listener', async () => {

@@ -2,7 +2,9 @@
 // control, against fixtures: no Safari, driver or network.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -12,6 +14,7 @@ import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, SAMPLED_SAMPLE_H
 	assert_collision_keys, assert_test_exit, drive_test, TEST_LOG_HOOK, capabilities, driver_arguments, drive_sample, evaluator, held_expression, inject_head, key_actions, page_scripts, parse_options,
 	safari_tabs_to_links, sampled_linesweeper_quit, session_commands, substitute, webdriver_command } from './run_safari.mjs';
 import { SAMPLE_INPUT_HOOK } from './sample_key.mjs';
+import { SAFARI_WINDOW_HOOK, drive_safari_window, safari_window_input } from './safari_window.mjs';
 
 test('the options name one mode and refuse every other combination', () => {
 	const sample = parse_options(['--pages', 'p', '--sample', 'minimal']);
@@ -51,6 +54,102 @@ test('each mode serves only its own files and hooks, and only the bundle substit
 	assert.match(substitute(bundle, new URL('http://h/linesweeper.js')).body.toString(), /labrador-bundle-source/);
 	assert.equal(substitute(bundle, new URL('http://h/linesweeper.js?labrador-bundle-source')), null);
 	assert.deepEqual(artifact_files(parse_options(['--renderer'])), []);
+});
+
+test('the WebWindow mode serves its HTML, loader, wasm and input fixture', () => {
+	const window = parse_options(['--window-page', 'tests/app/WebWindowTests.html']);
+	assert.deepEqual(artifact_files(window).map((file) => file.replace(/\\/g, '/').split('/').pop()),
+		['WebWindowTests.html', 'WebWindowTests.js', 'WebWindowTests.wasm']);
+	assert.deepEqual(page_scripts(window), [COMPLAINT_HOOK, SAFARI_WINDOW_HOOK]);
+	for (const conflict of [['--bundle', 'b'], ['--test-page', 'pixel.html'], ['--frames', '2'], ['--pixel-output', 'p']]) {
+		assert.throws(() => parse_options(['--window-page', 'window.html', ...conflict]));
+	}
+	assert.throws(() => parse_options(['--window-page', 'window.js']));
+});
+
+test('classic WebWindow input sends coordinates, wheel axes and Option-Tab as W3C actions', async () => {
+	const seen = [];
+	const at = { x: 120, y: 70 };
+	const session = { perform: async (actions) => seen.push(...actions) };
+	const input = safari_window_input(session, undefined, { option_tab: true });
+	await input.press(at);
+	await input.move({ x: 650, y: 400 }, true);
+	await input.release({ x: 650, y: 400 });
+	await input.wheel(at, 50, -100);
+	await input.key('KeyA', { control: true });
+	await input.key('Tab');
+	assert.deepEqual(seen.map(({ type, actions }) => [type, actions]), [
+		['pointer', [{ type: 'pointerMove', ...at, origin: 'viewport' }, { type: 'pointerDown', button: 0 }]],
+		['pointer', [{ type: 'pointerMove', x: 650, y: 400, origin: 'viewport' }]],
+		['pointer', [{ type: 'pointerMove', x: 650, y: 400, origin: 'viewport' }, { type: 'pointerUp', button: 0 }]],
+		['wheel', [{ type: 'scroll', ...at, deltaX: 50, deltaY: -100, origin: 'viewport' }]],
+		['key', [{ type: 'keyDown', value: '\uE009' }, { type: 'keyDown', value: 'a' },
+			{ type: 'keyUp', value: 'a' }, { type: 'keyUp', value: '\uE009' }]],
+		['key', [{ type: 'keyDown', value: '\uE00A' }, { type: 'keyDown', value: '\uE004' },
+			{ type: 'keyUp', value: '\uE004' }, { type: 'keyUp', value: '\uE00A' }]],
+	]);
+	assert.equal(seen[0].id, seen[2].id);
+	assert.equal(seen[0].parameters.pointerType, 'mouse');
+});
+
+test('the Safari window fixture handles trusted activation, DPR and touch state', async () => {
+	const emitted = [];
+	const listeners = {};
+	const seen = [];
+	const context = vm.createContext({
+		devicePixelRatio: 2, labradorComplaints: ['error: web window test failure'],
+		addEventListener: (type, listener) => { listeners[type] = listener; },
+		PointerEvent: class {
+			constructor(type, options) { Object.assign(this, { type }, options); }
+		},
+		Module: { canvas: { dispatchEvent: (event) => emitted.push(event) } },
+	});
+	context.window = context;
+	vm.runInContext(SAFARI_WINDOW_HOOK, context);
+	const evaluate = (expression) => vm.runInContext(expression, context);
+	const session = {
+		navigate: async (...parameters) => seen.push(parameters),
+		perform: async ([source]) => {
+			for (const { type } of source.actions) {
+				const dom_type = type.toLowerCase();
+				for (const isTrusted of [false, true]) {
+					const called = [];
+					listeners[dom_type]({ type: dom_type, code: 'ArrowLeft', isTrusted,
+						preventDefault: () => called.push('prevented'), stopImmediatePropagation: () => called.push('stopped') });
+					assert.deepEqual(called, isTrusted ? ['stopped', 'prevented'] : []);
+				}
+			}
+		},
+		release: async () => seen.push('release'),
+	};
+	const fixture = { timeout_ms: 123, log: () => {}, drive: async (page, input) => {
+		assert.equal(await page.evaluate('devicePixelRatio'), 1);
+		await input.device_pixel_ratio(2);
+		assert.equal(await page.evaluate('devicePixelRatio'), 2);
+		assert.equal(await page.evaluate('Promise.resolve(45)', { user_gesture: true }), 45);
+		assert.equal(await page.evaluate('labradorWindowFixture.activation'), null);
+		await input.touch('touchStart', [[10, 20, 1]]);
+		await input.touch('touchStart', [[10, 20, 1], [20, 30, 2]]);
+		await input.touch('touchMove', [[21, 32, 2]]);
+		await input.touch('touchEnd', [[10, 20, 1]]);
+		await input.touch('touchCancel', []);
+		await input.touch_end();
+	} };
+	await drive_safari_window(session, 'http://window/', evaluate, fixture);
+	assert.deepEqual(seen, [['http://window/', 123], 'release']);
+	assert.deepEqual(emitted.map(({ pointerType, type, pointerId, clientX, clientY }) =>
+		[pointerType, type, pointerId, clientX, clientY]), [
+		['touch', 'pointerdown', 1, 10, 20], ['touch', 'pointerdown', 2, 20, 30],
+		['touch', 'pointermove', 2, 21, 32], ['touch', 'pointerup', 1, 10, 20],
+		['touch', 'lostpointercapture', 1, 10, 20], ['touch', 'pointercancel', 2, 21, 32],
+		['touch', 'lostpointercapture', 2, 21, 32],
+	]);
+	context.labradorComplaints.push('warn: an unexpected warning');
+	await assert.rejects(drive_safari_window(session, 'http://window/', evaluate,
+		{ ...fixture, drive: async () => {} }), /unexpected warning/);
+	context.labradorExit = Promise.resolve({ abort: 'loader failed' });
+	await assert.rejects(drive_safari_window(session, 'http://window/', evaluate,
+		{ ...fixture, drive: async () => {} }), /Early WebWindow exit.*loader failed/);
 });
 
 test('the hooks go at the top of the head, before the page\'s own scripts', () => {
@@ -670,11 +769,15 @@ test('test-page mode is exclusive and requires a named html page', () => {
 	const options = parse_options(['--test-page', 'RenderPixelTests.html']);
 	assert.deepEqual(page_scripts(options), [COMPLAINT_HOOK, TEST_LOG_HOOK]);
 	assert.equal(artifact_files(options).length, 3);
+	assert.equal(parse_options(['--test-page', 'p.html', '--pixel-output', 'rejected']).pixel_output,
+		resolve('rejected'));
 	for (const args of [
 		['--test-page', 'p.js'], ['--test-page', 'p.html', '--renderer'],
 		['--test-page', 'p.html', '--bundle', 'b'],
 		['--test-page', 'p.html', '--pages', 'p'],
 		['--test-page', 'p.html', '--frames', '5'],
+		['--test-page', 'p.html', '--pixel-output', ''],
+		['--renderer', '--pixel-output', 'rejected'],
 	]) assert.throws(() => parse_options(args));
 });
 test('test exit requires integer zero with no abort', () => {
@@ -703,6 +806,7 @@ test('test page driver waits on exit, emits output and refuses complaints', asyn
 });
 
 const mismatch_fixture = 'golden mismatch: alpha\n  2 of 64 pixels differ by more than 1 (3 differ at all), worst channel by 9\n  first at (2, 4): golden rgba(0, 0, 0, 255), frame rgba(9, 0, 0, 255)';
+const pass_fixture = 'golden pass: beta-2, 128 pixels, 1 differing, allowance 1, worst channel 1';
 
 test('pixel diagnostics preserve measured mismatch fields, duplicates and CRLF', () => {
 	const parsed = pixel_diagnostics([mismatch_fixture, mismatch_fixture.replaceAll('\n', '\r\n')]);
@@ -715,24 +819,50 @@ test('empty, malformed and unrelated diagnostics never claim passing frames', ()
 	for (const lines of [[], ['doctest: all passed'], ['golden mismatch: truncated']]) {
 		const parsed = pixel_diagnostics(lines);
 		assert.deepEqual(parsed.frames, []);
-		assert.equal(parsed.passing_frame_details, 'not emitted by comparator');
+		assert.deepEqual(parsed.passing_frames, []);
 		assert.equal(parsed.suite_verdict, 'use exit protocol and page complaints');
 	}
 	assert.equal(pixel_diagnostics(['golden mismatch: truncated']).unparsed_mismatches, 1);
 });
 
-test('failed test exit emits machine-readable pixel evidence before rejecting', async () => {
+test('passing comparisons preserve exact and within-allowance drift separately from failures', () => {
+	const exact = 'golden pass: beta-2, 128 pixels, 0 differing, allowance 1, worst channel 0';
+	const parsed = pixel_diagnostics([mismatch_fixture, pass_fixture + '\r', exact, 'golden pass: truncated']);
+	assert.deepEqual(parsed.passing_frames, [
+		{frame: 'beta-2', pixels: 128, differing: 1, beyond: 0, allowance: 1, worst: 1},
+		{frame: 'beta-2', pixels: 128, differing: 0, beyond: 0, allowance: 1, worst: 0},
+	]);
+	assert.equal(parsed.frames.length, 1);
+	assert.equal(parsed.unparsed_passes, 1);
+});
+
+test('failed test exit writes rejected frames and emits diagnostics before rejecting', async (t) => {
+	const output = mkdtempSync(join(tmpdir(), 'labrador-safari-pixel-'));
+	t.after(() => rmSync(output, { recursive: true, force: true }));
 	const lines = [];
+	const bytes = Buffer.alloc(0x9012, 0xe3);
+	const context = {
+		btoa,
+		window: { labradorExit: Promise.resolve({code: 1}),
+			labradorTestLog: [pass_fixture, mismatch_fixture], labradorComplaints: [] },
+		Module: { FS: {
+			readdir: (path) => path === '/' ? ['golden-actual'] : ['.', '..', 'alpha.png'],
+			readFile: (path) => { assert.equal(path, '/golden-actual/alpha.png'); return bytes; },
+		} },
+	};
 	const session = {
 		navigate: async () => {},
 		set_timeouts: async () => {},
-		execute_async: async (script, [expression]) => JSON.stringify({value:
-			expression.includes('labradorExit') ? {code: 1} :
-			expression.includes('labradorTestLog') ? [mismatch_fixture] : []}),
+		execute_async: async (script, [expression]) => run_evaluate_script(expression, context),
 	};
-	await assert.rejects(drive_test(session, 'http://fixture', {log: line => lines.push(line)}),
+	await assert.rejects(drive_test(session, 'http://fixture', {
+		pixel_output: output, log: line => lines.push(line),
+	}),
 		/Test page failed/);
 	const evidence = lines.find(line => line.startsWith('Safari pixel diagnostics: '));
-	assert.equal(JSON.parse(evidence.slice('Safari pixel diagnostics: '.length)).frames[0].worst, 9);
+	const parsed = JSON.parse(evidence.slice('Safari pixel diagnostics: '.length));
+	assert.equal(parsed.frames[0].worst, 9);
+	assert.equal(parsed.passing_frames[0].worst, 1);
 	assert.ok(lines.some(line => line.includes(mismatch_fixture)));
+	assert.deepEqual(readFileSync(join(output, 'alpha.png')), bytes);
 });

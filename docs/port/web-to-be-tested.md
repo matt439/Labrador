@@ -950,6 +950,56 @@ missing/reversed/wrong/stale edges, early quit and late error cases. This is
 runner protocol evidence. Fresh hosted Safari execution and REV#159's
 clean-week criterion remain open; no engine or sample source changed.
 
+### Browser comparison and window checks, 2026-11-20
+
+The browser comparator emits a record for each passing golden comparison with
+the pixel count, differing pixel count, channel allowance and worst channel
+delta. The Firefox and Safari runners include those records in their JSON
+diagnostics alongside rejected comparisons. Analytic and size-only checks
+still report through doctest. The allowance is one channel value in every
+browser.
+
+Local `wasm-release` built `RenderPixelTests` and `WebWindowTests` and
+registered all 53 expected entries. The pixel module was 755,798 bytes
+(`44dfda7e6cd460277856c3a4cc5df7605eb8c86b0bd3b85f731e52e47c8e981b`
+SHA-256). Each browser variant passed 79 cases and 100,909 assertions:
+
+| Local browser and renderer | Baseline | S3TC hidden | Through post |
+|---|---|---|---|
+| Chrome 157.0.8103.80, RTX 5080 through ANGLE D3D11 | 64 exact frames | 64 exact frames | 64 exact frames |
+| Firefox 160.0.1, Microsoft Basic Render Driver D3D11 | 64 frames, 5 with drift of 1 | 64 frames, 5 with drift of 1 | 64 frames, 5 with drift of 1 |
+
+Firefox's masked run observed S3TC absent on all 86 WebGL2 contexts.
+Its other variants observed S3TC on all 86. Firefox had three BiDi
+`browsingContext.getTree` timeouts before navigation across the initial
+attempts. The table reports each passing run. Firefox native stderr also
+contained context-loss messages outside the BiDi console.
+
+For a local rejected-frame check, the classic WebDriver runner served a
+disposable copy of the pixel page with one embedded golden substituted in
+memory. Geckodriver 0.37.1 with Firefox 160.0.1 returned page exit 1 and
+extracted one PNG before reporting failure. The record included 63 passing
+goldens and a rejected comparison with 960 of 4,096 pixels past the allowance,
+worst channel 255. The PNG decoded to the expected 64×64 opaque-black frame.
+No checked-in golden was edited.
+
+The classic WebDriver runner also passed all 57 WebWindow steps in that
+local geckodriver configuration, including the fullscreen and cursor
+subchecks. It delivers mouse, wheel, focus and keyboard input through
+WebDriver, including key activation for fullscreen. Its DPR and touch
+assertions use page fixtures. The touch assertions exercise the engine's
+DOM listener. Desktop WebKit maps touch action sources to mouse sources, so
+compatibility mouse generation is part of the real-touch qualification.
+[WebKit automation source](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/Automation/WebAutomationSession.cpp#L3266-L3275)
+The window module SHA-256 was
+`739a0381955c10b78253020911b69947d3603ede80ebbbccc693091383ac1424`.
+
+The existing `wasm` job runs the three Firefox entries, with rejected frames
+kept by variant. The existing `safari` job extracts rejected pixel frames
+and drives the transferred WebWindow page. Hosted outcomes for the new
+steps, Safari's passing-frame drift and any rejection artifact remain to be
+recorded against the tested revision. REV#159 tracks the stability window.
+
 ### Hosted Safari stability, 2026-11-20
 
 Reviewing each attempt after the collision action-list fix found five passing

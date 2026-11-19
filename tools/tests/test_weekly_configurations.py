@@ -112,7 +112,7 @@ class WeeklyTests(unittest.TestCase):
                 gap = next(gap for gap in report.GAPS if gap.preset == preset)
                 self.assertEqual(set(gap.expected), expected)
         browser = inventory_check.expected_tests(INVENTORY, "wasm-debug")
-        self.assertEqual(len([name for name in browser if name.startswith("Firefox")]), 8)
+        self.assertEqual(len([name for name in browser if name.startswith("Firefox")]), 11)
         self.assertTrue(set(INVENTORY["chromium_registered"]) <= browser)
 
     def test_candidate_report_distinguishes_required_pr_gaps_from_weekly_coverage(self):

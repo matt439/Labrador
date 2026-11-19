@@ -717,7 +717,7 @@ jobs:
         run: |
           call "%VCVARS%"
           call C:\emsdk\emsdk_env.bat
-          ctest --preset wasm-release -j 3 -R "RenderPixelTests|RenderContextLoss" --no-tests=error -V
+          ctest --preset wasm-release -j 3 -R "^(RenderPixelTests|RenderContextLoss)" --no-tests=error -V
 
       # THE WEB WINDOW, DRIVEN: WebWindowTests is a page in the same Chrome,
       # which tests/app/web/window_input.mjs clicks, types into, resizes and
@@ -742,9 +742,9 @@ jobs:
           call C:\emsdk\emsdk_env.bat
           ctest --preset wasm-release -j 3 -R "PageTests" -E "^Firefox" --no-tests=error --output-on-failure
 
-      # All eight Firefox pages use a disposable profile and ANGLE/WARP.
+      # The eleven Firefox entries use a disposable profile and ANGLE/WARP.
       # Verbose output preserves browser capabilities and renderer evidence;
-      # sample runs refuse a different renderer when software mode is requested.
+      # sample and pixel runs refuse a different renderer in software mode.
       # This is software coverage, not physical GPU or audible-audio acceptance.
       - name: Run all Firefox pages on software WebGL
         run: |
@@ -797,21 +797,35 @@ jobs:
           retention-days: 3
           archive: true
 
+      - name: Keep the web window test page
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wasm-window-page
+          path: |
+            out/build/wasm-release/tests/app/WebWindowTests.html
+            out/build/wasm-release/tests/app/WebWindowTests.js
+            out/build/wasm-release/tests/app/WebWindowTests.wasm
+          if-no-files-found: error
+          retention-days: 3
+          archive: true
+
       - name: Keep the frames a golden check rejected
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: golden-actual-wasm-release
-          path: out/build/wasm-release/tests/render/golden-actual/
+          path: |
+            out/build/wasm-release/tests/render/golden-actual/
+            out/build/wasm-release/tests/render/firefox-golden-actual*/
           if-no-files-found: ignore
           archive: true
 
   # THE WASM JOB'S PAGES IN DESKTOP SAFARI, M3's Safari half
   # (docs/port/web-to-be-tested.md, "Needs Safari"). Nothing is built here:
-  # the six sample pages and the packaged bundle come from the wasm job, and
-  # tests/render/web/run_safari.mjs drives each through safaridriver - draws,
-  # a forced context loss and restore, trusted keys, quit, and the bundle's
-  # play and replay. It first prints the WebGL2 renderer strings Safari
+  # the sample pages, packaged bundle, and pixel and window tests come from
+  # the wasm job. run_safari.mjs drives these through safaridriver, checking
+  # draw/readback, window input, and the context recovery and quit paths.
+  # It first prints the WebGL2 renderer strings Safari
   # reports, masked and unmasked. The runner is a hosted macOS virtual
   # machine, not a Mac anyone plays on: its WebGL2 is real Safari on a
   # virtual GPU, and physical displays, pads and listening stay informal play.
@@ -849,12 +863,28 @@ jobs:
           path: ${{ runner.temp }}/pixel
           skip-decompress: false
           digest-mismatch: error
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wasm-window-page
+          path: ${{ runner.temp }}/window
+          skip-decompress: false
+          digest-mismatch: error
       - name: Enable safaridriver
         run: sudo safaridriver --enable
       - name: Safari's WebGL2 renderer
         run: node tests/render/web/run_safari.mjs --renderer
       - name: Pixel readback in Safari
-        run: node tests/render/web/run_safari.mjs --test-page "$RUNNER_TEMP/pixel/RenderPixelTests.html" --timeout 180
+        run: |
+          node tests/render/web/run_safari.mjs --test-page "$RUNNER_TEMP/pixel/RenderPixelTests.html" \
+            --pixel-output "$RUNNER_TEMP/safari-golden-actual" --timeout 180
+      - name: Keep the frames Safari's golden check rejected
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: golden-actual-safari
+          path: ${{ runner.temp }}/safari-golden-actual/
+          if-no-files-found: ignore
+          archive: true
       - name: Sample pages in Safari
         run: |
           for sample in linesweeper minimal collision audio local_multiplayer components; do
@@ -864,6 +894,8 @@ jobs:
           done
       - name: LineSweeper's bundle page in Safari
         run: node tests/render/web/run_safari.mjs --bundle "$RUNNER_TEMP/linesweeper" --timeout 180
+      - name: Drive the web window in Safari
+        run: node tests/render/web/run_safari.mjs --window-page "$RUNNER_TEMP/window/WebWindowTests.html" --timeout 180
 
   # THE SAME PRESET A SECOND TIME WITH BOTH NULL BACKENDS, because the sources
   # that assert drawing and playing are compiled only when the backend is null:
