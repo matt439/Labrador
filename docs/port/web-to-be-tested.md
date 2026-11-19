@@ -948,13 +948,24 @@ clean-week criterion remain open; no engine or sample source changed.
 
 ### Hosted Safari stability, 2026-11-20
 
-After the collision action-list fix, three hosted Safari jobs passed pixel
-readback, the six sample pages and the LineSweeper bundle. These include the
-released `f525bc6c` on its second build attempt. The first attempt stopped
-upstream in Firefox. [First passing job](https://github.com/matt439/Labrador/actions/runs/43974562599/job/133678425366),
-[release job](https://github.com/matt439/Labrador/actions/runs/44002989378/job/133779154106),
-[later passing job](https://github.com/matt439/Labrador/actions/runs/44008804143/job/133793505060).
+Reviewing each attempt after the collision action-list fix found five passing
+Safari jobs, one failed job and two skipped jobs. The first master attempt at
+`9ffe934e` passed pixel readback and all six sample pages. Collision logged
+both O press/release cycles and Escape through quit. SafariDriver then closed
+the connection on `POST /session` before the bundle page could navigate, with
+empty driver output. The same source passed the bundle on attempt two.
+[Failed attempt](https://github.com/matt439/Labrador/actions/runs/43981191139/job/133703585386),
+[passing retry](https://github.com/matt439/Labrador/actions/runs/43981191139/job/133704706830).
 
-`REV#159` is waiting for a full clean week after the November 17 fix. At the
-end of that window, review executed Safari jobs and their attempts. A new
-failure needs investigation. Skipped jobs supply no observation.
+The other four passes covered pixels, all six samples and the bundle. The
+release master run skipped Safari on its first attempt after a Firefox failure.
+The publication master run skipped it under the same-tree rule.
+[First fix PR](https://github.com/matt439/Labrador/actions/runs/43974562599/job/133678425366),
+[release PR](https://github.com/matt439/Labrador/actions/runs/44001464716/job/133770316079),
+[release master retry](https://github.com/matt439/Labrador/actions/runs/44002989378/job/133779154106),
+[publication PR](https://github.com/matt439/Labrador/actions/runs/44008804143/job/133793505060).
+
+`REV#159` waits for a full clean week following the failed job. The earliest
+review is 09:54 Brisbane time on November 24. Inspect every executed attempt
+through the end of that window and investigate any recurrence during session
+creation. Skipped jobs provide no stability evidence.
