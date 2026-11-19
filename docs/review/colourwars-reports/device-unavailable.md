@@ -99,6 +99,12 @@ checks and links/packages LineSweeper's shipping ES module. These are local
 source/device checks, not a hosted CI, release or new-platform qualification.
 The cross-backend verification procedure is in [verification](../../verification.md).
 
-The separate SM-98 policy uses the same startup-aware Direct3D helpers. Its
-ordinary Release known-software refusal and explicit software-test selection
-retain their own acceptance and receipts. Tracker response remains open.
+## Integration qualification, 2026-11-20
+
+Direct3D rejects an invalid window before adapter selection. Vulkan tries
+other candidates after a presentation-query failure and preserves the
+original API failure if no suitable candidate succeeds. The
+[combined qualification](../../verification/2026-11-20-todo-integration.md)
+records the real startup-path fixtures, all seven render/application tracks
+and Vulkan synchronization. SM-98's separate hosted software selection
+checks and the public tracker response remain pending.

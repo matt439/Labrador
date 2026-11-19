@@ -104,6 +104,13 @@ jobs run WARP. Its Direct3D hardware configurations explicitly select OFF,
 and a real-driver gap cannot pass from missing or software device evidence.
 No software result supplies physical-GPU, display-pacing or driver acceptance.
 
-Fresh hosted execution is separate from the prepared workflow and local
-qualification. This work performs no push, workflow dispatch, repository
-setting change or hardware-acceptance claim.
+## Local qualification, 2026-11-20
+
+Default Release passed nine D3D11 and ten D3D12 startup cases. Explicit
+WARP Release passed 22/22 D3D11 and 23/23 D3D12 CTest entries. Both suites
+reported Microsoft Basic Render Driver as software. The assembled starter
+passed both tests, installed successfully and ran its installed startup check
+from a separate working directory with the same software-device diagnostic.
+[The integration record](verification/2026-11-20-todo-integration.md) retains
+the source and executable identities. Fresh hosted runs remain the next
+qualification for these workflow steps.

@@ -4,46 +4,30 @@ An index of open work, one row per item; each row points to the document that ow
 
 ## NOW
 
-Start with these stories in [BACKLOG order](docs/product/BACKLOG.md#later).
-
-1. **OCA-97 — play the assembled starter.** Launch `play.cmd` by the advertised
-   route with the installed tools, play visibly and quit through the game.
-   The helpers already pass build, test and hidden smoke checks. [Acceptance](docs/product/BACKLOG.md#oca-97)
-2. **OCA-111 — qualify keyboard-layout labels.** Run the combined input and
-   application checks for the native labels, browser fallback and saved tokens.
-   [Acceptance](docs/product/BACKLOG.md#oca-111)
-3. **OCA-114 — qualify the integrated touch gallery.** Check simultaneous
-   contacts, drag, release and cancellation in the combined source.
-   [Acceptance](docs/product/BACKLOG.md#oca-114)
-
-All Now batches are complete. Next's five unchecked stories require owner
-attendance or hardware. The [scheduling amendment](docs/product/BACKLOG.md#later)
-allows ready Later work in parallel. Owner-attended sessions and external
-checks have their own rows below.
+The actionable November 16 batch has passed its local implementation checks.
+The [integration record](docs/verification/2026-11-20-todo-integration.md)
+holds the combined results. The rows below track the remaining hosted,
+Simulator and attended checks in [BACKLOG order](docs/product/BACKLOG.md#later).
 
 ## November 16 Later batches
 
 [BACKLOG.md](docs/product/BACKLOG.md#later) owns the order and acceptance.
 The [November 17 handoff](docs/2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
-names the isolated commits for keyboard labels, touch controls, dependencies,
-the Simulator and client changes, and locates the uncommitted Direct3D work.
-Use those revisions as starting points and qualify each against the integrated
-source. The [v0.4.0 record](docs/verification/releases/v0.4.0.md) identifies
-what shipped.
+identifies the source of the retained changes. The
+[November 20 verification](docs/verification/2026-11-20-todo-integration.md)
+records the integration. The [v0.4.0 record](docs/verification/releases/v0.4.0.md)
+identifies what shipped.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-97` | OPEN | could | M | Verify visible play and normal quit via the advertised starter launcher with installed tools. Non-default discovery paths have fixtures. [Scope](docs/product/BACKLOG.md#oca-97). |
+| `OCA-97` | BLOCKED | could | M | Confirm the visible starter's quit prompt with Enter and record the `play.cmd` exit. Build, tests and visible launch passed. [Evidence](docs/review/2026-11-10-first-run/2026-11-17-starter-helpers.md#ordinary-prompt-desktop-run-2026-11-20). |
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend with a real non-Xbox pad once one is available. [Scope](docs/product/BACKLOG.md#oca-108). |
-| `OCA-111` | OPEN | could | M | Qualify the integrated keyboard labels and rebinding fallback across the input and application matrix. [Scope](docs/product/BACKLOG.md#oca-111). |
-| `OCA-114` | OPEN | could | M | Qualify the integrated gallery's held buttons, virtual stick and cancellation. WEB#5 and SM-13 cover physical touch. [Scope](docs/product/BACKLOG.md#oca-114). |
 | `SM-89` | WAITING | could | M | Retain the first hosted results for all five configurations of the published weekly workflow. [Qualification](docs/verification-weekly.md). |
 | `SM-92` | WAITING | should | M | Retain fresh hosted results for the integrated Action pins and website dependencies. Local selector, site and diagram checks passed. [Scope](docs/product/BACKLOG.md#sm-92). |
 | `OCA-119` | BLOCKED | could | S | Record actual Escape behaviour from a trusted key in a headed browser. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add the AI-use disclosure when the owner supplies public wording and review/authorship claims. [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-97` | BLOCKED | could | M | Run the integrated pilot on a Mac with Xcode, safaridriver and an available iPhone Simulator. [Pilot](docs/port/ios-simulator-pilot.md). |
-| `SM-98` | OPEN | should | M | Qualify integrated Direct3D Release refusal, explicit WARP drawing and the installed consumer. [Scope](docs/product/BACKLOG.md#sm-98). |
-| `OCA-120` | OPEN | should | M | Qualify the integrated startup-failure mappings, consumer catch and unrelated-error controls. [Scope](docs/product/BACKLOG.md#oca-120). |
+| `SM-98` | WAITING | should | M | Retain fresh hosted Direct3D default-refusal, explicit WARP and installed-starter results. Both backends and the installed starter passed locally. [Evidence](docs/render-software-tests.md#local-qualification-2026-11-20). |
 
 For the client reports, v0.4.0 ships the scripted pad source requested in
 issue #122. The public tracker response is still due. [Client report ledger](docs/review/colourwars-reports/README.md)

@@ -1446,10 +1446,10 @@ No new removal API or stale-handle guarantee is implied.
 
 - [x] **[OCA-109](#oca-109)** Could · M · The Outside Adopter: Copy a desktop typed-text field with explicit text and glyph limits
 - [x] **[OCA-110](#oca-110)** Could · M · The Outside Adopter: Copy a game-owned keyboard rebinding screen that refuses duplicate bindings
-- [ ] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
+- [x] **[OCA-111](#oca-111)** Could · M · The Outside Adopter: See best-effort layout labels while saved bindings keep stable tokens — after OCA-110
 - [x] **[OCA-112](#oca-112)** Could · M · The Outside Adopter: Preserve existing settings when a write or migration fails
 - [x] **[OCA-113](#oca-113)** Could · M · The Outside Adopter: Choose a native or canvas cursor shape for the current page interaction
-- [ ] **[OCA-114](#oca-114)** Could · M · The Outside Adopter: Copy held touch buttons and a virtual-stick region without adopting a game action map
+- [x] **[OCA-114](#oca-114)** Could · M · The Outside Adopter: Copy held touch buttons and a virtual-stick region without adopting a game action map
 - [x] **[OCA-115](#oca-115)** Could · S · The Outside Adopter: Read the selected device's texture limit and understand an oversized-texture refusal
 - [x] **[SM-87](#sm-87)** Could · S · The Sole Owner-Maintainer: Read defined native memory and first-frame measurements without a hard gate
 - [x] **[SM-88](#sm-88)** Could · S · The Sole Owner-Maintainer: Request a read-only report of CI failures by step, ref and attempt
@@ -1470,7 +1470,7 @@ No new removal API or stale-handle guarantee is implied.
 - [ ] **[SM-97](#sm-97)** Could · M · The Sole Owner-Maintainer: Invoke an iOS Simulator game pilot without adding a recurring acceptance lane
 
 - [ ] **[SM-98](#sm-98)** Should · M · The Sole Owner-Maintainer: Refuse known software Direct3D by default while preserving explicit, truthfully labelled software CI coverage
-- [ ] **[OCA-120](#oca-120)** Should · M · The Outside Adopter: Catch genuine startup render-device absence separately from other runtime errors
+- [x] **[OCA-120](#oca-120)** Should · M · The Outside Adopter: Catch genuine startup render-device absence separately from other runtime errors
 - [x] **[PI-25](#pi-25)** Should · M · The Pinned Submodule Integrator: Mutate the other contact participant under a deterministic dispatch and retirement contract
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
@@ -2319,9 +2319,11 @@ PowerShell discovery/environment runner, print the manual commands, preserve
 stdout/stderr and real failure codes, and use CMake's cached game name for
 play. Isolated native-process fixtures and the ordinary-prompt host consumer
 proof are in [the qualification record](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md).
-The existing consumer job exercises the optional helpers. Remaining regular
-qualification is bounded normal visible play by the advertised launch route
-with installed tools; the story remains unticked.
+The existing consumer job exercises the optional helpers. The November 20
+installed-tool desktop run passed build, both tests and visible launch from
+the documented ordinary prompt. Clicking the game's window close control
+opened its in-game confirmation. A normal exit and `play.cmd` exit status
+still need to be observed. [Desktop evidence](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md#ordinary-prompt-desktop-run-2026-11-20).
 
 **Owner amendment, 2026-11-17:** installing Visual Studio inside Sandbox takes
 too long to be a useful regular test. Retire that installation gate and stop
@@ -3115,7 +3117,9 @@ separate. Follow input/app verification owners and run the website gate.
 **Integrated 2026-11-20.** The rebinding page displays optional layout labels
 and keeps saved bindings on their stable tokens. The [isolated qualification](../verification/keyboard-labels/2026-11-17/README.md)
 records native translation, browser cache invalidation and glyph fallback.
-Combined input/application qualification remains open.
+The [combined qualification](../verification/2026-11-20-todo-integration.md)
+passed the full input/application matrix, lint and the website gate. The
+optimized Chromium rebinding route also passed.
 
 <a id="oca-112"></a>
 ### OCA-112. Preserve valid saves across write and migration failures
@@ -3232,6 +3236,11 @@ distinct ids, bounded sticks, held buttons and cancellation without starting
 another contact. Native/browser sample checks exercise their feeds, while
 real-glass, pen and phone acceptance remain under WEB#5 and SM-13 and stay
 explicitly open until observed. Run sample checks, lint and the website gate.
+
+**Qualified 2026-11-20.** The [touch record](../2026-11-17-held-touch-controls.md#integration-checks-2026-11-20)
+retains native and browser checks of simultaneous contacts, drag, release
+and cancellation. The integrated Chromium pointer route passed in Debug and
+Release, along with [the combined matrix and local gates](../verification/2026-11-20-todo-integration.md).
 
 <a id="oca-115"></a>
 ### OCA-115. Report selected-device texture limits and oversized requests
@@ -3877,9 +3886,10 @@ Mac with Xcode. That run remains the acceptance gate.
 The final acceptance batch of 2026-11-16 selected the following three stories.
 v0.4.0 ships OCA-120's public exception type. The
 [November 17 handoff](../2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
-identifies the backend mappings, mutable-contact commits and Direct3D
-software-selection draft awaiting integration. Each story remains open for
-its own integration and qualification.
+identifies the retained backend mappings, mutable-contact commits and
+Direct3D software-selection draft. The
+[November 20 integration](../verification/2026-11-20-todo-integration.md)
+records the combined local qualification and the remaining hosted evidence.
 
 <a id="sm-98"></a>
 ### SM-98. Refuse known software Direct3D by default and preserve explicit CI
@@ -3909,6 +3919,11 @@ configuration. Follow all affected render/app configurations and consumer
 checks, update inventories/required-check records if needed, and run lint and
 the website gate. This planning record changes no selection or CI behaviour.
 
+**Locally qualified 2026-11-20.** Both Direct3D Release backends passed
+default refusal and explicit WARP drawing. The installed starter passed
+with the reported software device. The remaining gate is fresh hosted
+execution of those checks. [Local record](../render-software-tests.md#local-qualification-2026-11-20).
+
 <a id="oca-120"></a>
 ### OCA-120. Distinguish genuine startup render-device unavailability
 
@@ -3933,6 +3948,12 @@ device absence from every excluded class, and consumer checks exercise the
 specific catch while ordinary `std::runtime_error` handling still works.
 Follow affected render/app verification and the website gate; no unavailable
 device or platform-support result is claimed by this planning selection.
+
+**Qualified 2026-11-20.** The actual startup paths and typed catches passed
+with the native diagnostics and unrelated-error controls. The
+[combined qualification](../verification/2026-11-20-todo-integration.md)
+records the render/application matrix, the consumer evidence and Vulkan
+synchronization check. The public tracker response remains due.
 
 <a id="pi-25"></a>
 ### PI-25. Expose mutable contact participants with a pinned dispatch contract

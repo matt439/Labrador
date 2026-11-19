@@ -43,11 +43,11 @@ context to branch protection. The different start time can reduce setup
 contention; it does not guarantee that the workflows cannot overlap.
 
 Hosted software results establish neither physical-GPU equivalence nor
-listening, real-pad, phone or display-pacing acceptance. The same seven
-release/driver obligations remain in `tools/ci_gap_report.py`: real-driver
-Debug GL/Vulkan pixel and smoke tests, the four additional native Release
-suites and the full Debug browser suite. A scheduled run of an earlier
-commit cannot qualify a later release candidate. The
+listening, real-pad, phone or display-pacing acceptance. The ten selections in
+`tools/ci_gap_report.py` include real-driver Direct3D Debug and D3D11 Release,
+real-driver GL/Vulkan Debug, the four additional native Release suites and
+the full Debug browser suite. A scheduled run of an earlier commit cannot
+qualify a later release candidate. The
 [release/driver procedure](verification.md#release-and-real-driver-qualification)
 therefore remains required before a release is tagged.
 
