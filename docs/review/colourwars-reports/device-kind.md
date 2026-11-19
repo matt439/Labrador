@@ -1,33 +1,21 @@
 # The Direct3D device kind: issue #125
 
-## Current decision, 2026-11-16
+## Implementation
 
-**Accept the remaining selection change as
-[SM-98](../../product/BACKLOG.md#sm-98).** Ordinary Direct3D Release startup
-will refuse adapters classified as known software by the shared
-`dxgi_device_kind` function. Selection and reporting will therefore use the
-same evidence instead of letting an unflagged known CPU rasteriser pass the
-hardware-selection test.
+[SM-98](../../product/BACKLOG.md#sm-98) uses the shared `dxgi_device_kind`
+classifier for Direct3D 11 and 12 hardware selection. Ordinary Release
+refuses known software adapters, including an unflagged Basic Render Driver.
+The startup refusal uses the [common exception type](device-unavailable.md).
+Ordinary Debug tries eligible adapters before its WARP fallback.
 
-The earlier reporting fix remains implemented; this remaining selection
-change is planned. It includes an explicit software-test opt-in, defaulting
-off for ordinary Release use, so GPU-less CI can retain Release pixel and
-installed-consumer checks. Tests must cover both the default refusal and the
-opted-in software execution. Do not silently skip those checks or label the
-opted-in device as hardware. Existing Debug fallback behaviour and any unrun
-real-driver qualification are stated separately.
+The [policy and verification procedure](../../render-software-tests.md)
+document `LABRADOR_D3D_SOFTWARE_TEST`, which forces WARP for the opted-in CI
+and installed-consumer builds. Separate default-OFF Release fixtures cover
+refusal. Each software receipt requires the reported name and software kind.
+Hosted qualification and the public tracker response remain pending.
 
-The classifier's `hardware` answer means that its signals did not identify a
-known CPU rasteriser; it is not proof of physical hardware. SM-98 owns the
-build/runtime opt-in contract, CI/consumer changes, refusal diagnostics,
-CHANGES.md and affected verification. Its work is coordinated with
-[OCA-120](../../product/BACKLOG.md#oca-120)'s typed renderer-unavailable
-category. This selection implements neither story and records no new device
-run, tracker response or issue closure.
-
-The source check below remains dated context, including its original
-undecided selection discussion. The current decision above supersedes that
-discussion; the measured/source evidence is retained.
+The November 10 source check below records the original report and the
+selection decision as it stood at the time.
 
 ## Original source check, 2026-11-10
 

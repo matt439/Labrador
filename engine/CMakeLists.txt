@@ -173,6 +173,9 @@ if(EMSCRIPTEN AND LABRADOR_RENDER_BACKEND MATCHES "^(d3d11|d3d12|vulkan)$")
         "be gl, which draws through WebGL2 there and is the default, or null.")
 endif()
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/d3d_software_test.cmake")
+labrador_apply_d3d_software_test(LabradorEngine)
+
 if(LABRADOR_RENDER_BACKEND STREQUAL "d3d11")
     target_sources(LabradorEngine PRIVATE
         render/d3d11/device_resources.cpp

@@ -346,11 +346,11 @@ namespace
 	// being exact there. Something has to give, and the honest place is here,
 	// stated with the measurement that set it.
 	//
-	// WHAT CI'S RASTERISERS ARE. The Direct3D jobs draw on an adapter no log
-	// names: x64-release passes RenderPixelTests with the WARP fallback
-	// compiled out, so the runner has a DXGI adapter that is not flagged
-	// software, and nothing in ctest's output describes it
-	// (.github/workflows/ci.yml carries the evidence). The wasm job's is named,
+	// WHAT CI'S RASTERISERS ARE. The Direct3D jobs explicitly request WARP
+	// through LABRADOR_D3D_SOFTWARE_TEST and assert its actual name/software
+	// classification. Separate default-OFF Release fixtures retain the normal
+	// known-software refusal; they do not change this pixel allowance.
+	// The wasm job's rasteriser is named,
 	// because tests/render/web/run_page.mjs prints it: Chrome's SwiftShader,
 	// behind ANGLE's Vulkan path.
 	//

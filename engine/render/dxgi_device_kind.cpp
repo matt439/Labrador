@@ -31,4 +31,12 @@ namespace labrador
 		return lowered.find("microsoft basic render") != std::string::npos
 			? RenderDeviceKind::software : RenderDeviceKind::hardware;
 	}
+
+	bool dxgi_hardware_adapter_allowed(std::uint32_t flags,
+		std::uint32_t vendor_id, std::uint32_t device_id,
+		std::string_view device_name)
+	{
+		return dxgi_device_kind(flags, vendor_id, device_id, device_name)
+			== RenderDeviceKind::hardware;
+	}
 }

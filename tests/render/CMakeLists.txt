@@ -92,13 +92,12 @@ endif()
 # ctest entries that need a device (with MinimalSmokeTests, CollisionSmokeTests
 # and, under D3D12, D3D12SynchronizationTests) and can fail for a reason
 # outside the repository: a Direct3D debug build falls back to WARP and needs
-# no GPU, but a release build has no such fallback (device_resources.cpp), and
+# no GPU, but ordinary Release has no implicit fallback (device_resources.cpp), and
 # neither the OpenGL backend nor the Vulkan one has any fallback at all -
 # Vulkan's software implementations are installed rather than shipped - so all
-# three need an adapter. THE RELEASE HALF OF THAT IS ALSO A MEASUREMENT: CI
-# runs this executable under x64-release on a machine with no GPU and it
-# passes, which is how a build machine is known to offer an adapter rather
-# than to fall back to one (.github/workflows/ci.yml). Keeping it apart means
+# three need an adapter. CI explicitly forces WARP for its Direct3D software
+# runs and retains separate default-OFF Release startup refusal fixtures.
+# The opted-in suite still draws and compares the same goldens. Keeping it apart means
 # that failure names itself instead of taking the arithmetic down with it.
 #
 # NOT BUILT AT ALL AGAINST THE NULL BACKEND, rather than built and excluded. It
@@ -135,6 +134,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         labrador_settings
         lodepng
     )
+    labrador_apply_d3d_software_test(RenderPixelTests)
     labrador_add_material(RenderPixelTests test_material
         SOURCE materials/test_material.hlsl)
     labrador_add_material(RenderPixelTests constant_material
@@ -185,11 +185,25 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             win32/test_window.cpp
             ../test_main.cpp
         )
+        set(d3d12_device_source "${CMAKE_CURRENT_SOURCE_DIR}/../../engine/render/d3d12/device_resources.cpp")
+        set(d3d12_device_wrapper "${CMAKE_CURRENT_SOURCE_DIR}/d3d12/instrumented_device_resources.cpp")
+        cmake_path(NORMAL_PATH d3d12_device_source)
+        cmake_path(NORMAL_PATH d3d12_device_wrapper)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+            "${d3d12_device_source}" "${d3d12_device_wrapper}")
+        file(STRINGS "${d3d12_device_source}" d3d12_device_includes REGEX "^#include ")
+        file(STRINGS "${d3d12_device_wrapper}" d3d12_preload_includes REGEX "^#include ")
+        foreach(d3d12_include IN LISTS d3d12_device_includes)
+            if(NOT d3d12_include IN_LIST d3d12_preload_includes)
+                message(FATAL_ERROR "The instrumented DeviceResources must preload '${d3d12_include}' before its wait macro.")
+            endif()
+        endforeach()
         target_link_libraries(D3D12SynchronizationTests PRIVATE
             LabradorEngine
             doctest::doctest
             labrador_settings
         )
+        labrador_apply_d3d_software_test(D3D12SynchronizationTests)
         add_test(NAME D3D12SynchronizationTests COMMAND D3D12SynchronizationTests)
         set_tests_properties(D3D12SynchronizationTests PROPERTIES TIMEOUT 60)
 
@@ -215,6 +229,7 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
             LabradorEngine
             labrador_settings
         )
+        labrador_apply_d3d_software_test(D3D12PresentedSlotsProbe)
     elseif(LABRADOR_RENDER_BACKEND STREQUAL "vulkan")
         find_package(Vulkan REQUIRED)
         target_sources(RenderPixelTests PRIVATE

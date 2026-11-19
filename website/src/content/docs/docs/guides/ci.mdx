@@ -56,8 +56,8 @@ runner image has, and each step that runs CMake calls it first, because a step's
 does not carry over to the next one.
 
 **Configure, build and test are the commands you type.** The test step runs your project's
-ctest, which holds your game's tests and none of Labrador's. The start-up check gets a Direct3D
-device on the runner, which has no GPU but still offers Direct3D an adapter.
+ctest, which holds your game's tests. The starter's Debug startup check can
+use the Direct3D WARP fallback on the runner.
 
 ## See it run
 

@@ -14,7 +14,8 @@ output of
 
 run on the PR's head from a shell with vcvars (and emsdk_env for wasm-debug,
 whose inventory list needs a Chromium and a Firefox).
-It configures, builds and tests x64-debug-gl and x64-debug-vulkan (whose
+It configures, builds and tests both Direct3D Debug presets, x64-release,
+x64-debug-gl and x64-debug-vulkan (whose
 RenderPixelTests, MinimalSmokeTests and CollisionSmokeTests CI runs only on
 software rasterisers),
 the four additional release presets and wasm-debug. Their separate weekly

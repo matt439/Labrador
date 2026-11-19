@@ -18,6 +18,9 @@ namespace render_tests::dxgi_factory
 		no_devices,
 		software_only,
 		hardware_control,
+		unflagged_software_ids,
+		named_software,
+		software_then_hardware,
 		error
 	};
 
@@ -50,14 +53,13 @@ namespace render_tests::dxgi_factory
 		Scope& operator=(const Scope&) = delete;
 	};
 
-	// This adapter is solely an input to forced-failure device calls. Its
-	// description is deliberately synthetic; it must never reach a real device
-	// creation call or provide successful hardware-selection evidence.
-	class HardwareControl final : public IDXGIAdapter1
+	// Description controls are inputs to selection or forced-failure calls.
+	// Modified metadata must never provide successful hardware-device evidence.
+	class DescriptionControl final : public IDXGIAdapter1
 	{
 	public:
-		explicit HardwareControl(Microsoft::WRL::ComPtr<IDXGIAdapter1> real)
-			: real_(std::move(real))
+		DescriptionControl(Microsoft::WRL::ComPtr<IDXGIAdapter1> real, Mode mode)
+			: real_(std::move(real)), mode_(mode)
 		{
 		}
 
@@ -122,11 +124,7 @@ namespace render_tests::dxgi_factory
 			const HRESULT result = this->real_->GetDesc(description);
 			if (SUCCEEDED(result))
 			{
-				wcscpy_s(description->Description, L"Labrador synthetic hardware control");
-				description->VendorId = 0x1234;
-				description->DeviceId = 0x5678;
-				if (active_probe != nullptr)
-					++active_probe->hardware_descriptions;
+				this->describe(*description);
 			}
 			return result;
 		}
@@ -142,20 +140,37 @@ namespace render_tests::dxgi_factory
 			const HRESULT result = this->real_->GetDesc1(description);
 			if (SUCCEEDED(result))
 			{
-				wcscpy_s(description->Description, L"Labrador synthetic hardware control");
-				description->VendorId = 0x1234;
-				description->DeviceId = 0x5678;
+				this->describe(*description);
 				description->Flags = 0;
-				if (active_probe != nullptr)
-					++active_probe->hardware_descriptions;
 			}
 			return result;
 		}
 
 	private:
-		~HardwareControl() = default;
+		template<class Description>
+		void describe(Description& description) const
+		{
+			if (this->mode_ == Mode::unflagged_software_ids)
+			{
+				wcscpy_s(description.Description, L"Labrador software ID control");
+				description.VendorId = 0x1414;
+				description.DeviceId = 0x8c;
+			}
+			else
+			{
+				wcscpy_s(description.Description, this->mode_ == Mode::named_software
+					? L"mIcRoSoFt BaSiC ReNdEr DrIvEr" : L"Labrador synthetic hardware control");
+				description.VendorId = 0x1234;
+				description.DeviceId = 0x5678;
+			}
+			if (active_probe != nullptr && this->mode_ == Mode::hardware_control)
+				++active_probe->hardware_descriptions;
+		}
+
+		~DescriptionControl() = default;
 		std::atomic<ULONG> references_{ 1 };
 		Microsoft::WRL::ComPtr<IDXGIAdapter1> real_;
+		Mode mode_;
 	};
 
 	class Factory final : public IDXGIFactory6
@@ -379,19 +394,25 @@ namespace render_tests::dxgi_factory
 				return E_OUTOFMEMORY;
 			if (active_probe->mode == Mode::software_only && index == 0)
 				return this->real_->EnumWarpAdapter(iid, adapter);
-			if (active_probe->mode == Mode::hardware_control && index == 0)
+			const Mode mode = active_probe->mode;
+			const bool mixed = mode == Mode::software_then_hardware;
+			if ((index == 0 && (mode == Mode::hardware_control ||
+				mode == Mode::unflagged_software_ids || mode == Mode::named_software || mixed)) ||
+				(mixed && index == 1))
 			{
+				const Mode description_mode = mixed
+					? (index == 0 ? Mode::named_software : Mode::hardware_control) : mode;
 				Microsoft::WRL::ComPtr<IDXGIAdapter1> warp;
 				const HRESULT found = this->real_->EnumWarpAdapter(
 					IID_PPV_ARGS(warp.GetAddressOf()));
 				if (FAILED(found))
 					return found;
-				HardwareControl* control = new(std::nothrow) HardwareControl(std::move(warp));
+				DescriptionControl* control = new(std::nothrow) DescriptionControl(std::move(warp), description_mode);
 				if (control == nullptr)
 					return E_OUTOFMEMORY;
 				const HRESULT queried = control->QueryInterface(iid, adapter);
 				control->Release();
-				if (SUCCEEDED(queried))
+				if (SUCCEEDED(queried) && description_mode == Mode::hardware_control)
 					++active_probe->hardware_adapters;
 				return queried;
 			}

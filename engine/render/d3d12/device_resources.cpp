@@ -3,6 +3,8 @@
 #include "engine/core/diagnostic.h"
 #include "engine/render/device_unavailable.h"
 #include "engine/render/direct3d_startup.h"
+#include "engine/render/dxgi_device_kind.h"
+#include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 
 #include <algorithm>
@@ -42,12 +44,8 @@ namespace labrador
 		// other two).
 		const D3D_FEATURE_LEVEL min_feature_level = D3D_FEATURE_LEVEL_11_0;
 
-		// Whether hardware_adapter may take this adapter: not carrying
-		// DXGI_ADAPTER_FLAG_SOFTWARE, and able to make a Direct3D 12 device
-		// at the floor. The flag is the whole software test, so an unflagged
-		// CPU rasteriser such as the Basic Render Driver on some GPU-less
-		// machines is taken, and device_info reports it as software
-		// (dxgi_device_kind.h).
+		// Hardware selection uses device_info's known-software evidence and
+		// still requires a Direct3D 12 device at the existing feature floor.
 		//
 		// THE SECOND TEST IS ONE THE D3D11 FILE DOES NOT NEED. There, every
 		// adapter DXGI enumerates supports D3D11 at some level; here an
@@ -62,7 +60,9 @@ namespace labrador
 			ThrowIfFailed(adapter->GetDesc1(&description),
 				"An adapter's description could not be read");
 
-			if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			if (!dxgi_hardware_adapter_allowed(description.Flags,
+				description.VendorId, description.DeviceId,
+				narrow(description.Description)))
 			{
 				return false;
 			}
@@ -202,10 +202,25 @@ namespace labrador
 	{
 		this->create_factory();
 
-		ComPtr<IDXGIAdapter1> adapter = this->hardware_adapter();
-
+		ComPtr<IDXGIAdapter1> adapter;
 		HRESULT hr = E_FAIL;
-		bool missing_capability = !adapter;
+		bool missing_capability = true;
+#if defined(LABRADOR_D3D_SOFTWARE_TEST)
+		const HRESULT warp_result = this->factory_->EnumWarpAdapter(
+			IID_PPV_ARGS(adapter.GetAddressOf()));
+		check_direct3d_warp_adapter(warp_result, startup,
+			"The Direct3D 12 software-test WARP adapter could not be found");
+		hr = D3D12CreateDevice(adapter.Get(), min_feature_level,
+			IID_PPV_ARGS(this->device_.ReleaseAndGetAddressOf()));
+#if defined(_DEBUG)
+		if (SUCCEEDED(hr))
+		{
+			report_diagnostic("Direct3D 12 Adapter - WARP (explicit software test)");
+		}
+#endif
+#else
+		adapter = this->hardware_adapter();
+		missing_capability = !adapter;
 		if (adapter)
 		{
 			hr = D3D12CreateDevice(adapter.Get(), min_feature_level,
@@ -217,9 +232,9 @@ namespace labrador
 		{
 			if (startup)
 			{
-				throw RenderDeviceUnavailable("No Direct3D 12 hardware device found");
+				throw RenderDeviceUnavailable("No Direct3D 12 hardware device found. Known software adapters are excluded by default.");
 			}
-			throw std::runtime_error("No Direct3D 12 hardware device found");
+			throw std::runtime_error("No Direct3D 12 hardware device found. Known software adapters are excluded by default.");
 		}
 #else
 		if (FAILED(hr))
@@ -246,6 +261,7 @@ namespace labrador
 				}
 			}
 		}
+#endif
 #endif
 
 		check_direct3d_creation(hr, startup && missing_capability,

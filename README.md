@@ -93,6 +93,12 @@ starter's page in Edge. LineSweeper's live demo has been loaded and played
 briefly in Safari 27.0.1 on macOS 27.
 Phones are a planned phase, not a platform.
 
+Ordinary Direct3D Release builds refuse known software adapters. The explicit
+`LABRADOR_D3D_SOFTWARE_TEST=ON` configuration forces Microsoft WARP for
+software CI and installed-game tests; it stays OFF in ordinary presets.
+[Its contract](docs/render-software-tests.md) distinguishes default refusal,
+software drawing and hardware qualification. Debug retains WARP fallback.
+
 Why each backend exists is in [ARCHITECTURE](docs/design/ARCHITECTURE.md),
 *Modules*; where the browser build stands is in
 [docs/port/web.md](docs/port/web.md), and Vulkan's route to other platforms in

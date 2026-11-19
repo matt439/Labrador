@@ -1,5 +1,6 @@
 #include "engine/render/d3d12/backend.h"
 
+#include "engine/core/diagnostic.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
@@ -45,6 +46,10 @@ namespace labrador
 			info.device_id = description.DeviceId;
 			info.kind = dxgi_device_kind(description.Flags,
 				description.VendorId, description.DeviceId, info.device_name);
+#if defined(LABRADOR_D3D_SOFTWARE_TEST)
+			report_diagnostic("Direct3D 12 software-test device: " + info.device_name +
+				(info.kind == RenderDeviceKind::software ? " (software)" : " (hardware)"));
+#endif
 			return info;
 		}
 
@@ -1106,10 +1111,14 @@ namespace labrador
 		int view_capacity)
 	{
 		check_view_capacity(view_capacity);
+		const HWND window = static_cast<HWND>(native_window);
+		if (!IsWindow(window))
+		{
+			throw std::logic_error("create_device requires a valid Win32 window handle");
+		}
 		this->impl_->texture_limit.reset();
 
-		this->impl_->device_resources.set_window(
-			static_cast<HWND>(native_window), width, height);
+		this->impl_->device_resources.set_window(window, width, height);
 		this->impl_->device_resources.create_device_resources(true);
 
 		this->impl_->views.clear();

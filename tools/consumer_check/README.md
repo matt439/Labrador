@@ -220,12 +220,22 @@ results folder, then shuts the sandbox down. If it stays open, the screen
 shows why: a loader message about a missing DLL stops the script there. The
 sandbox's default virtual GPU presents the host's own adapter through a
 paravirtual driver, so a release build draws on it; with `--vgpu Disable`
-only Windows' software adapter remains, which a release build refuses with
+only Windows' software adapter remains, which an ordinary default-OFF
+Direct3D Release build refuses with
 `No Direct3D hardware device found`. So a run proves that the folder loads
 and its runtime is complete on a clean Windows; whether it draws on a player's
 GPU and driver needs a real machine. `run.cmd` takes a release folder as its argument
 to try it on the host first. Windows Sandbox needs Windows Pro or Enterprise,
 and an administrator to enable the *Windows Sandbox* optional feature.
+
+CI's existing Release install check deliberately configures
+`-DLABRADOR_D3D_SOFTWARE_TEST=ON` so that GPU-less Windows exercises the real
+WARP drawing path. This is a configured engine selection retained by the
+installed game, not the ordinary starter default. Its installed smoke must
+report the actual Basic Render Driver and software kind through
+`tools/d3d_software_check.py`; exit zero alone is insufficient. The
+[software-test contract](../../docs/render-software-tests.md) owns the
+default-refusal fixtures, separate build directories and qualification limits.
 
 CI's `wasm-consumer` job makes and extracts the same starter ZIP and builds the
 page's browser preset, from *Build for the browser*

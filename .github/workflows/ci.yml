@@ -265,23 +265,14 @@ jobs:
     # that make a device. llvmpipe is not a driver, so a real one is still run per release
     # (tools/ci_gap_report.py).
     #
-    # AND IT IS NOT THE WARP FALLBACK THAT MAKES THE DIRECT3D JOBS WORK.
-    # x64-release runs RenderPixelTests here and passes - run 33144174541, 14
-    # of 14, that entry in 0.36s - and a release build has no WARP fallback at
-    # all: engine/render/d3d11/device_resources.cpp puts it in the #else of
-    # #if defined(NDEBUG) and throws "No Direct3D hardware device found"
-    # instead. So this runner offers a DXGI adapter that GetHardwareAdapter
-    # accepts - one without DXGI_ADAPTER_FLAG_SOFTWARE - and D3D11CreateDevice
-    # succeeds on it. WHICH RASTERISER THAT IS, THE LOG SAYS: the step
-    # that records the device prints its name and kind for every rasterising
-    # entry, and an unflagged Basic Render Driver is reported as software
-    # (engine/render/dxgi_device_kind.h). Selection still reads the flag
-    # alone. The checkable shape is what the matrix rests on: Direct3D gets
-    # an adapter from the runner image, and GL and Vulkan get one only from
-    # the Mesa and SwiftShader drivers the steps below provide.
+    # DIRECT3D EXPLICITLY FORCES WARP FOR THIS SOFTWARE LANE;
+    # ordinary Release consumers refuse every known software adapter. A
+    # separate default-policy Release build runs the real startup refusal
+    # fixtures before the full opted-in pixel suite. Both kinds of evidence
+    # remain present, and no required job name changes.
     #
-    # THE D3D12 PRESET IS THE SAME RASTERISER AS D3D11. Whatever adapter this
-    # runner offers, both Direct3D backends take it, so this runner rasterises
+    # THE D3D12 PRESET IS THE SAME RASTERISER AS D3D11. Both request WARP
+    # explicitly and assert its reported name and software kind, so this runner rasterises
     # the pixel contract twice on one rasteriser, against one set of images. If
     # the two ever disagree, this job is where it shows.
     #
@@ -320,27 +311,39 @@ jobs:
       matrix:
         include:
           - preset: x64-debug
-            software_device: ''
+            software_device: Basic
+            d3d_software_test: true
+            refusal_preset: ''
             vulkan_sdk: false
             probes: ''
           - preset: x64-release
-            software_device: ''
+            software_device: Basic
+            d3d_software_test: true
+            refusal_preset: x64-release
             vulkan_sdk: false
             probes: ''
           - preset: x64-debug-d3d12
-            software_device: ''
+            software_device: Basic
+            d3d_software_test: true
+            refusal_preset: x64-release-d3d12
             vulkan_sdk: false
             probes: 'D3D12DestructionProbe D3D12PresentedSlotsProbe D3D12DescriptorQueryProbe D3D12DescriptorCountProbe'
           - preset: x64-debug-gl
             software_device: llvmpipe
+            d3d_software_test: false
+            refusal_preset: ''
             vulkan_sdk: false
             probes: ''
           - preset: x64-debug-vulkan
             software_device: SwiftShader
+            d3d_software_test: false
+            refusal_preset: ''
             vulkan_sdk: true
             probes: 'VulkanDestructionProbe VulkanPresentedSlotsProbe'
           - preset: x64-debug-null
             software_device: ''
+            d3d_software_test: false
+            refusal_preset: ''
             vulkan_sdk: false
             probes: ''
 
@@ -441,7 +444,18 @@ jobs:
         if: needs.changes.outputs.build == 'true'
         run: |
           call "%VCVARS%"
-          cmake --preset ${{ matrix.preset }} ${{ matrix.preset == 'x64-debug-gl' && '-DVCPKG_MANIFEST_FEATURES=materials' || '' }}
+          cmake --preset ${{ matrix.preset }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ${{ matrix.preset == 'x64-debug-gl' && '-DVCPKG_MANIFEST_FEATURES=materials' || '' }} ${{ matrix.d3d_software_test && '-DLABRADOR_D3D_SOFTWARE_TEST=ON' || '' }}
+
+      # The ordinary Release refusal is built independently of the WARP
+      # option. Its selected fixtures use actual DXGI/D3D calls with scoped
+      # factory/API controls, so the host need not have a physical GPU.
+      - name: Check ordinary Direct3D Release startup refusal
+        if: needs.changes.outputs.build == 'true' && matrix.refusal_preset != ''
+        run: |
+          call "%VCVARS%"
+          cmake --preset ${{ matrix.refusal_preset }} -B out/build/${{ matrix.preset }}-default-refusal -DLABRADOR_D3D_SOFTWARE_TEST=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DVCPKG_MANIFEST_INSTALL=OFF "-DVCPKG_INSTALLED_DIR=${{ github.workspace }}/out/build/${{ matrix.preset }}/vcpkg_installed" || exit /b 1
+          python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build out/build/${{ matrix.preset }}-default-refusal --target RenderPixelTests || exit /b 1
+          python tools\d3d_software_check.py --mode default-refusal --executable out/build/${{ matrix.preset }}-default-refusal/tests/render/RenderPixelTests.exe --compile-commands out/build/${{ matrix.preset }}-default-refusal/compile_commands.json --report out/d3d-default-${{ matrix.preset }}.json
 
       # Through ci_build_retry.py, which builds once more only when a link edge
       # fails on a locked output file, a runner flake whose cause is not known.
@@ -538,18 +552,32 @@ jobs:
       # A green above says nothing about what drew. ctest shows a passing
       # test's output to nobody, so this asks RenderPixelTests again, in its
       # own folder because it loads ./content. Every rasterising entry prints
-      # the device's name and kind; GL and Vulkan also fail unless the name
-      # is their software_device. The Direct3D entries are not held to a name:
-      # the runner image chooses their adapter, and this line is the record of
-      # which one it chose and how the engine classified it.
+      # the device's name and kind; GL and Vulkan fail unless the name is
+      # their software_device. Direct3D's separate checker below requires
+      # both its explicit WARP name and the software classification.
       - name: Record the device that drew
-        if: needs.changes.outputs.build == 'true' && matrix.preset != 'x64-debug-null'
+        if: needs.changes.outputs.build == 'true' && matrix.preset != 'x64-debug-null' && !matrix.d3d_software_test
         working-directory: out/build/${{ matrix.preset }}/tests/render
         run: |
           RenderPixelTests.exe -tc="the renderer reports the rasterising device it selected" > device.txt || exit /b 1
           type device.txt
           if "${{ matrix.software_device }}"=="" exit /b 0
           findstr /C:"Drawing on" device.txt | findstr /C:"${{ matrix.software_device }}" >nul || (echo RenderPixelTests did not draw on ${{ matrix.software_device }}. & exit /b 1)
+
+      - name: Record and verify the explicit Direct3D software device
+        if: needs.changes.outputs.build == 'true' && matrix.d3d_software_test
+        run: python tools\d3d_software_check.py --mode pixels --executable out/build/${{ matrix.preset }}/tests/render/RenderPixelTests.exe --compile-commands out/build/${{ matrix.preset }}/compile_commands.json --report out/d3d-software-${{ matrix.preset }}.json
+
+      - name: Keep Direct3D default and software-test receipts
+        if: always() && matrix.d3d_software_test
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          archive: true
+          name: d3d-selection-${{ matrix.preset }}
+          path: |
+            out/d3d-default-${{ matrix.preset }}.*
+            out/d3d-software-${{ matrix.preset }}.json
+          if-no-files-found: ignore
 
       # A failed golden comparison is the one failure here that cannot be read
       # from the log: it says which frame moved and by how much, but the thing a
@@ -1203,7 +1231,7 @@ jobs:
         working-directory: C:\dev\mygame
         run: |
           call "%VCVARS%"
-          cmake --preset x64-release
+          cmake --preset x64-release -DLABRADOR_D3D_SOFTWARE_TEST=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build the release
         working-directory: C:\dev\mygame
@@ -1220,7 +1248,16 @@ jobs:
 
       - name: Start the game from the release folder
         working-directory: C:\
-        run: C:\dev\mygame-release\MyGame.exe --smoke-test
+        run: python "%GITHUB_WORKSPACE%\tools\d3d_software_check.py" --mode installed --executable C:\dev\mygame-release\MyGame.exe --compile-commands C:\dev\mygame\out\build\x64-release\compile_commands.json --report "%GITHUB_WORKSPACE%\out\consumer-d3d-software.json"
+
+      - name: Keep installed-consumer software evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          archive: true
+          name: consumer-d3d-software
+          path: out/consumer-d3d-software.json
+          if-no-files-found: ignore
 
       # THE SAME PROJECT UNDER ANOTHER NAME, as Rename your game
       # (website/src/content/docs/docs/guides/your-name.mdx) has a reader make
@@ -1265,7 +1302,7 @@ jobs:
         run: |
           call "%VCVARS%"
           python "%GITHUB_WORKSPACE%\tools\consumer_check\icon_fixture.py" . || exit /b 1
-          cmake --preset x64-release "-DGAME_ICON_FILE=C:/dev/mygame/game/icon fixture/consumer.test.ico" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON || exit /b 1
+          cmake --preset x64-release -DLABRADOR_D3D_SOFTWARE_TEST=ON "-DGAME_ICON_FILE=C:/dev/mygame/game/icon fixture/consumer.test.ico" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON || exit /b 1
           python "%GITHUB_WORKSPACE%\tools\consumer_check\icon_fixture.py" . --check-configured out\build\x64-release || exit /b 1
           python "%GITHUB_WORKSPACE%\tools\ci_build_retry.py" cmake --build --preset x64-release || exit /b 1
           cmake --install out\build\x64-release --prefix C:\dev\mygame-icon-release || exit /b 1

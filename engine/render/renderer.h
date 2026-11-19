@@ -78,9 +78,10 @@ namespace labrador
 	//
 	// `software` means the API, or the engine's list of known CPU
 	// rasterisers, says the device is one. `hardware` means neither did,
-	// which is not proof of a GPU. A Direct3D release build refuses only the
-	// adapters DXGI flags as software, so on a machine whose CPU rasteriser
-	// carries no flag it starts and reports `software`.
+	// which is not proof of a GPU. Ordinary Direct3D Release selection refuses
+	// every known software adapter. The explicit LABRADOR_D3D_SOFTWARE_TEST
+	// build option forces WARP and still reports software; Debug otherwise
+	// retains its hardware-first/WARP-fallback behaviour.
 	enum class RenderDeviceKind
 	{
 		hardware,

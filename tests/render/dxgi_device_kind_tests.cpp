@@ -49,3 +49,19 @@ TEST_CASE("an ordinary adapter is hardware")
 	CHECK(dxgi_device_kind(1, 0x1002, 0x744c, "AMD Radeon")
 		== RenderDeviceKind::hardware);
 }
+
+TEST_CASE("Direct3D hardware selection refuses every known software signal")
+{
+	CHECK_FALSE(dxgi_hardware_adapter_allowed(dxgi_adapter_flag_software,
+		0x10de, 0x2c02, "NVIDIA GeForce RTX 5080"));
+	CHECK_FALSE(dxgi_hardware_adapter_allowed(0, 0x1414, 0x8c, ""));
+	CHECK_FALSE(dxgi_hardware_adapter_allowed(0, 0, 0,
+		"MICROSOFT BASIC RENDER DRIVER"));
+	CHECK_FALSE(dxgi_hardware_adapter_allowed(0, 0x1414, 0x8c,
+		"Microsoft Basic Render Driver"));
+	CHECK(dxgi_hardware_adapter_allowed(0, 0x10de, 0x2c02,
+		"NVIDIA GeForce RTX 5080"));
+	CHECK(dxgi_hardware_adapter_allowed(0, 0x1414, 0x8d,
+		"Another Microsoft adapter"));
+	CHECK(dxgi_hardware_adapter_allowed(1, 0x1002, 0x744c, "AMD Radeon"));
+}

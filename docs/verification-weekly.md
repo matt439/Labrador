@@ -9,7 +9,7 @@ contexts are non-required; the twenty required contexts in
 
 | Configuration | Required entries | Hosted execution |
 |---|---:|---|
-| `x64-release-d3d12` | 23 | Runner-selected Direct3D adapter; its name and classification are recorded. |
+| `x64-release-d3d12` | 23 | Explicit WARP, checked by name and software classification. |
 | `x64-release-gl` | 22 | Mesa llvmpipe, checked by name. |
 | `x64-release-vulkan` | 22 | Chrome's SwiftShader, checked by name. |
 | `x64-release-null` | 23 | Recorded render/audio; no graphics or audio API device. |

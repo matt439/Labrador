@@ -638,6 +638,7 @@ namespace labrador
 		// Other device types, including CPU implementations, share a priority;
 		// the first candidate at each priority wins ties.
 		int best_score = -1;
+		VkResult presentation_error = VK_SUCCESS;
 		std::string refusals;
 
 		for (VkPhysicalDevice candidate : devices)
@@ -676,9 +677,16 @@ namespace labrador
 				}
 
 				VkBool32 presents = VK_FALSE;
-				check_vk(vkGetPhysicalDeviceSurfaceSupportKHR(candidate, i,
-					this->surface_, &presents),
-					"The Vulkan device's presentation support could not be queried");
+				const VkResult queried = vkGetPhysicalDeviceSurfaceSupportKHR(candidate, i,
+					this->surface_, &presents);
+				if (queried != VK_SUCCESS)
+				{
+					if (presentation_error == VK_SUCCESS)
+					{
+						presentation_error = queried;
+					}
+					continue;
+				}
 				if (presents != VK_TRUE)
 				{
 					continue;
@@ -731,6 +739,8 @@ namespace labrador
 
 		if (this->owner_->physical_device == VK_NULL_HANDLE)
 		{
+			check_vk(presentation_error,
+				"The Vulkan device's presentation support could not be queried");
 			refuse_device_requirement(startup, "No Vulkan device on this machine can run "
 				"this backend:" + refusals);
 		}

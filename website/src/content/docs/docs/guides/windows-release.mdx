@@ -325,9 +325,17 @@ category is deliberately not an exhaustive detector of every unavailable
 browser situation; do not treat an arbitrary runtime error as optional
 graphics.
 
-A release build has no software fallback. A debug build's Direct3D renderers fall back to WARP,
-Windows' software rasteriser, when there is no hardware adapter, which is why a debug build can
-start where a release refuses.
+An ordinary Direct3D Release build refuses every known software adapter,
+including an unflagged Basic Render Driver. It has no implicit software
+fallback. A Debug build retains hardware-first selection and WARP fallback,
+which is why it can start where the ordinary Release build refuses.
+
+Maintainer software tests explicitly configure
+`-DLABRADOR_D3D_SOFTWARE_TEST=ON`. This forces WARP even when hardware is
+available and labels the actual device as software; it is not an ordinary
+starter default or physical-GPU qualification. The
+<RepoLink path="docs/render-software-tests.md">software-test contract</RepoLink>
+owns separate default-refusal and software pixel/installed-game checks.
 
 **For machines that refuse it, ship a second program.** Build the `x64-release-gl` preset above
 and install it into a second folder: everything in it is the same file as in the first, except the

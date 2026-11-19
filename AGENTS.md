@@ -160,7 +160,7 @@ The current mapping covers four engine folders:
 | Other engine folders, samples, website and tooling | Not modeled by the planner; follow their current owners and affected-configuration checks. |
 
 `python tools/ci_gap_report.py --execute` builds and tests release qualification
-outside required PR CI (GL/Vulkan pixel and smoke tests on a real driver, four additional release presets,
+outside required PR CI (Direct3D, GL and Vulkan pixel and smoke tests on a real driver, four additional Release presets,
 `wasm-debug`) and prints
 the PR template's section; its test fails if `ci.yml` drifts from its list.
 A whole candidate qualification fails unless it registers exactly its inventory list.
@@ -191,8 +191,10 @@ paths are planning information; they do not establish a build or test result.
   registers `MinimalStateTests`, the template's states driven by synthetic
   keys in a hidden Application, which the testing guide shows. CI's GL job draws on Mesa's llvmpipe and its Vulkan job on
   Chrome's SwiftShader, and fails if `RenderPixelTests` names another device;
-  neither is a real driver, which `ci_gap_report.py` still covers. A passing
-  release Direct3D test does not imply WARP: release has no WARP fallback.
+  neither is a real driver, which `ci_gap_report.py` still covers. Direct3D CI
+  explicitly forces WARP via `LABRADOR_D3D_SOFTWARE_TEST` and checks the software
+  device report. Separate default-OFF D3D Release builds verify startup refusal
+  for known software. [Software test policy](docs/render-software-tests.md).
   `renderer_seam_tests.cpp` is headless and runs with every render backend.
 - Pixel tests compare read-back with the shared PNGs in `tests/render/golden/`.
   Regenerate with `LABRADOR_GOLDEN_DUMP=1` and **review every changed image**.

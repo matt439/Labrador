@@ -120,16 +120,21 @@ class WeeklyTests(unittest.TestCase):
         markdown = report.markdown(outcomes, commit="fixture", changed=0, executed=False)
         self.assertIn("What required PR CI misses", markdown)
         self.assertEqual([gap.preset for gap in report.GAPS],
-                         ["x64-debug-gl", "x64-debug-vulkan", *report.WEEKLY_PRESETS])
+                         ["x64-debug-gl", "x64-debug-vulkan", "x64-debug",
+                          "x64-debug-d3d12", "x64-release", *report.WEEKLY_PRESETS])
 
     def test_native_release_uses_qualified_ipo_material_tools_and_correct_software_devices(self):
         native = self.jobs["native"]
         self.assertIn("-DLABRADOR_NATIVE_RELEASE_IPO=ON", native)
         self.assertIn("matrix.preset == 'x64-release-gl' && '-DVCPKG_MANIFEST_FEATURES=materials'", native)
-        self.assertEqual(matrix_values(native, "software_device"), ["", "llvmpipe", "SwiftShader", ""])
+        self.assertEqual(matrix_values(native, "software_device"), ["Basic", "llvmpipe", "SwiftShader", ""])
         self.assertEqual(matrix_values(native, "vulkan_sdk"), ["false", "false", "true", "false"])
         self.assertIn("matrix.preset != 'x64-release-null'", native)
         self.assertIn('findstr /C:"Drawing on" device.txt | findstr /C:"${{ matrix.software_device }}"', native)
+        self.assertIn("matrix.preset == 'x64-release-d3d12' && "
+                      "'-DLABRADOR_D3D_SOFTWARE_TEST=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON'", native)
+        self.assertIn("d3d_software_check.py --mode pixels", native)
+        self.assertEqual(native.count("/tests/render/d3d-software.json"), 2)
         self.assertIn("VK_DRIVER_FILES", native)
         self.assertIn("HKLM:\\SOFTWARE\\Khronos\\Vulkan\\Drivers", native)
         self.assertIn("GALLIUM_DRIVER=llvmpipe", native)

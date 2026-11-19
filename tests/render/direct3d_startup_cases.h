@@ -6,6 +6,17 @@
 
 TEST_SUITE("Direct3DStartupTests")
 {
+	TEST_CASE("D3D STARTUP: invalid caller window fails before adapter selection")
+	{
+		ImportScope imports;
+		render_tests::direct3d_startup::Probe device;
+		device.creation_failure = DXGI_ERROR_UNSUPPORTED;
+		render_tests::direct3d_startup::Scope creation(device);
+		labrador::Renderer renderer;
+		CHECK_THROWS_AS(renderer.create_device(nullptr, 32, 32, 1), std::logic_error);
+		CHECK(device.creation_attempts == 0);
+	}
+
 #if defined(_DEBUG) && !defined(LABRADOR_D3D_SOFTWARE_TEST)
 	TEST_CASE("D3D STARTUP: debug fallback cannot relabel an earlier unrelated failure")
 	{
@@ -64,6 +75,82 @@ TEST_SUITE("Direct3DStartupTests")
 	}
 
 #if !defined(LABRADOR_D3D_SOFTWARE_TEST)
+#if defined(NDEBUG)
+	TEST_CASE("D3D STARTUP: default Release refuses known software without device creation")
+	{
+		for (const render_tests::dxgi_factory::Mode mode : {
+			render_tests::dxgi_factory::Mode::software_only,
+			render_tests::dxgi_factory::Mode::unflagged_software_ids,
+			render_tests::dxgi_factory::Mode::named_software })
+		{
+			ImportScope imports;
+			render_tests::dxgi_factory::Probe adapters{ mode };
+			render_tests::dxgi_factory::Scope enumeration(adapters);
+			render_tests::direct3d_startup::Probe device;
+			device.creation_failure = E_INVALIDARG;
+			device.capability_success = true;
+			render_tests::direct3d_startup::Scope creation(device);
+			CHECK_THROWS_AS(create_resources(true), labrador::RenderDeviceUnavailable);
+			CHECK(adapters.interceptions > 0);
+			CHECK(device.creation_attempts == 0);
+			CHECK(device.capability_attempts == 0);
+		}
+	}
+#endif
+
+	TEST_CASE("D3D STARTUP: unflagged software IDs and names are refused before device creation")
+	{
+		for (const render_tests::dxgi_factory::Mode mode : {
+			render_tests::dxgi_factory::Mode::unflagged_software_ids,
+			render_tests::dxgi_factory::Mode::named_software })
+		{
+			ImportScope imports;
+			render_tests::dxgi_factory::Probe adapters{ mode };
+			render_tests::dxgi_factory::Scope enumeration(adapters);
+			render_tests::direct3d_startup::Probe device;
+			device.creation_failure = DXGI_ERROR_UNSUPPORTED;
+			device.capability_success = true;
+			render_tests::direct3d_startup::Scope creation(device);
+			CHECK_THROWS_AS(create_resources(true), labrador::RenderDeviceUnavailable);
+			CHECK(adapters.interceptions > 0);
+			CHECK(device.capability_attempts == 0);
+#if defined(NDEBUG)
+			CHECK(device.creation_attempts == 0);
+#else
+			// Ordinary Debug still attempts the separate WARP fallback.
+			CHECK(device.creation_attempts == 1);
+#endif
+		}
+	}
+
+	TEST_CASE("D3D STARTUP: selection skips known software and reaches the next hardware control")
+	{
+		ImportScope imports;
+		render_tests::dxgi_factory::Probe adapters{
+			render_tests::dxgi_factory::Mode::software_then_hardware };
+		render_tests::dxgi_factory::Scope enumeration(adapters);
+		render_tests::direct3d_startup::Probe device;
+		device.creation_failure = E_OUTOFMEMORY;
+		device.capability_success = true;
+		render_tests::direct3d_startup::Scope creation(device);
+		try
+		{
+			create_resources(true);
+			FAIL("the selected hardware control's forced allocation failure did not escape");
+		}
+		catch (const labrador::RenderDeviceUnavailable&)
+		{
+			FAIL("the hardware control was lost after the software candidate");
+		}
+		catch (const std::runtime_error& error)
+		{
+			CHECK(std::string(error.what()).find("8007000E") != std::string::npos);
+		}
+		CHECK(adapters.hardware_adapters > 0);
+		CHECK(adapters.hardware_descriptions > 0);
+		CHECK(device.creation_attempts > 0);
+	}
+
 	TEST_CASE("D3D STARTUP: exhausted device enumeration differs from an API failure")
 	{
 		ImportScope imports;
