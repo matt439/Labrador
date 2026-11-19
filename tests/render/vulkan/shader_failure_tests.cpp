@@ -3,6 +3,7 @@
 #include "tests/render/vulkan/loader_function.h"
 
 #include "engine/render/renderer.h"
+#include "engine/render/device_unavailable.h"
 
 #include <vulkan/vulkan.h>
 #include <windows.h>
@@ -111,6 +112,7 @@ TEST_CASE("Vulkan pixel shader creation failure releases the successful vertex m
 	}
 	catch (const std::runtime_error& error)
 	{
+		CHECK(dynamic_cast<const labrador::RenderDeviceUnavailable*>(&error) == nullptr);
 		const std::string message(error.what());
 		CHECK(message.find("The sprite pixel shader could not be created") != std::string::npos);
 		CHECK(message.find("VK_ERROR_OUT_OF_HOST_MEMORY") != std::string::npos);

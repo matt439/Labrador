@@ -1,6 +1,7 @@
 #include "engine/render/vulkan/device_resources.h"
 
 #include "engine/core/diagnostic.h"
+#include "engine/render/device_unavailable.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -14,6 +15,16 @@ namespace labrador
 {
 	namespace
 	{
+		[[noreturn]] void refuse_device_requirement(bool startup,
+			const std::string& message)
+		{
+			if (startup)
+			{
+				throw RenderDeviceUnavailable(message);
+			}
+			throw std::runtime_error(message);
+		}
+
 		// THE FLOOR, AND IT IS THE HIGHEST OF THE FIVE.
 		//
 		// engine/render/d3d11/device_resources.cpp puts this engine's floor at
@@ -497,7 +508,7 @@ namespace labrador
 		this->output_size_.bottom = static_cast<long>(height);
 	}
 
-	void DeviceResources::create_instance()
+	void DeviceResources::create_instance(bool startup)
 	{
 		VkApplicationInfo application = {};
 		application.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -565,6 +576,13 @@ namespace labrador
 		VkInstance instance = VK_NULL_HANDLE;
 		const VkResult created = vkCreateInstance(&description, nullptr,
 			&instance);
+		if (created == VK_ERROR_EXTENSION_NOT_PRESENT ||
+			created == VK_ERROR_INCOMPATIBLE_DRIVER)
+		{
+			refuse_device_requirement(startup,
+				std::string("The Vulkan instance could not be created (") +
+				vk_result_name(created) + ").");
+		}
 		check_vk(created, "The Vulkan instance could not be created");
 		this->owner_->instance = instance;
 
@@ -592,7 +610,7 @@ namespace labrador
 #endif
 	}
 
-	void DeviceResources::select_physical_device()
+	void DeviceResources::select_physical_device(bool startup)
 	{
 		uint32_t count = 0;
 		check_vk(vkEnumeratePhysicalDevices(this->owner_->instance, &count,
@@ -605,7 +623,7 @@ namespace labrador
 			// implementations - lavapipe, SwiftShader - are installed rather
 			// than shipped, which is why .github/workflows/ci.yml points the
 			// loader at the SwiftShader Chrome carries.
-			throw std::runtime_error("This machine has a Vulkan loader but no "
+			refuse_device_requirement(startup, "This machine has a Vulkan loader but no "
 				"Vulkan device. There is no in-box software implementation the "
 				"way Direct3D has WARP; a GPU driver or an installed software "
 				"ICD (lavapipe, SwiftShader) is what provides one.");
@@ -658,9 +676,10 @@ namespace labrador
 				}
 
 				VkBool32 presents = VK_FALSE;
-				if (vkGetPhysicalDeviceSurfaceSupportKHR(candidate, i,
-					this->surface_, &presents) != VK_SUCCESS ||
-					presents != VK_TRUE)
+				check_vk(vkGetPhysicalDeviceSurfaceSupportKHR(candidate, i,
+					this->surface_, &presents),
+					"The Vulkan device's presentation support could not be queried");
+				if (presents != VK_TRUE)
 				{
 					continue;
 				}
@@ -712,7 +731,7 @@ namespace labrador
 
 		if (this->owner_->physical_device == VK_NULL_HANDLE)
 		{
-			throw std::runtime_error("No Vulkan device on this machine can run "
+			refuse_device_requirement(startup, "No Vulkan device on this machine can run "
 				"this backend:" + refusals);
 		}
 
@@ -956,7 +975,7 @@ namespace labrador
 		return made_render_pass;
 	}
 
-	void DeviceResources::create_device_resources()
+	void DeviceResources::create_device_resources(bool startup)
 	{
 		if (this->window_ == nullptr)
 		{
@@ -966,7 +985,7 @@ namespace labrador
 
 		this->owner_ = std::make_shared<VulkanDevice>();
 
-		this->create_instance();
+		this->create_instance(startup);
 
 		VkWin32SurfaceCreateInfoKHR surface = {};
 		surface.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -978,7 +997,7 @@ namespace labrador
 			"This window could not be given a Vulkan surface");
 		this->surface_ = made_surface;
 
-		this->select_physical_device();
+		this->select_physical_device(startup);
 		this->create_logical_device();
 
 		// The timeline, which is this backend's whole synchronisation model.

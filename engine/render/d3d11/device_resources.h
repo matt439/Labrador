@@ -57,7 +57,7 @@ namespace labrador
         DeviceResources(DeviceResources const&) = delete;
         DeviceResources& operator= (DeviceResources const&) = delete;
 
-        void CreateDeviceResources();
+        void CreateDeviceResources(bool startup = false);
         void CreateWindowSizeDependentResources();
         void SetWindow(HWND window, int width, int height) noexcept;
         bool WindowSizeChanged(int width, int height);

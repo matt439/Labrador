@@ -127,6 +127,21 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-20 — Distinguish renderer startup requirement refusals
+
+Renderer startup throws `RenderDeviceUnavailable` when an explicit device or
+capability check rules out startup. Examples include no acceptable Direct3D
+adapter, missing required WGL capabilities, Vulkan driver or required extension
+absence, and a browser without WebGL2. The exception retains the backend
+diagnostic and its native error code where available.
+
+Callers can catch this category before the ordinary startup-failure handler.
+Runtime recovery, ambiguous WebGL context creation, invalid state, content,
+shader and audio failures keep their own error paths. Unexpected enumeration
+and capability errors remain API failures. See the
+[Windows release guide](website/src/content/docs/docs/guides/windows-release.mdx)
+for a consumer catch example.
+
 ### 2026-11-20 — Expose best-effort keyboard labels for rebinding
 
 `Keyboard::label(Key)` supplies a borrowed UTF-8 display label when a position

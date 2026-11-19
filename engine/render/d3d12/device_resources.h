@@ -51,7 +51,7 @@ namespace labrador
 		// Called when the shell hands its window over, before anything else.
 		void set_window(HWND window, int width, int height);
 
-		void create_device_resources();
+		void create_device_resources(bool startup = false);
 		void create_window_size_dependent_resources();
 
 		// Whether anything was rebuilt, which is what the seam asks for.

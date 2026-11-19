@@ -5,6 +5,8 @@
 
 #include "engine/render/d3d11/device_resources.h"
 #include "engine/core/diagnostic.h"
+#include "engine/render/device_unavailable.h"
+#include "engine/render/direct3d_startup.h"
 #include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 
@@ -111,7 +113,7 @@ namespace labrador
     }
 
     // Configures the Direct3D device, and stores handles to it and the device context.
-    void DeviceResources::CreateDeviceResources()
+    void DeviceResources::CreateDeviceResources(bool startup)
     {
         UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
@@ -152,6 +154,7 @@ namespace labrador
         ComPtr<ID3D11DeviceContext> context;
 
         HRESULT hr = E_FAIL;
+        bool missing_capability = !adapter;
         if (adapter)
         {
             hr = D3D11CreateDevice(
@@ -166,10 +169,15 @@ namespace labrador
                 nullptr,                // The level chosen is not kept.
                 context.GetAddressOf()  // Returns the device immediate context.
                 );
+            missing_capability = hr == DXGI_ERROR_UNSUPPORTED;
         }
 #if defined(NDEBUG)
         else
         {
+            if (startup)
+            {
+                throw RenderDeviceUnavailable("No Direct3D hardware device found");
+            }
             throw std::runtime_error("No Direct3D hardware device found");
         }
 #else
@@ -198,7 +206,8 @@ namespace labrador
         }
 #endif
 
-        ThrowIfFailed(hr);
+        check_direct3d_creation(hr, startup && missing_capability,
+            "The Direct3D 11 device (minimum feature level 10.0) could not be created");
 
 #ifndef NDEBUG
         ComPtr<ID3D11Debug> d3dDebug;
@@ -474,15 +483,23 @@ namespace labrador
 
         ComPtr<IDXGIFactory6> factory6;
         HRESULT hr = m_dxgiFactory.As(&factory6);
+        if (FAILED(hr) && hr != E_NOINTERFACE)
+        {
+            ThrowIfFailed(hr, "The DXGI adapter enumeration interface could not be queried");
+        }
         if (SUCCEEDED(hr))
         {
-            for (UINT adapterIndex = 0;
-                SUCCEEDED(factory6->EnumAdapterByGpuPreference(
+            for (UINT adapterIndex = 0; ; adapterIndex++)
+            {
+                hr = factory6->EnumAdapterByGpuPreference(
                     adapterIndex,
                     DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-                    IID_PPV_ARGS(adapter.ReleaseAndGetAddressOf())));
-                adapterIndex++)
-            {
+                    IID_PPV_ARGS(adapter.ReleaseAndGetAddressOf()));
+                if (hr == DXGI_ERROR_NOT_FOUND)
+                {
+                    break;
+                }
+                ThrowIfFailed(hr, "A Direct3D adapter could not be enumerated");
                 if (IsUsableAdapter(adapter.Get(), adapterIndex))
                 {
                     break;
@@ -492,12 +509,15 @@ namespace labrador
 
         if (!adapter)
         {
-            for (UINT adapterIndex = 0;
-                SUCCEEDED(m_dxgiFactory->EnumAdapters1(
-                    adapterIndex,
-                    adapter.ReleaseAndGetAddressOf()));
-                adapterIndex++)
+            for (UINT adapterIndex = 0; ; adapterIndex++)
             {
+                hr = m_dxgiFactory->EnumAdapters1(adapterIndex,
+                    adapter.ReleaseAndGetAddressOf());
+                if (hr == DXGI_ERROR_NOT_FOUND)
+                {
+                    break;
+                }
+                ThrowIfFailed(hr, "A Direct3D adapter could not be enumerated");
                 if (IsUsableAdapter(adapter.Get(), adapterIndex))
                 {
                     break;
