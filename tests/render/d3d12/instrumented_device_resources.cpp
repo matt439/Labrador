@@ -3,6 +3,11 @@
 // Include every production dependency before introducing the one-call macro,
 // so SDK declarations and standard-library headers are never rewritten.
 #include "engine/render/d3d12/device_resources.h"
+#include "engine/core/diagnostic.h"
+#include "engine/render/device_unavailable.h"
+#include "engine/render/direct3d_startup.h"
+#include "engine/render/dxgi_device_kind.h"
+#include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 
 #include <algorithm>

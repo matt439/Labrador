@@ -35,4 +35,11 @@ namespace labrador
 	RenderDeviceKind dxgi_device_kind(std::uint32_t flags,
 		std::uint32_t vendor_id, std::uint32_t device_id,
 		std::string_view device_name);
+
+	// Normal Direct3D hardware selection uses the same evidence as reporting.
+	// False for every known software adapter, including an unflagged Basic
+	// Render Driver. True means only that those signals did not identify one.
+	bool dxgi_hardware_adapter_allowed(std::uint32_t flags,
+		std::uint32_t vendor_id, std::uint32_t device_id,
+		std::string_view device_name);
 }

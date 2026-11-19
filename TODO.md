@@ -46,7 +46,7 @@ what shipped.
 | `OCA-119` | BLOCKED | could | S | Record actual Escape behaviour from a trusted key in a headed browser. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add the AI-use disclosure when the owner supplies public wording and review/authorship claims. [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-97` | BLOCKED | could | M | Run the integrated pilot on a Mac with Xcode, safaridriver and an available iPhone Simulator. [Pilot](docs/port/ios-simulator-pilot.md). |
-| `SM-98` | OPEN | should | M | Reconcile the retained Direct3D draft with OCA-120's startup mappings. Qualify Release software refusal and the explicit CI opt-in. [Scope](docs/product/BACKLOG.md#sm-98). |
+| `SM-98` | OPEN | should | M | Qualify integrated Direct3D Release refusal, explicit WARP drawing and the installed consumer. [Scope](docs/product/BACKLOG.md#sm-98). |
 | `OCA-120` | OPEN | should | M | Qualify the integrated startup-failure mappings, consumer catch and unrelated-error controls. [Scope](docs/product/BACKLOG.md#oca-120). |
 | `PI-25` | OPEN | should | M | Integrate the mutable-contact change, then verify pair dispatch, retirement and the consumer migration. [Scope](docs/product/BACKLOG.md#pi-25). |
 

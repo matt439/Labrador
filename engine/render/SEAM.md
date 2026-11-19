@@ -104,9 +104,11 @@ CPU rasterisers, says the device is one; `hardware` means neither did, which is
 not proof of a GPU. The two Direct3D backends share one classifier,
 `dxgi_device_kind.h`, which takes plain values so `RenderTests` runs it in
 every configuration: DXGI's software flag, or the Basic Render Driver's vendor
-and device numbers or name, make `software`. Direct3D adapter selection reads
-the flag alone, so a release build starts on an unflagged CPU rasteriser and
-reports it as `software`.
+and device numbers or name, make `software`. Normal Direct3D hardware selection
+uses that same evidence, so ordinary Release refuses known software even
+without the flag. Debug retains hardware-first selection and WARP fallback.
+The explicit `LABRADOR_D3D_SOFTWARE_TEST` build option forces WARP for software
+qualification; it does not change the reported kind or hardware floor.
 
 The same record names the configured presentation mode. Direct3D requests
 sync interval one, Vulkan selects FIFO, and OpenGL on its WGL context

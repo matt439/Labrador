@@ -577,9 +577,9 @@ qualifications separately from a printed plan or fake-command test result.
   checked against every backend, and one in `gl/` under a `wasm-*` preset too;
   CI builds all of them, but it is slower than finding out first.
 - A green pull request needs no local test run. CI runs every test on
-  every backend, the GL and Vulkan device tests on software rasterisers.
+  every backend, the Direct3D, GL and Vulkan device tests on software rasterisers.
   Qualification outside required PR CI is `python tools/ci_gap_report.py --execute`:
-  GL and Vulkan device tests on a real driver, the four additional native
+  Direct3D, GL and Vulkan device tests on a real driver, the four additional native
   Release presets and `wasm-debug`. Weekly software results do not qualify a
   later candidate or replace real-driver evidence. The sweep runs before a release is tagged (step 3 of *Cutting a
   release*), and on a pull request only when it changes golden images or the

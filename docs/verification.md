@@ -442,9 +442,12 @@ results; hosted CI retains its own qualification.
 
 ## Release and real-driver qualification
 
-Ordinary required PR CI runs `RenderPixelTests`, `MinimalSmokeTests` and `CollisionSmokeTests` on
-`x64-debug-gl` and `x64-debug-vulkan` with software rasterisers, Mesa's llvmpipe and Chrome's
-SwiftShader, so a real driver is what those two presets leave out. Its matrix
+Ordinary required PR CI runs `RenderPixelTests`, `MinimalSmokeTests` and
+`CollisionSmokeTests` on the two Direct3D Debug presets and `x64-release` with
+[explicit WARP selection](render-software-tests.md), and on `x64-debug-gl` and
+`x64-debug-vulkan` with Mesa's llvmpipe and Chrome's SwiftShader. These five
+configurations leave real-driver drawing to local qualification. Their
+separate default-OFF Direct3D Release builds verify startup refusal. The matrix
 also leaves out the four native Release presets other than `x64-release`
 and `wasm-debug`. The [additional weekly workflow](verification-weekly.md)
 runs those five as non-required software checks against their existing exact
@@ -471,8 +474,10 @@ so the record covers every selected preset. Results come from JUnit, because
 `LastTest.log` writes "Test Passed." for a test whose executable is missing
 and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
 case, a nonzero ctest exit, or a required test that was never registered makes
-the preset fail. On `x64-debug-gl` and `x64-debug-vulkan` the required tests
-are the pixel and smoke tests. Each whole candidate qualification must register
+the preset fail. In the five driver-only configurations, the required tests
+are the pixel and smoke tests. Real-driver runs require a reported
+hardware-kind device. Direct3D qualification explicitly configures
+`LABRADOR_D3D_SOFTWARE_TEST=OFF`. Each whole candidate qualification must register
 exactly its list in `tests/ctest_inventory.json`, the file CI holds its own
 configurations to: an entry missing from the run or one the list does not
 name fails the preset, naming the entry. `wasm-debug`'s list has the pages

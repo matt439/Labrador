@@ -460,7 +460,10 @@ it is wrapped the same way:
 <SourceFile path="samples/minimal/main.cpp" from="std::unique_ptr<State> first_state" to="return app.run(std::move(first_state));" />
 
 **The regular render build needs a graphics device.** Debug Direct3D permits
-Windows' WARP software fallback; Release has no WARP fallback. A preset for
+Windows' WARP software fallback; ordinary Release has no implicit WARP
+fallback. CI explicitly opts into the separate
+`LABRADOR_D3D_SOFTWARE_TEST=ON` WARP profile and retains default-Release
+refusal checks. A preset for
 OpenGL or Vulkan needs a driver. On a machine without the required device,
 `ctest --preset <name> -E SmokeTests` runs the rest. The null configure above
 instead checks startup with its recording renderer.

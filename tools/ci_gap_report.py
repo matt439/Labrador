@@ -62,6 +62,9 @@ def whole_preset(preset: str) -> Gap:
 GAPS = (
     Gap("x64-debug-gl", DEVICE_TESTS, DEVICE_TESTS),
     Gap("x64-debug-vulkan", DEVICE_TESTS, DEVICE_TESTS),
+    Gap("x64-debug", DEVICE_TESTS, DEVICE_TESTS),
+    Gap("x64-debug-d3d12", DEVICE_TESTS, DEVICE_TESTS),
+    Gap("x64-release", DEVICE_TESTS, DEVICE_TESTS),
     whole_preset("x64-release-d3d12"),
     whole_preset("x64-release-gl"),
     whole_preset("x64-release-vulkan"),
@@ -89,7 +92,10 @@ class Outcome:
 
 
 def commands(preset: str, junit: Path) -> list[list[str]]:
-    return [["cmake", "--preset", preset],
+    configure = ["cmake", "--preset", preset]
+    if preset in ("x64-debug", "x64-debug-d3d12", "x64-release", "x64-release-d3d12"):
+        configure.append("-DLABRADOR_D3D_SOFTWARE_TEST=OFF")
+    return [configure,
             ["cmake", "--build", "--preset", preset],
             ["ctest", "--preset", preset, *verification_runner.PASSED_OUTPUT_LIMIT,
              "--output-junit", str(junit)]]
@@ -205,6 +211,11 @@ def execute(gaps: list[Gap], root: Path, output_dir: Path, *, runner=None) -> li
                 outcome.result, outcome.detail = judge(gap, groups)
                 outcome.counts = {key: len(names) for key, names in groups.items()}
                 outcome.junit_path = str(junit)
+                if gap.real_driver and (outcome.device["result"] != "collected" or
+                                        any(not name.endswith(" (hardware)")
+                                            for name in outcome.device["devices"])):
+                    outcome.result = "failed"
+                    outcome.detail += "; real-driver qualification needs a reported hardware-kind device; software or missing evidence is not hardware acceptance"
                 if ctest_code != 0 and outcome.result == "passed":
                     outcome.result = "failed"
                     outcome.detail += f"; ctest exited {ctest_code}; see {log_path.name}"

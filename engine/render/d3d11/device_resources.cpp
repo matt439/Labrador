@@ -7,6 +7,7 @@
 #include "engine/core/diagnostic.h"
 #include "engine/render/device_unavailable.h"
 #include "engine/render/direct3d_startup.h"
+#include "engine/render/dxgi_device_kind.h"
 #include "engine/render/text_encoding.h"
 #include "engine/render/throw_if_failed.h"
 
@@ -75,19 +76,17 @@ namespace labrador
             D3D_FEATURE_LEVEL_10_0,
         };
 
-        // Whether an adapter GetHardwareAdapter may take: any that does not
-        // carry DXGI_ADAPTER_FLAG_SOFTWARE. The flag is the whole test, so an
-        // unflagged CPU rasteriser such as the Basic Render Driver on some
-        // GPU-less machines is taken, and device_info reports it as software
-        // (dxgi_device_kind.h). Traced in a debug build.
+        // Hardware selection and device_info use the same known-software
+        // evidence, including an unflagged Basic Render Driver. Debug can
+        // still fall back to WARP when this hardware walk finds no device.
         bool IsUsableAdapter(IDXGIAdapter1* adapter, [[maybe_unused]] UINT adapterIndex)
         {
             DXGI_ADAPTER_DESC1 desc;
             ThrowIfFailed(adapter->GetDesc1(&desc));
 
-            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+            if (!dxgi_hardware_adapter_allowed(desc.Flags, desc.VendorId,
+                desc.DeviceId, narrow(desc.Description)))
             {
-                // Don't select an adapter DXGI flags as software.
                 return false;
             }
 
@@ -146,14 +145,36 @@ namespace labrador
 
         const UINT featLevelCount = static_cast<UINT>(std::size(c_featureLevels));
 
+#if !defined(LABRADOR_D3D_SOFTWARE_TEST)
         ComPtr<IDXGIAdapter1> adapter;
         GetHardwareAdapter(adapter.GetAddressOf());
+#endif
 
         // Create the Direct3D 11 API device object and a corresponding context.
         ComPtr<ID3D11Device> device;
         ComPtr<ID3D11DeviceContext> context;
 
         HRESULT hr = E_FAIL;
+#if defined(LABRADOR_D3D_SOFTWARE_TEST)
+        const bool missing_capability = true;
+        hr = D3D11CreateDevice(
+            nullptr,
+            D3D_DRIVER_TYPE_WARP,
+            nullptr,
+            creationFlags,
+            c_featureLevels,
+            featLevelCount,
+            D3D11_SDK_VERSION,
+            device.GetAddressOf(),
+            nullptr,
+            context.GetAddressOf());
+#if defined(_DEBUG)
+        if (SUCCEEDED(hr))
+        {
+            report_diagnostic("Direct3D Adapter - WARP (explicit software test)");
+        }
+#endif
+#else
         bool missing_capability = !adapter;
         if (adapter)
         {
@@ -176,9 +197,9 @@ namespace labrador
         {
             if (startup)
             {
-                throw RenderDeviceUnavailable("No Direct3D hardware device found");
+                throw RenderDeviceUnavailable("No Direct3D hardware device found. Known software adapters are excluded by default.");
             }
-            throw std::runtime_error("No Direct3D hardware device found");
+            throw std::runtime_error("No Direct3D hardware device found. Known software adapters are excluded by default.");
         }
 #else
         if (FAILED(hr))
@@ -204,6 +225,7 @@ namespace labrador
                 report_diagnostic("Direct3D Adapter - WARP\n");
             }
         }
+#endif
 #endif
 
         check_direct3d_creation(hr, startup && missing_capability,

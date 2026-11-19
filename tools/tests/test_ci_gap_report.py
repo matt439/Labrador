@@ -208,6 +208,20 @@ class ExecuteTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--test-output-size-passed") + 1], "1048576")
         self.assertEqual(argv[-2:], ["--output-junit", "j.xml"])
 
+    def test_direct3d_hardware_qualification_explicitly_disables_the_software_profile(self):
+        for preset in ("x64-debug", "x64-debug-d3d12", "x64-release", "x64-release-d3d12"):
+            with self.subTest(preset=preset):
+                self.assertIn("-DLABRADOR_D3D_SOFTWARE_TEST=OFF", report.commands(preset, Path("j.xml"))[0])
+
+    def test_a_real_driver_gap_refuses_software_or_missing_device_evidence(self):
+        gap = report.Gap("x64-debug", ("RenderPixelTests",), ("RenderPixelTests",))
+        for device, expected in (("Microsoft Basic Render Driver (software)", "failed"),
+                                 ("", "failed"), ("Fixture adapter (hardware)", "passed")):
+            with self.subTest(device=device), tempfile.TemporaryDirectory() as directory:
+                run, _ = fake_commands(documents={gap.preset: junit(["RenderPixelTests"], device)})
+                outcomes = report.execute([gap], Path(directory), Path(directory) / "out", runner=run)
+                self.assertEqual(outcomes[0].result, expected)
+
     def test_each_preset_records_the_device_its_junit_names(self):
         run, _ = fake_commands(configure_fails={"x64-release-gl"},
                                documents={"x64-debug-gl": junit(["RenderPixelTests"], "Fixture GPU/PCIe"),

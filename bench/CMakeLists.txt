@@ -107,6 +107,7 @@ if(WIN32)
         target_link_libraries(D3D12DescriptorCountProbe PRIVATE
             LineSweeperRules LabradorEngine labrador_settings
         )
+        labrador_apply_d3d_software_test(D3D12DescriptorCountProbe)
         target_include_directories(D3D12DescriptorCountProbe SYSTEM PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/../external/rapidjson/include"
         )
@@ -124,6 +125,9 @@ if(WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/../engine/render/d3d12/device_resources.cpp")
         set(descriptor_preload_source
             "${CMAKE_CURRENT_SOURCE_DIR}/d3d12_descriptor_count_renderer.cpp")
+        cmake_path(NORMAL_PATH descriptor_renderer_source)
+        cmake_path(NORMAL_PATH descriptor_device_source)
+        cmake_path(NORMAL_PATH descriptor_preload_source)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
             "${descriptor_renderer_source}" "${descriptor_device_source}"
             "${descriptor_preload_source}")

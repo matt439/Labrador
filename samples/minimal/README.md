@@ -41,6 +41,11 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-20.** Ordinary Direct3D Release builds refuse known software
+  adapters. Configure `-DLABRADOR_D3D_SOFTWARE_TEST=ON` to force WARP for
+  software CI and installed-game checks. Diagnostics identify the selected
+  software device. Standard Debug builds may fall back to WARP.
+
 - **2026-11-17, `986c12cb`.** `GAME_ICON_FILE` optionally embeds an icon supplied by the
   game owner. Copy `game_icon.rc`, the native CMake block and main.cpp's
   `GAME_HAS_ICON_RESOURCE` block together; the latter explicitly selects

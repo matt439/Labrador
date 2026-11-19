@@ -34,6 +34,7 @@ review's and the release audit's.
 | `cmake/settings.cmake` | Defines the compile settings the game links. |
 | `cmake/native_release_ipo.cmake` | Checks and selects opt-in native Release IPO inside the engine's directory. |
 | `cmake/sanitizers.cmake` | Declares the isolated sanitizer option and refuses incompatible selections before building. |
+| `cmake/d3d_software_test.cmake` | Configures explicit native Direct3D WARP testing. |
 | `cmake/source_revision.cmake` | Reports the engine source identity during configure. |
 | `cmake/version.cmake` | Derives release/development version facts from the canonical manifest. |
 | `cmake/dependencies.cmake` | Supplements missing selected package/tool discovery with consumer manifest advice. |
@@ -126,6 +127,19 @@ not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
 ## Unreleased
+
+### 2026-11-20 — Refuse known software in ordinary Direct3D Release startup
+
+**Behaviour change.** Direct3D 11 and 12 use the reported device kind to
+exclude software adapters from hardware selection. The check covers the
+DXGI flag, Microsoft Basic Render Driver IDs and its known name. Ordinary
+Release builds now refuse an unflagged known software adapter. Debug keeps
+its hardware-first selection and WARP fallback.
+
+Set `-DLABRADOR_D3D_SOFTWARE_TEST=ON` at configure time to force WARP for the
+selected native Direct3D build and its linked programs. It defaults to OFF,
+persists in the CMake cache and reports the selected device and software kind.
+See the [configuration and consumer contract](docs/render-software-tests.md).
 
 ### 2026-11-20 — Distinguish renderer startup requirement refusals
 

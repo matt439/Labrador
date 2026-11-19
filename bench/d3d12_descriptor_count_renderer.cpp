@@ -4,6 +4,7 @@
 // includes a header this list lacks.
 #include "bench/d3d12_descriptor_count_state.h"
 #include "engine/render/d3d12/backend.h"
+#include "engine/core/diagnostic.h"
 #include "engine/math/rectanglef.h"
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"

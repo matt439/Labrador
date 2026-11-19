@@ -41,7 +41,7 @@ jobs:
       matrix:
         include:
           - preset: x64-release-d3d12
-            software_device: ''
+            software_device: Basic
             vulkan_sdk: false
           - preset: x64-release-gl
             software_device: llvmpipe
@@ -115,7 +115,7 @@ jobs:
         run: |
           call "%VCVARS%"
           if errorlevel 1 exit /b %errorlevel%
-          cmake --preset ${{ matrix.preset }} -DLABRADOR_NATIVE_RELEASE_IPO=ON ${{ matrix.preset == 'x64-release-gl' && '-DVCPKG_MANIFEST_FEATURES=materials' || '' }}
+          cmake --preset ${{ matrix.preset }} -DLABRADOR_NATIVE_RELEASE_IPO=ON ${{ matrix.preset == 'x64-release-gl' && '-DVCPKG_MANIFEST_FEATURES=materials' || '' }} ${{ matrix.preset == 'x64-release-d3d12' && '-DLABRADOR_D3D_SOFTWARE_TEST=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON' || '' }}
 
       - name: Build
         run: |
@@ -181,13 +181,17 @@ jobs:
           ctest --preset ${{ matrix.preset }} --parallel 1 --output-on-failure --no-tests=error --test-output-size-passed 1048576 --output-junit "${{ github.workspace }}/out/build/${{ matrix.preset }}/weekly-results.xml"
 
       - name: Record the device that drew
-        if: matrix.preset != 'x64-release-null'
+        if: matrix.preset != 'x64-release-null' && matrix.preset != 'x64-release-d3d12'
         working-directory: out/build/${{ matrix.preset }}/tests/render
         run: |
           RenderPixelTests.exe -tc="the renderer reports the rasterising device it selected" > device.txt || exit /b 1
           type device.txt
           if "${{ matrix.software_device }}"=="" exit /b 0
           findstr /C:"Drawing on" device.txt | findstr /C:"${{ matrix.software_device }}" >nul || (echo RenderPixelTests did not draw on ${{ matrix.software_device }}. & exit /b 1)
+
+      - name: Record and verify the explicit Direct3D software device
+        if: matrix.preset == 'x64-release-d3d12'
+        run: python tools\d3d_software_check.py --mode pixels --executable out/build/${{ matrix.preset }}/tests/render/RenderPixelTests.exe --compile-commands out/build/${{ matrix.preset }}/compile_commands.json --report out/build/${{ matrix.preset }}/tests/render/d3d-software.json
 
       - name: Keep the frames a golden check rejected
         if: failure()
@@ -207,6 +211,7 @@ jobs:
             out/build/${{ matrix.preset }}/weekly-results.xml
             out/build/${{ matrix.preset }}/Testing/Temporary/LastTest.log
             out/build/${{ matrix.preset }}/tests/render/device.txt
+            out/build/${{ matrix.preset }}/tests/render/d3d-software.json
           if-no-files-found: ignore
           retention-days: 14
           archive: true

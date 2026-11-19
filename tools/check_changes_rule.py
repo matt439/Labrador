@@ -28,7 +28,7 @@ ORIGINAL_RULE_PATHS = ("engine/CMakeLists.txt", "cmake/settings.cmake", "vcpkg.j
 RULE_PATHS = (*ORIGINAL_RULE_PATHS, "CMakeLists.txt", "engine/math/CMakeLists.txt",
               "cmake/source_revision.cmake", "cmake/compile_shaders.cmake",
               "cmake/version.cmake", "cmake/version_values.h.in", "cmake/release_identity.txt",
-              "cmake/dependencies.cmake",
+              "cmake/dependencies.cmake", "cmake/d3d_software_test.cmake",
               "cmake/add_material.cmake", "cmake/embed_material.cmake",
               "engine/app/web/window_dependencies.js",
               "cmake/check_engine_includes.cmake", "cmake/native_release_ipo.cmake", "cmake/sanitizers.cmake")
