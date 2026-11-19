@@ -7,11 +7,13 @@
 #include <emscripten/html5.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <exception>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 
 // THE PAGE'S HALF, which is the only JavaScript in the shell (the renderer's
@@ -231,6 +233,68 @@ EM_JS(int, labrador_take_fullscreen_refusal, (), {
 	return refused;
 });
 
+// Observation needs the DOM's composition/CapsLock facts, which the html5
+// keyboard struct does not carry. This listener asks for no layout-map or
+// keyboard-lock permission and changes neither event defaults nor key state.
+using KeyLabelCallback = void (*)(void* user_data, const char* code,
+	const char* label, int modified, int composing);
+using LabelInvalidatedCallback = void (*)(void* user_data);
+
+EM_JS(void, labrador_listen_key_labels, (void* user_data,
+	KeyLabelCallback deliver, LabelInvalidatedCallback invalidate), {
+	const previous = Module.labradorKeyLabels;
+	if (previous) {
+		previous.canvas.removeEventListener("keydown", previous.key);
+		if (previous.keyboard) {
+			previous.keyboard.removeEventListener("layoutchange", previous.layout);
+		}
+		Module.labradorKeyLabels = null;
+	}
+	if (!deliver) {
+		return;
+	}
+	const canvas = specialHTMLTargets["!canvas"];
+	const call = getWasmTableEntry(deliver);
+	const key = (event) => {
+		if (document.activeElement !== canvas || document.hidden || event.repeat) {
+			return;
+		}
+		const value = event.key || "";
+		const point = value.codePointAt(0);
+		if (!point || (point >= 0xd800 && point <= 0xdfff) ||
+			value.length !== (point > 0xffff ? 2 : 1) ||
+			(event.code || "").includes(String.fromCharCode(0))) {
+			return;
+		}
+		const modified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey ||
+			typeof event.getModifierState !== "function" || event.getModifierState("CapsLock");
+		const stack = stackSave();
+		try {
+			call(user_data, stringToUTF8OnStack(event.code || ""),
+				stringToUTF8OnStack(value), modified ? 1 : 0,
+				event.isComposing ? 1 : 0);
+		} finally {
+			stackRestore(stack);
+		}
+	};
+	const layout = () => getWasmTableEntry(invalidate)(user_data);
+	const listening = { canvas, key, layout, keyboard: null };
+	canvas.addEventListener("keydown", key);
+	// Current Chromium exposes no layoutchange EventTarget. A browser that
+	// supplies it can invalidate these partial facts without a map request.
+	const keyboard = typeof navigator !== "undefined" ? navigator.keyboard : null;
+	if (keyboard && typeof keyboard.addEventListener === "function" &&
+		typeof keyboard.removeEventListener === "function") {
+		try {
+			keyboard.addEventListener("layoutchange", layout);
+			listening.keyboard = keyboard;
+		} catch (error) {
+			// Optional notification; focus and changed observations still expire labels.
+		}
+	}
+	Module.labradorKeyLabels = listening;
+});
+
 // POINTER EVENTS, which are the one family the html5 API has no callback for.
 // They are used rather than its touch callbacks because a pointer event is one
 // contact with one id - the shape WM_POINTER and WindowNotify already have -
@@ -385,6 +449,7 @@ namespace labrador
 
 		// Tells the owner whether the browser has an element full screen now.
 		void report_fullscreen();
+		void invalidate_key_labels();
 
 		// Cancels the loop and stops listening. Idempotent.
 		void stop();
@@ -432,6 +497,9 @@ namespace labrador
 		static void frame(void* user_data);
 		static bool on_key(int event_type,
 			const EmscriptenKeyboardEvent* event, void* user_data);
+		static void on_key_label(void* user_data, const char* code,
+			const char* label, int modified, int composing);
+		static void on_labels_invalidated(void* user_data);
 		static bool on_mouse_down(int event_type,
 			const EmscriptenMouseEvent* event, void* user_data);
 		static bool on_mouse_move(int event_type,
@@ -468,6 +536,7 @@ namespace labrador
 		bool cursor_visible = true;
 		std::optional<CursorShape> cursor_shape;
 		DomModifiers modifiers;
+		std::array<std::string, static_cast<size_t>(Key::count)> observed_labels;
 
 		// The analogue of the Win32 window's capture count. A press that
 		// starts on the canvas is followed off it, and its release is heard
@@ -617,6 +686,8 @@ namespace labrador
 			on ? on_fullscreen_change : nullptr);
 		labrador_watch_fullscreen_errors(on ? 1 : 0);
 		labrador_listen_pointers(user_data, on ? on_pointer : nullptr);
+		labrador_listen_key_labels(user_data, on ? on_key_label : nullptr,
+			on ? on_labels_invalidated : nullptr);
 		labrador_observe_device_box(on ? 1 : 0);
 
 		if (!on)
@@ -818,6 +889,50 @@ namespace labrador
 			event->altKey, event->metaKey);
 	}
 
+	void Window::Impl::invalidate_key_labels()
+	{
+		for (std::string& label : this->observed_labels)
+		{
+			label.clear();
+		}
+		this->notify->on_key_labels_invalidated();
+	}
+
+	void Window::Impl::on_labels_invalidated(void* user_data)
+	{
+		Impl* const self = static_cast<Impl*>(user_data);
+		self->guarded([&]() { self->invalidate_key_labels(); });
+	}
+
+	void Window::Impl::on_key_label(void* user_data, const char* code,
+		const char* value, int modified, int composing)
+	{
+		Impl* const self = static_cast<Impl*>(user_data);
+		const Key key = key_from_code(code);
+		const std::string_view label = label_from_key(value, modified != 0,
+			composing != 0);
+		if (key == Key::none || label.empty())
+		{
+			return;
+		}
+		self->guarded([&]()
+			{
+				std::string& previous = self->observed_labels[static_cast<size_t>(key)];
+				if (previous == label)
+				{
+					return;
+				}
+				if (!previous.empty())
+				{
+					// A differing fact makes every older observation suspect. Keep
+					// only this new one; no layout family or remap is inferred.
+					self->invalidate_key_labels();
+				}
+				previous = label;
+				self->notify->on_key_label(key, previous);
+			});
+	}
+
 	bool Window::Impl::on_mouse_down(int, const EmscriptenMouseEvent* event,
 		void* user_data)
 	{
@@ -941,6 +1056,7 @@ namespace labrador
 				}
 
 				self->modifiers.clear();
+				self->invalidate_key_labels();
 				// Losing the keyboard mid-drag is a lost capture, as
 				// WM_CAPTURECHANGED is on Windows: the release will be
 				// delivered, if at all, to whatever has the page now.
@@ -975,6 +1091,7 @@ namespace labrador
 				if (hidden)
 				{
 					self->modifiers.clear();
+					self->invalidate_key_labels();
 					self->notify->on_suspending();
 				}
 				else
@@ -1158,6 +1275,12 @@ namespace labrador
 	// window.h: a page can lock the pointer but not confine it.
 	void Window::set_cursor_confined(bool) const
 	{
+	}
+
+	void Window::refresh_key_labels() const
+	{
+		// Browser label facts are delivered synchronously by the canvas's
+		// unmodified key events; no permission or complete layout map is asked.
 	}
 
 	void Window::leave_fullscreen(const Vector2I&) const

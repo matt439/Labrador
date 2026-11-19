@@ -47,6 +47,12 @@ namespace labrador
 	char32_t text_from_key(std::string_view key, bool control, bool alt,
 		bool meta);
 
+	// A label is one Unicode scalar from an unmodified, non-composing keydown.
+	// `modified` includes Shift, Control, Alt, Meta and CapsLock. ASCII space,
+	// C0/C1 controls, line separators and malformed text have no label.
+	std::string_view label_from_key(std::string_view key, bool modified,
+		bool composing);
+
 	// Whether the browser keeps this key's own default action.
 	//
 	// The canvas keeps every key a player presses on its own, because an

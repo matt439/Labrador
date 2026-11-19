@@ -52,6 +52,10 @@ int main()
 			[](const std::wstring& text)
 			{
 				std::printf("Components: %s\n", narrow(text).c_str());
+			},
+			[](const std::wstring& text)
+			{
+				std::printf("Components label: %s\n", narrow(text).c_str());
 			}));
 	}
 	catch (const std::exception& error)

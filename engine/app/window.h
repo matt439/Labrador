@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace labrador
 {
@@ -121,6 +122,13 @@ namespace labrador
 		virtual void on_key_down(Key key) const = 0;
 		virtual void on_key_up(Key key) const = 0;
 		virtual void on_text(char32_t codepoint) const = 0;
+
+		// Optional display facts, separate from key identity and typed text.
+		// Text is UTF-8, borrowed only for the callback; an empty value means
+		// unavailable. Invalidation discards all preceding label facts.
+		virtual void on_key_label([[maybe_unused]] Key key,
+			[[maybe_unused]] std::string_view label) const {}
+		virtual void on_key_labels_invalidated() const {}
 
 		virtual void on_mouse_move(int x, int y) const = 0;
 		virtual void on_mouse_button_down(MouseButton button) const = 0;
@@ -447,6 +455,13 @@ namespace labrador
 		// reports motion rather than a position. That is another mode with
 		// another contract, so this does nothing there.
 		void set_cursor_confined(bool confined) const;
+
+		// Application calls this before polling input. Direct Window owners
+		// do the same before their own poll. Native labels refresh at first
+		// use, layout change and activation; unchanged layouts are cached.
+		// Browser labels arrive only from observed unmodified canvas events,
+		// so this does nothing there. No layout or permission is changed.
+		void refresh_key_labels() const;
 
 	private:
 		friend class Application;

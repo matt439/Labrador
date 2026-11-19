@@ -6,7 +6,8 @@
 # ComponentsExample.
 add_library(ComponentsExample STATIC
     animation_preview.cpp nine_slice.cpp option_row.cpp pointer_capture.cpp
-    shape_outline.cpp slider.cpp text_field.cpp binding_row.cpp gallery_bindings.cpp)
+    shape_outline.cpp slider.cpp text_field.cpp binding_row.cpp gallery_bindings.cpp
+    binding_label.cpp)
 target_link_libraries(ComponentsExample PUBLIC LabradorEngine labrador_settings)
 
 set(components_texture_files
@@ -74,6 +75,7 @@ add_executable(ComponentsTests
     text_field_tests.cpp
     binding_row_tests.cpp
     gallery_bindings_tests.cpp
+    binding_label_tests.cpp
     test_main.cpp
 )
 target_link_libraries(ComponentsTests PRIVATE

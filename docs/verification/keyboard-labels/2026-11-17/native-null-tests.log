@@ -1,0 +1,56 @@
+UpdateCTestConfiguration  from :C:/Projects/Labrador-agent-key-labels/out/build/x64-debug-null/DartConfiguration.tcl
+Test project C:/Projects/Labrador-agent-key-labels/out/build/x64-debug-null
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 8
+    Start  8: ComponentsTests
+
+8: Test command: C:\Projects\Labrador-agent-key-labels\out\build\x64-debug-null\samples\components\ComponentsTests.exe
+8: Working Directory: C:/Projects/Labrador-agent-key-labels/out/build/x64-debug-null/samples/components
+8: Test timeout computed to be: 60
+8: [doctest] doctest version is "2.5.3"
+8: [doctest] run with "--help" for options
+8: ===============================================================================
+8: [doctest] test cases:   97 |   97 passed | 0 failed | 0 skipped
+8: [doctest] assertions: 1834 | 1834 passed | 0 failed |
+8: [doctest] Status: SUCCESS!
+1/3 Test  #8: ComponentsTests ..................   Passed    0.12 sec
+test 10
+    Start 10: AppTests
+
+10: Test command: C:\Projects\Labrador-agent-key-labels\out\build\x64-debug-null\tests\app\AppTests.exe
+10: Working Directory: C:/Projects/Labrador-agent-key-labels/out/build/x64-debug-null/tests/app
+10: Test timeout computed to be: 60
+10: [doctest] doctest version is "2.5.3"
+10: [doctest] run with "--help" for options
+10: ===============================================================================
+10: [doctest] test cases:  130 |  130 passed | 0 failed | 0 skipped
+10: [doctest] assertions: 2134 | 2134 passed | 0 failed |
+10: [doctest] Status: SUCCESS!
+2/3 Test #10: AppTests .........................   Passed    1.87 sec
+test 15
+    Start 15: InputTests
+
+15: Test command: C:\Projects\Labrador-agent-key-labels\out\build\x64-debug-null\tests\input\InputTests.exe
+15: Working Directory: C:/Projects/Labrador-agent-key-labels/out/build/x64-debug-null/tests/input
+15: Test timeout computed to be: 60
+15: [doctest] doctest version is "2.5.3"
+15: [doctest] run with "--help" for options
+15: ===============================================================================
+15: [doctest] test cases:   123 |   123 passed | 0 failed | 0 skipped
+15: [doctest] assertions: 13620 | 13620 passed | 0 failed |
+15: [doctest] Status: SUCCESS!
+3/3 Test #15: InputTests .......................   Passed    0.02 sec
+
+The following tests passed:
+	ComponentsTests
+	AppTests
+	InputTests
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   2.12 sec

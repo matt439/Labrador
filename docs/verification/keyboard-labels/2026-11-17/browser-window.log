@@ -1,0 +1,60 @@
+ok 1 - motion preference refreshes and unavailable queries fall back
+ok 2 - the window reports the measured box and that it lacks the keyboard
+ok 3 - a key while the canvas lacks the keyboard reaches nothing
+ok 4 - the pointer over the canvas is reported in client pixels
+ok 5 - the wheel belongs to the page until the canvas is clicked
+ok 6 - a press on the canvas is reported, and gives it the keyboard
+ok 7 - a held button is followed off the canvas
+ok 8 - and released off it
+ok 9 - a pointer off the canvas with nothing held is nobody's
+ok 10 - an arrow is the game's, and does not scroll the page
+ok 11 - Space is a key and text, and does not scroll the page
+ok 12 - a letter is a key and text
+ok 13 - synthetic ISO-position events reach the real DOM window feed
+ok 14 - an unselected international position stays unmapped in the DOM feed
+ok 15 - a chord is a key, not text, and is the browser's
+ok 16 - the wheel is the game's once the canvas has the keyboard, notches signed as on Windows
+ok 17 - the horizontal wheel keeps the DOM's sign
+ok 18 - a short click reaches the window before the next mouse poll
+ok 19 - the short click has both edges with no held button
+ok 20 - the next poll has no click edges
+ok 21 - pending click then held press before focus leaves
+ok 22 - focus cancellation discards the pending gesture
+ok 23 - the cancelled release is not delivered
+ok 24 - no pending click is reported after cancellation
+ok 25 - focus can return without a gesture
+ok 26 - focus return synthesises no button edge
+ok 27 - a second press
+ok 28 - the keyboard leaving mid-drag loses the capture first
+ok 29 - the release after a lost capture reaches nothing
+ok 30 - a press and release beside the canvas reach nothing
+ok 31 - a click gives the canvas the keyboard back
+ok 32 - Tab is the browser's, and takes the keyboard away
+ok 33 - a hidden page suspends
+ok 34 - a second hidden says nothing
+ok 35 - a shown page resumes
+ok 36 - a CSS resize is reported before the frame that draws into it, and never below the minimum
+ok 37 - a CSS resize above the minimum is the box
+ok 38 - a device pixel ratio of two doubles the buffer
+ok 39 - and a CSS position is scaled into it
+ok 40 - and back
+ok 41 - at a fractional device-pixel position the buffer is the snapped box
+ok 42 - and back to a whole position
+ok 43 - a touch goes down and focuses the canvas
+ok 44 - a second finger is a second point
+ok 45 - both move, in whichever order the browser sends them
+ok 46 - the first lifts, keeping its point
+ok 47 - the browser taking the second is a cancel
+ok 48 - a tap is a touch and nothing the mouse hears
+ok 49 - a granted request is reported
+ok 50 - leaving is reported, and the box is the page's again
+run_page: browser warning: Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
+ok 51 - a refused request is reported on the next frame
+ok 52 - closing tells the page before the owner
+ok 53 - the owner hears on_closed once, after the page
+ok 54 - a closed window says nothing more, and ticks no more
+web window test failure
+run_page: expected console diagnostic: web window test failure
+ok 55 - a failure tells the page, then the owner hears on_closed
+run_page: browser: Chrome/157.0.8103.78 (DevTools 1.3, revision @4b3d0dabb8250b6f152d2d85d79e7706e309d087)
+run_page: WebGL2 renderer: ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)

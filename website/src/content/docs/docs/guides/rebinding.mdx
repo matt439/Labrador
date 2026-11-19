@@ -77,9 +77,53 @@ cannot immediately reopen the editor. Keep those rules when you adapt the exampl
 The table's `tokens()` uses `key_name`, and `load_tokens()` parses the exact identities with
 `key_from_name`. A whole pair is validated before either value changes; invalid tokens,
 protected keys and duplicate values preserve the old table. A valid complete pair may swap
-its two distinct keys. The displayed token is a stable fallback, independent of what the
+its two distinct keys. The data token is a stable fallback, independent of what the
 active keyboard layout prints on that position; see [Input](/docs/guides/input/).
 
 The gallery saves nothing. Your game chooses whether to persist a table, its format, and how
 to recover a bad or old file. Keep menu cancellation and a reset route usable after every
-refusal. Physical layout labels and controller rebinding are separate mechanisms.
+refusal. Controller rebinding is a separate mechanism.
+
+## Show best-effort layout labels
+
+<GuideVersionNote feature="Keyboard::label and label_revision used by the gallery's binding display" releaseGuide="docs/guides/input/" />
+
+The gallery's selected row can show a layout label while its binding remains a physical
+position. The separate **Label / token** line says which text was used and whether the page
+fell back because the label was unavailable, unsupported by its font, or too wide. A label
+such as `q` for the position saved as `r` never makes the Q position run that action.
+
+`Keyboard::label(key)` returns an optional UTF-8 view. It borrows the keyboard's storage until
+the next poll or destruction, so the page converts or copies it during `update()`. A label
+change or invalidation advances `label_revision()` when published at an input poll; unchanged
+facts do not advance it. Refresh cached display text on that revision and whenever the selected
+binding changes. Keep `key_name`/`key_from_name` for every data representation.
+
+Copy `binding_label.h/.cpp` for the gallery's presentation policy as well. It converts through
+the existing `widen` boundary and checks `RenderResources::can_render` and measured width before
+using a label. The supplied font must always be able to draw the stable token within the row;
+a stand-in glyph does not make a missing layout label supported. The gallery's delivered font
+is ASCII only, so an available accented label deliberately displays its token instead. The
+helper bounds label conversion to 256 bytes; the gallery reserves 120 units for the key text.
+
+<SourceFile path="samples/components/binding_label.cpp" from="BindingKeyLabel binding_key_label(" to="return { std::move(wide), BindingLabelSource::layout };" />
+
+On Windows, the shell queries the current thread's input layout, caching labels until the
+layout changes or the window activates again. Character queries use a neutral modifier state
+and [`ToUnicodeEx`'s no-state-change flag](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-tounicodeex)
+within Labrador's Windows 10 version 1607 floor. Dead,
+ambiguous or failed character translations are unavailable; named controls can have localized
+names. This is best effort rather than a promise of every keycap or IME legend: a pending dead
+key can affect the returned translation, and IME profile changes do not all notify through
+[`WM_INPUTLANGCHANGE`](https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-inputlangchange).
+No layout is loaded, activated or remapped.
+
+In a browser, the shell caches **last-observed unmodified key labels** from the focused canvas.
+An observation must be a single Unicode scalar. ASCII space, C0/C1 controls, line separators,
+named and dead keys, Shift/Ctrl/Alt/Meta/CapsLock and composition produce no new label. The shell
+requests neither `getLayoutMap` nor Keyboard Lock. Canvas blur and page hiding discard observations. A changed label for an already observed position discards
+older observations before retaining the new fact; an optional `layoutchange` notification is
+used only where the browser actually supplies it. [Current Chromium does not expose that event](https://chromium.googlesource.com/chromium/src/+/HEAD/third_party/blink/renderer/modules/keyboard/keyboard.idl),
+so a layout change can remain undetected until focus changes or a differing fact is observed.
+The cache is not a complete current-layout snapshot. These limitations change display text,
+never the physical mapping, ISO extra-key identity, serialized tokens or binding policy.

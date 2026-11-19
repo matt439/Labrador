@@ -10,6 +10,29 @@
 
 using namespace labrador;
 
+TEST_CASE("observed key labels admit only unmodified printable scalar facts")
+{
+	CHECK(label_from_key("q", false, false) == "q");
+	CHECK(label_from_key("\xC3\xA9", false, false) == "\xC3\xA9");
+	CHECK(label_from_key("\xF0\x9F\x8E\xAE", false, false) == "\xF0\x9F\x8E\xAE");
+	CHECK(label_from_key("q", true, false).empty());
+	CHECK(label_from_key("q", false, true).empty());
+	// AltGr remains a typed-text route, but it is not an unmodified label.
+	CHECK(text_from_key("@", true, true, false) == U'@');
+	CHECK(label_from_key("@", true, false).empty());
+	for (std::string_view value : { "", "Dead", "Unidentified", "Enter", "ab", " ",
+		"\n", "\x7F", "\xC2\x85", "\xE2\x80\xA8", "\xE2\x80\xA9",
+		"\xC0\xAF", "\xED\xA0\x80", "\xF4\x90\x80\x80", "\xC3" })
+	{
+		CHECK(label_from_key(value, false, false).empty());
+	}
+	// The same observed character can label different physical positions;
+	// neither label lookup nor the typed character changes their identity.
+	CHECK(key_from_code("IntlBackslash") == Key::international_backslash);
+	CHECK(key_from_code("Backslash") == Key::backslash);
+	CHECK(key_from_code("UnmappedPosition") == Key::none);
+}
+
 // The browser half of the window's message translation, asserted with no
 // browser. The Win32 half is keyboard_input_tests.cpp, which asserts the Win32
 // translation functions directly, and window_tests.cpp, which drives a real

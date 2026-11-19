@@ -192,6 +192,18 @@ namespace labrador
 		return single_code_point(key);
 	}
 
+	std::string_view label_from_key(std::string_view key, bool modified,
+		bool composing)
+	{
+		const char32_t point = single_code_point(key);
+		if (modified || composing || point <= 0x20u ||
+			(point >= 0x7fu && point <= 0x9fu) || point == 0x2028u || point == 0x2029u)
+		{
+			return {};
+		}
+		return key;
+	}
+
 	bool browser_keeps_key(Key key, bool control, bool alt, bool meta)
 	{
 		if (control || alt || meta)

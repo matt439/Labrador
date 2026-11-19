@@ -139,9 +139,11 @@ namespace components
 		}
 	}
 
-	GalleryState::GalleryState(Application* app, StatusChanged on_status) :
+	GalleryState::GalleryState(Application* app, StatusChanged on_status,
+		StatusChanged on_binding_label) :
 		app_(app),
-		on_status_(std::move(on_status))
+		on_status_(std::move(on_status)),
+		on_binding_label_(std::move(on_binding_label))
 	{
 
 	}
@@ -251,6 +253,9 @@ namespace components
 		this->binding_status_ = this->scene_->add(std::make_unique<UiText>("binding_status",
 			L"Capture: letters/numbers; Esc/B or another row cancels", font_name,
 			Vector2F(label_x, 610.0f), resources, help_colour, false, detail_scale));
+		this->binding_label_info_ = this->scene_->add(std::make_unique<UiText>("binding_label_info",
+			L"", font_name, Vector2F(label_x, 590.0f), resources,
+			help_colour, false, detail_scale));
 		this->refresh_binding_value();
 		this->name_ = this->scene_->add(std::make_unique<TextField>("name",
 			L"Name", "Player", TextFieldLimits{ 12, 180.0f },
@@ -384,6 +389,10 @@ namespace components
 
 		const Keyboard& keyboard = *this->app_->keyboard();
 		const Gamepads& pads = *this->app_->gamepads();
+		if (this->binding_label_revision_ != keyboard.label_revision())
+		{
+			this->refresh_binding_value();
+		}
 		const bool was_editing = this->name_->editing();
 		const bool was_capturing = this->binding_->capturing();
 		bool binding_owned = false;

@@ -3112,6 +3112,11 @@ and the displaying page's fallback; verify
 the documented native/browser routes and keep physical-layout evidence
 separate. Follow input/app verification owners and run the website gate.
 
+**Integrated 2026-11-20.** The rebinding page displays optional layout labels
+and keeps saved bindings on their stable tokens. The [isolated qualification](../verification/keyboard-labels/2026-11-17/README.md)
+records native translation, browser cache invalidation and glyph fallback.
+Combined input/application qualification remains open.
+
 <a id="oca-112"></a>
 ### OCA-112. Preserve valid saves across write and migration failures
 

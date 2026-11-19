@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -169,6 +171,15 @@ namespace labrador
 		// Escape and Backspace as keys rather than appending them to text.
 		void on_text(char32_t codepoint);
 
+		// Copies a best-effort display label supplied by the shell or a fixture.
+		// A nonempty label must be well-formed UTF-8; input does not decode,
+		// normalise or infer it from typed text. Empty means unavailable.
+		// Key::none, Key::count and out-of-range values are ignored.
+		// Changes are staged until poll(), including explicit invalidation of
+		// the complete label map. The shell owns when layout facts expire.
+		void on_key_label(Key key, std::string_view label);
+		void on_key_labels_invalidated();
+
 		// Updates focus for the next poll(). Losing focus clears held keys and
 		// pending text; regaining it does not restore prior keys. Published
 		// snapshots and typed() remain unchanged until poll().
@@ -176,7 +187,8 @@ namespace labrador
 
 		// Called by the shell once per fixed update before readers. Current becomes
 		// previous, fed key/focus state becomes current, and accumulated text
-		// replaces the text accumulated before the previous poll.
+		// replaces the text accumulated before the previous poll. Staged labels
+		// publish together; only a changed label map advances label_revision().
 		void poll();
 
 		// Borrowed snapshots owned by this Keyboard; poll() replaces their values.
@@ -197,6 +209,21 @@ namespace labrador
 		// reconstruction from key bits or a promise of platform IME support.
 		std::string_view typed() const;
 
+		// A best-effort label for this physical position, not a saved binding
+		// token or a promise that the platform reveals its active layout.
+		// Unseen, unavailable and invalid keys return nullopt. The UTF-8 view
+		// borrows this Keyboard's storage until the next poll() or destruction;
+		// feeds and invalidation do not change the currently published view.
+		// The game owns conversion to its rendering text, font support and a
+		// stable key_name fallback. Labels never change a key's identity.
+		std::optional<std::string_view> label(Key key) const;
+
+		// Starts at zero. Advances once per poll whose published label map
+		// differs, including labels becoming unavailable. Repeated facts and
+		// invalidation followed by the same complete map do not advance it.
+		// Focus changes alone do not invalidate labels.
+		uint64_t label_revision() const;
+
 	private:
 		// Fed state is separate from the snapshots readers observe.
 		KeyboardState live_;
@@ -206,5 +233,11 @@ namespace labrador
 
 		std::string typed_;
 		std::string pending_text_;
+
+		std::array<std::string, static_cast<std::size_t>(Key::count)> labels_;
+		std::array<std::string, static_cast<std::size_t>(Key::count)> pending_labels_;
+		std::array<bool, static_cast<std::size_t>(Key::count)> pending_label_keys_{};
+		bool labels_pending_ = false;
+		uint64_t label_revision_ = 0;
 	};
 }

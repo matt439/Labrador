@@ -42,6 +42,15 @@ namespace
 	{
 	public:
 		std::vector<std::string> log;
+		mutable labrador::Keyboard labels;
+		void on_key_label(Key key, std::string_view label) const override
+		{
+			this->labels.on_key_label(key, label);
+		}
+		void on_key_labels_invalidated() const override
+		{
+			this->labels.on_key_labels_invalidated();
+		}
 
 		// What tick() does, so one test can make it throw.
 		std::function<void()> on_tick;
@@ -204,6 +213,43 @@ namespace
 		return PeekMessageW(&message, nullptr, WM_QUIT, WM_QUIT,
 			PM_NOREMOVE) != 0;
 	}
+}
+
+TEST_CASE("native key labels refresh on layout messages and activation without changing keys")
+{
+	RecordingNotify notify;
+	Window window(hidden_options(), &notify);
+	window.refresh_key_labels();
+	notify.labels.poll();
+	REQUIRE(notify.labels.label(Key::escape).has_value());
+	const std::string native_escape(*notify.labels.label(Key::escape));
+	const uint64_t first = notify.labels.label_revision();
+	CHECK(first > 0);
+	window.refresh_key_labels();
+	notify.labels.poll();
+	CHECK(notify.labels.label_revision() == first);
+
+	// A direct owner can observe refresh using a deliberately replaced
+	// published fixture fact. The message carries the existing HKL; no OS
+	// layout is loaded or activated by this test.
+	notify.labels.on_key_label(Key::escape, "fixture label");
+	notify.labels.poll();
+	std::ignore = SendMessageW(hwnd(window), WM_INPUTLANGCHANGE, 0,
+		reinterpret_cast<LPARAM>(GetKeyboardLayout(0)));
+	window.refresh_key_labels();
+	notify.labels.poll();
+	CHECK(*notify.labels.label(Key::escape) == native_escape);
+	CHECK(notify.labels.label_revision() == first + 2);
+	CHECK(labrador::key_name(Key::escape) == "escape");
+	CHECK_FALSE(notify.labels.state().is_down(Key::escape));
+
+	notify.labels.on_key_label(Key::escape, "fixture label");
+	notify.labels.poll();
+	std::ignore = SendMessageW(hwnd(window), WM_ACTIVATEAPP, TRUE, 0);
+	window.refresh_key_labels();
+	notify.labels.poll();
+	CHECK(*notify.labels.label(Key::escape) == native_escape);
+	CHECK(notify.labels.label_revision() == first + 4);
 }
 
 TEST_CASE("an ordinary close destroys the window and ends the pump")

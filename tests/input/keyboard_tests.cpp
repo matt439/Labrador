@@ -2,6 +2,7 @@
 
 #include "engine/input/keyboard.h"
 
+#include <array>
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
@@ -64,6 +65,13 @@ namespace
 		keyboard.set_focused(true);
 		keyboard.poll();
 		keyboard.poll();
+	}
+
+	std::string_view required_label(const Keyboard& keyboard, Key key)
+	{
+		const std::optional<std::string_view> value = keyboard.label(key);
+		REQUIRE(value.has_value());
+		return value.value_or(std::string_view());
 	}
 }
 
@@ -557,4 +565,204 @@ TEST_CASE("the ISO extra key has independent sampled edges and focus cancellatio
 	keyboard.poll();
 	CHECK_FALSE(keyboard.held(Key::international_backslash));
 	CHECK_FALSE(keyboard.held(Key::backslash));
+}
+
+TEST_SUITE("KeyboardLabelTests")
+{
+	TEST_CASE("unseen and invalid key labels are unavailable without inventing token labels")
+	{
+		Keyboard keyboard;
+		CHECK(keyboard.label_revision() == 0);
+		for (unsigned int index = 0; index <= 255; ++index)
+		{
+			CHECK_FALSE(keyboard.label(static_cast<Key>(index)).has_value());
+		}
+		for (Key key : { Key::none, Key::count, static_cast<Key>(255) })
+		{
+			keyboard.on_key_label(key, "Unavailable position");
+		}
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 0);
+		CHECK_FALSE(keyboard.label(Key::a).has_value());
+		CHECK_FALSE(keyboard.label(Key::none).has_value());
+		CHECK_FALSE(keyboard.label(Key::count).has_value());
+		CHECK_FALSE(keyboard.label(static_cast<Key>(255)).has_value());
+	}
+
+	TEST_CASE("key labels publish with the next input snapshot without remapping its identity")
+	{
+		Keyboard keyboard;
+		settle(keyboard);
+		keyboard.on_key_label(Key::z, "W");
+		keyboard.on_key_down(Key::z);
+		keyboard.on_text(U'w');
+		CHECK_FALSE(keyboard.label(Key::z).has_value());
+		CHECK_FALSE(keyboard.held(Key::z));
+		CHECK(keyboard.typed().empty());
+		CHECK(keyboard.label_revision() == 0);
+		keyboard.poll();
+		REQUIRE(keyboard.label(Key::z).has_value());
+		CHECK(required_label(keyboard, Key::z) == "W");
+		CHECK(keyboard.held(Key::z));
+		CHECK_FALSE(keyboard.held(Key::w));
+		CHECK(keyboard.typed() == "w");
+		CHECK(keyboard.label_revision() == 1);
+		CHECK(key_name(Key::z) == "z");
+		CHECK(key_from_name("z") == Key::z);
+	}
+
+	TEST_CASE("label feeds copy caller storage while published views survive staged changes")
+	{
+		Keyboard keyboard;
+		std::string supplied = "A long platform label owned by a temporary shell buffer";
+		const std::string expected = supplied;
+		keyboard.on_key_label(Key::a, supplied);
+		supplied.assign("Changed by the shell before poll");
+		keyboard.poll();
+		const std::optional<std::string_view> published = keyboard.label(Key::a);
+		REQUIRE(published.has_value());
+		CHECK(*published == expected);
+		keyboard.on_key_label(Key::a, "A replacement label with a different allocation length");
+		CHECK(*published == expected);
+		CHECK(required_label(keyboard, Key::a) == expected);
+		keyboard.on_key_labels_invalidated();
+		CHECK(*published == expected);
+		CHECK(required_label(keyboard, Key::a) == expected);
+		keyboard.on_key_label(Key::a, *published);
+		CHECK(*published == expected);
+		keyboard.poll();
+		// The borrowed pre-poll view is no longer used after this boundary.
+		CHECK(required_label(keyboard, Key::a) == expected);
+		CHECK(keyboard.label_revision() == 1);
+	}
+
+	TEST_CASE("one label publication advances revision once and unchanged facts do not advance it")
+	{
+		Keyboard keyboard;
+		keyboard.on_key_label(Key::a, "A");
+		keyboard.on_key_label(Key::b, "B");
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.on_key_label(Key::a, "A");
+		keyboard.on_key_label(Key::b, "B");
+		keyboard.on_key_label(Key::c, "");
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.on_key_label(Key::a, "Transient observation");
+		keyboard.on_key_label(Key::a, "A");
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.on_key_label(Key::a, "Q");
+		keyboard.on_key_label(Key::b, "W");
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 2);
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK(required_label(keyboard, Key::b) == "W");
+	}
+
+	TEST_CASE("label deltas preserve unrelated facts across successive publications")
+	{
+		Keyboard keyboard;
+		keyboard.on_key_label(Key::a, "A");
+		keyboard.on_key_label(Key::b, "B");
+		keyboard.poll();
+		keyboard.on_key_label(Key::a, "Q");
+		keyboard.poll();
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK(required_label(keyboard, Key::b) == "B");
+		keyboard.on_key_label(Key::b, "W");
+		keyboard.poll();
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK(required_label(keyboard, Key::b) == "W");
+		CHECK(keyboard.label_revision() == 3);
+		keyboard.on_key_label(Key::a, "");
+		CHECK(keyboard.label(Key::a).has_value());
+		keyboard.poll();
+		CHECK_FALSE(keyboard.label(Key::a).has_value());
+		CHECK(required_label(keyboard, Key::b) == "W");
+		CHECK(keyboard.label_revision() == 4);
+		keyboard.on_key_label(Key::a, std::string_view());
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 4);
+	}
+
+	TEST_CASE("invalidation clears only at poll and republishing the same complete map is invisible")
+	{
+		Keyboard keyboard;
+		keyboard.on_key_label(Key::a, "Q");
+		keyboard.on_key_label(Key::b, "W");
+		keyboard.poll();
+		keyboard.on_key_labels_invalidated();
+		keyboard.on_key_label(Key::b, "W");
+		keyboard.on_key_label(Key::a, "Q");
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 1);
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK(required_label(keyboard, Key::b) == "W");
+		keyboard.on_key_labels_invalidated();
+		keyboard.on_key_label(Key::a, "Q");
+		CHECK(required_label(keyboard, Key::b) == "W");
+		keyboard.poll();
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK_FALSE(keyboard.label(Key::b).has_value());
+		CHECK(keyboard.label_revision() == 2);
+		keyboard.on_key_labels_invalidated();
+		CHECK(keyboard.label(Key::a).has_value());
+		keyboard.poll();
+		CHECK_FALSE(keyboard.label(Key::a).has_value());
+		CHECK(keyboard.label_revision() == 3);
+		keyboard.on_key_labels_invalidated();
+		keyboard.poll();
+		CHECK(keyboard.label_revision() == 3);
+	}
+
+	TEST_CASE("focus does not discard label facts and the shell explicitly expires them")
+	{
+		Keyboard keyboard;
+		keyboard.on_key_label(Key::a, "Q");
+		keyboard.poll();
+		keyboard.set_focused(true);
+		keyboard.poll();
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.set_focused(false);
+		keyboard.poll();
+		CHECK(required_label(keyboard, Key::a) == "Q");
+		CHECK(keyboard.label_revision() == 1);
+		keyboard.on_key_label(Key::a, "A");
+		keyboard.poll();
+		CHECK_FALSE(keyboard.focused());
+		CHECK(required_label(keyboard, Key::a) == "A");
+		CHECK(keyboard.label_revision() == 2);
+		keyboard.on_key_labels_invalidated();
+		keyboard.poll();
+		keyboard.set_focused(true);
+		keyboard.poll();
+		CHECK_FALSE(keyboard.label(Key::a).has_value());
+		CHECK(keyboard.label_revision() == 3);
+	}
+
+	TEST_CASE("UTF-8 label bytes are preserved independently of font support or saved key tokens")
+	{
+		Keyboard keyboard;
+		const std::array<std::string, 4> labels{
+			utf8({ 0xC3, 0xA9 }), utf8({ 0xE4, 0xB8, 0xAD }),
+			utf8({ 0xF0, 0x9F, 0x98, 0x80 }), utf8({ 0x65, 0xCC, 0x81 })
+		};
+		uint64_t revision = 0;
+		for (const std::string& label : labels)
+		{
+			keyboard.on_key_label(Key::international_backslash, label);
+			keyboard.poll();
+			++revision;
+			REQUIRE(keyboard.label(Key::international_backslash).has_value());
+			CHECK(required_label(keyboard, Key::international_backslash) == label);
+			CHECK(keyboard.label_revision() == revision);
+			CHECK(key_name(Key::international_backslash) == "international_backslash");
+			CHECK_FALSE(key_from_name(label).has_value());
+		}
+	}
 }

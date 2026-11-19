@@ -42,7 +42,7 @@ namespace components
 		using StatusChanged = std::function<void(const std::wstring& text)>;
 
 		explicit GalleryState(labrador::Application* app,
-			StatusChanged on_status = nullptr);
+			StatusChanged on_status = nullptr, StatusChanged on_binding_label = nullptr);
 
 		void init() override;
 		void update(float dt) override;
@@ -111,6 +111,8 @@ namespace components
 		labrador::UiText* animation_help_ = nullptr;
 		BindingRow* binding_ = nullptr;
 		labrador::UiText* binding_status_ = nullptr;
+		labrador::UiText* binding_label_info_ = nullptr;
+		uint64_t binding_label_revision_ = 0;
 		GalleryBindings bindings_;
 		GalleryAction binding_action_ = GalleryAction::restart_previews;
 		TextField* name_ = nullptr;
@@ -133,5 +135,7 @@ namespace components
 		Slider* dragging_ = nullptr;
 
 		StatusChanged on_status_;
+		// Optional receipt of the separate selected-label information line.
+		StatusChanged on_binding_label_;
 	};
 }

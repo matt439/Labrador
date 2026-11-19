@@ -1,7 +1,9 @@
 #include "samples/components/gallery_state.h"
+#include "samples/components/binding_label.h"
 
 #include "engine/input/gamepads.h"
 #include "engine/input/keyboard.h"
+#include "engine/render/render_resources.h"
 
 #include <string>
 #include <string_view>
@@ -27,17 +29,51 @@ namespace components
 			const std::string_view token = key_name(key);
 			return std::wstring(token.begin(), token.end());
 		}
+
+		std::wstring label_source(BindingLabelSource source)
+		{
+			switch (source)
+			{
+			case BindingLabelSource::layout: return L"layout";
+			case BindingLabelSource::token_unavailable: return L"unavailable";
+			case BindingLabelSource::token_font: return L"font fallback";
+			case BindingLabelSource::token_width: return L"width fallback";
+			}
+			return L"unavailable";
+		}
 	}
 
 	void GalleryState::refresh_binding_value()
 	{
+		const Keyboard& keyboard = *this->app_->keyboard();
+		const RenderResources& resources = *this->app_->render_resources();
+		const FontHandle font = resources.resolve_sprite_font("jetbrains_mono_bold_16");
+		const auto display = [&](GalleryAction action)
+			{
+				const Key key = this->bindings_.key(action);
+				return binding_key_label(keyboard.label(key), key_name(key), resources,
+					font, 120.0f);
+			};
+		const BindingKeyLabel selected = display(this->binding_action_);
 		this->binding_->set_value(action_title(this->binding_action_) + L": " +
-			key_token(this->bindings_.key(this->binding_action_)));
+			selected.text);
+		const std::wstring info = L"Label: " + selected.text + L" / token " +
+			key_token(this->bindings_.key(this->binding_action_)) + L" (" +
+			label_source(selected.source) + L")";
+		if (this->binding_label_info_->text() != info)
+		{
+			this->binding_label_info_->set_text(info);
+			if (this->on_binding_label_)
+			{
+				this->on_binding_label_(info);
+			}
+		}
 		if (this->animation_help_ != nullptr)
 		{
-			this->animation_help_->set_text(L"Restart: " + key_token(this->bindings_.key(GalleryAction::restart_previews)) +
-				L" / pad X; difficulty reset: " + key_token(this->bindings_.key(GalleryAction::reset_difficulty)));
+			this->animation_help_->set_text(L"Restart: " + display(GalleryAction::restart_previews).text +
+				L" / pad X; difficulty reset: " + display(GalleryAction::reset_difficulty).text);
 		}
+		this->binding_label_revision_ = keyboard.label_revision();
 	}
 
 	void GalleryState::set_binding_status(const std::wstring& text)
