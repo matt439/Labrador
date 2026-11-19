@@ -4,181 +4,54 @@ An index of open work, one row per item; each row points to the document that ow
 
 ## NOW
 
-The overnight goal was cleared on 2026-11-17. The [local handoff](docs/2026-11-17-overnight-handoff.md)
-records integrated work, retained qualification failures and completed scopes
-awaiting integration. Resume only on the owner's next instruction.
+Start with these stories in [BACKLOG order](docs/product/BACKLOG.md#later).
 
-**The only ordering in this file.** Keep every `DECISION` row here. Keep this block to the current aim and the next few actions; results go in their owners, and a closed story is a ticked box in BACKLOG.md.
+1. **OCA-97 — play the assembled starter.** Launch `play.cmd` by the advertised
+   route with the installed tools, play visibly and quit through the game.
+   The helpers already pass build, test and hidden smoke checks. [Acceptance](docs/product/BACKLOG.md#oca-97)
+2. **OCA-111 — finish keyboard-layout labels.** Integrate the retained change
+   with the rebinding sample, then check native labels, the browser fallback
+   and saved binding tokens. [Acceptance](docs/product/BACKLOG.md#oca-111)
+3. **OCA-114 — finish held touch controls.** Integrate the retained gallery
+   change and test two simultaneous touches, drag, release and cancellation.
+   Real-glass play has its own row. [Acceptance](docs/product/BACKLOG.md#oca-114)
 
-**Now is finished**: every batch of [BACKLOG.md, Now](docs/product/BACKLOG.md#now), N1 to N21, has landed, and `v0.1.0`, `v0.2.0`, `v0.3.0` and `v0.4.0` are cut.
+Alongside the product stories, [REV#151](#work-audit-of-2026-11-12) can
+start by reporting pixel drift on passing frames. The browser ledger also
+tracks Safari failure diagnostics, WebWindow input and Firefox pixel coverage.
 
-**Aim:** finish Next's remaining acceptance while taking ready Later work in
-parallel, as [BACKLOG.md's scheduling amendment](docs/product/BACKLOG.md#later)
-allows. Next's hardware and release gates remain open. The accepted decision
-batches below supply ready Later work; their own dependencies and qualification
-gates still apply.
+All Now batches are complete. Next's five unchecked stories require owner
+attendance or hardware. The [scheduling amendment](docs/product/BACKLOG.md#later)
+allows ready Later work in parallel. Owner-attended sessions and external
+checks have their own rows below.
 
-Otherwise follow Later's order and each story's prerequisites; an open hardware
-gate does not block unrelated work.
-**Hygiene has a separate lane:** [Code hygiene](docs/code-hygiene.md) owns it;
-BACKLOG's L36 to L54 let it run alongside product work.
+## November 16 Later batches
 
-**The original beginner-guide audit is closed:** every `GUIDE#` unit of
-[Beginner guides](docs/beginner-guides.md) has closed. What the runs could not
-check is in its *Not verified by the audit*; `GUIDE#12` left saving through
-IDBFS from the starter unguided. The second decision batch below selects new
-guide and onboarding work independently of that completed audit; the third
-selects `OCA-103` for the camera-follow component linked by *A camera that
-follows the player*.
-
-**Owner checklists become automation** (decided 2026-11-03, [BACKLOG](docs/product/BACKLOG.md#decisions-only-the-owner-can-make)): a listable check is an automated suite; the owner's part is informal play on real hardware. Each owner row below is re-planned that way when it is taken up; `SITE#3`'s selector checks were the first, now [website/acceptance/](website/acceptance/) in CI.
-
-**Next ready stories:** the owner accepted eighteen scopes on 2026-11-16 in
-[the decision batch below](#accepted-decision-batch-of-2026-11-16), ordered as
-BACKLOG's L66 to L83. The first batch is complete, including its combined
-app/render/input and website qualification ([checkpoint](docs/verification/2026-11-17-overnight-checkpoint.md)).
-`SM-81` has qualified native MSVC Release IPO and its standalone default;
-`SM-82`'s native-null ASan repair is locally qualified; its separate
-scheduled workflow is ready for publication.
-The two deferred scopes, `REV#35` and `REV#53`, retain
-their revisit triggers. Later batches continue in their recorded order.
-
-The owner also accepted the [second batch](#second-accepted-decision-batch-of-2026-11-16),
-fourteen more stories in BACKLOG's L84 to L97 after the first batch. Five
-proposals are deferred with triggers. `REV#121`'s policy is settled: retain
-vcpkg's default tool downloads; `OCA-96` owns the expected-download explanation.
-`OCA-98` teaches today's Random API without reopening `REV#35`'s deferral.
-
-The [third batch](#third-accepted-decision-batch-of-2026-11-16) adds eight
-scopes in BACKLOG's L98 to L105 after those stories. `OCA-108` is blocked on
-access to a real non-Xbox pad for qualification; scripted input cannot close
-that hardware gate. Nine proposals are deferred and three are declined in
-their owners, with explicit revisit conditions.
-
-The [fourth batch](#fourth-accepted-decision-batch-of-2026-11-16) adds twelve
-scopes in BACKLOG's L106 to L117. `OCA-111` follows `OCA-110`'s rebinding
-example; `SM-89`'s additional weekly source awaits its first hosted qualification after publication. Seven proposals
-are deferred. `REV#56` is settled: retain the wide rendering API and use the
-existing UTF-8 conversion boundary. Every current `GAP#` and `IDEA#` selection
-call is now recorded; deferred scopes retain their own revisit triggers.
-
-The [fifth batch](#fifth-accepted-decision-batch-of-2026-11-16) adds eleven
-scopes in BACKLOG's L118 to L128. `SM-95` waits for owner-supplied public
-disclosure wording.
-`SM-96` is complete: [v0.4.0 qualification](docs/verification/releases/v0.4.0.md)
-covers the released `f525bc6c` source and custom-material consumers. The release
-was published on 2026-11-17; the November 13 preparation remains historical.
-Six proposals are deferred and three policies are
-settled. `REV#156` is closed with its bounded advisory-hint wording correction.
-
-**Final acceptance and client decisions, 2026-11-16:** the last eighteen
-calls are recorded. There is no unresolved `DECISION` row. Approved physical
-acceptance is `BLOCKED` on owner attendance or hardware; deploy-dependent
-checks are `WAITING`. Those statuses preserve the required evidence and do
-not tick acceptance boxes. `SM-30`'s live-settings read is blocked on
-access, as its owner records.
-
-`PI-14` is closed here as delegated coordination, not as new ColourWars
-qualification. Client changes are selected in BACKLOG's L129 to L131;
-`SM-78` is amended to supply a construction-time scripted/recording source
-beside the configured shipping backend in the same engine library. Configured
-null alone does not meet issue #122. Registry name recycling is declined;
-the durable name/slot and resource-lifetime boundaries remain.
-
-Earlier Later item L56, `OCA-79`, is complete: the current-release starter's
-[first public push passed CI](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329).
-The first six selected product priorities and the rest of the first batch
-are complete. Ready work continues in the later accepted batches.
-
-**Other open agent rows:** `REV#112` to `REV#114` of [the first-run review](#first-run-review-of-2026-11-10), each an unverified first-run failure to reproduce; `REV#151` and `REV#159` of [the work audit](#work-audit-of-2026-11-12) (`REV#159` awaits hosted qualification and its clean-week gate). The completed hygiene lane remains separate; [the audit](docs/review/2026-11-12-work-audit/README.md) describes the queue before these selections.
-
-**Owner-attended acceptance remains open.** Group it without restoring manual
-checklists: pad play (`OCA-48`, `OCA-45`, `PI-21`); audio/listening and endpoint
-recovery (`WEB#3`, `REV#8`); display, DPI and pacing (`BDP-07`, `REV#3`,
-`OCA-66`); the Air/iPhone sessions (`SM-09`, `SM-14` with `SM-13`); and the
-Radeon's firmware/driver/display-path step (`SM-01`). Mapping, transport and
-listable checks stay automated; the owner's part stays informal real-device
-use and the observations that only that use can supply.
-
-**External events:** `SITE#4` waits for the documentation-site deployment;
-`WEB#12` waits for the separately hosted demo's deployment and its verifier
-receipt. `SM-30` needs access to read the documentation-site build settings
-before reconciliation; it closes on a normal production log without forcing
-a deployment.
-
-## Accepted decision batch of 2026-11-16
-
-**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L66 to L83, holds the
-accepted scope, acceptance and scheduling order. The original findings remain
-historical; their live review ledgers link to these stories. Each row below
-replaces its selected `REV#` row rather than duplicating its implementation.
-
-All eighteen scopes are closed in BACKLOG; their combined qualification is
-recorded in the [November 17 checkpoint](docs/verification/2026-11-17-overnight-checkpoint.md).
-
-## Second accepted decision batch of 2026-11-16
-
-**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L84 to L97. These
-fourteen selected stories follow the first batch; the remaining open rows are below. `OCA-96`
-also owns the documentation follow-up to the settled `REV#121` policy; the
-five deferred review rows below keep their individual revisit triggers.
+[BACKLOG.md](docs/product/BACKLOG.md#later) owns the order and acceptance.
+The [November 17 handoff](docs/2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
+names the isolated commits for keyboard labels, touch controls, dependencies,
+the Simulator and client changes, and locates the uncommitted Direct3D work.
+Use those revisions as starting points and qualify each against the integrated
+source. The [v0.4.0 record](docs/verification/releases/v0.4.0.md) identifies
+what shipped.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-97` | OPEN | could | M | Native helpers implemented; finish bounded advertised-launch/normal-play verification with installed tools. Fresh VS installation in Sandbox is retired by the owner; use focused non-default-path fixtures (`REV#120`). [Scope](docs/product/BACKLOG.md#oca-97). |
+| `OCA-97` | OPEN | could | M | Verify visible play and normal quit via the advertised starter launcher with installed tools. Non-default discovery paths have fixtures. [Scope](docs/product/BACKLOG.md#oca-97). |
+| `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend with a real non-Xbox pad once one is available. [Scope](docs/product/BACKLOG.md#oca-108). |
+| `OCA-111` | OPEN | could | M | Integrate and qualify best-effort layout labels and stable-token fallback in the rebinding sample. [Scope](docs/product/BACKLOG.md#oca-111). |
+| `OCA-114` | OPEN | could | M | Integrate and qualify the gallery's held buttons and virtual stick. WEB#5 and SM-13 cover physical touch. [Scope](docs/product/BACKLOG.md#oca-114). |
+| `SM-89` | WAITING | could | M | Retain the first hosted results for all five configurations of the published weekly workflow. [Qualification](docs/verification-weekly.md). |
+| `SM-92` | OPEN | should | M | Integrate the reviewed Action and website dependency changes and qualify them in their workflows. The alerts-only setting is verified. [Scope](docs/product/BACKLOG.md#sm-92). |
+| `OCA-119` | BLOCKED | could | S | Record actual Escape behaviour from a trusted key in a headed browser. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
+| `SM-95` | BLOCKED | could | XS | Add the AI-use disclosure when the owner supplies public wording and review/authorship claims. [Scope](docs/product/BACKLOG.md#sm-95). |
+| `SM-97` | OPEN | could | M | Integrate the iOS Simulator pilot and its fixtures. Acceptance needs an explicit Simulator play/quit run. [Scope](docs/product/BACKLOG.md#sm-97). |
+| `SM-98` | OPEN | should | M | Reconcile the retained Direct3D draft with OCA-120's startup mappings. Qualify Release software refusal and the explicit CI opt-in. [Scope](docs/product/BACKLOG.md#sm-98). |
+| `OCA-120` | OPEN | should | M | The exception type shipped. Integrate genuine startup-failure mappings and verify the consumer catch and unrelated-error controls. [Scope](docs/product/BACKLOG.md#oca-120). |
+| `PI-25` | OPEN | should | M | Integrate the mutable-contact change, then verify pair dispatch, retirement and the consumer migration. [Scope](docs/product/BACKLOG.md#pi-25). |
 
-## Third accepted decision batch of 2026-11-16
-
-**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L98 to L105, owns the
-eight selected scopes and their acceptance. The [comparison selection record](docs/survey/2026-10-27.md#selection-record-of-2026-11-16)
-and [Feature candidates](docs/feature-candidates.md) own the deferrals,
-declines and remaining boundaries. The table below indexes the remaining open stories;
-their owners hold completed results.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend on real non-Xbox pads; keep four slots. Waits for hardware access (`GAP#1`). [Scope](docs/product/BACKLOG.md#oca-108). |
-
-## Fourth accepted decision batch of 2026-11-16
-
-**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L106 to L117, owns
-the twelve selected scopes and their acceptance. [Feature candidates](docs/feature-candidates.md)
-and [the review ledger](docs/review/2026-11-10/STATUS.md) hold deferrals and the
-decision to keep the current rendering-text API. Implementation is open.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `OCA-111` | OPEN | could | M | Add best-effort layout labels distinct from stable binding tokens to `OCA-110`'s completed example (`REV#58`). [Scope](docs/product/BACKLOG.md#oca-111). |
-| `OCA-114` | OPEN | could | M | Copyable held touch buttons and a virtual stick; games own regions and bindings, and real-glass acceptance stays open (`REV#64`). [Scope](docs/product/BACKLOG.md#oca-114). |
-| `SM-89` | WAITING | could | M | Five non-required weekly selections and exact-inventory checks are staged; retain the first hosted results after owner publication (`REV#52`). [Scope](docs/product/BACKLOG.md#sm-89). |
-
-## Fifth accepted decision batch of 2026-11-16
-
-**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L118 to L128, owns
-the eleven selected scopes. The [review ledger](docs/review/2026-11-10/STATUS.md)
-and [work-audit ledger](docs/review/2026-11-12-work-audit/STATUS.md) retain the
-six deferrals, policy decisions and bounded follow-ups. Selection records
-scope; it does not publish a release, change settings or claim acceptance.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `SM-92` | OPEN | should | M | Audit dependency-alert settings and qualify supported action updates; alerts only, with auto-update PRs/merge separate (`REV#69`). [Scope](docs/product/BACKLOG.md#sm-92). |
-| `OCA-119` | BLOCKED | could | S | Await a qualified trusted-key or informal human browser observation. Computer Use stopped before any trusted input; no Escape behaviour is claimed. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
-| `SM-95` | BLOCKED | could | XS | Add a short factual AI-use disclosure once the owner supplies public wording and review/authorship claims (`REV#76`). [Scope](docs/product/BACKLOG.md#sm-95). |
-| `SM-97` | OPEN | could | M | Pilot LineSweeper on iOS Simulator by explicit invocation, measuring reliability before recurring coverage (`REV#152`). [Scope](docs/product/BACKLOG.md#sm-97). |
-
-## Final accepted client changes of 2026-11-16
-
-**Owner:** [BACKLOG.md](docs/product/BACKLOG.md#later), L129 to L131, and
-[the client-report decisions](docs/review/colourwars-reports/README.md).
-The input request amends `SM-78` above; the Registry rider is declined in its
-owner. These verdicts are planned work, not implementation or remote issue closure.
-
-| id | status | pri | size | item |
-|---|---|---|---|---|
-| `SM-98` | OPEN | should | M | Refuse known software by default in Direct3D Release; keep a labelled explicit software-test route and default-refusal coverage (`REV#104`). [Scope](docs/product/BACKLOG.md#sm-98). |
-| `OCA-120` | OPEN | should | M | Add a backend-neutral typed device-unavailable error for genuine renderer startup/capability absence, preserving detailed causes (issue #123). [Scope](docs/product/BACKLOG.md#oca-120). |
-| `PI-25` | OPEN | should | M | Make contact's other participant mutable with exact dispatch/lifetime contracts and a documented source-break migration (issue #124). [Scope](docs/product/BACKLOG.md#pi-25). |
+For the client reports, v0.4.0 ships the scripted pad source requested in
+issue #122. The public tracker response is still due. [Client report ledger](docs/review/colourwars-reports/README.md)
 
 ## Input, menus, settings and saves
 
@@ -195,7 +68,7 @@ owner. These verdicts are planned work, not implementation or remote issue closu
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SITE#4` | WAITING | should | S | After the documentation-site deploy, retain real-iPhone search observation with deployed revision/browser/date; the source fix and Simulator alone do not close it. |
+| `SITE#4` | BLOCKED | should | S | The search fix is deployed. On a real iPhone, press Return in search and record the result, browser, date and deployed revision. [Evidence](docs/port/web-to-be-tested.md#approved-acceptance-actions-2026-11-16). |
 | `WEB#12` | WAITING | could | S | After the separately hosted demo deploy, run check_live.mjs for the intended commit and retain dated output/failures; loopback evidence is separate. [Scope](docs/port/web-to-be-tested.md). |
 | `SM-30` | BLOCKED | could | S | Workers Builds read is denied to the saved OAuth credential; dashboard access is unavailable. Reconcile after access, then wait for a normal production log. [Evidence](website/README.md#sm-30-access-check-2026-11-16). |
 
@@ -215,6 +88,7 @@ owner. These verdicts are planned work, not implementation or remote issue closu
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `OCA-48` | BLOCKED | should | S | Shared owner-attended native Release/Chrome pad play, retaining actual focus/background observations; mapping remains automated. [Scope](docs/product/BACKLOG.md#next). |
+| `BDP-06` | BLOCKED | should | S | Play the bundle in Chrome with the owned pad during OCA-48. The Firefox bundle, Chromium tab switch and GPU-process loss already have automated coverage. [Scope](docs/product/BACKLOG.md#next). |
 | `SM-09` | BLOCKED | should | S | Keep the remaining informal Air/Safari acceptance; preserve the brief recorded play and automated Safari checks as separate evidence. [Scope](docs/product/BACKLOG.md#next). |
 | `SM-14` | BLOCKED | should | S | Use and correct the LAN-serving draft during SM-13's real-iPhone session; optional Android paths do not gate iPhone acceptance. [Scope](docs/port/lan-serve.md). |
 | `WEB#3` | BLOCKED | should | S | Keep real native/browser listening, sharing the audio/recovery session; record only output actually heard and leave unavailable paths unverified. [Scope](docs/port/web-to-be-tested.md). |
@@ -235,7 +109,7 @@ owner. These verdicts are planned work, not implementation or remote issue closu
 | `REV#3` | BLOCKED | could | M | Record real monitor/topology-change recovery, including D3D11's same-size factory-refresh case, in the display session. [Scope](docs/review/d3d12/STATUS.md). |
 | `REV#12` | BLOCKED | could | M | The 2026-09-26 review's manual checks: real device removal, interactive minimise, restore and drag, physical keyboard layouts and device changes, real sleep and wake. Needs a person at the machine. |
 | `REV#5` | DEFERRED | could | S | Whether the Vulkan surface-format fallback, a fixed `compositeAlpha` and an unapplied `preTransform` are defects (Vulkan review 6.2). Live only on Android; reopens with that port. |
-| `REV#9` | DEFERRED | could | M | Input recording and replay for LineSweeper, with a rules and file version (gpt6 opportunity 3). T1: waits for a client that needs it, and no report asks for it; pad replay also needs a scriptable `GamepadReader` (issue #122), which `REV#40` proposes. |
+| `REV#9` | DEFERRED | could | M | LineSweeper input recording, replay and file versioning wait for a game that needs them. SM-78 supplies the scripted pad source. [Review](docs/review/INDEX.md#remaining-verification-and-hardware). |
 | `REV#10` | DEFERRED | could | M | A frame-time overlay: the distribution, sprites submitted, particles dropped (gpt6 opportunity 5). T1: waits for a client that needs it. The measurement under it is `Application::frame_timings()` (PI-19); the overlay itself still waits. |
 
 ## Records and design decisions
@@ -244,8 +118,8 @@ owner. These verdicts are planned work, not implementation or remote issue closu
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `SRL-07` | BLOCKED | could | S | This tree's constants are renamed and CHANGES.md lists the public spellings; migrate the ColourWars callers at its next pin move and record the counted caller repositories. Waits on that pin move. [Scope](docs/product/BACKLOG.md#later). |
 | `OCA-66` | BLOCKED | could | S | Keep informal template acceptance at actual 150% scaling in the display session; completed manifest checks do not prove appearance. [Scope](docs/product/BACKLOG.md#later). |
+| `PI-11` | DEFERRED | could | M | Revisit runtime-file staging when a client files an exhibit-backed packaging request. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
 
 ## Features other engines have
 
@@ -304,7 +178,7 @@ implementation scopes are stories in the batches above.
 | `REV#77` | DEFERRED | could | S | Until a borrowed-slice caller or measured allocation cost justifies public text-parameter changes; retain current callers meanwhile. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#78` | DEFERRED | could | M | `ResourceLoader::load_manifest` loads everything in one blocking call with no progress report, and no resource type has an unload verb; waits for a client with a long load or level-scoped content. |
 | `REV#79` | DEFERRED | could | M | Until a client needs a specific additional collision shape with concrete geometry, allocation and lifetime requirements. [Decision](docs/review/2026-11-10/STATUS.md). |
-| `REV#81` | DEFERRED | could | S | Manifold, Contact and on_contact carry a normal and a penetration but no contact point; no client has asked. Revisit only if #124 breaks on_contact's signature. |
+| `REV#81` | DEFERRED | could | S | Revisit contact-point data when a caller needs it. PI-25's accepted callback change excludes contact points. [Scope](docs/review/colourwars-reports/contact.md). |
 | `REV#83` | DEFERRED | could | M | Select individual window options only for a caller's need; title/icon work does not select size, position, monitor or maximised-start policy. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#84` | DEFERRED | could | S | No query for the player's preferred language on Win32 or in the browser shell under `engine/app/`; nothing in the tree ships two languages, so it waits for a localised sample or client. |
 | `REV#85` | DEFERRED | could | M | `AudioDevice` has no verb to close a wave bank or destroy a voice, so a game that replaces banks grows both lists until the device is destroyed; waits for a client that swaps banks. |
@@ -320,13 +194,13 @@ implementation scopes are stories in the batches above.
 
 ## First-run review of 2026-11-10
 
-**Owner:** [the first-run review of 2026-11-10](docs/review/2026-11-10-first-run/README.md): [FINDINGS.md](docs/review/2026-11-10-first-run/FINDINGS.md) holds each row's evidence under its id, and [STATUS.md](docs/review/2026-11-10-first-run/STATUS.md) records each resolution. An `OPEN` row needs no owner call; three say they are unverified and are reproduced before anything is written. A `DECISION` row is the owner's call.
+The [first-run findings](docs/review/2026-11-10-first-run/FINDINGS.md) identify the reader's problem for each row. The [status ledger](docs/review/2026-11-10-first-run/STATUS.md) records which Windows environment each reproduction needs.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#112` | OPEN | could | S | Unverified: Smart App Control or Defender blocking the reader's own `MyGame.exe` has no page, and `starter.mdx` step 7 would send them to rebuild. Reproduce on such a machine, then write the entry. |
-| `REV#113` | OPEN | could | S | Unverified: on a Windows that is not in English, cmd, vcpkg and the compiler print translated messages no page quotes. Check whether `VSLANG=1033` restores the English text, then say so in `prerequisites.mdx`. |
-| `REV#114` | OPEN | could | S | Unverified: what a build prints after a Visual Studio update is not recorded, and no page says how to remove everything or where vcpkg's cache is. Apply one update to a built starter, then write both. |
+| `REV#112` | BLOCKED | could | S | Capture a genuine Smart App Control or Defender refusal of a reader's own starter-built MyGame.exe before writing recovery guidance. [Finding](docs/review/2026-11-10-first-run/FINDINGS.md#rev112). |
+| `REV#113` | BLOCKED | could | S | Compare default cmd, vcpkg and compiler output with VSLANG=1033 on a non-English Windows installation with localized tools. [Finding](docs/review/2026-11-10-first-run/FINDINGS.md#rev113). |
+| `REV#114` | BLOCKED | could | S | Record the first rebuild of an existing starter across an update to the same Visual Studio instance, then document recovery and cleanup. [Finding](docs/review/2026-11-10-first-run/FINDINGS.md#rev114). |
 
 ## Work audit of 2026-11-12
 
@@ -335,7 +209,7 @@ implementation scopes are stories in the batches above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `REV#151` | OPEN | could | M | Hosted Safari pixel readback passes. Left: passing-frame drift, Safari rejected-frame extraction and WebWindow input, and Firefox pixel variants/CI. [Evidence](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16). |
-| `REV#159` | OPEN | should | S | Sampled genuine-key quit with exact menu rows passes local protocol fixtures. Left: hosted Safari qualification and a full clean week after publication. [Scope](docs/port/web-to-be-tested.md#safari-sampled-quit-follow-up-2026-11-16). |
+| `REV#159` | WAITING | should | S | Hosted Safari passed after the November 17 fix. Review executed jobs and any failures over the full clean week. [Evidence](docs/port/web-to-be-tested.md#hosted-safari-stability-2026-11-20). |
 
 ## Ports
 
@@ -344,7 +218,7 @@ implementation scopes are stories in the batches above.
 | id | status | pri | size | item |
 |---|---|---|---|---|
 | `PORT#1` | DEFERRED | could | M | A KTX2 reader beside `dds_file.h` with the ETC2 formats (spine item 3.1a, headless, blocks nothing), and an ETC2 encode of the sprite sheet to judge its hard alpha edges. Until the Android port is taken up. |
-| `PORT#2` | DEFERRED | could | XL | The device-bound half of the Android spine: an arm64-v8a NDK preset, `char16_t` on the render API, a push-only pad seam (the port re-takes report 21's decline of an action map against android.md's argument rather than presuming the layer), the activity shell with surface loss. Waits on an Android device. |
+| `PORT#2` | DEFERRED | could | XL | An Android device is needed for the NDK preset, render text, pad seam and activity surface-loss work. Revisit report 21's input decision when the port starts. [Plan](docs/port/android.md). |
 
 ## Areas with no open rows
 
@@ -353,11 +227,11 @@ A new row for one of these gets its section back.
 | area | owner | a row returns with |
 |---|---|---|
 | Client coordination/intake | [BACKLOG](docs/product/BACKLOG.md#next) and [reports](docs/review/colourwars-reports/README.md) | a new report/coordination choice; selected implementations are indexed above |
-| Game-authored post materials | [OCA-84](docs/product/BACKLOG.md#oca-84) and [effects.md §16](docs/effects.md#16) | a regression or another shader-authoring requirement |
-| The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | its batch reaching the front; the rows above are the batches NOW names, and the Next stories that the owner or an outside event gates, or that a row here pairs with |
+| Game-authored post materials | [OCA-84](docs/product/BACKLOG.md#oca-84) and [effects.md §16](docs/effects.md#16-game-material-implementation-amendment) | a regression or another shader-authoring requirement |
+| The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | a new story selected for this horizon |
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
 | Code hygiene (L36 to L54) | [Code hygiene](docs/code-hygiene.md) and [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new bounded repair or review story reaching the front |
-| The rest of Later (L1 to L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | its next ready batch reaching the front under the scheduling amendment; the hygiene lane runs alongside product work |
+| The rest of Later (L1 to L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new story selected for these batches |
 | CI (`CI#`) | [.github/workflows/ci.yml](.github/workflows/ci.yml), [docs/dependency-updates.md](docs/dependency-updates.md) | a new CI check or job; a new required job or matrix entry needs the owner to update branch protection |
 | Won't this time | [BACKLOG.md](docs/product/BACKLOG.md#wont-this-time) | a re-plan of the backlog with its reason recorded there |
 | web.md's milestones M1, M2, M5, M6 and its decisions | [docs/port/web.md](docs/port/web.md) sections 8 and 9, and [docs/port/web-as-built.md](docs/port/web-as-built.md) for what each measured | a regression, or a change the port meets that a decision must settle |
@@ -366,7 +240,7 @@ A new row for one of these gets its section back.
 | round-2 plan, the RTCD list, the first review, backend-equivalence | [docs/review/round-2/PLAN.md](docs/review/round-2/PLAN.md), [docs/review/rtcd/](docs/review/rtcd/), [docs/review/IMPLEMENTED.md](docs/review/IMPLEMENTED.md) | nothing: all landed or superseded; the game-side rows live in ColourWars |
 | The 2026-09-26 review's numbered findings and hardening candidates | [docs/review/2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and [the review index](docs/review/INDEX.md#hardening-verification) | nothing: all 23 implemented and four hardening candidates addressed; `REV#12` remains |
 | Beginner guides (`GUIDE#1` to `GUIDE#13`) | [Beginner guides](docs/beginner-guides.md) | a new procedure a beginner cannot follow, or a page that stops matching the starter |
-| The historical repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: original work and StateContext's keep verdict stand; current hygiene work is indexed above |
+| The historical repository split, file-length tripwire and survey decisions | [docs/repo-split.md](docs/repo-split.md), [docs/file-length-audit.md](docs/file-length-audit.md), [docs/survey/2026-08-26-status.md](docs/survey/2026-08-26-status.md) | nothing: original work and StateContext's keep verdict stand |
 
 ---
 

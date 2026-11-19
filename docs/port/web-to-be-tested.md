@@ -21,8 +21,7 @@ phone, driver or live-service result. [BACKLOG.md](../product/BACKLOG.md) owns
 the story acceptance, and [TODO.md](../../TODO.md) indexes the next actions.
 
 In TODO, `BLOCKED` on the hardware rows means approved work awaiting owner
-attendance or a physical prerequisite, not an undecided policy. `WAITING`
-on the two deploy checks means awaiting their distinct outside events.
+attendance or a physical prerequisite. `WEB#12` is `WAITING` for a demo deployment.
 Listable checks stay automated; the owner's contribution remains informal
 play, listening and observations on the real devices.
 
@@ -42,12 +41,18 @@ explicit-exit/full-screen-flag tests remain separate evidence.
 | Displays: `BDP-07`, `REV#3`, `OCA-66` | Record physical 60/144 Hz pacing observations, the real display-change case for the D3D11 same-size factory-refresh question, and template play at actual 150% Windows scaling. Callback timing, source inspection and emulated scale do not replace visible judder, driver behaviour or the real scaled display. |
 | Radeon: `SM-01`, before `SM-07` | The already approved owner-attended BIOS enablement, AMD driver and display-path/adapter checks precede low-tier measurement. Record the actual driver and created Radeon device; a cross-adapter present or the RTX/L4 cannot supply this evidence. No current hardware state or new measurement is claimed here. |
 
-`SITE#4` waits for the next **Labrador documentation-site** deployment before
-the owner's informal iPhone search. `WEB#12` waits for the next
-**PersonalWebsite-hosted LineSweeper demo** deployment before running
-`check_live.mjs` with the intended deployed commit and retaining dated output.
-These are different deploy events. Neither deployment is performed or newly
-scheduled by this record, and the existing dated results below remain intact.
+On 2026-11-20 the [live documentation footer](https://labradorengine.com/docs/)
+identified revision `f7b717c42199c1f5098a8c3fccbc17e970f1df67` of 2026-11-17.
+`SITE#4` is **BLOCKED** on the owner's real-iPhone search observation. Record
+what pressing Return does with an empty search and with a query, together with
+the date, browser and revision shown on the phone.
+
+On 2026-11-20 the hosted demo still identified the recorded `v0.3.0` revision
+`0f4f5033b317a334d89e3cf14ab98684e0598ddd` in both
+[BUILD.json](https://mattharding.dev/demo/linesweeper/BUILD.json) and
+[SITE.json](https://mattharding.dev/demo/linesweeper/SITE.json). After the
+next demo deployment, `WEB#12` runs `check_live.mjs` for the intended commit
+and retains its dated output.
 
 `OCA-79` closed on 2026-11-16: the unchanged current-release `v0.3.0` starter,
 with plain engine files, passed its
@@ -57,8 +62,8 @@ The guides retain that result and the remaining browser-form/sign-in limits.
 This proof pushed no Labrador work branch, deployed no site and created no
 recurring publication bot; [BACKLOG.md](../product/BACKLOG.md#oca-79) owns its receipt.
 
-`SM-30` is approved `OPEN` work to read the current Labrador documentation
-site's Cloudflare settings and reconcile only differences from
+`SM-30` is `BLOCKED` on [read access to Workers Builds](../../website/README.md#sm-30-access-check-2026-11-16).
+Once access is available, reconcile only differences from
 `npm ci && npm run gate`, Node from `.node-version`, and no `NODE_VERSION`
 override. The next normal production log must show Node 24 and the gate
 before closure; no forced deployment or setting change occurs here.
@@ -940,3 +945,16 @@ All 159 local Node browser-protocol fixtures pass, including delayed replies,
 missing/reversed/wrong/stale edges, early quit and late error cases. This is
 runner protocol evidence. Fresh hosted Safari execution and REV#159's
 clean-week criterion remain open; no engine or sample source changed.
+
+### Hosted Safari stability, 2026-11-20
+
+After the collision action-list fix, three hosted Safari jobs passed pixel
+readback, the six sample pages and the LineSweeper bundle. These include the
+released `f525bc6c` on its second build attempt. The first attempt stopped
+upstream in Firefox. [First passing job](https://github.com/matt439/Labrador/actions/runs/43974562599/job/133678425366),
+[release job](https://github.com/matt439/Labrador/actions/runs/44002989378/job/133779154106),
+[later passing job](https://github.com/matt439/Labrador/actions/runs/44008804143/job/133793505060).
+
+`REV#159` is waiting for a full clean week after the November 17 fix. At the
+end of that window, review executed Safari jobs and their attempts. A new
+failure needs investigation. Skipped jobs supply no observation.
