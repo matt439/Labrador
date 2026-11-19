@@ -29,9 +29,10 @@ jobs:
       # external/labrador, and a private submodule needs a token as well. With
       # the engine as plain files, as a starter project is committed, it does
       # nothing.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
+          allow-unsafe-pr-checkout: false
 
       # CMakePresets.json reads VCPKG_ROOT for the toolchain file. The runner
       # has a vcpkg of its own, and this points at it.
@@ -44,7 +45,7 @@ jobs:
       # so a run that changes no dependency restores the last one's binaries
       # instead of building them again.
       - name: Cache vcpkg's binaries
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}

@@ -3541,8 +3541,11 @@ where needed. Run local lint and the website gate.
 204 and its automated-security-fixes endpoint returned `enabled: false`.
 The selected alerts-only setting is in place. The [November 17 handoff](../2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
 identifies the prepared Action updates (`455d7be4`) and website dependency
-repair (`7d8d1272`). Integrate them against current master, run local lint
-and the website gate, then retain fresh hosted results for the changed Actions.
+repair (`7d8d1272`). Both are integrated. The local website gate passed its
+219 tests and 196-page build, the two Chromium diagram checks passed, and the
+lockfile audit reported zero advisories. The [Action record](../action-runtime-updates.md)
+holds the pinned revisions and remaining hosted workflows. Retain their fresh
+results before closing this story.
 
 <a id="sm-93"></a>
 ### SM-93. Exercise cross-origin iframe embedding as a regression

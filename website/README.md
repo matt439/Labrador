@@ -6,11 +6,16 @@ Live at **[labradorengine.com](https://labradorengine.com/)** since 8 October 20
 says what is decided and what is not.
 
 It is a static site built with [Astro](https://astro.build/) and
-[Starlight](https://starlight.astro.build/). Use Node 22.18+ in the 22.x line,
+[Starlight](https://starlight.astro.build/). Use Node 22.23.4+ in the 22.x line,
 or Node 24 or newer; [`.node-version`](.node-version) names the major that CI
 and the production build use, 24. Node is the only tool it needs.
 Nothing in the engine's CMake build depends on this folder, and nothing here
 needs the engine's toolchain.
+
+The [dependency triage](../docs/website-dependency-triage.md) records the
+current security repair and its runtime/archive qualification boundaries.
+Use a current supported Node patch; the compatibility range is not a promise
+that every historical Node patch has current security fixes.
 
 ```
 npm ci            # once, and after package-lock.json changes

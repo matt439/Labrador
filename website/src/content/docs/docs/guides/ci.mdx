@@ -91,16 +91,22 @@ engine, and it runs most of these steps: the runner's vcpkg, vcvars found throug
 configure, build and the game's ctest. That job takes the engine from the change being checked
 rather than from a submodule, and it restores the vcpkg binary cache the engine's own Windows jobs
 save without ever saving one, so it does not run this file's save step.
-The file itself has run, with the steps it has now, as the workflow of a repository of its own:
+Earlier versions of this recipe ran as the workflow of a repository of its own:
 [matt439/labrador-mygame](https://github.com/matt439/labrador-mygame), which holds the project
 Start your own project builds, with Labrador at `v0.2.0`. On 26 October 2026 its
 [first run](https://github.com/matt439/labrador-mygame/actions/runs/40242503246) found no cache,
 configured in 95 seconds, passed both tests and saved the cache, and the
 [second](https://github.com/matt439/labrador-mygame/actions/runs/40242709388) restored it, so
 vcpkg restored its six packages instead of building them and configure took 42 seconds. That was a hit on the exact key; the `restore-keys` fallback, for a run after `vcpkg.json` changes, has not been exercised. Each
-run took about two and a half minutes on `windows-latest`, with MSVC 19.51. Both runs warn that
+run took about two and a half minutes on `windows-latest`, with MSVC 19.51. Both runs warned that
 `actions/checkout@v4` and `actions/cache@v4` target Node.js 20, which GitHub now runs on
-Node.js 24; nothing fails because of it.
+Node.js 24; neither run failed because of that warning.
+
+The current development recipe uses reviewed immutable action commits and an explicit safe
+checkout input. It keeps the commands and cache choices above, but its new action versions
+await a fresh hosted run. The historical runs below qualify their tagged recipes; they do
+not qualify these new selectors. GitHub-hosted runners need Actions Runner 2.327.1 or newer
+for their Node 24 action runtime.
 
 The released starter's plain-file route also ran on GitHub on 16 November 2026. The
 `v0.3.0` starter ZIP was extracted without changing its files and committed as
@@ -110,6 +116,6 @@ Its [first push's run](https://github.com/matt439/labrador-starter-proof/actions
 passed on `windows-latest`, Windows Server 2025 with MSVC 19.51.36260. The `windows` job took
 1 minute 48 seconds: configure 71 seconds, build 20 seconds, and both `MyGameTests` and
 `MyGameSmokeTests` passed. It found no vcpkg cache, restored no packages and saved the new cache.
-The ZIP's workflow is byte-for-byte the file shown here; this proof changed no engine source.
+The ZIP's workflow was the recipe before that action-selector update; this proof changed no engine source.
 The Node.js 20 action warning above still appeared. Cache restoration for this plain-file
 repository and the `restore-keys` fallback were not exercised by its first run.

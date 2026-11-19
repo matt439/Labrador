@@ -93,9 +93,10 @@ jobs:
       tested: ${{ steps.tested.outputs.tested }}
       build: ${{ steps.diff.outputs.code }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          allow-unsafe-pr-checkout: false
 
       - name: Has a pull request already passed this tree
         id: tested
@@ -144,9 +145,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          allow-unsafe-pr-checkout: false
 
       - name: Check per-commit golden review declarations
         env:
@@ -350,7 +352,9 @@ jobs:
         shell: cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          allow-unsafe-pr-checkout: false
         if: needs.changes.outputs.build == 'true'
 
       # VCPKG_ROOT, IMAGE_VERSION and VCVARS, as every Windows job sets them.
@@ -369,7 +373,7 @@ jobs:
       # weekly scheduled run refreshes.
       - name: Cache vcpkg binaries
         if: needs.changes.outputs.build == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -395,7 +399,7 @@ jobs:
       # checked against its digest again before it is used.
       - name: Cache the Vulkan SDK installer and Mesa
         if: needs.changes.outputs.build == 'true' && (matrix.vulkan_sdk || matrix.software_device == 'llvmpipe')
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: C:\ci-downloads
           key: ci-downloads-${{ matrix.preset }}-${{ env.VULKAN_SDK_SHA256 }}-${{ env.MESA_SHA256 }}
@@ -555,11 +559,12 @@ jobs:
       # and an empty artifact is a line in a log nobody reads.
       - name: Keep the frames a golden check rejected
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: golden-actual-${{ matrix.preset }}
           path: out/build/${{ matrix.preset }}/tests/render/golden-actual/
           if-no-files-found: ignore
+          archive: true
 
       # Reported, not gated, so the numbers are in the log where a throughput
       # change shows up as a diff between two runs rather than as nothing at
@@ -603,7 +608,9 @@ jobs:
         shell: cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          allow-unsafe-pr-checkout: false
 
       # Ninja and cmake come with Visual Studio, so the MSVC environment is
       # still what puts them on the path, though nothing here compiles with
@@ -613,7 +620,7 @@ jobs:
         uses: ./.github/actions/msvc-env
 
       - name: Cache vcpkg binaries
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -725,16 +732,17 @@ jobs:
       # this job's (docs/port/web.md, section 7).
       # A missing bundle is an error, because the build is meant to write it.
       - name: Keep LineSweeper's web bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linesweeper-web
           path: out/build/wasm-release/web-dist/linesweeper/
           if-no-files-found: error
+          archive: true
 
       # The six development sample pages, for the safari job below: each
       # sample's page, loader and module, nothing else of the build.
       - name: Keep the sample pages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wasm-sample-pages
           path: |
@@ -746,10 +754,11 @@ jobs:
             out/build/wasm-release/samples/components/ComponentsGallery.*
           if-no-files-found: error
           retention-days: 3
+          archive: true
 
       # Standalone readback page for the macOS Safari job.
       - name: Keep the pixel test page
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wasm-pixel-page
           path: |
@@ -758,14 +767,16 @@ jobs:
             out/build/wasm-release/tests/render/RenderPixelTests.wasm
           if-no-files-found: error
           retention-days: 3
+          archive: true
 
       - name: Keep the frames a golden check rejected
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: golden-actual-wasm-release
           path: out/build/wasm-release/tests/render/golden-actual/
           if-no-files-found: ignore
+          archive: true
 
   # THE WASM JOB'S PAGES IN DESKTOP SAFARI, M3's Safari half
   # (docs/port/web-to-be-tested.md, "Needs Safari"). Nothing is built here:
@@ -785,22 +796,31 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          allow-unsafe-pr-checkout: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - uses: actions/download-artifact@v4
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: wasm-sample-pages
           path: ${{ runner.temp }}/samples
-      - uses: actions/download-artifact@v4
+          skip-decompress: false
+          digest-mismatch: error
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: linesweeper-web
           path: ${{ runner.temp }}/linesweeper
-      - uses: actions/download-artifact@v4
+          skip-decompress: false
+          digest-mismatch: error
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: wasm-pixel-page
           path: ${{ runner.temp }}/pixel
+          skip-decompress: false
+          digest-mismatch: error
       - name: Enable safaridriver
         run: sudo safaridriver --enable
       - name: Safari's WebGL2 renderer
@@ -843,13 +863,15 @@ jobs:
         shell: cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          allow-unsafe-pr-checkout: false
 
       - name: Set up the MSVC environment
         uses: ./.github/actions/msvc-env
 
       - name: Restore the wasm job's vcpkg binaries
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -905,7 +927,9 @@ jobs:
         shell: cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          allow-unsafe-pr-checkout: false
 
       - name: Set up the MSVC environment
         uses: ./.github/actions/msvc-env
@@ -914,7 +938,7 @@ jobs:
       # packages are a subset of the engine's, so saving here could leave the
       # key holding a set the wasm job then lacks.
       - name: Restore the wasm job's vcpkg binaries
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-wasm-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -1086,7 +1110,9 @@ jobs:
         shell: cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          allow-unsafe-pr-checkout: false
 
       - name: Set up the MSVC environment
         uses: ./.github/actions/msvc-env
@@ -1097,7 +1123,7 @@ jobs:
       # the same key from here could race those jobs for it; on a miss this
       # job builds from source and leaves the saving to them.
       - name: Restore the windows jobs' vcpkg binaries
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}-${{ env.IMAGE_VERSION }}
@@ -1109,11 +1135,12 @@ jobs:
           cd /d C:\dev && "%SystemRoot%\System32\tar.exe" -xf labrador-starter-dev.zip
 
       - name: Keep the starter ZIP
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: labrador-starter
           path: C:\dev\labrador-starter-dev.zip
           if-no-files-found: error
+          archive: true
 
       - name: Configure
         working-directory: C:\dev\mygame
@@ -1226,11 +1253,12 @@ jobs:
 
       - name: Keep compiled-guide sources, timing and command logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: compiled-guide-pilot
           path: C:\dev\guide-pilot\out\guide-pilot
           if-no-files-found: ignore
+          archive: true
 
       - name: Embed an optional game icon and verify the installed resource
         working-directory: C:\dev\mygame

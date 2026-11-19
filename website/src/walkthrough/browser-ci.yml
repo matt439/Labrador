@@ -21,9 +21,10 @@ jobs:
       run:
         shell: cmd
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
+          allow-unsafe-pr-checkout: false
 
       - name: Find build tools and Chrome
         shell: pwsh
@@ -38,7 +39,7 @@ jobs:
 
       - name: Cache Emscripten
         id: emsdk
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: C:/emsdk
           key: starter-emsdk-${{ runner.os }}-${{ env.EMSDK_VERSION }}
@@ -51,7 +52,7 @@ jobs:
           call C:/emsdk/emsdk.bat activate %EMSDK_VERSION% || exit /b 1
 
       - name: Cache vcpkg's browser binaries
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: starter-wasm-${{ runner.os }}-${{ env.EMSDK_VERSION }}-${{ hashFiles('vcpkg.json') }}
@@ -103,9 +104,10 @@ jobs:
           "%EMSDK_NODE%" external/labrador/tests/render/web/run_page.mjs --browser "%CHROME%" --page out/web-release/index.html --quit-keys Escape,Enter --timeout 60
 
       - name: Keep the tested runtime
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mygame-browser
           path: out/web-release/
           if-no-files-found: error
           retention-days: 7
+          archive: true

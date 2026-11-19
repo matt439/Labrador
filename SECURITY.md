@@ -9,6 +9,20 @@ receives fixes.
 Before reporting, check that the problem is still present on current `master`
 rather than only on a revision your project pins.
 
+Dependency vulnerability alerts are enabled for this repository. Automatic
+Dependabot security updates remain disabled, and no automatic dependency-update
+pull-request or merging policy is selected. The
+[dependency procedure](docs/dependency-updates.md) owns reviewed changes;
+[the dated Action/settings audit](docs/action-runtime-updates.md) records the
+source and validation boundaries. Alerts do not cover every vendored or
+unsupported package source and are not evidence that the project is free of
+vulnerabilities.
+
+The [website dependency triage](docs/website-dependency-triage.md) records the
+current npm repair and the separate host-runtime and immutable-archive
+follow-ups. Local validation does not establish that unpublished changes are
+running on the public site.
+
 ## Reporting a vulnerability
 
 Report it privately through GitHub's private vulnerability reporting: the
