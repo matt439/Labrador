@@ -155,10 +155,11 @@ native Release and Debug browser builds at 03:17 UTC. They leave this isolated
 sanitizer preset, dependency cache namespace, inventory and receipt/probe
 requirements unchanged; their green results do not qualify this ASan lane.
 
-The workflow is staged in source only. No dispatch, push, repository-setting
-change or hosted sanitizer run was performed for this qualification. The first
-hosted result after publication remains to be inspected; local green does not
-establish runner-image qualification.
+The local qualification preceded workflow publication. On 2026-11-20 GitHub
+listed the sanitizer workflow as active on `master` at `f7b717c4` and
+reported zero runs. Inspect the first hosted result for the 24-entry inventory
+and instrumentation and detection probes on the runner.
+[Sanitizer runs](https://github.com/matt439/Labrador/actions/workflows/sanitizers.yml)
 
 ## Combined-source qualification, 2026-11-17
 

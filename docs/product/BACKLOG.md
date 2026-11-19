@@ -1326,7 +1326,22 @@ No new removal API or stale-handle guarantee is implied.
   and the website's zero-diagnostic check, 160 tests and 145-page/435-file
   build. The emitted revision-pinned rules-test link, unique README anchor,
   exact recipe and both one-entry native results were inspected.
-- [ ] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
+- [x] **[SRL-07](STORIES.md#srl-07)** Could · S · The Sample-Reading Learner: Rename non-macro uppercase constants and migrate callers in both repositories
+  Closed 2026-11-20. Labrador migrated its callers in [the rename and sample diff](https://github.com/matt439/Labrador/commit/e0536ccc1a42a31dc04e1e0f9ae01784909f913f).
+  The audit found no uses of the retired public spellings in the tracked C++
+  under `engine/`, `samples/`, `tests/` and `bench/` at `f7b717c4`.
+  ColourWars migrated its callers at `0ef9454d` when adopting v0.3.0.
+  Its public `master` at `3316edb6` pins v0.4.0 and has no remaining uses
+  of those names.
+
+  A public GitHub code search for `matt439/Labrador` in `.gitmodules` on
+  2026-11-20 found two repositories, ColourWars and `matt439/labrador-mygame`.
+  The latter still pins v0.2.0 at `c1976977` of the game. It has six uses of
+  `Vector2F::ZERO` to change to `Vector2F::zero` if it upgrades, three each
+  in [the starter state](https://github.com/matt439/labrador-mygame/blob/c19769776480ddf80ecee87c75b81de97cb16516/game/states/hello_state.cpp)
+  and [the motion tests](https://github.com/matt439/labrador-mygame/blob/c19769776480ddf80ecee87c75b81de97cb16516/game/tests/motion_tests.cpp).
+  The count covers Labrador and those two public pins. Private games and
+  pins outside the search are unknown.
 - [x] **[SRL-19](#srl-19)** Should · S · The Sample-Reading Learner: Make LineSweeper's layer boundary a build check
 - [x] **[SRL-20](#srl-20)** Could · M · The Sample-Reading Learner: Copy a working sprite-strip animation example
 - [x] **[SM-45](../code-hygiene.md#sm-45-public-header-contracts-and-rationale)** Should · M · The Sole Owner-Maintainer: Audit public-header contracts and oversized rationale
@@ -2032,9 +2047,10 @@ configuration passes all 24 entries with instrumented lodepng and DirectXTK,
 retained STL annotations, unchanged audio failpoint assertions and positive
 heap/container detection probes. The [qualification record](../verification-asan.md)
 owns exact source/toolchain, dependency hashes and allocator limits. The
-separate non-required scheduled/manual workflow is prepared after that local
-green result. The local implementation and qualification close this scope;
-hosted execution remains explicitly unrun until publication.
+separate non-required scheduled/manual workflow was prepared after that local
+green result. The local implementation and qualification closed this scope.
+As of 2026-11-20 the workflow is published and awaits its first
+[hosted run](../verification-asan.md#scheduled-execution).
 
 <a id="sm-83"></a>
 ### SM-83. Report invalid collider data at the collision/scene boundary
@@ -3356,10 +3372,12 @@ their unchanged exact inventories, retains complete test/device output and
 uses explicit native Release IPO plus the existing software-driver/material
 tool setup. The twenty required PR contexts, the independent ASan preset
 and its instrumentation/detection checks, and all seven local release/driver
-obligations remain. [The qualification and cost record](../verification-weekly.md)
-holds the first hosted receipt, which is **waiting for owner publication**;
-the implementation does not push, activate a schedule or dispatch a run.
-The story remains unticked until that hosted result is retained.
+obligations remain.
+
+**Hosted qualification, checked 2026-11-20.** The workflow is published and
+GitHub reported zero runs. SM-89 remains open until the first five hosted
+results and their cost evidence are retained in the
+[qualification record](../verification-weekly.md).
 
 <a id="sm-90"></a>
 ### SM-90. Invoke an aggregate counter snapshot when cutting a release
@@ -3518,6 +3536,13 @@ executed by this planning record. Fixture tests cover any settings-audit or
 inventory tooling; read workflow diffs as changes to checks, retain fresh CI
 evidence after an implemented update, and amend dependency/security guidance
 where needed. Run local lint and the website gate.
+
+**Status on 2026-11-20.** GitHub's dependency-alerts endpoint returned HTTP
+204 and its automated-security-fixes endpoint returned `enabled: false`.
+The selected alerts-only setting is in place. The [November 17 handoff](../2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
+identifies the prepared Action updates (`455d7be4`) and website dependency
+repair (`7d8d1272`). Integrate them against current master, run local lint
+and the website gate, then retain fresh hosted results for the changed Actions.
 
 <a id="sm-93"></a>
 ### SM-93. Exercise cross-origin iframe embedding as a regression
@@ -3836,9 +3861,12 @@ invoked Simulator run, retain the evidence and integration limits, and run
 affected tooling, lint and the website gate. No Simulator session starts as
 part of this planning record.
 
-The following three stories were selected in the final acceptance batch on
-2026-11-16. All remain unimplemented; their public-issue owner records retain
-the decisions and source-break boundaries.
+The final acceptance batch of 2026-11-16 selected the following three stories.
+v0.4.0 ships OCA-120's public exception type. The
+[November 17 handoff](../2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
+identifies the backend mappings, mutable-contact commits and Direct3D
+software-selection draft awaiting integration. Each story remains open for
+its own integration and qualification.
 
 <a id="sm-98"></a>
 ### SM-98. Refuse known software Direct3D by default and preserve explicit CI
@@ -5531,7 +5559,7 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | OCA-78 | No registered gap: the 2026-10-13 record took a C++ developer with Git as the floor. The owner's 2026-10-30 decision lowered it and required a Git-free start; the Get Started pages were made exhaustive for that reader in the commit that added this story. |
 | OCA-79 | No registered gap: found by the persona re-review of 2026-11-03. Closed 2026-11-16 by the released starter's [first plain-file push and green CI](https://github.com/matt439/labrador-starter-proof/actions/runs/43874327329); browser-form and sign-in limits remain explicit in the guides. |
 | SM-11 | G70. Moved from Won't this time on 2026-11-03 by the owner, graded Should as `WEB#10` is. Both reasons for holding it were overtaken: the BiDi runner exists (`tests/render/web/run_firefox.mjs`, its protocol held by `BrowserProtocolTests`) and has run five sample pages, and the 2026-11-03 decision withdrew BDP-06's manual fallback. Its remaining work is `WEB#10`; placed last in Later because it waits on nothing. |
-| SRL-07 | G92. Decided 2026-10-27: rename non-macro uppercase constants to snake_case, preserving CONVENTIONS' distinction between values and macros. Inventory current declarations rather than assuming the historical count of 26, migrate engine/sample/test/website uses and the ColourWars callers, and record every old/new spelling and the counted caller repositories. The source break needs CHANGES.md and the public sample migration. Keep this story open for implementation and its affected build, test and website checks. Implemented in this tree 2026-10-27 by *Spell constants in snake_case*: engine, samples, tests and benches, with platform-API restatements kept as CONVENTIONS now allows and the public renames in CHANGES.md. The ColourWars migration and the counted caller record remain. |
+| SRL-07 | G92. The 2026-10-27 decision kept snake_case for values, with CONVENTIONS' exception for platform-API restatements. The [v0.3.0 migration table](../../CHANGES.md#2026-10-27---spell-constants-in-snake_case) records the public source break. The checked L33 story records the ColourWars migration and dated caller count. |
 
 </details>
 

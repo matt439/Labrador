@@ -86,9 +86,9 @@ changed YAML documents parsed, both verification tools printed their plans
 without executing them, and independent source review found no actionable
 workflow defect. The combined website gate remains part of integration.
 
-**First hosted qualification: waiting for publication.** Source preparation
-does not activate a schedule or change repository settings. No push or remote
-dispatch was performed for this work. After the owner publishes the workflow,
-its first scheduled or explicitly authorized manual run supplies the hosted
-evidence; retain its run URL and the five results here before closing SM-89.
-Local native Release IPO evidence is the prerequisite, not that hosted receipt.
+The November 17 local qualification preceded workflow publication.
+
+**First hosted qualification, checked 2026-11-20.** GitHub listed the workflow
+as active on `master` at `f7b717c4` and reported zero runs. After its first
+run, retain the URL, the five results and their timing and cache evidence here
+before closing SM-89. [Weekly configuration runs](https://github.com/matt439/Labrador/actions/workflows/weekly-configurations.yml)

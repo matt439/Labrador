@@ -5,8 +5,15 @@
 [public request](https://github.com/matt439/Labrador/issues/123) identifies a
 consumer that must distinguish a renderer's startup refusal without matching
 English message text. One public renderer-unavailable exception category,
-derived from `std::runtime_error`, is selected. Implementation and
-qualification remain open; this record is not a tracker response or closure.
+derived from `std::runtime_error`, is selected.
+
+**Released in v0.4.0.** The [public header](../../../engine/render/device_unavailable.h)
+defines `RenderDeviceUnavailable`. The [category tests](../../../tests/render/device_unavailable_tests.cpp)
+throw it directly and check the narrow and base catches, retained message and
+handling of an unrelated error. The released backends still use their existing
+startup errors. The [November 17 handoff](../../2026-11-17-overnight-handoff.md#completed-isolated-scopes-awaiting-integration)
+identifies the isolated backend-mapping commits. Integrating them, exercising
+the backend refusal paths and verifying the consumer catch remain open.
 
 ## Accepted scope
 
@@ -24,8 +31,8 @@ qualification remain open; this record is not a tracker response or closure.
   this startup classification slice. A backend not built remains a build/link
   concern rather than a new runtime backend-selection framework.
 
-Current Direct3D and Vulkan refusals use `std::runtime_error`; GL also has
-context/capability refusals without a common engine category. The existing
+The released Direct3D, Vulkan and GL startup paths still need to emit the
+common category for their device or context refusals. The existing
 [COM exception helper](../../../engine/render/throw_if_failed.h) describes a
 failed native call and is broader than this selected semantic failure. It
 does not justify classifying every failed call as renderer unavailability.
@@ -43,6 +50,3 @@ known-software refusal with this category, retaining default-refusal and
 explicit software-test opt-in coverage. Update the public header/reference,
 CHANGES.md, the release guide and affected backend/consumer checks together;
 keep source, device and unrun acceptance evidence distinct.
-
-No new exception, backend behaviour, build or device run accompanies this
-planning decision.
