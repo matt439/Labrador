@@ -264,6 +264,24 @@ on by itself after an alt-tab.
 To let a player choose keys in a menu, [copy the keyboard rebinding example](/docs/guides/rebinding/).
 Its game-owned table refuses duplicates, preserves navigation and uses stable tokens for data.
 
+### Display labels and binding tokens
+
+<GuideVersionNote feature="Keyboard::label and label_revision" releaseGuide="docs/guides/input/" />
+
+`keyboard.label(key)` optionally returns a best-effort UTF-8 display label for that physical
+position. It never changes `Key`, `key_name`, or saved bindings. An absent value means
+unavailable, including a browser position it has not observed. The borrowed view lasts until
+the next input poll or keyboard destruction; copy it to retain it. `label_revision()` changes
+when a different label map is published, including invalidation, so a page can refresh its
+cached text in `update()` instead of converting on every draw.
+
+The [rebinding example's label section](/docs/guides/rebinding/#show-best-effort-layout-labels)
+shows the platform limits and the game-owned `widen`, font and width checks. Its ASCII gallery
+font falls back to the stable token when a returned label needs a missing glyph. Native labels
+query the current thread's layout without changing it. Browser labels are only last-observed
+unmodified canvas key facts, not a complete active-layout map; no layout-map or keyboard-lock
+permission is requested.
+
 ## Gamepads
 
 `Gamepads` has four slots, numbered 0 to 3, and answers `held`, `pressed` and `released` with a

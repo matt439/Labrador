@@ -555,6 +555,8 @@ namespace labrador
 		void on_key_down(Key key) const override;
 		void on_key_up(Key key) const override;
 		void on_text(char32_t codepoint) const override;
+		void on_key_label(Key key, std::string_view label) const override;
+		void on_key_labels_invalidated() const override;
 		void on_mouse_move(int x, int y) const override;
 		void on_mouse_button_down(MouseButton button) const override;
 		void on_mouse_button_up(MouseButton button) const override;

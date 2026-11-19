@@ -43,6 +43,7 @@ namespace
 	struct GalleryFixture
 	{
 		std::vector<std::wstring> heard;
+		std::vector<std::wstring> label_lines;
 		ScriptedGamepadSource source;
 		Application app;
 		GalleryState gallery;
@@ -50,7 +51,8 @@ namespace
 
 		GalleryFixture() :
 			app(binding_options(&this->source)),
-			gallery(&app, [this](const std::wstring& text) { this->heard.push_back(text); })
+			gallery(&app, [this](const std::wstring& text) { this->heard.push_back(text); },
+				[this](const std::wstring& text) { this->label_lines.push_back(text); })
 		{
 			this->app.initialize();
 			this->app.load_manifest("manifest.json");
@@ -373,4 +375,33 @@ TEST_CASE("a modal opener owns a simultaneous fresh pointer press and action key
 		fixture.press(Key::r);
 		CHECK(fixture.heard.back() == L"Both animation previews restarted.");
 	}
+}
+
+TEST_CASE("gallery layout label refresh and font fallback never remap the saved position")
+{
+	GalleryFixture fixture;
+	Keyboard& keyboard = *fixture.app.keyboard();
+	keyboard.on_key_label(Key::r, "Q");
+	fixture.tick();
+	REQUIRE_FALSE(fixture.label_lines.empty());
+	CHECK(fixture.label_lines.back() == L"Label: Q / token r (layout)");
+	const std::size_t displayed = fixture.label_lines.size();
+	fixture.press(Key::q);
+	CHECK(fixture.label_lines.size() == displayed);
+	CHECK_FALSE(fixture.status_begins(L"Both animation"));
+	fixture.press(Key::r);
+	CHECK(fixture.heard.back() == L"Both animation previews restarted.");
+
+	// The delivered gallery font has ASCII only. An otherwise valid
+	// accented label stays an input fact, while this page shows its token.
+	keyboard.on_key_label(Key::r, "\xC3\xA9");
+	fixture.tick();
+	CHECK(keyboard.label(Key::r) == "\xC3\xA9");
+	CHECK(fixture.label_lines.back() == L"Label: r / token r (font fallback)");
+	keyboard.on_key_labels_invalidated();
+	fixture.tick();
+	CHECK_FALSE(keyboard.label(Key::r).has_value());
+	CHECK(fixture.label_lines.back() == L"Label: r / token r (unavailable)");
+	fixture.press(Key::r);
+	CHECK(fixture.heard.back() == L"Both animation previews restarted.");
 }

@@ -1,0 +1,34 @@
+Components: Window mode applies; difficulty and volume sliders are examples.
+Components label: Label: r / token r (unavailable)
+Components: Name editing: Player
+Components label: Label: R / token r (layout)
+Components: Name editing: PlayerR
+Components: Name: missing font glyph
+Components: Name editing: Player
+Components: Name editing: Playera
+Components: Name saved: Playera
+ok - text commit and unsupported-glyph refusal
+Components: Name editing: Playera
+Components: Name editing: PlayeraZ
+Components: Name kept: Playera
+ok - Escape cancels the draft without quitting
+Components: Name editing: Playera
+Components: Name editing: PlayeraQ
+Components label: Label: r / token r (unavailable)
+Components: Name kept: Playera
+ok - canvas blur cancels and unfocused text is ignored
+Components: Name editing: Playera
+Components: Name editing: Playera?
+Components: Name kept: Playera
+ok - an outside press cancels the draft
+Components: Name editing: Playera
+Components: Name editing: Playera1
+Components: Name editing: Playera12
+Components: Name editing: Playera123
+Components: Name editing: Playera1234
+Components: Name editing: Playera12345
+Components: Name: 12 chars maximum
+Components: Name saved: Playera12345
+ok - desktop Name editing, end backspace, commit/cancel, glyph/length refusal and focus loss
+run_page: browser: Chrome/157.0.8103.78 (DevTools 1.3, revision @4b3d0dabb8250b6f152d2d85d79e7706e309d087)
+run_page: WebGL2 renderer: ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)

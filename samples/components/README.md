@@ -12,6 +12,7 @@ name field and a keyboard binding row on one screen.
 | Text field | `text_field.h`, `text_field.cpp` | A single-line UTF-8 value with an end caret, append/code-point backspace, transactional input batches and explicit confirm/cancel. The page owns focus and keys. |
 | Pointer capture | `pointer_capture.h`, `pointer_capture.cpp` | One contact at a time, from the mouse or one finger, followed from press to release or cancellation, and a hit test over a page's targets. |
 | Binding capture row | `binding_row.h`, `binding_row.cpp` | A label/value row that emits one physical-key candidate from page-supplied snapshots, waits for held keys to release and cancels on lost keyboard focus. |
+| Binding label policy | `binding_label.h`, `binding_label.cpp` | Page-owned UTF-8 conversion, font/width checks and stable-token fallback for an optional platform label. |
 | Nine-slice | `nine_slice.h`, `nine_slice.cpp` | One small image drawn at any size with its corners kept: a panel, a button background, a speech bubble. Nine `draw_sprite` calls and no engine change. |
 | Animation preview | `animation_preview.h`, `animation_preview.cpp` | Game-owned elapsed time, looping, one-shot completion and restart over a named animation strip. Drawing reads the current frame without advancing it. |
 | Shape outline | `shape_outline.h`, `shape_outline.cpp` | Collision boundaries drawn as ordinary white-texture sprite quads. The collision sample chooses when and which shapes to show. |
@@ -285,6 +286,25 @@ past its end, a key drops a drag, and a tap on Quit closes the window.
 
 ## The gallery
 
+The binding display queries `Keyboard::label` and refreshes its owned wide
+text on `label_revision()` or a binding change. It keeps stable tokens in
+`GalleryBindings`. The separate Label/token line shows whether the selected
+text came from a layout fact or an unavailable/font/width fallback. The
+delivered font is ASCII only; an available accented label uses its stable
+token. Copy `binding_label.h/.cpp` if taking that page policy, and supply a
+font and width that can always show the token.
+
+Native labels are best-effort neutral-state queries of the current thread's
+input layout, refreshed on layout change/activation. Browser labels are only
+last-observed single Unicode scalars from unmodified canvas key events.
+Unseen positions are unavailable. The shell requests neither a layout map
+nor Keyboard Lock. Canvas blur, page hiding, a changed observation or an
+optional layout notification discard the earlier observations.
+Current Chromium has no such notification, so changes may remain undetected
+until refocus or a differing observation. This never changes a binding.
+The [public label section](https://labradorengine.com/docs/guides/rebinding/#show-best-effort-layout-labels)
+states view lifetimes, native dead-key/IME limits and the rendering boundary.
+
 From the repository root in the x64 Native Tools Command Prompt. In a starter
 project the repository root is `external\labrador`, and
 [Run the samples](https://labradorengine.com/docs/guides/samples/) has every
@@ -375,6 +395,12 @@ cancel/reset, actual canvas blur, and Name's ownership of letters. The native
 null gallery cases use synthetic keys and a hidden real window, with no device
 or Application loop. Neither route claims a physical keyboard-layout check,
 gamepad capture, touchscreen acceptance or saved settings.
+It also injects explicit code/character label facts to check display versus
+identity, font refusal, modified/composing/dead/unknown input and focus
+invalidation. Those are browser-window fixtures, not evidence from a physical
+non-US layout. A second qualification run enables the optional layout-event
+fixture with `--query layout-events=1`; the normal route leaves Chromium's
+unsupported notification explicit.
 
 ## What a component is not
 

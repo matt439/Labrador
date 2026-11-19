@@ -2,8 +2,20 @@
 // No gamepad mapping or persistence is implied by this desktop capture flow.
 import { writeFileSync } from 'node:fs';
 const HOOK = `(() => {
-	const state = { initialized: false, quit: false };
+	const state = { initialized: false, quit: false, layoutRequests: 0 };
 	window.componentsBinding = state;
+	const keyboard = new URLSearchParams(location.search).has('layout-events')
+		? new EventTarget() : navigator.keyboard;
+	if (keyboard) {
+		// A disposable-page guard, not a browser/profile permission change.
+		// Any accidental map/lock request fails this fixture before it can prompt.
+		keyboard.getLayoutMap = () => { ++state.layoutRequests; throw new Error('unexpected layout-map request'); };
+		keyboard.lock = () => { ++state.layoutRequests; throw new Error('unexpected keyboard-lock request'); };
+		if (new URLSearchParams(location.search).has('layout-events')) {
+			Object.defineProperty(navigator, 'keyboard', { value: keyboard, configurable: true });
+			window.componentsLabelKeyboard = keyboard;
+		}
+	}
 	let module;
 	Object.defineProperty(window, 'Module', {
 		configurable: true,
@@ -72,6 +84,77 @@ export default async function drive(page) {
 	// Click the new left row without moving any of the original five targets.
 	await click(500, 500);
 	await press('Escape');
+
+	// Layout facts are display-only. These explicit DOM fixtures choose a
+	// character independently of its physical code; they do not change the
+	// host's layout or establish physical non-US keyboard acceptance.
+	const observed = async (code, value, extra = {}) => {
+		for (const type of ['keydown', 'keyup']) {
+			await page.evaluate(`document.getElementById('canvas').dispatchEvent(
+				new KeyboardEvent(${JSON.stringify(type)}, {
+					code: ${JSON.stringify(code)}, key: ${JSON.stringify(value)},
+					bubbles: true, cancelable: true, ...${JSON.stringify(extra)}
+				})); true`);
+			await frames();
+		}
+	};
+	let label_from = heard.length;
+	await press('ArrowRight');
+	assert(since(label_from, 'Label: d / token d (unavailable)').length === 1,
+		'unseen default key did not use a stable-token fallback');
+	await press('ArrowRight');
+	label_from = heard.length;
+	await observed('KeyR', 'q');
+	assert(since(label_from, 'Label: q / token r (layout)').length === 1,
+		'observed label was not displayed separately from its token');
+	assert(since(label_from, 'Both animation previews restarted.').length === 1,
+		'label text remapped the physical restart binding');
+	label_from = heard.length;
+	await observed('KeyQ', 'a');
+	assert(since(label_from, 'Both animation previews restarted.').length === 0,
+		'the displayed character became the action key');
+	label_from = heard.length;
+	await observed('KeyR', '\u00E9');
+	assert(since(label_from, 'Label: r / token r (font fallback)').length === 1,
+		'the ASCII gallery font accepted an unavailable accent glyph');
+	if (process.env.LABRADOR_COMPONENTS_LABEL_CAPTURE) {
+		const screenshot = await page.send('Page.captureScreenshot', { format: 'png' });
+		writeFileSync(process.env.LABRADOR_COMPONENTS_LABEL_CAPTURE,
+			Buffer.from(screenshot.data, 'base64'));
+	}
+	await observed('KeyR', 'z');
+	label_from = heard.length;
+	await observed('KeyR', 'Z', { shiftKey: true });
+	await observed('KeyR', 'Z', { modifierCapsLock: true });
+	await observed('KeyR', 'x', { isComposing: true });
+	await observed('KeyR', 'Dead');
+	await observed('KeyR', 'ab');
+	await observed('KeyR', '\uD800x');
+	await observed('KeyR\u0000junk', 'x');
+	await observed('UnknownPosition', 'x');
+	assert(since(label_from, 'Components label:').length === 0,
+		'modified, composing, dead, ambiguous or unknown input changed a label');
+	await page.evaluate('document.getElementById("canvas").blur(); true');
+	await frames();
+	assert(since(label_from, 'Label: r / token r (unavailable)').length === 1,
+		'focus loss retained an observed layout label');
+	await page.evaluate('document.getElementById("canvas").focus(); true');
+	await frames();
+	label_from = heard.length;
+	await press('KeyR');
+	assert(since(label_from, 'Label: r / token r (layout)').length === 1,
+		'a fresh real canvas key event did not restore its observed label');
+	if (await page.evaluate('Boolean(window.componentsLabelKeyboard)')) {
+		label_from = heard.length;
+		await page.evaluate('window.componentsLabelKeyboard.dispatchEvent(new Event("layoutchange")); true');
+		await frames();
+		assert(since(label_from, 'Label: r / token r (unavailable)').length === 1,
+			'optional layoutchange notification did not invalidate labels');
+	}
+	assert((await page.evaluate('window.componentsBinding.layoutRequests')) === 0,
+		'the label route requested a layout map or keyboard lock');
+	console.log('ok - observed labels, font/unavailable fallback and refresh preserve stable binding identities');
+
 	let from = heard.length;
 	await key('keyDown', 'Enter');
 	await key('keyDown', 'KeyT');

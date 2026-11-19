@@ -18,6 +18,7 @@ if(NOT EMSCRIPTEN)
     target_sources(AppTests PRIVATE
         application_order_tests.cpp
         keyboard_input_tests.cpp
+        key_labels_tests.cpp
         pointer_input_tests.cpp
         startup_info_tests.cpp
         system_command_tests.cpp

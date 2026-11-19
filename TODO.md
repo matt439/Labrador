@@ -9,9 +9,9 @@ Start with these stories in [BACKLOG order](docs/product/BACKLOG.md#later).
 1. **OCA-97 — play the assembled starter.** Launch `play.cmd` by the advertised
    route with the installed tools, play visibly and quit through the game.
    The helpers already pass build, test and hidden smoke checks. [Acceptance](docs/product/BACKLOG.md#oca-97)
-2. **OCA-111 — finish keyboard-layout labels.** Integrate the retained change
-   with the rebinding sample, then check native labels, the browser fallback
-   and saved binding tokens. [Acceptance](docs/product/BACKLOG.md#oca-111)
+2. **OCA-111 — qualify keyboard-layout labels.** Run the combined input and
+   application checks for the native labels, browser fallback and saved tokens.
+   [Acceptance](docs/product/BACKLOG.md#oca-111)
 3. **OCA-114 — finish held touch controls.** Integrate the retained gallery
    change and test two simultaneous touches, drag, release and cancellation.
    Real-glass play has its own row. [Acceptance](docs/product/BACKLOG.md#oca-114)
@@ -39,7 +39,7 @@ what shipped.
 |---|---|---|---|---|
 | `OCA-97` | OPEN | could | M | Verify visible play and normal quit via the advertised starter launcher with installed tools. Non-default discovery paths have fixtures. [Scope](docs/product/BACKLOG.md#oca-97). |
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend with a real non-Xbox pad once one is available. [Scope](docs/product/BACKLOG.md#oca-108). |
-| `OCA-111` | OPEN | could | M | Integrate and qualify best-effort layout labels and stable-token fallback in the rebinding sample. [Scope](docs/product/BACKLOG.md#oca-111). |
+| `OCA-111` | OPEN | could | M | Qualify the integrated keyboard labels and rebinding fallback across the input and application matrix. [Scope](docs/product/BACKLOG.md#oca-111). |
 | `OCA-114` | OPEN | could | M | Integrate and qualify the gallery's held buttons and virtual stick. WEB#5 and SM-13 cover physical touch. [Scope](docs/product/BACKLOG.md#oca-114). |
 | `SM-89` | WAITING | could | M | Retain the first hosted results for all five configurations of the published weekly workflow. [Qualification](docs/verification-weekly.md). |
 | `SM-92` | WAITING | should | M | Retain fresh hosted results for the integrated Action pins and website dependencies. Local selector, site and diagram checks passed. [Scope](docs/product/BACKLOG.md#sm-92). |

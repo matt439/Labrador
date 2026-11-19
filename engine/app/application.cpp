@@ -182,6 +182,7 @@ namespace labrador
 		this->keyboard_ = std::make_unique<Keyboard>();
 		this->mouse_ = std::make_unique<Mouse>();
 		this->touch_ = std::make_unique<Touch>();
+		this->window_->refresh_key_labels();
 
 		// Apply any focus report made before the input services existed. Native
 		// activation arrives on the first-frame reveal; a canvas may already
@@ -497,6 +498,7 @@ namespace labrador
 		// pads', and a game reading both would see a stick and a key pressed
 		// between the same two polls report on different updates.
 		this->gamepads_->poll();
+		this->window_->refresh_key_labels();
 		this->keyboard_->poll();
 		this->mouse_->poll();
 		this->touch_->poll();
@@ -807,6 +809,22 @@ namespace labrador
 		if (this->keyboard_)
 		{
 			this->keyboard_->on_text(codepoint);
+		}
+	}
+
+	void Application::on_key_label(Key key, std::string_view label) const
+	{
+		if (this->keyboard_)
+		{
+			this->keyboard_->on_key_label(key, label);
+		}
+	}
+
+	void Application::on_key_labels_invalidated() const
+	{
+		if (this->keyboard_)
+		{
+			this->keyboard_->on_key_labels_invalidated();
 		}
 	}
 

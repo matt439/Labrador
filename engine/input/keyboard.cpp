@@ -110,6 +110,35 @@ namespace labrador
 		append_utf8(this->pending_text_, codepoint);
 	}
 
+	void Keyboard::on_key_label(Key key, std::string_view label)
+	{
+		if (!is_key(key))
+		{
+			return;
+		}
+		const std::size_t index = static_cast<std::size_t>(key);
+		if (label.empty())
+		{
+			this->pending_labels_[index].clear();
+		}
+		else
+		{
+			this->pending_labels_[index].assign(label.data(), label.size());
+		}
+		this->pending_label_keys_[index] = true;
+		this->labels_pending_ = true;
+	}
+
+	void Keyboard::on_key_labels_invalidated()
+	{
+		for (std::string& label : this->pending_labels_)
+		{
+			label.clear();
+		}
+		this->pending_label_keys_.fill(true);
+		this->labels_pending_ = true;
+	}
+
 	void Keyboard::set_focused(bool focused)
 	{
 		this->live_.focused = focused;
@@ -142,6 +171,28 @@ namespace labrador
 		// stops allocating once both have grown once.
 		this->typed_.swap(this->pending_text_);
 		this->pending_text_.clear();
+
+		if (this->labels_pending_)
+		{
+			bool changed = false;
+			for (std::size_t index = 1; index < this->labels_.size(); ++index)
+			{
+				if (this->pending_label_keys_[index] &&
+					this->labels_[index] != this->pending_labels_[index])
+				{
+					// Feeds own the allocation. Swapping published storage cannot
+					// throw or expose a partially copied label map from poll().
+					this->labels_[index].swap(this->pending_labels_[index]);
+					changed = true;
+				}
+			}
+			this->pending_label_keys_.fill(false);
+			this->labels_pending_ = false;
+			if (changed)
+			{
+				++this->label_revision_;
+			}
+		}
 	}
 
 	const KeyboardState& Keyboard::state() const
@@ -187,6 +238,25 @@ namespace labrador
 	std::string_view Keyboard::typed() const
 	{
 		return this->typed_;
+	}
+
+	std::optional<std::string_view> Keyboard::label(Key key) const
+	{
+		if (!is_key(key))
+		{
+			return std::nullopt;
+		}
+		const std::string& value = this->labels_[static_cast<std::size_t>(key)];
+		if (value.empty())
+		{
+			return std::nullopt;
+		}
+		return std::string_view(value);
+	}
+
+	uint64_t Keyboard::label_revision() const
+	{
+		return this->label_revision_;
 	}
 
 	// One case per enumerator and no default, so that clang's -Wswitch, an

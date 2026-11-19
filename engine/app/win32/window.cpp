@@ -2,6 +2,7 @@
 #include "engine/app/modifier_sides.h"
 #include "engine/app/win32/display_info.h"
 #include "engine/app/win32/keyboard_input.h"
+#include "engine/app/win32/key_labels.h"
 #include "engine/app/win32/pointer_input.h"
 #include "engine/app/win32/system_command.h"
 #include "engine/render/text_encoding.h"
@@ -410,6 +411,8 @@ namespace labrador
 		bool minimized = false;
 		bool power_suspended = false;
 		bool show_on_frame = false;
+		bool key_labels_dirty = true;
+		HKL key_labels_layout = nullptr;
 		int show_command = SW_SHOWDEFAULT;
 
 		// The pointer. `active` is the last WM_ACTIVATEAPP, and `clipping` is
@@ -771,6 +774,32 @@ namespace labrador
 	int Window::exit_code() const
 	{
 		return this->impl_->exit_code;
+	}
+
+	void Window::refresh_key_labels() const
+	{
+		if (this->impl_->handle == nullptr)
+		{
+			return;
+		}
+		const HKL layout = GetKeyboardLayout(0);
+		if (!this->impl_->key_labels_dirty && this->impl_->key_labels_layout == layout)
+		{
+			return;
+		}
+		this->impl_->key_labels_dirty = false;
+		this->impl_->key_labels_layout = layout;
+		this->impl_->notify->on_key_labels_invalidated();
+		for (unsigned int value = 1; value < static_cast<unsigned int>(Key::count); ++value)
+		{
+			const Key key = static_cast<Key>(value);
+			const std::string label = key_label_from_layout(key,
+				reinterpret_cast<std::uintptr_t>(layout));
+			if (!label.empty())
+			{
+				this->impl_->notify->on_key_label(key, label);
+			}
+		}
 	}
 
 	void Window::pump_until_quit()
@@ -1201,6 +1230,7 @@ namespace labrador
 
 		case WM_ACTIVATEAPP:
 			this->active = w_param != 0;
+			this->key_labels_dirty = true;
 			this->update_cursor_clip(window);
 			if (w_param)
 			{
@@ -1638,6 +1668,11 @@ namespace labrador
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
 			return this->on_key_message(window, message, w_param, l_param);
+
+		case WM_INPUTLANGCHANGE:
+			this->key_labels_dirty = true;
+			// DefWindowProc forwards the change to child windows as required.
+			return DefWindowProcW(window, message, w_param, l_param);
 
 		case WM_CHAR:
 			return this->on_char_message(window, w_param, l_param);

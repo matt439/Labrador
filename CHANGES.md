@@ -125,6 +125,23 @@ browser build to break, and a game on a tag can have one.
 not consumer-visible: a game reads nothing from it, and a release is told by
 its heading here.
 
+## Unreleased
+
+### 2026-11-20 — Expose best-effort keyboard labels for rebinding
+
+`Keyboard::label(Key)` supplies a borrowed UTF-8 display label when a position
+has a usable label. `label_revision()` changes when `poll()` publishes a
+different label map. The label view is valid until the next poll or destruction.
+Key positions and saved tokens keep their existing meanings, including
+`international_backslash`.
+
+Win32 uses the active thread layout. Browsers use observed unmodified printable
+keys on the canvas, so unseen keys can lack labels. The rebinding gallery
+falls back to the saved token for unavailable, unrenderable or oversized
+labels. Direct `Window` owners can call `refresh_key_labels()` before polling
+keyboard input. See the [rebinding guide](website/src/content/docs/docs/guides/rebinding.mdx)
+for the display and platform limits.
+
 ## v0.4.0 (2026-11-17)
 
 ### 2026-11-17 — Select native and canvas cursor shapes

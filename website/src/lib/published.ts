@@ -259,6 +259,10 @@ export const REFERENCE_MODULES: ReferenceModule[] = [
 // Headers intentionally excluded from the public reference, each with its reason.
 export const UNPUBLISHED_HEADERS: [source: string, reason: string][] = [
 	[
+		'engine/app/win32/key_labels.h',
+		'The native SDK translation and injectable fixture boundary behind Keyboard::label; game code reads the platform-neutral keyboard.h contract.',
+	],
+	[
 		'engine/render/material_table.h',
 		'Renderer-internal ownership, selection and validation shared by the backends; callers use MaterialSource and MaterialHandle through renderer.h.',
 	],

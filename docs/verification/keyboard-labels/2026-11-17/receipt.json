@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "story": "OCA-111",
+  "date": "2026-11-17",
+  "base": "77399933eb58c6d83a4a602fe4c8cc9acffd2b18",
+  "iso_dependency": "75131afd3aab93a1e471fd3f1354a6e6956725dd",
+  "local_dependency_head": "ae4cdbda",
+  "guide_version_note_dependency": "95108c33",
+  "source_identity": "The containing commit, the dependency commits and the exact local build-input bytes recorded below.",
+  "compatibility": {
+    "key_enum_unchanged": true,
+    "token_functions_unchanged": true,
+    "game_binding_table_unchanged": true
+  },
+  "toolchain": {
+    "native": "MSVC14.51.36231 / CMake4.3.1-msvc1",
+    "wasm": "Emscripten6.0.12; CTest Node24.14.0",
+    "browser": "Chrome157.0.8103.78; ANGLE NVIDIA GeForce RTX5080 D3D11"
+  },
+  "source_files": {
+    "CMakeLists.txt": {
+      "sha256": "213a298061b2d4d2e30ee0330ae1f5cf5dd26539a67885bb0f87aba055136d70",
+      "bytes": 22660
+    },
+    "CMakePresets.json": {
+      "sha256": "606faae86c4f7b9ea57cfc8c12fe1cad16f6adb31beeeba29468a407d478ebe2",
+      "bytes": 6052
+    },
+    "engine/CMakeLists.txt": {
+      "sha256": "b6f97fcfe0d6dbf6dabcb729acd19de7e266bc2172da4357abb521afe2519568",
+      "bytes": 24042
+    },
+    "engine/app/application.cpp": {
+      "sha256": "6e9895d33f7c7de7adf51c758367bef61d5a7c7d1f12608c696ba3d7be129eb0",
+      "bytes": 28411
+    },
+    "engine/app/application.h": {
+      "sha256": "7e31346b97baa3037a852ba7c1886b01e57e1b908334fdc732b196e3e9747114",
+      "bytes": 26616
+    },
+    "engine/app/web/dom_events.cpp": {
+      "sha256": "1c4d5907ded9d28edaa9fa50b750f56ee7b9a6586e4d19e97b8c40047ad0aa39",
+      "bytes": 7574
+    },
+    "engine/app/web/dom_events.h": {
+      "sha256": "48f38dcb0e905562e2e3c725c6b3df40ed2a5b82dc393f532d351df2d97c87b2",
+      "bytes": 5471
+    },
+    "engine/app/web/window.cpp": {
+      "sha256": "796e619c43e818e3620933995cfa9138f0de6b267703a5ca7d95c108f1ff77da",
+      "bytes": 37064
+    },
+    "engine/app/win32/key_labels.cpp": {
+      "sha256": "d355c98a3d3b75f0c09026ca554cc83930d54c5c313ff4bd4f96c60e595ce1a7",
+      "bytes": 6022
+    },
+    "engine/app/win32/key_labels.h": {
+      "sha256": "3537f7ac3e38a1560b7db73eb1291b760f5caaf869613dd7cda7a5d62f79a236",
+      "bytes": 1458
+    },
+    "engine/app/win32/window.cpp": {
+      "sha256": "4f59337a057b102255d544125f626de681b0a38d14ea573c54d6a82c3c5d1d30",
+      "bytes": 54384
+    },
+    "engine/app/window.h": {
+      "sha256": "2cf3f39919002791283912a24b99bf2b051ca365ad122d2cfac2c12ecd71937d",
+      "bytes": 21363
+    },
+    "engine/input/keyboard.cpp": {
+      "sha256": "590b2ce991fde4c6f266d8fb345022f1966d617336100f89bdfc54e5ea02da3f",
+      "bytes": 11208
+    },
+    "engine/input/keyboard.h": {
+      "sha256": "9ed1897edc8401509e3e5a4776012f8e3434a911515684a99e0bfc592677ab84",
+      "bytes": 9089
+    },
+    "samples/components/CMakeLists.txt": {
+      "sha256": "834b7063d92eaa520d7ddff17570b47e16d66b0034cf64f6a0de483dc3234c22",
+      "bytes": 5265
+    },
+    "samples/components/binding_label.cpp": {
+      "sha256": "eb9e011c1ebd0a84d37ffd80a4ea1b134534a6e90243998d3d8040a658a64e81",
+      "bytes": 2418
+    },
+    "samples/components/binding_label.h": {
+      "sha256": "98b48ecbbe47d0b11a91ee723af3b05a2dff09c17196af40283076142aa27ec4",
+      "bytes": 1177
+    },
+    "samples/components/binding_label_tests.cpp": {
+      "sha256": "f6f4cc11e8a52e27d876266f81bbcea1637d6b81aceac8511beaa22112a52215",
+      "bytes": 4902
+    },
+    "samples/components/content/manifest.json": {
+      "sha256": "ce807f99e95cadcbb467d629b2db5456301b9af1dc9c3f3b6ab8fb2375a1ff53",
+      "bytes": 441
+    },
+    "samples/components/gallery_binding.cpp": {
+      "sha256": "30a7245113579c27fd72865457b5fc112ba64818b18f5f6d231b98a33799dec9",
+      "bytes": 6051
+    },
+    "samples/components/gallery_binding_tests.cpp": {
+      "sha256": "072536988cde94bed4fe84efb206972baf4f1e88e0617591d1e898d722e636f6",
+      "bytes": 13891
+    },
+    "samples/components/gallery_bindings.cpp": {
+      "sha256": "acc9d6151d9583dbe05659dae22f448f94171c23da242b0c76696fd7eae7d5ea",
+      "bytes": 2124
+    },
+    "samples/components/gallery_bindings.h": {
+      "sha256": "c425b0d87e0941defc584dda0840fd26a3c3c3ab20f1ea876a06c31a9e87684f",
+      "bytes": 1459
+    },
+    "samples/components/gallery_state.cpp": {
+      "sha256": "feed1b5aaf8fbd278dc717b82c10b745db0961838b771b62402556ba4300ab17",
+      "bytes": 21993
+    },
+    "samples/components/gallery_state.h": {
+      "sha256": "9ef8c0c1e3c834578fca0adbb43efce02d5923d6c77c87949d9a6da5054ab4b6",
+      "bytes": 5341
+    },
+    "samples/components/main_web.cpp": {
+      "sha256": "dc1cf28a9410782457874669e203e20acac9011c75932b42dbcdc9841c364aa9",
+      "bytes": 1990
+    },
+    "samples/components/web/rebinding_input.mjs": {
+      "sha256": "3fea74dc7860bca31c05822202ce41765dc85d3f41af9055152d9fd6ca4331ab",
+      "bytes": 11458
+    },
+    "samples/minimal/content/fonts/jetbrains_mono_bold_16.spritefont": {
+      "sha256": "4eed8bab40cd7c21856e9da166a42a956a63910c57051145571f13d25e7b95b1",
+      "bytes": 24584
+    },
+    "tests/app/CMakeLists.txt": {
+      "sha256": "f6b3803e8113cb179b092527d840aabc649fe3882b45e45084b1a298ebeb8d32",
+      "bytes": 4902
+    },
+    "tests/app/key_labels_tests.cpp": {
+      "sha256": "f99a0ced00e73ae58ee631d9400728374e8295086583dd54c84c4f356b702710",
+      "bytes": 10437
+    },
+    "tests/app/web/dom_events_tests.cpp": {
+      "sha256": "c44c710a0a9128322b451aec65d4ca904cd6f9f12bf0aaa777fadfbfb0f0f4f3",
+      "bytes": 14844
+    },
+    "tests/app/window_tests.cpp": {
+      "sha256": "a87d29f91b3b48526b9d2a357f8a3965e2657c771c66250e747ed06e52f63c51",
+      "bytes": 54907
+    },
+    "tests/input/keyboard_tests.cpp": {
+      "sha256": "dae9d4ef3fbba7e0709050d3fe656b9f8d503b63f160c579a85a3922fae2095c",
+      "bytes": 24277
+    },
+    "vcpkg.json": {
+      "sha256": "435e882976349988b43c997912b2327a4bf4d2b3f2ef6aa4b29c8432f44a229b",
+      "bytes": 570
+    }
+  },
+  "outputs": {
+    "out/build/x64-debug-null/tests/input/InputTests.exe": {
+      "sha256": "659e825c97dbb87525522eb19a063287e25b52f36badef052a18f76094745936",
+      "bytes": 2371072
+    },
+    "out/build/x64-debug-null/tests/app/AppTests.exe": {
+      "sha256": "e2380d0af75eb20e4a7021519831172b00b6bdcc5e5c75da14993d672d8cf32f",
+      "bytes": 4416000
+    },
+    "out/build/x64-debug-null/samples/components/ComponentsTests.exe": {
+      "sha256": "2945a977f723072bbee107edaa4dd43654d8ce24b715369fba70d203000d925c",
+      "bytes": 4542464
+    },
+    "out/build/x64-debug-null/samples/components/ComponentsGallery.exe": {
+      "sha256": "8918363bcbf024e674d388bf97a9ef679b7fe68bcfe4cf0fe3033264b8bbb4ae",
+      "bytes": 2791936
+    },
+    "out/build/x64-debug/tests/input/InputTests.exe": {
+      "sha256": "99816612510f49a327e2eb9983baa62f405bade969efe90b78d3551c041e9dc0",
+      "bytes": 2371072
+    },
+    "out/build/x64-debug/tests/app/AppTests.exe": {
+      "sha256": "c74e9cebacb9fad8d1f45c60e0aa5392b7d3ce470e217cf39833007916787761",
+      "bytes": 4205056
+    },
+    "out/build/x64-debug/samples/components/ComponentsTests.exe": {
+      "sha256": "b065dc07908b27b23dd23ff0a225a72e572836828d9d7f8cae6fbe4f9a83ce2f",
+      "bytes": 3239424
+    },
+    "out/build/x64-debug/samples/components/ComponentsGallery.exe": {
+      "sha256": "925ad4cf45839564c2e48a644855e4b5fd9ab2b5247297bdc3f20d4dd0f37c41",
+      "bytes": 2932224
+    },
+    "out/build/wasm-debug/tests/input/InputTests.js": {
+      "sha256": "4b4c9951b30108915a04704521c67e35e5da5934f21280179157691752343cfe",
+      "bytes": 208538
+    },
+    "out/build/wasm-debug/tests/input/InputTests.wasm": {
+      "sha256": "84f632fdbcf4a2c29ba64a767c2ae68f8c94480ccc7b29d7704258c135aba31d",
+      "bytes": 7162331
+    },
+    "out/build/wasm-debug/tests/app/AppTests.js": {
+      "sha256": "4fbf00da287fdd6803076147ba926bfa4850d5638a1c8b3af6ce559ad9908d29",
+      "bytes": 218504
+    },
+    "out/build/wasm-debug/tests/app/AppTests.wasm": {
+      "sha256": "b50ea92a7ee3b679e028c952c30a51c203768eed982330c253443962fc6ba678",
+      "bytes": 12470498
+    },
+    "out/build/wasm-debug/samples/components/ComponentsTests.js": {
+      "sha256": "fa0ad28db57432a6525c0ea743b255cc3a3b17911d49ecce7ccea2371666219d",
+      "bytes": 190049
+    },
+    "out/build/wasm-debug/samples/components/ComponentsTests.wasm": {
+      "sha256": "a0272b144405f227c9063a2ee7ee7da3d19cf2f0313cc9b9ef16f4957809f591",
+      "bytes": 12621828
+    },
+    "out/build/wasm-debug/samples/components/ComponentsGallery.js": {
+      "sha256": "e9627b6ef8dbaa0d54fb3fa01b732c0fe438ae223f02e9d308d89200b563908f",
+      "bytes": 287508
+    },
+    "out/build/wasm-debug/samples/components/ComponentsGallery.wasm": {
+      "sha256": "06ffb489809e5b778c3672c940dd4936c7bb543e1cb713509994655a3524cf58",
+      "bytes": 14460167
+    },
+    "out/build/wasm-debug/samples/components/ComponentsGallery.html": {
+      "sha256": "9c7fc7e1fdd363ea9e18829a9f6781a577002911be70eddc118fd71b07cbcddb",
+      "bytes": 3333
+    },
+    "out/build/wasm-debug/tests/app/WebWindowTests.js": {
+      "sha256": "52f1c5e4ef1bb4d16569e2dc4ed4335003158bbea805fdc73ee963ee8efed4ef",
+      "bytes": 118332
+    },
+    "out/build/wasm-debug/tests/app/WebWindowTests.wasm": {
+      "sha256": "3c2542cf31fbf1ec302411cc52dd43edc44fad4c816f738dd52aa5dbd389f797",
+      "bytes": 1878113
+    },
+    "out/build/wasm-debug/tests/app/WebWindowTests.html": {
+      "sha256": "cfebe5df5cc5c19329fe5b4ff0751f6010d13384bc7bf7763c62d7f794b7d4b2",
+      "bytes": 3125
+    }
+  },
+  "browser_runner_commit": "59634ce46e7efd054110c150acf6a497ca8a5c40",
+  "browser_runs": [
+    {
+      "name": "browser-labels",
+      "command": [
+        "node",
+        "C:\\Projects\\Labrador\\tests\\render\\web\\run_page.mjs",
+        "--browser",
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "--page",
+        "out/build/wasm-debug/samples/components/ComponentsGallery.html",
+        "--input",
+        "samples/components/web/rebinding_input.mjs",
+        "--timeout",
+        "60",
+        "--browser-warnings",
+        "fail"
+      ],
+      "exit_code": 0,
+      "runner_files": {
+        "tests/render/web/run_page.mjs": "1f163b1996cd206984ee3735a04484558915ef11446af33d86dac625911af222",
+        "tests/render/web/devtools.mjs": "f474ab3dca367ba784d9835f59ab32e07664e35455cbee0c63415a2d7d5e56a0",
+        "tests/render/web/page_harness.mjs": "eb819c62bdc96a4ad94a6351a15f836d106be15ef9169926ea57007e849154e7",
+        "tests/render/web/sample_key.mjs": "8227efa0819f01b2375effc8ec80c33c761a70e9cc1d612e14ea6201cb5a1de1",
+        "website/acceptance/server.mjs": "a0e5f1ff357d9f11636fb5a49710f684a44fb6e66bdf12246517988f6801b642"
+      },
+      "unchanged_during_run": true
+    },
+    {
+      "name": "browser-layout-event",
+      "command": [
+        "node",
+        "C:\\Projects\\Labrador\\tests\\render\\web\\run_page.mjs",
+        "--browser",
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "--page",
+        "out/build/wasm-debug/samples/components/ComponentsGallery.html",
+        "--input",
+        "samples/components/web/rebinding_input.mjs",
+        "--timeout",
+        "60",
+        "--query",
+        "layout-events=1",
+        "--browser-warnings",
+        "fail"
+      ],
+      "exit_code": 0,
+      "runner_files": {
+        "tests/render/web/run_page.mjs": "1f163b1996cd206984ee3735a04484558915ef11446af33d86dac625911af222",
+        "tests/render/web/devtools.mjs": "f474ab3dca367ba784d9835f59ab32e07664e35455cbee0c63415a2d7d5e56a0",
+        "tests/render/web/page_harness.mjs": "eb819c62bdc96a4ad94a6351a15f836d106be15ef9169926ea57007e849154e7",
+        "tests/render/web/sample_key.mjs": "8227efa0819f01b2375effc8ec80c33c761a70e9cc1d612e14ea6201cb5a1de1",
+        "website/acceptance/server.mjs": "a0e5f1ff357d9f11636fb5a49710f684a44fb6e66bdf12246517988f6801b642"
+      },
+      "unchanged_during_run": true
+    },
+    {
+      "name": "browser-text",
+      "command": [
+        "node",
+        "C:\\Projects\\Labrador\\tests\\render\\web\\run_page.mjs",
+        "--browser",
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "--page",
+        "out/build/wasm-debug/samples/components/ComponentsGallery.html",
+        "--input",
+        "samples/components/web/text_field_input.mjs",
+        "--timeout",
+        "60",
+        "--browser-warnings",
+        "fail"
+      ],
+      "exit_code": 0,
+      "runner_files": {
+        "tests/render/web/run_page.mjs": "1f163b1996cd206984ee3735a04484558915ef11446af33d86dac625911af222",
+        "tests/render/web/devtools.mjs": "f474ab3dca367ba784d9835f59ab32e07664e35455cbee0c63415a2d7d5e56a0",
+        "tests/render/web/page_harness.mjs": "eb819c62bdc96a4ad94a6351a15f836d106be15ef9169926ea57007e849154e7",
+        "tests/render/web/sample_key.mjs": "8227efa0819f01b2375effc8ec80c33c761a70e9cc1d612e14ea6201cb5a1de1",
+        "website/acceptance/server.mjs": "a0e5f1ff357d9f11636fb5a49710f684a44fb6e66bdf12246517988f6801b642"
+      },
+      "unchanged_during_run": true
+    },
+    {
+      "name": "browser-pointer",
+      "command": [
+        "node",
+        "C:\\Projects\\Labrador\\tests\\render\\web\\run_page.mjs",
+        "--browser",
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "--page",
+        "out/build/wasm-debug/samples/components/ComponentsGallery.html",
+        "--input",
+        "samples/components/web/pointer_input.mjs",
+        "--timeout",
+        "60",
+        "--browser-warnings",
+        "fail"
+      ],
+      "exit_code": 0,
+      "runner_files": {
+        "tests/render/web/run_page.mjs": "1f163b1996cd206984ee3735a04484558915ef11446af33d86dac625911af222",
+        "tests/render/web/devtools.mjs": "f474ab3dca367ba784d9835f59ab32e07664e35455cbee0c63415a2d7d5e56a0",
+        "tests/render/web/page_harness.mjs": "eb819c62bdc96a4ad94a6351a15f836d106be15ef9169926ea57007e849154e7",
+        "tests/render/web/sample_key.mjs": "8227efa0819f01b2375effc8ec80c33c761a70e9cc1d612e14ea6201cb5a1de1",
+        "website/acceptance/server.mjs": "a0e5f1ff357d9f11636fb5a49710f684a44fb6e66bdf12246517988f6801b642"
+      },
+      "unchanged_during_run": true
+    },
+    {
+      "name": "browser-window",
+      "command": [
+        "node",
+        "C:\\Projects\\Labrador\\tests\\render\\web\\run_page.mjs",
+        "--browser",
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "--page",
+        "out/build/wasm-debug/tests/app/WebWindowTests.html",
+        "--input",
+        "tests/app/web/window_input.mjs",
+        "--timeout",
+        "60"
+      ],
+      "exit_code": 0,
+      "runner_files": {
+        "tests/render/web/run_page.mjs": "1f163b1996cd206984ee3735a04484558915ef11446af33d86dac625911af222",
+        "tests/render/web/devtools.mjs": "f474ab3dca367ba784d9835f59ab32e07664e35455cbee0c63415a2d7d5e56a0",
+        "tests/render/web/page_harness.mjs": "eb819c62bdc96a4ad94a6351a15f836d106be15ef9169926ea57007e849154e7",
+        "tests/render/web/sample_key.mjs": "8227efa0819f01b2375effc8ec80c33c761a70e9cc1d612e14ea6201cb5a1de1",
+        "website/acceptance/server.mjs": "a0e5f1ff357d9f11636fb5a49710f684a44fb6e66bdf12246517988f6801b642"
+      },
+      "unchanged_during_run": true
+    }
+  ],
+  "guide_component_bytes": {
+    "sha256": "1b52c169bc1dda3ae6025aa657fb46697cf6405c8b9ad60fe0193b7a8f0b447f",
+    "bytes": 2078
+  },
+  "images": {
+    "browser-font-fallback.png": {
+      "sha256": "fd5db874ea060d5de1fb75bad68c24d7dbeb47ed657eff5d65be1cfdce2dceac",
+      "bytes": 18684
+    },
+    "native-label.png": {
+      "sha256": "452cbf4a949dc2a06704811f5cceb180149817f60a6e99490693a3e059f7430b",
+      "bytes": 84413
+    }
+  },
+  "logs": {
+    "browser-labels.log": {
+      "sha256": "4754f73910969a4365720a048966f56f50fd73b190153af75f404db2a4fa16d0",
+      "bytes": 3048
+    },
+    "browser-layout-event.log": {
+      "sha256": "8bb75b8a989222e0f9041726dcc271255905091764174d414155452128a824bc",
+      "bytes": 3099
+    },
+    "browser-pointer.log": {
+      "sha256": "7e8050a51fc8ee4a2774113889142fc2fdfb99c7f13a6dfcd7285b555a52ee3e",
+      "bytes": 674
+    },
+    "browser-text.log": {
+      "sha256": "8af2160736a5c6b7c70edff37095b151e5c5218c6f1516e3151c582dbb830e2a",
+      "bytes": 1520
+    },
+    "browser-window.log": {
+      "sha256": "e6b5b8bc775a2305a6ef9826a2cc89912597698f1fc6d95d69e6f591a82e1dad",
+      "bytes": 3421
+    },
+    "native-null-tests.log": {
+      "sha256": "85bb4acb0f8fbe4827d0f59df394912df7c7bf32a559835df4c7e5085e6ba6e7",
+      "bytes": 2575
+    },
+    "native-tests.log": {
+      "sha256": "8ee622a5f96f2d6f25edcd4aac88f91dc6e7f1780a816262275b978cf2d4873f",
+      "bytes": 2525
+    },
+    "wasm-tests.log": {
+      "sha256": "71b66086838f6492b7f3811e25c89cc3b7edca6aba1deb04fc9a1cc64b06c85a",
+      "bytes": 2657
+    }
+  },
+  "qualification": {
+    "native_null": "Input123/13620, App130/2134, Components97/1834;3/3 passed",
+    "native_d3d11": "Input123/13620, App114/1637, Components78/1485;3/3 passed",
+    "wasm_debug": "Input134/13661, App39/520, Components78/1485;3/3 passed",
+    "browser": "five routes passed; each runner dependency set unchanged during execution",
+    "website": "82 checked files, zero diagnostics;200 tests;181 pages, internal links valid; finalbuildpassed",
+    "focused_lint": "steps3-11 passed; per-commit declarations run separately",
+    "integration_pending": [
+      "combined seven-track input/app sweep",
+      "whole-head lint"
+    ]
+  },
+  "limits": [
+    "Browser labels are partial last-observed unmodified scalar facts, never a complete active-layout map.",
+    "Native dead-key/IME and browser notification limits are documented; no physical non-US-layout acceptance.",
+    "Native actual currentHKL smoke and caller appearance use no layout loading/activation. Browser non-US label cases and optional notifications are explicit DOM fixtures.",
+    "No map/lock prompt, global layout or normal browser/profile setting change, binding remap or serialization change."
+  ]
+}
