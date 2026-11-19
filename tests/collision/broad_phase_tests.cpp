@@ -66,7 +66,7 @@ namespace
 		CollisionMask mask() const override { return this->mask_; }
 		CollisionTag tag() const override { return 0; }
 
-		void on_contact(const CollisionObject& /*other*/,
+		void on_contact(CollisionObject& /*other*/,
 			const Vector2F& /*normal*/, float /*penetration*/) override
 		{
 		}

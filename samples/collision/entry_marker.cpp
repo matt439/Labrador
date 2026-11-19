@@ -39,7 +39,7 @@ namespace collision
 		this->for_deletion_ = for_deletion;
 	}
 
-	void EntryMarker::on_contact(const CollisionObject&, const Vector2F&, float)
+	void EntryMarker::on_contact(CollisionObject&, const Vector2F&, float)
 	{
 	}
 }

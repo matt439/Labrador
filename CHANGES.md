@@ -128,6 +128,29 @@ its heading here.
 
 ## Unreleased
 
+### 2026-11-20 — Allow contact responses to mutate either participant
+
+**Source break.** `CollisionObject::on_contact` now receives
+`CollisionObject& other` in place of `const CollisionObject& other`. Drop
+`const` from the first parameter of the override in `samples/collision/body.h`
+and its definition in `samples/collision/body.cpp`, as in this sample migration.
+
+```diff
+-void on_contact(const labrador::CollisionObject& other,
++void on_contact(labrador::CollisionObject& other,
+     const labrador::Vector2F& normal, float penetration) override;
+-void Body::on_contact(const CollisionObject& other,
++void Body::on_contact(CollisionObject& other,
+     const Vector2F& normal, float penetration)
+```
+
+Each pair is measured before dispatch. Both halves receive that manifold with
+opposite normals, and mutation during a pair can affect later measurements.
+Retirement during dispatch preserves the pair's second callback and skips
+later pairs involving the retired object. Scene destroys it at `end_tick`.
+See the [contact contract and migration evidence](docs/review/colourwars-reports/contact.md)
+for [issue #124](https://github.com/matt439/Labrador/issues/124).
+
 ### 2026-11-20 — Refuse known software in ordinary Direct3D Release startup
 
 **Behaviour change.** Direct3D 11 and 12 use the reported device kind to

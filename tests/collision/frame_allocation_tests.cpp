@@ -56,7 +56,7 @@ namespace
 			this->forward_ = !this->forward_;
 		}
 
-		void on_contact(const CollisionObject& /*other*/,
+		void on_contact(CollisionObject& /*other*/,
 			const Vector2F& /*normal*/, float /*penetration*/) override
 		{
 			++this->contacts_;

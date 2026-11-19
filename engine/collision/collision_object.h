@@ -47,7 +47,22 @@ namespace labrador
 		// `normal` is a unit vector pointing from this object towards `other`,
 		// and `penetration` is how far they overlap along it - so the two
 		// participants of one contact are told the same overlap with opposite
-		// normals, and each is told exactly once.
+		// normals. Dispatch measures the pair immediately before its callbacks
+		// and calls each participant once in the pair's order. Scene determines
+		// that order from collision-object registration. Both halves use that
+		// measurement, even if the first moves or retires either participant.
+		// Later pairs involving a retired object are skipped.
+		//
+		// A response may mutate either participant, including its geometry or
+		// retirement flag. Both objects must stay alive through dispatch;
+		// geometry must remain valid for each query using it. `other` borrows
+		// its object (Scene keeps it alive until end_tick); `normal` is borrowed
+		// only for this callback, so copy the measurement if retaining it.
+		// Do not destroy participants or reenter collision dispatch,
+		// Scene::resolve or Scene::end_tick here.
+		// Scene::add takes ownership and queues admission until end_tick.
+		// Scene::remove queues removal and leaves collision eligibility intact.
+		// A callback exception stops dispatch; earlier effects are not undone.
 		//
 		// Separation is the game's call, not the engine's, which is why this
 		// hands over the measurement rather than the movement: a one-way
@@ -55,12 +70,13 @@ namespace labrador
 		// separates vertically rather than along the slope, and a projectile
 		// does not separate at all - it dies. engine/collision/resolve.h has
 		// the arithmetic for the cases that do separate.
-		virtual void on_contact(const CollisionObject& other,
+		virtual void on_contact(CollisionObject& other,
 			const Vector2F& normal, float penetration) = 0;
 
 		// Retired at the end of this tick. Objects flagged mid-frame generate
-		// no further contacts, so a projectile that hits a wall cannot also
-		// hit the player standing behind it.
+		// no later pairs while for_deletion() answers true. The other half of
+		// an already-started pair still runs, so a projectile can finish its
+		// wall response without also hitting the player behind that wall.
 		virtual bool for_deletion() const = 0;
 
 		// Requests removal at the end of the tick, and is the only way the

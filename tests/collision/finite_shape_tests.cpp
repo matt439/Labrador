@@ -40,7 +40,7 @@ namespace
 			StubCollider(RectangleF(), 1, 1, 73), shape_(shape) {}
 
 		const Shape* shape() const override { return this->shape_; }
-		void on_contact(const CollisionObject&, const Vector2F&, float) override
+		void on_contact(CollisionObject&, const Vector2F&, float) override
 		{
 			++this->received;
 			if (this->response) this->response();

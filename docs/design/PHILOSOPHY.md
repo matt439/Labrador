@@ -675,6 +675,12 @@ engine API to depend on.
   iterative search.
 - Collidability is layer/mask filtering plus an opaque game tag. The engine
   decides *whether* things collide; the game decides what it *means*.
+- Contact responses may mutate either participant. Pair dispatch follows
+  input order (Scene's maintained registration order), measuring each live
+  pair immediately before calling both halves with that one manifold and
+  opposite normals. Retirement drops later pairs. Both halves of a started
+  pair run. Scene defers admission, removal and destruction until `end_tick`.
+  Callbacks keep participants alive and leave the collision phases to the caller.
 
 ### Content and assets
 

@@ -23,7 +23,7 @@ namespace collision
 		labrador::CollisionTag tag() const override;
 		bool for_deletion() const override;
 		void set_for_deletion(bool for_deletion) override;
-		void on_contact(const labrador::CollisionObject& other,
+		void on_contact(labrador::CollisionObject& other,
 			const labrador::Vector2F& normal, float penetration) override;
 
 	private:

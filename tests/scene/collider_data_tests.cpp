@@ -19,7 +19,7 @@ namespace
 			StubCollider(rectangle, 1, 1, 91) {}
 
 		void set_rectangle(const RectangleF& rectangle) { this->rectangle_ = rectangle; }
-		void on_contact(const CollisionObject&, const Vector2F&, float) override
+		void on_contact(CollisionObject&, const Vector2F&, float) override
 		{
 			++this->received;
 		}

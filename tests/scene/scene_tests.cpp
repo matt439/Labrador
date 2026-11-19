@@ -5,8 +5,10 @@
 #include "engine/math/vector2f.h"
 #include "tests/collision/stub_collider.h"
 
+#include <functional>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 using labrador::CollisionLayer;
@@ -22,6 +24,48 @@ namespace
 {
 	constexpr CollisionLayer player_layer = 1u << 0;
 	constexpr CollisionLayer wall_layer = 1u << 1;
+
+	using ContactPair = std::pair<labrador::CollisionTag, labrador::CollisionTag>;
+
+	class ContactLifetimeCollider final : public StubCollider
+	{
+	public:
+		using Response = std::function<void(CollisionObject&)>;
+
+		ContactLifetimeCollider(labrador::CollisionTag tag,
+			std::vector<ContactPair>* calls,
+			std::vector<labrador::CollisionTag>* destroyed) :
+			StubCollider(RectangleF(0.0f, 0.0f, 10.0f, 10.0f), 1u, 1u, tag),
+			calls_(calls), destroyed_(destroyed)
+		{
+		}
+
+		~ContactLifetimeCollider() override
+		{
+			this->destroyed_->push_back(this->tag());
+		}
+
+		ContactLifetimeCollider(const ContactLifetimeCollider&) = delete;
+		ContactLifetimeCollider& operator=(const ContactLifetimeCollider&) = delete;
+
+		void on_contact(CollisionObject& other,
+			const Vector2F&, float) override
+		{
+			CHECK(this->destroyed_->empty());
+			this->calls_->emplace_back(this->tag(), other.tag());
+			if (this->response_)
+			{
+				this->response_(other);
+			}
+		}
+
+		void set_response(Response response) { this->response_ = std::move(response); }
+
+	private:
+		std::vector<ContactPair>* calls_;
+		std::vector<labrador::CollisionTag>* destroyed_;
+		Response response_;
+	};
 
 	// Counts the ticks it was stepped for, which is all the scene does to a
 	// plain object.
@@ -69,7 +113,7 @@ namespace
 			this->StubCollider::set_for_deletion(for_deletion);
 		}
 
-		void on_contact(const CollisionObject& other,
+		void on_contact(CollisionObject& other,
 			const Vector2F& /*normal*/, float /*penetration*/) override
 		{
 			this->contacts_++;
@@ -513,6 +557,66 @@ TEST_CASE("end_tick expires contacts whether or not their participants retire")
 		CHECK(scene.contacts().empty());
 		scene.resolve();
 		CHECK(scene.contacts().empty());
+	}
+}
+
+TEST_CASE("mutable counterpart retirement preserves both halves and defers destruction")
+{
+	for (bool retire : { false, true })
+	{
+		CAPTURE(retire);
+		std::vector<ContactPair> calls;
+		std::vector<labrador::CollisionTag> destroyed;
+		Scene scene(nullptr, nullptr);
+		ContactLifetimeCollider* a = scene.add(std::make_unique<ContactLifetimeCollider>(
+			30, &calls, &destroyed));
+		ContactLifetimeCollider* b = scene.add(std::make_unique<ContactLifetimeCollider>(
+			10, &calls, &destroyed));
+		scene.add(std::make_unique<ContactLifetimeCollider>(20, &calls, &destroyed));
+		a->set_response([&scene, retire](CollisionObject& other)
+			{
+				if (other.tag() == 10u)
+				{
+					if (retire)
+					{
+						other.set_for_deletion(true);
+					}
+					scene.remove(&other);
+				}
+			});
+		scene.end_tick();
+		scene.resolve();
+		const std::vector<ContactPair> expected = retire ?
+			std::vector<ContactPair>{ { 30, 10 }, { 10, 30 }, { 30, 20 }, { 20, 30 } } :
+			std::vector<ContactPair>{ { 30, 10 }, { 10, 30 }, { 30, 20 }, { 20, 30 },
+				{ 10, 20 }, { 20, 10 } };
+		CHECK(calls == expected);
+		REQUIRE(destroyed.empty());
+		CHECK(b->tag() == 10u); // Still a live borrowed participant after its response.
+		CHECK(b->for_deletion() == retire);
+		CHECK(scene.contacts().size() == 3); // Includes a skipped pair when retired.
+		CHECK(scene.collision_objects().size() == 3);
+
+		// Pending additions append after surviving registrations. Removal does
+		// not reorder the survivors, even though the tag values are unsorted.
+		scene.add(std::make_unique<ContactLifetimeCollider>(5, &calls, &destroyed));
+		scene.end_tick();
+		const std::vector<labrador::CollisionTag> expected_destroyed{ 10 };
+		CHECK(destroyed == expected_destroyed);
+		CHECK(scene.contacts().empty());
+		const std::span<CollisionObject* const> survivors = scene.collision_objects();
+		REQUIRE(survivors.size() == 3);
+		CHECK(survivors[0]->tag() == 30u);
+		CHECK(survivors[1]->tag() == 20u);
+		CHECK(survivors[2]->tag() == 5u);
+		calls.clear();
+		// Subsequent callbacks must not confuse last tick's completed removal
+		// with destruction during this dispatch.
+		destroyed.clear();
+		scene.resolve();
+		const std::vector<ContactPair> next_expected{
+			{ 30, 20 }, { 20, 30 }, { 30, 5 }, { 5, 30 }, { 20, 5 }, { 5, 20 } };
+		CHECK(calls == next_expected);
 	}
 }
 

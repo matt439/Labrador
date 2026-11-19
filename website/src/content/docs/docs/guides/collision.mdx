@@ -9,6 +9,7 @@ import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
 import { Image } from 'astro:assets';
 import outlineCapture from '~/assets/captures/collision-outlines.png';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 The collision sample puts a blue player in an arena with grey walls, a green
 trigger and a purple rectangle that deliberately rejects contacts. Move into a
@@ -16,6 +17,8 @@ wall to stop and slide along it; walk through the trigger to count an entry.
 All the code below comes from the runnable
 <RepoLink path="samples/collision/README.md">collision sample</RepoLink>. If a build fails after you
 bring some of it into your own game, [Read a build error](/docs/get-started/build-errors/) shows how to read the error.
+
+<GuideVersionNote feature="the mutable other parameter in the contact callback shown here" releaseGuide="docs/guides/collision/" />
 
 ## Run it
 
@@ -137,6 +140,23 @@ the velocity component into the wall using `slide(velocity, normal)`:
 The wall ignores its callback. A trigger marks the player's overlap without
 moving it or changing its velocity. These are game decisions: `Scene::resolve`
 does not automatically push every pair apart.
+
+The callback receives `CollisionObject& other`, so a game can change or retire
+the counterpart without a const cast. Pairs follow the scene's maintained
+collision-object registration order, with the earlier participant called
+first. The engine measures each live pair immediately before its first
+callback and passes that same depth and opposite normals to both halves.
+The second half runs with that measurement even if the first moves or retires
+either object. Dispatch checks later pairs against current geometry and skips
+pairs that are separated or have a retired participant.
+
+Keep both participants alive through dispatch and leave resolution and
+`end_tick` to the caller. `Scene::remove` queues removal until `end_tick`.
+For later pairs to be skipped, the object must record its retirement flag
+through `set_for_deletion(true)`. Copy the normal if you need it after the
+callback. Participant references borrow the scene-owned objects. Layers,
+masks and new overlaps take effect on the next `resolve`. The contact list
+contains the overlaps from before any response, including pairs dispatch skips.
 
 `Body::update` clears the contact flags before each sweep and moves its rectangle
 by velocity times `dt`. The same rectangle supplies collision and drawing, so
