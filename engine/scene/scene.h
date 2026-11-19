@@ -249,6 +249,21 @@ namespace labrador
 		// and masked objects. Invalid input on entry throws std::invalid_argument
 		// with an empty contact list and no callbacks. Dispatch revalidates each pair;
 		// if a callback corrupts geometry, earlier callback effects remain.
+		// Pairs follow collision-object registration order: (0,1), (0,2), ...,
+		// then (1,2), ... . Surviving registration order stays stable across
+		// end_tick removals; additions append. Before each surviving pair, one
+		// fresh measurement is taken, then the earlier participant and later
+		// participant receive it with opposite normals. Responses may mutate
+		// either object. Retirement during that pair does not suppress its
+		// second half; pairs reached while either object is retired are skipped.
+		// contacts() still describes pre-response overlaps, including skipped
+		// pairs. New overlaps created by a response wait for another resolve().
+		// Layer/mask changes also affect the next find, not this list's membership.
+		// Both participants remain owned until end_tick. Inside a response,
+		// add queues admission and remove queues removal. Removing an object
+		// leaves it eligible for later pairs. Do not destroy objects, reenter
+		// resolve(), or call end_tick() during dispatch. Participant references
+		// borrow those owned objects. Callback normal references last for the call.
 		void resolve();
 		std::span<const Contact> contacts() const;
 

@@ -34,7 +34,7 @@ public:
 	labrador::CollisionMask mask() const override { return this->mask_; }
 	labrador::CollisionTag tag() const override { return this->tag_; }
 
-	void on_contact(const labrador::CollisionObject& /*other*/,
+	void on_contact(labrador::CollisionObject& /*other*/,
 		const labrador::Vector2F& /*normal*/, float /*penetration*/) override
 	{
 	}

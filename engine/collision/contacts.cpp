@@ -121,6 +121,8 @@ namespace labrador
 
 			contact.a->on_contact(*contact.b, manifold->normal,
 				manifold->penetration);
+			// A started pair finishes both halves with the same measurement:
+			// the first response may move or retire either participant.
 			contact.b->on_contact(*contact.a, -manifold->normal,
 				manifold->penetration);
 		}

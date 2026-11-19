@@ -5,6 +5,23 @@ rectangle. It exercises the engine's `Scene` collision sweep and the game's
 response in `Body::on_contact`, with no game-specific collision code in the
 engine.
 
+`Body` and `EntryMarker` implement `on_contact(CollisionObject& other, ...)`.
+The counterpart is mutable: a game's response may change or retire either
+participant. [CHANGES.md](../../CHANGES.md) gives the source migration from a
+const first parameter; the sample's only code migration is that qualifier in
+its declarations and definitions.
+
+Pairs and callback halves follow maintained collision registration order.
+Each surviving pair is measured immediately before either callback; both
+halves receive that one measurement and opposite normals, even if the first
+response moves or retires its counterpart. Later pairs see current geometry
+and skip objects whose retirement flag is set. Objects stay alive until
+`end_tick`; `remove` queues destruction but does not itself retire a collider.
+Callbacks must not destroy participants, reenter resolution or end the tick.
+The normal reference lasts only for its callback; participant pointers borrow
+their objects. `Scene::contacts` remains the pre-response snapshot and can
+include pairs whose callbacks were skipped.
+
 From the repository root, in the x64 Native Tools Command Prompt, which has
 `VCPKG_ROOT` and the Windows SDK shader compiler available. In a starter
 project the repository root is `external\labrador`, and

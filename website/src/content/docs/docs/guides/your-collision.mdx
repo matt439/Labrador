@@ -8,6 +8,7 @@ sidebar:
 import { Steps, Aside } from '@astrojs/starlight/components';
 import SourceFile from '~/components/SourceFile.astro';
 import RepoLink from '~/components/RepoLink.astro';
+import GuideVersionNote from '~/components/GuideVersionNote.astro';
 
 This page puts something to bump into in the game from [Get the starter project](/docs/get-started/starter/):
 a grey wall, and a blue box that the arrow keys, WASD and the left stick move. The box stops
@@ -17,6 +18,8 @@ decides what that means. It goes through every file that changes: a new class in
 a `.cpp` file, the two lines in `game\CMakeLists.txt` that add that `.cpp` file to the build,
 and the lines in `HelloState` that put a wall and a box in the scene and move the box. It takes
 about 20 minutes.
+
+<GuideVersionNote feature="the mutable other parameter in this example's contact callback" releaseGuide="docs/guides/your-collision/" />
 
 Before you start, do [Make a first change](/docs/get-started/first-change/), so that you know
 the edit, build and run loop and have a copy of your game to go back to. Make a fresh copy now
@@ -86,7 +89,7 @@ cd /d C:\dev\mygame
    	labrador::CollisionMask mask() const override;
    	labrador::CollisionTag tag() const override;
    	bool for_deletion() const override;
-   	void on_contact(const labrador::CollisionObject& other,
+       void on_contact(labrador::CollisionObject& other,
    		const labrador::Vector2F& normal, float penetration) override;
 
    private:
@@ -185,7 +188,7 @@ cd /d C:\dev\mygame
    	return false;
    }
 
-   void Block::on_contact(const CollisionObject& other,
+   void Block::on_contact(CollisionObject& other,
    	const Vector2F& normal, float penetration)
    {
    	if (this->kind_ != BlockKind::player ||
@@ -439,6 +442,17 @@ each. `normal` is a direction one unit long, pointing from this object towards t
 smallest move that takes the box out of the wall, and `slide` takes away the part of the
 velocity that points into the wall and keeps the rest, which is why the box slides. The wall's
 `on_contact` returns at once: walls do not move.
+
+The first parameter is a mutable `CollisionObject&`: your response may change
+the other participant too. Older overrides taking `const CollisionObject&`
+must remove that qualifier in both their declaration and definition. Pairs
+follow registration order, and each live pair is measured just before its
+two callbacks. Both halves receive that one overlap with opposite normals,
+even when the first moves or retires the other object. Later pairs see the
+changed geometry and skip retired objects. Destruction waits for `end_tick`;
+do not destroy participants or reenter the scene's collision phases in a
+callback. The [collision guide](/docs/guides/collision/#separate-walls-observe-triggers)
+states the borrowed-reference and snapshot limits.
 
 **`for_deletion()` answers `false`**, so the scene never removes a block on its own.
 [Collision](/docs/guides/collision/#say-how-an-object-is-retired) explains when an object, such

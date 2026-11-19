@@ -1471,7 +1471,7 @@ No new removal API or stale-handle guarantee is implied.
 
 - [ ] **[SM-98](#sm-98)** Should · M · The Sole Owner-Maintainer: Refuse known software Direct3D by default while preserving explicit, truthfully labelled software CI coverage
 - [ ] **[OCA-120](#oca-120)** Should · M · The Outside Adopter: Catch genuine startup render-device absence separately from other runtime errors
-- [ ] **[PI-25](#pi-25)** Should · M · The Pinned Submodule Integrator: Mutate the other contact participant under a deterministic dispatch and retirement contract
+- [x] **[PI-25](#pi-25)** Should · M · The Pinned Submodule Integrator: Mutate the other contact participant under a deterministic dispatch and retirement contract
 
 - [x] **[SM-11](STORIES.md#sm-11)** Should · M · The Sole Owner-Maintainer: Run the six sample pages in Firefox without hand-driving each
   Moved from Won't this time on 2026-11-03 by the owner's decision. Its
@@ -3963,6 +3963,12 @@ pre-measurement reuse, pair order, separation by an earlier pair, retirement
 and later-pair suppression with destruction deferred; verify representative
 sample/client migration and native/wasm portable cases. Run relevant collision
 and scene checks, lint and the website gate.
+
+**Qualified 2026-11-20.** The [integration record](../review/colourwars-reports/contact.md#integration-qualification-2026-11-20)
+retains native and wasm pair-dispatch and retirement tests, the assembled
+collision guide's three passing tests, and the old/new signature controls
+under MSVC and Emscripten. The reviewed Release capture matched the published
+outline image byte for byte. The public tracker response remains due.
 
 <a id="oca-84"></a>
 ### OCA-84. Write a post-processing shader in my game

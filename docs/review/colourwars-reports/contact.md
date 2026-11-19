@@ -2,33 +2,52 @@
 
 ## Current decision, 2026-11-16
 
-**Accept option B as [PI-25](../../product/BACKLOG.md#pi-25).** The selected
-signature is `on_contact(CollisionObject& other, ...)`: a response may change
-the other participant during resolution. Implementation, migration and
-qualification remain open; the selection records no tracker response or
-closure.
+**Accept option B as [PI-25](../../product/BACKLOG.md#pi-25).** A response
+receives `on_contact(CollisionObject& other, ...)` and may change the other
+participant during resolution. The [source-break entry](../../../CHANGES.md)
+shows the signature change in the collision sample. Every in-tree override
+and the [copied collision guide](../../../website/src/content/docs/docs/guides/your-collision.mdx)
+use the new signature.
 
-The implementation preserves and states the dispatch rules together:
+A dispatched pair calls both participants once in input order. Scene uses
+its maintained collision-object registration order. Both halves receive the
+one overlap measured before either response, with opposite normals. Changes
+from either half affect later pairs. Retirement suppresses those later pairs,
+and Scene defers removal and destruction to `end_tick`. Normal references
+last for the callback and participant references borrow their objects.
+Callbacks leave the other collision phases to the caller. Layer and mask
+changes and new overlaps take effect at the next resolve. The contact list
+contains the pre-response overlaps, including pairs skipped during dispatch.
 
-- A dispatched pair calls both participants once, in input order; Scene's
-  input order is its maintained collision-object registration order.
-- Both halves receive the one overlap measured immediately before either
-  responds, with opposite normals. The first response's changes do not
-  replace the measurement handed to the second.
-- Retirement suppresses later pairs, not the other half of a pair already
-  being dispatched. Scene removal/destruction remains deferred to the tick's
-  lifetime boundary; a response must not destroy participants during dispatch.
+This selection covers the mutable participant, dispatch and lifetime
+contracts. The contact-point proposal stays deferred. The tracker response
+and the client project's pin update remain open.
 
-The public signature change is a deliberate source break. PI-25 owns the
-override/sample/test/benchmark/guide migration and the CHANGES.md entry with
-old/new spellings and the sample migration. Drawing remains const; this
-selection adds no second response virtual, dispatch-history list or contact
-point parameter. The existing contact-list inspection route and its
-pre-response membership limits remain documented separately.
+## Integration qualification, 2026-11-20
+
+- `x64-debug-null` passed CollisionTests, SceneTests, CollisionSampleTests,
+  CollisionSmokeTests and Benchmarks. The dispatch tests cover both pair
+  enumerations, writes from both callback halves, shared measurements and
+  fresh geometry for later pairs. The Scene test checks removal with and
+  without retirement, deferred destruction, contact expiry and registration
+  order across removal and addition.
+- `wasm-debug` passed the four portable Node suites and the Chrome collision
+  page. In the full selection, Firefox 160.0.1 saw one owned-process
+  teardown failure after drawing and quitting, and one BiDi startup
+  timeout on the rebuild. The standalone retry of each build passed.
+- The compiled guide pilot assembled a development starter ZIP, applied the
+  collision guide's numbered steps and passed GuideStateTests, MyGameTests
+  and MyGameSmokeTests. Strict C++20 checks of the guide's source accepted
+  the mutable override under MSVC and Emscripten Clang. Restoring `const`
+  caused both compilers to reject the override.
+- `x64-release` D3D11 completed the smoke route twice and captured its final
+  frame with and without outlines. Both images were reviewed. The outlined
+  capture matched the [published PNG](../../../website/src/assets/captures/collision-outlines.png)
+  byte for byte.
 
 The original draft below is preserved as dated context. Its undecided
 statements, options and recommendations describe the state before this
-selection; BACKLOG.md owns the accepted scope and acceptance.
+selection. BACKLOG.md owns the accepted scope and acceptance.
 
 ## Original draft, 2026-11-10
 

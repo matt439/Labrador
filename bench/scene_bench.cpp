@@ -82,7 +82,7 @@ namespace
 		// rectangles and change what the next repetition measures, and what is
 		// being timed is the sweep that finds the contacts, not a game's
 		// response to them.
-		void on_contact(const CollisionObject& /*other*/,
+		void on_contact(CollisionObject& /*other*/,
 			const Vector2F& /*normal*/, float /*penetration*/) override
 		{
 		}
@@ -118,7 +118,7 @@ namespace
 		CollisionMask mask() const override { return this->mask_; }
 		CollisionTag tag() const override { return 0; }
 
-		void on_contact(const CollisionObject& /*other*/,
+		void on_contact(CollisionObject& /*other*/,
 			const Vector2F& /*normal*/, float /*penetration*/) override
 		{
 		}

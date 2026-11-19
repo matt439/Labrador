@@ -11,6 +11,8 @@
 #include "tests/collision/stub_collider.h"
 
 #include <algorithm>
+#include <functional>
+#include <utility>
 #include <vector>
 
 using labrador::CollisionLayer;
@@ -27,6 +29,59 @@ namespace
 	constexpr CollisionLayer wall_layer = 1u << 1;
 	constexpr CollisionLayer bullet_layer = 1u << 2;
 
+	struct DispatchEvent
+	{
+		labrador::CollisionTag receiver;
+		labrador::CollisionTag other;
+		Vector2F normal;
+		float penetration;
+	};
+
+	class DispatchCollider final : public StubCollider
+	{
+	public:
+		using Response = std::function<void(DispatchCollider&, CollisionObject&)>;
+
+		DispatchCollider(labrador::CollisionTag tag, float x,
+			std::vector<DispatchEvent>* events) :
+			StubCollider(RectangleF(x, 0.0f, 10.0f, 10.0f), 1u, 1u, tag),
+			events_(events)
+		{
+		}
+
+		void on_contact(CollisionObject& other, const Vector2F& normal,
+			float penetration) override
+		{
+			this->events_->push_back({ this->tag(), other.tag(), normal, penetration });
+			if (this->response_)
+			{
+				this->response_(*this, other);
+			}
+		}
+
+		void set_response(Response response) { this->response_ = std::move(response); }
+		void set_x(float x) { this->rectangle_.x = x; }
+		void set_value(int value) { this->value_ = value; }
+		int value() const { return this->value_; }
+
+	private:
+		std::vector<DispatchEvent>* events_;
+		Response response_;
+		int value_ = 0;
+	};
+
+	using DispatchPair = std::pair<labrador::CollisionTag, labrador::CollisionTag>;
+
+	std::vector<DispatchPair> dispatch_order(const std::vector<DispatchEvent>& events)
+	{
+		std::vector<DispatchPair> result;
+		for (const DispatchEvent& event : events)
+		{
+			result.emplace_back(event.receiver, event.other);
+		}
+		return result;
+	}
+
 	// The shared stub, plus a log of every contact it receives and two
 	// optional responses to one: retiring, and moving out of the overlap.
 	class TestObject : public StubCollider
@@ -41,7 +96,7 @@ namespace
 
 		using StubCollider::StubCollider;
 
-		void on_contact(const CollisionObject& other, const Vector2F& normal,
+		void on_contact(CollisionObject& other, const Vector2F& normal,
 			float penetration) override
 		{
 			this->received_.push_back(Received{ &other, normal, penetration });
@@ -72,10 +127,8 @@ namespace
 			(contact.a == &y && contact.b == &x);
 	}
 
-	// Membership, not position: the order of `contacts` is unspecified and
-	// follows whatever the broad phase's sort produced. Asserting a pair is
-	// present, together with the total count, still pins "every pair once and
-	// no pair twice" without pinning an order nothing promises.
+	// Membership assertions keep the shape/filter cases focused. The dispatch
+	// cases below separately pin input order for both enumerations.
 	bool contains_pair(const std::vector<Contact>& contacts,
 		const CollisionObject& x, const CollisionObject& y)
 	{
@@ -320,4 +373,172 @@ TEST_CASE("circles and polygons share one sweep, and each pair is measured by sh
 	CHECK(from(ball, other).normal.x == doctest::Approx(-1.0f));
 	CHECK(from(ball, other).penetration == doctest::Approx(1.0f));
 	CHECK(from(other, ball).normal.x == doctest::Approx(1.0f));
+}
+
+TEST_CASE("both enumerations dispatch pairs and halves in input order")
+{
+	for (bool indexed : { false, true })
+	{
+		CAPTURE(indexed);
+		std::vector<DispatchEvent> events;
+		DispatchCollider a(30, 0.0f, &events);
+		DispatchCollider b(10, 2.0f, &events);
+		DispatchCollider c(20, 4.0f, &events);
+		DispatchCollider retired(5, 1.0f, &events);
+		retired.set_for_deletion(true);
+		CollisionObject* objects[] = { &a, nullptr, &retired, &b, &c };
+		labrador::BroadPhase broad_phase;
+		std::vector<Contact> contacts;
+		find_contacts(objects, contacts, indexed ? &broad_phase : nullptr);
+		REQUIRE(contacts.size() == 3);
+		CHECK(contacts[0].a == &a);
+		CHECK(contacts[0].b == &b);
+		CHECK(contacts[1].a == &a);
+		CHECK(contacts[1].b == &c);
+		CHECK(contacts[2].a == &b);
+		CHECK(contacts[2].b == &c);
+		dispatch_contacts(contacts);
+		const std::vector<DispatchPair> expected{
+			{ 30, 10 }, { 10, 30 }, { 30, 20 }, { 20, 30 }, { 10, 20 }, { 20, 10 } };
+		CHECK(dispatch_order(events) == expected);
+	}
+}
+
+TEST_CASE("each callback half may mutate its counterpart directly")
+{
+	std::vector<DispatchEvent> events;
+	DispatchCollider a(1, 0.0f, &events);
+	DispatchCollider b(2, 2.0f, &events);
+	a.set_response([](DispatchCollider&, CollisionObject& other)
+		{
+			static_cast<DispatchCollider&>(other).set_value(11);
+		});
+	b.set_response([](DispatchCollider& self, CollisionObject& other)
+		{
+			CHECK(self.value() == 11);
+			static_cast<DispatchCollider&>(other).set_value(22);
+		});
+	CollisionObject* objects[] = { &a, &b };
+	std::vector<Contact> contacts;
+	find_contacts(objects, contacts);
+	dispatch_contacts(contacts);
+	CHECK(a.value() == 22);
+	CHECK(b.value() == 11);
+	REQUIRE(events.size() == 2);
+	CHECK(events[0].normal == -events[1].normal);
+	CHECK(events[0].penetration == events[1].penetration);
+}
+
+TEST_CASE("a pair reuses one measurement while later pairs see mutated geometry")
+{
+	for (bool indexed : { false, true })
+	{
+		CAPTURE(indexed);
+		std::vector<DispatchEvent> events;
+		DispatchCollider a(1, 0.0f, &events);
+		DispatchCollider b(2, 2.0f, &events);
+		DispatchCollider c(3, 4.0f, &events);
+		a.set_response([](DispatchCollider&, CollisionObject& other)
+			{
+				if (other.tag() == 2u)
+				{
+					static_cast<DispatchCollider&>(other).set_x(7.0f);
+				}
+			});
+		CollisionObject* objects[] = { &a, &b, &c };
+		labrador::BroadPhase broad_phase;
+		std::vector<Contact> contacts;
+		find_contacts(objects, contacts, indexed ? &broad_phase : nullptr);
+		REQUIRE(contacts.size() == 3);
+		dispatch_contacts(contacts);
+		REQUIRE(events.size() == 6);
+		// AB was measured at B.x=2. Moving B to 7 would change depth to 3,
+		// but its second half still receives the original 8, facing A.
+		CHECK(events[0].normal == Vector2F(1.0f, 0.0f));
+		CHECK(events[0].penetration == 8.0f);
+		CHECK(events[1].normal == Vector2F(-1.0f, 0.0f));
+		CHECK(events[1].penetration == 8.0f);
+		// BC is reached later: its direction and depth now differ from the
+		// pre-response snapshot (B.x=2, normal +x, depth 8).
+		CHECK(events[4].receiver == 2u);
+		CHECK(events[4].other == 3u);
+		CHECK(events[4].normal == Vector2F(-1.0f, 0.0f));
+		CHECK(events[4].penetration == 7.0f);
+		CHECK(events[5].normal == -events[4].normal);
+		CHECK(events[5].penetration == events[4].penetration);
+		CHECK(contacts[2].normal == Vector2F(1.0f, 0.0f));
+		CHECK(contacts[2].penetration == 8.0f);
+	}
+}
+
+TEST_CASE("moving the other participant can separate later pairs without losing this half")
+{
+	for (bool indexed : { false, true })
+	{
+		CAPTURE(indexed);
+		std::vector<DispatchEvent> events;
+		DispatchCollider a(1, 0.0f, &events);
+		DispatchCollider b(2, 2.0f, &events);
+		DispatchCollider c(3, 4.0f, &events);
+		a.set_response([](DispatchCollider&, CollisionObject& other)
+			{
+				if (other.tag() == 2u)
+				{
+					static_cast<DispatchCollider&>(other).set_x(100.0f);
+				}
+			});
+		CollisionObject* objects[] = { &a, &b, &c };
+		labrador::BroadPhase broad_phase;
+		std::vector<Contact> contacts;
+		find_contacts(objects, contacts, indexed ? &broad_phase : nullptr);
+		dispatch_contacts(contacts);
+		const std::vector<DispatchPair> expected{ { 1, 2 }, { 2, 1 }, { 1, 3 }, { 3, 1 } };
+		CHECK(dispatch_order(events) == expected);
+		REQUIRE(events.size() == 4);
+		CHECK(events[1].normal == Vector2F(-1.0f, 0.0f));
+		CHECK(events[1].penetration == 8.0f);
+		CHECK(contacts.size() == 3); // Snapshot membership is not dispatch history.
+	}
+}
+
+TEST_CASE("retirement from either callback half suppresses only later pairs")
+{
+	for (bool indexed : { false, true })
+	{
+		for (int response = 0; response < 4; ++response)
+		{
+			CAPTURE(indexed);
+			CAPTURE(response);
+			std::vector<DispatchEvent> events;
+			DispatchCollider a(1, 0.0f, &events);
+			DispatchCollider b(2, 2.0f, &events);
+			DispatchCollider c(3, 4.0f, &events);
+			a.set_response([response](DispatchCollider& self, CollisionObject& other)
+				{
+					if (other.tag() == 2u && response < 2)
+					{
+						(response == 0 ? self : other).set_for_deletion(true);
+					}
+				});
+			b.set_response([response](DispatchCollider& self, CollisionObject& other)
+				{
+					if (other.tag() == 1u && response >= 2)
+					{
+						(response == 2 ? other : self).set_for_deletion(true);
+					}
+				});
+			CollisionObject* objects[] = { &a, &b, &c };
+			labrador::BroadPhase broad_phase;
+			std::vector<Contact> contacts;
+			find_contacts(objects, contacts, indexed ? &broad_phase : nullptr);
+			dispatch_contacts(contacts);
+			const bool retired_a = response == 0 || response == 2;
+			const std::vector<DispatchPair> expected = retired_a ?
+				std::vector<DispatchPair>{ { 1, 2 }, { 2, 1 }, { 2, 3 }, { 3, 2 } } :
+				std::vector<DispatchPair>{ { 1, 2 }, { 2, 1 }, { 1, 3 }, { 3, 1 } };
+			CHECK(dispatch_order(events) == expected);
+			CHECK(a.for_deletion() == retired_a);
+			CHECK(b.for_deletion() == !retired_a);
+		}
+	}
 }

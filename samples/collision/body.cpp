@@ -47,7 +47,7 @@ namespace collision
 		this->rectangle_.y += this->velocity_.y * dt;
 	}
 
-	void Body::on_contact(const CollisionObject& other,
+	void Body::on_contact(CollisionObject& other,
 		const Vector2F& normal, float penetration)
 	{
 		if (this->kind_ != BodyKind::player)

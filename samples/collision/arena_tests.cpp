@@ -43,7 +43,7 @@ namespace
 			return static_cast<CollisionTag>(BodyKind::wall);
 		}
 		bool for_deletion() const override { return false; }
-		void on_contact(const CollisionObject& /*other*/,
+		void on_contact(CollisionObject& /*other*/,
 			const Vector2F& /*normal*/, float /*penetration*/) override {}
 
 	private:

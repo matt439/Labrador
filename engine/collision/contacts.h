@@ -16,6 +16,10 @@ namespace labrador
 	// responds to them - which is the whole reason this is a value and not a
 	// callback fired from inside the sweep. A test can assert on the list, and
 	// a scene can hand it to the game after resolution instead of during it.
+	// Participant pointers are borrowed. The caller keeps each object alive
+	// through dispatch and any inspection; Scene expires the list at end_tick
+	// before destroying participants. This is the pre-response membership and
+	// measurement, not a record of which pairs dispatch actually delivered.
 	struct Contact
 	{
 		CollisionObject* a = nullptr;
@@ -29,7 +33,9 @@ namespace labrador
 	};
 
 	// Fills `contacts` with every overlapping pair among `objects`, each pair
-	// once.
+	// once. Null entries are ignored. Pairs follow ascending input indices
+	// (i, j), i < j, with the earlier object as `a`. Exhaustive and broad-phase
+	// enumeration agree.
 	//
 	// `contacts` is cleared first and reused, so a caller that keeps one
 	// vector across frames allocates nothing after the first busy frame -
@@ -60,8 +66,11 @@ namespace labrador
 		std::vector<Contact>& contacts,
 		BroadPhase* broad_phase = nullptr);
 
-	// Tells both participants of every contact, once each, with the normal
-	// oriented for the object receiving it.
+	// Walks the supplied list in order. Each surviving pair is measured once
+	// immediately before dispatch, then calls `a` and `b` once each with that
+	// same measurement and opposite normals. The first response may mutate or
+	// retire either participant without suppressing the already-started second
+	// half or changing its measurement. A callback exception stops dispatch.
 	//
 	// Two things a response does are accounted for here, because they are
 	// properties of dispatching a list rather than of any one response:
@@ -69,7 +78,7 @@ namespace labrador
 	//   - A response can retire an object, and a retired object's remaining
 	//     contacts are dropped. A projectile that hits a wall does not go on
 	//     to hit the player behind it. The rule applies to both sides of
-	//     every pair.
+	//     every pair when it is reached, not between its two callback halves.
 	//   - A response can move an object, so every pair is measured again
 	//     immediately before it is dispatched, and a pair an earlier response
 	//     has already separated is dropped. The depths in the list describe
@@ -78,5 +87,12 @@ namespace labrador
 	//
 	// Each live pair is validated immediately before remeasurement. Invalid
 	// geometry throws std::invalid_argument; earlier callback effects remain.
+	// New overlaps created by responses are not added to this snapshot. The
+	// stored contacts are not rewritten when a pair is remeasured or skipped.
+	// Layer/mask filtering belongs to find_contacts; it is not reapplied here.
+	// The caller supplies non-null participants in each Contact and
+	// keeps them alive until dispatch returns. A copied participant pointer
+	// borrows its object's lifetime; normal references expire with the callback.
+	// Do not destroy participants or reenter dispatch here.
 	void dispatch_contacts(std::span<const Contact> contacts);
 }
