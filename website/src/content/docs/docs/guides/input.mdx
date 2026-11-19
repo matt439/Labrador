@@ -522,6 +522,20 @@ The minimal sample draws a marker with the id at every point:
 
 <SourceFile path="samples/minimal/states/hello_state.cpp" from="const std::span<const TouchPoint> points" to="}" />
 
+<GuideVersionNote kind="template" feature="the copied held-button and virtual-stick sample files" releaseGuide="docs/guides/input/" />
+
+For copied held buttons and a virtual stick, the ComponentsGallery's **Touch controls (F2)**
+page combines several fingers: the stick moves a marker, A changes its colour and B its size.
+The values take a stable point id and a position already converted into their region's space;
+the page owns regions, overlap precedence, fresh-press acceptance, focus/resize cancellation
+and those action bindings. Start with
+<RepoLink path="samples/components/TOUCH.md">Held touch controls</RepoLink> for the copy commands,
+their portable tests and the complete Gallery routing source. These development sample files
+can be copied into a v0.3 game; changing an engine pin does not replace a game's own copies.
+The whole development Gallery additionally uses its newer pure pointer-hit query and cursor API.
+Synthetic native and Chromium checks exercise the feeds; real-glass, pen and phone acceptance
+remain open.
+
 On-screen controls are the game's, too. LineSweeper draws eight buttons once a finger has touched
 the screen, asks each step which button every point is on, and feeds those into the same byte its
 keys do, so a thumb resting on a button is a held key. Its

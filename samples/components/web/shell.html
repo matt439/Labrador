@@ -9,8 +9,8 @@
   What the page owes the module is what LineSweeper's page owes it, and
   samples/linesweeper/web/shell.html gives the reason for each: Module.canvas
   is the canvas, sized by CSS and focusable, and Module.onQuit and
-  Module.onError are the module's two calls to the page. Escape quits here, as it
-  does in the collision sample, where LineSweeper pauses.
+  Module.onError are the module's two calls to the page. Escape returns from
+  the internal touch page and quits from the main gallery.
 -->
 <html lang="en">
 <head>
@@ -20,7 +20,7 @@
 <style>
   body { margin: 0; background: #111; color: #ddd; font: 15px/1.4 system-ui, sans-serif; }
   main { max-width: 1280px; margin: 0 auto; padding: 16px; }
-  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; }
+  canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; outline: none; touch-action: none; }
   canvas:focus-visible { outline: 2px solid #5a9; }
   #status { margin: 10px 0 0; min-height: 1.4em; }
   #status.error { color: #f77; }
@@ -42,7 +42,7 @@
     onRuntimeInitialized: function () {
       loading = false;
       statusLine.textContent =
-        "Arrows, click or tap choose a row. Rebind key changes shortcuts. Esc cancels editing/capture, or quits.";
+        "Arrows, click or tap choose a row. F2 opens touch controls. Esc cancels editing/capture, returns, or quits.";
       canvas.focus();
     },
     onQuit: function () {

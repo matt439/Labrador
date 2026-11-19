@@ -24,8 +24,8 @@
 
 namespace components
 {
-	// Every component on one settings screen, so each can be seen and played
-	// with: option rows, sliders, animations, text and binding entry and a way out.
+	// Settings components on one screen, with a separate held-touch page:
+	// option rows, sliders, animations, text and binding entry and a way out.
 	// main.cpp and main_web.cpp both run it.
 	//
 	// It is also the page half a component leaves to its game. A component
@@ -48,6 +48,8 @@ namespace components
 		void update(float dt) override;
 		void draw(labrador::Renderer& renderer) const override;
 		void on_deactivated() override;
+		void on_suspend() override;
+		void on_resume() override;
 
 	private:
 		// Which way the player is pushing, from the arrows and either pad
@@ -120,6 +122,10 @@ namespace components
 
 		// A completed click/tap closes the gallery. Name and Binding have separate actions.
 		labrador::UiText* quit_ = nullptr;
+		// A separate page entry, outside the settings focus order.
+		labrador::UiText* touch_entry_ = nullptr;
+		bool touch_requested_ = false;
+		bool pointer_wait_for_clear_ = false;
 
 		labrador::FocusGroup focus_;
 		labrador::DirectionRepeat repeat_;

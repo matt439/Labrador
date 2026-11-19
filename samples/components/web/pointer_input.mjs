@@ -1,3 +1,5 @@
+import { drive_touch_controls } from './touch_controls_input.mjs';
+
 // The gallery driven by a real mouse and a real (emulated) touchscreen, as
 // ComponentsPointerPageTests: tests/render/web/run_page.mjs --input runs it
 // against the built development page in Chromium. Each step dispatches
@@ -166,6 +168,8 @@ export default async function drive(page) {
 	assert(said.length === 1 && said[0].includes('Difficulty is now Easy'),
 		`a tap on the value's left half did not step back once: ${JSON.stringify(said)}`);
 	console.log('ok - a tap on a value steps it once');
+
+	await drive_touch_controls(page);
 
 	// A tap on the label column of Quit chooses it, and the page is told.
 	await tap(at(LABEL_X + 10, row_middle(4)));

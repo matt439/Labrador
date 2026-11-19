@@ -52,8 +52,8 @@ sound bank and two players sharing a world through separate views. Each has
 its own README with controls and build commands.
 
 `samples/components` has an option row, a slider, a nine-slice panel,
-a sprite-strip animation preview and a bounded desktop text field, each with
-its source and tests.
+a sprite-strip animation preview, a bounded desktop text field and held touch
+controls, each with its source and tests.
 A game copies these pieces into its own tree rather than links them; a
 gallery shows them running. [Its README](samples/components/README.md)
 says why they are copied, and when one would move into the engine.
