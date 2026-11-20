@@ -53,9 +53,16 @@ export const SAFARI_WINDOW_HOOK = `(() => {
 })();`;
 
 export function safari_window_input(session, evaluate, { option_tab = false } = {}) {
-	const pointer = (actions) => session.perform([{ type: 'pointer', id: 'mouse',
-		parameters: { pointerType: 'mouse' }, actions }]);
-	const move_to = ({ x, y }) => ({ type: 'pointerMove', x, y, origin: 'viewport' });
+	let pointer_position = null;
+	const pointer = async ({ x, y }, button_actions = [], { move_if_same = true } = {}) => {
+		const same_point = x === pointer_position?.x && y === pointer_position?.y;
+		const actions = same_point && !move_if_same ? button_actions : [
+			{ type: 'pointerMove', x, y, origin: 'viewport' }, ...button_actions,
+		];
+		await session.perform([{ type: 'pointer', id: 'mouse',
+			parameters: { pointerType: 'mouse' }, actions }]);
+		pointer_position = { x, y };
+	};
 	let wheel_source = 0;
 	const fingers = new Map();
 	const touch = async (type, points) => {
@@ -100,9 +107,10 @@ export function safari_window_input(session, evaluate, { option_tab = false } = 
 				throw new Error(`The WebWindow fixture needs a CSS viewport above 660x410 and pixel ratio one; received ${width}x${height} at ${ratio}.`);
 			}
 		},
-		move: (at) => pointer([move_to(at)]),
-		press: (at) => pointer([move_to(at), { type: 'pointerDown', button: 0 }]),
-		release: (at) => pointer([move_to(at), { type: 'pointerUp', button: 0 }]),
+		move: (at) => pointer(at),
+		press: (at) => pointer(at, [{ type: 'pointerDown', button: 0 }]),
+		// Safari reports a pointerMove even at identical coordinates.
+		release: (at) => pointer(at, [{ type: 'pointerUp', button: 0 }], { move_if_same: false }),
 		// WebKit subtracts the previous delta of a reused source. Each
 		// scroll here supplies the full relative delta of one action.
 		wheel: ({ x, y }, deltaX, deltaY) => session.perform([{ type: 'wheel', id: `wheel-${++wheel_source}`, actions: [
