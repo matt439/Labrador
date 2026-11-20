@@ -112,5 +112,16 @@ reported Microsoft Basic Render Driver as software. The assembled starter
 passed both tests, installed successfully and ran its installed startup check
 from a separate working directory with the same software-device diagnostic.
 [The integration record](verification/2026-11-20-todo-integration.md) retains
-the source and executable identities. Fresh hosted runs remain the next
-qualification for these workflow steps.
+the source and executable identities.
+
+## Hosted qualification, 2026-11-20
+
+PR #143 tested `79d65774`. The D3D11 and D3D12 jobs passed their separate
+default Release refusal fixtures. Their explicit WARP configurations then
+passed 22/22 and 23/23 CTest entries and both reported Microsoft Basic Render
+Driver as software. The native consumer passed installed startup from an
+unrelated directory with the same reported software device and both compile
+policy entries verified.
+[D3D11 job](https://github.com/matt439/Labrador/actions/runs/44652200557/job/136009629484),
+[D3D12 job](https://github.com/matt439/Labrador/actions/runs/44652200557/job/136009629424),
+[consumer job](https://github.com/matt439/Labrador/actions/runs/44652200557/job/136009629220).

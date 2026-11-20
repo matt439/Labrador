@@ -26,7 +26,6 @@ identifies what shipped.
 | `OCA-119` | BLOCKED | could | S | Record actual Escape behaviour from a trusted key in a headed browser. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add the AI-use disclosure when the owner supplies public wording and review/authorship claims. [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-97` | BLOCKED | could | M | Run the integrated pilot on a Mac with Xcode, safaridriver and an available iPhone Simulator. [Pilot](docs/port/ios-simulator-pilot.md). |
-| `SM-98` | WAITING | should | M | Retain fresh hosted Direct3D default-refusal, explicit WARP and installed-starter results. Both backends and the installed starter passed locally. [Evidence](docs/render-software-tests.md#local-qualification-2026-11-20). |
 
 For the client reports, v0.4.0 ships the scripted pad source requested in
 issue #122. The public tracker response is still due. [Client report ledger](docs/review/colourwars-reports/README.md)

@@ -1469,7 +1469,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-96](#sm-96)** Should · M · The Sole Owner-Maintainer: Refresh preparation for the actual v0.4.0 candidate independently of queued feature stories
 - [ ] **[SM-97](#sm-97)** Could · M · The Sole Owner-Maintainer: Invoke an iOS Simulator game pilot without adding a recurring acceptance lane
 
-- [ ] **[SM-98](#sm-98)** Should · M · The Sole Owner-Maintainer: Refuse known software Direct3D by default while preserving explicit, truthfully labelled software CI coverage
+- [x] **[SM-98](#sm-98)** Should · M · The Sole Owner-Maintainer: Refuse known software Direct3D by default while preserving explicit, truthfully labelled software CI coverage
 - [x] **[OCA-120](#oca-120)** Should · M · The Outside Adopter: Catch genuine startup render-device absence separately from other runtime errors
 - [x] **[PI-25](#pi-25)** Should · M · The Pinned Submodule Integrator: Mutate the other contact participant under a deterministic dispatch and retirement contract
 
@@ -3919,10 +3919,10 @@ configuration. Follow all affected render/app configurations and consumer
 checks, update inventories/required-check records if needed, and run lint and
 the website gate. This planning record changes no selection or CI behaviour.
 
-**Locally qualified 2026-11-20.** Both Direct3D Release backends passed
-default refusal and explicit WARP drawing. The installed starter passed
-with the reported software device. The remaining gate is fresh hosted
-execution of those checks. [Local record](../render-software-tests.md#local-qualification-2026-11-20).
+**Qualified 2026-11-20.** Both Direct3D backends passed the local and hosted
+default Release refusal fixtures and explicit WARP drawing. The installed
+starter reported Microsoft's software rasterizer and completed its hidden
+startup check. [Hosted record](../render-software-tests.md#hosted-qualification-2026-11-20).
 
 <a id="oca-120"></a>
 ### OCA-120. Distinguish genuine startup render-device unavailability

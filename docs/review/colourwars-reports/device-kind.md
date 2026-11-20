@@ -12,7 +12,8 @@ The [policy and verification procedure](../../render-software-tests.md)
 document `LABRADOR_D3D_SOFTWARE_TEST`, which forces WARP for the opted-in CI
 and installed-consumer builds. Separate default-OFF Release fixtures cover
 refusal. Each software receipt requires the reported name and software kind.
-Hosted qualification and the public tracker response remain pending.
+[Hosted qualification](../../render-software-tests.md#hosted-qualification-2026-11-20)
+passed. The public tracker response remains pending.
 
 The November 10 source check below records the original report and the
 selection decision as it stood at the time.
