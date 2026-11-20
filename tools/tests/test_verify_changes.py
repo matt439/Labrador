@@ -72,7 +72,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(self.plan(paths=["engine/render/"])["scope"]["paths"], ["engine/render"])
 
     def test_outside_traversal_and_unmodeled_paths_are_rejected(self):
-        for path in ("", "engine/rendered/file.cpp", "engine/audios", "engine/scene", "samples/audio", "/engine/render", "C:\\engine\\render",
+        for path in ("", "engine/rendered/file.cpp", "engine/audios", "engine/scenery", "engine/collisions", "samples/audio", "/engine/render", "C:\\engine\\render",
                      "C:engine/render", "../engine/render", "engine/render/../assets", "\\\\host\\share\\engine\\render"):
             with self.subTest(path=path), self.assertRaises(planner.PlanError):
                 self.plan(paths=[path])
@@ -166,7 +166,7 @@ class PlanTests(unittest.TestCase):
                          ["x64-debug", "x64-debug-null", "wasm-debug", "wasm-release-null"])
         self.assertEqual([item["id"] for item in self.plan(areas=["app"])["configurations"]], list(planner.CONFIGURATIONS))
         with self.assertRaises(planner.PlanError):
-            self.plan(areas=["scene"])
+            self.plan(areas=["assets"])
         with self.assertRaises(planner.PlanError):
             self.plan(areas=["audio"], paths=["engine/audio"])
 
@@ -181,6 +181,38 @@ class PlanTests(unittest.TestCase):
         by_area = self.plan(areas=["audio", "app", "audio"])
         self.assertEqual(by_area["scope"]["areas"], ["app", "audio"])
         self.assertEqual(mixed["configurations"], by_area["configurations"])
+
+    def test_contact_change_selects_collision_and_scene_on_three_tracks(self):
+        paths = ["engine/collision/collision_object.h", "engine/collision/contacts.cpp",
+                 "engine/collision/contacts.h", r"engine\scene\scene.h"]
+        plan = self.plan(paths=paths)
+        self.assertEqual(plan["scope"]["areas"], ["collision", "scene"])
+        tracks = {item["id"]: item["required_test_names"] for item in plan["configurations"]}
+        self.assertEqual(list(tracks), ["x64-debug", "x64-debug-null", "wasm-release-null"])
+        common = ["SceneTests", "CollisionSampleTests", "Benchmarks", "CollisionTests"]
+        self.assertEqual(tracks["wasm-release-null"], common + ["LocalMultiplayerTests"])
+        self.assertEqual(tracks["x64-debug"], common + ["CollisionSmokeTests", "LocalMultiplayerTests"])
+        self.assertEqual(tracks["x64-debug-null"], common + ["CollisionSmokeTests", "LocalMultiplayerTests",
+                                                          "LocalMultiplayerSmokeTests"])
+        self.assertEqual(plan["configurations"], self.plan(areas=["scene", "collision"])["configurations"])
+
+    def test_mixed_scopes_require_applicable_registrations_on_every_selected_track(self):
+        for item in self.plan(areas=["render", "input"])["configurations"]:
+            self.assertIn("InputTests", item["required_test_names"], item["id"])
+        for item in self.plan(areas=["render", "scene"])["configurations"]:
+            required = item["required_test_names"]
+            for suite in ("SceneTests", "CollisionSampleTests", "Benchmarks", "LocalMultiplayerTests"):
+                self.assertIn(suite, required, item["id"])
+            self.assertEqual("CollisionSmokeTests" in required, item["id"].startswith("x64-"))
+            self.assertEqual("LocalMultiplayerSmokeTests" in required, item["id"] == "x64-debug-null")
+
+    def test_missing_collision_sample_registration_refuses_plan(self):
+        path = self.root / "tests/ctest_inventory.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["every_configuration"].remove("CollisionSampleTests")
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaisesRegex(planner.PlanError, "CollisionSampleTests for x64-debug"):
+            self.plan(areas=["collision"])
 
     def test_area_registrations_join_on_shared_tracks(self):
         def required(plan, name):
@@ -606,7 +638,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual({step["result"] for item in plan["configurations"] for step in item["steps"]}, {"not-run"})
 
     def test_invalid_cli_selector_or_browser_does_not_run_a_preflight(self):
-        for arguments in ([], ["--area", "scene"], ["--area", "render", "--path", "engine/render"],
+        for arguments in ([], ["--area", "assets"], ["--area", "render", "--path", "engine/render"],
                           ["--area", "audio", "--path", "engine/audio"]):
             with self.subTest(arguments=arguments), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(planner.main(arguments, root=self.root,

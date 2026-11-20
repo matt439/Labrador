@@ -140,14 +140,14 @@ CI's full matrix remains required. Match focused local checks to the change.
 
 `python tools/verify_changes.py --area render` prints the render verification
 plan; `--path engine/render/gl/renderer.cpp --format json` selects it by path.
-`--area` takes `render`, `audio`, `input` or `app` and repeats for a union;
+`--area` takes `render`, `audio`, `input`, `app`, `collision` or `scene` and repeats for a union;
 `--path` selects the areas of the `engine/` folders it names.
 The optional `--preflight` inspects tooling and caches without running phases.
 Explicit `--execute` runs the sweep only when its mixed runtime is authorized;
 it checks all prerequisites first, validates caches and test registrations,
 and stops at the first command or result failure. [Verification](docs/verification.md)
 owns the command contract, logs and remaining real-sweep qualification.
-The current mapping covers four engine folders:
+The current mapping covers six engine folders:
 
 | Changed area | Planned selections and additional obligations |
 |---|---|
@@ -157,6 +157,7 @@ The current mapping covers four engine folders:
 | `engine/audio/` | `x64-debug` (XAudio2, silent bank), `x64-debug-null` (recorded waves, `AudioSmokeTests`), `wasm-debug` (Node `AudioTests`, `AudioSampleTests`, pages) and `wasm-release-null`; the XAudio2 endpoint smoke and listening stay unrun. |
 | `engine/input/` | The same four tracks with `InputTests` and the browser pages; real pads and touchscreens stay unrun. |
 | `engine/app/` | All seven render tracks, with `AppTests`, native `MinimalSmokeTests` and `CollisionSmokeTests` and native-null `LocalMultiplayerSmokeTests`; the window reaches every backend. |
+| `engine/collision/`, `engine/scene/` | `x64-debug` for the rasterizing collision sample smoke, `x64-debug-null` for native recorded draws and state coverage, and `wasm-release-null` for clang recording and fan-out. See the verification guide for the required suites per area. |
 | Other engine folders, samples, website and tooling | Not modeled by the planner; follow their current owners and affected-configuration checks. |
 
 `python tools/ci_gap_report.py --execute` builds and tests release qualification

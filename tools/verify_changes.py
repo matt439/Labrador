@@ -1,4 +1,4 @@
-"""Plan render, audio, input or app verification, or explicitly execute its first-failure sweep.
+"""Plan verification for modeled engine areas, or explicitly execute its first-failure sweep.
 
 Default planning reads repository rules without tooling discovery. --preflight
 explicitly adds read-only tooling-environment, tool-path and cache inspection.
@@ -35,7 +35,9 @@ WASM_CONFIGURATIONS = tuple(name for name in CONFIGURATIONS if name.startswith("
 # audio, synthetic input with hidden windows) and both browser tracks cover them.
 # The window and application loop reach every render backend, so app keeps all seven.
 AUDIO_INPUT_TRACKS = ("x64-debug", "x64-debug-null", "wasm-debug", "wasm-release-null")
-AREAS = {"render": CONFIGURATIONS, "audio": AUDIO_INPUT_TRACKS, "input": AUDIO_INPUT_TRACKS, "app": CONFIGURATIONS}
+COLLISION_SCENE_TRACKS = ("x64-debug", "x64-debug-null", "wasm-release-null")
+AREAS = {"render": CONFIGURATIONS, "audio": AUDIO_INPUT_TRACKS, "input": AUDIO_INPUT_TRACKS, "app": CONFIGURATIONS,
+         "collision": COLLISION_SCENE_TRACKS, "scene": COLLISION_SCENE_TRACKS}
 AREA_ROOTS = {"engine/" + area: area for area in AREAS}
 ENVIRONMENT_KEYS = ("PATH", "PATHEXT", "VCPKG_ROOT", "VULKAN_SDK", "EMSDK", "EMSDK_NODE", "MSYSTEM")
 # A cmd started from Git Bash inherits MSYSTEM; emsdk_env.bat then prints bash
@@ -94,6 +96,17 @@ def required_tests(area: str, name: str, render: str) -> list[str]:
         return ["AudioTests", "AudioSampleTests"] + (["AudioSmokeTests"] if name == "x64-debug-null" else [])
     if area == "input":
         return ["InputTests"]
+    if area in {"collision", "scene"}:
+        names = ["SceneTests", "CollisionSampleTests", "Benchmarks"]
+        if area == "collision":
+            names.append("CollisionTests")
+        if native:
+            names.append("CollisionSmokeTests")
+        if area == "scene":
+            names.append("LocalMultiplayerTests")
+            if name == "x64-debug-null":
+                names.append("LocalMultiplayerSmokeTests")
+        return names
     names = ["AppTests"]
     if native:
         names += ["MinimalSmokeTests", "CollisionSmokeTests"]
@@ -553,7 +566,7 @@ def main(arguments: list[str] | None = None, *, root: Path | None = None, inspec
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--area", action="append", choices=list(AREAS), help="modeled area; repeat for a union")
     selection.add_argument("--path", action="append",
-                           help="repo-relative engine/render, audio, input or app selector; repeat for a union")
+                           help="repo-relative path within a modeled engine area; repeat for a union")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     behavior = parser.add_mutually_exclusive_group()
     behavior.add_argument("--preflight", action="store_true", help="inspect tooling environment/paths/caches without running tools")
