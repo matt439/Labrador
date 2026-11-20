@@ -185,7 +185,6 @@ The [first-run findings](docs/review/2026-11-10-first-run/FINDINGS.md) identify 
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#151` | WAITING | could | M | Record hosted Safari WebWindow and pixel drift, and the three Firefox pixel variants. Local Chromium, Firefox and classic WebDriver checks passed. [Evidence](docs/port/web-to-be-tested.md#browser-comparison-and-window-checks-2026-11-20). |
 | `REV#159` | WAITING | should | S | Observe a clean week after the November 17 SafariDriver bundle-session failure. Review every executed attempt, including retries. [Evidence](docs/port/web-to-be-tested.md#hosted-safari-stability-2026-11-20). |
 
 ## Ports

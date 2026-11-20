@@ -15,6 +15,23 @@ import { COMPLAINT_HOOK, EVALUATE_SCRIPT, SAMPLES, SAMPLE_HOOK, SAMPLED_SAMPLE_H
 	safari_tabs_to_links, sampled_linesweeper_quit, session_commands, substitute, webdriver_command } from './run_safari.mjs';
 import { SAMPLE_INPUT_HOOK } from './sample_key.mjs';
 import { SAFARI_WINDOW_HOOK, drive_safari_window, safari_window_input } from './safari_window.mjs';
+import { check_fullscreen_exit } from '../../app/web/window_input.mjs';
+
+test('hosted Safari fullscreen exit traces require restored size, focus and one exit notification', () => {
+	const exit = (events, focused = true, size = 'size 480 250') =>
+		check_fullscreen_exit([...events, size], focused, 'fullscreen fixture');
+	exit(['fullscreen 0']);
+	exit(['mouse_move 10 10', 'mouse_move 10 10', 'mouse_move 10 10', 'fullscreen 0']);
+	exit(['fullscreen 0', 'keyboard_lost', 'keyboard_gained']);
+	assert.throws(() => exit(['fullscreen 0', 'keyboard_lost']), /focus events/);
+	assert.throws(() => exit(['fullscreen 0', 'keyboard_gained', 'keyboard_lost']), /focus events/);
+	assert.throws(() => exit(['fullscreen 0', 'keyboard_lost', 'keyboard_gained'], false), /canvas focus/);
+	assert.throws(() => exit(['fullscreen 0'], true, 'size 640 480'), /the box/);
+	assert.throws(() => exit(['key_down a', 'text 97', 'fullscreen 0']), { message:
+		'fullscreen fixture: leaving\n  expected ["fullscreen 0"]\n  received ["key_down a","text 97","fullscreen 0"]' });
+	assert.throws(() => exit([]), /leaving/);
+	assert.throws(() => exit(['fullscreen 0', 'fullscreen 0']), /leaving/);
+});
 
 test('the options name one mode and refuse every other combination', () => {
 	const sample = parse_options(['--pages', 'p', '--sample', 'minimal']);
