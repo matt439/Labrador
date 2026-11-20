@@ -440,9 +440,9 @@ rasterization; this backend produces no pixels and `read_back_buffer` throws
 ## The start-up check
 
 `MyGame.exe --smoke-test` runs your first state in a hidden window, with the real window, device,
-content and frame loop, and quits once 30 frames have been drawn, about half a second. It exits
-0 when it got that far and 1 when anything threw, with the reason written to the standard error
-stream instead of a message box, because nobody is there to close one. The build registers it:
+content and frame loop. It presents without requesting vertical sync and quits on an update
+after at least 30 completed frames. It exits 0 when it gets that far and 1 if anything throws. It writes the
+reason to standard error so the hidden test can fail without a message box. The build registers it:
 
 <SourceFile path="website/src/walkthrough/game-CMakeLists.txt" from="add_test(NAME MyGameSmokeTests" to="set_tests_properties(MyGameSmokeTests" />
 

@@ -20,9 +20,8 @@ NATIVE_SMOKE_OPTIONS_ANCHOR = "\t\toptions.visible = !smoke_test;"
 NATIVE_SMOKE_OPTIONS = """
 		if (smoke_test)
 		{
-			// Bound the post work and present immediately on software runners.
+			// Bound the fullscreen post work on software runners.
 			options.client_size = Vector2I{ 640, 360 };
-			options.vsync = false;
 			std::fputs("material smoke: starting 640x360 device setup\\n", stderr);
 		}
 """

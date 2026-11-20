@@ -37,13 +37,11 @@ namespace
 			arguments.substr(first, last - first + 1) == L"--smoke-test";
 	}
 
-	// How many frames --smoke-test draws before it quits: half a second at
-	// 60 Hz, which is enough for the first state to have initialised, stepped
-	// and drawn several times over.
+	// Completed frames needed to exercise initialization, updates and drawing.
 	constexpr std::uint64_t smoke_test_frames = 30;
 
 	// --smoke-test: the game's first state, run as it is in a hidden window,
-	// and the game quit once the loop has drawn smoke_test_frames frames. It
+	// and the game quits on an update after reaching smoke_test_frames. It
 	// is a start-up check rather than a test of what the state does - the
 	// window, the device, the content and the first frames, which is what an
 	// engine upgrade that moved something would break first - and ctest runs
@@ -118,6 +116,9 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		// A smoke test gets the whole shell - window, device, services - with
 		// nothing on screen and no focus taken.
 		options.visible = !smoke_test;
+		// The hidden smoke still presents each frame. Request no display
+		// sync interval so this check can run on software-only CI.
+		options.vsync = !smoke_test;
 
 		// One pane, so one view's worth of recording state. The default is four
 		// - four-player split-screen, the widest layout the engine has a client
