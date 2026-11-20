@@ -59,8 +59,8 @@ cmake --build --preset x64-release --target MinimalSample LineSweeperFrameBench
 ```
 
 Run `out/build/x64-release/samples/minimal/MinimalSample.exe --smoke-test`
-with stdout and stderr retained. It remains hidden and uses its ordinary
-smoke workload; stdout gains one JSON record. The configure-time source
+with stdout and stderr retained. It renders its usual hidden smoke workload
+with vertical sync disabled. Stdout gains one JSON record. The configure-time source
 revision, configuration, completed-frame count and actual render device/API
 are recorded. Reporting is off by default; it adds no player-facing UI.
 Copies may opt in with the same two target definitions from the sample's

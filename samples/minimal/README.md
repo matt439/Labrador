@@ -41,6 +41,12 @@ next release on, the master commit that made it; the id is added when that
 release is prepared, and `git tag --contains <commit>` names the releases that
 carry it.
 
+- **2026-11-20.** The native `--smoke-test` requests unsynchronised
+  presentation and quits on an update after at least 30 completed frames.
+  Existing copies can set
+  `options.vsync = !smoke_test` beside the visibility option in
+  `main.cpp` to keep normal play synchronized.
+
 - **2026-11-20.** Ordinary Direct3D Release builds refuse known software
   adapters. Configure `-DLABRADOR_D3D_SOFTWARE_TEST=ON` to force WARP for
   software CI and installed-game checks. Diagnostics identify the selected

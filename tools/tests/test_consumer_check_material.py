@@ -61,7 +61,8 @@ class ConsumerMaterialTests(unittest.TestCase):
                          native.index("Application app(std::move(options));")]
         self.assertIn("if (smoke_test)\n\t\t{", options)
         self.assertIn("options.client_size = Vector2I{ 640, 360 };", options)
-        self.assertIn("options.vsync = false;", options)
+        self.assertEqual(options.count("options.vsync = !smoke_test;"), 1)
+        self.assertEqual(options.count("options.vsync ="), 1)
         self.assertNotIn("options.client_size", web)
         self.assertNotIn("material smoke:", web)
         frame_budget = next(line for line in original_native.splitlines() if "smoke_test_frames =" in line)

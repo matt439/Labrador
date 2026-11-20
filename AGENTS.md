@@ -183,7 +183,7 @@ paths are planning information; they do not establish a build or test result.
   with `validate_sync` so layer output reaches the shell, not only
   `OutputDebugStringA`. [Vulkan review](docs/review/vulkan/README.md).
 - Desktop `RenderPixelTests` creates a hidden window and device;
-  `MinimalSmokeTests` starts a hidden sample, draws 30 frames and quits, and
+  `MinimalSmokeTests` starts a hidden sample, draws at least 30 frames and quits, and
   `CollisionSmokeTests` drives the collision sample's scripted route the same
   way. All three need a device. Under null render `RenderPixelTests` is not
   registered; the two smoke tests and `LocalMultiplayerSmokeTests` record

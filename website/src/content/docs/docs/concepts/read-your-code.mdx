@@ -73,7 +73,7 @@ the caller. `&&` requires both conditions to be true, and `==` compares two valu
 semicolon ends an instruction or declaration.
 
 This function answers whether the program was started with `--smoke-test`. Below it,
-`smoke_test_frames` sets the test's length to 30 drawn frames. `constexpr` makes it a value
+`smoke_test_frames` requires at least 30 completed frames. `constexpr` makes it a value
 that can be worked out when the program is built. The `SmokeTest` class then wraps the real
 screen: its `init`, `update` and `draw` pass work to that screen, and its update ends the
 program once enough frames have drawn. This is what the project's startup test uses. It does
