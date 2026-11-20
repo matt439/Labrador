@@ -67,13 +67,12 @@ were not substituted into this report.
 
 ## Retained evidence and limits
 
-The complete local evidence remains at
-`C:\Projects\Labrador-agent-release-rebuild\out\v030-final-2026-11-17`:
+The complete local evidence is under
+`out/worktree-cleanup-2026-11-20/Labrador-agent-release-rebuild/out/v030-final-2026-11-17/`:
 downloaded `originals/`, independently produced `rebuilt/`, all metadata,
 stdout/stderr logs, source/EOL records and the report. The
 [file identity index](local-evidence-files.json) records the raw local bytes
-of all 29 files, including both original and rebuilt archives. Keep that
-directory if the disposable source worktree is later removed. The adjacent
+of all 29 files, including both original and rebuilt archives. The adjacent
 committed metadata and selected logs make the identity/result reviewable
 without adding duplicate release archives to Git. Git checkout line-ending
 conversion may change a text copy's bytes; the index describes the preserved

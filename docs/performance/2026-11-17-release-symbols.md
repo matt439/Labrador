@@ -78,7 +78,8 @@ Git archive's possible line-ending conversion. Hash capture remains separate
 from matching verification and reproducible dependency builds.
 
 Commands, compile records, flags audit and probe receipts remain under the
-task worktree's `out/pi24/`, `out/pi24-*-symbol-probe.log` and named private
-capture. Nothing was uploaded, tagged, signed, scheduled or added to the
+local `out/worktree-cleanup-2026-11-20/Labrador-agent-release-symbols/out/`
+in `pi24/` and `pi24-*-symbol-probe.log`, and in the named private capture.
+Nothing was uploaded, tagged, signed, scheduled or added to the
 distributed game. Other compilers, browser symbols, third-party DLL symbols
 and informal device/display acceptance remain separate work.

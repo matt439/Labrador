@@ -70,5 +70,5 @@ closed REV#151. REV#159's separate Safari stability window remains open.
 Ignored local receipts for the combined source are under
 `out/verification/todo-20261120/` and `out/todo-20261120/`. The latter retains
 `lint-retry.log`, `website.log`, `vulkan-sync.log` and `wasm-release-junit.xml`.
-The focused startup receipts are in `out/startup-check/` in the startup
-worktree. These paths identify local receipts for this run.
+The focused startup receipts are in
+`out/pr/143-local-receipts/Lab-startup/startup-check/` in the primary checkout.

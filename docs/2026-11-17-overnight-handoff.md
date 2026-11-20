@@ -107,5 +107,10 @@ host Node patch qualification, actual iOS/phone/pad/listening/display checks
 and other recorded owner gates remain separate. No portable Node patch was
 downloaded or qualified by root after the goal was cleared.
 
-Keep all task worktrees and ignored receipts. Some dependency directories are
-junctions to the primary checkout; do not recursively traverse them for cleanup.
+At this handoff, the task worktrees and ignored receipts were retained. Some
+dependency directories were junctions to the primary checkout. The
+[current landing procedure](../AGENTS.md#changes-and-landing) removes linked
+worktrees after merging. On November 20 the linked worktrees were removed and
+the local receipts selected for retention were copied to
+`out/worktree-cleanup-2026-11-20/` in the primary checkout. They keep their
+original worktree names and relative paths within that directory.
