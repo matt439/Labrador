@@ -5,6 +5,7 @@
 // CMakeLists registers each as a ctest entry when configure finds a Firefox.
 // On Windows, the observed pre-navigation context setup failures get one
 // fresh session after the owned browser and profile finish cleanup.
+// LABRADOR_FIREFOX_JOB_HELPER selects the Windows CI job-object supervisor.
 //
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --build-dir out/build/wasm-release --sample minimal [--timeout 60] [--frames 60]
@@ -545,8 +546,11 @@ function artifact_files(options) {
 	return ['html', 'js', 'wasm'].map((extension) => join(directory, `${target}.${extension}`));
 }
 
-export function launch_firefox(browser, profile, spawn_process = spawn) {
-	const child = spawn_process(browser, firefox_arguments(profile), { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
+export function launch_firefox(browser, profile, spawn_process = spawn, job_helper = null) {
+	const executable = job_helper || browser;
+	const args = firefox_arguments(profile);
+	if (job_helper) args.unshift(resolve(browser));
+	const child = spawn_process(executable, args, { stdio: [job_helper ? 'pipe' : 'ignore', 'ignore', 'pipe'], windowsHide: true });
 	let stderr = '';
 	let protocol = null;
 	let stopping = false;
@@ -555,13 +559,20 @@ export function launch_firefox(browser, profile, spawn_process = spawn) {
 	let refused;
 	const endpoint = new Promise((resolve_, reject) => { found = resolve_; refused = reject; });
 	endpoint.catch(() => {});
+	if (job_helper) {
+		// Firefox can finish while we close the control pipe. Only the supervisor's
+		// exit status establishes whether the job emptied.
+		child.stdin.on('error', (error) => {
+			stderr = (stderr + `\nFirefox job control pipe: ${error.message}\n`).slice(-16384);
+		});
+	}
 	child.stderr.on('data', (chunk) => {
 		stderr = (stderr + String(chunk)).slice(-16384);
 		try { const url = bidi_endpoint(stderr); if (url) found(url); } catch (error) { refused(error); }
 	});
 	child.on('error', (error) => {
 		spawn_error = error;
-		refused(new Error(`spawn ${browser}: ${error.code ?? error.name}: ${error.message}`));
+		refused(new Error(`spawn ${executable}: ${error.code ?? error.name}: ${error.message}`));
 		protocol?.fail(`Firefox process error: ${error.code ?? error.name}: ${error.message}`);
 	});
 	child.on('exit', (code, signal) => {
@@ -712,6 +723,24 @@ export async function terminate_owned_firefox(child, browser, profile,
 	console.log('Owned Firefox tree cleanup: ' + output.trim());
 }
 
+// A zero exit from the supervisor confirms that its private job has no
+// remaining processes, including descendants of an already exited launcher.
+export async function finish_firefox_job(child, grace_ms = 3000, stop_ms = 10000) {
+	if (!await exited(child, grace_ms)) {
+		console.log('Requesting termination of the owned Firefox job.');
+		child.stdin.end('\n');
+		if (!await exited(child, stop_ms)) {
+			// Killing this specific supervisor releases its kill-on-close job.
+			// We still lack its exit report and retain the profile for diagnosis.
+			child.kill();
+			throw new Error('Firefox job supervisor timed out confirming an empty job');
+		}
+	}
+	if (child.exitCode !== 0 || child.signalCode !== null) {
+		throw new Error(`Firefox job supervisor exited: code=${child.exitCode}, signal=${child.signalCode ?? 'none'}`);
+	}
+}
+
 export function retryable_context_setup(error, platform = process.platform) {
 	if (platform !== 'win32') return false;
 	const message = error?.message ?? '';
@@ -747,6 +776,7 @@ async function run_once(options) {
 	let failure = null;
 	let context_failure = null;
 	let profile_removed = false;
+	const job_helper = process.platform === 'win32' && process.env.LABRADOR_FIREFOX_JOB_HELPER;
 	try {
 		remove_stale_profiles(tmpdir());
 		profile = mkdtempSync(join(tmpdir(), 'labrador-firefox-'));
@@ -756,8 +786,8 @@ async function run_once(options) {
 		}
 		service = await serve_files(files,
 			{ substitute: options.bundle !== undefined ? bundle_substitute : undefined, deny_after_failure: true });
-		launched = launch_firefox(options.browser, profile);
-		console.log(`Firefox task profile=${profile}, pid=${launched.child.pid ?? 'unavailable'}`);
+		launched = launch_firefox(options.browser, profile, spawn, job_helper);
+		console.log(`Firefox task profile=${profile}, ${job_helper ? 'supervisor ' : ''}pid=${launched.child.pid ?? 'unavailable'}`);
 		const endpoint = await bounded(launched.endpoint, 30000, 'Firefox did not report its BiDi endpoint in 30 seconds.');
 		protocol = new FirefoxProtocol(endpoint);
 		launched.bind(protocol);
@@ -799,17 +829,21 @@ async function run_once(options) {
 		}
 		let closed = !launched;
 		if (launched) {
-			closed = launched.spawn_failed() || await exited(launched.child, 3000);
-			if (!closed) {
-				try {
+			try {
+				if (launched.spawn_failed()) {
+					closed = true;
+				} else if (job_helper) {
+					await finish_firefox_job(launched.child);
+					closed = true;
+				} else if (await exited(launched.child, 3000)) {
+					closed = true;
+				} else {
 					await terminate_owned_firefox(launched.child, options.browser, profile);
 					closed = await exited(launched.child, 5000);
 				}
-				catch (error) {
-					const refused = new Error(`terminate owned Firefox pid ${launched.child.pid}: ${error.code}: ${error.message}`);
-					console.error(refused.message);
-					failure ??= refused;
-				}
+			} catch (error) {
+				console.error(`terminate owned Firefox ${job_helper ? 'supervisor ' : ''}pid ${launched.child.pid}: ${error.message}`);
+				failure ??= error;
 			}
 			console.log(launched.diagnostics());
 		}
