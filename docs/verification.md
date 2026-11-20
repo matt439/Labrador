@@ -351,6 +351,17 @@ passed in wasm Debug. In wasm Release both also passed, along with the three
 pixel variants in each of Chrome and Firefox (8/8). Local receipts for the
 sweep and controls are under `out/verification/render-transitions-20261120/`.
 
+The D3D11 collision smoke passed in 6.50 s during that combined sweep.
+On the same RTX 5080, it later reached its 60 s timeout in the collision/scene
+sweep (60.06 s) and again when run alone with the same executable (60.05 s).
+Requesting a zero display sync interval for the hidden smoke, as the minimal
+sample does, passed three consecutive runs in 0.28, 0.26 and 0.26 s.
+All 375 fixed steps still draw, submit and present, and the route and marker
+checks still run under the original timeout. Visible play requests vsync.
+The comparison measures completion time on this host. It does not identify
+which driver or desktop condition triggered the earlier delays. The before
+and after logs are in the sweep receipt directory's `smoke-diagnostic/`.
+
 ## Chromium page activation (2026-11-17)
 
 The page runner enables the DevTools Page domain and waits for

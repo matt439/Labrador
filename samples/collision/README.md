@@ -125,7 +125,8 @@ one after admission and none after retirement. Native-null render/audio also
 creates a hidden shell, loads sample content and records the O binding and
 const overlay. To exercise the
 application, manifest and drawing too, launch `CollisionSample.exe --smoke-test`.
-It runs hidden for 375 fixed steps: the original 315-step route into the wall
+It runs hidden and presents each frame with vsync disabled for 375 fixed steps:
+the original 315-step route into the wall
 and around it to the trigger, then 60 stationary steps. It checks the route,
 one marker spawn and its completed retirement, and exits zero on success.
 `CollisionSmokeTests` runs it on every Windows preset, as `MinimalSmokeTests`
