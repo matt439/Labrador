@@ -675,11 +675,19 @@ export async function drive_window(page, input) {
 	await frames(3);
 	await pass('leaving is reported, and the box is the page\'s again', async (what) => {
 		const left = await take();
-		// As the window returns to its page geometry, Safari can send mouse
-		// movement with the resize. Check the fullscreen notification apart
-		// from those position and size updates.
+		// Safari can deliver mouse movement and transient focus changes as
+		// its native window returns to the page. Require the complete focus
+		// pair if it occurs, and check where focus actually ends up.
 		const transition = without_sizes(left).filter((entry) => !/^mouse_move -?\d+ -?\d+$/.test(entry));
-		expect(`step ${step}, ${what}: leaving`, transition, ['fullscreen 0']);
+		const keyboard_event = (entry) => entry === 'keyboard_lost' || entry === 'keyboard_gained';
+		const focus = transition.filter(keyboard_event);
+		expect(`step ${step}, ${what}: leaving`, transition.filter((entry) => !keyboard_event(entry)),
+			['fullscreen 0']);
+		if (focus.length > 0) {
+			expect(`step ${step}, ${what}: focus events`, focus, ['keyboard_lost', 'keyboard_gained']);
+		}
+		expect(`step ${step}, ${what}: canvas focus`,
+			await evaluate('document.hasFocus() && document.activeElement === Module.canvas'), true);
 		expect(`step ${step}, ${what}: the box`,
 			left.filter((entry) => entry.startsWith('size ')).slice(-1), ['size 480 250']);
 	});
