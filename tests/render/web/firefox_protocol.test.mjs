@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -848,7 +848,53 @@ test('pixel page rejects a missing exit protocol and releases its listener', asy
 });
 
 
-import { initial_context, terminate_owned_firefox, OWNED_FIREFOX_CLEANUP } from './run_firefox.mjs';
+import { finish_firefox_job, initial_context, terminate_owned_firefox, OWNED_FIREFOX_CLEANUP } from './run_firefox.mjs';
+
+test('the Windows supervisor receives the Firefox argv and forwards the browser endpoint', async () => {
+	const child = Object.assign(new EventEmitter(), {stdin: new EventEmitter(), stderr: new EventEmitter()});
+	const helper = resolve('fixture job helper.exe');
+	const browser = resolve('test browser', 'firefox.exe');
+	const profile = resolve('profile with spaces');
+	const launched = launch_firefox(browser, profile, (command, args, options) => {
+		assert.equal(command, helper);
+		assert.deepEqual(args, [browser, ...firefox_arguments(profile)]);
+		assert.deepEqual(options.stdio, ['pipe', 'ignore', 'pipe']);
+		assert.equal(options.windowsHide, true);
+		return child;
+	}, helper);
+	child.stderr.emit('data', 'WebDriver BiDi listening on ws://127.0.0.1:46249\n');
+	assert.equal(await launched.endpoint, 'ws://127.0.0.1:46249/session');
+	child.stdin.emit('error', new Error('write EPIPE'));
+	assert.match(launched.diagnostics(), /control pipe: write EPIPE/);
+});
+
+test('a Firefox job must confirm an empty tree after graceful exit or a requested stop', async () => {
+	for (const code of [0, 7]) {
+		const ended = {exitCode: code, signalCode: null};
+		if (code === 0) await finish_firefox_job(ended);
+		else await assert.rejects(finish_firefox_job(ended), /supervisor exited: code=7/);
+
+		const running = Object.assign(new EventEmitter(), {exitCode: null, signalCode: null});
+		running.stdin = {end(request) {
+			assert.equal(request, '\n');
+			running.exitCode = code;
+			running.emit('exit', code, null);
+		}};
+		if (code === 0) await finish_firefox_job(running, 1, 1000);
+		else await assert.rejects(finish_firefox_job(running, 1, 1000), /supervisor exited: code=7/);
+	}
+	await assert.rejects(finish_firefox_job({exitCode: null, signalCode: 'SIGTERM'}), /signal=SIGTERM/);
+});
+
+test('a hung Firefox supervisor is disposed and cannot qualify cleanup', async () => {
+	let stops = 0, kills = 0;
+	const stuck = Object.assign(new EventEmitter(), {exitCode: null, signalCode: null,
+		stdin: {end() { ++stops; }}, kill() { ++kills; }});
+	await assert.rejects(finish_firefox_job(stuck, 1, 1), /timed out confirming an empty job/);
+	assert.equal(stops, 1);
+	assert.equal(kills, 1);
+	assert.equal(stuck.listenerCount('exit'), 0);
+});
 
 test('reuse only the sole owned startup blank context, never create an extra tab', async () => {
 	const calls = [];

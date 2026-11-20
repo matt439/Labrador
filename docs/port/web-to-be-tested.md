@@ -1041,3 +1041,41 @@ creation. Skipped jobs provide no stability evidence.
 
 The [November 20 browser CI investigation](2026-11-20-browser-ci-investigation.md)
 covers the subsequent WebWindow input failures and Firefox setup failures.
+
+### Firefox process cleanup on hosted Windows, 2026-11-20
+
+Three attempts at `04e4406e` failed in different Firefox entries. The first
+timed out in `getTree` before the through-post pixel page opened. The second
+passed that pixel test but Firefox reported repeated failures to start a tab
+subprocess for the minimal page. The third passed both tests. Its audio page
+recorded 99 draws and `onQuit` before the Windows cleanup helper timed out with
+the launcher still running. The first attempt had also timed out in cleanup.
+The helper gave no indication which process lookup or termination step was
+still pending. [First job](https://github.com/matt439/Labrador/actions/runs/44685759793/job/136119623280),
+[second job](https://github.com/matt439/Labrador/actions/runs/44685759793/job/136123582076),
+[third job](https://github.com/matt439/Labrador/actions/runs/44685759793/job/136127642363).
+
+The required wasm job sets `LABRADOR_FIREFOX_JOB_HELPER` to the absolute path
+of its host-built [Windows supervisor](../../tools/firefox_job.cpp). Windows
+assigns the Firefox launcher to a private Job Object at process creation. The
+runner first asks Firefox to close through BiDi. If the browser stays alive,
+the helper can terminate the owned job and verify that it has no active
+processes. The page and pixel assertions run in the existing Firefox runner.
+[Windows job lifetime and accounting](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)
+describe the operating system guarantees used here.
+Local runs can select the same helper from an x64 Native Tools prompt:
+
+```bat
+set "LABRADOR_FIREFOX_JOB_HELPER=%TEMP%\labrador-firefox-job.exe"
+cl /nologo /std:c++20 /EHsc /W4 /WX /permissive- /utf-8 /Fo"%TEMP%\labrador-firefox-job.obj" /Fe"%LABRADOR_FIREFOX_JOB_HELPER%" tools\firefox_job.cpp
+node --test tests/render/web/firefox_job.test.mjs
+ctest --preset wasm-release -R "^Firefox" --no-tests=error -V
+```
+
+The native tests execute the compiled helper, forward quoted and Unicode
+arguments, preserve a failed launcher's exit code and exercise both control-pipe
+shutdown paths. The descendant test leaves a detached child running after its
+launcher exits and verifies that the unrelated sibling is still alive after
+cleanup. Locally, all eleven browser entries passed under Firefox 160.0.1
+with WARP. The helper also stopped a real Firefox process after its BiDi
+endpoint appeared.

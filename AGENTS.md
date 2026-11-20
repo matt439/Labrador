@@ -120,6 +120,9 @@ all three pixel test variants over WebDriver BiDi
 `-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` and runs the Firefox entries.
 The option puts Firefox on ANGLE/WARP in a disposable profile. The sample
 and pixel runs require Microsoft's Direct3D11 Basic Render Driver.
+The required Windows wasm job compiles [firefox_job.cpp](tools/firefox_job.cpp)
+with host MSVC and sets `LABRADOR_FIREFOX_JOB_HELPER` for these runs.
+The helper owns each test browser and its descendants through teardown.
 Verbose CI output retains the browser/device evidence. Hosted Firefox 159.0.1
 passed the six samples, window and bundle on WARP in runs recorded in
 [web-to-be-tested.md](docs/port/web-to-be-tested.md#hosted-browser-verification-2026-11-16);
