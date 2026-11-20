@@ -309,6 +309,10 @@ if(PROJECT_IS_TOP_LEVEL)
         # exercises real instances, quit/replay, the touch gate and recovery
         # UI. Context-loss coverage needs the rasterizing browser build.
         if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
+            # The pointer and palette checks also read pixels. Give each its
+            # own turn on the rasterizer when the bundle runs in parallel.
+            set_tests_properties(LineSweeperPalettePageTests LineSweeperPointerPageTests PROPERTIES
+                RESOURCE_LOCK linesweeper_frame_timing)
             labrador_page_test(LineSweeperBundlePageTests
                 PAGE "${CMAKE_BINARY_DIR}/web-dist/linesweeper/index.html"
                 TIMEOUT 120
