@@ -80,7 +80,7 @@ class SoftwareEvidenceTests(unittest.TestCase):
 
     def test_invocation_keeps_arguments_separate_and_retains_failure_receipt(self):
         with tempfile.TemporaryDirectory(prefix="d3d evidence ") as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             executable = root / "pixel fixture.exe"
             executable.write_bytes(b"offline executable stand-in")
             report = root / "report.json"
