@@ -4,12 +4,13 @@ description: Download a game project with Labrador inside it, extract it, build 
 ---
 
 import { FileTree, Steps } from '@astrojs/starlight/components';
+import RepoLink from '~/components/RepoLink.astro';
 import StarterDownload from '~/components/StarterDownload.astro';
 import ToolDownloads from '~/components/ToolDownloads.astro';
 
-Each Labrador release comes with a **starter ZIP**: a game project of your own, made from the
-engine's minimal sample, with the engine inside it. You download it, extract it, build it and
-play it. You do not need Git, and you do not build Labrador on its own first.
+Since `v0.3.0`, Labrador releases include a **starter ZIP**: a game project of your own, made
+from the engine's minimal sample, with the engine inside it. You download it, extract it, build
+it and play it. You do not need Git, and you do not build Labrador on its own first.
 
 The game code and build are the ones [Start your own project](/docs/get-started/your-project/)
 makes by hand, so later code-editing pages apply to both. The engine folder is a plain copy
@@ -58,18 +59,24 @@ this page runs in the x64 Native Tools Command Prompt, one box at a time, in ord
    ```text title="Output"
    .github
    .gitignore
+   build.cmd
    CMakeLists.txt
    CMakePresets.json
    external
    game
+   labrador.vsconfig
+   play.cmd
    README.txt
+   test.cmd
+   tools
    vcpkg.json
    ```
 
-   This is the released `v0.3.0` ZIP's listing. Development starter ZIPs also include
-   `labrador.vsconfig`, an optional Visual Studio setup file described in
+   This is the released `v0.4.0` ZIP's listing. It includes the
+   [optional command helpers](#optional-commands-from-an-ordinary-prompt) and
+   `labrador.vsconfig`, the optional Visual Studio setup file described in
    [Install the tools](/docs/get-started/prerequisites/#optional-visual-studio-configuration).
-   It changes none of the commands below.
+   The `v0.3.0` ZIP has neither addition and uses the manual commands below.
 
    If the box prints `C:\dev\mygame already exists. Nothing was extracted.`, you already have a
    project called `mygame`, and the box left it as it was: follow
@@ -346,8 +353,8 @@ the project are explained on [Start your own project](/docs/get-started/your-pro
 
 ## Optional commands from an ordinary prompt
 
-These helpers belong to the development starter after `v0.3.0`; that release's
-ZIP uses the manual steps above. [Move a starter project to a newer Labrador](/docs/guides/starter-update/)
+The helpers first shipped in `v0.4.0`. Use the manual steps above with the
+`v0.3.0` ZIP. [Move a starter project to a newer Labrador](/docs/guides/starter-update/)
 explains how to take a release that carries new starter files.
 
 If your project has `build.cmd`, `test.cmd` and `play.cmd`, you can use them
@@ -412,6 +419,10 @@ again after a line had been added to `mygame\game\main.cpp` it printed
 `already exists. Nothing was extracted.` and the added line was still there. Its form that
 finds the ZIP by the start of its name did both the same way.
 
-No release had carried a starter ZIP when this was checked, so the download step was not run
-against a real release, and the **Extract All** dialog itself was not clicked through. CI makes a starter ZIP
-from every change, extracts it with `tar`, and builds and tests the project in it.
+On 17 November 2026, the published `v0.4.0` starter ZIP was checked against its
+release digest. Windows `tar` extracted the archive into a new short path,
+and x64 Debug configure, build and both starter tests passed without Git
+metadata in the extracted project. The <RepoLink path="docs/verification/releases/v0.4.0.md" hash="starter-asset-and-consumer-acceptance">release record</RepoLink>
+has the result and archive digest.
+CI makes a starter ZIP for build changes, extracts it with `tar`, and builds
+and tests the project in it.

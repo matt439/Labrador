@@ -154,9 +154,7 @@ Command Prompt (or a shell where `vcvars64.bat` has run), from the root of a
 clone of this repository:
 
 ```
-cmake --preset x64-debug          # or x64-release, x64-debug-d3d12,
-                                  # x64-release-d3d12, and the gl/vulkan/null
-                                  # debug/release pairs
+cmake --preset x64-debug
 cmake --build --preset x64-debug
 ctest --preset x64-debug
 ```
@@ -331,12 +329,11 @@ Direct3D 12 presets have 23, with a synchronization test of their own. The
 `-null` presets have 23: the pixel tests need a device and are left out, and
 the local multiplayer and audio samples' start-up checks, which record calls
 instead of drawing or playing, and the minimal sample's states driven by keys
-in a hidden window are added. A `wasm-*` build has 20 without
-a Chromium and, where one is found, 41 in Debug and 42 in Release, the extra
-ones being pages run in headless Chrome, one for each sample among them, and no
-start-up check, because a page has no command line. Where configure also finds
-a Firefox, eleven `Firefox*` entries cover the samples, window, bundle and
-three pixel variants in it.
+in a hidden window are added. The `wasm-debug` and `wasm-release` presets
+register 20 entries when neither browser is found, 41 in Debug and 42 in
+Release with Chromium alone, and 31 with Firefox alone. Chromium adds page
+tests including one for every sample. Firefox independently adds eleven
+entries for the samples, window, bundle and three pixel variants.
 [`tests/ctest_inventory.json`](tests/ctest_inventory.json) lists the entries
 each configuration registers, with both browsers. CI fails when one of its own
 configurations differs, and `tools/ci_gap_report.py` when one it runs does.
@@ -365,12 +362,8 @@ rounds from before the split, and targeted reviews since, of the render
 backends against one contract and of the whole project. Their findings are
 not updated as they are fixed. Beside them are `rtcd/`, a candidate list
 rather than a review, and `colourwars-reports/`, the engine's decisions on
-the client's reports. Three files are kept current, and say where they
-stand:
-[backend-equivalence-2/STATUS.md](docs/review/backend-equivalence-2/STATUS.md),
-[2026-09-26/STATUS.md](docs/review/2026-09-26/STATUS.md) and the table in
-[colourwars-reports/README.md](docs/review/colourwars-reports/README.md).
-Each other folder's README says what it covers and when.
+the client's reports. The [review index](docs/review/INDEX.md) maps every
+review to its current status owner and remaining verification.
 
 Out of scope on purpose: online play, 3D, an editor and a scripting layer, for
 good ([PHILOSOPHY](docs/design/PHILOSOPHY.md), *Non-goals*), and an

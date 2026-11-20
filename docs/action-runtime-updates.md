@@ -1,10 +1,9 @@
 # Reviewed Action selectors and alerts-only reporting
 
-SM-92 prepares reviewed upstream Action sources and records an independent
-repository-settings change. The workflow source has local validation;
-**hosted execution of these new selectors remains unrun** until the owner
-publishes the branch and its required checks execute. Earlier green runs
-used older selectors and do not qualify this update.
+SM-92 records the reviewed upstream Action sources and an independent
+repository-settings change. The required hosted workflows and master
+watch have run on the new selectors. The scheduled workflows and the
+optional starter browser recipe still await hosted execution.
 
 ## Selected sources, 17 November 2026
 
@@ -106,7 +105,7 @@ separate reviewed dependency triage, not mixed into these Action pins.
 Alerts do not establish coverage for every vcpkg or vendored-source input.
 The recorded rapidjson commit/tree and engine baseline are preserved.
 
-## Qualification boundaries
+## Local qualification
 
 Local validation checks the source inventory, guard refusal fixtures,
 required-context/weekly/sanitizer contracts, golden-history checkout scope,
@@ -115,11 +114,33 @@ comparison against the pre-update source permits only the reviewed refs and
 explicit migration inputs; it retains other workflow behaviour. The [weekly inventory](verification-weekly.md)
 reflects the registered Debug browser tests.
 
-Actionlint was not available on PATH or in the previous ignored `out/lint`
-location, so it is not recorded as run. No new standing lint tool or toolchain
-pin is selected. Source validation cannot execute GitHub's cache
-or artifact service or prove runner compatibility. Keep the full published
-required matrix, the sanitizer/weekly non-required runs, privileged watcher
-behaviour, cache save/restore and artifact handoffs explicit until observed
-on these exact selectors. The optional starter browser recipe still needs
-its own hosted proof. No push, PR, dispatch or publication is performed here.
+Actionlint was unavailable on PATH and in the previous ignored `out/lint`
+location during this check. Source validation exercises the local inventory
+and guards. Hosted evidence covers the runner, cache and artifact services.
+
+## Hosted qualification, 2026-11-20
+
+The required build and website runs passed on PR head
+`0ed793eb417357b69d37abe323867b2477f22dae`. Its selector inventory and
+website lockfile match `146ad579` byte for byte.
+
+- The native, browser, Safari and consumer jobs executed and passed. The
+  wasm job ran on Actions Runner 2.338.2, restored the vcpkg, Emscripten and
+  ccache archives on `actions/cache` 6.1.0, and saved the new ccache entry.
+  It uploaded the named bundle, sample, pixel and window artifacts. The
+  Safari job downloaded them and ran the corresponding tests.
+  [Build and test run](https://github.com/matt439/Labrador/actions/runs/44690619907)
+- The website job ran `npm ci` and `npm run gate` with the integrated
+  lockfile. Its acceptance jobs downloaded the uploaded fixture and passed.
+  [Website run](https://github.com/matt439/Labrador/actions/runs/44690619903)
+- Master watch used the reviewed checkout pin on master at `c9689538` and
+  ran its `Rerun, report or close` step successfully. This records the
+  observed path through the watcher.
+  [Master watch run](https://github.com/matt439/Labrador/actions/runs/44678870293)
+
+The published [weekly workflow](verification-weekly.md) and
+[sanitizer workflow](verification-asan.md#scheduled-execution) had zero
+hosted runs when checked. The [optional starter browser recipe](product/BACKLOG.md#oca-116)
+still needs a hosted run of the copied workflow. The required wasm consumer
+job tests the assembled consumer and its page. The optional recipe has its
+own trigger, build and artifact steps.

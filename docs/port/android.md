@@ -104,7 +104,7 @@ is the first thing that puts the whole sentence under load.
 It is worth writing down now, before the work, what the answer looks like:
 
 - **Where the claim holds outright.** `render/` — the seam was cut four times
-  and a fifth costs a folder ([§3.5](#35-the-vulkan-backend)). `input/xinput/`
+  and a fifth costs a folder ([§3.5](#vulkan-backend)). `input/xinput/`
   — the folder exists and the module table forbids XInput outside it
   (ARCHITECTURE, [*Modules*](../design/ARCHITECTURE.md#modules)).
 - **Where it holds but has not been demonstrated.** The window. ARCHITECTURE
@@ -127,6 +127,8 @@ It is worth writing down now, before the work, what the answer looks like:
 ## 3. The work items
 
 Ordered by dependency in §4, not by size. Sizes here are per item in isolation.
+
+<a id="content-probe"></a>
 
 ### 3.1 The content probe — *hours* — **RUN, see [content-probe.md](content-probe.md)**
 
@@ -310,7 +312,7 @@ Two more, both smaller than they look:
 > ([§4](#4-the-dependency-spine)) landed without it. `DeviceNotify` is the shape
 > for a lost **device**. What an Android activity loses on
 > backgrounding is its **surface**: under Vulkan — which
-> [§3.5](#35-the-vulkan-backend) and [§6](#6-out-of-scope-on-purpose) commit
+> [§3.5](#vulkan-backend) and [§6](#6-out-of-scope-on-purpose) commit
 > this port to — the swapchain and the `VkSurfaceKHR` are destroyed while the
 > `VkDevice`, every `VkImage` in it and therefore all of the content survive. So
 > the routine Android event rebuilds a swapchain and never reaches the asset
@@ -382,6 +384,8 @@ mid-frame-resize term, and
 [`renderer.h:330-338`](../../engine/render/renderer.h#L330-L338) states a contract
 written entirely in terms of a caller who already knows the size changed. See
 §5 — this is the term Vulkan stresses.
+
+<a id="vulkan-backend"></a>
 
 ### 3.5 The Vulkan backend — *weeks*
 
@@ -587,7 +591,7 @@ it holds, "Metal eventually" is a build target rather than a sixth backend.**
 > stale is not what the seam calls the back buffer, and
 > `VK_ERROR_OUT_OF_DATE_KHR` is answered inside `present()` without
 > `window_size_changed` hearing about it. That was chosen for a different
-> reason — see [§3.5](#35-the-vulkan-backend) — and this fell out of it, which
+> reason — see [§3.5](#vulkan-backend) — and this fell out of it, which
 > is worth recording as luck rather than as foresight. What a backend that DID
 > draw into swapchain images would have owed the seam is now an unasked
 > question, and this document should not pretend it was asked.

@@ -134,6 +134,20 @@ check_fixture(base pass "${base_brief}" "${base_inventory}" "@AGENTS.md\n"
 string(REPLACE "\n" "\r\n" crlf_brief "${base_brief}")
 check_fixture(carriage_returns pass "${crlf_brief}" "${base_inventory}" "@AGENTS.md\r\n"
     "6 ctest counts in AGENTS.md match")
+
+# Count the same UTF-8 text and CRLF line endings in either checkout mode.
+set(budget_brief "${base_brief}\nÉ ")
+string(REPLACE "\n" "\r\n" budget_crlf "${budget_brief}")
+string(LENGTH "${budget_crlf}" budget_bytes)
+math(EXPR padding_bytes "28672 - ${budget_bytes}")
+string(REPEAT "x" ${padding_bytes} padding)
+check_fixture(at_byte_budget pass "${budget_brief}${padding}" "${base_inventory}" "@AGENTS.md\n"
+    "6 ctest counts in AGENTS.md match")
+check_fixture(over_byte_budget_lf fail "${budget_brief}${padding}x" "${base_inventory}" "@AGENTS.md\n"
+    "28673 bytes with CRLF line endings" "28672 bytes (28 KiB)")
+check_fixture(over_byte_budget_crlf fail "${budget_crlf}${padding}x" "${base_inventory}" "@AGENTS.md\r\n"
+    "28673 bytes with CRLF line endings" "28672 bytes (28 KiB)")
+
 check_brief_change(firefox_count_in_digits pass
     "two `Firefox*` entries" "2 `Firefox*` entries"
     "6 ctest counts in AGENTS.md match")

@@ -57,11 +57,15 @@ its software-device diagnostic. Its SHA-256 was
 
 OCA-120's caller handling is shown in the [Windows release guide](../../website/src/content/docs/docs/guides/windows-release.mdx).
 [SM-98](../render-software-tests.md#hosted-qualification-2026-11-20) passed
-hosted default refusal, WARP and installed-starter checks. [SM-92](../action-runtime-updates.md) and
-[REV#151](../port/web-to-be-tested.md#browser-comparison-and-window-checks-2026-11-20)
-also await hosted execution. [SM-97](../port/ios-simulator-pilot.md) awaits a
+hosted default refusal, WARP and installed-starter checks. [SM-97](../port/ios-simulator-pilot.md) awaits a
 Simulator session on macOS. Physical input, listening and display acceptance
 stay with their existing owner rows.
+
+SM-92 and REV#151 still needed hosted execution at this local checkpoint.
+The later [Action qualification](../action-runtime-updates.md#hosted-qualification-2026-11-20)
+records the required workflows and remaining optional runs. The hosted
+[browser comparison and window checks](../port/web-to-be-tested.md#browser-comparison-and-window-checks-2026-11-20)
+closed REV#151. REV#159's separate Safari stability window remains open.
 
 Ignored local receipts for the combined source are under
 `out/verification/todo-20261120/` and `out/todo-20261120/`. The latter retains

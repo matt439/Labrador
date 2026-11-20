@@ -4,10 +4,22 @@ An index of open work, one row per item; each row points to the document that ow
 
 ## NOW
 
-The actionable November 16 batch has passed its local implementation checks.
-The [integration record](docs/verification/2026-11-20-todo-integration.md)
-holds the combined results. The rows below track the remaining hosted,
-Simulator and attended checks in [BACKLOG order](docs/product/BACKLOG.md#later).
+The [November 20 integration record](docs/verification/2026-11-20-todo-integration.md)
+holds the combined local results. The client tracker responses are ready for
+the owner. The next section tracks the remaining hosted, Simulator and
+attended checks in [BACKLOG order](docs/product/BACKLOG.md#later).
+
+### Client tracker responses
+
+The [client report ledger](docs/review/colourwars-reports/README.md#issues-filed-on-the-tracker-2026-11-05)
+owns the dispositions. Follow [the tracker procedure](CONTRIBUTING.md#how-a-request-is-closed).
+
+| id | status | pri | size | item |
+|---|---|---|---|---|
+| `#122` | OPEN | should | XS | Record the v0.4.0 scripted input answer and the declined Registry rider. [Scope](docs/review/colourwars-reports/scripted-pad.md). |
+| `#123` | OPEN | should | XS | Record the shipped exception type and the startup cases mapped to it on master. [Scope](docs/review/colourwars-reports/device-unavailable.md). |
+| `#124` | OPEN | should | XS | Record the mutable contact counterpart and its dispatch and migration rules. [Scope](docs/review/colourwars-reports/contact.md). |
+| `#125` | OPEN | should | XS | Record default Release software refusal and the explicit WARP test option. [Scope](docs/review/colourwars-reports/device-kind.md). |
 
 ## November 16 Later batches
 
@@ -22,13 +34,10 @@ identifies what shipped.
 |---|---|---|---|---|
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend with a real non-Xbox pad once one is available. [Scope](docs/product/BACKLOG.md#oca-108). |
 | `SM-89` | WAITING | could | M | Retain the first hosted results for all five configurations of the published weekly workflow. [Qualification](docs/verification-weekly.md). |
-| `SM-92` | WAITING | should | M | Retain fresh hosted results for the integrated Action pins and website dependencies. Local selector, site and diagram checks passed. [Scope](docs/product/BACKLOG.md#sm-92). |
+| `SM-92` | WAITING | should | M | Retain hosted execution on the reviewed Action pins for the weekly and sanitizer workflows and the optional starter browser recipe. [Qualification](docs/action-runtime-updates.md#hosted-qualification-2026-11-20). |
 | `OCA-119` | BLOCKED | could | S | Record actual Escape behaviour from a trusted key in a headed browser. [Attempt](docs/port/2026-11-17-browser-escape-attempt.md). [Scope](docs/product/BACKLOG.md#oca-119). |
 | `SM-95` | BLOCKED | could | XS | Add the AI-use disclosure when the owner supplies public wording and review/authorship claims. [Scope](docs/product/BACKLOG.md#sm-95). |
 | `SM-97` | BLOCKED | could | M | Run the integrated pilot on a Mac with Xcode, safaridriver and an available iPhone Simulator. [Pilot](docs/port/ios-simulator-pilot.md). |
-
-For the client reports, v0.4.0 ships the scripted pad source requested in
-issue #122. The public tracker response is still due. [Client report ledger](docs/review/colourwars-reports/README.md)
 
 ## Input, menus, settings and saves
 
@@ -70,7 +79,7 @@ issue #122. The public tracker response is still due. [Client report ledger](doc
 | `SM-14` | BLOCKED | should | S | Use and correct the LAN-serving draft during SM-13's real-iPhone session; optional Android paths do not gate iPhone acceptance. [Scope](docs/port/lan-serve.md). |
 | `WEB#3` | BLOCKED | should | S | Keep real native/browser listening, sharing the audio/recovery session; record only output actually heard and leave unavailable paths unverified. [Scope](docs/port/web-to-be-tested.md). |
 | `BDP-07` | BLOCKED | could | M | Automate real 60/144 Hz capture while the owner judges judder; nominal refresh and frame intervals do not prove scan-out. [Scope](docs/port/pacing-method.md). |
-| `SM-13` | BLOCKED | should | M | Play the development page and the live demo on the owner's iPhone and record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). After `SM-14` (serving to a phone on the LAN); R6 by [the method](docs/port/pacing-method.md). |
+| `SM-13` | BLOCKED | should | M | Use the SM-14 draft during iPhone play of the development page and live demo. Record layout, rotation, touch, legibility, load time, memory (R4) and the top-out frame (R6). [Method](docs/port/pacing-method.md). |
 | `BDP-10` | BLOCKED | could | XS | Lift the bundle page's phone gate after `SM-13`; `BDP-09`'s layout is in place. The owner approved iPhone-only evidence; Android is not a prerequisite. [Decision](docs/product/BACKLOG.md#decisions-only-the-owner-can-make). |
 | `SM-44` | DEFERRED | could | S | Optional future real-phone record on a mid-range Android phone in Chrome. Waits on a borrowed phone; none is accessible. Does not gate iPhone acceptance. |
 | `WEB#2` | BLOCKED | could | S | A standard-mapping pad in Firefox and Safari (Chrome is `BDP-06`'s), and unplug and replug with more than four pads seen. Firefox can ride `OCA-48`'s session, Safari the owner's play on the Air; five pads are not owned. |
@@ -78,7 +87,7 @@ issue #122. The public tracker response is still due. [Client report ledger](doc
 
 ## Engine verification and reviews
 
-**Owner:** [the review index](docs/review/INDEX.md) maps every review to its live ledger and tracks the remaining D3D12 and Vulkan candidates (`REV#3` to `REV#5`).
+**Owner:** [the review index](docs/review/INDEX.md) maps every review to its live ledger and tracks the remaining display and Vulkan platform checks (`REV#3` and `REV#5`).
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
@@ -148,7 +157,7 @@ implementation scopes are stories in the batches above.
 | `REV#61` | DEFERRED | could | M | Until accepted starter work demonstrates recurring fatal-reporting defects; retain explicit native/browser entry points and separate non-fatal diagnostics. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#65` | DEFERRED | could | S | Owner deferred 2026-11-16 until a real consumer needs a specific integration route beyond the starter ZIP or source/submodule. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#66` | DEFERRED | could | M | Owner deferred 2026-11-16 until a concrete Windows evaluation or distribution need cannot be met by the browser route. [Decision](docs/review/2026-11-10/STATUS.md). |
-| `REV#67` | DEFERRED | could | M | Reassess after SM-82's ASan qualification, when a concrete parser-coverage need justifies fuzzing and corpus maintenance; no security-policy change selected. [Decision](docs/review/2026-11-10/STATUS.md). |
+| `REV#67` | DEFERRED | could | M | Reassess when a concrete parser-coverage gap justifies a maintained fuzzing corpus. SM-82's local ASan qualification is complete. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#68` | DEFERRED | could | S | Owner deferred 2026-11-16 until an analyzer demonstrates useful findings with manageable upkeep, or a recurring defect class warrants one. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#71` | DEFERRED | could | L | Until a concrete race investigation or selected native port justifies a Linux/TSan path; ASan is not race-freedom evidence. [Decision](docs/review/2026-11-10/STATUS.md). |
 | `REV#75` | DEFERRED | could | S | A promotional performance number waits for low-tier evidence or an explicitly scoped qualified comparison; dated technical records remain available. [Decision](docs/review/2026-11-10/STATUS.md). |
@@ -185,7 +194,7 @@ The [first-run findings](docs/review/2026-11-10-first-run/FINDINGS.md) identify 
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `REV#159` | WAITING | should | S | Observe a clean week after the November 17 SafariDriver bundle-session failure. Review every executed attempt, including retries. [Evidence](docs/port/web-to-be-tested.md#hosted-safari-stability-2026-11-20). |
+| `REV#159` | WAITING | should | S | Check for a week without another SafariDriver bundle-session creation failure. Inspect each executed attempt and retry through 09:54 Brisbane time on November 24. [Evidence](docs/port/web-to-be-tested.md#hosted-safari-stability-2026-11-20). |
 
 ## Ports
 
@@ -202,7 +211,6 @@ A new row for one of these gets its section back.
 
 | area | owner | a row returns with |
 |---|---|---|
-| Client coordination/intake | [BACKLOG](docs/product/BACKLOG.md#next) and [reports](docs/review/colourwars-reports/README.md) | a new report/coordination choice; selected implementations are indexed above |
 | Game-authored post materials | [OCA-84](docs/product/BACKLOG.md#oca-84) and [effects.md §16](docs/effects.md#16-game-material-implementation-amendment) | a regression or another shader-authoring requirement |
 | The rest of Next (X1 to X28) | [BACKLOG.md, Next](docs/product/BACKLOG.md#next) | a new story selected for this horizon |
 | Content, text and sample examples (L21 to L23, L26, L35) | [BACKLOG.md, Later](docs/product/BACKLOG.md#later) | a new text, content or sample-example story reaching the front |
@@ -237,6 +245,7 @@ Rules for writing it: read them before editing a row, not before picking one.
    - `REV#`: the review under [docs/review/](docs/review/) the row names.
    - `PORT#`: [docs/port/android.md](docs/port/android.md).
    - `DOC#`: the record the row names.
+   - `#NNN`: the public Labrador issue number for a pending response in the [client report ledger](docs/review/colourwars-reports/README.md).
    - `GAP#`: [the engine comparison of 2026-10-27](docs/survey/2026-10-27.md).
    - `IDEA#`: [Feature candidates](docs/feature-candidates.md), selected into BACKLOG.md before implementation.
    - `GUIDE#`: [Beginner guides](docs/beginner-guides.md).

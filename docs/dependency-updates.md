@@ -206,17 +206,16 @@ Retain the full CI matrix and the additional local device checks below. A
 documentation-only implementation of this procedure needs source/lint/website
 checks, not a pretend dependency bump or an unauthorized runtime sweep.
 
-- Run all seven [standalone checks](../AGENTS.md#build-checks), applicable
-  offline tooling regressions and current required CI contexts. Record the
-  actual commands and any stopped cases; do not report a permitted subset as
-  a full suite.
+- Run the [local lint sequence](../CONTRIBUTING.md#before-opening-a-pull-request)
+  and current required CI checks. Record the commands that ran and any
+  stopped cases.
 - Configure, build and test all five native Debug render selections:
   x64-debug, x64-debug-d3d12, x64-debug-gl, x64-debug-vulkan and x64-debug-null.
   Retain x64-release and the Release/consumer checks CI runs. Include further
   Release/device qualification demanded by the affected owner.
 - Run the rasterizing golden/pixel set on applicable backends with devices.
-  CI's GL/Vulkan skips do not establish those results, and native null records
-  draws rather than pixels. Compare existing goldens; do not regenerate them
+  CI's llvmpipe and SwiftShader runs cover software rendering. Native null
+  records draws. Compare existing goldens; do not regenerate them
   to hide a failure. Intentional changed PNGs need visual review and exact
   per-commit declarations under
   [Golden image review records](../CONTRIBUTING.md#golden-image-review-records).
@@ -225,8 +224,8 @@ checks, not a pretend dependency bump or an unauthorized runtime sweep.
 - Build/test wasm-debug and wasm-release GL/Web Audio, plus CI's explicit
   wasm-release-null override build. Cover SDK Node tests and the registered
   pixel/no-S3TC, context-loss, window and sample pages, the packaged LineSweeper
-  bundle and Release pacing-protocol cases. Preserve the registration and
-  device requirements in [AGENTS.md](../AGENTS.md#verification-boundaries).
+  bundle and Release pacing-protocol cases. Follow the registration and
+  device requirements in [the verification guide](verification.md#reading-the-remaining-obligations).
 - Run the website's clean install, check, tests and build. Inspect affected
   reference pages, source excerpts, notices, generated consumer manifest and
   static assets. Release metadata/live-index checks need their own applicable

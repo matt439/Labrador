@@ -332,7 +332,7 @@ a frame. `set_post_values(MaterialHandle, PostValues)` fills the selected materi
 `float4` values as a built-in effect, without changing the selection. A custom
 material processes the scene once and leaves overlay views flat. This adds
 neither game render targets nor multi-pass chains: those are separate
-milestones in [the effects plan](../../docs/effects.md#13).
+milestones in [the effects plan](../../docs/effects.md#13-milestones-and-what-to-spike-first).
 
 ### What `submit` costs
 

@@ -122,9 +122,10 @@ From `v0.1.0` on, a change confined to a browser build is an entry like any
 other. The backfill leaves such changes out because a game on `4cefb68` has no
 browser build to break, and a game on a tag can have one.
 
-`vcpkg.json`'s `version-string` changes at every release, and that change is
-not consumer-visible: a game reads nothing from it, and a release is told by
-its heading here.
+Changing only `vcpkg.json`'s `version-string` to cut a release is recorded by
+the release heading. Use `not consumer-visible` for that bookkeeping change.
+`labrador::version()` reports the new version to games after they reconfigure
+and build against the release.
 
 ## Unreleased
 

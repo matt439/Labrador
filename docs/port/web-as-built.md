@@ -11,11 +11,9 @@ R-labels refer to [web.md §8](web.md#8-decisions)'s decisions and
 and risks; "its row" is a milestone's row in web.md's
 [milestone table](web.md#milestones).
 
-**S1, S2, M1 and M2 are done. S3 was not run as a throwaway; it was absorbed
-into M3, whose code has landed and which is met in two of the three browsers
-its row names.** Safari has not been checked and R5 has not been measured, so
-M3 is not called done. What they measured, against the guesses this plan
-made:
+At the early Chrome and Firefox checkpoint, S1, S2, M1 and M2 had landed,
+and M3 had absorbed S3. Safari and R5 were still open at that checkpoint.
+The M3 entry below records the later Safari results.
 
 - **S1 was hours, not a milestone.** Emscripten 6.0.12, every portable `.cpp`
   in `engine/` and LineSweeper under `-Wall -Wextra -Wpedantic`: 61 distinct
@@ -274,11 +272,11 @@ protocol's. Touch cancellation is the one step BiDi cannot send.
 **WEB#10, 2026-11-05:** the runner adds LineSweeper's development page and
 its bundle page's play, forced context loss, quit and replay, and configure
 registers all eight runs as `Firefox*` ctest entries where it finds a
-Firefox. All eight passed in headless Firefox 159.0.1 on the desktop. CI's
-wasm job runs only the window's entry, because the runner image's Firefox
-makes no WebGL2 context without a GPU; the
+Firefox. All eight passed in headless Firefox 159.0.1 on the desktop. At
+that checkpoint CI's wasm job ran only the window's entry, because Firefox's
+default settings on the runner gave pages no WebGL2 context. The
 [record](web-to-be-tested.md#firefox-sample-checks-web4) gives the counts and
-what the bundle run leaves to Chromium.
+what the bundle run leaves to Chromium, along with later coverage.
 
 **M6's first item is done: `RenderPixelTests` runs in headless Chrome
 against the same golden set, and on this machine it is byte-identical to

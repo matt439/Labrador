@@ -5,6 +5,8 @@
 # and nothing would notice: each agent would go on reading its own copy as the
 # truth (T4). So the build checks that CLAUDE.md still imports AGENTS.md
 # rather than carrying a copy, and names the file when it does not (T5, T6).
+# Keep AGENTS.md within 28 KiB with Windows line endings, so the default
+# 32 KiB Codex project instruction budget leaves room for other guidance.
 #
 # The brief's preset table is a second copy of another kind: it states how many
 # ctest entries each preset pair registers, and tests/ctest_inventory.json is
@@ -74,6 +76,20 @@ if(NOT first_line STREQUAL "@AGENTS.md")
         "See CONTRIBUTING.md, The agent brief.")
 endif()
 
+# Count UTF-8 bytes with CRLF line endings, regardless of Git's checkout mode.
+file(READ "${agents_brief}" brief)
+string(REPLACE "\r\n" "\n" brief "${brief}")
+string(REPLACE "\n" "\r\n" windows_brief "${brief}")
+string(LENGTH "${windows_brief}" brief_bytes)
+set(brief_budget_bytes 28672)
+if(brief_bytes GREATER brief_budget_bytes)
+    message(FATAL_ERROR
+        "AGENTS.md uses ${brief_bytes} bytes with CRLF line endings.\n"
+        "  The agent brief budget is ${brief_budget_bytes} bytes (28 KiB):\n"
+        "    ${agents_brief}\n"
+        "  Link to owner documents for procedures and dated evidence.")
+endif()
+
 # The inventory's counts.
 set(inventory_path "${REPO_DIR}/tests/ctest_inventory.json")
 if(NOT EXISTS "${inventory_path}")
@@ -141,7 +157,6 @@ endif()
 # characters CMake's lists give meaning to replaced, so that a table row can be
 # a list element whatever its prose contains. No message below may contain a
 # semicolon, for the same reason.
-file(READ "${agents_brief}" brief)
 string(ASCII 29 open_bracket)
 string(ASCII 30 close_bracket)
 string(ASCII 31 semicolon)
