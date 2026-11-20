@@ -137,6 +137,8 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
     labrador_apply_d3d_software_test(RenderPixelTests)
     labrador_add_material(RenderPixelTests test_material
         SOURCE materials/test_material.hlsl)
+    labrador_add_material(RenderPixelTests reverse_material
+        SOURCE materials/reverse_material.hlsl)
     labrador_add_material(RenderPixelTests constant_material
         SOURCE materials/constant_material.hlsl)
 
@@ -406,6 +408,8 @@ if(NOT LABRADOR_RENDER_BACKEND STREQUAL "null")
         )
         labrador_add_material(RenderContextLossTests context_material
             SOURCE materials/test_material.hlsl)
+        labrador_add_material(RenderContextLossTests context_reverse_material
+            SOURCE materials/reverse_material.hlsl)
         set_target_properties(RenderContextLossTests PROPERTIES SUFFIX ".html")
         target_link_options(RenderContextLossTests PRIVATE
             -sENVIRONMENT=web

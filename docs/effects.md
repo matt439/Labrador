@@ -1644,10 +1644,20 @@ Release builds, Safari, phones, native forced device loss, driver diversity,
 physical pacing and performance qualification were not run for P6. No golden
 PNG changed. No release, client pin move or deployment is part of this story.
 
-`RenderContextLossWithPostTests` uses a compiled game material, retains its
-selected handle and values through WebGL context restoration, then updates
-the same handle's values and checks the output again. Identity remains in
-the pixel suite; this context lane registers no additional ctest entry.
+The [material pixel tests](../tests/render/material_pixel_tests.cpp) follow one scene
+across five frames. Red and blue world panes share a yellow HUD that crosses the
+split. Two authored shaders rotate the colour channels in opposite directions
+and use different parameter slots. The sequence switches shader, resizes with
+the second shader active, reselects the first without resetting its values, then
+draws directly with the HUD removed. Every pixel has an exact expected colour,
+including the old HUD footprint. The [null case](../tests/render/material_null_tests.cpp)
+checks the view and sprite order, post boundary, selected handle and its values.
+
+`RenderContextLossWithPostTests` switches shaders before forcing WebGL context
+loss. On the first restored frame it checks every pixel of both processed panes
+and the flat HUD. It then changes the second shader's values through the handle
+retained from before the loss and checks the resulting frame. The direct
+context-loss case draws its red quad through the same restore sequence.
 
 ## 17. Game-target decision amendment, 2026-11-16
 

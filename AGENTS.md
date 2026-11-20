@@ -88,9 +88,10 @@ all six sample `*PageTests`,
 `LineSweeperBundlePageTests` and `LineSweeperIframePageTests` registered. `MinimalLoadFailurePageTests` answers
 the template page's `.wasm` with 404 and asserts its failure line and the
 loader's console error; a failed loader script or `.data` file is untested.
-`RenderContextLossWithPostTests` selects a game-authored material and checks
-its selected handle and values across context restoration; identity is still
-covered by the pixel suite. The bundle test loads `web-dist/linesweeper/index.html`, plays and
+`RenderContextLossWithPostTests` switches between two game-authored materials and checks
+both split-screen panes and their HUD on the first restored frame. It then updates the
+selected material through its pre-loss handle. The pixel suite also covers identity.
+The bundle test loads `web-dist/linesweeper/index.html`, plays and
 replays, checks the touch gate, restores a context after a forced loss and a
 GPU process crash, switches tabs and asserts failure UI.
 It requires a rasterizing backend. The cross-site iframe regression uses

@@ -7,12 +7,16 @@
 #include "engine/math/rectanglei.h"
 #include "engine/math/vector2f.h"
 
+#include "tests/render/material_transition_scene.h"
 #include "tests/render/test_window.h"
 #include "materials/context_material.h"
+#include "materials/context_reverse_material.h"
 
 #include <emscripten/em_js.h>
 #include <emscripten/emscripten.h>
 
+#include <algorithm>
+#include <array>
 #include <cstdio>
 #include <exception>
 #include <memory>
@@ -51,10 +55,10 @@
 //     browser logs fails the run.
 //
 // THE SAME SEQUENCE THROUGH THE POST STAGE when the page's address carries
-// through_post (RenderContextLossWithPostTests): every frame then draws
-// through a game-authored channel-swap material. Green read-back after the
-// restore pins that its program, retained source and values were rebuilt
-// with the context; the final frame changes its values using the old handle.
+// through_post (RenderContextLossWithPostTests): two coloured panes draw
+// through one authored material and then another, with a flat HUD crossing
+// their seam. The frame that hears the restore must match the second
+// material's output without reselecting it or supplying its values again.
 //
 // NOT PINNED: that the device's strings are read again after the restore. On
 // one GPU the restored context describes itself exactly as the lost one did,
@@ -213,6 +217,7 @@ namespace
 	{
 		recover_unasked_loss,
 		draw_before_loss,
+		draw_switched_before_loss,
 		draw_while_lost,
 		wait_for_restore,
 		draw_after_restore,
@@ -229,7 +234,7 @@ namespace
 		std::unique_ptr<RecordingShell> shell;
 		TextureHandle quad;
 		MaterialHandle material;
-		PostValues material_values;
+		MaterialHandle reverse_material;
 		Step step = Step::draw_before_loss;
 		int frame = 0;
 		int lost_frames = 0;
@@ -237,10 +242,17 @@ namespace
 		std::vector<unsigned char> pixels;
 	};
 
-	// The quad's red texel over the whole buffer, so any pixel tells.
-	void draw_red(Run& run)
+	// The direct variant draws a single red quad.
+	void draw_frame(Run& run)
 	{
 		run.renderer.begin_frame();
+		if (run.material.valid())
+		{
+			render_tests::draw_material_transition_scene(run.renderer, run.quad,
+				RectangleI(1, 1, 1, 1), buffer_side, buffer_side);
+			run.renderer.submit();
+			return;
+		}
 		run.renderer.set_view_count(1);
 		DrawList list = run.renderer.view(0);
 		list.draw_sprite(run.quad, RectangleI(0, 0, 1, 1),
@@ -250,18 +262,43 @@ namespace
 		run.renderer.submit();
 	}
 
-	bool centre_has_expected_colour(Run& run)
+	using Pixel = std::array<unsigned char, 4>;
+	constexpr Pixel red{ 255, 0, 0, 255 };
+	constexpr Pixel green{ 0, 255, 0, 255 };
+	constexpr Pixel blue{ 0, 0, 255, 255 };
+	constexpr Pixel yellow{ 255, 255, 0, 255 };
+
+	void check_frame(Run& run, const char* stage, const Pixel& left, const Pixel& right)
 	{
 		run.renderer.read_back_buffer(run.pixels);
-		const size_t centre =
-			(static_cast<size_t>(buffer_side / 2) * buffer_side + buffer_side / 2) * 4;
-		const bool swapped = run.material.valid() &&
-			run.material_values.values[0] == 1.0f;
-		return run.pixels.size() == static_cast<size_t>(buffer_side) *
-				buffer_side * 4 &&
-			run.pixels[centre] == (swapped ? 0 : 255) &&
-			run.pixels[centre + 1] == (swapped ? 255 : 0) &&
-			run.pixels[centre + 2] == 0 && run.pixels[centre + 3] == 255;
+		const size_t expected_size = static_cast<size_t>(buffer_side) * buffer_side * 4;
+		if (run.pixels.size() != expected_size)
+		{
+			check(false, std::string(stage) + ": expected " + std::to_string(expected_size) +
+				" read-back bytes, observed " + std::to_string(run.pixels.size()));
+			return;
+		}
+		for (int y = 0; y < buffer_side; ++y)
+		{
+			for (int x = 0; x < buffer_side; ++x)
+			{
+				const bool hud = run.material.valid() && x >= buffer_side / 2 - 3 &&
+					x < buffer_side / 2 + 3 && y >= 5 && y < 8;
+				const Pixel& world = x < buffer_side / 2 ? left : right;
+				const Pixel& expected = hud ? yellow : world;
+				const unsigned char* observed = run.pixels.data() + (y * buffer_side + x) * 4;
+				if (!std::equal(expected.begin(), expected.end(), observed))
+				{
+					std::fprintf(stderr, "pixel (%d,%d): expected RGBA (%d,%d,%d,%d), "
+						"observed (%d,%d,%d,%d)\n", x, y,
+						expected[0], expected[1], expected[2], expected[3],
+						observed[0], observed[1], observed[2], observed[3]);
+					check(false, stage);
+					return;
+				}
+			}
+		}
+		check(true, stage);
 	}
 
 	void finish()
@@ -312,7 +349,7 @@ namespace
 			// back and begin_frame tells the shell both halves.
 			try
 			{
-				draw_red(run);
+				draw_frame(run);
 				run.renderer.end_frame();
 			}
 			catch (const std::exception& error)
@@ -329,11 +366,16 @@ namespace
 			std::printf("the context is back after the unasked loss; starting again\n");
 			run.shell->heard.clear();
 			labrador_page_heard_forget();
+			if (run.material.valid())
+			{
+				run.renderer.set_post_material(run.material);
+			}
 			run.step = Step::draw_before_loss;
 			break;
 		}
 
 		case Step::draw_before_loss:
+		case Step::draw_switched_before_loss:
 		{
 			if (labrador_context_is_lost(target(run)))
 			{
@@ -352,11 +394,31 @@ namespace
 				run.step = Step::recover_unasked_loss;
 				break;
 			}
-			draw_red(run);
+			draw_frame(run);
 			check(run.renderer.texture_dimension_limit() == 1024u,
 				"the created device reports the initial synthetic texture bound");
-			check(centre_has_expected_colour(run), "the quad draws before the loss");
+			if (!run.material.valid())
+			{
+				check_frame(run, "direct quad before loss", red, red);
+			}
+			else if (run.step == Step::draw_before_loss)
+			{
+				check_frame(run, "forward material before switch", green, red);
+			}
+			else
+			{
+				check_frame(run, "reverse material before loss", blue, green);
+			}
 			run.renderer.end_frame();
+			if (run.material.valid() && run.step == Step::draw_before_loss)
+			{
+				run.renderer.set_post_material(run.reverse_material);
+				PostValues reverse_values{};
+				reverse_values.values[4] = 1.0f;
+				run.renderer.set_post_values(run.reverse_material, reverse_values);
+				run.step = Step::draw_switched_before_loss;
+				break;
+			}
 			labrador_lose_context(target(run));
 			run.step = Step::draw_while_lost;
 			break;
@@ -385,7 +447,7 @@ namespace
 			bool drew = true;
 			try
 			{
-				draw_red(run);
+				draw_frame(run);
 				run.renderer.end_frame();
 			}
 			catch (const std::exception& error)
@@ -432,7 +494,7 @@ namespace
 				"the texture bound stays unavailable until a frame rebuilds resources");
 			// begin_frame is where the restore is heard, so the shell has
 			// either heard both halves by the end of this draw or neither.
-			draw_red(run);
+			draw_frame(run);
 			if (run.shell->heard.empty())
 			{
 				run.renderer.end_frame();
@@ -445,8 +507,14 @@ namespace
 				"the shell hears lost then restored, together");
 			check(run.renderer.texture_dimension_limit() == 512u,
 				"the restored device reports the changed synthetic texture bound");
-			check(centre_has_expected_colour(run),
-				"the reloaded quad draws in the frame that heard the restore");
+			if (run.material.valid())
+			{
+				check_frame(run, "reverse material and flat HUD on the first restored frame", blue, green);
+			}
+			else
+			{
+				check_frame(run, "reloaded direct quad on the first restored frame", red, red);
+			}
 			check(page_heard({ page_heard_lost, page_heard_restored }),
 				"the page hears lost then restored, each once and from a "
 				"frame, by the end of the frame that restored the shell");
@@ -459,11 +527,10 @@ namespace
 		{
 			if (run.material.valid())
 			{
-				run.material_values.values[0] = 0.0f;
-				run.renderer.set_post_values(run.material, run.material_values);
+				run.renderer.set_post_values(run.reverse_material, PostValues{});
 			}
-			draw_red(run);
-			check(centre_has_expected_colour(run), "the quad draws after the restore");
+			draw_frame(run);
+			check_frame(run, "frame after restore and value update", red, run.material.valid() ? blue : red);
 			run.renderer.end_frame();
 			check(run.shell->heard.size() == 2 &&
 				page_heard({ page_heard_lost, page_heard_restored }),
@@ -498,15 +565,17 @@ int main()
 		static Run run;
 		labrador_install_texture_limit_fixture();
 		run.renderer.create_device(run.window.handle(), buffer_side,
-			buffer_side, 1);
+			buffer_side, 3);
 		run.renderer.set_resources(&run.resources);
 		if (emscripten_run_script_int(
 			"new URLSearchParams(location.search).has('through_post') ? 1 : 0") != 0)
 		{
 			run.material = run.renderer.add_material(labrador::context_material);
+			run.reverse_material = run.renderer.add_material(labrador::context_reverse_material);
 			run.renderer.set_post_material(run.material);
-			run.material_values.values[0] = 1.0f;
-			run.renderer.set_post_values(run.material, run.material_values);
+			PostValues forward_values{};
+			forward_values.values[0] = 1.0f;
+			run.renderer.set_post_values(run.material, forward_values);
 			std::printf("ok: every frame draws through an authored material\n");
 		}
 		run.shell = std::make_unique<RecordingShell>(run.renderer,
