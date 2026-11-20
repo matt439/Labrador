@@ -52,6 +52,34 @@ class ConsumerMaterialTests(unittest.TestCase):
         self.assertTrue((self.project / "game/shaders/consumer_material.hlsl").is_file())
         self.assertEqual((self.project / "vcpkg.json").read_bytes(), manifest)
 
+    def test_native_smoke_bounds_the_draw_size_and_keeps_the_frame_budget(self):
+        material_fixture.prepare(self.project)
+        native = (self.project / "game/main.cpp").read_text(encoding="utf-8")
+        web = (self.project / "game/main_web.cpp").read_text(encoding="utf-8")
+        original_native = (REPOSITORY / "samples/minimal/main.cpp").read_text(encoding="utf-8")
+        options = native[native.index("options.visible = !smoke_test;"):
+                         native.index("Application app(std::move(options));")]
+        self.assertIn("if (smoke_test)\n\t\t{", options)
+        self.assertIn("options.client_size = Vector2I{ 640, 360 };", options)
+        self.assertIn("options.vsync = false;", options)
+        self.assertNotIn("options.client_size", web)
+        self.assertNotIn("material smoke:", web)
+        frame_budget = next(line for line in original_native.splitlines() if "smoke_test_frames =" in line)
+        self.assertIn(frame_budget, native)
+        self.assertLess(native.index("app.initialize();"), native.index("material smoke: application initialized"))
+        self.assertLess(native.index("set_post_values(material, material_values)"),
+                        native.index("material smoke: material selected, entering frame loop"))
+
+    def test_missing_native_smoke_anchor_leaves_every_file_unchanged(self):
+        path = self.project / "game/main.cpp"
+        source = path.read_text(encoding="utf-8")
+        path.write_text(source.replace("options.visible = !smoke_test;", "options.visible = true;"),
+                        encoding="utf-8")
+        before = self.contents()
+        with self.assertRaisesRegex(ValueError, "native smoke options and state"):
+            material_fixture.prepare(self.project)
+        self.assertEqual(self.contents(), before)
+
     def test_host_tools_come_from_the_consumed_engines_optional_feature(self):
         material_fixture.prepare(self.project, host_tools=True)
         actual = json.loads((self.project / "vcpkg.json").read_text(encoding="utf-8"))

@@ -16,6 +16,24 @@ from pathlib import Path
 
 INCLUDE_ANCHOR = '#include "engine/app/application.h"'
 INITIALIZE_ANCHOR = "\t\tapp.initialize();"
+NATIVE_SMOKE_OPTIONS_ANCHOR = "\t\toptions.visible = !smoke_test;"
+NATIVE_SMOKE_OPTIONS = """
+		if (smoke_test)
+		{
+			// Bound the post work and present immediately on software runners.
+			options.client_size = Vector2I{ 640, 360 };
+			options.vsync = false;
+			std::fputs("material smoke: starting 640x360 device setup\\n", stderr);
+		}
+"""
+NATIVE_SMOKE_INITIALIZED = """
+		if (smoke_test)
+		{
+			std::fputs("material smoke: application initialized\\n", stderr);
+		}
+"""
+NATIVE_SMOKE_STATE_ANCHOR = "\t\t\tfirst_state = std::make_unique<SmokeTest>(&app, std::move(first_state));"
+NATIVE_SMOKE_STATE_NOTE = '\t\t\tstd::fputs("material smoke: material selected, entering frame loop\\n", stderr);'
 MATERIAL_INCLUDE = '#include "materials/consumer_material.h"'
 SETUP = """
 		Renderer& material_renderer = *app.renderer();
@@ -56,9 +74,19 @@ def prepare(project: Path, host_tools: bool = False) -> None:
         text = path.read_text(encoding="utf-8")
         if text.count(INCLUDE_ANCHOR) != 1 or text.count(INITIALIZE_ANCHOR) != 1:
             raise ValueError(f"{path} needs one application include and one app.initialize(); update the material fixture with the starter.")
+        setup = SETUP
+        if entry == "main.cpp":
+            if (text.count(NATIVE_SMOKE_OPTIONS_ANCHOR) != 1 or
+                    text.count(NATIVE_SMOKE_STATE_ANCHOR) != 1):
+                raise ValueError(f"{path} needs the native smoke options and state; update the material fixture with the starter.")
+            text = text.replace(NATIVE_SMOKE_OPTIONS_ANCHOR,
+                                NATIVE_SMOKE_OPTIONS_ANCHOR + "\n" + NATIVE_SMOKE_OPTIONS.rstrip("\n"))
+            text = text.replace(NATIVE_SMOKE_STATE_ANCHOR,
+                                NATIVE_SMOKE_STATE_NOTE + "\n" + NATIVE_SMOKE_STATE_ANCHOR)
+            setup = NATIVE_SMOKE_INITIALIZED + SETUP
         edits[path] = text.replace(INCLUDE_ANCHOR,
                                    INCLUDE_ANCHOR + "\n" + MATERIAL_INCLUDE).replace(
-            INITIALIZE_ANCHOR, INITIALIZE_ANCHOR + "\n" + SETUP.rstrip("\n"))
+            INITIALIZE_ANCHOR, INITIALIZE_ANCHOR + "\n" + setup.rstrip("\n"))
 
     shader = project / "game/shaders/consumer_material.hlsl"
     if shader.exists():

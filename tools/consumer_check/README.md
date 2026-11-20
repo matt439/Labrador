@@ -288,7 +288,11 @@ HLSL pixel function, calls `labrador_add_material` from the project's root
 after `game/` exists, and registers and selects its `MaterialSource` after
 `app.initialize()` in both entry points. The function samples the scene with
 a parameter set by the game. The native smoke test and browser page then draw
-through it. Pixel semantics are asserted separately by `RenderPixelTests`;
+through it. The native fixture requests a 640×360 client area and immediate
+presentation for the hidden 30-frame `--smoke-test`. This bounds post work
+and avoids waiting for a display interval on software runners. Its smoke log
+marks application initialization and entry into the frame loop after material
+selection. Pixel semantics are asserted separately by `RenderPixelTests`;
 these consumer runs check the generated header, paths, build tools and
 runtime handover in a project outside the engine's own build.
 
