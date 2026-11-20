@@ -942,7 +942,7 @@ test('natural graceful exit cancels a slow ownership query without reporting fai
 });
 
 
-import { create_test_context } from './run_firefox.mjs';
+import { create_test_context, retry_context_setup, retryable_context_setup } from './run_firefox.mjs';
 test('a genuinely foreground test tab replaces the unfocused startup tab', async () => {
 	const calls = [];
 	const protocol = {send: async (method, params) => {
@@ -957,4 +957,44 @@ test('a genuinely foreground test tab replaces the unfocused startup tab', async
 		{method:'browsingContext.create',params:{type:'tab',background:false}},
 		{method:'browsingContext.close',params:{context:'startup'}},
 	]);
+});
+
+test('a Windows recovery is limited to the observed pre-navigation Firefox context setup errors', () => {
+	for (const message of [
+		'browsingContext.getTree: timed out after 10000 ms',
+		'browsingContext.create: timed out after 10000 ms',
+		'browsingContext.create: no such frame: DiscardedBrowsingContextError: BrowsingContext does no longer exist',
+	]) {
+		assert.equal(retryable_context_setup(new Error(message), 'win32'), true);
+		assert.equal(retryable_context_setup(new Error(message), 'linux'), false);
+	}
+	for (const message of [
+		'browsingContext.close: timed out after 10000 ms',
+		'browsingContext.navigate: timed out after 10000 ms',
+		'browsingContext.create: no such frame: unknown container',
+		'Owned Firefox must start with exactly one about:blank context',
+	]) {
+		assert.equal(retryable_context_setup(new Error(message), 'win32'), false);
+	}
+});
+
+test('context setup retries once after completed teardown, then preserves any failure', async () => {
+	const first = new Error('first setup failure');
+	const second = new Error('second setup failure');
+	const log = [];
+	for (const outcome of [null, second]) {
+		let calls = 0;
+		const run = retry_context_setup(async () => ++calls === 1 ? first : outcome,
+			(line) => log.push(line));
+		if (outcome === null) await run;
+		else await assert.rejects(run, (error) => error === second);
+		assert.equal(calls, 2);
+	}
+	const teardown_failure = new Error('teardown did not finish');
+	let calls = 0;
+	await assert.rejects(retry_context_setup(async () => { calls++; throw teardown_failure; },
+		(line) => log.push(line)), (error) => error === teardown_failure);
+	assert.equal(calls, 1);
+	assert.equal(log.length, 2);
+	assert.match(log[0], /first setup failure.*fresh owned session/);
 });
