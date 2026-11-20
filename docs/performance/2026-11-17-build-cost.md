@@ -65,10 +65,10 @@ or stable speed difference. Clean versus no-op comparison is unqualified
 because its declared cache context, clean selection and workload differ.
 `LabradorMathTests` then passes 1/1.
 
-Raw snapshots, dependency exports, compiler commands, contexts and logs stay
-under `C:/Projects/Labrador-agent-build-cost/out/build-cost/`. They are local
-measurement artifacts, not release assets. The source snapshot and input
-hashes in each `receipt.json` identify its data independently of later edits.
+Raw snapshots, dependency exports, compiler commands, contexts and logs are
+under `out/worktree-cleanup-2026-11-20/Labrador-agent-build-cost/out/build-cost/`.
+The source snapshot and input hashes in each `receipt.json` identify the local
+measurement data independently of later edits.
 
 ## Existing IPO evidence retained in its scope
 

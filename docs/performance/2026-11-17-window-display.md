@@ -83,8 +83,9 @@ independently measured/fractional rate. A physical cross-monitor move and a
 real mode change were not performed; their query refresh behavior is covered
 by the deterministic fixtures.
 
-Logs remain in this worktree's ignored `out/refresh-live-query.log`,
-`refresh-live-cim.json`, native/wasm logs and `refresh-browser-metadata.log`.
+The `refresh-live-query.log`, `refresh-live-cim.json`, native and Wasm logs, and
+`refresh-browser-metadata.log` are under
+`out/worktree-cleanup-2026-11-20/Labrador-agent-refresh/out/`.
 The [pacing method](../port/pacing-method.md) and
 [native collection procedure](local-frame-bench.md) retain the operator's
 physical-display and mode record. The combined app verification matrix,

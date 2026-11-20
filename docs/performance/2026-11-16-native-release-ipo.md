@@ -66,7 +66,8 @@ The D3D11 commands use the `x64-release` preset with separate
 `out/build/qualification-{off,on}-verified` folders and explicit OFF/ON.
 The other presets use `out/build/qualification-{d3d12,gl,vulkan,null}` with ON.
 The common vcpkg arguments above are added to each configure. Full logs and
-argv/exit/duration records remain under this worktree's ignored `out/ipo/`:
+argv/exit/duration records are in the local receipt directory
+`out/worktree-cleanup-2026-11-20/Labrador-agent-ipo/out/ipo/`, including
 `qualification-verified.json`, `release-matrix.json` and their phase logs.
 
 | D3D11 cost, seconds | OFF | ON |
@@ -153,10 +154,10 @@ justify a stable speed-up factor. Frame-start p50s remain around 16.666 ms
 under presentation pacing; CPU phases establish neither physical FPS nor
 scan-out latency or the Radeon low tier.
 
-Raw JSON and machine evidence remain in `out/ipo/measurements/`:
+Raw JSON and machine evidence are in the receipt directory's `measurements/`:
 `local-52a84842-d3d11-ipo-{off,on}-{1,2}.json` and
 `machine-52a84842.txt`. The exact measured benchmark executables are retained
-in `out/ipo/artifacts/`, before incremental relinking, with SHA-256:
+in its `artifacts/` subdirectory, before incremental relinking, with SHA-256:
 
 - OFF: `5224e9cabeeecd9bd32c475233cd47b9f01fb044bec02a4ca6e79e02f752a38e`
 - ON: `a99d501d7c7419550a6373e0cc672c5c52d8c9f9d8ff90f847d4acf2b99e22fe`

@@ -39,17 +39,17 @@ direct browser children were verified gone. Other browser sessions were not
 targeted. The resulting `Runtime.evaluate: the browser went away` and exit 1
 are consequences of that cleanup, not a tested Escape failure.
 
-The local receipt is `out/escape119-headed.log` in the retained
-`Labrador-agent-browser-escape` worktree; `out/escape119-build.log` records the
-gallery build. The three unqualified observer prototype files are retained
-only under `out/oca119-unqualified-prototype/`. They are not maintained tests
-or a qualified regression: their browser-state checks cannot by themselves
-authenticate which input route caused an exit. No successful page-test result
-or Escape behaviour is inferred from them.
+The local receipt is `escape119-headed.log` under
+`out/worktree-cleanup-2026-11-20/Labrador-agent-browser-escape/out/`.
+In that directory, `escape119-build.log` records the gallery build and
+`oca119-unqualified-prototype/` holds the three observer files. Their
+browser-state checks cannot authenticate which input route caused an exit.
+The prototypes remain unqualified for regression testing or for recording a
+successful Escape result.
 
 SHA-256 identifies those retained local files:
 
-| File under `out/` | SHA-256 |
+| File under the local receipt directory | SHA-256 |
 |---|---|
 | `escape119-headed.log` | `283ebfa92559141529c82841048649053c9efaec854ac7724a1e3b5229605fdd` |
 | `oca119-unqualified-prototype/fullscreen_escape.html` | `a47a20b383ea45457c13db55b6537f85d94c74611648a28c4fc5a4ecf644ed8b` |

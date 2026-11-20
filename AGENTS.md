@@ -26,6 +26,9 @@ only when the owner asks. Open one PR for the accumulated work.
 
 Follow [CONTRIBUTING.md](CONTRIBUTING.md) for the protected, linear `master`
 workflow. Rebase with `git rebase origin/master` when updating the branch.
+Remove every linked Git worktree used for the merged work immediately after
+merging, without exception. Verify removal with `git worktree list` before
+closing the task.
 Include tests and every document the change makes inaccurate in the same
 commit. Changes to required PR contexts also need the owner to update branch
 protection. Weekly and sanitizer jobs stay outside required PR checks.
