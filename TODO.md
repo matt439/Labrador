@@ -20,7 +20,6 @@ identifies what shipped.
 
 | id | status | pri | size | item |
 |---|---|---|---|---|
-| `OCA-97` | BLOCKED | could | M | Confirm the visible starter's quit prompt with Enter and record the `play.cmd` exit. Build, tests and visible launch passed. [Evidence](docs/review/2026-11-10-first-run/2026-11-17-starter-helpers.md#ordinary-prompt-desktop-run-2026-11-20). |
 | `OCA-108` | BLOCKED | should | L | Qualify a bought platform pad backend with a real non-Xbox pad once one is available. [Scope](docs/product/BACKLOG.md#oca-108). |
 | `SM-89` | WAITING | could | M | Retain the first hosted results for all five configurations of the published weekly workflow. [Qualification](docs/verification-weekly.md). |
 | `SM-92` | WAITING | should | M | Retain fresh hosted results for the integrated Action pins and website dependencies. Local selector, site and diagram checks passed. [Scope](docs/product/BACKLOG.md#sm-92). |
