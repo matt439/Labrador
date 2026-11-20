@@ -75,7 +75,9 @@ test('classic WebWindow input sends coordinates, wheel axes and virtual keys as 
 	await input.press(at);
 	await input.move({ x: 650, y: 400 }, true);
 	await input.release({ x: 650, y: 400 });
-	await input.wheel(at, 50, -100);
+	await input.wheel(at, 0, 100);
+	await input.wheel(at, 0, 100);
+	await input.wheel(at, 50, 0);
 	await input.key('Space');
 	await input.key('KeyA', { control: true });
 	await input.key('Tab');
@@ -83,7 +85,9 @@ test('classic WebWindow input sends coordinates, wheel axes and virtual keys as 
 		['pointer', [{ type: 'pointerMove', ...at, origin: 'viewport' }, { type: 'pointerDown', button: 0 }]],
 		['pointer', [{ type: 'pointerMove', x: 650, y: 400, origin: 'viewport' }]],
 		['pointer', [{ type: 'pointerMove', x: 650, y: 400, origin: 'viewport' }, { type: 'pointerUp', button: 0 }]],
-		['wheel', [{ type: 'scroll', ...at, deltaX: 50, deltaY: -100, origin: 'viewport' }]],
+		['wheel', [{ type: 'scroll', ...at, deltaX: 0, deltaY: 100, origin: 'viewport' }]],
+		['wheel', [{ type: 'scroll', ...at, deltaX: 0, deltaY: 100, origin: 'viewport' }]],
+		['wheel', [{ type: 'scroll', ...at, deltaX: 50, deltaY: 0, origin: 'viewport' }]],
 		['key', [{ type: 'keyDown', value: '\uE00D' }, { type: 'keyUp', value: '\uE00D' }]],
 		['key', [{ type: 'keyDown', value: '\uE009' }, { type: 'keyDown', value: 'a' },
 			{ type: 'keyUp', value: 'a' }, { type: 'keyUp', value: '\uE009' }]],
@@ -92,6 +96,8 @@ test('classic WebWindow input sends coordinates, wheel axes and virtual keys as 
 	]);
 	assert.equal(seen[0].id, seen[2].id);
 	assert.equal(seen[0].parameters.pointerType, 'mouse');
+	const wheel_ids = seen.filter(({ type }) => type === 'wheel').map(({ id }) => id);
+	assert.equal(new Set(wheel_ids).size, wheel_ids.length);
 });
 
 test('the Safari window fixture handles trusted activation, DPR and touch state', async () => {
