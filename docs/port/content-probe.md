@@ -1,7 +1,7 @@
 # The content probe — can the art land on the target
 
 > Run 2026-08-21 against Labrador at `f6e58be` and ColourWars at its own working
-> tree. This answers the three questions [android.md §3.1](android.md#31-the-content-probe--hours)
+> tree. This answers the three questions [android.md §3.1](android.md#content-probe)
 > asked and nothing else. **Every number here was measured** — DDS and
 > `.spritefont` headers were parsed, not estimated — and §5 lists the two claims
 > that are still knowledge rather than measurement.
@@ -137,7 +137,7 @@ That is not expensive. It is just not *nothing*, and ETC2 is nothing.
 
 ## 3. Q2 — does the content stay in `.dds`
 
-**No, and not for the reason the plan assumed.** [android.md §3.1](android.md#31-the-content-probe--hours)
+**No, and not for the reason the plan assumed.** [android.md §3.1](android.md#content-probe)
 framed this as a choice between carrying ASTC in a `.dds` DX10 header and moving
 to KTX2, on the grounds that the DX10 header is what `dds_file.h` deliberately
 does not read. The probe closes it: **the DX10 header's format field is a

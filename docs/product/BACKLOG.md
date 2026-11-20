@@ -264,8 +264,7 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   versions, and a play of the live demo on it, are this story's record; the
   2013 machine's ceiling no longer decides whether M3 can close on owned
   hardware. Recorded 2026-11-03: macOS 27.0.1 and Safari 27.0.1, above the
-  18.4 floor; the live demo loaded and was played briefly. Left: one full
-  match, quit and played again.
+  18.4 floor; the live demo loaded and was played briefly.
   *Amended 2026-11-03 by the persona re-review:* the ceiling half is met,
   since Safari 27.0.1 is above the 18.4 floor. Under the 2026-11-03 decision
   the scripted match, quit and replay is re-planned with `WEB#1` as an
@@ -296,22 +295,20 @@ Pin, test, ship: an adopter moves a pin by procedure, tests their game, makes co
   reader did, and `gamepad_reader.h` states that one contract with no
   disclaimer. The session's observation checks it on the physical pad; it no
   longer chooses between the three outcomes above.
-- [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page in Firefox, with a physical pad, through a real tab switch and a real context loss
+- [ ] **[BDP-06](STORIES.md#bdp-06)** Should · S · The Browser and Phone Demo Player · **Owner**: Play the bundle page with the owned pad in Chrome during OCA-48's session
   *Amended 2026-11-03 by the persona re-review, under the 2026-11-03
   decision:* the Firefox half is automated rather than played: a bundle mode
   for the existing BiDi runner, `tests/render/web/run_firefox.mjs`, serves
   `web-dist/linesweeper/` and plays, quits and plays again with the bundle
   page test's assertions, registered when a Firefox is found (`WEB#10`).
-  *2026-11-05:* that half landed as `FirefoxLineSweeperBundlePageTests`,
-  which runs where a Firefox has a GPU (CI's has none, so not in CI); the
-  physical pad in Chrome remains.
+  *2026-11-05:* that half landed as `FirefoxLineSweeperBundlePageTests`.
+  *2026-11-16:* hosted Firefox passed the bundle route on ANGLE/WARP.
+  [Hosted Firefox evidence](../port/web-to-be-tested.md#hosted-browser-verification-2026-11-16).
   Whether DevTools can drive a real context loss and a real tab switch in
   Chrome was investigated for the same treatment (`WEB#14`): it can, and
   since 2026-11-04 the bundle and host page tests crash Chrome's GPU process
   and switch tabs ([M5](../port/web-to-be-tested.md#the-live-demo-m5-checked-2026-10-13)).
-  The physical
-  pad's feel in the browser, and whatever cannot be automated, is informal
-  owner play in OCA-48's session.
+  Informal Chrome play with the physical pad remains in OCA-48's session.
 - [x] **[OCA-29](STORIES.md#oca-29)** Must · M · The Outside Adopter: A test target for my game's rules from the start — after OCA-11
 - [x] **[OCA-30](STORIES.md#oca-30)** Must · S · The Outside Adopter: A start-up smoke check for my Windows game — after OCA-29
 - [x] **[OCA-12](STORIES.md#oca-12)** Should · S · The Outside Adopter: The first-build time and public-clone path are observed from a cold cache — after OCA-11
@@ -721,7 +718,7 @@ No new removal API or stale-handle guarantee is implied.
 14. L14 Take and publish the low-tier per-claim measurements: SM-07
 15. L15 Headless XInput translation test: SM-40
 16. L16 Browser pacing and phone top-out method: SM-08
-17. L17 Real iPhone run with the LAN-serve procedure, then lift the phone gate: SM-14, SM-13, BDP-10 (also after BDP-09)
+17. L17 Use the LAN-serve draft in the real iPhone session (SM-14 and SM-13), then lift the phone gate (BDP-10, also after BDP-09)
 18. L18 Pacing on visitors displays: BDP-07
 19. L19 Couch play: join screen: OCA-46
 20. L20 Settings screen and pointer menus: OCA-51, OCA-50
@@ -889,20 +886,14 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[SM-40](STORIES.md#sm-40)** Could · S · The Sole Owner-Maintainer: A headless test of the XInput translation
 - [x] **[SM-08](STORIES.md#sm-08)** Should · S · The Sole Owner-Maintainer: A method for judging browser pacing (R5) and timing the phone top-out frame (R6) — after PI-19
 - [ ] **[SM-14](STORIES.md#sm-14)** Should · S · The Sole Owner-Maintainer · **Owner**: Serve a development page to a phone on my network
-  *Amended 2026-11-04:* drafted, untried, in
-  [lan-serve.md](../port/lan-serve.md) with `tools/lan_serve.py`; the box is
-  ticked once `SM-13`'s iPhone session has followed and corrected it.
   *Amended 2026-11-03 by the persona re-review:* the Mac for iOS Web Inspector
   is the owner's current MacBook Air, not the 2013 machine the dated story
-  names. No LAN-serve procedure exists yet; every serve recipe in the tree
-  binds to loopback (`127.0.0.1`), for example `samples/audio/README.md` and
-  the browser guide. It can be drafted ahead in
-  `docs/port/`: binding to the LAN, which features need a secure context and
-  how to get one, the Web Inspector steps on the Air, and Android Chrome's remote-debugging
-  steps, written but untried until SM-44. The story closes
-  only after the draft has been used in SM-13's iPhone session, as its note
-  requires.
-- [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-14, SM-08
+  names.
+  *Amended 2026-11-04:* [lan-serve.md](../port/lan-serve.md) and
+  `tools/lan_serve.py` were drafted before the iPhone session. Try and correct
+  the draft during SM-13's session, then tick this box. The Android Chrome
+  remote-debugging steps await SM-44.
+- [ ] **[SM-13](STORIES.md#sm-13)** Should · M · The Sole Owner-Maintainer · **Owner**: Record a real iPhone run of the development page and the live demo — after SM-08, using the SM-14 draft in the same session
 - [ ] **[BDP-10](STORIES.md#bdp-10)** Could · XS · The Browser and Phone Demo Player: Lift the phone gate after the real iPhone and host layout pass — after SM-13, BDP-09
 - [ ] **[BDP-07](STORIES.md#bdp-07)** Could · M · The Browser and Phone Demo Player · **Owner**: Smooth play on the displays visitors actually use — after SM-08
 - [x] **[OCA-46](STORIES.md#oca-46)** Could · M · The Outside Adopter: See a join screen for couch play I can copy
@@ -1034,6 +1025,8 @@ No new removal API or stale-handle guarantee is implied.
     [indexed in the reports table](../review/colourwars-reports/README.md#issues-filed-on-the-tracker-2026-11-05);
     none is a packaging request. Whether they are answered under this story
     or under rows of their own is the owner's call.
+  - *Status 2026-11-20:* the four implementation scopes are complete. The
+    public tracker responses are indexed separately in [TODO.md](../../TODO.md#client-tracker-responses).
 - [x] **[PI-19](STORIES.md#pi-19)** Should · M · The Pinned Submodule Integrator: Read what the engine's last frame cost, phase by phase
 - [ ] **[PI-11](STORIES.md#pi-11)** Could · M · The Pinned Submodule Integrator: Stage the runtime files the engine makes my game need, without hand-keeping that list — after PI-10, OCA-60
 - [x] **[PI-08](STORIES.md#pi-08)** Could · S · The Pinned Submodule Integrator: See what happened to each request and which commit answered it — after OCA-72
@@ -3558,8 +3551,11 @@ identifies the prepared Action updates (`455d7be4`) and website dependency
 repair (`7d8d1272`). Both are integrated. The local website gate passed its
 219 tests and 196-page build, the two Chromium diagram checks passed, and the
 lockfile audit reported zero advisories. The [Action record](../action-runtime-updates.md)
-holds the pinned revisions and remaining hosted workflows. Retain their fresh
-results before closing this story.
+holds the pinned revisions. The [hosted qualification](../action-runtime-updates.md#hosted-qualification-2026-11-20)
+records the passing required build and website workflows, cache restore and
+save, artifact handoffs and master watch. Retain hosted results for the
+weekly and sanitizer workflows and the optional starter browser recipe before
+closing this story.
 
 <a id="sm-93"></a>
 ### SM-93. Exercise cross-origin iframe embedding as a regression
@@ -3995,7 +3991,7 @@ outline image byte for byte. The public tracker response remains due.
 ### OCA-84. Write a post-processing shader in my game
 
 Selected 2026-11-16 by the owner from P6 and the accepted E1 decision in
-[the effects plan](../effects.md#12). A game's HLSL function owns its pixel
+[the effects plan](../effects.md#12-decisions). A game's HLSL function owns its pixel
 look; C++ owns when it is selected and the values it receives. The engine
 owns the fixed material frame, compiled source formats and backend pipelines.
 
@@ -4028,7 +4024,7 @@ are scoped explicitly under PHILOSOPHY T10 and T12; game behaviour stays C++.
 **Implemented 2026-11-16.** All five native Debug suites pass; compiled game
 materials pass the browser pixel and context-restoration checks, and both
 assembled starter consumers build and run them. Lint and the website gate
-pass. The [qualification record](../effects.md#16) distinguishes those results
+pass. The [qualification record](../effects.md#16-game-material-implementation-amendment) distinguishes those results
 from full browser suites, whose fullscreen and Firefox-startup failures also
 reproduce on unchanged November 13 artifacts. The CI workflow retains the
 material checks; its remote matrix and Release/device acceptance remain unrun
@@ -5552,7 +5548,7 @@ The top-out frame was looked at: the banner text draws in full beyond its panel.
 | SM-07 | G24 (major): the low-tier measurements the performance identity rests on. Follows SM-03's per-claim mapping and SM-01's adapter selection; owner-run on the iGPU. CPU update, recording/submission and cadence p99s complete only their part. The pipeline-latency claims and the low-tier acceptance box remain open until separate evidence with stated endpoints exists. *Amended 2026-11-03:* no Radeon GPU is available (owner facts), so this story and Later's low-tier exit term wait on the owner's SM-01 decision. *Decided 2026-11-03:* the owner re-enables the Radeon at the next reboot; SM-01 then runs and this story follows as written. |
 | SM-40 | G125. Closed 2026-10-27: the translation is `engine/input/xinput/xinput_gamepad.h`'s `gamepad_state_from_xinput`, and InputTests under the XInput backend fills DirectXTK's state by hand to assert each of the fourteen button bits alone and together, both sticks' y negation, the analogue triggers, a disconnected pad's neutral state and `DEAD_ZONE_NONE`. |
 | SM-08 | G27: a method for browser pacing (R5) and the phone top-out frame (R6). Promoted to Should because SM-13 depends on it. Closed 2026-10-29. [The method](../port/pacing-method.md) names the console rAF procedure, the `?pacing=` engine-frame export, observed judder and both results templates. In headless Chrome 156 on `wasm-release`, `LineSweeperPacingPageTests` logged per-frame intervals and the marked top-out frame (9,600 live, 0 dropped, CPU 1.6 and 1.5 ms) for both fixture modes, and `LineSweeperPageTests` passed. No display or phone result: those are BDP-07's and SM-13's. |
-| SM-14 | G71: serve a development page to a phone. Out of deferred: the owner has an iPhone; written and tried in SM-13's session. |
+| SM-14 | G71: serve a development page to a phone. The LAN-serving draft is ready for use and correction during SM-13's iPhone session. |
 | SM-13 | G34, G05 (merged with BDP-08): a real iPhone run. Split from the Android half (SM-44, deferred) per the owner facts. |
 | BDP-10 | Moved from Deferred to Later on 2026-10-27: the owner has no Android access and accepts iPhone-only evidence for lifting the phone gate. The gate stays closed until SM-13 and BDP-09 pass, then its implementation and public support wording are updated together. SM-44 is optional future evidence; this decision verifies no device and makes no Android support claim. |
 | BDP-07 | G23: pacing on the displays visitors use; may need a borrowed high-refresh display. *Amended 2026-11-03:* no display needs borrowing. The owner's desktop runs its four QHD screens at 60 Hz, and one at 144 Hz with the other three unplugged (owner facts). Interval collection can be scripted, for example a headed `LineSweeperPacingPageTests`-style run on each display, leaving the owner to judge only visible judder. |

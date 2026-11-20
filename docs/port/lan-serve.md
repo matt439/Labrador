@@ -12,10 +12,12 @@ does not match, the session records what it was called.
 ## 1. Build and serve
 
 Build the page as usual, for example the development page for LineSweeper
-or the minimal sample under `wasm-release`:
+or the minimal sample under `wasm-release`. A fresh standalone build can
+get the [GL material tools](../verification.md#gl-and-webgl-material-tools)
+from vcpkg.
 
 ```text
-cmake --preset wasm-release
+cmake --preset wasm-release -DVCPKG_MANIFEST_FEATURES=materials
 cmake --build --preset wasm-release --target LineSweeperSample MinimalSample
 ```
 

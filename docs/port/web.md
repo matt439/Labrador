@@ -652,13 +652,18 @@ restoration, a real one from crashing Chrome's GPU process, a real tab
 switch, QUIT, replay and five games in a row; a 16:9 stage within the
 page at phone and desktop widths; the ten-second context wait and Try again;
 and each failure's sentence with its raw reason beneath. The host repository
-is private, so CI cannot run it. Configure a `wasm-*` preset with a browser and
-the host checkout's `public/` folder, then run it before each deploy:
+is private and the test runs locally. Configure a `wasm-*` preset with a
+Chromium and the host checkout's `public/` folder, then run it after
+`sync-demo` and before each deploy. For a fresh build with vcpkg-supplied
+material tools:
 
 ```text
-cmake --preset wasm-release -DLABRADOR_HOST_SITE=C:/Projects/PersonalWebsite/public
-ctest --preset wasm-release -R LineSweeperHostPageTests
+cmake --preset wasm-release -DVCPKG_MANIFEST_FEATURES=materials -DLABRADOR_HOST_SITE=C:/Projects/PersonalWebsite/public
+ctest --preset wasm-release --no-tests=error -R "^LineSweeperHostPageTests$"
 ```
+
+Set `LABRADOR_TEST_BROWSER` at configure time if CMake needs a Chromium path.
+An existing SPIR-V-capable dxc and spirv-cross can supply the material tools.
 
 `LineSweeperIframePageTests` retains the packaged example page's cross-site
 iframe route in Chromium, using independent `localhost` and `127.0.0.1`
@@ -1031,36 +1036,29 @@ Nothing. Anything else this plan meets that would change a design document, a pu
 
 ## 9. Milestones, and what to spike first
 
-### Where it stands, 2026-10-13
+### Where it stands, 2026-11-20
 
-**Every milestone's code has landed, the demo is live, and what is left is
-hardware and browsers.** [web-to-be-tested.md](web-to-be-tested.md) is that list as
-boxes to tick. M1 and M2 are done. M3 is met in Chrome. In Firefox,
-LineSweeper's development page has been checked in headless Firefox 157 -
-its drawing, its keys and its way out (M3, in [the as-built record](web-as-built.md)) - and headless Firefox 158
-has run the other five samples' pages (draw calls submitted, trusted keys,
-quit) and `WebWindowTests`' 39 steps over WebDriver BiDi, with no pixel read
-back and nothing listened to; that list's
-[Firefox section](web-to-be-tested.md#firefox-sample-checks-web4) has the
-runs. CI's `safari` job draws all six samples' pages and the bundle page in
-desktop Safari on a hosted macOS runner, with a forced context loss, keys,
-quit and the bundle's replay
-([its section](web-to-be-tested.md#safari-sample-checks-web1)). M3 owes R5's
-pacing on real displays and the owner's informal play on the Air. M4's pad path has been driven by a
-page script's fake pad and owes a physical one. M5 is done: the module, the
-bundle, its page and CI's upload are built here, and the owner has deployed
-the demo to <https://mattharding.dev/demo/linesweeper/>, from a bundle built
-at `c369e8b` (`v0.1.0`), where on 2026-10-13 it played in headless Chrome,
-calm top-out included, its files matched `BUILD.json` and `curl -I` showed the
-§7.2 headers; Safari 27.0.1 on macOS 27.0.1 loaded and briefly played it on
-2026-11-03, and Firefox on the live page is still to be checked. M6's items are all done. M7a's touch device
-has been driven by Chrome's touch emulation and by touch injected into a
-Win32 window, and owes a real touchscreen. M7b's controls, portrait layout,
-page handling and texture path are built and emulated, and owe a real iPhone,
-a real Android phone and a measured frame on one. All six samples run in a
-browser, and every page the build makes is a ctest entry where configure
-finds a Chromium. What each milestone measured as it landed is in
-[the as-built record](web-as-built.md).
+M1, M2, M5 and M6 have shipped. The [as-built record](web-as-built.md) keeps
+the landing evidence, and the [acceptance ledger](web-to-be-tested.md)
+tracks the checks still due.
+
+- **M3:** Hosted Chromium, Firefox and desktop Safari exercise the samples.
+  The [November 20 comparison](web-to-be-tested.md#browser-comparison-and-window-checks-2026-11-20)
+  records Firefox's three pixel variants, Safari readback and WebWindow
+  runs. The Air's brief Safari play on November 3 and hosted Safari runs
+  are recorded. The owner's remaining informal play and R5's physical
+  display pacing are open.
+- **M4:** Automated pad mapping and foreground tests have run. Physical
+  pad play remains open.
+- **M5:** The owner's separately deployed demo is live. The
+  [live-host checks](web-to-be-tested.md#the-live-demo-m5-checked-2026-10-13)
+  record the original Chrome play and brief Safari play. A live Firefox
+  play and the next deploy's receipt remain open.
+- **M7a and M7b:** Windows injection and browser emulation have driven
+  touch. Real glass, an iPhone session and its frame measurement remain
+  open. The phone gate depends on the iPhone and host layout checks.
+  Android remains a broader milestone target and an optional follow-up
+  under the §7.4 decision.
 
 ### Spikes — *days*, before any milestone is committed to
 

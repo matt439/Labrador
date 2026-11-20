@@ -118,8 +118,9 @@ ctest --test-dir out/build/wasm-release-null --parallel 1 --output-on-failure --
 Its build/test commands use the override directory, never the GL wasm-release
 build/test preset. An explicit `--browser` adds a FILEPATH cache argument to
 both planned wasm configure commands; planning neither writes that cache nor
-launches the browser. It does not copy CI's GL/Vulkan pixel/smoke exclusions
-into a full local sweep.
+launches the browser. The local sweep runs the GL and Vulkan pixel and smoke
+tests on the available device. Required CI uses llvmpipe and SwiftShader for
+those presets.
 
 The restricted rule reader validates the current version-6 local preset shapes,
 matching build/test links, single-parent inheritance (for a test preset,
@@ -144,9 +145,11 @@ It creates, deletes and changes no cache, build tree, environment or global file
 
 The checks cover the modeled Windows toolchain environment, CMake/CTest/Ninja/cl,
 Direct3D fxc, VCPKG_ROOT's toolchain, Vulkan headers/import library and its own
-Bin/dxc.exe, and EMSDK's toolchain/compiler entry file. A PATH dxc is no substitute
-for the Vulkan SDK compiler. Emscripten's selected Node must come from the existing
-EMSDK_NODE value or configured emulator; an arbitrary host Node on PATH does not
+Bin/dxc.exe, and EMSDK's toolchain/compiler entry file. Vulkan uses the SDK's
+dxc. Preflight leaves GL/WebGL material tool setup to
+[the configure prerequisites below](#gl-and-webgl-material-tools).
+Emscripten's selected Node must come from the existing EMSDK_NODE value
+or configured emulator; an arbitrary host Node on PATH does not
 establish that selection. Presence checks do not establish versions/capabilities.
 A set `MSYSTEM` is a blocking mismatch for the planned wasm tracks: a cmd started
 from Git Bash inherits it, `emsdk_env.bat` then prints bash exports instead of
@@ -221,6 +224,26 @@ in force; selecting execution does not authorize a stopped action.
 
 ## Explicit execution
 
+### GL and WebGL material tools
+
+Standalone GL and WebGL builds compile authored fixtures. Provide a host dxc
+with SPIR-V support and spirv-cross, or enable the manifest's `materials` feature
+in each selected GL/WebGL preset's build directory. The render sweep uses
+`x64-debug-gl` and `wasm-debug`. The full release gap report also uses
+`x64-release-gl`. Run the applicable configure commands before execution.
+
+```text
+cmake --preset x64-debug-gl -DVCPKG_MANIFEST_FEATURES=materials
+cmake --preset wasm-debug -DVCPKG_MANIFEST_FEATURES=materials
+cmake --preset x64-release-gl -DVCPKG_MANIFEST_FEATURES=materials
+```
+
+`verify_changes.py` and `ci_gap_report.py` reuse those cache values when they
+configure. The [shader guide](../website/src/content/docs/docs/guides/your-shader.mdx)
+documents the host tool overrides.
+
+### Run the sweep
+
 Run this only in an already prepared toolchain environment and when the complete
 mixed runtime sweep is authorized:
 
@@ -230,7 +253,7 @@ python tools/verify_changes.py --path engine/render/gl/renderer.cpp --execute --
 ```
 
 Execution uses the same planned configurations and argv selections as the plan.
-It inspects prerequisites for every configuration before running the first
+It runs the documented preflight for every configuration before running the first
 configure. A late missing SDK therefore prevents an earlier build from starting.
 It does not activate vcvars/emsdk, fix caches, change environment values, probe
 versions, download tools or retry commands. CMake and build tools can still
@@ -510,10 +533,10 @@ separate default-OFF Direct3D Release builds verify startup refusal. The matrix
 also leaves out the four native Release presets other than `x64-release`
 and `wasm-debug`. The [additional weekly workflow](verification-weekly.md)
 runs those five as non-required software checks against their existing exact
-inventories. That periodic result does not qualify a later candidate or a
-real driver, so the local release/driver obligations remain unchanged.
-It runs before each release on a real GPU, which CONTRIBUTING's *Cutting a
-release* makes a step, and is not required of a pull request.
+inventories. [Cutting a release](../CONTRIBUTING.md#cutting-a-release) requires
+the local candidate and real-driver sweep. See
+[Before opening a pull request](../CONTRIBUTING.md#before-opening-a-pull-request)
+for when to run this sweep for a PR.
 `tools/ci_gap_report.py` holds that list; its test derives the same list from
 `ci.yml` and `CMakePresets.json` and fails when they drift apart, and the
 inventory's test fails when its configurations are not CI's and these.
@@ -533,15 +556,17 @@ so the record covers every selected preset. Results come from JUnit, because
 `LastTest.log` writes "Test Passed." for a test whose executable is missing
 and `LastTestsFailed.log` survives later runs. Any failed, skipped or disabled
 case, a nonzero ctest exit, or a required test that was never registered makes
-the preset fail. In the five driver-only configurations, the required tests
-are the pixel and smoke tests. Real-driver runs require a reported
-hardware-kind device. Direct3D qualification explicitly configures
+the preset fail. In the five driver-only configurations the tool requires
+passing pixel and smoke tests and a reported hardware-kind device.
+Direct3D qualification explicitly configures
 `LABRADOR_D3D_SOFTWARE_TEST=OFF`. Each whole candidate qualification must register
 exactly its list in `tests/ctest_inventory.json`, the file CI holds its own
 configurations to: an entry missing from the run or one the list does not
 name fails the preset, naming the entry. `wasm-debug`'s list has the pages
 configure registers only when it finds a Chromium and a Firefox, so the run
-needs both: without them its headless tests would otherwise pass alone. A
+needs both: without them its headless tests would otherwise pass alone. The
+whole-preset rows report the drawing device when one is available. Review
+that identity against the hardware used for the candidate. A
 configure given `LABRADOR_HOST_SITE` adds `LineSweeperHostPageTests`, which no
 list names, and fails the same way. A tool missing from the shell fails its preset
 and the run moves on. With `--execute` the exit code is 0 when every selected
@@ -557,9 +582,10 @@ reached" where configure or build failed, and "no test here draws on a device"
 for `x64-release-null`. The device line carries no driver version, so the
 person pasting it fills in the template's "Driver:" line. It activates no
 toolchain. Run it
-from a cmd shell with vcvars, and with `emsdk_env.bat` for `wasm-debug`. A
-cmd started from Git Bash inherits `MSYSTEM`, which makes `emsdk_env.bat`
-print bash exports and leave the environment unset; clear it with
+from a cmd shell with vcvars, and with `emsdk_env.bat` for `wasm-debug`.
+Set up the [GL and WebGL material tools](#gl-and-webgl-material-tools) before
+running the report. A cmd started from Git Bash inherits `MSYSTEM`, which
+makes `emsdk_env.bat` print bash exports and leave the environment unset. Clear it with
 `set MSYSTEM=` first. With `wasm-debug` selected, `--execute` refuses to start
 while `MSYSTEM` is set, exiting 2 before any preset runs. Passing the record
 does not complete the manual checks listed above: those still go in the

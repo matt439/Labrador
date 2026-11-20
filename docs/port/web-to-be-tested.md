@@ -106,7 +106,7 @@ certify a current client release, physical pad, audible audio or Radeon run.
       Chrome 156's SwiftShader, and nothing moved by 2. The allowance is 1
       (`tests/render/golden_image.cpp`).
 
-## Needs Safari (M3's done-when)
+## Desktop Safari evidence and remaining Air play (M3)
 
 - [x] LineSweeper, local_multiplayer, minimal, collision, the audio sample and
       the components gallery in desktop Safari: drawing, keys, quit, context loss and restore.
@@ -122,7 +122,9 @@ certify a current client release, physical pad, audible audio or Radeon run.
       `Apple GPU` from `Apple Inc.`.
 
 *Amended 2026-11-03:* re-planned as an automated safaridriver run on
-`macos-latest` (`WEB#1` in TODO.md) plus the owner's informal play on the Air.
+`macos-latest` ([`WEB#1`](#safari-sample-checks-web1)) plus the owner's
+informal play on the Air. The [November 20 hosted evidence](#browser-comparison-and-window-checks-2026-11-20)
+also covers Safari pixel readback and supported WebWindow inputs.
 
 ## Needs real displays (R5)
 
@@ -337,11 +339,13 @@ below predate it.
       page's "Thanks for playing.", and "Play again" mounted a fresh canvas,
       fetched the module again from the browser's cache, started from an
       empty board, and played and quit the same way, with no console message
-      and no browser warning throughout. **Firefox's half runs as
-      `FirefoxLineSweeperBundlePageTests`** (the
-      [Firefox record](#firefox-sample-checks-web4)), which plays, loses and
-      restores the context, quits and plays again on the bundle page, and
-      **Safari waits on SM-09**.
+      and no browser warning throughout. The Air briefly played the live
+      demo on November 3. Its remaining informal play is **SM-09**. The live
+      Firefox play, quit and replay remain open.
+
+      The packaged example page has its own
+      [Firefox bundle coverage](#firefox-sample-checks-web4) for play,
+      forced context loss and restore, quit and replay.
 - [x] The live demo plays the calm top-out (BDP-23). `c369e8b` contains
       `8c69272`, the commit that calmed it, and in headless Chrome a third
       game, Space pressed until the well filled, showed the stack on every
@@ -616,22 +620,22 @@ the 30 offline BiDi transport, control, input-translation and option fixtures;
 beside Chromium's transport, sample-key, input-bridge and bundle-host
 fixtures, 78 cases in all.
 
-Configure registers eight entries where it finds a Firefox
-(`LABRADOR_TEST_FIREFOX`) and the render backend rasterizes:
-`FirefoxLineSweeperPageTests`, `FirefoxMinimalPageTests`,
-`FirefoxCollisionPageTests`, `FirefoxAudioPageTests`,
-`FirefoxLocalMultiplayerPageTests`, `FirefoxComponentsPageTests`,
-`FirefoxWebWindowTests` and `FirefoxLineSweeperBundlePageTests`. CI's wasm
-job now opts into software WebGL and selects all eight entries. Without that
-option, the runner image's Firefox gives a page no WebGL2 context: the runner has no GPU, and Firefox's driver blocklist
-refuses the software adapter it has, so on 2026-11-05 (run 41944047596) each
-drawing entry failed at startup with "Failed to create WebGL context" while
-the window's entry passed. The drawing entries run wherever configure finds a
-Firefox on a machine with a GPU, which remains a separate hardware check
-from CI's software coverage.
+Current wasm builds with a rasterizing backend register eleven `Firefox*`
+entries when configure locates Firefox. Set `LABRADOR_TEST_FIREFOX` if CMake
+needs its executable path. The six sample pages, WebWindow and the LineSweeper
+bundle are joined by the baseline, no-S3TC and through-post pixel tests. The
+required wasm job runs all eleven on software WebGL. The
+[November 20 comparison](#browser-comparison-and-window-checks-2026-11-20)
+records the hosted pixel results. Physical GPU results depend on the device
+that drew in each run.
+
+On 2026-11-05 (run 41944047596), the matrix had eight Firefox entries and the
+wasm job used Firefox's default WebGL selection. Firefox's driver blocklist
+rejected the runner's software adapter. The drawing entries failed at startup
+with "Failed to create WebGL context" and the window's entry passed.
 
 Configuring with `-DLABRADOR_FIREFOX_SOFTWARE_WEBGL=ON` passes the runner's
-opt-in `--software-webgl` to all eight entries. It writes three preferences
+opt-in `--software-webgl` to the Firefox entries. It writes three preferences
 into the temporary profile's `user.js`: `webgl.force-enabled` past the
 blocklist, `webgl.angle.force-warp` to put ANGLE's Direct3D 11 device on WARP,
 Windows' software rasteriser, and `webgl.sanitize-unmasked-renderer` off, so
@@ -683,7 +687,7 @@ To run them, or one page by hand (either
 runner command also takes `--software-webgl`):
 
 ```text
-ctest --preset wasm-release -R "^Firefox" --output-on-failure
+ctest --preset wasm-release -R "^Firefox" --no-tests=error --output-on-failure
 node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --build-dir out/build/wasm-release --sample linesweeper
 node tests/render/web/run_firefox.mjs --browser "C:\Program Files\Mozilla Firefox\firefox.exe" --bundle out/build/wasm-release/web-dist/linesweeper
 ```
@@ -1034,10 +1038,10 @@ The publication master run skipped it under the same-tree rule.
 [release master retry](https://github.com/matt439/Labrador/actions/runs/44002989378/job/133779154106),
 [publication PR](https://github.com/matt439/Labrador/actions/runs/44008804143/job/133793505060).
 
-`REV#159` waits for a full clean week following the failed job. The earliest
-review is 09:54 Brisbane time on November 24. Inspect every executed attempt
-through the end of that window and investigate any recurrence during session
-creation. Skipped jobs provide no stability evidence.
+`REV#159` tracks a week without another SafariDriver bundle-session creation
+failure. Review every executed attempt, including retries, through November 24
+at 09:54 Brisbane time. Count bundle session creation on attempts that reached
+it. The subsequent WebWindow input failures occurred after session creation.
 
 The [November 20 browser CI investigation](2026-11-20-browser-ci-investigation.md)
 covers the subsequent WebWindow input failures and Firefox setup failures.

@@ -5,7 +5,7 @@ advisories, all for `website/package-lock.json`. This local repair updates the
 current website graph. It neither closes remote alerts before publication nor
 establishes that an advisory's exploit prerequisites are present in Labrador.
 [The Action/settings record](action-runtime-updates.md) owns the separate
-alerts-only change and its pending hosted qualification.
+alerts-only change and hosted Action qualification.
 
 ## Selection and evidence
 
@@ -119,6 +119,6 @@ required CI check, workflow schedule or outside request.
    and advisory prerequisites, then select any erratum or hosting mitigation
    explicitly. This triage makes no claim that the archived site is exploitable
    or safe. No tag, archive, manifest hash, erratum or deployed policy was changed.
-3. **Publication qualification.** Fresh hosted website CI and deployment/live
-   verification follow the existing owner procedure when publication is chosen.
-   No push, PR, remote dispatch, alert dismissal or deployment happened here.
+3. **Deployment qualification.** The [hosted website gate](https://github.com/matt439/Labrador/actions/runs/44690619903)
+   passed with this lockfile on 2026-11-20. Deployment and live verification
+   follow the existing owner procedure and still need their own evidence.

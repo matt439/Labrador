@@ -93,16 +93,8 @@ gh label create declined --color b60205 --description "Request declined; the clo
    lint job fails a commit that has neither (`tools/check_changes_rule.py`);
    whether the entry or the declaration is right is review's to check before
    merging, because nothing else does.
-   The build inputs are the root, engine and math `CMakeLists.txt`, and
-   `cmake/`'s `settings.cmake`, `native_release_ipo.cmake`, `sanitizers.cmake`,
-   `source_revision.cmake`, `version.cmake`, `dependencies.cmake`,
-   `compile_shaders.cmake`, `add_material.cmake`, `embed_material.cmake` and
-   `check_engine_includes.cmake`, plus `version_values.h.in` and
-   `release_identity.txt`, and `engine/app/web/window_dependencies.js`. Other
-   CMake scripts and maintainer tooling
-   are not implicitly included. CHANGES.md records the frozen historical
-   boundary for the paths added to coverage on 2026-11-16; the original paths
-   remain checked across history.
+   [The rule](CHANGES.md#the-rule) owns the build-input inventory and the
+   historical boundary of its coverage.
    A commit that changes what `samples/minimal/` does or how it builds, or an
    engine behaviour that folder depends on, in a way a copy of it would want,
    adds a dated line to the change list in
@@ -223,12 +215,13 @@ workflows run [tools/ci_tested_tree.py](tools/ci_tested_tree.py) first. When
 a pull request merged into `master` has the pushed tree at its head, that head
 contains the `master` the push replaced, and the workflow's newest run on it
 succeeded, the push run builds nothing and says which pull request passed the
-tree. Strict required checks are what make that the usual case. Anything
-unproven builds everything: a forced or direct push, a failed or missing pull
-request run, an API error, and a change to `vcpkg.json`, `.github/` or, for the
-website, its lockfile, because a run on `master` is what refreshes the caches
-pull requests restore. Browser ccache objects on `master` are therefore
-refreshed by those runs and the weekly schedule rather than by every merge.
+tree. Strict required checks are what make that the usual case. A forced or
+direct push, a failed or missing pull request run, an API error, and changes
+to cache inputs fall back to the standard workflow. Build and test still
+applies the documentation-only filter. Changes to `vcpkg.json` or `.github/`
+refresh the build caches on `master`; the website's refresh inputs are
+its lockfile and `.github/`. Browser ccache objects on `master` are refreshed
+by the build runs and the weekly schedule.
 
 **A red run on `master` is rerun once, then reported.** When either
 workflow fails on `master`, [master-watch.yml](.github/workflows/master-watch.yml)
@@ -312,19 +305,16 @@ moves for a source break, a removed or retyped name, a moved header, or a
 change to what `labrador_settings` gives the game. 1.0 itself is the first tag
 cut once PHILOSOPHY's settle criterion has run.
 
-1. **Audit the batch.** Run `git fetch origin --tags`, then list what it
-   holds with
-   `git log --format='%h %s' vPREV..origin/master -- 'engine/*.h' 'engine/*.cpp' engine/CMakeLists.txt cmake/settings.cmake vcpkg.json`,
-   where `vPREV` is the newest tag. Every commit it prints that touches a path
-   the rule names has an entry in CHANGES.md or says `not consumer-visible` in
-   its message.
+1. **Audit the batch.** Run `git fetch origin --tags`, then list the commits
+   and changed files with
+   `git log --format="%h %s" --name-status --no-renames vPREV..origin/master`,
+   where `vPREV` is the newest tag. Use [the CHANGES.md rule](CHANGES.md#the-rule)
+   to find commits that need an entry or a `not consumer-visible` declaration.
    `python tools/check_changes_rule.py --base vPREV --head origin/master`
-   names each one that neither touches CHANGES.md, nor says so, nor is the
-   exception CHANGES.md records; whether a touch is that commit's own entry
-   is read here. A change to a source file is read for a behaviour change a
-   game would see, which the rule's paths do not catch. A commit the audit
-   finds unclassified is given an entry, or a line under the release's heading
-   saying why it has none, in the next step.
+   flags missing entries or declarations under that rule. Read the commits
+   to confirm that each classification is correct and check source files for
+   behaviour changes a game would see. Give an unclassified commit an entry
+   or a note under the release's heading explaining the decision in step 2.
 2. **Prepare the release commit**, by the procedure above. It sets
    `version-string` to the new number, and renames CHANGES.md's
    `## Unreleased` to `## vX.Y.Z (date)`, dated the day the commit is
@@ -364,11 +354,11 @@ cut once PHILOSOPHY's settle criterion has run.
    `gh run list --branch master --commit <sha> --json workflowName,conclusion`
    until both workflows, `build and test` and `website`, have succeeded. A run
    that finds the pull request already passed the tree succeeds in under a
-   minute without building. Merge nothing else meanwhile:
-   both workflows cancel a run in progress when `master` moves. A run cancelled
-   anyway is re-run with `gh run rerun <id>`, never re-merged. Only a `master`
-   commit whose push runs are green is tagged. `git show <sha>:vcpkg.json`
-   names the version about to be tagged.
+   minute without building. Merge nothing else meanwhile. A newer `master`
+   push cancels an in-progress `website` run and can displace a pending
+   `build and test` run. Re-run a cancelled run with `gh run rerun <id>`.
+   Tag only a `master` commit whose push runs are green.
+   `git show <sha>:vcpkg.json` names the version about to be tagged.
 
    **Then run what CI cannot, on that commit, on a real GPU:** check it out
    and run `python tools/ci_gap_report.py --execute` from a cmd shell with
@@ -431,28 +421,54 @@ cut once PHILOSOPHY's settle criterion has run.
    python tools\consumer_check\starter_zip.py out\release-assets --release vX.Y.Z
    ```
 
-   It prints the ZIP's path, size and SHA-256. Check it the way a reader
-   will use it, in a folder that does not exist yet, then delete the folder:
+   It prints the ZIP's path, size and SHA-256. Check the archive in a new, short
+   directory under `C:\dev`, with the same x64 tool environment. From the
+   prompt that built the ZIP, open PowerShell:
 
    ```text
-   mkdir C:\dev\starter-check
-   tar -xf out\release-assets\labrador-starter-vX.Y.Z.zip -C C:\dev\starter-check
-   pushd C:\dev\starter-check\mygame
-   type README.txt
-   cmake --preset x64-debug
-   cmake --build --preset x64-debug
-   ctest --preset x64-debug
+   powershell -NoProfile -NoExit
    ```
 
-   `README.txt` must say `Labrador version: vX.Y.Z`, and ctest must pass
-   both tests. Then return to the checkout's root, which `pushd` remembered,
-   attach the ZIP to the draft and leave the checkout on `master`:
+   Set the tag in this block and run it in the PowerShell prompt:
+
+   ```powershell
+   & {
+       $ErrorActionPreference = 'Stop'
+       $starterTag = 'vX.Y.Z'
+       $archive = (Get-Item -LiteralPath "out\release-assets\labrador-starter-$starterTag.zip").FullName
+       New-Item -ItemType Directory -Path 'C:\dev' -Force | Out-Null
+       $checkPath = Join-Path 'C:\dev' ('starter-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+       $check = New-Item -ItemType Directory -Path $checkPath
+       Write-Output "Starter check folder $($check.FullName)"
+       & "$env:SystemRoot\System32\tar.exe" -xf $archive -C $check.FullName
+       if ($LASTEXITCODE -ne 0) { throw 'Starter ZIP extraction failed.' }
+
+       Push-Location -LiteralPath (Join-Path $check.FullName 'mygame')
+       try {
+           if ("Labrador version: $starterTag" -notin (Get-Content -LiteralPath 'README.txt')) {
+               throw 'The starter README names a different release.'
+           }
+           cmake --preset x64-debug
+           if ($LASTEXITCODE -ne 0) { throw 'Starter configure failed.' }
+           cmake --build --preset x64-debug
+           if ($LASTEXITCODE -ne 0) { throw 'Starter build failed.' }
+           ctest --preset x64-debug --no-tests=error
+           if ($LASTEXITCODE -ne 0) { throw 'Starter tests failed.' }
+       } finally {
+           Pop-Location
+       }
+   }
+   ```
+
+   Confirm `MyGameTests` and `MyGameSmokeTests` both passed and the total is
+   2/2. If the check stops, keep its folder and fix the failure before upload.
+   After a pass, use `exit` to return to the original prompt and checkout
+   root. Upload the ZIP to the draft and return to `master`. For cleanup,
+   remove only the fresh directory printed by the check.
 
    ```text
-   popd
    gh release upload vX.Y.Z out\release-assets\labrador-starter-vX.Y.Z.zip
    git checkout master
-   rmdir /s /q C:\dev\starter-check
    ```
 
    Never replace it (`--clobber`). CI's `consumer` job has already built the
@@ -604,7 +620,10 @@ anything below that line is for Claude Code alone. The build fails if that
 first line is anything else
 ([cmake/check_agent_brief.cmake](cmake/check_agent_brief.cmake)).
 
-The same check derives the ctest counts in the brief's preset table from
+The same check limits AGENTS.md to 28 KiB (28,672 bytes) with Windows line
+endings, leaving room below the 32 KiB default agent instruction limit. Move
+detailed procedures to their owner documents and link to them from the brief.
+It also derives the ctest counts in the brief's preset table from
 [tests/ctest_inventory.json](tests/ctest_inventory.json) and fails when one
 differs, naming the row, the stated count and the derived count. A commit that
 changes how many entries a checked configuration registers therefore changes

@@ -63,9 +63,9 @@ gives every consumer. They are numbered by issue, not by the client's ledger.
 **The owner selected verdicts on 2026-11-16.** The pad source, typed renderer
 refusal, mutable contact counterpart and remaining software-selection policy
 have implementation owners below. The Registry name-removal rider is
-declined with its lifetime rationale. Selection does not implement those
-changes or file their tracker responses: the issue checkboxes stay unticked
-until the implementation or recorded answer lands.
+declined with its lifetime rationale. The implementation and release state is
+recorded by each owner. The issue checkboxes track the public responses.
+On 2026-11-20 all four issues were open without replies.
 
 | | Issue | Engine-focused claim | Owner selection, 2026-11-16 |
 |---|---|---|---|
