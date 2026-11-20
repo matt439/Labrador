@@ -239,7 +239,6 @@ namespace
 		int frame = 0;
 		int lost_frames = 0;
 		int unasked_losses = 0;
-		std::vector<unsigned char> pixels;
 	};
 
 	// The direct variant draws a single red quad.
@@ -250,6 +249,15 @@ namespace
 		{
 			render_tests::draw_material_transition_scene(run.renderer, run.quad,
 				RectangleI(1, 1, 1, 1), buffer_side, buffer_side);
+			// The frame whose begin_frame delivered restoration leaves a new
+			// mark across the HUD seam. A replay of the last frame cannot pass.
+			if (run.step == Step::wait_for_restore && !run.shell->heard.empty())
+			{
+				DrawList hud = run.renderer.view(2);
+				hud.draw_sprite(run.quad, RectangleI(1, 1, 1, 1),
+					RectangleF(31.0f, 6.0f, 2.0f, 1.0f), Colour::cyan,
+					0.0f, Vector2F::zero, SpriteFlip::none, 0.0f);
+			}
 			run.renderer.submit();
 			return;
 		}
@@ -267,15 +275,18 @@ namespace
 	constexpr Pixel green{ 0, 255, 0, 255 };
 	constexpr Pixel blue{ 0, 0, 255, 255 };
 	constexpr Pixel yellow{ 255, 255, 0, 255 };
+	constexpr Pixel cyan{ 0, 255, 255, 255 };
 
-	void check_frame(Run& run, const char* stage, const Pixel& left, const Pixel& right)
+	void check_frame(Run& run, const char* stage, const Pixel& left, const Pixel& right,
+		bool expect_restore_mark = false)
 	{
-		run.renderer.read_back_buffer(run.pixels);
+		std::vector<unsigned char> pixels;
+		run.renderer.read_back_buffer(pixels);
 		const size_t expected_size = static_cast<size_t>(buffer_side) * buffer_side * 4;
-		if (run.pixels.size() != expected_size)
+		if (pixels.size() != expected_size)
 		{
 			check(false, std::string(stage) + ": expected " + std::to_string(expected_size) +
-				" read-back bytes, observed " + std::to_string(run.pixels.size()));
+				" read-back bytes, observed " + std::to_string(pixels.size()));
 			return;
 		}
 		for (int y = 0; y < buffer_side; ++y)
@@ -285,8 +296,10 @@ namespace
 				const bool hud = run.material.valid() && x >= buffer_side / 2 - 3 &&
 					x < buffer_side / 2 + 3 && y >= 5 && y < 8;
 				const Pixel& world = x < buffer_side / 2 ? left : right;
-				const Pixel& expected = hud ? yellow : world;
-				const unsigned char* observed = run.pixels.data() + (y * buffer_side + x) * 4;
+				const Pixel& background = hud ? yellow : world;
+				const bool mark = expect_restore_mark && y == 6 && (x == 31 || x == 32);
+				const Pixel& expected = mark ? cyan : background;
+				const unsigned char* observed = pixels.data() + (y * buffer_side + x) * 4;
 				if (!std::equal(expected.begin(), expected.end(), observed))
 				{
 					std::fprintf(stderr, "pixel (%d,%d): expected RGBA (%d,%d,%d,%d), "
@@ -460,7 +473,8 @@ namespace
 			bool refused = false;
 			try
 			{
-				run.renderer.read_back_buffer(run.pixels);
+				std::vector<unsigned char> pixels;
+				run.renderer.read_back_buffer(pixels);
 			}
 			catch (const std::runtime_error&)
 			{
@@ -509,7 +523,8 @@ namespace
 				"the restored device reports the changed synthetic texture bound");
 			if (run.material.valid())
 			{
-				check_frame(run, "reverse material and flat HUD on the first restored frame", blue, green);
+				check_frame(run, "reverse material and marked flat HUD on the first restored frame",
+					blue, green, true);
 			}
 			else
 			{

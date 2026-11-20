@@ -1655,7 +1655,9 @@ checks the view and sprite order, post boundary, selected handle and its values.
 
 `RenderContextLossWithPostTests` switches shaders before forcing WebGL context
 loss. On the first restored frame it checks every pixel of both processed panes
-and the flat HUD. It then changes the second shader's values through the handle
+and the flat HUD. Two cyan HUD pixels appear only on that frame, so the image before
+loss and a later restored frame are both distinguishable. Each readback starts with
+an empty destination. The test then changes the second shader's values through the handle
 retained from before the loss and checks the resulting frame. The direct
 context-loss case draws its red quad through the same restore sequence.
 
