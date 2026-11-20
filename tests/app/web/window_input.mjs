@@ -675,7 +675,11 @@ export async function drive_window(page, input) {
 	await frames(3);
 	await pass('leaving is reported, and the box is the page\'s again', async (what) => {
 		const left = await take();
-		expect(`step ${step}, ${what}: leaving`, without_sizes(left), ['fullscreen 0']);
+		// As the window returns to its page geometry, Safari can send mouse
+		// movement with the resize. Check the fullscreen notification apart
+		// from those position and size updates.
+		const transition = without_sizes(left).filter((entry) => !/^mouse_move -?\d+ -?\d+$/.test(entry));
+		expect(`step ${step}, ${what}: leaving`, transition, ['fullscreen 0']);
 		expect(`step ${step}, ${what}: the box`,
 			left.filter((entry) => entry.startsWith('size ')).slice(-1), ['size 480 250']);
 	});
