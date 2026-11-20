@@ -54,9 +54,11 @@ export const SAFARI_WINDOW_HOOK = `(() => {
 
 export function safari_window_input(session, evaluate, { option_tab = false } = {}) {
 	let pointer_position = null;
-	const pointer = async ({ x, y }, button_actions = [], { move_if_same = true } = {}) => {
+	const pointer = async ({ x, y }, button_actions = []) => {
 		const same_point = x === pointer_position?.x && y === pointer_position?.y;
-		const actions = same_point && !move_if_same ? button_actions : [
+		// Safari can dispatch a move at unchanged coordinates after a button
+		// action. Keep the move only when requested or needed to reach the point.
+		const actions = same_point && button_actions.length > 0 ? button_actions : [
 			{ type: 'pointerMove', x, y, origin: 'viewport' }, ...button_actions,
 		];
 		await session.perform([{ type: 'pointer', id: 'mouse',
@@ -109,8 +111,7 @@ export function safari_window_input(session, evaluate, { option_tab = false } = 
 		},
 		move: (at) => pointer(at),
 		press: (at) => pointer(at, [{ type: 'pointerDown', button: 0 }]),
-		// Safari reports a pointerMove even at identical coordinates.
-		release: (at) => pointer(at, [{ type: 'pointerUp', button: 0 }], { move_if_same: false }),
+		release: (at) => pointer(at, [{ type: 'pointerUp', button: 0 }]),
 		// WebKit subtracts the previous delta of a reused source. Each
 		// scroll here supplies the full relative delta of one action.
 		wheel: ({ x, y }, deltaX, deltaY) => session.perform([{ type: 'wheel', id: `wheel-${++wheel_source}`, actions: [
