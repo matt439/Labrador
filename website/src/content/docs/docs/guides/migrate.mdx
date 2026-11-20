@@ -1,6 +1,6 @@
 ---
 title: Update your code for a newer Labrador
-description: The edits a newer Labrador release asks of your game, as boxes to copy - the renames from v0.2.0 to v0.3.0 made in one command, the removed names found, and what each release's CHANGES.md entries mean for a starter project.
+description: Move a starter game's code between Labrador releases, including v0.4.0 application options, collision calls, sprite sheets and optional build changes.
 sidebar:
   order: 13.5
 ---
@@ -8,10 +8,9 @@ sidebar:
 import { Aside } from '@astrojs/starlight/components';
 
 A newer Labrador can rename or remove something your game uses. Before version 1.0 any release
-may, and when it does, its entry in `CHANGES.md` is marked **Source break** and names the old
-spelling and the new one. Your game then stops building with the newer engine until the same
-edit is made in your code. This page gives those edits as commands, for the source breaks a game
-made from the starter project meets, so you do not make them by hand file by file.
+may. The release's `CHANGES.md` names the affected calls and their replacements. A compiler
+error may point straight to the line to edit. Some changes still compile and alter what your
+game does, so also exercise the behavior you rely on after the move.
 
 You come here from step 7 of
 [Move a starter project to a newer Labrador](/docs/guides/starter-update/) or step 6 of
@@ -28,6 +27,60 @@ untouched until you delete it, and in Git, `git diff` shows every change they ma
 Otherwise, make a copy of `game` as in
 [Make a first change](/docs/get-started/first-change/), step 1, before you start.
 </Aside>
+
+## From v0.3.0 to v0.4.0
+
+Keep your game's own entry points, rules, states, tests and content. The v0.3.0 starter already
+sets its application options by name. Start with the calls **your game** added. Open the release
+notes beside your sources and search for these names from the project's folder:
+
+```bat
+notepad external\labrador\CHANGES.md
+findstr /s /n /l /c:"ApplicationOptions" /c:"AABB_intersects" /c:"collision/partitioner.h" /c:"read_sprite_sheet" game\*.cpp game\*.h
+```
+
+The search lists matching lines and their files. Check these against the entries under
+`## v0.4.0`. A game that uses more of the engine should also read the entries for its own
+modules, including the removed math and render members.
+
+- **Window and thread settings.** If your code supplies values in order inside
+  `ApplicationOptions{...}`, look up what each value meant in the old project's
+  `engine/app/application.h` under `external/labrador`. Construct the options first, then
+  assign those values by name, as below. The release inserted `client_size` after
+  `resolution` and `vsync` before `min_threads`. A positional value can reach the wrong
+  field even when the compiler accepts it.
+- **Collision.** Replace `a.AABB_intersects(b)` with `a.bounding_boxes_intersect(b)`.
+  For two pointers to live shapes, `a->AABB_intersects(b)` becomes
+  `a->bounding_boxes_intersect(*b)`. The new call takes a reference.
+- **Work partitioning.** If your code says `#include "engine/collision/partitioner.h"`, change
+  the path to `engine/core/partitioner.h`. If you assigned the result of `partitioner.partition(n, k)`
+  to `ranges`, pass the vector as the third argument in `partitioner.partition(n, k, ranges);`.
+- **Sprite sheets.** A direct call becomes
+  `read_sprite_sheet(path, texture, resources.texture_size(texture))`. Games that load sheets
+  through the manifest already pass the size through the loader. If loading now names a frame
+  outside its atlas, check that frame's coordinates and dimensions against the actual image.
+
+For example, a game that used one view and between one and four worker threads can keep those
+choices in either release:
+
+```cpp
+labrador::ApplicationOptions options;
+options.view_capacity = 1;
+options.min_threads = 1;
+options.max_threads = 4;
+```
+
+If you customized `game\CMakeLists.txt`, preserve your target names, source lists, tests and
+content packaging for **both** Windows and the browser. The new template adds a doctest lookup
+with a clearer missing-package message and optional Windows icon support. Your existing
+`find_package(doctest CONFIG REQUIRED)` still works. To adopt the icon option, take its CMake
+block, copy the resource file below, and set `options.window_icon_resource = L"GAME_ICON";`
+in your Windows entry point under `#if defined(GAME_HAS_ICON_RESOURCE)` before you construct
+the application. The default build leaves the icon option empty.
+
+```bat
+copy external\labrador\samples\minimal\game_icon.rc game\
+```
 
 ## From v0.2.0 to v0.3.0
 
