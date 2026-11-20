@@ -56,8 +56,8 @@ its software-device diagnostic. Its SHA-256 was
 `8a8da876ee984aff2eafcce0b9e5ad80827ed70cee59d355f1c117afb00aeef7`.
 
 OCA-120's caller handling is shown in the [Windows release guide](../../website/src/content/docs/docs/guides/windows-release.mdx).
-[SM-98](../render-software-tests.md) still needs fresh hosted default-refusal,
-WARP and installed-starter results. [SM-92](../action-runtime-updates.md) and
+[SM-98](../render-software-tests.md#hosted-qualification-2026-11-20) passed
+hosted default refusal, WARP and installed-starter checks. [SM-92](../action-runtime-updates.md) and
 [REV#151](../port/web-to-be-tested.md#browser-comparison-and-window-checks-2026-11-20)
 also await hosted execution. [SM-97](../port/ios-simulator-pilot.md) awaits a
 Simulator session on macOS. Physical input, listening and display acceptance
