@@ -77,6 +77,9 @@ test('classic WebWindow input sends coordinates, wheel axes and virtual keys as 
 	await input.release({ x: 651, y: 400 });
 	await input.press(at);
 	await input.release(at);
+	await input.press(at);
+	await input.release(at);
+	await input.move(at);
 	await input.wheel(at, 0, 100);
 	await input.wheel(at, 0, 100);
 	await input.wheel(at, 50, 0);
@@ -89,6 +92,9 @@ test('classic WebWindow input sends coordinates, wheel axes and virtual keys as 
 		['pointer', [{ type: 'pointerMove', x: 651, y: 400, origin: 'viewport' }, { type: 'pointerUp', button: 0 }]],
 		['pointer', [{ type: 'pointerMove', ...at, origin: 'viewport' }, { type: 'pointerDown', button: 0 }]],
 		['pointer', [{ type: 'pointerUp', button: 0 }]],
+		['pointer', [{ type: 'pointerDown', button: 0 }]],
+		['pointer', [{ type: 'pointerUp', button: 0 }]],
+		['pointer', [{ type: 'pointerMove', ...at, origin: 'viewport' }]],
 		['wheel', [{ type: 'scroll', ...at, deltaX: 0, deltaY: 100, origin: 'viewport' }]],
 		['wheel', [{ type: 'scroll', ...at, deltaX: 0, deltaY: 100, origin: 'viewport' }]],
 		['wheel', [{ type: 'scroll', ...at, deltaX: 50, deltaY: 0, origin: 'viewport' }]],
