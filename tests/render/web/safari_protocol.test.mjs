@@ -67,7 +67,7 @@ test('the WebWindow mode serves its HTML, loader, wasm and input fixture', () =>
 	assert.throws(() => parse_options(['--window-page', 'window.js']));
 });
 
-test('classic WebWindow input sends coordinates, wheel axes and Option-Tab as W3C actions', async () => {
+test('classic WebWindow input sends coordinates, wheel axes and virtual keys as W3C actions', async () => {
 	const seen = [];
 	const at = { x: 120, y: 70 };
 	const session = { perform: async (actions) => seen.push(...actions) };
@@ -76,6 +76,7 @@ test('classic WebWindow input sends coordinates, wheel axes and Option-Tab as W3
 	await input.move({ x: 650, y: 400 }, true);
 	await input.release({ x: 650, y: 400 });
 	await input.wheel(at, 50, -100);
+	await input.key('Space');
 	await input.key('KeyA', { control: true });
 	await input.key('Tab');
 	assert.deepEqual(seen.map(({ type, actions }) => [type, actions]), [
@@ -83,6 +84,7 @@ test('classic WebWindow input sends coordinates, wheel axes and Option-Tab as W3
 		['pointer', [{ type: 'pointerMove', x: 650, y: 400, origin: 'viewport' }]],
 		['pointer', [{ type: 'pointerMove', x: 650, y: 400, origin: 'viewport' }, { type: 'pointerUp', button: 0 }]],
 		['wheel', [{ type: 'scroll', ...at, deltaX: 50, deltaY: -100, origin: 'viewport' }]],
+		['key', [{ type: 'keyDown', value: '\uE00D' }, { type: 'keyUp', value: '\uE00D' }]],
 		['key', [{ type: 'keyDown', value: '\uE009' }, { type: 'keyDown', value: 'a' },
 			{ type: 'keyUp', value: 'a' }, { type: 'keyUp', value: '\uE009' }]],
 		['key', [{ type: 'keyDown', value: '\uE00A' }, { type: 'keyDown', value: '\uE004' },

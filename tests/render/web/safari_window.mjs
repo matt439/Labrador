@@ -3,9 +3,14 @@
 // inputs desktop Safari's driver cannot deliver: a DPR override and touch
 // pointers (desktop WebKit aliases a touch source to a mouse source).
 import { drive_window, expected_complaint } from '../../app/web/window_input.mjs';
+import { Keys } from '../../../website/acceptance/webdriver.mjs';
 import { WEBDRIVER_CONTROL, WEBDRIVER_OPTION, key_table } from './page_harness.mjs';
 
-const KEYS = key_table(['ArrowLeft', 'Space', 'KeyA', 'Tab']);
+const KEYS = Object.freeze({
+	...key_table(['ArrowLeft', 'KeyA', 'Tab']),
+	// Cocoa gives the virtual Space a native key code.
+	Space: Keys.Space,
+});
 
 export const SAFARI_WINDOW_HOOK = `(() => {
 	const fixture = { native_ratio: devicePixelRatio, activation: null, exit: null };
