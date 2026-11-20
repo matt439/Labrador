@@ -3,6 +3,8 @@
 // (run_page.mjs). No geckodriver, shared profile or security flags, and no
 // browser preferences unless --software-webgl asks for its three. The root
 // CMakeLists registers each as a ctest entry when configure finds a Firefox.
+// On Windows, the observed pre-navigation context setup failures get one
+// fresh session after the owned browser and profile finish cleanup.
 //
 // node tests/render/web/run_firefox.mjs --browser <firefox.exe>
 //   --build-dir out/build/wasm-release --sample minimal [--timeout 60] [--frames 60]
@@ -710,7 +712,24 @@ export async function terminate_owned_firefox(child, browser, profile,
 	console.log('Owned Firefox tree cleanup: ' + output.trim());
 }
 
-export async function main(options) {
+export function retryable_context_setup(error, platform = process.platform) {
+	if (platform !== 'win32') return false;
+	const message = error?.message ?? '';
+	return /^browsingContext\.(getTree|create): timed out after \d+ ms$/.test(message) ||
+		message === 'browsingContext.create: no such frame: DiscardedBrowsingContextError: BrowsingContext does no longer exist';
+}
+
+// Only run_once can return an error that occurred before navigation and whose
+// owned browser and profile completed teardown. Other failures are thrown.
+export async function retry_context_setup(run_once, log = console.error) {
+	const first = await run_once();
+	if (first === null) return;
+	log(`Firefox context setup failed before navigation: ${first.message}. Retrying once with a fresh owned session.`);
+	const second = await run_once();
+	if (second !== null) throw second;
+}
+
+async function run_once(options) {
 	const files = artifact_files(options);
 	// These reads occur only on an explicit CLI run, never on module import.
 	// Any denied artifact read stops before launching; there is no alternate path.
@@ -726,6 +745,8 @@ export async function main(options) {
 	let protocol;
 	let connected = false;
 	let failure = null;
+	let context_failure = null;
+	let profile_removed = false;
 	try {
 		remove_stale_profiles(tmpdir());
 		profile = mkdtempSync(join(tmpdir(), 'labrador-firefox-'));
@@ -745,7 +766,10 @@ export async function main(options) {
 		assert_owned_session(session.capabilities, profile);
 		connected = true;
 		console.log(`Firefox session ${session.sessionId}: ${JSON.stringify(session.capabilities)}`);
-		const context = await create_test_context(protocol);
+		const context = await create_test_context(protocol).catch((error) => {
+			if (retryable_context_setup(error)) context_failure = error;
+			throw error;
+		});
 		console.log(`Firefox foreground test context created and startup tab closed: ${context}`);
 		const driven = is_pixel_test(options.test) ?
 			drive_pixels(protocol, context, service.url, { ...options,
@@ -799,6 +823,7 @@ export async function main(options) {
 				// The profile can stay locked for a moment after Firefox exits on
 				// Windows, as run_page.mjs's does for Chromium.
 				rmSync(absolute, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+				profile_removed = true;
 			} catch (error) {
 				const refused = new Error(`cleanup ${profile}: ${error.code ?? error.name}: ${error.message}`);
 				console.error(refused.message);
@@ -809,7 +834,13 @@ export async function main(options) {
 			failure ??= new Error('Firefox process did not establish and finish its owned session.');
 		}
 	}
+	if (failure && failure === context_failure && profile_removed) return failure;
 	if (failure) throw failure;
+	return null;
+}
+
+export async function main(options) {
+	await retry_context_setup(() => run_once(options));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
