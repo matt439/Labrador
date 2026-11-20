@@ -51,7 +51,7 @@ const commands: Record<Exclude<Props['part'], 'download'>, string> = {
 		`rmdir /s /q C:\\dev\\unpack`,
 		`cd /d "C:\\dev\\%NAME%"`,
 	].join('\n'),
-	update: [`mkdir C:\\dev\\new`, extract('C:\\dev\\new')].join('\n'),
+	update: `if exist C:\\dev\\new (echo C:\\dev\\new already exists. Nothing was extracted.) else (mkdir C:\\dev\\new && ${extract('C:\\dev\\new')})`,
 	// tar names a file inside the ZIP with forward slashes; %FILE:\=/% turns them round.
 	original: [
 		`if exist C:\\dev\\original rmdir /s /q C:\\dev\\original`,

@@ -8,13 +8,14 @@ sidebar:
 import { Steps } from '@astrojs/starlight/components';
 import StarterDownload from '~/components/StarterDownload.astro';
 import ReleaseNote from '~/components/ReleaseNote.astro';
+import RepoLink from '~/components/RepoLink.astro';
 
 A project made from the [starter ZIP](/docs/get-started/starter/) holds the engine as a plain
 folder, `external\labrador`, at the release it came with. Nothing moves it for you. To take a
 newer release, you download that release's starter ZIP, put your `game` folder and everything
 else you added into it, and switch to it once it builds. Your old project stays as it is, under
-another name, until you delete it, so a release that does not work for you costs nothing. It
-takes about half an hour, most of it reading what changed, and downloads about 9 MB.
+another name, until you delete it. Allow time to rebuild the project and try the parts of
+the game you changed. The v0.4.0 starter download is about 13 MB.
 
 This is safer than replacing `external\labrador` by itself, because the project's own files
 (`CMakeLists.txt`, `CMakePresets.json` and above all `vcpkg.json`, which pins the engine's
@@ -30,7 +31,9 @@ this page: step 5 carries its history across and step 10 commits the move.
 The commands run in the x64 Native Tools Command Prompt. They assume your project is
 `C:\dev\mygame`; if yours has another name, put it in place of `mygame` wherever a command has
 `C:\dev\mygame`. Close Visual Studio, your game, and any File Explorer window showing the
-project before you start.
+project before you start. Note one route through your game that you can repeat afterwards.
+For example, collect an item, finish a level and restart. Keep any expected score, custom
+controls and content you need to check.
 
 <Steps>
 
@@ -40,7 +43,9 @@ project before you start.
    type C:\dev\mygame\README.txt
    ```
 
-   The line `Labrador version:` names it, for example `v0.3.0`.
+   The line `Labrador version:` names it, for example `v0.3.0`. If you replaced the
+   starter's README, open `external\labrador\vcpkg.json` and read the engine's
+   `version-string`. The top-level `vcpkg.json` identifies your game.
 
 2. **Download the newest starter ZIP** into `C:\dev`.
 
@@ -49,17 +54,16 @@ project before you start.
    <StarterDownload part="download" moving />
 
    Compare the version in the ZIP's name, the part after `labrador-starter-` such as `v0.3.0`,
-   with the `Labrador version:` line from step 1. If they are the same, there is nothing newer:
-   delete the ZIP with `del C:\dev\labrador-starter-*.zip` and stop here.
+   with the `Labrador version:` line from step 1. If they are the same, your project already
+   has this release. Stop here.
 
 3. **Extract it beside your project**, into a new folder `C:\dev\new`:
 
    <StarterDownload part="update" />
 
-   The new project is now `C:\dev\new\mygame`. If `mkdir` says
-   `A subdirectory or file C:\dev\new already exists.`, a folder is left from an earlier move:
-   look in it, delete it with `rmdir /s /q C:\dev\new` if you no longer need it, and run the box
-   again.
+   The new project is now `C:\dev\new\mygame`. If the command prints
+   `C:\dev\new already exists. Nothing was extracted.`, inspect the existing folder, rename it
+   to an unused name to keep it, then run the box again.
 
 4. **Read what changed.** Every change in the engine that a game can notice is an entry in
    CHANGES.md, under the heading of the release that made it, with what to do about it when
@@ -80,7 +84,7 @@ project before you start.
    Its list is under *A copy is yours*. Read the entries dated after your release, which is the
    date beside your release's heading in CHANGES.md. Neither list needs anything from you
    unless an entry says so; note the ones that do for step 7. An entry marked **Source break**
-   is one your code may need an edit for, and step 7's page has it as a command. Numbers such as
+   can require an edit where your game uses that API. Step 7 shows examples. Numbers such as
    `SM-57` or `OCA-78` in an entry are the owner's references to other records, not things for
    you to do.
 
@@ -89,7 +93,7 @@ project before you start.
 
    ```bat
    rmdir /s /q C:\dev\new\mygame\game
-   xcopy C:\dev\mygame\game C:\dev\new\mygame\game /E /I
+   xcopy C:\dev\mygame\game C:\dev\new\mygame\game /E /I /H
    ```
 
    Check the first line before you run it: it must name `C:\dev\new\mygame\game`, the new
@@ -106,22 +110,10 @@ project before you start.
    dir /a /b C:\dev\new\mygame
    ```
 
-   `/a` lists hidden names such as `.git` as well. The second list is the starter's own:
-
-   ```text title="Output"
-   .github
-   .gitignore
-   CMakeLists.txt
-   CMakePresets.json
-   external
-   game
-   README.txt
-   vcpkg.json
-   ```
-
-   Every name in the first list that the second lacks is yours, except `out`, your build folder,
-   and `.vs`, Visual Studio's, which the new project makes again. Copy each one across, a file
-   with `copy` and a folder with `xcopy`. For the three examples above:
+   `/a` includes hidden names such as `.git`. A v0.4.0 starter also has `build.cmd`,
+   `test.cmd`, `play.cmd`, `labrador.vsconfig` and a `tools` folder.
+   Copy the project files you added. Leave behind `out` and `.vs`, which the tools regenerate.
+   For the three examples above:
 
    ```bat
    copy C:\dev\mygame\hero.png C:\dev\new\mygame\
@@ -131,8 +123,17 @@ project before you start.
 
    Each `copy` prints `1 file(s) copied.` and `xcopy` ends with its count; `/H` copies hidden
    files too. These copy rather than move, so your old project keeps its own until you delete
-   it. Run the two `dir` lines again: now only `out` and `.vs` may be in the first list and not
-   the second.
+   it. A top-level comparison can miss a game script inside a folder that both projects have.
+   This read-only command lists old files missing from the new tree, including files inside
+   `tools` and `.github`. It skips the engine, Git's own files and the two build folders.
+
+   ```bat
+   robocopy C:\dev\mygame C:\dev\new\mygame /L /S /XJ /XX /XC /XN /XO /FP /NDL /NJH /NJS /XD C:\dev\mygame\external\labrador C:\dev\mygame\.git C:\dev\mygame\out C:\dev\mygame\.vs
+   ```
+
+   Copy each missing file your game owns into the same relative folder, then run the command
+   again. If you customized a file that now exists at the same path in both projects, compare
+   the two copies with `fc` and merge your edits. The missing-file list checks names only.
 
 6. **Compare the project's own files.** Run these six lines. Each compares a file in your
    project with the new project's:
@@ -185,16 +186,18 @@ project before you start.
      [Put your project on GitHub](/docs/guides/your-github/) had you add to `.gitignore` is in
      the new one already, so leave it out.
 
-   If you are not sure what you changed, keeping the new project's file and adding back only the
-   additions you remember making is safe: the build in step 9 tells you if one is missing, and
-   your old project keeps every file until you delete it.
+   If you are unsure which differences are yours, compare the old project's file with the
+   unmodified copy in the old release ZIP. If you committed that starter to Git before editing
+   it, `git diff --name-status STARTER -- .` in your old project lists tracked files you
+   changed. Replace `STARTER` with the commit that imported the starter. Reapply your changes
+   to the new release's version.
+   Check custom assets, scripts and tests even if the executable builds.
 
 7. **Update your code for the new release.** If CHANGES.md or the template's list in step 4
    asked for an edit, make it now, in `C:\dev\new\mygame`.
    [Update your code for a newer Labrador](/docs/guides/migrate/) gives the edits for each
-   release as commands to copy: from `v0.2.0` to `v0.3.0`, for example, one line renames
-   `mattmath::` to `labrador::` and `Vector2F::ZERO` to `Vector2F::zero` in every file of your
-   `game` folder. Run them from the new project's folder:
+   release. For v0.4.0, for example, check positional application options and any direct
+   collision or sprite-sheet calls. Run that page's commands from the new project's folder:
 
    ```bat
    cd /d C:\dev\new\mygame
@@ -233,10 +236,14 @@ project before you start.
    out\build\x64-debug\game\MyGame.exe
    ```
 
-   The new project has no build folder yet, so this is a first build: configure installs
+   If you renamed the game, use its executable name in the last command. The new project has
+   no build folder yet, so this is a first build: configure installs
    whatever a changed `vcpkg.json` needs, which took 17 seconds when vcpkg had the packages
    already and can take a few minutes when it has to build one. The build compiles the engine and
-   your game, about 100 steps, and both tests pass.
+   your game. Check that CTest still lists your game's tests and that each passes. Repeat the
+   play route you chose at the start, including a restart. If you ship a browser build, run
+   its build and play that route in the browser too. This catches missing content or controls
+   that a successful native build can leave unnoticed.
 
    The build applies the engine's compiler settings to your code, warnings as errors among them,
    so a name the new engine renamed, or a warning a newer engine causes in your code, stops it;
@@ -274,28 +281,25 @@ project before you start.
 
 `fc` prints, for each place two files differ, a block of lines from the first file and then the
 same place in the second, each headed by `*****` and the file's name, and a lone `*****` ending
-the pair. Around the lines that differ it prints one unchanged line before and one after, so you
-can find the place. This is the third comparison of step 6 for a project that had added
-`lodepng` to its `vcpkg.json`:
+the pair. The surrounding lines help you locate the edit. A v0.3.0 game added `fmt` to format
+its timer. The dependency block from the third comparison in step 6 shows that the new starter
+adds `lodepng`:
 
 ```text title="Output"
-Comparing files C:\DEV\MYGAME\vcpkg.json and C:\DEV\NEW\MYGAME\VCPKG.JSON
 ***** C:\DEV\MYGAME\vcpkg.json
-    },
     "doctest",
-    "lodepng"
+    "fmt"
   ],
 ***** C:\DEV\NEW\MYGAME\VCPKG.JSON
-    },
-    "doctest"
+    "doctest",
+    "lodepng"
   ],
 *****
 ```
 
-The first block is your file, the second the new project's. `},` and `],` are the same in both
-and only mark the place. In between, yours has `"doctest",` with a comma and a `"lodepng"` line,
-and the new one `"doctest"` alone: the difference is your added library. `fc` writes the names in
-capitals; the files are the same ones.
+The first block is your file, the second the new project's. The final manifest needs both
+`fmt` for the game and `lodepng` for the engine. Your own project name and version may also
+show up in this comparison.
 
 A change in the release looks the same, the other way round. The fourth comparison, from
 `v0.2.0` to `v0.3.0`, prints three pairs; this is the last:
@@ -316,37 +320,27 @@ other two pairs change `MattMath` to `LabradorMath` and add two comment lines.
 
 ## A worked merge
 
-You added `lodepng` to `vcpkg.json` in your old project, and the comparison above shows it. Open
-the new project's file:
+To carry the timer's `fmt` dependency forward, open the new project's file:
 
 ```bat
 notepad C:\dev\new\mygame\vcpkg.json
 ```
 
-Find `"doctest"`, put a comma after it, and add your library on the next line, so that the end
+Find `"lodepng"`, put a comma after it, and add your library on the next line, so that the end
 of the list reads:
 
 ```json
     "doctest",
-    "lodepng"
+    "lodepng",
+    "fmt"
   ],
 ```
 
-Save and close Notepad, then run the third comparison again. It prints
-`FC: no differences encountered`: the new file now has your library and everything else the new
-engine wants. Every entry in a list but the last ends with a comma. A missing comma stops step
-9's configure with an error that names the file, its line and the place in it:
-
-```text title="Output"
-Failed to load manifest from directory C:\dev\mygame
-C:\dev\mygame\vcpkg.json:13:5: error: Unexpected character in middle of array
-  on expression:     "lodepng"
-                     ^
--- Running vcpkg install - failed
-```
-
-Here line 13, the `"lodepng"` line, follows `"doctest"` with no comma. Put the comma back, compare
-the file with the box above again, and run the configure again.
+Keep the new starter's `builtin-baseline` and reapply your game's name and version if you
+changed them. Save, then run the third comparison again. In this example the new manifest
+still differs from the old one by the addition of `lodepng`. Every entry in the dependency
+list except the last ends with a comma. If configure reports `Unexpected character in middle
+of array`, check the comma on the preceding line and configure again.
 
 ## Going back
 
@@ -378,30 +372,37 @@ When the new project builds, passes its tests and plays as you expect, delete th
 rmdir /s /q C:\dev\mygame-old
 ```
 
-It deletes the folder and everything in it without asking. Check first that the new project
-has everything of yours: run step 5's two `dir` lines with `C:\dev\mygame-old` in place of
-`C:\dev\mygame` and `C:\dev\mygame` in place of `C:\dev\new\mygame`, and copy across anything
-but `out` and `.vs` that only the old project has. Any change you made to the old project after
-step 5 is in that folder only, so check you have none as well.
+It deletes the folder and everything in it without asking. Before running it, repeat step 5's
+file comparison, using `C:\dev\mygame-old` as the source and `C:\dev\mygame` as the
+destination. Update the excluded paths to use `mygame-old` too. Check any edits you made
+in the old folder after step 5, including edits to files that both projects have.
 
 ## What was checked
 
-On 30 October 2026 the commands on this page were run as written, in a command prompt, on two
+On 20 November 2026, a two-room courier game named Night Dispatch was moved between the
+published v0.3.0 and v0.4.0 starter ZIPs. Its timer needed the game's `fmt` dependency alongside
+the engine's new `lodepng`. Its postal cart used the renamed collision call. The first
+browser playthrough command failed because its script had been missed inside `tools`, a
+folder the new starter also supplies. Step 5 now checks for missing files inside shared
+folders. The <RepoLink path="docs/verification/courier-migration.md">migration record</RepoLink>
+identifies the archives, game revisions and results.
+
+On 30 October 2026 the original procedure was run in a command prompt on two
 projects extracted from starter ZIPs of the same development revision, so the comparisons
 found nothing to change and the rebuilt project's tests passed.
 
-On 31 October 2026 a move between releases that differ was made. No two releases with starter
-ZIPs exist yet, so the old project was extracted from a starter ZIP that `starter_zip.py` made of
+On 31 October 2026 a move between releases that differ was made. At that date there were no two
+releases with starter ZIPs, so the old project was extracted from a starter ZIP that `starter_zip.py` made of
 a clean clone at `v0.2.0`, and the new one from a starter ZIP of this tree, whose `README.txt`
 says it is a development build; both stood in `C:\dev\g11-author\up` in place of `C:\dev`, and the
 quoted output has that folder changed back. The old project had its greeting changed and
-`lodepng` added to its `vcpkg.json`, as a reader's would. Steps 1, 3, 5, 6 and 8 ran as worded:
-`mkdir` a second time printed the message step 3 quotes, `xcopy` copied 15 files, and the four
-comparisons printed what [Reading fc](#reading-fc) quotes, `CMakeLists.txt` differing in a
+`lodepng` added to its `vcpkg.json`. In the procedure at the time, `mkdir` a second time
+reported that the destination already existed, and `xcopy` copied 15 files. The four
+comparisons showed `CMakeLists.txt` differing in a
 comment, `CMakePresets.json` in a Windows-only condition, `vcpkg.json` in the added library and
 the template's `game\CMakeLists.txt` in three places. The game's own `game\CMakeLists.txt` had
-never changed, so the new one was copied. The merge in [A worked merge](#a-worked-merge) was made
-with a tool rather than Notepad, after which `fc` found no differences, and the missing comma's
+never changed, so the new one was copied. After the game dependency was restored in the new
+manifest with a text-editing tool, `fc` found no differences, and the missing comma's
 error was made on purpose. Step 9 then stopped first at configure, on the missing
 `dpi_aware.manifest`, then at the build, on `mattmath`, as
 [Update your code for a newer Labrador](/docs/guides/migrate/) quotes; after that page's edits the
@@ -416,11 +417,10 @@ this move; the step 2 comparison is of the names step 1 and the download print.
 
 A second person then followed the page as worded with their own projects from the same two ZIPs,
 at `C:\dev\g11-follow\up`. Steps 1, 3, 5, 6, 8 and 9, all four `fc` outputs, the missing comma's
-error, both `ren` messages of step 8 and *Going back* gave what is quoted. They found two gaps,
-since filled: step 2, as this site shows it while no release has a starter ZIP, sent a reader who
-already has a project to start again on the Git route, and now says there is nothing to move to
-and how a project in Git can move instead; and *Going back* left `C:\dev\mygame-new` with nothing
-said about it. On the same day at `C:\dev\g11-fixer\up`, an old project configured and built in
+error, both `ren` messages of step 8 and *Going back* reproduced the first run. They found two gaps,
+since filled. Before a release had a starter ZIP, step 2 sent a reader who already had a project
+to start again on the Git route. The fallback now explains when a project can move. *Going back*
+also left `C:\dev\mygame-new` unexplained. On the same day at `C:\dev\g11-fixer\up`, an old project configured and built in
 place, renamed to `mygame-old` with a new one moved into its name, came back with *Going back*'s
 two lines, each printing nothing; its build then had nothing to compile and both tests passed,
 and `rmdir /s /q` deleted `mygame-new` and printed nothing. Step 2's text for a release that has
@@ -430,8 +430,8 @@ On 13 November 2026 the files outside `game` were checked. Two projects were ext
 Windows' `tar` from one starter ZIP of a development revision; the old one was put in Git, given
 a `hero.png`, an empty `web-release.bat`, `.vs` and `out` folders and a second `.vs/` line in
 `.gitignore`, and committed. Step 5's `dir /a /b` lines listed `.git`, `.vs`, `hero.png`, `out`
-and `web-release.bat` in the old project beyond the starter's eight names, which the new one
-listed as quoted; the two `copy` lines each printed `1 file(s) copied.` and `xcopy` copied the
+and `web-release.bat` in the old project beyond that starter's eight names.
+The two `copy` lines each printed `1 file(s) copied.` and `xcopy` copied the
 hidden `.git` folder. Step 6's two added comparisons found the extra `.vs/` line and no
 difference in `ci.yml`. After step 8's swap, `git status --short` in the new project listed
 `.gitignore` alone, since both projects came from one ZIP; step 10's commit followed the old
