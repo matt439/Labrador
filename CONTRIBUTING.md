@@ -562,8 +562,8 @@ their actual commit messages.
 
 ## Before opening a pull request
 
-For a render, audio, input or app change, review the matrix with
-`python tools/verify_changes.py --area render` (or `audio`, `input`, `app`), or
+For changes in render, audio, input, app, collision or scene, review the matrix
+with `python tools/verify_changes.py --area <area>`, or
 select `engine/` paths with `--path`. The [verification contract](docs/verification.md) explains its JSON
 output, optional read-only tooling/cache preflight and explicit `--execute`
 sweep. Execution includes device and browser tests, stops at the first failure,

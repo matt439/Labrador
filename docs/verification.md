@@ -15,7 +15,7 @@ suite with a deterministic detection probe. It is not an additional render
 track selected by `verify_changes.py` or a replacement for real-driver checks.
 
 `tools/verify_changes.py` prints the verification plan for the render, audio,
-input or app area of the engine.
+input, app, collision or scene area of the engine.
 Every configure/build/test phase remains `not-run` unless `--execute` is explicit.
 The executor stops at the first failed command or validation and names it.
 The real sweep ran on 2026-10-29 ([qualification](#real-sweep-qualification-2026-10-29));
@@ -29,6 +29,7 @@ python tools/verify_changes.py --area render
 python tools/verify_changes.py --path engine/render/gl/renderer.cpp --format json
 python tools/verify_changes.py --path engine\render\vulkan --preflight
 python tools/verify_changes.py --area render --preflight --browser "C:/Program Files/Chromium/chrome.exe"
+python tools/verify_changes.py --path engine/collision/contacts.cpp --path engine/scene/scene.h
 python tools/verify_changes.py --area audio --area input
 python tools/verify_changes.py --path engine/audio/xaudio2 --path engine/app/win32/window.cpp
 ```
@@ -37,9 +38,9 @@ From another directory, provide the absolute or relative path to this checkout's
 script. It anchors the checkout to its own location.
 
 Repeatable `--area` and repeatable `--path` selectors are mutually exclusive;
-either repeated forms a union. The areas are `render`, `audio`, `input` and
-`app`. A path selects the area of the exact `engine/render`, `engine/audio`,
-`engine/input` or `engine/app` root it is in, including deleted paths. Windows
+either repeated forms a union. The areas are `render`, `audio`, `input`, `app`,
+`collision` and `scene`. A path selects the matching `engine/<area>` root,
+including deleted paths. Windows
 separators are normalized. Traversal, absolute paths and other folders fail
 explicitly. Documentation, sample, website and other engine folders are not
 modeled; follow their owners in AGENTS.md.
@@ -75,13 +76,30 @@ Each area plans a subset of these tracks, in this order:
 | audio | x64-debug, x64-debug-null, wasm-debug, wasm-release-null | `AudioTests`, `AudioSampleTests`; native null adds `AudioSmokeTests` | the XAudio2 endpoint smoke and listening (`WEB#3`) |
 | input | the same four | `InputTests` | real pads and touchscreens |
 | app | all seven | `AppTests`; native tracks add `MinimalSmokeTests` and `CollisionSmokeTests`, native null adds `LocalMultiplayerSmokeTests` | Vulkan synchronization validation, conditional |
+| collision | x64-debug, x64-debug-null, wasm-release-null | `CollisionTests`, `SceneTests`, `CollisionSampleTests`, `Benchmarks`; both native tracks add `CollisionSmokeTests` | none specific |
+| scene | x64-debug, x64-debug-null, wasm-release-null | `SceneTests`, `CollisionSampleTests`, `Benchmarks`, `LocalMultiplayerTests`; both native tracks add `CollisionSmokeTests`, native null adds `LocalMultiplayerSmokeTests` | none specific |
+
+Collision and scene share portable code. The D3D11 smoke drives the collision
+sample's scripted route on a rasterizing device. Native null exercises the
+sample's outline state and records the scene's per-view draws. Wasm null
+compiles the recording, culling and fan-out cases and benchmarks under clang.
+The multiplayer sample compares serial and parallel draws of the same players
+across two views on both null tracks. The planner runs the full suite on each
+selection.
+
+For changes to the public contact callback, the [PI-25 integration
+record](review/colourwars-reports/contact.md#integration-qualification-2026-11-20)
+also covers the compiled collision guide and a reviewed Release capture.
+Check edited guide steps with the [starter guide pilot](../tools/consumer_check/README.md#compiled-guide-pilot) and run `npm run gate`
+in `website/` for affected published guides and header excerpts. These checks
+run separately from the planner.
 
 Audio and input have one backend on each side: XAudio2 or null and XInput
 natively, Web Audio or null and web input in the browser. The default native
 preset, native null (recorded waves, synthetic input with hidden windows) and
 both browser tracks therefore cover them. The window and application loop
 reach every render backend, so app keeps all seven. A union plans every track
-any selected area needs, with the union of their registrations. The browser
+any selected area needs, with every selected area's applicable registrations on each track. The browser
 registrations below belong to the track, whichever area selects it. Each
 required registration must be in `tests/ctest_inventory.json` for its track,
 or planning fails and names the entry.
