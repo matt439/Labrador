@@ -18,8 +18,9 @@ track selected by `verify_changes.py` or a replacement for real-driver checks.
 input, app, collision or scene area of the engine.
 Every configure/build/test phase remains `not-run` unless `--execute` is explicit.
 The executor stops at the first failed command or validation and names it.
-The real sweep ran on 2026-10-29 ([qualification](#real-sweep-qualification-2026-10-29));
-fake-command tests qualify the control flow. The per-change record of what
+The [original sweep](#real-sweep-qualification-2026-10-29) and the
+[collision and scene qualification](#collision-and-scene-qualification-2026-11-20)
+record actual runs. Fake-command tests exercise the control flow. The per-change record of what
 required PR CI does not fully qualify is [below](#release-and-real-driver-qualification).
 
 These examples run from the repository root:
@@ -320,6 +321,35 @@ not run a configured build or test binary:
 python -m unittest discover -s tools/tests -p test_verify_changes.py
 python -m unittest discover -s tools/tests -p test_verification_runner.py
 ```
+
+## Collision and scene qualification (2026-11-20)
+
+The four `engine/` paths changed by the [contact-callback migration](review/colourwars-reports/contact.md#integration-qualification-2026-11-20)
+at `f26feaed` selected `x64-debug`, `x64-debug-null` and `wasm-release-null`.
+Those tracks ran 79 CTest entries in the combined sweep below. The null builds included
+the scene's culling, draw order and fan-out cases and the multiplayer sample's two-view
+draws. The complete plans for all 15 nonempty combinations of the four original areas
+matched the planner at `c9689538`.
+
+At clean source `593ab35f`, `python tools/verify_changes.py --area render --area collision --area scene --execute`
+passed all seven configurations. In sweep order the native D3D11, D3D12, GL, Vulkan and
+null builds passed 22, 23, 22, 22 and 23 entries. WebGL Debug passed 52 and wasm-null
+Release passed 34, for a total of 198 with zero skipped. The native rasterizers and
+Chrome's ANGLE/D3D11 renderer identified the RTX 5080. A separate Vulkan pixel run with
+`validate_sync` passed 97 cases with zero reported validation errors or synchronization hazards.
+
+In a D3D11 negative control, substituting the first material's compiled shader for the
+second made the [transition test](../tests/render/material_pixel_tests.cpp) fail on the
+first pixel of the switch. It read red where the second shader should have produced
+blue. Restoring the shader passed all 13,959 assertions.
+
+After the sweep, the WebGL context-loss fixture gained two cyan HUD pixels
+drawn only in the first restored frame. In an optimized build, drawing them
+yellow like the preceding frame failed at (31, 6), with expected and observed
+RGBA in the diagnostic. With the marker restored, both context-loss cases
+passed in wasm Debug. In wasm Release both also passed, along with the three
+pixel variants in each of Chrome and Firefox (8/8). Local receipts for the
+sweep and controls are under `out/verification/render-transitions-20261120/`.
 
 ## Chromium page activation (2026-11-17)
 
