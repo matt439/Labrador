@@ -95,5 +95,7 @@ and Ninja `1.13.2`. `build.cmd` exited zero and `test.cmd` passed both
 The unmodified `play.cmd` launched the visible game on the RTX 5080. It
 drew the greeting and controls. The native close button displayed the
 game's `Really quit?` confirmation. The desktop tool's brief Enter
-presses left the prompt open. A manual Enter and the launcher exit status
-remain to be recorded. Local receipts sit under `out/todo-20261120/starter/`.
+presses left the prompt open. The process later exited and the launcher
+returned zero. The final input was unobserved. The local
+`out/todo-20261120/starter/exit-codes.txt` receipt records zero for all three
+launchers.

@@ -21,8 +21,9 @@ registration, result and source revision.
 | Total | 198/198 |
 
 The [starter desktop record](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md#ordinary-prompt-desktop-run-2026-11-20)
-retains its separate ordinary-prompt build, test and visible launch. In-game
-quit confirmation remains open.
+retains its separate ordinary-prompt build, test and visible launch. The game
+showed its quit confirmation and the launcher subsequently returned zero.
+The final input was unobserved.
 
 The separate Vulkan pixel run used the review's shell-visible `validate_sync`
 and best-practices settings. It passed 96 cases and 101,180 assertions with

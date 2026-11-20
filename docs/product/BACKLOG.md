@@ -1424,7 +1424,7 @@ No new removal API or stale-handle guarantee is implied.
 - [x] **[OCA-94](#oca-94)** Should · M · The Outside Adopter: Read my starter's files and setup vocabulary at beginner level
 - [x] **[OCA-95](#oca-95)** Could · S · The Outside Adopter: My assembled game's README and comments describe my project
 - [x] **[OCA-96](#oca-96)** Could · M · The Outside Adopter: Use an optional Visual Studio configuration and recognise expected vcpkg tool downloads
-- [ ] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
+- [x] **[OCA-97](#oca-97)** Could · M · The Outside Adopter: Run the same build, test and play commands without finding a special prompt
 - [x] **[SM-84](#sm-84)** Could · M · The Sole Owner-Maintainer: Keep three guide examples compiled against the assembled starter
 - [x] **[OCA-98](#oca-98)** Could · S · The Outside Adopter: Hand reproducible random values from a state into a tested rule
 - [x] **[OCA-99](#oca-99)** Should · S · The Outside Adopter: Align measured text without re-deriving its origin
@@ -2322,8 +2322,8 @@ proof are in [the qualification record](../review/2026-11-10-first-run/2026-11-1
 The existing consumer job exercises the optional helpers. The November 20
 installed-tool desktop run passed build, both tests and visible launch from
 the documented ordinary prompt. Clicking the game's window close control
-opened its in-game confirmation. A normal exit and `play.cmd` exit status
-still need to be observed. [Desktop evidence](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md#ordinary-prompt-desktop-run-2026-11-20).
+opened its in-game confirmation. The process later exited and `play.cmd`
+returned zero. The final input was unobserved. [Desktop evidence](../review/2026-11-10-first-run/2026-11-17-starter-helpers.md#ordinary-prompt-desktop-run-2026-11-20).
 
 **Owner amendment, 2026-11-17:** installing Visual Studio inside Sandbox takes
 too long to be a useful regular test. Retire that installation gate and stop
