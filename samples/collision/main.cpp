@@ -77,6 +77,8 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE,
 		options.view_capacity = 1;
 		options.max_threads = 1;
 		options.visible = !smoke_test;
+		// The fixed-step route presents every frame without waiting for display refresh.
+		options.vsync = !smoke_test;
 		Application app(std::move(options));
 		app.initialize();
 		app.load_manifest("./manifest.json");
