@@ -3,9 +3,11 @@
 #include "engine/render/material.h"
 #include "engine/render/material_table.h"
 #include "engine/render/renderer.h"
+#include "tests/render/material_transition_scene.h"
 #include "tests/render/pixel_test_harness.h"
 
 #include "materials/constant_material.h"
+#include "materials/reverse_material.h"
 #include "materials/test_material.h"
 
 #include <stdexcept>
@@ -167,4 +169,58 @@ TEST_CASE("MATERIAL: renderer ownership and frame boundaries are enforced")
 	CHECK_THROWS_AS(renderer.set_post_material(handle), std::logic_error);
 	harness.end_not_comparable();
 	CHECK(harness.at(32, 32) == green_pixel);
+}
+
+TEST_CASE("MATERIAL: split world and flat HUD survive switches, resize and removal")
+{
+	Harness harness;
+	Renderer& renderer = harness.renderer();
+	const MaterialHandle forward = renderer.add_material(test_material);
+	const MaterialHandle reverse = renderer.add_material(reverse_material);
+
+	const auto check_frame = [&](const std::string& phase, int width, int height,
+		Pixel left, Pixel right, bool draw_hud = true)
+	{
+		renderer.begin_frame();
+		render_tests::draw_material_transition_scene(renderer, harness.quad,
+			Harness::white_texel(), width, height, draw_hud);
+		harness.end_not_comparable();
+		REQUIRE(harness.buffer_size() == Vector2F(static_cast<float>(width),
+			static_cast<float>(height)));
+		for (int y = 0; y < height; ++y)
+		{
+			for (int x = 0; x < width; ++x)
+			{
+				const bool hud = draw_hud && x >= width / 2 - 3 && x < width / 2 + 3 &&
+					y >= 5 && y < 8;
+				const Pixel world = x < width / 2 ? left : right;
+				const Pixel expected = hud ? Pixel{ 255, 255, 0, 255 } : world;
+				REQUIRE_MESSAGE(harness.at(x, y) == expected,
+					phase, " pixel (", x, ", ", y, ") should be ", expected);
+			}
+		}
+		renderer.end_frame();
+	};
+
+	PostValues forward_values;
+	forward_values.values[0] = 1.0f;
+	renderer.set_post_material(forward);
+	renderer.set_post_values(forward, forward_values);
+	check_frame("forward", buffer_side, buffer_side, green_pixel, red_pixel);
+
+	PostValues reverse_values;
+	reverse_values.values[4] = 1.0f;
+	renderer.set_post_material(reverse);
+	renderer.set_post_values(reverse, reverse_values);
+	check_frame("reverse", buffer_side, buffer_side, blue_pixel, green_pixel);
+
+	harness.resize_window(48, 40);
+	REQUIRE(renderer.window_size_changed(48, 40));
+	check_frame("resized reverse", 48, 40, blue_pixel, green_pixel);
+
+	renderer.set_post_material(forward);
+	check_frame("reselected forward", 48, 40, green_pixel, red_pixel);
+
+	renderer.set_post_effects({});
+	check_frame("direct without HUD", 48, 40, red_pixel, blue_pixel, false);
 }
