@@ -56,6 +56,7 @@ export function safari_window_input(session, evaluate, { option_tab = false } = 
 	const pointer = (actions) => session.perform([{ type: 'pointer', id: 'mouse',
 		parameters: { pointerType: 'mouse' }, actions }]);
 	const move_to = ({ x, y }) => ({ type: 'pointerMove', x, y, origin: 'viewport' });
+	let wheel_source = 0;
 	const fingers = new Map();
 	const touch = async (type, points) => {
 		const events = [];
@@ -102,7 +103,9 @@ export function safari_window_input(session, evaluate, { option_tab = false } = 
 		move: (at) => pointer([move_to(at)]),
 		press: (at) => pointer([move_to(at), { type: 'pointerDown', button: 0 }]),
 		release: (at) => pointer([move_to(at), { type: 'pointerUp', button: 0 }]),
-		wheel: ({ x, y }, deltaX, deltaY) => session.perform([{ type: 'wheel', id: 'wheel', actions: [
+		// WebKit subtracts the previous delta of a reused source. Each
+		// scroll here supplies the full relative delta of one action.
+		wheel: ({ x, y }, deltaX, deltaY) => session.perform([{ type: 'wheel', id: `wheel-${++wheel_source}`, actions: [
 			{ type: 'scroll', x, y, deltaX, deltaY, origin: 'viewport' },
 		] }]),
 		key: (name, { control = false } = {}) => {
