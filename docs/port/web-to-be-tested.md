@@ -994,11 +994,26 @@ compatibility mouse generation is part of the real-touch qualification.
 The window module SHA-256 was
 `739a0381955c10b78253020911b69947d3603ede80ebbbccc693091383ac1424`.
 
-The existing `wasm` job runs the three Firefox entries, with rejected frames
-kept by variant. The existing `safari` job extracts rejected pixel frames
-and drives the transferred WebWindow page. Hosted outcomes for the new
-steps, Safari's passing-frame drift and any rejection artifact remain to be
-recorded against the tested revision. REV#159 tracks the stability window.
+Hosted master revision `86ab9ccd4037b84298075dcadbbcc87746d724d8` passed
+the transferred pixel and WebWindow pages on November 20. Safari 27.2 on
+macOS reported Apple Inc. / Apple GPU (hardware) and passed all 57 supported
+WebWindow steps. Firefox 159.0.1 used WebGL 2.0 on Windows ANGLE / Microsoft
+Basic Render Driver (software). Each pixel run passed 83 cases, 100,918
+assertions and 64 golden comparisons. Counts below sum differing pixels over
+the golden frames of each variant. Every comparison kept channel allowance 1.
+[Safari job](https://github.com/matt439/Labrador/actions/runs/44664778496/job/136056068258),
+[Firefox job](https://github.com/matt439/Labrador/actions/runs/44664778496/job/136051333787).
+
+| Browser and variant | Frames with differences | Differing pixels | Worst channel |
+| --- | ---: | ---: | ---: |
+| Safari default | 3/64 | 768 | 1 |
+| Firefox default | 5/64 | 1,280 | 1 |
+| Firefox without S3TC | 5/64 | 1,280 | 1 |
+| Firefox through post | 5/64 | 1,280 | 1 |
+
+No comparison exceeded the allowance or produced a hosted rejection artifact.
+The local deliberately rejected frame above exercises extraction. This closes
+REV#151. REV#159 tracks the separate stability window.
 
 ### Hosted Safari stability, 2026-11-20
 
@@ -1023,3 +1038,6 @@ The publication master run skipped it under the same-tree rule.
 review is 09:54 Brisbane time on November 24. Inspect every executed attempt
 through the end of that window and investigate any recurrence during session
 creation. Skipped jobs provide no stability evidence.
+
+The [November 20 browser CI investigation](2026-11-20-browser-ci-investigation.md)
+covers the subsequent WebWindow input failures and Firefox setup failures.

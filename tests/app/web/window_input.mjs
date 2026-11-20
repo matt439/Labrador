@@ -77,6 +77,27 @@ const KEYS = {
 };
 const CONTROL = 2;
 
+function expect(what, actual, expected) {
+	if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+		throw new Error(`${what}\n  expected ${JSON.stringify(expected)}\n  received ${JSON.stringify(actual)}`);
+	}
+}
+
+export function check_fullscreen_exit(left, canvas_focused, label) {
+	// Safari can deliver mouse movement and transient focus changes as
+	// its native window returns to the page. Require the complete focus
+	// pair if it occurs, and check where focus actually ends up.
+	const transition = left.filter((entry) => !entry.startsWith('size ') && !/^mouse_move -?\d+ -?\d+$/.test(entry));
+	const keyboard_event = (entry) => entry === 'keyboard_lost' || entry === 'keyboard_gained';
+	const focus = transition.filter(keyboard_event);
+	expect(`${label}: leaving`, transition.filter((entry) => !keyboard_event(entry)), ['fullscreen 0']);
+	if (focus.length > 0) {
+		expect(`${label}: focus events`, focus, ['keyboard_lost', 'keyboard_gained']);
+	}
+	expect(`${label}: canvas focus`, canvas_focused, true);
+	expect(`${label}: the box`, left.filter((entry) => entry.startsWith('size ')).slice(-1), ['size 480 250']);
+}
+
 // The failure step's exception, which the window writes to the console.
 export function expected_complaint({ level, text }) {
 	return level === 'error' && text === 'web window test failure';
@@ -302,11 +323,6 @@ export async function drive_window(page, input) {
 	const defaults = () => evaluate('JSON.stringify(Module.labradorDefaults.splice(0))')
 		.then((text) => JSON.parse(text));
 
-	const expect = (what, actual, expected) => {
-		if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-			throw new Error(`${what}\n  expected ${JSON.stringify(expected)}\n  received ${JSON.stringify(actual)}`);
-		}
-	};
 	const check = async (what, expected, expected_defaults = undefined) => {
 		step++;
 		expect(`step ${step}, ${what}`, await take(), expected);
@@ -675,21 +691,8 @@ export async function drive_window(page, input) {
 	await frames(3);
 	await pass('leaving is reported, and the box is the page\'s again', async (what) => {
 		const left = await take();
-		// Safari can deliver mouse movement and transient focus changes as
-		// its native window returns to the page. Require the complete focus
-		// pair if it occurs, and check where focus actually ends up.
-		const transition = without_sizes(left).filter((entry) => !/^mouse_move -?\d+ -?\d+$/.test(entry));
-		const keyboard_event = (entry) => entry === 'keyboard_lost' || entry === 'keyboard_gained';
-		const focus = transition.filter(keyboard_event);
-		expect(`step ${step}, ${what}: leaving`, transition.filter((entry) => !keyboard_event(entry)),
-			['fullscreen 0']);
-		if (focus.length > 0) {
-			expect(`step ${step}, ${what}: focus events`, focus, ['keyboard_lost', 'keyboard_gained']);
-		}
-		expect(`step ${step}, ${what}: canvas focus`,
-			await evaluate('document.hasFocus() && document.activeElement === Module.canvas'), true);
-		expect(`step ${step}, ${what}: the box`,
-			left.filter((entry) => entry.startsWith('size ')).slice(-1), ['size 480 250']);
+		const focused = await evaluate('document.hasFocus() && document.activeElement === Module.canvas');
+		check_fullscreen_exit(left, focused, `step ${step}, ${what}`);
 	});
 	await evaluate('document.getElementById("canvas").requestFullscreen().then(() => false, () => true)');
 	await frames(3);
